@@ -182,7 +182,7 @@ These are key functions that drive the script's core logic.
 
 ## License
 
-This project is licensed under the **MIT License**. See the `LICENSE` file for details. You are free to modify and distribute this script, but please provide attribution.
+This project is licensed under the **MIT License**. See the `LICENSE` file for details. You are free to modify and distribute this script, but please provide attribution and never paywall it. My scripts are always free and open source.
 
 -----
 
