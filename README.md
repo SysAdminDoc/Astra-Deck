@@ -2,6 +2,8 @@
 
 A powerful userscript for ultimate YouTube customization, allowing you to hide elements, control layout, and enhance your viewing experience. There is no other free userscript that can do what this can do.
 
+## BETA: Working out small bugs, still adding additional features. Script is stable. Main issue is the Cobalt download button, Youtube is actively scanning for downloaders and killing the button. 
+
 ## Introduction
 
 The YouTube interface, while functional, can often feel cluttered with features you don't use or lack options you wish you had. The **YouTube Customization Suite** was created to solve this problem by providing a single, comprehensive script to take back control. Its core purpose is to allow users to meticulously tailor their viewing experience, from decluttering the UI to automating common actions and redesigning page layouts. All features are modular and can be toggled on or off from a clean, integrated settings panel.
@@ -12,11 +14,20 @@ The YouTube interface, while functional, can often feel cluttered with features 
 
 The script is organized into logical groups of features.
 
+<img width="1235" height="1297" alt="Settings1" src="https://github.com/user-attachments/assets/d6d54b3c-da6e-4e77-b728-4cc7b1069e1e" />
+<img width="1218" height="1323" alt="Settings2" src="https://github.com/user-attachments/assets/7a556743-c011-406d-914a-3d070ff6ab24" />
+<img width="1203" height="1357" alt="Settings3" src="https://github.com/user-attachments/assets/69aa742e-1e6f-4ab9-b844-e453ec82aa95" />
+
+
 ### Core UI
 
 | Name | What it does | How it improves the target interface |
 | :--- | :--- | :--- |
 | **Settings Button** | Adds a settings cog icon to the YouTube interface. | Provides a consistent and easily accessible entry point to configure all script features without leaving the YouTube page. |
+
+<img width="546" height="159" alt="SettingsMainPage" src="https://github.com/user-attachments/assets/a89be257-31f6-4195-bfef-26a77f1aeb29" />
+<img width="1362" height="528" alt="Settings" src="https://github.com/user-attachments/assets/296b420f-c05e-424e-8e97-ec6374af4051" />
+
 
 ### Header
 
@@ -47,7 +58,16 @@ The script is organized into logical groups of features.
 | **Make Subscriptions Full-Width** | Expands the subscription grid to use the full available page width. | Displays more videos on screen at once, reducing the need for scrolling. |
 | **5 Videos Per Row** | Changes the video grid layout to show 5 videos per row instead of the default 4. | Increases content density, allowing you to see more videos at a glance. |
 
+<img width="3840" height="1776" alt="5row" src="https://github.com/user-attachments/assets/53520c93-132b-4c36-be8e-24cbd51014ec" />
+
 ### Watch Page - Layout
+
+### Live Chat on side, full scaled video on the left.
+<img width="3840" height="1780" alt="Livestream" src="https://github.com/user-attachments/assets/ff7974b0-e840-4744-85f9-4a6c36b89f4e" />
+
+### Full screen scrollable to show comments and the rest of the watch page.
+
+<img width="3837" height="1689" alt="View" src="https://github.com/user-attachments/assets/b0e1a69a-ad2e-4250-95ff-aeaabb35d457" />
 
 | Name | What it does | How it improves the target interface |
 | :--- | :--- | :--- |
@@ -56,6 +76,8 @@ The script is organized into logical groups of features.
 | **Logo in Video Header** | Moves the YouTube logo (linking to subscriptions) into the video header next to the channel name. | Maintains key navigation while allowing the main site header to be hidden for a cleaner look. |
 
 ### Watch Page - Action Buttons
+
+<img width="3840" height="1348" alt="CobaltDownload" src="https://github.com/user-attachments/assets/7f4a5a0a-b3fb-4962-a806-89ae98738dfa" />
 
 | Name | What it does | How it improves the target interface |
 | :--- | :--- | :--- |
