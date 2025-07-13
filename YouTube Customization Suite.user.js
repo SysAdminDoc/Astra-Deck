@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         YouTube Customization Suite
 // @namespace    https://github.com/user/yt-enhancement-suite
-// @version      2.5
+// @version      2.7
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_getResourceText
+// @resource     betterDarkMode https://github.com/SysAdminDoc/Youtube_Customization_Suite/raw/refs/heads/main/Themes/youtube-dark-theme.css
 // @run-at       document-end
 // ==/UserScript==
 
@@ -14,12 +16,11 @@
     'use strict';
 
     // ——————————————————————————————————————————————————————————————————————————
-    //  ~ YouTube Customization Suite v2.5 ~
+    //  ~ YouTube Customization Suite v2.7 ~
     //
-    //  - Updated "Hide Pinned Comments" to be more robust.
-    //  - Overhauled settings button to be context-aware (Masthead on regular
-    //    pages, floating next to logo on watch pages).
-    //  - Removed old bottom-left floating settings button.
+    //  - Added "Themes" section to settings.
+    //  - Added toggle to force YouTube's native dark theme.
+    //  - Added sub-setting to apply "Better Full Dark Theme" enhancement.
     //
     // ——————————————————————————————————————————————————————————————————————————
 
@@ -103,6 +104,10 @@
 
             // Sidebar
             hideSidebar: false,
+
+            // Themes
+            nativeDarkMode: false,
+            betterDarkMode: false,
 
             // General Content
             removeAllShorts: true,
@@ -289,6 +294,47 @@
                     ytd-page-manager { margin-left: 0 !important; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() {
+                this._styleElement?.remove();
+            }
+        },
+
+        // Group: Themes
+        {
+            id: 'nativeDarkMode',
+            name: 'YouTube Native Dark Theme',
+            description: 'Forces YouTube\'s built-in dark theme to be active.',
+            group: 'Themes',
+            _ruleId: 'nativeDarkModeRule',
+            _applyTheme() {
+                document.documentElement.setAttribute('dark', '');
+            },
+            init() {
+                this._applyTheme(); // Apply immediately
+                addRule(this._ruleId, this._applyTheme.bind(this));
+            },
+            destroy() {
+                document.documentElement.removeAttribute('dark');
+                removeRule(this._ruleId);
+            }
+        },
+        {
+            id: 'betterDarkMode',
+            name: 'Better Full Dark Theme',
+            description: 'Enhances the native dark theme. Requires "YouTube Native Dark Theme" to be enabled.',
+            group: 'Themes', // Note: This feature is only controllable as a sub-setting
+            _styleElement: null,
+            init() {
+                const customCss = GM_getResourceText('betterDarkMode');
+                if (customCss) {
+                    this._styleElement = document.createElement('style');
+                    this._styleElement.id = `yt-suite-style-${this.id}`;
+                    this._styleElement.textContent = customCss;
+                    document.head.appendChild(this._styleElement);
+                } else {
+                    console.error('[YT Suite] Could not load betterDarkMode resource. Was the script installed correctly?');
+                }
             },
             destroy() {
                 this._styleElement?.remove();
@@ -703,9 +749,13 @@
     function buildPanel(appState) {
         const groups = features.reduce((acc, f) => {
             acc[f.group] = acc[f.group] || [];
-            acc[f.group].push(f);
+            // Exclude sub-features from being rendered as top-level items
+            if (f.id !== 'betterDarkMode' && f.id !== 'expandVideoWidth') {
+                 acc[f.group].push(f);
+            }
             return acc;
         }, {});
+
 
         const panelContainer = document.createElement('div');
         panelContainer.id = 'yt-suite-panel-container';
@@ -722,7 +772,7 @@
         title.textContent = 'YouTube Customization Suite';
         const version = document.createElement('span');
         version.className = 'version';
-        version.textContent = 'v2.5';
+        version.textContent = 'v2.7';
         header.append(title, version);
 
         const main = document.createElement('main');
@@ -730,6 +780,7 @@
             'Core UI',
             'Header',
             'Sidebar',
+            'Themes',
             'General Content',
             'Watch Page - Layout',
             'Watch Page - Other Elements',
@@ -737,41 +788,50 @@
             'Watch Page - Player Controls'
         ];
 
-        const createSubSetting = (id, name, description, parentInput, parentFeatureId) => {
+        const createSubSetting = (subFeatureId, parentInput) => {
+            const subFeat = features.find(x => x.id === subFeatureId);
+            if (!subFeat) return null;
+
             const wrapper = document.createElement('div');
             wrapper.className = 'yt-suite-switch-wrapper yt-suite-sub-setting-wrapper';
-            wrapper.dataset.tooltip = description;
+            wrapper.dataset.tooltip = subFeat.description;
+
             const label = document.createElement('label');
             label.className = 'yt-suite-switch';
-            label.htmlFor = `switch-${id}`;
+            label.htmlFor = `switch-${subFeat.id}`;
+
             const input = document.createElement('input');
             input.type = 'checkbox';
-            input.id = `switch-${id}`;
-            input.checked = appState.settings[id];
+            input.id = `switch-${subFeat.id}`;
+            input.checked = appState.settings[subFeat.id];
             input.onchange = async (e) => {
-                appState.settings[id] = e.target.checked;
-                const parentFeat = features.find(x => x.id === parentFeatureId);
-                if (parentFeat) {
-                    if (parentFeat.destroy) parentFeat.destroy();
-                    if (appState.settings[parentFeatureId] && parentFeat.init) {
-                        parentFeat.init();
-                    }
-                }
+                const isChecked = e.target.checked;
+                appState.settings[subFeat.id] = isChecked;
+                if (subFeat.destroy) subFeat.destroy();
+                if (isChecked && subFeat.init) subFeat.init();
                 await settingsManager.save(appState.settings);
             };
+
             const slider = document.createElement('span');
             slider.className = 'slider';
             const nameSpan = document.createElement('span');
             nameSpan.className = 'label';
-            nameSpan.textContent = name;
+            nameSpan.textContent = subFeat.name;
+
             label.append(input, slider);
             wrapper.append(label, nameSpan);
             wrapper.style.display = parentInput.checked ? 'flex' : 'none';
             parentInput.addEventListener('change', (e) => {
                 wrapper.style.display = e.target.checked ? 'flex' : 'none';
+                if (!e.target.checked && input.checked) {
+                    input.checked = false;
+                    // Fire the change event to trigger destroy() and save the state
+                    input.dispatchEvent(new Event('change'));
+                }
             });
             return wrapper;
         };
+
 
         groupOrder.forEach(groupName => {
             if (!groups[groupName] || groups[groupName].length === 0) return;
@@ -812,9 +872,12 @@
                 wrapper.append(label, nameSpan);
                 fieldset.appendChild(wrapper);
 
+                // Attach sub-settings to their parents
                 if (f.id === 'hideRelatedVideos') {
-                    const expandWidthSub = createSubSetting('expandVideoWidth', "Expand video to full width", "When related videos are hidden, this makes the video player fill the available space.", input, 'hideRelatedVideos');
-                    fieldset.append(expandWidthSub);
+                    fieldset.append(createSubSetting('expandVideoWidth', input));
+                }
+                if (f.id === 'nativeDarkMode') {
+                    fieldset.append(createSubSetting('betterDarkMode', input));
                 }
             });
             main.appendChild(fieldset);
@@ -866,7 +929,7 @@
             .yt-suite-switch input:checked + .slider:before { transform: translateX(18px); }
             .yt-suite-switch-wrapper::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background: #111; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10003; }
             .yt-suite-switch-wrapper:hover::after { opacity: 1; }
-            .yt-suite-sub-setting-wrapper { margin-left: 20px; }
+            .yt-suite-sub-setting-wrapper { margin-left: 20px; padding-left: 10px; border-left: 2px solid var(--yt-suite-border-color); }
             .yt-suite-footer-controls { display: flex; gap: 10px; }
             .yt-suite-btn-primary { background-color: var(--yt-suite-accent-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-family: var(--panel-font); font-weight: 500; cursor: pointer; transition: background-color .2s; }
             .yt-suite-btn-primary:hover { background-color: #cc0000; }
