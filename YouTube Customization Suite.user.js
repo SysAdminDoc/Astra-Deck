@@ -3,7 +3,7 @@
 // @namespace    https://github.com/user/yt-enhancement-suite
 // @version      3.3
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience.
-// @author       Matthew Parker & yodaluca23
+// @author       Matthew Parker
 // @match        https://*.youtube.com/*
 // @icon         https://www.google.com/s2/favicons?domain=youtube.com
 // @grant        GM_setValue
