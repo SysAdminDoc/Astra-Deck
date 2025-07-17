@@ -68,9 +68,7 @@ ytd-playlist-panel-video-renderer:hover:not(.dragging),ytd-playlist-panel-video-
 .yt-lockup-notification .unread-dot{background:#167ac6}
 #progress.waiting,#progress{background:#0072f3}
 .ytp-swatch-color,.ytp-red2 .ytp-swatch-color{color:#049bff}
-.html5-play-progress,.ytp-play-progress,.ytp-cairo-refresh-signature-moments .ytp-play-progress,.ytp-red2 .ytp-swatch-background-color,.ytp-red2 .ytp-swatch-background-color-secondary{background:linear-gradient(to right,#0072ffad 95%,#6ca8ff 100%)}
-.html5-scrubber-button,.ytp-scrubber-button{box-shadow:0 0 6px #0066ff,0 0 8px #0ea3ff,0 0 10px #0ea3ff}
-.ytp-hover-progress-light{background:#004eb159}
+.ytp-red2 .ytp-swatch-background-color,.ytp-red2 .ytp-swatch-background-color-secondary{background:linear-gradient(to right,#0072ffad 95%,#6ca8ff 100%)}
 .ytp-settings-button.ytp-hd-quality-badge::after,.ytp-settings-button.ytp-4k-quality-badge::after,.ytp-settings-button.ytp-5k-quality-badge::after,.ytp-settings-button.ytp-8k-quality-badge::after,.ytp-settings-button.ytp-3d-badge::after,.ytp-red2 .ytp-settings-button.ytp-hd-quality-badge:after,.ytp-red2 .ytp-settings-button.ytp-4k-quality-badge:after,.ytp-red2 .ytp-settings-button.ytp-5k-quality-badge:after,.ytp-red2 .ytp-settings-button.ytp-8k-quality-badge:after,.ytp-red2 .ytp-settings-button.ytp-3d-badge-grey:after,.ytp-red2 .ytp-settings-button.ytp-3d-badge:after{background-color:#068bff}
 .ytp-menuitem[aria-checked=true] .ytp-menuitem-toggle-checkbox,.ytp-red2 .ytp-menuitem[aria-checked=true] .ytp-menuitem-toggle-checkbox,.ytp-cairo-refresh .ytp-menuitem[aria-checked=true] .ytp-menuitem-toggle-checkbox{background:#0582ff}
 .ytp-chrome-controls .ytp-button[aria-pressed]:after,.ytp-cairo-refresh .ytp-chrome-controls .ytp-button[aria-pressed]::after{background-color:#198aff}
@@ -564,8 +562,6 @@ paper-item.yt-dropdown-menu:hover{background-color:#1a1a1a}
 .ytp-big-mode .html5-scrubber-button,.ytp-big-mode .ytp-scrubber-button{box-shadow:none;background:#fff}
 .resume-playback-progress-bar{background:#0d82ff}
 .ytp-chrome-controls .ytp-button.ytp-youtube-button:hover:not([aria-disabled=true]):not([disabled]) .ytp-svg-fill-logo-tube-lozenge{fill:#057aff}
-.html5-scrubber-button,.ytp-scrubber-button{background:#fff;border-color:#1b1b1b;transition:.3s}
-.html5-scrubber-button:hover,.ytp-scrubber-button:hover{border-color:#fff;box-shadow:0 0 3px #fff,0 0 5px #fff,0 0 6px #fff}
 .ytp-fullerscreen-edu-chevron,.ytp-fullerscreen-edu-text{display:none}
 .ytp-chrome-controls .ytp-button[aria-pressed]:after{bottom:9px}
 .ytp-chrome-controls .ytp-button[aria-pressed=true]:after{width:24px}
@@ -923,3 +919,16 @@ body #footer-container{background:#232323;border-top:1px solid #2b2b2b}
 .yt-badge{background-color:#3c3c3c;border-color:#444;color:#b6b6b6}
 #creator-subheader{border-bottom:none}
 .yt-uix-tooltip{margin:0 1px 1px 15px}
+
+.ytp-play-progress,.html5-play-progress,.ytp-cairo-refresh-signature-moments .ytp-play-progress {
+  background: #e50914 !important;
+  box-shadow: none !important;
+}.ytp-scrubber-button,.html5-scrubber-button {
+  background-color: #fff !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+  height: 13px !important;
+  width: 13px !important;
+}.ytp-hover-progress-light {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
