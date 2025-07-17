@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         YouTube Customization Suite
-// @namespace    https://github.com/SysAdminDoc/Youtube_Customization_Suite
-// @version      3.3
+// @namespace    https://github.com/user/yt-enhancement-suite
+// @version      3.13
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
-// @icon         https://www.google.com/s2/favicons?domain=youtube.com
+// @icon         https://raw.githubusercontent.com/SysAdminDoc/Youtube_Customization_Suite/refs/heads/main/ytlogo.png
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_getResourceText
@@ -14,20 +14,46 @@
 // @updateURL    https://github.com/SysAdminDoc/Youtube_Customization_Suite/raw/refs/heads/main/YouTube%20Customization%20Suite.user.js
 // @downloadURL  https://github.com/SysAdminDoc/Youtube_Customization_Suite/raw/refs/heads/main/YouTube%20Customization%20Suite.user.js
 // @resource     betterDarkMode https://github.com/SysAdminDoc/Youtube_Customization_Suite/raw/refs/heads/main/Themes/youtube-dark-theme.css
+// @resource     catppuccinMocha https://github.com/SysAdminDoc/Youtube_Customization_Suite/raw/refs/heads/main/Themes/youtube-catppuccin-theme.css
+// @resource     nyanCatProgressBar https://raw.githubusercontent.com/SysAdminDoc/Youtube_Customization_Suite/refs/heads/main/Themes/nyan-cat-progress-bar.css
 // @run-at       document-end
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // ——————————————————————————————————————————————————————————————————————————
-    //  ~ YouTube Customization Suite v3.3 ~
-    //
-    //  - Integrated Cobalt Tools Download Button script as a new feature.
-    //  - Replaced "Hide Download Button" with "Replace with Cobalt Downloader".
-    //  - Fixed selectors for hiding Share, Clip, Thanks, and Save buttons.
-    //
-    // ——————————————————————————————————————————————————————————————————————————
+//  ~ CHANGELOG ~
+//
+//  v3.15
+//  - ADDED: Option to hide the on-screen captions container.
+//  - RE-IMPLEMENTED: All features from v3.12-v3.14 on a more stable script base.
+//
+//  v3.14
+//  - ADDED: Option to hide Subscriptions page layout toggles.
+//  - ADDED: "Nyan Cat Progress Bar" under a new "Progress Bar Themes" category.
+//  - UPDATED: Userscript icon.
+//
+//  v3.13
+//  - ADDED: "Enable Recommended" & "Disable All" master controls for quick setup.
+//  - FIXED: Re-nested "Catppuccin Mocha" theme under the native dark mode toggle.
+//  - FIXED: Improved settings cog spacing on watch pages.
+//  - REMOVED: The non-functional "Settings Cog on Player" feature.
+//
+//  v3.12
+//  - ADDED: Options to hide comment action menu, "Level Up" messages, "Ask" button, SponsorBlock button.
+//
+//  v3.10 & v3.11
+//  - FIXED: Enhanced bitrate selection is now invisible and more reliable.
+//
+//  v3.9
+//  - FIXED: Reverted "Auto Max Resolution" to a more stable logic.
+//  - UI: Made "Use Enhanced Bitrate" a separate sub-toggle and fixed sub-setting layout.
+//
+//  v3.8
+//  - FEATURED: Integrated many new features from "YouTube Alchemy."
+//  - ADDED: Behavior toggles (prevent autoplay, expand description, etc.).
+//  - ADDED: Content toggles (redirect Shorts, hide end cards, etc.).
+//  - ADDED: "Catppuccin Mocha" theme.
 
 
     // —————————————————————
@@ -64,9 +90,8 @@
             childList: true,
             subtree: true,
             attributes: true,
-            attributeFilter: ['theater', 'fullscreen', 'hidden', 'video-id']
+            attributeFilter: ['theater', 'fullscreen', 'hidden', 'video-id', 'page-subtype']
         });
-        // Also listen for YouTube's own navigation event for SPA
         window.addEventListener('yt-navigate-finish', () => runAllRules(document.body));
     }
 
@@ -99,9 +124,6 @@
     // —————————————————————
     const settingsManager = {
         defaults: {
-            // Core UI
-            settingsButton: true,
-
             // Header
             hideCreateButton: false,
             hideVoiceSearch: false,
@@ -113,11 +135,19 @@
             // Themes
             nativeDarkMode: false,
             betterDarkMode: false,
+            catppuccinMocha: false,
+
+            // Progress Bar Themes
+            nyanCatProgressBar: false,
 
             // General Content
             removeAllShorts: true,
+            redirectShorts: false,
+            disablePlayOnHover: false,
             fullWidthSubscriptions: false,
+            hideSubscriptionOptions: false,
             fiveVideosPerRow: false,
+            hidePaidContentOverlay: false,
 
             // Watch Page - Layout
             fitPlayerToWindow: false,
@@ -125,17 +155,46 @@
             expandVideoWidth: true,
             floatingLogoOnWatch: false,
 
+            // Watch Page - Behavior
+            preventAutoplay: false,
+            autoExpandDescription: false,
+            sortCommentsNewestFirst: false,
+
             // Watch Page - Other Elements
             hideMerchShelf: false,
             hideDescriptionExtras: false,
+            hideHashtags: false,
             hidePinnedComments: false,
+            hideCommentActionMenu: false,
             hideLiveChatEngagement: false,
+            hidePaidPromotionWatch: false,
+            hideVideoEndCards: false,
+            hideVideoEndScreen: false,
+
+            // Watch Page - Live Chat
+            hideLiveChatHeader: false,
+            hideChatMenu: false,
+            hidePopoutChatButton: false,
+            hideChatReactionsButton: false,
+            hideChatTimestampsButton: false,
+            hideChatPolls: false,
+            hideChatPollBanner: false,
+            hideChatTicker: false,
+            hideViewerLeaderboard: false,
+            hideChatSupportButtons: false,
+            hideChatBanner: false,
+            hideChatEmojiButton: false,
+            hideTopFanIcons: false,
+            hideSuperChats: false,
+            hideLevelUp: false,
+            keywordFilterList: '',
 
             // Watch Page - Action Buttons
             autolikeVideos: false,
             hideLikeButton: false,
             hideDislikeButton: false,
             hideShareButton: false,
+            hideAskButton: false,
             hideClipButton: false,
             hideThanksButton: false,
             hideSaveButton: false,
@@ -145,28 +204,19 @@
 
             // Watch Page - Player Controls
             autoMaxResolution: false,
+            useEnhancedBitrate: false,
+            hideSponsorBlockButton: false,
             hideNextButton: false,
             hideAutoplayToggle: false,
             hideSubtitlesToggle: false,
+            hideCaptionsContainer: false,
             hideMiniplayerButton: false,
             hidePipButton: false,
             hideTheaterButton: false,
             hideFullscreenButton: false,
-
         },
         async load() {
             let savedSettings = await GM_getValue('ytSuiteSettings', {});
-            // Migration for older setting name
-            if (savedSettings.hasOwnProperty('collapsibleGuide')) {
-                delete savedSettings.collapsibleGuide;
-            }
-            if (savedSettings.hasOwnProperty('hideShortsFeed')) {
-                savedSettings.removeAllShorts = savedSettings.hideShortsFeed;
-                delete savedSettings.hideShortsFeed;
-            }
-            if (savedSettings.hasOwnProperty('hideDownloadButton')) {
-                delete savedSettings.hideDownloadButton;
-            }
             return { ...this.defaults, ...savedSettings };
         },
         async save(settings) {
@@ -185,73 +235,6 @@
     // 2. FEATURE DEFINITIONS
     // —————————————————————
     const features = [
-        // Group: Core UI
-        {
-            id: 'settingsButton',
-            name: 'Settings Button',
-            description: 'Shows a settings cog. On watch pages, it appears next to the channel info. On other pages, it appears in the main header.',
-            group: 'Core UI',
-            _elements: { watch: null, masthead: null },
-            _ruleId: 'settingsButtonRule',
-            _handleDisplay() {
-                const isWatch = window.location.pathname.startsWith('/watch');
-
-                // --- Handle Watch Page ---
-                if (isWatch) {
-                    this._elements.masthead?.remove();
-                    this._elements.masthead = null;
-                    document.getElementById('yt-floating-cog')?.remove();
-
-                    const ownerDiv = document.querySelector('#top-row #owner');
-                    if (ownerDiv && !document.getElementById('yt-suite-watch-cog')) {
-                        const cog = document.createElement('div');
-                        cog.id = 'yt-suite-watch-cog';
-                        const btn = document.createElement('button');
-                        btn.title = 'Open YouTube Suite Settings';
-                        btn.appendChild(createCogSvg());
-                        btn.onclick = () => document.body.classList.toggle('yt-suite-panel-open');
-                        cog.appendChild(btn);
-                        this._elements.watch = cog;
-
-                        const logo = document.getElementById('yt-suite-watch-logo');
-                        if (logo && logo.parentElement === ownerDiv) {
-                            ownerDiv.insertBefore(cog, logo.nextSibling);
-                        } else {
-                            ownerDiv.prepend(cog);
-                        }
-                    }
-                }
-                // --- Handle Non-Watch Page ---
-                else {
-                    this._elements.watch?.remove();
-                    this._elements.watch = null;
-
-                    const masthead = document.querySelector('ytd-topbar-logo-renderer');
-                    if (masthead && !document.getElementById('yt-masthead-cog')) {
-                        const cog = document.createElement('div');
-                        cog.id = 'yt-masthead-cog';
-                        const btn = document.createElement('button');
-                        btn.title = 'Open YouTube Suite Settings';
-                        btn.appendChild(createCogSvg());
-                        btn.onclick = () => document.body.classList.toggle('yt-suite-panel-open');
-                        cog.appendChild(btn);
-                        masthead.appendChild(cog);
-                        this._elements.masthead = cog;
-                    }
-                }
-            },
-            init() {
-                addRule(this._ruleId, this._handleDisplay.bind(this));
-            },
-            destroy() {
-                removeRule(this._ruleId);
-                this._elements.watch?.remove();
-                this._elements.masthead?.remove();
-                document.getElementById('yt-suite-watch-cog')?.remove();
-                this._elements = { watch: null, masthead: null };
-            }
-        },
-
         // Group: Header
         {
             id: 'hideCreateButton',
@@ -355,13 +338,58 @@
                     this._styleElement.textContent = customCss;
                     document.head.appendChild(this._styleElement);
                 } else {
-                    console.error('[YT Suite] Could not load betterDarkMode resource.');
+                    console.error('[YT Suite] Could not load betterDarkMode resource. Make sure the @resource URL is correct and accessible.');
                 }
             },
             destroy() {
                 this._styleElement?.remove();
             }
         },
+        {
+            id: 'catppuccinMocha',
+            name: 'Catppuccin Mocha Theme',
+            description: 'A soothing dark theme for YouTube. Requires "YouTube Native Dark Theme" to be enabled.',
+            group: 'Themes',
+            _styleElement: null,
+            init() {
+                const customCss = GM_getResourceText('catppuccinMocha');
+                if (customCss) {
+                    this._styleElement = document.createElement('style');
+                    this._styleElement.id = `yt-suite-style-${this.id}`;
+                    this._styleElement.textContent = customCss;
+                    document.head.appendChild(this._styleElement);
+                } else {
+                    console.error('[YT Suite] Could not load catppuccinMocha resource. Make sure the @resource URL is correct and accessible.');
+                }
+            },
+            destroy() {
+                this._styleElement?.remove();
+            }
+        },
+
+        // Group: Progress Bar Themes
+        {
+            id: 'nyanCatProgressBar',
+            name: 'Nyan Cat Progress Bar',
+            description: 'Replaces the video progress bar with the one and only Nyan Cat.',
+            group: 'Progress Bar Themes',
+            _styleElement: null,
+            init() {
+                const customCss = GM_getResourceText('nyanCatProgressBar');
+                if (customCss) {
+                    this._styleElement = document.createElement('style');
+                    this._styleElement.id = `yt-suite-style-${this.id}`;
+                    this._styleElement.textContent = customCss;
+                    document.head.appendChild(this._styleElement);
+                } else {
+                    console.error('[YT Suite] Could not load nyanCatProgressBar resource. Make sure the @resource URL is correct and accessible.');
+                }
+            },
+            destroy() {
+                this._styleElement?.remove();
+            }
+        },
+
 
         // Group: General Content
         {
@@ -395,6 +423,43 @@
             }
         },
         {
+            id: 'redirectShorts',
+            name: 'Redirect Shorts to Standard Player',
+            description: 'Automatically redirects any Shorts video to the normal watch page.',
+            group: 'General Content',
+            init() {
+                const redirectRule = () => {
+                    if (window.location.pathname.startsWith('/shorts/')) {
+                        window.location.href = window.location.href.replace('/shorts/', '/watch?v=');
+                    }
+                };
+                addRule(this.id, redirectRule);
+            },
+            destroy() {
+                removeRule(this.id);
+            }
+        },
+        {
+            id: 'disablePlayOnHover',
+            name: 'Disable Play on Hover',
+            description: 'Prevents videos from auto-playing when you hover over their thumbnails.',
+            group: 'General Content',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-video-preview, #preview, #mouseover-overlay,
+                    ytd-moving-thumbnail-renderer,
+                    ytd-thumbnail-overlay-loading-preview-renderer {
+                        display: none !important;
+                    }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() {
+                this._styleElement?.remove();
+            }
+        },
+        {
             id: 'fullWidthSubscriptions',
             name: 'Make Subscriptions Full-Width',
             description: 'Expands the subscription grid to use the full page width.',
@@ -408,6 +473,15 @@
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideSubscriptionOptions',
+            name: 'Hide Subscriptions Layout Options',
+            description: 'Hides the "Latest" header and grid/list view options on the Subscriptions page.',
+            group: 'General Content',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -427,7 +501,15 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
-
+        {
+            id: 'hidePaidContentOverlay',
+            name: 'Hide "Paid promotion" overlay',
+            description: 'Hides the "Includes paid promotion" message on video thumbnails.',
+            group: 'General Content',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('ytd-paid-content-overlay-renderer, ytm-paid-content-overlay-renderer', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
 
         // Group: Watch Page - Layout
         {
@@ -544,9 +626,95 @@
             }
         },
 
+        // Group: Watch Page - Behavior
+        {
+            id: 'preventAutoplay',
+            name: 'Prevent Autoplay',
+            description: 'Stops videos from automatically playing when the page loads.',
+            group: 'Watch Page - Behavior',
+            init() {
+                const pauseRule = () => {
+                    if (!window.location.pathname.startsWith('/watch')) return;
+                    const video = document.querySelector('video.html5-main-video');
+                    const player = document.getElementById('movie_player');
+                    if (video && player && !video.paused) {
+                        video.pause();
+                        player.classList.remove('playing-mode');
+                        player.classList.add('paused-mode');
+                    }
+                };
+                // Use a timeout to ensure player is ready
+                window.addEventListener('yt-navigate-finish', () => setTimeout(pauseRule, 500));
+                setTimeout(pauseRule, 500);
+            },
+            destroy() { /* No cleanup needed as it's a one-time action on load */ }
+        },
+        {
+            id: 'autoExpandDescription',
+            name: 'Auto Expand Video Description',
+            description: 'Automatically expands the video description to show all content.',
+            group: 'Watch Page - Behavior',
+            init() {
+                const expandRule = () => {
+                    document.querySelector('ytd-text-inline-expander tp-yt-paper-button#expand')?.click();
+                };
+                addRule(this.id, expandRule);
+            },
+            destroy() {
+                removeRule(this.id);
+            }
+        },
+        {
+            id: 'sortCommentsNewestFirst',
+            name: 'Sort Comments to "Newest first"',
+            description: 'Automatically changes the comment sort order to "Newest first".',
+            group: 'Watch Page - Behavior',
+            init() {
+                const sortRule = () => {
+                    const commentsSection = document.querySelector('ytd-comments#comments');
+                    if (!commentsSection) return;
+                    // Check if comments are disabled
+                    if (commentsSection.textContent.includes('Comments are turned off')) return;
+
+                    const sortButton = commentsSection.querySelector('yt-sort-filter-sub-menu-renderer');
+                    if (sortButton && !sortButton.hasAttribute('data-suite-sorted')) {
+                        sortButton.querySelector('yt-dropdown-menu tp-yt-paper-button')?.click();
+
+                        setTimeout(() => {
+                            const menuItems = document.querySelectorAll('tp-yt-paper-listbox a.yt-simple-endpoint');
+                            const newestOption = Array.from(menuItems).find(item => item.textContent.trim() === 'Newest first');
+                            if (newestOption) {
+                                newestOption.click();
+                                sortButton.setAttribute('data-suite-sorted', 'true');
+                            } else {
+                                // Close menu if option not found
+                                document.body.click();
+                            }
+                        }, 200);
+                    }
+                };
+                addRule(this.id, sortRule);
+            },
+            destroy() {
+                removeRule(this.id);
+            }
+        },
+
         // Group: Watch Page - Other Elements
         { id: 'hideMerchShelf', name: 'Hide Merch Shelf', description: 'Hides the merchandise shelf that appears below the video.', group: 'Watch Page - Other Elements', _styleElement: null, init() { this._styleElement = injectStyle('ytd-merch-shelf-renderer', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideDescriptionExtras', name: 'Hide Description Extras', description: 'Hides extra content below the description like transcripts, podcasts, etc.', group: 'Watch Page - Other Elements', _styleElement: null, init() { this._styleElement = injectStyle('ytd-watch-metadata [slot="extra-content"]', this.id); }, destroy() { this._styleElement?.remove(); }},
+        {
+            id: 'hideHashtags',
+            name: 'Hide Hashtags',
+            description: 'Hides hashtags shown below the video title.',
+            group: 'Watch Page - Other Elements',
+            _styleElement: null,
+            init() {
+                const css = `ytd-watch-metadata[description-collapsed] #description.ytd-watch-metadata a.yt-simple-endpoint[href^="/hashtag/"] { display: none !important; }`;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
         {
             id: 'hidePinnedComments',
             name: 'Hide Pinned Comments',
@@ -557,6 +725,15 @@
                 const css = `ytd-comment-view-model[pinned], ytd-comment-thread-renderer:has(ytd-comment-view-model[pinned]) { display: none !important; }`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideCommentActionMenu',
+            name: 'Hide Comment Action Menu',
+            description: 'Hides the three-dot action menu on individual comments.',
+            group: 'Watch Page - Other Elements',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('ytd-comment-view-model #action-menu', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -577,6 +754,75 @@
             destroy() {
                 this._styleElement?.remove();
                 removeRule(this._ruleId);
+            }
+        },
+        {
+            id: 'hidePaidPromotionWatch',
+            name: 'Hide Paid Promotion Overlay',
+            description: 'Hides the "Includes paid promotion" overlay on the video player itself.',
+            group: 'Watch Page - Other Elements',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('.ytp-paid-content-overlay', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideVideoEndCards',
+            name: 'Hide Video End Cards',
+            description: 'Hides the interactive cards that appear over the video near the end.',
+            group: 'Watch Page - Other Elements',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('.ytp-ce-element', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideVideoEndScreen',
+            name: 'Hide Video End Screen',
+            description: 'Hides the grid of suggested videos that appears when a video finishes.',
+            group: 'Watch Page - Other Elements',
+            _styleElement: null,
+            init() {
+                const css = `
+                    .html5-endscreen.videowall-endscreen { display: none !important; }
+                    .ended-mode .ytp-cued-thumbnail-overlay:not([aria-hidden="true"]) { display: block !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+
+        // Group: Watch Page - Live Chat
+        { id: 'hideLiveChatHeader', name: 'Hide Live Chat Header', description: 'Hides the entire header bar at the top of the live chat.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-header-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatMenu', name: 'Hide Chat Menu Button (3-dot)', description: 'Hides the three-dot menu at the top of live chat.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-header-renderer #menu-button', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hidePopoutChatButton', name: 'Hide "Popout chat" Button', description: 'Hides the "Popout chat" button inside the chat menu.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('ytd-menu-service-item-renderer:has(yt-formatted-string:contains("Popout chat"))', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatReactionsButton', name: 'Hide "Reactions" Toggle', description: 'Hides the "Reactions" toggle inside the chat menu.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-toggle-renderer:has(span:contains("Reactions"))', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatTimestampsButton', name: 'Hide "Timestamps" Toggle', description: 'Hides the "Timestamps" toggle inside the chat menu.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-toggle-renderer:has(span:contains("Timestamps"))', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatPolls', name: 'Hide Chat Polls', description: 'Hides polls that appear inside the live chat feed.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-poll-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatPollBanner', name: 'Hide Chat Poll Banner', description: 'Hides the banner at the top of chat that announces a poll.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-banner-renderer[is-poll-banner]', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatBanner', name: 'Hide Pinned Announcement Banner', description: 'Hides the pinned announcement banner at the top of chat.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-banner-manager', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatTicker', name: 'Hide Super Chat Ticker', description: 'Hides the ticker bar that shows Super Chats and new members.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-ticker-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideSuperChats', name: 'Hide Super Chats', description: 'Hides all paid Super Chats and Super Stickers from the chat feed.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('yt-live-chat-paid-message-renderer, yt-live-chat-paid-sticker-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        {
+            id: 'hideLevelUp',
+            name: 'Hide "Level Up" Messages',
+            description: 'Hides member "Level Up" notifications in live chat.',
+            group: 'Watch Page - Live Chat',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('yt-live-chat-membership-item-renderer', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
+        { id: 'hideViewerLeaderboard', name: 'Hide Viewer Leaderboard', description: 'Hides the viewer leaderboard button in the chat header.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('#viewer-leaderboard-entry-point', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatSupportButtons', name: 'Hide Support/Reaction Buttons', description: 'Hides the "Show your support" and emoji reaction buttons in the input bar.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('#picker-buttons.yt-live-chat-message-input-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideChatEmojiButton', name: 'Hide Emoji Button', description: 'Hides the emoji/emote button in the chat input bar.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('#emoji-picker-button.yt-live-chat-message-input-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        { id: 'hideTopFanIcons', name: 'Hide Top Fan Icons', description: 'Hides the ranked top fan icons next to usernames in chat.', group: 'Watch Page - Live Chat', _styleElement: null, init() { this._styleElement = injectStyle('#before-content-buttons.yt-live-chat-text-message-renderer', this.id); }, destroy() { this._styleElement?.remove(); } },
+        {
+            id: 'keywordFilterList', name: 'Keyword-Based Chat Filter', description: 'Hides chat messages containing any of these comma-separated words.', group: 'Watch Page - Live Chat', type: 'textarea',
+            init() { addRule('keywordFilterRule', applyKeywordFilter); },
+            destroy() {
+                removeRule('keywordFilterRule');
+                document.querySelectorAll('yt-live-chat-text-message-renderer.yt-suite-hidden-keyword').forEach(el => {
+                    el.classList.remove('yt-suite-hidden-keyword');
+                    el.style.display = '';
+                });
             }
         },
 
@@ -612,6 +858,15 @@
         { id: 'hideLikeButton', name: 'Hide Like Button', description: 'Hides the Like button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('#actions-inner .yt-like-button-view-model, ytd-watch-metadata like-button-view-model', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideDislikeButton', name: 'Hide Dislike Button', description: 'Hides the Dislike button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('#actions-inner .yt-dislike-button-view-model, ytd-watch-metadata dislike-button-view-model', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideShareButton', name: 'Hide Share Button', description: 'Hides the Share button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('yt-button-view-model:has(button[aria-label="Share"])', this.id); }, destroy() { this._styleElement?.remove(); }},
+        {
+            id: 'hideAskButton',
+            name: 'Hide "Ask" Button',
+            description: 'Hides the "Ask" button for video Q&A.',
+            group: 'Watch Page - Action Buttons',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('yt-button-view-model:has(button[aria-label="Ask"])', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
         { id: 'hideClipButton', name: 'Hide Clip Button', description: 'Hides the Clip button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('yt-button-view-model:has(button[aria-label="Clip"])', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideThanksButton', name: 'Hide Thanks Button', description: 'Hides the Thanks button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('yt-button-view-model:has(button[aria-label="Thanks"])', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideSaveButton', name: 'Hide Save Button', description: 'Hides the "Save to playlist" button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('yt-button-view-model:has(button[aria-label="Save to playlist"])', this.id); }, destroy() { this._styleElement?.remove(); }},
@@ -629,7 +884,7 @@
             _getApiUrl() { return `${this._INSTANCE.protocol}://${this._INSTANCE.apiHost}/`; },
             _getFrontendUrl() { return `${this._INSTANCE.protocol}://${this._INSTANCE.frontend}/#`; },
 
-            _isWatchPage() { return window.location.href.includes('youtube.com/watch?'); },
+            _isWatchPage() { return window.location.href.includes('/watch?'); },
             _removeElement(sel) { const e = document.querySelector(sel); if (e) e.remove(); },
 
             async _cobaltApiCall(videoUrl, audio = false, quality = '1080', format = 'webm') {
@@ -784,22 +1039,89 @@
                     const levels = player.getAvailableQualityLevels();
                     if (!levels || !levels.length) return;
                     const best = levels.map(l => ({ l, n: parseInt((l.match(/\d+/) || [])[0], 10) || 0 })).sort((a, b) => b.n - a.n)[0].l;
-                    try { player.setPlaybackQualityRange(best); } catch (e) { console.warn('[YT Suite AutoMaxRes] Could not set quality', e); }
+                    try {
+                        player.setPlaybackQualityRange(best);
+                    } catch (e) {
+                        console.warn('[YT Suite AutoMaxRes] Could not set quality', e);
+                    }
+
+                    if (best === 'hd1080' && appState.settings.useEnhancedBitrate) {
+                        const settingsButton = document.querySelector('.ytp-settings-button');
+                        if (!settingsButton) return;
+
+                        const tempStyle = document.createElement('style');
+                        tempStyle.id = 'yt-suite-temp-hide-menu';
+                        tempStyle.textContent = '.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }';
+                        document.head.appendChild(tempStyle);
+
+                        try {
+                            settingsButton.click();
+                            setTimeout(() => {
+                                const qualityMenu = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(el => el.textContent.includes('Quality'));
+                                if (qualityMenu) {
+                                    qualityMenu.parentElement.click();
+                                    setTimeout(() => {
+                                        const premiumOption = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(label => label.textContent.includes('1080p Premium'));
+                                        if (premiumOption) {
+                                            premiumOption.parentElement.click();
+                                        } else {
+                                            // Close menu if not found by clicking button again
+                                            settingsButton.click();
+                                        }
+                                    }, 400);
+                                } else {
+                                    settingsButton.click();
+                                }
+                            }, 400);
+                        } finally {
+                            // Ensure the temporary style is removed
+                            setTimeout(() => tempStyle.remove(), 1500);
+                        }
+                    }
                 };
+
                 this._onPlayerUpdated = (evt) => setMaxQuality(evt?.target?.player_ || document.getElementById('movie_player'));
-                this._onNavigateFinish = () => setTimeout(() => setMaxQuality(document.getElementById('movie_player')), 500);
+                this._onNavigateFinish = () => setTimeout(() => setMaxQuality(document.getElementById('movie_player')), 1500); // Increased delay for stability
+
                 window.addEventListener('yt-player-updated', this._onPlayerUpdated, true);
                 window.addEventListener('yt-navigate-finish', this._onNavigateFinish, true);
-                this._onNavigateFinish();
+                this._onNavigateFinish(); // Initial run
             },
             destroy() {
                 if (this._onPlayerUpdated) window.removeEventListener('yt-player-updated', this._onPlayerUpdated, true);
                 if (this._onNavigateFinish) window.removeEventListener('yt-navigate-finish', this._onNavigateFinish, true);
             }
         },
+        {
+            id: 'useEnhancedBitrate',
+            name: 'Use Enhanced Bitrate (for Premium users)',
+            description: 'If max resolution is 1080p, attempts to select the "Premium" enhanced bitrate option. Requires YouTube Premium.',
+            group: 'Watch Page - Player Controls',
+            // Logic is now handled within the autoMaxResolution feature
+            init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideSponsorBlockButton',
+            name: 'Hide SponsorBlock Button',
+            description: 'Hides the SponsorBlock icon from the player controls.',
+            group: 'Watch Page - Player Controls',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('button.playerButton[title*="SponsorBlock"]', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
         { id: 'hideNextButton', name: 'Hide "Next video" Button', description: 'Hides the next video button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-next-button', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideAutoplayToggle', name: 'Hide Autoplay Toggle', description: 'Hides the autoplay toggle in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-autonav-toggle-button-container', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideSubtitlesToggle', name: 'Hide Subtitles Toggle', description: 'Hides the subtitles/CC button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-subtitles-button', this.id); }, destroy() { this._styleElement?.remove(); }},
+        {
+            id: 'hideCaptionsContainer',
+            name: 'Hide Captions Box',
+            description: 'Hides the container box for subtitles/captions on the video.',
+            group: 'Watch Page - Player Controls',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('.ytp-caption-window-container', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
         { id: 'hideMiniplayerButton', name: 'Hide Miniplayer Button', description: 'Hides the miniplayer button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-miniplayer-button', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hidePipButton', name: 'Hide Picture-in-Picture Button', description: 'Hides the Picture-in-Picture button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-pip-button', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideTheaterButton', name: 'Hide Theater Mode Button', description: 'Hides the theater mode button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-size-button', this.id); }, destroy() { this._styleElement?.remove(); }},
@@ -815,9 +1137,40 @@
     }
 
     // —————————————————————
-    // 3. DOM HELPERS & TOAST NOTIFICATIONS
+    // 3. DOM HELPERS & CORE UI
     // —————————————————————
     let appState = {};
+
+    function applyKeywordFilter() {
+        const keywordsRaw = appState.settings.keywordFilterList;
+        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer');
+
+        if (!keywordsRaw || !keywordsRaw.trim()) {
+            messages.forEach(el => {
+                if (el.classList.contains('yt-suite-hidden-keyword')) {
+                    el.style.display = '';
+                    el.classList.remove('yt-suite-hidden-keyword');
+                }
+            });
+            return;
+        }
+
+        const keywords = keywordsRaw.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
+
+        messages.forEach(msg => {
+            const messageText = msg.querySelector('#message')?.textContent.toLowerCase() || '';
+            const authorText = msg.querySelector('#author-name')?.textContent.toLowerCase() || '';
+            const shouldHide = keywords.some(k => messageText.includes(k) || authorText.includes(k));
+
+            if (shouldHide) {
+                msg.style.display = 'none';
+                msg.classList.add('yt-suite-hidden-keyword');
+            } else if (msg.classList.contains('yt-suite-hidden-keyword')) {
+                msg.style.display = '';
+                msg.classList.remove('yt-suite-hidden-keyword');
+            }
+        });
+    }
 
     function createCogSvg() {
         const svgNS = "http://www.w3.org/2000/svg";
@@ -827,21 +1180,53 @@
         svg.setAttribute("width", "24");
         svg.setAttribute("height", "24");
         const path1 = document.createElementNS(svgNS, "path");
-        path1.setAttribute("d", "M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z");
+        path1.setAttribute("d", "M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22-.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z");
         svg.appendChild(path1);
         return svg;
     }
 
-    function showToast(message, isError = false) {
-        let toast = document.getElementById('yt-suite-toast-notification');
-        if (toast) toast.remove();
-        toast = document.createElement('div');
-        toast.id = 'yt-suite-toast-notification';
-        toast.textContent = message;
-        toast.style.cssText = `position: fixed; bottom: 20px; right: 20px; background-color: ${isError ? '#d9534f' : '#0f9d58'}; color: white; padding: 10px 20px; border-radius: 5px; z-index: 10002; opacity: 0; transition: opacity 0.3s, bottom 0.3s;`;
-        document.body.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '1'; toast.style.bottom = '30px'; }, 10);
-        setTimeout(() => { toast.style.opacity = '0'; toast.style.bottom = '20px'; toast.addEventListener('transitionend', () => toast.remove()); }, 3000);
+    function injectSettingsButton() {
+        const handleDisplay = () => {
+            const isWatch = window.location.pathname.startsWith('/watch');
+
+            if (isWatch) {
+                document.getElementById('yt-masthead-cog')?.remove();
+                if (document.getElementById('yt-suite-watch-cog')) return;
+
+                const ownerDiv = document.querySelector('#top-row #owner');
+                if (ownerDiv) {
+                    const cog = document.createElement('div');
+                    cog.id = 'yt-suite-watch-cog';
+                    const btn = document.createElement('button');
+                    btn.title = 'Open YouTube Suite Settings';
+                    btn.appendChild(createCogSvg());
+                    btn.onclick = () => document.body.classList.toggle('yt-suite-panel-open');
+                    cog.appendChild(btn);
+                    const logo = document.getElementById('yt-suite-watch-logo');
+                    if (logo && logo.parentElement === ownerDiv) {
+                        ownerDiv.insertBefore(cog, logo.nextSibling);
+                    } else {
+                        ownerDiv.prepend(cog);
+                    }
+                }
+            } else {
+                document.getElementById('yt-suite-watch-cog')?.remove();
+                if (document.getElementById('yt-masthead-cog')) return;
+
+                const masthead = document.querySelector('ytd-topbar-logo-renderer');
+                if (masthead) {
+                    const cog = document.createElement('div');
+                    cog.id = 'yt-masthead-cog';
+                    const btn = document.createElement('button');
+                    btn.title = 'Open YouTube Suite Settings';
+                    btn.appendChild(createCogSvg());
+                    btn.onclick = () => document.body.classList.toggle('yt-suite-panel-open');
+                    cog.appendChild(btn);
+                    masthead.appendChild(cog);
+                }
+            }
+        };
+        addRule("settingsButtonRule", handleDisplay);
     }
 
 
@@ -851,7 +1236,7 @@
     function buildPanel(appState) {
         const groups = features.reduce((acc, f) => {
             acc[f.group] = acc[f.group] || [];
-            if (f.id !== 'betterDarkMode' && f.id !== 'expandVideoWidth') {
+            if (!['betterDarkMode', 'expandVideoWidth', 'useEnhancedBitrate', 'catppuccinMocha'].includes(f.id)) {
                  acc[f.group].push(f);
             }
             return acc;
@@ -873,11 +1258,11 @@
         title.textContent = 'YouTube Customization Suite';
         const version = document.createElement('span');
         version.className = 'version';
-        version.textContent = 'v3.3';
+        version.textContent = 'v3.13';
         header.append(title, version);
 
         const main = document.createElement('main');
-        const groupOrder = [ 'Core UI', 'Header', 'Sidebar', 'Themes', 'General Content', 'Watch Page - Layout', 'Watch Page - Other Elements', 'Watch Page - Action Buttons', 'Watch Page - Player Controls' ];
+        const groupOrder = [ 'Header', 'Sidebar', 'Themes', 'Progress Bar Themes', 'General Content', 'Watch Page - Layout', 'Watch Page - Behavior', 'Watch Page - Other Elements', 'Watch Page - Live Chat', 'Watch Page - Action Buttons', 'Watch Page - Player Controls' ];
 
         const createSubSetting = (subFeatureId, parentInput) => {
             const subFeat = features.find(x => x.id === subFeatureId);
@@ -917,6 +1302,83 @@
             return wrapper;
         };
 
+        // --- Master Controls ---
+        const masterControlFieldset = document.createElement('fieldset');
+        masterControlFieldset.className = 'yt-suite-feature-group';
+        const masterLegend = document.createElement('legend');
+        masterLegend.textContent = 'Master Controls';
+        masterControlFieldset.appendChild(masterLegend);
+
+        const recommendedIds = new Set([
+            'hideCreateButton', 'hideVoiceSearch', 'hideSidebar', 'nativeDarkMode',
+            'betterDarkMode', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
+            'fullWidthSubscriptions', 'hideSubscriptionOptions', 'fiveVideosPerRow', 'hidePaidContentOverlay',
+            'fitPlayerToWindow', 'hideRelatedVideos', 'floatingLogoOnWatch', 'hideMerchShelf',
+            'hideDescriptionExtras', 'hideHashtags', 'hidePinnedComments', 'hideCommentActionMenu',
+            'hideLiveChatEngagement', 'hidePaidPromotionWatch', 'hideVideoEndCards',
+            'hideVideoEndScreen', 'hideLiveChatHeader', 'hideChatMenu', 'hidePopoutChatButton',
+            'hideChatReactionsButton', 'hideChatTimestampsButton', 'hideChatPolls',
+            'hideChatPollBanner', 'hideChatBanner', 'hideSuperChats', 'hideLevelUp',
+            'hideViewerLeaderboard', 'hideChatSupportButtons', 'hideChatEmojiButton',
+            'hideTopFanIcons', 'autolikeVideos', 'hideLikeButton', 'hideDislikeButton',
+            'hideShareButton', 'hideAskButton', 'hideClipButton', 'hideThanksButton',
+            'hideSaveButton', 'replaceWithCobaltDownloader', 'hideSponsorButton',
+            'hideMoreActionsButton', 'autoMaxResolution', 'hideSponsorBlockButton',
+            'hideNextButton', 'hideAutoplayToggle', 'hideSubtitlesToggle',
+            'hideMiniplayerButton', 'hidePipButton', 'hideTheaterButton',
+            'hideFullscreenButton'
+        ]);
+
+        const createMasterToggle = (id, name, description, action) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'yt-suite-input-wrapper yt-suite-switch-wrapper';
+            wrapper.dataset.tooltip = description;
+            const label = document.createElement('label');
+            label.className = 'yt-suite-switch';
+            label.htmlFor = `switch-${id}`;
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = `switch-${id}`;
+            input.onchange = (e) => {
+                if (!e.target.checked) return;
+                action();
+                e.target.checked = false;
+            };
+            const slider = document.createElement('span');
+            slider.className = 'slider';
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'label';
+            nameSpan.textContent = name;
+            label.append(input, slider);
+            wrapper.append(label, nameSpan);
+            return wrapper;
+        };
+
+        const enableRecommendedAction = () => {
+            features.forEach(feat => {
+                const shouldBeOn = recommendedIds.has(feat.id);
+                const uiSwitch = document.getElementById(`switch-${feat.id}`);
+                if (uiSwitch && uiSwitch.checked !== shouldBeOn) {
+                    uiSwitch.checked = shouldBeOn;
+                    uiSwitch.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        };
+
+        const disableAllAction = () => {
+            features.forEach(feat => {
+                const uiSwitch = document.getElementById(`switch-${feat.id}`);
+                if (uiSwitch && uiSwitch.checked) {
+                    uiSwitch.checked = false;
+                    uiSwitch.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        };
+
+        masterControlFieldset.appendChild(createMasterToggle('recommended', 'Enable Recommended', 'Enable a curated set of features for an enhanced experience.', enableRecommendedAction));
+        masterControlFieldset.appendChild(createMasterToggle('disableAll', 'Disable All', 'Disable all active features.', disableAllAction));
+        main.appendChild(masterControlFieldset);
+
 
         groupOrder.forEach(groupName => {
             if (!groups[groupName] || groups[groupName].length === 0) return;
@@ -927,34 +1389,76 @@
             fieldset.appendChild(legend);
             groups[groupName].forEach(f => {
                 const wrapper = document.createElement('div');
-                wrapper.className = 'yt-suite-switch-wrapper';
+                wrapper.className = 'yt-suite-input-wrapper'; // Use a generic class
                 wrapper.dataset.tooltip = f.description;
-                const label = document.createElement('label');
-                label.className = 'yt-suite-switch';
-                label.htmlFor = `switch-${f.id}`;
-                const input = document.createElement('input');
-                input.type = 'checkbox';
-                input.id = `switch-${f.id}`;
-                input.dataset.featureId = f.id;
-                input.checked = appState.settings[f.id];
-                input.onchange = async (e) => {
-                    const id = e.target.dataset.featureId;
-                    appState.settings[id] = e.target.checked;
-                    const feat = features.find(x => x.id === id);
-                    if (feat.destroy) feat.destroy();
-                    if (appState.settings[id] && feat.init) feat.init();
-                    await settingsManager.save(appState.settings);
-                };
-                const slider = document.createElement('span');
-                slider.className = 'slider';
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'label';
-                nameSpan.textContent = f.name;
-                label.append(input, slider);
-                wrapper.append(label, nameSpan);
+
+                // Handle text area type
+                if (f.type === 'textarea') {
+                    wrapper.classList.add('yt-suite-textarea-wrapper');
+                    const label = document.createElement('label');
+                    label.htmlFor = `input-${f.id}`;
+                    label.textContent = f.name;
+                    label.className = 'yt-suite-textarea-label';
+                    const textarea = document.createElement('textarea');
+                    textarea.id = `input-${f.id}`;
+                    textarea.placeholder = 'e.g. word1, phrase two, user3';
+                    textarea.value = appState.settings[f.id];
+                    textarea.oninput = async () => {
+                        appState.settings[f.id] = textarea.value;
+                        applyKeywordFilter(); // Apply filter live
+                        await settingsManager.save(appState.settings);
+                    };
+                    textarea.onfocus = () => panelContainer.classList.add('yt-suite-revealing');
+                    textarea.onblur = () => panelContainer.classList.remove('yt-suite-revealing');
+
+                    wrapper.append(label, textarea);
+
+                } else { // Handle default toggle switch type
+                    wrapper.classList.add('yt-suite-switch-wrapper');
+                    const label = document.createElement('label');
+                    label.className = 'yt-suite-switch';
+                    label.htmlFor = `switch-${f.id}`;
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.id = `switch-${f.id}`;
+                    input.dataset.featureId = f.id;
+                    input.checked = appState.settings[f.id];
+                    input.onchange = async (e) => {
+                        const id = e.target.dataset.featureId;
+                        appState.settings[id] = e.target.checked;
+                        const feat = features.find(x => x.id === id);
+                        if (feat.destroy) feat.destroy();
+                        if (appState.settings[id] && feat.init) feat.init();
+                        await settingsManager.save(appState.settings);
+                    };
+                    const slider = document.createElement('span');
+                    slider.className = 'slider';
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'label';
+                    nameSpan.textContent = f.name;
+                    label.append(input, slider);
+                    wrapper.append(label, nameSpan);
+
+                    fieldset.appendChild(wrapper); // Append the main wrapper first
+
+                    // Then create and append sub-settings
+                    if (f.id === 'hideRelatedVideos') {
+                        const sub = createSubSetting('expandVideoWidth', input);
+                        if (sub) wrapper.after(sub);
+                    }
+                    if (f.id === 'nativeDarkMode') {
+                        const betterDark = createSubSetting('betterDarkMode', input);
+                        const catppuccin = createSubSetting('catppuccinMocha', input);
+                        if(catppuccin) wrapper.after(catppuccin);
+                        if(betterDark) wrapper.after(betterDark);
+                    }
+                    if (f.id === 'autoMaxResolution') {
+                        const sub = createSubSetting('useEnhancedBitrate', input);
+                        if (sub) wrapper.after(sub);
+                    }
+                    return; // Skip the final appendChild as it's already done
+                }
                 fieldset.appendChild(wrapper);
-                if (f.id === 'hideRelatedVideos') fieldset.append(createSubSetting('expandVideoWidth', input));
-                if (f.id === 'nativeDarkMode') fieldset.append(createSubSetting('betterDarkMode', input));
             });
             main.appendChild(fieldset);
         });
@@ -982,7 +1486,8 @@
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
             :root { --panel-font: 'Roboto', sans-serif; --panel-radius: 12px; --panel-shadow: 0 10px 30px -5px rgba(0,0,0,0.3); --yt-suite-panel-bg: #282828; --yt-suite-panel-fg: #f1f1f1; --yt-suite-border-color: #4d4d4d; --yt-suite-accent-color: #ff0000; }
             body.yt-suite-panel-open #yt-suite-panel-container .yt-suite-panel-overlay { opacity: 1; pointer-events: auto; }
-            .yt-suite-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+            .yt-suite-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 10000; opacity: 0; pointer-events: none; transition: background .3s ease, opacity .3s ease; }
+            #yt-suite-panel-container.yt-suite-revealing .yt-suite-panel-overlay { background: transparent !important; pointer-events: none !important; }
             .yt-suite-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); width: 90%; max-width: 520px; background: var(--yt-suite-panel-bg); color: var(--yt-suite-panel-fg); border-radius: var(--panel-radius); box-shadow: var(--panel-shadow); font-family: var(--panel-font); opacity: 0; pointer-events: none; transition: opacity .3s ease, transform .3s ease; z-index: 10001; display: flex; flex-direction: column; }
             body.yt-suite-panel-open .yt-suite-panel { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
             .yt-suite-panel header { padding: 20px 24px; border-bottom: 1px solid var(--yt-suite-border-color); display: flex; justify-content: space-between; align-items: center; }
@@ -992,8 +1497,9 @@
             .yt-suite-panel footer { padding: 16px 24px; border-top: 1px solid var(--yt-suite-border-color); display: flex; justify-content: flex-end; align-items: center; }
             .yt-suite-feature-group { border: 1px solid var(--yt-suite-border-color); border-radius: 8px; padding: 16px; margin: 0 0 16px; }
             .yt-suite-feature-group legend { padding: 0 8px; font-size: 14px; font-weight: 500; color: var(--yt-suite-accent-color); }
-            .yt-suite-switch-wrapper { display: flex; align-items: center; margin-bottom: 12px; position: relative; }
-            .yt-suite-switch-wrapper:last-child { margin-bottom: 0; }
+            .yt-suite-input-wrapper { margin-bottom: 12px; position: relative; }
+            .yt-suite-switch-wrapper { display: flex; align-items: center; }
+            .yt-suite-input-wrapper:last-child { margin-bottom: 0; }
             .yt-suite-switch { display: flex; align-items: center; cursor: pointer; }
             .yt-suite-switch-wrapper .label { margin-left: 12px; flex: 1; font-size: 15px; }
             .yt-suite-switch input { display: none; }
@@ -1001,12 +1507,17 @@
             .yt-suite-switch .slider:before { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .2s ease; }
             .yt-suite-switch input:checked + .slider { background: var(--yt-suite-accent-color); }
             .yt-suite-switch input:checked + .slider:before { transform: translateX(18px); }
-            .yt-suite-switch-wrapper::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background: #111; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10003; }
-            .yt-suite-switch-wrapper:hover::after { opacity: 1; }
-            .yt-suite-sub-setting-wrapper { margin-left: 20px; padding-left: 10px; border-left: 2px solid var(--yt-suite-border-color); }
+            .yt-suite-input-wrapper::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background: #111; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10003; }
+            .yt-suite-input-wrapper:hover::after { opacity: 1; }
+            .yt-suite-sub-setting-wrapper { margin-left: 20px; padding-left: 10px; border-left: 2px solid var(--yt-suite-border-color); margin-top: 8px; margin-bottom: 12px; }
+            .yt-suite-textarea-wrapper { display: flex; flex-direction: column; }
+            .yt-suite-textarea-label { margin-bottom: 8px; font-size: 15px; }
+            .yt-suite-textarea-wrapper textarea { width: 100%; min-height: 80px; background-color: #1a1a1a; border: 1px solid var(--yt-suite-border-color); color: var(--yt-suite-panel-fg); border-radius: 4px; padding: 8px; font-family: inherit; font-size: 14px; resize: vertical; }
+            .yt-suite-textarea-wrapper textarea:focus { border-color: var(--yt-suite-accent-color); outline: none; }
             .yt-suite-btn-primary { background-color: var(--yt-suite-accent-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-family: var(--panel-font); font-weight: 500; cursor: pointer; transition: background-color .2s; }
             .yt-suite-btn-primary:hover { background-color: #cc0000; }
-            #yt-suite-watch-logo, #yt-suite-watch-cog { display: flex; align-items: center; margin-right: 12px; }
+            #yt-suite-watch-logo, #yt-suite-watch-cog { display: flex; align-items: center; }
+            #yt-suite-watch-cog { margin: 0 8px 0 24px; }
             #yt-suite-watch-logo a { display: flex; align-items: center; }
             #yt-suite-watch-logo ytd-logo { width: 90px; height: auto; }
             #yt-suite-watch-cog button { background: transparent; border: none; width: 40px; height: 40px; cursor: pointer; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -1030,7 +1541,9 @@
     async function main() {
         appState.settings = await settingsManager.load();
         injectPanelStyles();
+        injectSettingsButton();
         buildPanel(appState);
+
         features.forEach(f => {
             if (appState.settings[f.id]) {
                 try {
@@ -1040,6 +1553,7 @@
                 }
             }
         });
+
         const hasRun = await settingsManager.getFirstRunStatus();
         if (!hasRun) {
             document.body.classList.add('yt-suite-panel-open');
@@ -1047,10 +1561,10 @@
         }
     }
 
-    if (document.readyState === 'complete') {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
         main();
     } else {
-        window.addEventListener('load', main);
+        window.addEventListener('DOMContentLoaded', main);
     }
 
 })();
