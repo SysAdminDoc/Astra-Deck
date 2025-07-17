@@ -1,5 +1,4 @@
-@-moz-document domain("youtube.com") {
-  :root[dark] {
+:root[dark] {
     --efyt-control-bar-background-color: #181825 !important;
     --dimmer-text: #cdd6f4 !important;
     --yt-spec-white-1: #cdd6f4 !important;
@@ -217,4 +216,3 @@
     --sb-category-filler: #b4befe;
     --sb-category-music_offtopic: #fab387;
   }
-}
