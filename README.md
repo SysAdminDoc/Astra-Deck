@@ -2,7 +2,7 @@
 
 A powerful userscript for ultimate YouTube customization, allowing you to hide elements, control layout, and enhance your viewing experience. There is no other free userscript that can do what this can do.
 
-## BETA: Working out small bugs, still adding additional features. Script is stable. Main issue is the Cobalt download button, Youtube is actively scanning for downloaders and killing the button. 
+## BETA: Working out small bugs, still adding additional features. Script is stable.
 
 ## Introduction
 
