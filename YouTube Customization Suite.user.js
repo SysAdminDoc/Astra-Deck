@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Customization Suite
 // @namespace    https://github.com/user/yt-enhancement-suite
-// @version      3.22
+// @version      3.23
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -29,9 +29,12 @@
 // ——————————————————————————————————————————————————————————————————————————
 //  ~ CHANGELOG ~
 //
-//  v3.22
+//  v3.23
+//  - ADDED: New sub-setting to hide SponsorBlock labels in the video title.
+//  - FIXED: The auto-quality popup is now permanently hidden when the feature is enabled to prevent it from appearing.
 //  - FIXED: Cobalt Downloader button now loads reliably by waiting for its parent element to exist before injection.
-//  - UPDATED: Applied custom CSS to resize and reposition all player enhancement buttons (Loop, Screenshot).
+//  - UPDATED: Player enhancement icons (Loop, Screenshot) are now ~30% smaller.
+//  - UPDATED: Replaced "Widen Search Bar" CSS with a more effective user-provided version.
 //
 // ——————————————————————————————————————————————————————————————————————————
 
@@ -160,6 +163,7 @@
             autoExpandDescription: false,
             sortCommentsNewestFirst: false,
             skipSponsors: false,
+            hideSponsorBlockLabels: false,
 
             // Watch Page - Other Elements
             hideMerchShelf: false,
@@ -211,6 +215,7 @@
             // Watch Page - Player Controls
             autoMaxResolution: false,
             useEnhancedBitrate: false,
+            hideQualityPopup: true,
             hideSponsorBlockButton: false,
             hideNextButton: false,
             hideAutoplayToggle: false,
@@ -289,7 +294,7 @@
             group: 'Header',
             _styleElement: null,
             init() {
-                const css = `ytd-masthead #center { flex: 1; min-width: 0; }`;
+                const css = `ytd-masthead yt-searchbox { margin-left: -180px; margin-right: -300px; }`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
@@ -941,6 +946,19 @@
             }
         },
         // --- End of sb.js Integration ---
+        {
+            id: 'hideSponsorBlockLabels',
+            name: 'Hide SponsorBlock Labels in Title',
+            description: 'Hides the labels (e.g., "sponsor", "poi") that appear next to the video title.',
+            group: 'Watch Page - Behavior', // Group doesn't matter, it's a sub-setting
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle('[id^="sbjs-label-"]', this.id);
+            },
+            destroy() {
+                this._styleElement?.remove();
+            }
+        },
 
 
         // Group: Watch Page - Other Elements
@@ -1141,14 +1159,12 @@
             name: 'Replace with Cobalt Downloader',
             description: 'Replaces the native YouTube download button with a custom downloader using Cobalt.',
             group: 'Watch Page - Action Buttons',
-            _lastUrl: '',
-            _navigateListener: null,
             _styleElement: null,
             _INSTANCE: { protocol: 'https', apiHost : 'cobalt-api.meowing.de', frontend: 'cobalt.meowing.de' },
             _API_KEY: 'e4d331cc8267e6d04ecad6a5e22da9c7b31e97df',
             _getApiUrl() { return `${this._INSTANCE.protocol}://${this._INSTANCE.apiHost}/`; },
             _getFrontendUrl() { return `${this._INSTANCE.protocol}://${this._INSTANCE.frontend}/#`; },
-            _isWatchPage() { return window.location.href.includes('/watch?'); },
+            _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
             _removeElement(sel) { const e = document.querySelector(sel); if (e) e.remove(); },
             async _cobaltApiCall(videoUrl, audio = false, quality = '1080', format = 'webm') {
                 const codec = format === 'webm' ? 'vp9' : 'h264';
@@ -1356,10 +1372,8 @@
             init() {
                 const buttonCSS = `
                     .yt-suite-enhancer-btn {
-                        height: 35px;
-                        width: 35px;
-                        margin-bottom: 40px;
-                        vertical-align: middle;
+                        height: 25px;
+                        width: 25px;
                     }
                     .yt-suite-enhancer-btn svg { fill: #fff; }
                     .yt-suite-enhancer-btn:hover svg { fill: #ff0000; }
@@ -1473,6 +1487,7 @@
             group: 'Watch Page - Player Controls',
             _lastProcessedVideoId: null,
             _onPlayerUpdated: null,
+            _styleElement: null,
 
             init() {
                 this._onPlayerUpdated = (evt) => {
@@ -1480,11 +1495,16 @@
                     this.setMaxQuality(player);
                 };
                 window.addEventListener('yt-player-updated', this._onPlayerUpdated, true);
+
+                if (appState.settings.hideQualityPopup) {
+                    this._styleElement = injectStyle('.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'hide-quality-popup', true);
+                }
             },
             destroy() {
                 if (this._onPlayerUpdated) {
                     window.removeEventListener('yt-player-updated', this._onPlayerUpdated, true);
                 }
+                this._styleElement?.remove();
                 this._lastProcessedVideoId = null;
             },
 
@@ -1508,10 +1528,7 @@
                     const settingsButton = document.querySelector('.ytp-settings-button');
                     if (!settingsButton) return;
 
-                    const tempStyle = injectStyle('.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'temp-hide-menu', true);
-
-                    // Open settings
-                    settingsButton.click();
+                    settingsButton.click(); // Open settings
 
                     setTimeout(() => {
                         const qualityMenu = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(el => el.textContent.includes('Quality'));
@@ -1523,20 +1540,22 @@
                                 if (premiumOption) {
                                     premiumOption.parentElement.click();
                                 } else {
-                                    // Close menu if premium not found by backing out
                                     const backButton = document.querySelector('.ytp-panel-back-button');
                                     if(backButton) backButton.click();
                                 }
+                                // Close settings menu after selection attempt
+                                setTimeout(() => {
+                                    if (document.querySelector('.ytp-popup.ytp-settings-menu')) {
+                                        settingsButton.click();
+                                    }
+                                }, 500);
                             }, 400);
-                        }
-
-                        // Close settings menu regardless of outcome
-                        setTimeout(() => {
+                        } else {
+                             // Close if quality menu not found
                             if (document.querySelector('.ytp-popup.ytp-settings-menu')) {
                                 settingsButton.click();
                             }
-                            tempStyle.remove();
-                        }, 1000);
+                        }
                     }, 400);
                 }
             }
@@ -1547,6 +1566,14 @@
             description: 'If max resolution is 1080p, attempts to select the "Premium" enhanced bitrate option. Requires YouTube Premium.',
             group: 'Watch Page - Player Controls',
             init() {},
+            destroy() {}
+        },
+        {
+            id: 'hideQualityPopup',
+            name: 'Hide Quality Popup',
+            description: 'Prevents the quality selection menu from appearing visually when auto-quality is active.',
+            group: 'Watch Page - Player Controls',
+            init() {}, // Logic is handled by autoMaxResolution feature
             destroy() {}
         },
         {
@@ -1696,7 +1723,7 @@
     function buildPanel(appState) {
         const groups = features.reduce((acc, f) => {
             acc[f.group] = acc[f.group] || [];
-            if (!['betterDarkMode', 'expandVideoWidth', 'useEnhancedBitrate', 'catppuccinMocha'].includes(f.id)) {
+            if (!['betterDarkMode', 'expandVideoWidth', 'useEnhancedBitrate', 'catppuccinMocha', 'hideQualityPopup', 'hideSponsorBlockLabels'].includes(f.id)) {
                  acc[f.group].push(f);
             }
             return acc;
@@ -1718,7 +1745,7 @@
         title.textContent = 'YouTube Customization Suite';
         const version = document.createElement('span');
         version.className = 'version';
-        version.textContent = 'v3.22';
+        version.textContent = 'v3.23';
         header.append(title, version);
 
         const main = document.createElement('main');
@@ -1745,6 +1772,12 @@
                 if (feat) {
                     if (isChecked) { if (feat.init) feat.init(); }
                     else { if (feat.destroy) feat.destroy(); }
+                }
+                 // Special handling to re-init parent feature
+                if(subFeatureId === 'hideQualityPopup') {
+                     const parentFeat = features.find(f => f.id === 'autoMaxResolution');
+                     if(parentFeat.destroy) parentFeat.destroy();
+                     if(parentFeat.init) parentFeat.init();
                 }
             };
             const slider = document.createElement('span');
@@ -1920,7 +1953,13 @@
                         if(betterDark) wrapper.after(betterDark);
                     }
                     if (f.id === 'autoMaxResolution') {
-                        const sub = createSubSetting('useEnhancedBitrate', input);
+                        const sub1 = createSubSetting('useEnhancedBitrate', input);
+                        const sub2 = createSubSetting('hideQualityPopup', input);
+                        if (sub2) wrapper.after(sub2);
+                        if (sub1) wrapper.after(sub1);
+                    }
+                     if (f.id === 'skipSponsors') {
+                        const sub = createSubSetting('hideSponsorBlockLabels', input);
                         if (sub) wrapper.after(sub);
                     }
                     return;
