@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Customization Suite
 // @namespace    https://github.com/user/yt-enhancement-suite
-// @version      3.20
+// @version      3.22
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -29,16 +29,9 @@
 // ——————————————————————————————————————————————————————————————————————————
 //  ~ CHANGELOG ~
 //
-//  v3.20
-//  - ADDED: 'Widen Search Bar' feature in Header group.
-//  - ADDED: 'Squarify' theme option to remove all border-radius.
-//  - ADDED: 'Hide Video Description Row' option in Watch Page - Layout.
-//  - ADDED: New 'Player Enhancements' group with 'Add Loop & Screenshot Buttons' feature. (From YouTube Enhancer)
-//  - ADDED: 'Open Channel Pages on "Videos" Tab' feature. (From Youtube channels open to "Videos" tab)
-//  - REPLACED: Original SponsorBlock logic with the more advanced version from sb.js for better segment handling.
-//  - FIXED: Auto-quality popup menu should now reliably close after selection.
-//  - FIXED: Watch page CSS injection logic updated.
-//  - UPDATED: Settings cog icon replaced with a higher-quality SVG.
+//  v3.22
+//  - FIXED: Cobalt Downloader button now loads reliably by waiting for its parent element to exist before injection.
+//  - UPDATED: Applied custom CSS to resize and reposition all player enhancement buttons (Loop, Screenshot).
 //
 // ——————————————————————————————————————————————————————————————————————————
 
@@ -50,6 +43,23 @@
     const mutationRules = new Map();
     const navigateRules = new Map();
     let isNavigateListenerAttached = false;
+
+    // Helper to wait for an element to appear in the DOM
+    function waitForElement(selector, callback, timeout = 10000) {
+        const intervalTime = 100;
+        let elapsedTime = 0;
+        const interval = setInterval(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(interval);
+                callback(element);
+            }
+            elapsedTime += intervalTime;
+            if (elapsedTime >= timeout) {
+                clearInterval(interval);
+            }
+        }, intervalTime);
+    }
 
     const runNavigateRules = () => {
         for (const rule of navigateRules.values()) {
@@ -279,7 +289,7 @@
             group: 'Header',
             _styleElement: null,
             init() {
-                const css = `yt-searchbox[center-search-bar] { flex: 1 !important; max-width: unset !important; }`;
+                const css = `ytd-masthead #center { flex: 1; min-width: 0; }`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
@@ -559,7 +569,7 @@
                         anchorTag.href = RegExp.$2 + DEFAULT_TAB_HREF;
                     }
                 };
-                document.addEventListener('mousedown', this._mousedownListener, true);
+                document.addEventListener('mousedown', this._mousedownListener, { passive: true, capture: true });
             },
             destroy() {
                 if (this._mousedownListener) {
@@ -641,18 +651,22 @@
             name: 'Logo in Video Header',
             description: 'On watch pages, adds a YouTube logo (linking to Subscriptions) next to the channel avatar.',
             group: 'Watch Page - Layout',
-            _element: null,
-            _ruleId: 'floatingLogoRule',
+            init() {
+                addNavigateRule(this.id, this.handleLogoDisplay.bind(this));
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                document.getElementById('yt-suite-watch-logo')?.remove();
+            },
             handleLogoDisplay() {
                 if (!window.location.pathname.startsWith('/watch')) {
-                    this._element?.remove();
-                    this._element = null;
                     document.getElementById('yt-suite-watch-logo')?.remove();
                     return;
                 }
-                const ownerDiv = document.querySelector('#top-row #owner');
 
-                if (ownerDiv && !document.getElementById('yt-suite-watch-logo')) {
+                waitForElement('#top-row #owner', (ownerDiv) => {
+                    if (document.getElementById('yt-suite-watch-logo')) return;
+
                     let logoEl = document.createElement('div');
                     logoEl.id = 'yt-suite-watch-logo';
                     const link = document.createElement('a');
@@ -662,25 +676,10 @@
                     const originalLogo = document.querySelector('ytd-topbar-logo-renderer ytd-logo');
                     if (originalLogo) {
                         link.appendChild(originalLogo.cloneNode(true));
-                    } else {
-                        const fallbackLogo = document.createElement('ytd-logo');
-                        fallbackLogo.className = 'style-scope ytd-topbar-logo-renderer';
-                        fallbackLogo.setAttribute('is-red-logo', '');
-                        link.appendChild(fallbackLogo);
                     }
                     logoEl.appendChild(link);
                     ownerDiv.prepend(logoEl);
-                    this._element = logoEl;
-                }
-            },
-            init() {
-                addNavigateRule(this._ruleId, this.handleLogoDisplay.bind(this));
-            },
-            destroy() {
-                removeNavigateRule(this._ruleId);
-                this._element?.remove();
-                document.getElementById('yt-suite-watch-logo')?.remove();
-                this._element = null;
+                });
             }
         },
         {
@@ -1235,36 +1234,29 @@
                 });
             },
             _injectButton() {
-                if (!this._isWatchPage() || document.querySelector('button[id^="cobaltBtn"]')) return;
-                const id = 'cobaltBtn' + Math.random().toString(36).substr(2, 5);
-                const btn = document.createElement('button');
-                btn.id = id; btn.textContent = 'Download';
-                btn.setAttribute('aria-label', 'Download video');
-                btn.style.cssText = `font-size:14px;padding:6px 12px;margin-left:8px;border-radius:20px;border:2px solid #ff5722;background:transparent;color:#ff5722;cursor:pointer;transition:background .2s,color .2s;`;
-                btn.onmouseenter = () => { btn.style.background = '#ff5722'; btn.style.color = '#fff'; };
-                btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.color = '#ff5722'; };
-                btn.addEventListener('click', () => this._showPopup(window.location.href));
-                const parent = document.querySelector('#actions-inner #end-buttons, #top-level-buttons-computed');
-                if (parent) parent.appendChild(btn);
-            },
-            _runInitLogic() {
-                if (window.location.href === this._lastUrl) return;
-                this._lastUrl = window.location.href;
-                this._injectButton();
-                this._removeElement('#cobalt-popup');
+                if (!this._isWatchPage()) return;
+                waitForElement('#actions-inner #end-buttons, #top-level-buttons-computed', (parent) => {
+                    if (document.querySelector('button[id^="cobaltBtn"]')) return;
+                    const id = 'cobaltBtn' + Math.random().toString(36).substr(2, 5);
+                    const btn = document.createElement('button');
+                    btn.id = id; btn.textContent = 'Download';
+                    btn.setAttribute('aria-label', 'Download video');
+                    btn.style.cssText = `font-size:14px;padding:6px 12px;margin-left:8px;border-radius:20px;border:2px solid #ff5722;background:transparent;color:#ff5722;cursor:pointer;transition:background .2s,color .2s;`;
+                    btn.onmouseenter = () => { btn.style.background = '#ff5722'; btn.style.color = '#fff'; };
+                    btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.color = '#ff5722'; };
+                    btn.addEventListener('click', () => this._showPopup(window.location.href));
+                    parent.appendChild(btn);
+                });
             },
             init() {
                 this._styleElement = injectStyle('ytd-download-button-renderer', 'hideNativeDownload');
-                this._navigateListener = () => setTimeout(() => this._runInitLogic.bind(this)(), 1000);
-                window.addEventListener('yt-navigate-finish', this._navigateListener);
-                setTimeout(this._runInitLogic.bind(this), 2000);
+                addNavigateRule('cobaltDownloader', this._injectButton.bind(this));
             },
             destroy() {
-                if (this._navigateListener) window.removeEventListener('yt-navigate-finish', this._navigateListener);
+                removeNavigateRule('cobaltDownloader');
                 this._removeElement('button[id^="cobaltBtn"]');
                 this._removeElement('#cobalt-popup');
                 this._styleElement?.remove();
-                this._lastUrl = '';
             }
         },
         { id: 'hideSponsorButton', name: 'Hide Join/Sponsor Button', description: 'Hides the channel membership "Join" button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('#sponsor-button', this.id); }, destroy() { this._styleElement?.remove(); }},
@@ -1281,37 +1273,13 @@
             _observer: null,
             _contextMenuListener: null,
 
-            // --- Start of YouTube Enhancer: iconUtils ---
             _iconUtils: {
-                createGradientDefs(isShortsButton = false) {
-                    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                    const hoverGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-                    hoverGradient.setAttribute('id', isShortsButton ? 'shortsButtonGradient' : 'buttonGradient');
-                    hoverGradient.setAttribute('x1', '0%'); hoverGradient.setAttribute('y1', '0%');
-                    hoverGradient.setAttribute('x2', '100%'); hoverGradient.setAttribute('y2', '100%');
-                    const hoverStop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    hoverStop1.setAttribute('offset', '0%'); hoverStop1.setAttribute('style', 'stop-color:#f03');
-                    const hoverStop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    hoverStop2.setAttribute('offset', '100%'); hoverStop2.setAttribute('style', 'stop-color:#ff2791');
-                    hoverGradient.appendChild(hoverStop1); hoverGradient.appendChild(hoverStop2);
-                    defs.appendChild(hoverGradient);
-                    const successGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-                    successGradient.setAttribute('id', isShortsButton ? 'shortsSuccessGradient' : 'successGradient');
-                    successGradient.setAttribute('x1', '0%'); successGradient.setAttribute('y1', '0%');
-                    successGradient.setAttribute('x2', '100%'); successGradient.setAttribute('y2', '100%');
-                    const successStop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    successStop1.setAttribute('offset', '0%'); successStop1.setAttribute('style', 'stop-color:#0f9d58');
-                    const successStop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                    successStop2.setAttribute('offset', '100%'); successStop2.setAttribute('style', 'stop-color:#00c853');
-                    successGradient.appendChild(successStop1); successGradient.appendChild(successStop2);
-                    defs.appendChild(successGradient);
-                    return defs;
-                },
-                createBaseSVG(viewBox, fill = '#e8eaed', isShortsButton = false) {
+                createBaseSVG(viewBox, fill = '#e8eaed') {
                     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.setAttribute('viewBox', viewBox);
                     svg.setAttribute('fill', fill);
-                    svg.appendChild(this.createGradientDefs(isShortsButton));
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '100%');
                     return svg;
                 },
                 paths: {
@@ -1341,9 +1309,7 @@
                     return svg;
                 }
             },
-            // --- End of YouTube Enhancer: iconUtils ---
 
-            // --- Start of YouTube Enhancer: buttonUtils ---
             _buttonUtils: {
                 getVideoId() {
                     const urlParams = new URLSearchParams(window.location.search);
@@ -1351,8 +1317,6 @@
                 },
                 async getVideoTitle() {
                     try {
-                        const videoId = this.getVideoId();
-                        // Leveraging existing player data if available
                         if (window.ytInitialPlayerResponse?.videoDetails?.title) {
                             return window.ytInitialPlayerResponse.videoDetails.title;
                         }
@@ -1388,12 +1352,16 @@
                     }, 'image/png');
                 }
             },
-            // --- End of YouTube Enhancer: buttonUtils ---
 
             init() {
                 const buttonCSS = `
-                    .yt-suite-enhancer-btn { display: flex; align-items: center; justify-content: center; }
-                    .yt-suite-enhancer-btn svg { width: 24px; height: 24px; transition: fill 0.1s ease; fill: #fff; }
+                    .yt-suite-enhancer-btn {
+                        height: 35px;
+                        width: 35px;
+                        margin-bottom: 40px;
+                        vertical-align: middle;
+                    }
+                    .yt-suite-enhancer-btn svg { fill: #fff; }
                     .yt-suite-enhancer-btn:hover svg { fill: #ff0000; }
                     .yt-suite-enhancer-btn.active svg { fill: #3ea6ff; }
                     .yt-suite-enhancer-btn.clicked svg { animation: suite-enhancer-click-anim 0.5s; }
@@ -1418,34 +1386,36 @@
 
             insertButtons() {
                 if (!window.location.pathname.startsWith('/watch')) return;
-                const controls = document.querySelector('div.ytp-left-controls');
-                if (!controls || document.querySelector('.yt-suite-enhancer-loop-btn')) return;
 
-                // Loop Button
-                const loopBtn = document.createElement('button');
-                loopBtn.className = 'ytp-button yt-suite-enhancer-btn yt-suite-enhancer-loop-btn';
-                loopBtn.title = 'Loop Video';
-                loopBtn.appendChild(this._iconUtils.createLoopIcon());
-                loopBtn.addEventListener('click', this.toggleLoopState.bind(this));
-                controls.appendChild(loopBtn);
+                waitForElement('.ytp-right-controls', (controls) => {
+                    if (document.querySelector('.yt-suite-enhancer-loop-btn')) return;
 
-                // Save Screenshot Button
-                const saveBtn = document.createElement('button');
-                saveBtn.className = 'ytp-button yt-suite-enhancer-btn yt-suite-enhancer-save-btn';
-                saveBtn.title = 'Save Screenshot';
-                saveBtn.appendChild(this._iconUtils.createSaveScreenshotIcon());
-                saveBtn.addEventListener('click', this.handleScreenshotClick.bind(this, 'download'));
-                controls.appendChild(saveBtn);
+                    const settingsButton = controls.querySelector('.ytp-settings-button');
+                    const createButton = (className, title, icon, clickHandler) => {
+                        const btn = document.createElement('button');
+                        btn.className = `ytp-button yt-suite-enhancer-btn ${className}`;
+                        btn.title = title;
+                        btn.appendChild(icon);
+                        btn.addEventListener('click', clickHandler);
+                        return btn;
+                    };
 
-                // Copy Screenshot Button
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'ytp-button yt-suite-enhancer-btn yt-suite-enhancer-copy-btn';
-                copyBtn.title = 'Copy Screenshot to Clipboard';
-                copyBtn.appendChild(this._iconUtils.createCopyScreenshotIcon());
-                copyBtn.addEventListener('click', this.handleScreenshotClick.bind(this, 'copy'));
-                controls.appendChild(copyBtn);
+                    const loopBtn = createButton('yt-suite-enhancer-loop-btn', 'Loop Video', this._iconUtils.createLoopIcon(), this.toggleLoopState.bind(this));
+                    const saveBtn = createButton('yt-suite-enhancer-save-btn', 'Save Screenshot', this._iconUtils.createSaveScreenshotIcon(), this.handleScreenshotClick.bind(this, 'download'));
+                    const copyBtn = createButton('yt-suite-enhancer-copy-btn', 'Copy Screenshot', this._iconUtils.createCopyScreenshotIcon(), this.handleScreenshotClick.bind(this, 'copy'));
 
-                this.addLoopObserver();
+                    if (settingsButton) {
+                        controls.insertBefore(loopBtn, settingsButton);
+                        controls.insertBefore(saveBtn, settingsButton);
+                        controls.insertBefore(copyBtn, settingsButton);
+                    } else {
+                        controls.appendChild(loopBtn);
+                        controls.appendChild(saveBtn);
+                        controls.appendChild(copyBtn);
+                    }
+
+                    this.addLoopObserver();
+                });
             },
 
             toggleLoopState() {
@@ -1468,6 +1438,8 @@
             addLoopObserver() {
                 const video = document.querySelector('.html5-main-video');
                 if (!video) return;
+
+                this.updateLoopControls(); // Initial check
 
                 this._observer = new MutationObserver(() => this.updateLoopControls());
                 this._observer.observe(video, { attributes: true, attributeFilter: ['loop'] });
@@ -1499,64 +1471,74 @@
             name: 'Auto Max Resolution',
             description: 'Automatically sets the video quality to the highest available resolution.',
             group: 'Watch Page - Player Controls',
-            _onPlayerUpdated: null, _onNavigateFinish: null,
+            _lastProcessedVideoId: null,
+            _onPlayerUpdated: null,
+
             init() {
-                const setMaxQuality = (player) => {
-                    if (!player || typeof player.getAvailableQualityLevels !== 'function') return;
-                    const levels = player.getAvailableQualityLevels();
-                    if (!levels || !levels.length) return;
-                    const best = levels[0];
-                    try {
-                        player.setPlaybackQualityRange(best);
-                    } catch (e) {
-                        console.warn('[YT Suite AutoMaxRes] Could not set quality', e);
-                    }
-
-                    if (best.includes('1080') && appState.settings.useEnhancedBitrate) {
-                        const settingsButton = document.querySelector('.ytp-settings-button');
-                        if (!settingsButton) return;
-
-                        const tempStyle = injectStyle('.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'temp-hide-menu', true);
-                        try {
-                            settingsButton.click();
-                            setTimeout(() => {
-                                const qualityMenu = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(el => el.textContent.includes('Quality'));
-                                if (qualityMenu) {
-                                    qualityMenu.parentElement.click();
-                                    setTimeout(() => {
-                                        const premiumOption = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(label => label.textContent.includes('1080p Premium'));
-                                        if (premiumOption) {
-                                            premiumOption.parentElement.click();
-                                        } else {
-                                            settingsButton.click(); // Close menu if premium not found
-                                        }
-                                    }, 400);
-                                } else {
-                                    settingsButton.click(); // Close menu if quality option not found
-                                }
-                            }, 400);
-                        } finally {
-                            setTimeout(() => {
-                                // Final check to ensure the menu is closed
-                                if (document.querySelector('.ytp-popup.ytp-settings-menu')) {
-                                    settingsButton.click();
-                                }
-                                tempStyle.remove();
-                            }, 1500);
-                        }
-                    }
+                this._onPlayerUpdated = (evt) => {
+                    const player = evt?.target?.player_ || document.getElementById('movie_player');
+                    this.setMaxQuality(player);
                 };
-
-                this._onPlayerUpdated = (evt) => setMaxQuality(evt?.target?.player_ || document.getElementById('movie_player'));
-                this._onNavigateFinish = () => setTimeout(() => setMaxQuality(document.getElementById('movie_player')), 1500);
-
                 window.addEventListener('yt-player-updated', this._onPlayerUpdated, true);
-                window.addEventListener('yt-navigate-finish', this._onNavigateFinish, true);
-                this._onNavigateFinish();
             },
             destroy() {
-                if (this._onPlayerUpdated) window.removeEventListener('yt-player-updated', this._onPlayerUpdated, true);
-                if (this._onNavigateFinish) window.removeEventListener('yt-navigate-finish', this._onNavigateFinish, true);
+                if (this._onPlayerUpdated) {
+                    window.removeEventListener('yt-player-updated', this._onPlayerUpdated, true);
+                }
+                this._lastProcessedVideoId = null;
+            },
+
+            setMaxQuality(player) {
+                const currentVideoId = (new URLSearchParams(window.location.search)).get('v');
+                if (!player || !currentVideoId || currentVideoId === this._lastProcessedVideoId) {
+                    return;
+                }
+
+                if (typeof player.getAvailableQualityLevels !== 'function') return;
+                const levels = player.getAvailableQualityLevels();
+                if (!levels || !levels.length) return;
+
+                this._lastProcessedVideoId = currentVideoId;
+                const best = levels[0];
+                try {
+                    player.setPlaybackQualityRange(best);
+                } catch (e) { console.warn('[YT Suite AutoMaxRes] Could not set quality', e); }
+
+                if (best.includes('1080') && appState.settings.useEnhancedBitrate) {
+                    const settingsButton = document.querySelector('.ytp-settings-button');
+                    if (!settingsButton) return;
+
+                    const tempStyle = injectStyle('.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'temp-hide-menu', true);
+
+                    // Open settings
+                    settingsButton.click();
+
+                    setTimeout(() => {
+                        const qualityMenu = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(el => el.textContent.includes('Quality'));
+                        if (qualityMenu) {
+                            qualityMenu.parentElement.click();
+
+                            setTimeout(() => {
+                                const premiumOption = Array.from(document.querySelectorAll('.ytp-menuitem-label')).find(label => label.textContent.includes('1080p Premium'));
+                                if (premiumOption) {
+                                    premiumOption.parentElement.click();
+                                } else {
+                                    // Close menu if premium not found by backing out
+                                    const backButton = document.querySelector('.ytp-panel-back-button');
+                                    if(backButton) backButton.click();
+                                }
+                            }, 400);
+                        }
+
+                        // Close settings menu regardless of outcome
+                        setTimeout(() => {
+                            if (document.querySelector('.ytp-popup.ytp-settings-menu')) {
+                                settingsButton.click();
+                            }
+                            tempStyle.remove();
+                        }, 1000);
+                    }, 400);
+                }
             }
         },
         {
@@ -1674,8 +1656,8 @@
             document.getElementById('yt-suite-watch-cog')?.remove();
 
             if (isWatch) {
-                const ownerDiv = document.querySelector('#top-row #owner');
-                if (ownerDiv) {
+                waitForElement('#top-row #owner', (ownerDiv) => {
+                    if (document.getElementById('yt-suite-watch-cog')) return;
                     const cog = document.createElement('div');
                     cog.id = 'yt-suite-watch-cog';
                     const btn = document.createElement('button');
@@ -1689,7 +1671,7 @@
                     } else {
                         ownerDiv.prepend(cog);
                     }
-                }
+                });
             } else {
                 const masthead = document.querySelector('ytd-topbar-logo-renderer');
                 if (masthead) {
@@ -1736,7 +1718,7 @@
         title.textContent = 'YouTube Customization Suite';
         const version = document.createElement('span');
         version.className = 'version';
-        version.textContent = 'v3.20';
+        version.textContent = 'v3.22';
         header.append(title, version);
 
         const main = document.createElement('main');
