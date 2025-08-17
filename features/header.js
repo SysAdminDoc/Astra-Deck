@@ -1,7 +1,5 @@
-// YTKit Header Features Module
 (function() {
     'use strict';
-    if (!window.YTKit) { window.YTKit = {}; }
 
     const headerFeatures = [
         {
@@ -55,9 +53,12 @@
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
-        },
+        }
     ];
 
-    window.YTKit.registerFeatures(headerFeatures);
+    // Push features to the global array
+    if (typeof features !== 'undefined') {
+        features.push(...headerFeatures);
+    }
 
 })();
