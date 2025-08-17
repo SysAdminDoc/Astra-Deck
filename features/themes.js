@@ -1,8 +1,5 @@
- 
-// YTKit Themes Features Module
 (function() {
     'use strict';
-    if (!window.YTKit) { window.YTKit = {}; }
 
     const themeFeatures = [
         {
@@ -38,9 +35,13 @@
                     this._styleElement.id = `yt-suite-style-${this.id}`;
                     this._styleElement.textContent = customCss;
                     document.head.appendChild(this._styleElement);
+                } else {
+                    console.error('[YT Suite] Could not load betterDarkMode resource.');
                 }
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() {
+                this._styleElement?.remove();
+            }
         },
         {
             id: 'catppuccinMocha',
@@ -56,9 +57,13 @@
                     this._styleElement.id = `yt-suite-style-${this.id}`;
                     this._styleElement.textContent = customCss;
                     document.head.appendChild(this._styleElement);
+                } else {
+                    console.error('[YT Suite] Could not load catppuccinMocha resource.');
                 }
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() {
+                this._styleElement?.remove();
+            }
         },
         {
             id: 'squarify',
@@ -85,12 +90,18 @@
                     this._styleElement.id = `yt-suite-style-${this.id}`;
                     this._styleElement.textContent = customCss;
                     document.head.appendChild(this._styleElement);
+                } else {
+                    console.error('[YT Suite] Could not load nyanCatProgressBar resource.');
                 }
             },
-            destroy() { this._styleElement?.remove(); }
-        },
+            destroy() {
+                this._styleElement?.remove();
+            }
+        }
     ];
 
-    window.YTKit.registerFeatures(themeFeatures);
+    if (typeof features !== 'undefined') {
+        features.push(...themeFeatures);
+    }
 
 })();

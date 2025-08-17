@@ -1,8 +1,5 @@
- 
-// YTKit Sidebar Features Module
 (function() {
     'use strict';
-    if (!window.YTKit) { window.YTKit = {}; }
 
     const sidebarFeatures = [
         {
@@ -29,9 +26,11 @@
             destroy() {
                 this._styleElement?.remove();
             }
-        },
+        }
     ];
 
-    window.YTKit.registerFeatures(sidebarFeatures);
+    if (typeof features !== 'undefined') {
+        features.push(...sidebarFeatures);
+    }
 
 })();
