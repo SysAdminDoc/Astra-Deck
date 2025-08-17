@@ -158,8 +158,9 @@
         }
     ];
 
-    if (typeof features !== 'undefined') {
-        features.push(...generalFeatures);
+    // New Way
+    if (typeof window.YTKitFeatures !== 'undefined') {
+        window.YTKitFeatures.header = headerFeatures;
     }
 
 })();
