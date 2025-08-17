@@ -959,8 +959,9 @@
         { id: 'hideFullscreenButton', name: 'Hide Fullscreen Button', description: 'Hides the fullscreen button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-fullscreen-button', this.id); }, destroy() { this._styleElement?.remove(); }}
     ];
 
-    if (typeof features !== 'undefined') {
-        features.push(...watchPageFeatures);
+    // New Way
+    if (typeof window.YTKitFeatures !== 'undefined') {
+        window.YTKitFeatures.header = headerFeatures;
     }
 
 })();

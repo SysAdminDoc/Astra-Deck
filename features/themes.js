@@ -100,8 +100,9 @@
         }
     ];
 
-    if (typeof features !== 'undefined') {
-        features.push(...themeFeatures);
+    // New Way
+    if (typeof window.YTKitFeatures !== 'undefined') {
+        window.YTKitFeatures.header = headerFeatures;
     }
 
 })();
