@@ -56,9 +56,9 @@
         }
     ];
 
-    // Push features to the global array
-    if (typeof features !== 'undefined') {
-        features.push(...headerFeatures);
+    // New Way
+    if (typeof window.YTKitFeatures !== 'undefined') {
+        window.YTKitFeatures.header = headerFeatures;
     }
 
 })();
