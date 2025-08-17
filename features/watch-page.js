@@ -961,7 +961,7 @@
 
     // New Way
     if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.header = headerFeatures;
+        window.YTKitFeatures.watchPage = watchPageFeatures;
     }
 
 })();
