@@ -18,17 +18,17 @@
                         if (parent) parent.style.display = 'none';
                     });
                 };
-                addMutationRule(this.id, removeShortsRule);
+                window.YTKit.addMutationRule(this.id, removeShortsRule);
                 const css = `
                     ytd-reel-shelf-renderer,
                     ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]) {
                         display: none !important;
                     }
                 `;
-                this._styleElement = injectStyle(css, this.id + '-style', true);
+                this._styleElement = window.YTKit.injectStyle(css, this.id + '-style', true);
             },
             destroy() {
-                removeMutationRule(this.id);
+                window.YTKit.removeMutationRule(this.id);
                 this._styleElement?.remove();
             }
         },
@@ -43,10 +43,10 @@
                         window.location.href = window.location.href.replace('/shorts/', '/watch?v=');
                     }
                 };
-                addNavigateRule(this.id, redirectRule);
+                window.YTKit.addNavigateRule(this.id, redirectRule);
             },
             destroy() {
-                removeNavigateRule(this.id);
+                window.YTKit.removeNavigateRule(this.id);
             }
         },
         {
@@ -63,7 +63,7 @@
                         display: none !important;
                     }
                 `;
-                this._styleElement = injectStyle(css, this.id, true);
+                this._styleElement = window.YTKit.injectStyle(css, this.id, true);
             },
             destroy() {
                 this._styleElement?.remove();
@@ -81,7 +81,7 @@
                         max-width: 100% !important;
                     }
                 `;
-                this._styleElement = injectStyle(css, this.id, true);
+                this._styleElement = window.YTKit.injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
         },
@@ -91,7 +91,7 @@
             description: 'Hides the "Latest" header and grid/list view options on the Subscriptions page.',
             group: 'General Content',
             _styleElement: null,
-            init() { this._styleElement = injectStyle('ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)', this.id); },
+            init() { this._styleElement = window.YTKit.injectStyle('ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -107,7 +107,7 @@
                         --ytd-rich-grid-items-per-row: ${videosPerRow} !important;
                     }
                 `;
-                this._styleElement = injectStyle(css, this.id, true);
+                this._styleElement = window.YTKit.injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
         },
@@ -117,7 +117,7 @@
             description: 'Hides the "Includes paid promotion" message on video thumbnails.',
             group: 'General Content',
             _styleElement: null,
-            init() { this._styleElement = injectStyle('ytd-paid-content-overlay-renderer, ytm-paid-content-overlay-renderer', this.id); },
+            init() { this._styleElement = window.YTKit.injectStyle('ytd-paid-content-overlay-renderer, ytm-paid-content-overlay-renderer', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -139,7 +139,7 @@
                     }
                 };
                 handleDirectNavigation();
-                addNavigateRule('channelRedirectorNav', handleDirectNavigation);
+                window.YTKit.addNavigateRule('channelRedirectorNav', handleDirectNavigation);
 
                 this._mousedownListener = (event) => {
                     const anchorTag = event.target.closest('a');
@@ -153,14 +153,13 @@
                 if (this._mousedownListener) {
                     document.removeEventListener('mousedown', this._mousedownListener, true);
                 }
-                removeNavigateRule('channelRedirectorNav');
+                window.YTKit.removeNavigateRule('channelRedirectorNav');
             }
         }
     ];
 
-    // New Way
-    if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.general = generalFeatures;
+    if (typeof window.YTKit !== 'undefined') {
+        window.YTKit.YTKitFeatures.general = generalFeatures;
     }
 
 })();

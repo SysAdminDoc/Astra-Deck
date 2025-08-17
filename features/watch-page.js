@@ -1,6 +1,51 @@
 (function() {
     'use strict';
 
+    if (typeof window.YTKit === 'undefined') { return; }
+    const { addNavigateRule, removeNavigateRule, addMutationRule, removeMutationRule, injectStyle, waitForElement, createToast } = window.YTKit;
+
+    // Helper functions for chat filters, using the global appState
+    function applyBotFilter() {
+        if (!window.location.pathname.startsWith('/watch')) return;
+        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer:not(.yt-suite-hidden-bot)');
+        messages.forEach(msg => {
+            const authorName = msg.querySelector('#author-name')?.textContent.toLowerCase() || '';
+            if (authorName.includes('bot')) {
+                msg.style.display = 'none';
+                msg.classList.add('yt-suite-hidden-bot');
+            }
+        });
+    }
+
+    function applyKeywordFilter() {
+        if (!window.location.pathname.startsWith('/watch')) return;
+        const keywordsRaw = window.YTKit.appState.settings.keywordFilterList;
+        const messages = document.querySelectorAll('yt-live-chat-text-message-renderer');
+        if (!keywordsRaw || !keywordsRaw.trim()) {
+            messages.forEach(el => {
+                if (el.classList.contains('yt-suite-hidden-keyword')) {
+                    el.style.display = '';
+                    el.classList.remove('yt-suite-hidden-keyword');
+                }
+            });
+            return;
+        }
+        const keywords = keywordsRaw.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
+        messages.forEach(msg => {
+            const messageText = msg.querySelector('#message')?.textContent.toLowerCase() || '';
+            const authorText = msg.querySelector('#author-name')?.textContent.toLowerCase() || '';
+            const shouldHide = keywords.some(k => messageText.includes(k) || authorText.includes(k));
+            if (shouldHide) {
+                msg.style.display = 'none';
+                msg.classList.add('yt-suite-hidden-keyword');
+            } else if (msg.classList.contains('yt-suite-hidden-keyword')) {
+                msg.style.display = '';
+                msg.classList.remove('yt-suite-hidden-keyword');
+            }
+        });
+    }
+
+
     const watchPageFeatures = [
         // Watch Page - Layout
         {
@@ -57,7 +102,7 @@
             _subFeatureStyle: null,
             init() {
                 this._styleElement = injectStyle('#secondary', this.id);
-                if (appState.settings.expandVideoWidth) {
+                if (window.YTKit.appState.settings.expandVideoWidth) {
                     this._subFeatureStyle = document.createElement('style');
                     this._subFeatureStyle.id = 'yt-suite-expand-width';
                     this._subFeatureStyle.textContent = `ytd-watch-flexy:not(.yt-suite-fit-to-window) #primary { max-width: none !important; }`;
@@ -77,7 +122,7 @@
             isSubFeature: true,
             _styleElement: null,
             init() {
-                if (appState.settings.hideRelatedVideos) {
+                if (window.YTKit.appState.settings.hideRelatedVideos) {
                     this._styleElement = document.createElement('style');
                     this._styleElement.id = 'yt-suite-expand-width';
                     this._styleElement.textContent = `ytd-watch-flexy:not(.yt-suite-fit-to-window) #primary { max-width: none !important; }`;
@@ -852,7 +897,7 @@
                 };
                 window.addEventListener('yt-player-updated', this._onPlayerUpdated, true);
 
-                if (appState.settings.hideQualityPopup) {
+                if (window.YTKit.appState.settings.hideQualityPopup) {
                     this._styleElement = injectStyle('.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'hide-quality-popup', true);
                 }
             },
@@ -880,7 +925,7 @@
                     player.setPlaybackQualityRange(best);
                 } catch (e) { /* ignore */ }
 
-                if (best.includes('1080') && appState.settings.useEnhancedBitrate) {
+                if (best.includes('1080') && window.YTKit.appState.settings.useEnhancedBitrate) {
                     const settingsButton = document.querySelector('.ytp-settings-button');
                     if (!settingsButton) return;
 
@@ -959,9 +1004,8 @@
         { id: 'hideFullscreenButton', name: 'Hide Fullscreen Button', description: 'Hides the fullscreen button in the player controls.', group: 'Watch Page - Player Controls', _styleElement: null, init() { this._styleElement = injectStyle('.ytp-fullscreen-button', this.id); }, destroy() { this._styleElement?.remove(); }}
     ];
 
-    // New Way
-    if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.watchPage = watchPageFeatures;
+    if (typeof window.YTKit.YTKitFeatures !== 'undefined') {
+        window.YTKit.YTKitFeatures.watchPage = watchPageFeatures;
     }
 
 })();

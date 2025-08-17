@@ -302,6 +302,7 @@
             _lastHref: '',
             _timer: null,
             init() {
+                const appState = window.YTKit.appState;
                 const isYouTubeHost = (host) => host === 'youtube.com' || host.endsWith('.youtube.com');
                 const isNoCookieHost = (host) => host === 'youtube-nocookie.com' || host.endsWith('.youtube-nocookie.com');
                 const isYoutuDotBeHost = (host) => host === 'youtu.be';
@@ -414,7 +415,7 @@
                         rewriteAllLinks();
                     }, 50);
                 };
-                addNavigateRule('yout-ube-redirector', this._urlChangeListener);
+                window.YTKit.addNavigateRule('yout-ube-redirector', this._urlChangeListener);
             },
             destroy() {
                 this._linkObserver?.disconnect();
@@ -424,7 +425,7 @@
                     document.removeEventListener('auxclick', this._clickInterceptor, true);
                 }
                 this._clickInterceptor = null;
-                removeNavigateRule('yout-ube-redirector');
+                window.YTKit.removeNavigateRule('yout-ube-redirector');
                 if (this._timer) clearTimeout(this._timer);
             }
         },
@@ -434,8 +435,7 @@
         { id: 'yout_ube_rewriteLinks', name: 'Rewrite In-Page Links', description: 'Proactively changes video links on the page (e.g., in subscriptions) to point to yout-ube.com.', group: 'Modules', isSubFeature: true, init() {}, destroy() {} }
     ];
 
-    // New Way
-	if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.modules = moduleFeatures;
+	if (typeof window.YTKit !== 'undefined') {
+        window.YTKit.YTKitFeatures.modules = moduleFeatures;
 	}
 })();
