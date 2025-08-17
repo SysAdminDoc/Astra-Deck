@@ -1,7 +1,5 @@
-// YTKit General Content Features Module
 (function() {
     'use strict';
-    if (!window.YTKit) { window.YTKit = {}; }
 
     const generalFeatures = [
         {
@@ -157,9 +155,11 @@
                 }
                 removeNavigateRule('channelRedirectorNav');
             }
-        },
+        }
     ];
 
-    window.YTKit.registerFeatures(generalFeatures);
+    if (typeof features !== 'undefined') {
+        features.push(...generalFeatures);
+    }
 
 })();
