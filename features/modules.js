@@ -434,8 +434,8 @@
         { id: 'yout_ube_rewriteLinks', name: 'Rewrite In-Page Links', description: 'Proactively changes video links on the page (e.g., in subscriptions) to point to yout-ube.com.', group: 'Modules', isSubFeature: true, init() {}, destroy() {} }
     ];
 
-    if (typeof features !== 'undefined') {
-        features.push(...moduleFeatures);
-    }
-
+    // New Way
+	if (typeof window.YTKitFeatures !== 'undefined') {
+        window.YTKitFeatures.header = headerFeatures;
+	}
 })();

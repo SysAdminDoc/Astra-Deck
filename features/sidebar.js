@@ -29,8 +29,9 @@
         }
     ];
 
-    if (typeof features !== 'undefined') {
-        features.push(...sidebarFeatures);
+    // New Way
+    if (typeof window.YTKitFeatures !== 'undefined') {
+        window.YTKitFeatures.header = headerFeatures;
     }
 
 })();
