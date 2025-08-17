@@ -1,6 +1,9 @@
 (function() {
     'use strict';
 
+    if (typeof window.YTKit === 'undefined') { return; }
+    const { addMutationRule, removeMutationRule, injectStyle } = window.YTKit;
+
     const themeFeatures = [
         {
             id: 'nativeDarkMode',
@@ -100,9 +103,8 @@
         }
     ];
 
-    // New Way
-    if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.themes = themeFeatures;
+    if (typeof window.YTKit.YTKitFeatures !== 'undefined') {
+        window.YTKit.YTKitFeatures.themes = themeFeatures;
     }
 
 })();

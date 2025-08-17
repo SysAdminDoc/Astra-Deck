@@ -76,6 +76,7 @@
     window.YTKit = {
         features: [],
         appState: {},
+        YTKitFeatures: {}, // Staging area for features from modules
 
         waitForElement: function(selector, callback, timeout = 10000) {
             const intervalTime = 100;
@@ -146,6 +147,20 @@
             style.textContent = isRawCss ? selector : `${selector} { display: none !important; }`;
             (document.head || document.documentElement).appendChild(style);
             return style;
+        },
+
+        createToast: function(message, type = 'success', duration = 3000) {
+            const existingToast = document.querySelector('.ycs-toast');
+            if (existingToast) existingToast.remove();
+            const toast = document.createElement('div');
+            toast.className = `ycs-toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, duration);
         }
     };
 })();
@@ -159,8 +174,21 @@
 (function() {
     'use strict';
 
-    // Destructure from the global object for convenience
-    const { features, appState, waitForElement, addNavigateRule } = window.YTKit;
+    // --- [FIX] FEATURE AGGREGATION ---
+    // Consolidate all feature arrays from the modules into the main features array.
+    if (window.YTKit && window.YTKit.YTKitFeatures) {
+        for (const key in window.YTKit.YTKitFeatures) {
+            if (Object.prototype.hasOwnProperty.call(window.YTKit.YTKitFeatures, key)) {
+                const featureArray = window.YTKit.YTKitFeatures[key];
+                if (Array.isArray(featureArray)) {
+                    window.YTKit.features.push(...featureArray);
+                }
+            }
+        }
+    }
+
+    // Destructure from the global object for convenience AFTER aggregation
+    const { features, appState, waitForElement, addNavigateRule, createToast } = window.YTKit;
 
     // ——————————————————————————————————————————————————————————————————————————
     // SECTION 1: SETTINGS MANAGER
@@ -454,20 +482,6 @@
             row.appendChild(switchLabel);
         }
         return row;
-    }
-
-    function createToast(message, type = 'success', duration = 3000) {
-        const existingToast = document.querySelector('.ycs-toast');
-        if (existingToast) existingToast.remove();
-        const toast = document.createElement('div');
-        toast.className = `ycs-toast ${type}`;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 500);
-        }, duration);
     }
 
     function updateAllToggleStates() {
