@@ -29,9 +29,9 @@
         }
     ];
 
-    // New Way
-    if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.header = headerFeatures;
-    }
+// New Way
+if (typeof window.YTKitFeatures !== 'undefined') {
+    window.YTKitFeatures.sidebar = sidebarFeatures;
+}
 
 })();
