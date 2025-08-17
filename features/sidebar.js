@@ -21,7 +21,7 @@
                     #guide, #guide-button, ytd-mini-guide-renderer, tp-yt-app-drawer:not([persistent]) { display: none !important; }
                     ytd-page-manager { margin-left: 0 !important; }
                 `;
-                this._styleElement = injectStyle(css, this.id, true);
+                this._styleElement = window.YTKit.injectStyle(css, this.id, true);
             },
             destroy() {
                 this._styleElement?.remove();
@@ -29,9 +29,8 @@
         }
     ];
 
-// New Way
-if (typeof window.YTKitFeatures !== 'undefined') {
-    window.YTKitFeatures.sidebar = sidebarFeatures;
+if (typeof window.YTKit !== 'undefined') {
+    window.YTKit.YTKitFeatures.sidebar = sidebarFeatures;
 }
 
 })();

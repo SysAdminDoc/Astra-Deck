@@ -8,7 +8,7 @@
             description: 'Hides the "Create" button in the main YouTube header.',
             group: 'Header',
             _styleElement: null,
-            init() { this._styleElement = injectStyle('ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])', this.id); },
+            init() { this._styleElement = window.YTKit.injectStyle('ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -17,7 +17,7 @@
             description: 'Hides the microphone icon for voice search in the header.',
             group: 'Header',
             _styleElement: null,
-            init() { this._styleElement = injectStyle('#voice-search-button', this.id); },
+            init() { this._styleElement = window.YTKit.injectStyle('#voice-search-button', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -34,10 +34,10 @@
                 }
             },
             init() {
-                addNavigateRule('relinkLogoRule', () => this._relinkLogo());
+                window.YTKit.addNavigateRule('relinkLogoRule', () => this._relinkLogo());
             },
             destroy() {
-                removeNavigateRule('relinkLogoRule');
+                window.YTKit.removeNavigateRule('relinkLogoRule');
                 const logoLink = document.querySelector('ytd-topbar-logo-renderer a#logo');
                 if (logoLink) logoLink.href = '/';
             }
@@ -50,15 +50,14 @@
             _styleElement: null,
             init() {
                 const css = `ytd-masthead yt-searchbox { margin-left: -180px; margin-right: -300px; }`;
-                this._styleElement = injectStyle(css, this.id, true);
+                this._styleElement = window.YTKit.injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
         }
     ];
 
-    // New Way
-    if (typeof window.YTKitFeatures !== 'undefined') {
-        window.YTKitFeatures.header = headerFeatures;
+    if (typeof window.YTKit !== 'undefined') {
+        window.YTKit.YTKitFeatures.header = headerFeatures;
     }
 
 })();
