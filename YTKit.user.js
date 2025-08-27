@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      5.6
+// @version      5.8
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience with a modern UI.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -23,8 +23,8 @@
 // @grant        GM_openInTab
 // @connect      sponsor.ajay.app
 // @resource     betterDarkMode https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/youtube-dark-theme.css
-// @resource     catppuccinMocha https://github.comcom/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/youtube-catppuccin-theme.css
-// @resource     nyanCatProgressBar https://raw.githubusercontent.com/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/nyan-cat-progress-bar.css
+// @resource     catppuccinMocha https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/youtube-catppuccin-theme.css
+// @resource     nyanCatProgressBar https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/nyan-cat-progress-bar.css
 // @updateURL    https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js
 // @downloadURL  https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js
 // @run-at       document-end
@@ -36,12 +36,15 @@
     // ——————————————————————————————————————————————————————————————————————————
     //  ~ CHANGELOG ~
     //
+    //  v5.8 - Critical UI Fix
+    //  - FIXED: Resolved a critical SyntaxError in the UI builder that prevented the script from loading entirely.
+    //
+    //  v5.7 - Merged & Finalized
+    //  - MERGED: Ensured all features from the modular version are present in this monolithic script.
+    //  - ENHANCED: Carried over the latest bug fixes and code improvements for stability and performance.
+    //
     //  v5.6 - Watch Page Button Fix
     //  - FIXED: Re-implemented the logic to display the settings gear icon on video watch pages, next to the uploader's channel info. The button now correctly appears in either the main header or on the watch page as you navigate.
-    //
-    //  v5.5 - Full Code Merge
-    //  - MAJOR: Thoroughly compared version 5.0 and the newer script.
-    //  - ADDED: Re-integrated all missing functions, features, UI logic, and CSS from v5.0.
     //
     // ——————————————————————————————————————————————————————————————————————————
 
@@ -800,6 +803,7 @@
             name: 'Prevent Autoplay',
             description: 'Stops videos from automatically playing when the page loads.',
             group: 'Watch Page - Behavior',
+            _navHandler: null,
             init() {
                 const pauseRule = () => {
                     if (!window.location.pathname.startsWith('/watch')) return;
@@ -811,10 +815,16 @@
                         player.classList.add('paused-mode');
                     }
                 };
-                window.addEventListener('yt-navigate-finish', () => setTimeout(pauseRule, 500));
-                setTimeout(pauseRule, 500);
+                this._navHandler = () => setTimeout(pauseRule, 500);
+                window.addEventListener('yt-navigate-finish', this._navHandler);
+                setTimeout(pauseRule, 500); // For initial load
             },
-            destroy() { /* No cleanup needed */ }
+            destroy() {
+                if (this._navHandler) {
+                    window.removeEventListener('yt-navigate-finish', this._navHandler);
+                    this._navHandler = null;
+                }
+            }
         },
         {
             id: 'autoExpandDescription',
@@ -855,6 +865,7 @@
                                 newestOption.click();
                                 sortButton.setAttribute('data-suite-sorted', 'true');
                             } else {
+                                // Close the menu if option isn't found
                                 document.body.click();
                             }
                         }, 200);
@@ -1289,12 +1300,12 @@
         { id: 'hideSponsorButton', name: 'Hide Join/Sponsor Button', description: 'Hides the channel membership "Join" button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('#sponsor-button', this.id); }, destroy() { this._styleElement?.remove(); }},
         { id: 'hideMoreActionsButton', name: 'Hide "More actions" (3-dot) Button', description: 'Hides the three-dots "More actions" menu button.', group: 'Watch Page - Action Buttons', _styleElement: null, init() { this._styleElement = injectStyle('#actions-inner #button-shape > button[aria-label="More actions"]', this.id); }, destroy() { this._styleElement?.remove(); }},
 
-        // Group: Player Enhancements
+        // Group: Player
         {
             id: 'playerEnhancements',
-            name: 'Add Loop & Screenshot Buttons',
-            description: 'Adds buttons to loop the video, save a screenshot, or copy a screenshot to the clipboard.',
-            group: 'Player Enhancements',
+            name: 'Player Enhancements (Loop, Screenshot)',
+            description: 'Adds handy buttons for looping and capturing screenshots from the player.',
+            group: 'Player',
             _styleElement: null,
             _observer: null,
             _contextMenuListener: null,
@@ -1487,7 +1498,7 @@
                 video.addEventListener('contextmenu', this._contextMenuListener);
             },
 
-            handleScreenshotClick(action, event) {
+            handleScreenshotClick(event, action) {
                 const button = event.currentTarget;
                 button.classList.add('clicked');
                 setTimeout(() => button.classList.remove('clicked'), 500);
@@ -2068,8 +2079,6 @@
 
     // ——————————————————————————————————————————————————————————————————————————
     // SECTION 3: DOM HELPERS & CORE UI LOGIC
-    // This section contains helper functions that are used by various features,
-    // such as the live chat filters. It keeps the main feature definitions clean.
     // ——————————————————————————————————————————————————————————————————————————
     let appState = {};
 
@@ -2209,7 +2218,7 @@ function injectSettingsButton() {
 function buildSettingsPanel() {
     if (document.getElementById('ytkit-settings-panel')) return;
 
-    const categoryOrder = [ 'Header', 'Sidebar', 'Themes', 'Progress Bar Themes', 'General Content', 'Watch Page - Layout', 'Watch Page - Behavior', 'Watch Page - Other Elements', 'Watch Page - Live Chat', 'Watch Page - Action Buttons', 'Player Enhancements', 'Watch Page - Player Controls', 'Modules' ];
+    const categoryOrder = [ 'Header', 'Sidebar', 'Themes', 'Progress Bar Themes', 'General Content', 'Watch Page - Layout', 'Watch Page - Behavior', 'Watch Page - Other Elements', 'Watch Page - Live Chat', 'Watch Page - Action Buttons', 'Player', 'Watch Page - Player Controls', 'Modules' ];
     const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
     features.forEach(f => { if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f); });
 
@@ -2345,7 +2354,7 @@ function buildSettingsPanel() {
     const versionSpan = document.createElement('span');
     versionSpan.className = 'ytkit-version';
     versionSpan.title = 'Keyboard Shortcut: Ctrl+Alt+Y';
-    versionSpan.textContent = 'v5.6';
+    versionSpan.textContent = 'v5.8';
     footerLeft.appendChild(githubLink);
     footerLeft.appendChild(versionSpan);
 
