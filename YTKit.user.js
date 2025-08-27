@@ -1262,7 +1262,7 @@
             description: 'Replaces the native YouTube download button with a custom downloader using Cobalt.',
             group: 'Watch Page - Action Buttons',
             _styleElement: null,
-            _getFrontendUrl() { return `https://cobalt.tools/#`; },
+            _getFrontendUrl() { return `https://cobalt.meowing.de/#`; },
             _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
             _injectButton() {
                 if (!this._isWatchPage()) return;
