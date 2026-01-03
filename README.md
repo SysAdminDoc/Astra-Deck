@@ -9,7 +9,7 @@
 
 <p align="center">
   <strong>The ultimate userscript for taking control of your YouTube experience.</strong><br>
-  104+ customizable features • Modern settings UI • SponsorBlock integration • Ad blocking • And much more
+  104+ customizable features • SponsorBlock integration • Ad blocking • And much more
 </p>
 
 ---
@@ -20,40 +20,11 @@ YTKit is a comprehensive userscript that transforms YouTube into a cleaner, fast
 
 <img width="1128" height="805" alt="2026-01-03 06_56_06-_new 8 - Notepad++  Administrator" src="https://github.com/user-attachments/assets/15776005-b776-40b9-80a8-767cdff9f0c7" />
 
-
-### Key Highlights
-
-- 🎨 **Beautiful Settings Panel** - Modern glass-morphism UI with 12 organized categories
-- ⏭️ **SponsorBlock Integration** - Automatically skip sponsored segments with visual preview bar
-- 🚫 **Ad Blocking** - Multiple ad-blocking methods including network request interception
-- 🎬 **Shorts Removal** - Completely hide or redirect Shorts to the regular player
-- ⚡ **Performance Optimized** - CPU tamer and efficient DOM operations
-- 💾 **Import/Export Settings** - Backup and share your configuration
-- 🌙 **Theme Support** - Enhanced dark mode and Catppuccin Mocha theme
-
----
-
 ## 📦 Installation
-
-### Prerequisites
-
-You'll need a userscript manager extension:
-
-| Browser | Recommended Extension |
-|---------|----------------------|
-| Chrome | [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/) |
-| Firefox | [Violentmonkey](https://violentmonkey.github.io/) or [Greasemonkey](https://www.greasespot.net/) |
-| Edge | [Tampermonkey](https://www.tampermonkey.net/) |
-| Safari | [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) |
 
 ### Install YTKit
 
-1. Install a userscript manager from the table above
-2. **[Click here to install YTKit](https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js)** (or manually create a new script and paste the code)
-3. Visit YouTube and click the ⚙️ settings button (bottom-right corner)
-4. Configure your preferences and enjoy!
-
----
+**[Click here to install YTKit](https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js)**
 
 ## 🎛️ Features
 
