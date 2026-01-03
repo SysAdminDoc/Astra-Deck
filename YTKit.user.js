@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      6.0
+// @version      6.1
 // @description  Ultimate YouTube customization. Hide elements, control layout, and enhance your viewing experience with a premium UI.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -124,11 +124,18 @@
             logoToSubscriptions: true,
             widenSearchBar: true,
             hideSidebar: true,
+            hideNotificationButton: false,
+            hideNotificationBadge: false,
+            squareSearchBar: false,
             // Appearance
             nativeDarkMode: true,
             betterDarkMode: true,
             catppuccinMocha: false,
             squarify: false,
+            squareAvatars: false,
+            noAmbientMode: false,
+            noFrostedGlass: false,
+            compactLayout: false,
             // Content
             removeAllShorts: true,
             redirectShorts: true,
@@ -138,6 +145,10 @@
             fiveVideosPerRow: true,
             hidePaidContentOverlay: true,
             redirectToVideosTab: true,
+            hidePlayables: false,
+            hideMembersOnly: false,
+            hideNewsHome: false,
+            hidePlaylistsHome: false,
             // Video Player Layout
             fitPlayerToWindow: true,
             hideRelatedVideos: true,
@@ -145,10 +156,15 @@
             expandVideoWidth: true,
             floatingLogoOnWatch: true,
             hideDescriptionRow: false,
+            autoTheaterMode: false,
+            persistentProgressBar: false,
             // Playback
             preventAutoplay: false,
             autoExpandDescription: false,
             sortCommentsNewestFirst: false,
+            autoOpenChapters: false,
+            autoOpenTranscript: false,
+            chronologicalNotifications: false,
             // SponsorBlock
             skipSponsors: true,
             hideSponsorBlockLabels: true,
@@ -167,6 +183,9 @@
             hidePaidPromotionWatch: true,
             hideVideoEndCards: true,
             hideVideoEndScreen: true,
+            hideInfoPanel: false,
+            hideFundraiser: false,
+            hideLatestPosts: false,
             // Live Chat
             hideLiveChatHeader: true,
             hideChatMenu: true,
@@ -210,6 +229,11 @@
             // Advanced
             enableAdblock: false,
             enableCPU_Tamer: false,
+            disableMiniPlayer: false,
+            channelRSSButton: false,
+            enableAdBlockPro: false,
+            downloadProvider: 'cobalt',
+            hideCollaborations: false,
         },
         async load() {
             let savedSettings = await GM_getValue('ytSuiteSettings', {});
@@ -323,6 +347,46 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
+        {
+            id: 'hideNotificationButton',
+            name: 'Hide Notification Bell',
+            description: 'Remove the notification bell icon from the header',
+            group: 'Interface',
+            icon: 'bell-off',
+            _styleElement: null,
+            init() { this._styleElement = injectStyle('ytd-masthead ytd-notification-topbar-button-renderer', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideNotificationBadge',
+            name: 'Hide Notification Badge',
+            description: 'Hide the red notification count badge',
+            group: 'Interface',
+            icon: 'bell-minus',
+            _styleElement: null,
+            init() {
+                const css = `ytd-notification-topbar-button-renderer .yt-spec-icon-badge-shape__badge { display: none !important; }`;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'squareSearchBar',
+            name: 'Square Search Bar',
+            description: 'Remove rounded corners from the search bar',
+            group: 'Interface',
+            icon: 'search',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-searchbox #container.ytd-searchbox,
+                    ytd-searchbox #container.ytd-searchbox input#search,
+                    #search-icon-legacy { border-radius: 0 !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
 
         // ─── Appearance ───
         {
@@ -392,6 +456,74 @@
             _styleElement: null,
             init() {
                 const css = `* { border-radius: 0 !important; }`;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'squareAvatars',
+            name: 'Square Avatars',
+            description: 'Make channel avatars square instead of round',
+            group: 'Appearance',
+            icon: 'user-square',
+            _styleElement: null,
+            init() {
+                const css = `
+                    yt-img-shadow, #avatar-link, #author-thumbnail,
+                    ytd-channel-avatar-editor img, yt-img-shadow img,
+                    .yt-spec-avatar-shape--circle { border-radius: 0 !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'noAmbientMode',
+            name: 'Disable Ambient Mode',
+            description: 'Turn off the glowing background effect that matches video colors',
+            group: 'Appearance',
+            icon: 'sun-dim',
+            _styleElement: null,
+            init() {
+                const css = `
+                    #cinematics, #cinematics-container,
+                    .ytp-autonav-endscreen-upnext-cinematics,
+                    #player-container.ytd-watch-flexy::before { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'noFrostedGlass',
+            name: 'Disable Frosted Glass',
+            description: 'Remove blur effects from UI elements',
+            group: 'Appearance',
+            icon: 'droplet-off',
+            _styleElement: null,
+            init() {
+                const css = `
+                    * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'compactLayout',
+            name: 'Compact Layout',
+            description: 'Reduce spacing and padding for a denser interface',
+            group: 'Appearance',
+            icon: 'minimize',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-rich-grid-renderer { --ytd-rich-grid-row-padding: 0 !important; }
+                    ytd-rich-item-renderer { margin-bottom: 8px !important; }
+                    #contents.ytd-rich-grid-renderer { padding-top: 8px !important; }
+                    ytd-two-column-browse-results-renderer { padding: 8px !important; }
+                    ytd-watch-flexy[flexy] #primary.ytd-watch-flexy { padding-top: 0 !important; }
+                `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
@@ -545,6 +677,68 @@
                 removeNavigateRule('channelRedirectorNav');
             }
         },
+        {
+            id: 'hidePlayables',
+            name: 'Hide Playables',
+            description: 'Hide YouTube Playables gaming content from feeds',
+            group: 'Content',
+            icon: 'gamepad',
+            _styleElement: null,
+            init() {
+                const css = `ytd-rich-section-renderer:has([is-playables]) { display: none !important; }`;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideMembersOnly',
+            name: 'Hide Members Only',
+            description: 'Hide members-only content from channels',
+            group: 'Content',
+            icon: 'lock',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-badge-supported-renderer:has([aria-label*="Members only"]),
+                    ytd-rich-item-renderer:has([aria-label*="Members only"]),
+                    ytd-video-renderer:has([aria-label*="Members only"]) { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideNewsHome',
+            name: 'Hide News Section',
+            description: 'Hide news sections from the homepage',
+            group: 'Content',
+            icon: 'newspaper',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-rich-section-renderer:has([is-news]),
+                    ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[type="news"]) { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hidePlaylistsHome',
+            name: 'Hide Playlist Shelves',
+            description: 'Hide playlist sections from the homepage',
+            group: 'Content',
+            icon: 'list-x',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-playlist]),
+                    ytd-rich-section-renderer:has([is-mixes]) { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
 
         // ─── Video Player ───
         {
@@ -681,6 +875,43 @@
             init() { this._styleElement = injectStyle('ytd-watch-metadata #bottom-row', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
+        {
+            id: 'autoTheaterMode',
+            name: 'Auto Theater Mode',
+            description: 'Automatically enter theater mode on video pages',
+            group: 'Video Player',
+            icon: 'tv',
+            init() {
+                const enableTheater = () => {
+                    if (!window.location.pathname.startsWith('/watch')) return;
+                    setTimeout(() => {
+                        const watchFlexy = document.querySelector('ytd-watch-flexy');
+                        if (watchFlexy && !watchFlexy.hasAttribute('theater')) {
+                            document.querySelector('button.ytp-size-button')?.click();
+                        }
+                    }, 300);
+                };
+                addNavigateRule(this.id, enableTheater);
+            },
+            destroy() { removeNavigateRule(this.id); }
+        },
+        {
+            id: 'persistentProgressBar',
+            name: 'Always Show Progress Bar',
+            description: 'Keep the video progress bar visible at all times',
+            group: 'Video Player',
+            icon: 'align-horizontal-justify-center',
+            _styleElement: null,
+            init() {
+                const css = `
+                    .ytp-chrome-bottom { opacity: 1 !important; }
+                    .ytp-autohide .ytp-chrome-bottom { opacity: 1 !important; visibility: visible !important; }
+                    .ytp-autohide .ytp-progress-bar-container { bottom: 0 !important; opacity: 1 !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
 
         // ─── Playback ───
         {
@@ -758,156 +989,282 @@
             },
             destroy() { removeNavigateRule(this.id); }
         },
+        {
+            id: 'autoOpenChapters',
+            name: 'Auto-Open Chapters',
+            description: 'Automatically open the chapters panel when available',
+            group: 'Playback',
+            icon: 'list-tree',
+            init() {
+                const openChapters = () => {
+                    if (!window.location.pathname.startsWith('/watch')) return;
+                    setTimeout(() => {
+                        const chaptersButton = document.querySelector('ytd-video-description-chapters-section-renderer button');
+                        if (chaptersButton && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]')) {
+                            chaptersButton.click();
+                        }
+                    }, 1000);
+                };
+                addNavigateRule(this.id, openChapters);
+            },
+            destroy() { removeNavigateRule(this.id); }
+        },
+        {
+            id: 'autoOpenTranscript',
+            name: 'Auto-Open Transcript',
+            description: 'Automatically open the transcript panel when available',
+            group: 'Playback',
+            icon: 'scroll-text',
+            init() {
+                const openTranscript = () => {
+                    if (!window.location.pathname.startsWith('/watch')) return;
+                    setTimeout(() => {
+                        const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
+                        if (moreBtn && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]')) {
+                            moreBtn.click();
+                        }
+                    }, 1200);
+                };
+                addNavigateRule(this.id, openTranscript);
+            },
+            destroy() { removeNavigateRule(this.id); }
+        },
+        {
+            id: 'chronologicalNotifications',
+            name: 'Sort Notifications',
+            description: 'Sort notifications chronologically (newest first)',
+            group: 'Playback',
+            icon: 'bell-ring',
+            _observer: null,
+            init() {
+                const sortNotifications = () => {
+                    const container = document.querySelector('ytd-notification-renderer');
+                    if (!container) return;
+                    const parent = container.parentElement;
+                    if (!parent || parent.dataset.sorted) return;
+                    const items = Array.from(parent.querySelectorAll('ytd-notification-renderer'));
+                    if (items.length < 2) return;
+                    items.sort((a, b) => {
+                        const timeA = a.querySelector('#message')?.textContent || '';
+                        const timeB = b.querySelector('#message')?.textContent || '';
+                        return timeB.localeCompare(timeA);
+                    });
+                    items.forEach(item => parent.appendChild(item));
+                    parent.dataset.sorted = 'true';
+                };
+                this._observer = new MutationObserver(sortNotifications);
+                const popup = document.querySelector('ytd-popup-container');
+                if (popup) this._observer.observe(popup, { childList: true, subtree: true });
+            },
+            destroy() { this._observer?.disconnect(); }
+        },
 
-        // ─── SponsorBlock ───
+        // ─── SponsorBlock (Lite Implementation) ───
         {
             id: 'skipSponsors',
             name: 'Skip Sponsors',
-            description: 'Automatically skip sponsored segments using SponsorBlock',
+            description: 'Automatically skip sponsored segments using SponsorBlock API',
             group: 'SponsorBlock',
             icon: 'skip-forward',
             isParent: true,
-            _video: null,
-            _videoID: null,
-            _muteEndTime: 0,
-            _skipSegments: new Map(),
-            _muteSegments: new Map(),
-            _poi_listener: null,
-            _timeUpdateListener: null,
+            _state: {
+                videoID: null,
+                segments: [],
+                skippableSegments: [],
+                lastSkippedUUID: null,
+                currentSegmentIndex: 0,
+                video: null,
+                rafSkipId: null,
+                skipScheduleTimer: null,
+                previewBarContainer: null,
+                videoDuration: 0
+            },
+            _categories: ["sponsor", "selfpromo", "exclusive_access", "interaction", "outro", "music_offtopic"],
+            _categoryColors: {
+                sponsor: "#00d400",
+                selfpromo: "#ffff00",
+                exclusive_access: "#008a5c",
+                interaction: "#cc00ff",
+                outro: "#0202ed",
+                music_offtopic: "#ff9900"
+            },
+            _styleElement: null,
 
-            init() {
-                this._timeUpdateListener = this.skipOrMute.bind(this);
-                document.addEventListener("yt-navigate-start", this.reset.bind(this));
-                document.addEventListener("yt-navigate-finish", this.setup.bind(this));
-                this.setup();
+            async _sha256(message) {
+                const msgBuffer = new TextEncoder().encode(message);
+                const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
             },
-            destroy() {
-                document.removeEventListener("yt-navigate-start", this.reset.bind(this));
-                document.removeEventListener("yt-navigate-finish", this.setup.bind(this));
-                if (this._video && this._timeUpdateListener) {
-                    this._video.removeEventListener("timeupdate", this._timeUpdateListener);
-                }
-                document.querySelectorAll('[id^="sbjs-label-"]').forEach(e => e.remove());
-                this.reset();
+
+            async _getHashPrefix(videoID) {
+                const hash = await this._sha256(videoID);
+                return hash.slice(0, 4);
             },
-            setup() {
-                const getVideoID = () => new URL(window.location.href).searchParams.get("v");
-                if (this._videoID === getVideoID()) return;
-                if (document.querySelector("#previewbar")) return;
-                this.reset();
-                this._video = document.querySelector("video");
-                this._videoID = getVideoID();
-                this.fetchSegments(this._videoID);
-                if (!this._video) return;
-                this._video.addEventListener("timeupdate", this._timeUpdateListener);
+
+            _getVideoID() {
+                const url = new URL(window.location.href);
+                const vParam = url.searchParams.get("v");
+                if (vParam && /^[a-zA-Z0-9_-]{11}$/.test(vParam)) return vParam;
+                const shortsMatch = url.pathname.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+                if (shortsMatch) return shortsMatch[1];
+                return null;
             },
-            reset() {
-                if (this._video && this._timeUpdateListener) this._video.removeEventListener("timeupdate", this._timeUpdateListener);
-                this._video = null;
-                this._videoID = null;
-                this._muteEndTime = 0;
-                this._skipSegments = new Map();
-                this._muteSegments = new Map();
-                document.querySelectorAll('[id^="sbjs-label-"]').forEach(e => e.remove());
-                if (this._poi_listener) document.removeEventListener("keydown", this._poi_listener);
-            },
-            fetchSegments(videoID) {
-                const categories = ["sponsor", "selfpromo", "interaction", "intro", "outro", "preview", "music_offtopic", "exclusive_access", "poi_highlight"];
-                const actionTypes = ["skip", "mute", "full", "poi"];
-                const url = `https://sponsor.ajay.app/api/skipSegments?videoID=${videoID}&categories=${JSON.stringify(categories)}&actionTypes=${JSON.stringify(actionTypes)}`;
-                GM.xmlHttpRequest({
-                    method: 'GET',
-                    url: url,
-                    onload: (response) => {
-                        if (response.status !== 200) return;
-                        const data = JSON.parse(response.responseText);
-                        const convertSegment = s => [s.segment[0], { end: s.segment[1], uuid: s.UUID }];
-                        data.forEach(s => {
-                            if (s.actionType === "skip") this._skipSegments.set(...convertSegment(s));
-                            else if (s.actionType === "mute") this._muteSegments.set(...convertSegment(s));
-                            else if (s.actionType === "full") this.createVideoLabel(s);
-                            else if (s.actionType === "poi") this.createPOILabel(s);
+
+            async _fetchSegments(videoID) {
+                try {
+                    const hashPrefix = await this._getHashPrefix(videoID);
+                    const params = new URLSearchParams({
+                        categories: JSON.stringify(this._categories),
+                        actionTypes: JSON.stringify(["skip", "full"])
+                    });
+                    return new Promise((resolve) => {
+                        GM.xmlHttpRequest({
+                            method: "GET",
+                            url: `https://sponsor.ajay.app/api/skipSegments/${hashPrefix}?${params}`,
+                            headers: { Accept: "application/json" },
+                            onload: (response) => {
+                                if (response.status === 200) {
+                                    try {
+                                        const data = JSON.parse(response.responseText);
+                                        const videoData = data.find(v => v.videoID === videoID);
+                                        const segs = videoData?.segments || [];
+                                        segs.sort((a, b) => a.segment[0] - b.segment[0]);
+                                        resolve(segs);
+                                    } catch { resolve([]); }
+                                } else { resolve([]); }
+                            },
+                            onerror: () => resolve([])
                         });
+                    });
+                } catch { return []; }
+            },
+
+            _computeSkippableSegments() {
+                this._state.skippableSegments = this._state.segments.filter(s => s.actionType !== "full");
+                this._state.currentSegmentIndex = 0;
+            },
+
+            _skipToTime(targetTime) {
+                if (!this._state.video || targetTime === undefined) return false;
+                try {
+                    this._state.video.currentTime = targetTime;
+                    return true;
+                } catch (e) { return false; }
+            },
+
+            _startRAFSkipLoop() {
+                if (this._state.rafSkipId) cancelAnimationFrame(this._state.rafSkipId);
+                const SKIP_BUFFER = 0.003;
+                const checkAndSkip = () => {
+                    if (!this._state.video || !this._state.skippableSegments.length) {
+                        this._state.rafSkipId = null;
+                        return;
                     }
-                });
-            },
-            trackSkip(uuid) {
-                GM.xmlHttpRequest({
-                    method: 'POST',
-                    url: `https://sponsor.ajay.app/api/viewedVideoSponsorTime?UUID=${uuid}`
-                });
-            },
-            skipOrMute() {
-                if (!this._video) return;
-                const currentTime = this._video.currentTime;
-                if (this._video.muted && currentTime >= this._muteEndTime) {
-                    this._video.muted = false;
-                    this._muteEndTime = 0;
-                }
-                const skipEnd = this.findEndTime(currentTime, this._skipSegments);
-                if (skipEnd) this._video.currentTime = skipEnd;
-                const muteEnd = this.findEndTime(currentTime, this._muteSegments);
-                if (muteEnd) {
-                    this._video.muted = true;
-                    this._muteEndTime = muteEnd;
-                }
-            },
-            findEndTime(now, map) {
-                const skipThreshold = [0.2, 1];
-                let endTime;
-                for (const startTime of map.keys()) {
-                    if (now + skipThreshold[0] >= startTime && now - startTime <= skipThreshold[1]) {
-                        const segment = map.get(startTime);
-                        endTime = segment.end;
-                        this.trackSkip(segment.uuid);
-                        map.delete(startTime);
-                        for (const overlapStart of map.keys()) {
-                            if (endTime >= overlapStart && overlapStart >= now) {
-                                const overSegment = map.get(overlapStart);
-                                endTime = overSegment.end;
-                                this.trackSkip(overSegment.uuid);
-                                map.delete(overlapStart);
+                    if (!this._state.video.paused) {
+                        const currentTime = this._state.video.currentTime;
+                        for (const seg of this._state.skippableSegments) {
+                            const [startTime, endTime] = seg.segment;
+                            if (currentTime >= startTime - SKIP_BUFFER && currentTime < endTime - SKIP_BUFFER && this._state.lastSkippedUUID !== seg.UUID) {
+                                this._state.lastSkippedUUID = seg.UUID;
+                                console.log(`[YTKit SponsorBlock] Skipping ${seg.category} segment`);
+                                this._skipToTime(endTime);
+                                break;
                             }
                         }
-                        return endTime;
                     }
-                }
-                return endTime;
-            },
-            createPOILabel(poiLabel) {
-                this.createVideoLabel(poiLabel, "poi");
-                const highlightKey = "Enter";
-                this._poi_listener = e => {
-                    if (e.key === highlightKey) {
-                        this._video.currentTime = poiLabel.segment[1];
-                        this.trackSkip(poiLabel.UUID);
-                        const label = document.querySelector("#sbjs-label-poi");
-                        if (label) label.style.display = "none";
-                        document.removeEventListener("keydown", this._poi_listener);
-                        this._poi_listener = null;
-                    }
+                    this._state.rafSkipId = requestAnimationFrame(checkAndSkip);
                 };
-                document.addEventListener("keydown", this._poi_listener);
+                this._state.rafSkipId = requestAnimationFrame(checkAndSkip);
             },
-            createVideoLabel(videoLabel, type = "full") {
+
+            _stopRAFSkipLoop() {
+                if (this._state.rafSkipId) {
+                    cancelAnimationFrame(this._state.rafSkipId);
+                    this._state.rafSkipId = null;
+                }
+            },
+
+            _createPreviewBar() {
+                const container = document.createElement("ul");
+                container.id = "ytkit-sb-previewbar";
+                container.style.cssText = "position:absolute;width:100%;height:100%;padding:0;margin:0;overflow:visible;pointer-events:none;z-index:42;list-style:none;transform:scaleY(0.6);transition:transform 0.1s cubic-bezier(0, 0, 0.2, 1);";
+                return container;
+            },
+
+            _updatePreviewBar() {
+                const duration = this._state.video?.duration || 0;
+                if (!duration || duration <= 0) return;
+                this._state.videoDuration = duration;
+                if (!this._state.previewBarContainer) {
+                    this._state.previewBarContainer = this._createPreviewBar();
+                }
+                const progressBar = document.querySelector(".ytp-progress-bar");
+                if (progressBar && !progressBar.contains(this._state.previewBarContainer)) {
+                    progressBar.appendChild(this._state.previewBarContainer);
+                }
+                if (!progressBar) return;
+                this._state.previewBarContainer.innerHTML = "";
+                const previewSegments = this._state.segments.filter(s => s.actionType !== "full");
+                for (const segment of previewSegments) {
+                    const bar = document.createElement("li");
+                    bar.className = "ytkit-sb-segment";
+                    const startPercent = (segment.segment[0] / duration) * 100;
+                    const endPercent = (segment.segment[1] / duration) * 100;
+                    bar.style.cssText = `position:absolute;height:100%;min-width:1px;display:inline-block;opacity:0.7;left:${startPercent}%;right:${100 - endPercent}%;background-color:${this._categoryColors[segment.category] || "#888"};`;
+                    bar.title = segment.category.replace(/_/g, " ");
+                    this._state.previewBarContainer.appendChild(bar);
+                }
+            },
+
+            _removePreviewBar() {
+                if (this._state.previewBarContainer) {
+                    this._state.previewBarContainer.remove();
+                    this._state.previewBarContainer = null;
+                }
+            },
+
+            _reset() {
+                this._state.videoID = null;
+                this._state.segments = [];
+                this._state.skippableSegments = [];
+                this._state.lastSkippedUUID = null;
+                this._state.currentSegmentIndex = 0;
+                this._state.videoDuration = 0;
+                this._stopRAFSkipLoop();
+                this._removePreviewBar();
+                document.querySelectorAll('[id^="ytkit-sb-label-"]').forEach(e => e.remove());
+            },
+
+            async _loadSegmentsAndSetup() {
+                if (!this._state.videoID) return;
+                try {
+                    this._state.segments = await this._fetchSegments(this._state.videoID);
+                    if (this._state.segments.length > 0) {
+                        console.log(`[YTKit SponsorBlock] Found ${this._state.segments.length} segments`);
+                    }
+                    this._computeSkippableSegments();
+                    this._updatePreviewBar();
+                    // Create full video labels
+                    this._state.segments.filter(s => s.actionType === "full").forEach(s => this._createVideoLabel(s));
+                    if (this._state.video && !this._state.video.paused) {
+                        this._startRAFSkipLoop();
+                    }
+                } catch (error) {
+                    console.error("[YTKit SponsorBlock] Failed to load segments:", error);
+                }
+            },
+
+            _createVideoLabel(videoLabel) {
                 const check = () => {
                     const title = document.querySelector("#title h1, h1.title.ytd-video-primary-info-renderer");
                     if (title) {
-                        const highlightKey = "Enter";
                         const category = videoLabel.category;
-                        const fvString = cat => `The entire video is ${cat}`;
-                        const styles = {
-                            sponsor: ["#0d0", "#111", fvString("sponsor")],
-                            selfpromo: ["#ff0", "#111", fvString("selfpromo")],
-                            exclusive_access: ["#085", "#fff", "Showcases free/subsidized access"],
-                            poi_highlight: ["#f18", "#fff", `Press ${highlightKey} to skip to highlight`],
-                        };
-                        const style = styles[category] || ["#ccc", "#111", fvString(category)];
                         const label = document.createElement("span");
-                        label.title = style[2];
+                        label.id = `ytkit-sb-label-${category}`;
+                        label.title = `The entire video is ${category}`;
                         label.innerText = category;
-                        label.id = `sbjs-label-${type}`;
-                        label.style = `color: ${style[1]}; background-color: ${style[0]}; display: flex; margin: 0 5px; padding: 2px 6px; font-size: 12px; font-weight: bold; border-radius: 4px;`;
+                        label.style.cssText = `color:#111;background-color:${this._categoryColors[category] || "#ccc"};display:flex;margin:0 5px;padding:2px 6px;font-size:12px;font-weight:bold;border-radius:4px;`;
                         title.style.display = "flex";
                         title.prepend(label);
                     } else {
@@ -915,6 +1272,53 @@
                     }
                 };
                 check();
+            },
+
+            _handleVideoChange() {
+                const newVideoID = this._getVideoID();
+                if (!newVideoID || newVideoID === this._state.videoID) return;
+                console.log(`[YTKit SponsorBlock] Video changed to: ${newVideoID}`);
+                this._reset();
+                this._state.videoID = newVideoID;
+                let attempts = 0;
+                const checkVideo = setInterval(() => {
+                    attempts++;
+                    const video = document.querySelector("video");
+                    if (video) {
+                        clearInterval(checkVideo);
+                        this._state.video = video;
+                        video.addEventListener("play", () => this._startRAFSkipLoop());
+                        video.addEventListener("pause", () => this._stopRAFSkipLoop());
+                        video.addEventListener("seeked", () => { this._state.lastSkippedUUID = null; });
+                        this._loadSegmentsAndSetup();
+                    } else if (attempts >= 50) {
+                        clearInterval(checkVideo);
+                    }
+                }, 100);
+            },
+
+            init() {
+                this._styleElement = document.createElement("style");
+                this._styleElement.textContent = `
+                    .ytp-progress-bar:hover #ytkit-sb-previewbar { transform: scaleY(1); }
+                    .ytp-big-mode #ytkit-sb-previewbar { transform: scaleY(0.625); }
+                    .ytp-big-mode .ytp-progress-bar:hover #ytkit-sb-previewbar { transform: scaleY(1); }
+                    .ytkit-sb-segment:hover { opacity: 1 !important; }
+                `;
+                document.head.appendChild(this._styleElement);
+                this._navHandler = () => this._handleVideoChange();
+                this._resetHandler = () => { this._removePreviewBar(); this._stopRAFSkipLoop(); };
+                document.addEventListener("yt-navigate-finish", this._navHandler);
+                document.addEventListener("yt-navigate-start", this._resetHandler);
+                this._handleVideoChange();
+                setTimeout(() => this._handleVideoChange(), 500);
+            },
+
+            destroy() {
+                document.removeEventListener("yt-navigate-finish", this._navHandler);
+                document.removeEventListener("yt-navigate-start", this._resetHandler);
+                this._reset();
+                this._styleElement?.remove();
             }
         },
         {
@@ -926,7 +1330,7 @@
             isSubFeature: true,
             parentId: 'skipSponsors',
             _styleElement: null,
-            init() { this._styleElement = injectStyle('[id^="sbjs-label-"]', this.id); },
+            init() { this._styleElement = injectStyle('[id^="ytkit-sb-label-"]', this.id); },
             destroy() { this._styleElement?.remove(); }
         },
 
@@ -1049,7 +1453,13 @@
             group: 'Clutter',
             icon: 'pin-off',
             _styleElement: null,
-            init() { this._styleElement = injectStyle('ytd-comment-thread-renderer:has(#pinned-comment-badge)', this.id); },
+            init() {
+                const css = `
+                    ytd-comment-thread-renderer:has(ytd-pinned-comment-badge-renderer) { display: none !important; }
+                    ytd-pinned-comment-badge-renderer { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -1100,6 +1510,57 @@
             icon: 'layout-grid',
             _styleElement: null,
             init() { this._styleElement = injectStyle('.ytp-endscreen-content', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideInfoPanel',
+            name: 'Hide Info Panels',
+            description: 'Remove info cards and panels below videos',
+            group: 'Clutter',
+            icon: 'info',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-info-panel-content-renderer,
+                    ytd-info-panel-container-renderer,
+                    ytd-clarification-renderer { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideFundraiser',
+            name: 'Hide Fundraisers',
+            description: 'Remove fundraiser and donation badges',
+            group: 'Clutter',
+            icon: 'heart-off',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-donation-shelf-renderer,
+                    ytd-button-renderer[button-next]:has([aria-label*="Donate"]),
+                    .ytp-donation-shelf { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideLatestPosts',
+            name: 'Hide Latest Posts',
+            description: 'Remove community posts and updates sections',
+            group: 'Clutter',
+            icon: 'message-square-off',
+            _styleElement: null,
+            init() {
+                const css = `
+                    ytd-post-renderer,
+                    ytd-backstage-post-thread-renderer,
+                    ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[type="posts"]) { display: none !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
             destroy() { this._styleElement?.remove(); }
         },
 
@@ -1302,18 +1763,32 @@
         { id: 'hideSaveButton', name: 'Hide Save Button', description: 'Remove the save to playlist button', group: 'Action Buttons', icon: 'bookmark', _styleElement: null, init() { this._styleElement = injectStyle('ytd-watch-metadata button-view-model:has(button[aria-label="Save to playlist"]), #top-level-buttons-computed ytd-button-renderer:has(button[aria-label="Save"])', this.id); }, destroy() { this._styleElement?.remove(); }},
         {
             id: 'replaceWithCobaltDownloader',
-            name: 'Cobalt Download Button',
-            description: 'Add a download button using Cobalt.tools',
+            name: 'Download Button',
+            description: 'Add a download button using your chosen provider',
             group: 'Action Buttons',
             icon: 'download',
             _styleElement: null,
-            _getFrontendUrl() { return `https://cobalt.meowing.de/#`; },
+            _providers: {
+                'cobalt': 'https://cobalt.tools/#',
+                'y2mate': 'https://www.y2mate.com/youtube/',
+                'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
+                'ssyoutube': 'https://ssyoutube.com/watch?v='
+            },
+            _getDownloadUrl(videoUrl) {
+                const provider = appState.settings.downloadProvider || 'cobalt';
+                const baseUrl = this._providers[provider] || this._providers['cobalt'];
+                if (provider === 'ssyoutube') {
+                    const videoId = new URL(videoUrl).searchParams.get('v');
+                    return baseUrl + videoId;
+                }
+                return baseUrl + encodeURIComponent(videoUrl);
+            },
             _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
             _injectButton() {
                 if (!this._isWatchPage()) return;
                 waitForElement('#actions-inner #end-buttons, #top-level-buttons-computed', (parent) => {
-                    if (document.querySelector('button[id^="cobaltBtn"]')) return;
-                    const id = 'cobaltBtn' + Math.random().toString(36).substr(2, 5);
+                    if (document.querySelector('button[id^="downloadBtn"]')) return;
+                    const id = 'downloadBtn' + Math.random().toString(36).substr(2, 5);
                     const btn = document.createElement('button');
                     btn.id = id;
                     btn.textContent = 'Download';
@@ -1323,19 +1798,19 @@
                     btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.color = '#ff5722'; };
                     btn.addEventListener('click', () => {
                         const videoUrl = window.location.href;
-                        const cobaltUrl = this._getFrontendUrl() + encodeURIComponent(videoUrl);
-                        window.open(cobaltUrl, '_blank');
+                        const downloadUrl = this._getDownloadUrl(videoUrl);
+                        window.open(downloadUrl, '_blank');
                     });
                     parent.appendChild(btn);
                 });
             },
             init() {
                 this._styleElement = injectStyle('ytd-download-button-renderer', 'hideNativeDownload');
-                addNavigateRule('cobaltDownloader', this._injectButton.bind(this));
+                addNavigateRule('downloadButton', this._injectButton.bind(this));
             },
             destroy() {
-                removeNavigateRule('cobaltDownloader');
-                document.querySelector('button[id^="cobaltBtn"]')?.remove();
+                removeNavigateRule('downloadButton');
+                document.querySelector('button[id^="downloadBtn"]')?.remove();
                 this._styleElement?.remove();
             }
         },
@@ -1475,6 +1950,272 @@
                 if (this._originals.clearTimeout) window.clearTimeout = this._originals.clearTimeout;
                 if (this._originals.clearInterval) window.clearInterval = this._originals.clearInterval;
                 window.yt_cpu_tamer_by_animationframe = false;
+            }
+        },
+        {
+            id: 'disableMiniPlayer',
+            name: 'Disable Mini Player',
+            description: 'Prevent the mini player from appearing when navigating away',
+            group: 'Advanced',
+            icon: 'picture-in-picture-2',
+            _styleElement: null,
+            init() {
+                const css = `ytd-miniplayer { display: none !important; }`;
+                this._styleElement = injectStyle(css, this.id, true);
+                const closeMiniplayer = () => {
+                    document.querySelector('.ytp-miniplayer-close-button')?.click();
+                };
+                addNavigateRule(this.id, closeMiniplayer);
+            },
+            destroy() {
+                this._styleElement?.remove();
+                removeNavigateRule(this.id);
+            }
+        },
+        {
+            id: 'channelRSSButton',
+            name: 'Channel RSS Button',
+            description: 'Add an RSS feed button to channel pages',
+            group: 'Advanced',
+            icon: 'rss',
+            _buttonElement: null,
+            init() {
+                const addRSSButton = () => {
+                    if (this._buttonElement) return;
+                    const channelMatch = window.location.pathname.match(/^\/@([^\/]+)/);
+                    if (!channelMatch) return;
+                    const container = document.querySelector('#channel-header-container #inner-header-container #buttons');
+                    if (!container || container.querySelector('.ytkit-rss-btn')) return;
+                    const btn = document.createElement('a');
+                    btn.className = 'ytkit-rss-btn';
+                    btn.target = '_blank';
+                    btn.title = 'RSS Feed';
+                    btn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-right:8px;border-radius:50%;background:rgba(255,255,255,0.1);cursor:pointer;';
+                    btn.textContent = '📡';
+                    const channelId = document.querySelector('meta[itemprop="identifier"]')?.content;
+                    if (channelId) {
+                        btn.href = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+                    }
+                    container.prepend(btn);
+                    this._buttonElement = btn;
+                };
+                addNavigateRule(this.id, addRSSButton);
+            },
+            destroy() {
+                this._buttonElement?.remove();
+                this._buttonElement = null;
+                removeNavigateRule(this.id);
+            }
+        },
+        {
+            id: 'enableAdBlockPro',
+            name: 'Ad Blocker Pro',
+            description: 'Block YouTube ads, skip video ads, and remove ad overlays',
+            group: 'Advanced',
+            icon: 'shield-check',
+            _observer: null,
+            _originalFetch: null,
+            _originalXhrOpen: null,
+            _blockedPatterns: ['doubleclick.net', 'googlesyndication', 'googleads', 'adsystem', 'adservice', 'pagead'],
+
+            _removeAds() {
+                const selectors = [
+                    '.ytp-ad-module', '.ytp-ad-overlay-container', '.ytp-ad-player-overlay',
+                    '.ytp-ad-text-overlay', 'ytd-display-ad-renderer', 'ytd-promoted-sparkles-web-renderer',
+                    'ytd-video-masthead-ad-v3-renderer', '#player-ads', '#masthead-ad',
+                    'ytd-ad-slot-renderer', 'ytd-in-feed-ad-layout-renderer', 'ytd-banner-promo-renderer'
+                ];
+                selectors.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => el.remove());
+                });
+            },
+
+            _handleVideoAds() {
+                const video = document.querySelector('video');
+                if (!video) return;
+                const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
+                if (skipBtn) skipBtn.click();
+                const adShowing = document.querySelector('.ad-showing');
+                if (adShowing && video.duration && video.duration < 60 && video.currentTime < video.duration) {
+                    video.currentTime = video.duration;
+                    video.muted = true;
+                } else if (!adShowing) {
+                    video.muted = false;
+                }
+            },
+
+            _hideWarnings() {
+                document.querySelectorAll('tp-yt-paper-dialog, ytd-popup-container yt-confirm-dialog-renderer').forEach(d => {
+                    if (d.innerText.toLowerCase().includes('ad blocker')) {
+                        d.remove();
+                    }
+                });
+            },
+
+            init() {
+                // Block ad-related network requests
+                this._originalFetch = window.fetch;
+                window.fetch = (...args) => {
+                    const url = args[0]?.toString() || '';
+                    if (this._blockedPatterns.some(p => url.includes(p))) {
+                        return new Promise(() => {});
+                    }
+                    return this._originalFetch.apply(window, args);
+                };
+
+                this._originalXhrOpen = XMLHttpRequest.prototype.open;
+                const patterns = this._blockedPatterns;
+                XMLHttpRequest.prototype.open = function(method, url) {
+                    if (patterns.some(p => url.includes(p))) return;
+                    return XMLHttpRequest.prototype._ytkit_originalOpen.apply(this, arguments);
+                };
+                XMLHttpRequest.prototype._ytkit_originalOpen = this._originalXhrOpen;
+
+                // Observe DOM changes
+                this._observer = new MutationObserver(() => {
+                    this._removeAds();
+                    this._handleVideoAds();
+                    this._hideWarnings();
+                });
+                this._observer.observe(document.documentElement, { childList: true, subtree: true });
+
+                // Initial cleanup
+                this._removeAds();
+                this._handleVideoAds();
+                this._hideWarnings();
+            },
+
+            destroy() {
+                if (this._originalFetch) window.fetch = this._originalFetch;
+                if (this._originalXhrOpen) XMLHttpRequest.prototype.open = this._originalXhrOpen;
+                this._observer?.disconnect();
+            }
+        },
+        {
+            id: 'downloadProvider',
+            name: 'Download Provider',
+            description: 'Choose which service to use for video downloads',
+            group: 'Advanced',
+            icon: 'download-cloud',
+            type: 'select',
+            options: {
+                'cobalt': 'Cobalt (cobalt.tools)',
+                'y2mate': 'Y2Mate',
+                'savefrom': 'SaveFrom.net',
+                'ssyoutube': 'SSYouTube'
+            },
+            _providers: {
+                'cobalt': 'https://cobalt.tools/#',
+                'y2mate': 'https://www.y2mate.com/youtube/',
+                'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
+                'ssyoutube': 'https://ssyoutube.com/watch?v='
+            },
+            init() {
+                // This is a config-only feature, the download button uses this setting
+            },
+            destroy() {}
+        },
+        {
+            id: 'hideCollaborations',
+            name: 'Hide Collaborations',
+            description: 'Hide videos from channels you\'re not subscribed to in your subscriptions feed',
+            group: 'Content',
+            icon: 'users-x',
+            _subscriptions: [],
+            _observer: null,
+            _initialized: false,
+
+            async _fetchSubscriptions() {
+                try {
+                    const response = await fetch('https://www.youtube.com/feed/channels');
+                    const html = await response.text();
+                    const dataMarker = 'ytInitialData = ';
+                    let startIdx = html.indexOf(dataMarker);
+                    if (startIdx === -1) return [];
+                    let jsonStr = html.substring(startIdx + dataMarker.length);
+                    const endIdx = jsonStr.indexOf('</script>');
+                    if (endIdx === -1) return [];
+                    jsonStr = jsonStr.substring(0, endIdx);
+                    const start = jsonStr.indexOf('{');
+                    const end = jsonStr.lastIndexOf('}');
+                    const ytInitialData = JSON.parse(jsonStr.substring(start, end + 1));
+                    const tabs = ytInitialData?.contents?.twoColumnBrowseResultsRenderer?.tabs;
+                    if (!tabs || !tabs[0]) return [];
+                    const sectionList = tabs[0]?.tabRenderer?.content?.sectionListRenderer;
+                    if (!sectionList) return [];
+                    const items = sectionList?.contents?.[0]?.itemSectionRenderer?.contents?.[0]?.shelfRenderer?.content?.expandedShelfContentsRenderer?.items;
+                    if (!items) return [];
+                    return items.map(({ channelRenderer }) => ({
+                        title: channelRenderer?.title?.simpleText,
+                        handle: channelRenderer?.subscriberCountText?.simpleText
+                    })).filter(s => s.title);
+                } catch (e) {
+                    console.error('[YTKit] Failed to fetch subscriptions:', e);
+                    return [];
+                }
+            },
+
+            _isSubscribed(channel) {
+                if (!channel) return true;
+                if (channel.startsWith('@')) {
+                    return this._subscriptions.some(s => s.handle === channel);
+                }
+                return this._subscriptions.some(s => s.title === channel);
+            },
+
+            _validateFeedCard(cardNode) {
+                if (cardNode.tagName !== 'YTD-ITEM-SECTION-RENDERER') return;
+                const channelLink = cardNode.querySelector('ytd-shelf-renderer #title-container a[title]');
+                if (!channelLink) return;
+                const title = channelLink.getAttribute('title');
+                const handle = channelLink.getAttribute('href')?.slice(1);
+                if (!this._isSubscribed(title) && !this._isSubscribed(handle)) {
+                    console.log('[YTKit] Hiding collaboration from:', title);
+                    cardNode.remove();
+                }
+            },
+
+            async init() {
+                if (window.location.pathname !== '/feed/subscriptions') return;
+                if (!this._initialized) {
+                    this._subscriptions = await this._fetchSubscriptions();
+                    this._initialized = true;
+                    console.log(`[YTKit] Loaded ${this._subscriptions.length} subscriptions`);
+                }
+                if (this._subscriptions.length === 0) return;
+
+                // Process existing items
+                document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
+
+                // Watch for new items
+                const feedSelector = 'ytd-section-list-renderer > div#contents';
+                const feed = document.querySelector(feedSelector);
+                if (feed) {
+                    this._observer = new MutationObserver((mutations) => {
+                        for (const m of mutations) {
+                            if (m.type === 'childList' && m.addedNodes.length > 0) {
+                                m.addedNodes.forEach(node => {
+                                    if (node.nodeType === 1) this._validateFeedCard(node);
+                                });
+                            }
+                        }
+                    });
+                    this._observer.observe(feed, { childList: true });
+                }
+
+                // Re-run on navigation
+                addNavigateRule(this.id, () => {
+                    if (window.location.pathname === '/feed/subscriptions') {
+                        setTimeout(() => {
+                            document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
+                        }, 1000);
+                    }
+                });
+            },
+
+            destroy() {
+                this._observer?.disconnect();
+                removeNavigateRule(this.id);
             }
         },
     ];
@@ -1968,7 +2709,7 @@
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v6.0';
+        versionSpan.textContent = 'v6.1';
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'ytkit-shortcut';
@@ -2015,7 +2756,7 @@
 
     function buildFeatureCard(f, accentColor, isSubFeature = false) {
         const card = document.createElement('div');
-        card.className = 'ytkit-feature-card' + (isSubFeature ? ' ytkit-sub-card' : '') + (f.type === 'textarea' ? ' ytkit-textarea-card' : '');
+        card.className = 'ytkit-feature-card' + (isSubFeature ? ' ytkit-sub-card' : '') + (f.type === 'textarea' ? ' ytkit-textarea-card' : '') + (f.type === 'select' ? ' ytkit-select-card' : '');
         card.dataset.featureId = f.id;
 
         const info = document.createElement('div');
@@ -2040,6 +2781,20 @@
             textarea.placeholder = 'word1, word2, phrase';
             textarea.value = appState.settings[f.id] || '';
             card.appendChild(textarea);
+        } else if (f.type === 'select') {
+            const select = document.createElement('select');
+            select.className = 'ytkit-select';
+            select.id = `ytkit-select-${f.id}`;
+            select.style.cssText = `padding:8px 12px;border-radius:8px;background:var(--ytkit-bg-base);color:#fff;border:1px solid rgba(255,255,255,0.1);cursor:pointer;font-size:13px;min-width:150px;`;
+            const currentValue = appState.settings[f.id] || Object.keys(f.options)[0];
+            for (const [value, label] of Object.entries(f.options)) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                option.selected = value === currentValue;
+                select.appendChild(option);
+            }
+            card.appendChild(select);
         } else {
             const isEnabled = appState.settings[f.id];
             const switchDiv = document.createElement('div');
@@ -2227,6 +2982,14 @@
                     feature.destroy?.();
                     feature.init?.();
                 }
+            }
+            // Select dropdown
+            if (e.target.matches('.ytkit-select')) {
+                const card = e.target.closest('[data-feature-id]');
+                const featureId = card.dataset.featureId;
+                appState.settings[featureId] = e.target.value;
+                await settingsManager.save(appState.settings);
+                createToast(`Download provider set to ${e.target.options[e.target.selectedIndex].text}`, 'success');
             }
         });
 
