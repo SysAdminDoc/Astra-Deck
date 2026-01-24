@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      9.3
+// @version      9.4
 // @description  Ultimate YouTube customization with VLC streaming, video/channel hiding with bulk hide support, playback enhancements, Return YouTube Dislike, and more.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -6710,20 +6710,47 @@
         githubLink.title = 'View on GitHub';
         githubLink.appendChild(ICONS.github());
 
-        // YouTube Tools Installer Link
-        const ytToolsLink = document.createElement('a');
-        ytToolsLink.href = 'https://raw.githubusercontent.com/SysAdminDoc/YTKit/refs/heads/main/Install-YouTubeTools.ps1';
-        ytToolsLink.target = '_blank';
-        ytToolsLink.className = 'ytkit-github';
-        ytToolsLink.title = 'Download YouTube Tools (VLC/Download integration)';
-        ytToolsLink.style.cssText = 'background: linear-gradient(135deg, #f97316, #22c55e) !important;';
+        // YouTube Tools Installer Button - Downloads a .bat launcher
+        const ytToolsBtn = document.createElement('button');
+        ytToolsBtn.className = 'ytkit-github';
+        ytToolsBtn.title = 'Download YouTube Tools Installer (double-click to run)';
+        ytToolsBtn.style.cssText = 'background: linear-gradient(135deg, #f97316, #22c55e) !important; border: none; cursor: pointer;';
         const dlIcon = ICONS.download();
         dlIcon.style.color = 'white';
-        ytToolsLink.appendChild(dlIcon);
+        ytToolsBtn.appendChild(dlIcon);
+
+        ytToolsBtn.addEventListener('click', () => {
+            // Generate a .bat file that runs the PowerShell installer
+            const batContent = `@echo off
+title YouTube Tools Installer
+echo ========================================
+echo   YouTube Tools Installer
+echo   VLC/MPV Streaming ^& Local Downloads
+echo ========================================
+echo.
+echo Downloading and running installer...
+echo.
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/SysAdminDoc/YTKit/refs/heads/main/Install-YouTubeTools.ps1 | iex"
+echo.
+echo If the window closes immediately, right-click and Run as Administrator.
+pause
+`;
+            const blob = new Blob([batContent], { type: 'application/x-bat' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Install-YouTubeTools.bat';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('📦 Installer downloaded! Double-click the .bat file to run.', '#22c55e');
+        });
+        const ytToolsLink = ytToolsBtn; // Alias for existing appendChild call
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v9.3';
+        versionSpan.textContent = 'v9.4';
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'ytkit-shortcut';
