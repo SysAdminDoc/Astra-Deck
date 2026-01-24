@@ -12,6 +12,7 @@
 // @exclude      https://www.youtube.com/shorts/*
 // @exclude      https://m.youtube.com/*
 // @exclude      https://www.youtube.com/playlist?list=*
+// @exclude      https://studio.youtube.com/*
 // @icon         https://github.com/SysAdminDoc/YTKit/blob/main/assets/ytlogo.png?raw=true
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -1195,6 +1196,9 @@
                 if (this._subsLoadState.loadingBlocked) return;
                 this._subsLoadState.loadingBlocked = true;
 
+                // Clear any pending batch processing
+                if (this._clearBatchBuffer) this._clearBatchBuffer();
+
                 // Hide the continuation spinner/trigger to prevent more loading
                 const continuations = document.querySelectorAll('ytd-continuation-item-renderer, #continuations, ytd-browse[page-subtype="subscriptions"] ytd-continuation-item-renderer');
                 continuations.forEach(cont => {
@@ -1242,7 +1246,33 @@
                 `;
 
                 const icon = document.createElement('div');
-                icon.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '24');
+                svg.setAttribute('height', '24');
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', '#f59e0b');
+                svg.setAttribute('stroke-width', '2');
+                svg.setAttribute('stroke-linecap', 'round');
+                svg.setAttribute('stroke-linejoin', 'round');
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', '12');
+                circle.setAttribute('cy', '12');
+                circle.setAttribute('r', '10');
+                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line1.setAttribute('x1', '12');
+                line1.setAttribute('y1', '8');
+                line1.setAttribute('x2', '12');
+                line1.setAttribute('y2', '12');
+                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line2.setAttribute('x1', '12');
+                line2.setAttribute('y1', '16');
+                line2.setAttribute('x2', '12.01');
+                line2.setAttribute('y2', '16');
+                svg.appendChild(circle);
+                svg.appendChild(line1);
+                svg.appendChild(line2);
+                icon.appendChild(svg);
 
                 const textContainer = document.createElement('div');
                 textContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 4px;';
@@ -1502,243 +1532,17 @@
 
             _showManager() {
                 document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-                let manager = document.getElementById('ytkit-hide-manager');
-                if (manager) { manager.classList.add('show'); return; }
-
-                const overlay = document.createElement('div');
-                overlay.id = 'ytkit-hide-manager-overlay';
-                overlay.addEventListener('click', () => this._closeManager());
-
-                manager = document.createElement('div');
-                manager.id = 'ytkit-hide-manager';
-
-                const header = document.createElement('div');
-                header.className = 'ytkit-hm-header';
-                const title = document.createElement('h3');
-                title.textContent = 'Hidden Videos Manager';
-                const closeBtn = document.createElement('button');
-                closeBtn.textContent = '×';
-                closeBtn.onclick = () => this._closeManager();
-                header.appendChild(title);
-                header.appendChild(closeBtn);
-
-                const tabs = document.createElement('div');
-                tabs.className = 'ytkit-hm-tabs';
-                ['Videos', 'Channels', 'Keywords', 'Settings'].forEach((t, i) => {
-                    const tab = document.createElement('button');
-                    tab.textContent = t;
-                    tab.className = i === 0 ? 'active' : '';
-                    tab.onclick = () => this._switchManagerTab(t.toLowerCase());
-                    tabs.appendChild(tab);
-                });
-
-                const content = document.createElement('div');
-                content.className = 'ytkit-hm-content';
-                content.id = 'ytkit-hm-content';
-
-                manager.appendChild(header);
-                manager.appendChild(tabs);
-                manager.appendChild(content);
-                document.body.appendChild(overlay);
-                document.body.appendChild(manager);
-                this._switchManagerTab('videos');
-                requestAnimationFrame(() => { overlay.classList.add('show'); manager.classList.add('show'); });
+                // Open main settings panel and switch to Video Hider tab
+                document.body.classList.add('ytkit-panel-open');
+                // Wait for panel to be visible then switch tab
+                setTimeout(() => {
+                    const navBtn = document.querySelector('.ytkit-nav-btn[data-tab="Video-Hider"]');
+                    if (navBtn) navBtn.click();
+                }, 100);
             },
 
             _closeManager() {
-                document.getElementById('ytkit-hide-manager-overlay')?.classList.remove('show');
-                document.getElementById('ytkit-hide-manager')?.classList.remove('show');
-            },
-
-            _switchManagerTab(tab) {
-                const content = document.getElementById('ytkit-hm-content');
-                if (!content) return;
-                content.textContent = '';
-                document.querySelectorAll('.ytkit-hm-tabs button').forEach((b, i) => {
-                    b.className = ['videos', 'channels', 'keywords', 'settings'][i] === tab ? 'active' : '';
-                });
-
-                if (tab === 'videos') {
-                    const videos = this._getHiddenVideos();
-                    if (videos.length === 0) {
-                        const empty = document.createElement('p');
-                        empty.className = 'ytkit-hm-empty';
-                        empty.textContent = 'No hidden videos yet. Click X on thumbnails to hide videos.';
-                        content.appendChild(empty);
-                    } else {
-                        const list = document.createElement('div');
-                        list.className = 'ytkit-hm-list';
-                        videos.forEach(vid => {
-                            const item = document.createElement('div');
-                            item.className = 'ytkit-hm-item';
-                            const thumb = document.createElement('img');
-                            thumb.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
-                            thumb.onerror = () => { thumb.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>' };
-                            const info = document.createElement('div');
-                            info.className = 'ytkit-hm-info';
-                            const vidId = document.createElement('span');
-                            vidId.textContent = vid;
-                            const link = document.createElement('a');
-                            link.href = `https://youtube.com/watch?v=${vid}`;
-                            link.target = '_blank';
-                            link.textContent = 'View →';
-                            info.appendChild(vidId);
-                            info.appendChild(link);
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Unhide';
-                            removeBtn.onclick = () => {
-                                const h = this._getHiddenVideos();
-                                const idx = h.indexOf(vid);
-                                if (idx > -1) { h.splice(idx, 1); this._setHiddenVideos(h); }
-                                item.remove();
-                                this._processAllVideos();
-                            };
-                            item.appendChild(thumb);
-                            item.appendChild(info);
-                            item.appendChild(removeBtn);
-                            list.appendChild(item);
-                        });
-                        const clearBtn = document.createElement('button');
-                        clearBtn.className = 'ytkit-hm-clear';
-                        clearBtn.textContent = `Clear All (${videos.length})`;
-                        clearBtn.onclick = () => {
-                            if (confirm('Unhide all videos?')) { this._setHiddenVideos([]); this._processAllVideos(); this._switchManagerTab('videos'); }
-                        };
-                        content.appendChild(list);
-                        content.appendChild(clearBtn);
-                    }
-                } else if (tab === 'channels') {
-                    const channels = this._getBlockedChannels();
-                    if (channels.length === 0) {
-                        const empty = document.createElement('p');
-                        empty.className = 'ytkit-hm-empty';
-                        empty.textContent = 'No blocked channels. Right-click X button to block a channel.';
-                        content.appendChild(empty);
-                    } else {
-                        const list = document.createElement('div');
-                        list.className = 'ytkit-hm-list';
-                        channels.forEach(ch => {
-                            const item = document.createElement('div');
-                            item.className = 'ytkit-hm-item ytkit-hm-channel';
-                            const info = document.createElement('div');
-                            info.className = 'ytkit-hm-info';
-                            const name = document.createElement('span');
-                            name.textContent = ch.name || ch.id;
-                            const id = document.createElement('small');
-                            id.textContent = ch.id;
-                            info.appendChild(name);
-                            info.appendChild(id);
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Unblock';
-                            removeBtn.onclick = () => {
-                                const c = this._getBlockedChannels();
-                                const idx = c.findIndex(x => x.id === ch.id);
-                                if (idx > -1) { c.splice(idx, 1); this._setBlockedChannels(c); }
-                                item.remove();
-                                this._processAllVideos();
-                            };
-                            item.appendChild(info);
-                            item.appendChild(removeBtn);
-                            list.appendChild(item);
-                        });
-                        content.appendChild(list);
-                    }
-                } else if (tab === 'keywords') {
-                    const kwLabel = document.createElement('label');
-                    kwLabel.textContent = 'Auto-hide videos with these words in title (comma-separated):';
-                    const kwInput = document.createElement('textarea');
-                    kwInput.className = 'ytkit-hm-textarea';
-                    kwInput.placeholder = 'reaction, unboxing, shorts';
-                    kwInput.value = appState.settings.hideVideosKeywordFilter || '';
-                    kwInput.onchange = async () => {
-                        appState.settings.hideVideosKeywordFilter = kwInput.value;
-                        await settingsManager.save(appState.settings);
-                        this._processAllVideos();
-                    };
-                    content.appendChild(kwLabel);
-                    content.appendChild(kwInput);
-                } else if (tab === 'settings') {
-                    const durLabel = document.createElement('label');
-                    durLabel.textContent = 'Auto-hide videos shorter than (minutes, 0 = disabled):';
-                    const durInput = document.createElement('input');
-                    durInput.type = 'number';
-                    durInput.min = '0';
-                    durInput.max = '60';
-                    durInput.value = appState.settings.hideVideosDurationFilter || 0;
-                    durInput.onchange = async () => {
-                        appState.settings.hideVideosDurationFilter = parseInt(durInput.value) || 0;
-                        await settingsManager.save(appState.settings);
-                        this._processAllVideos();
-                    };
-                    content.appendChild(durLabel);
-                    content.appendChild(durInput);
-
-                    // Subscription Load Limiter Section
-                    const limiterSection = document.createElement('div');
-                    limiterSection.style.cssText = 'margin-top: 20px; padding-top: 16px; border-top: 1px solid #444;';
-
-                    const limiterTitle = document.createElement('div');
-                    limiterTitle.style.cssText = 'color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px;';
-                    limiterTitle.textContent = 'Subscription Page Load Limiter';
-                    limiterSection.appendChild(limiterTitle);
-
-                    const limiterDesc = document.createElement('div');
-                    limiterDesc.style.cssText = 'color: #888; font-size: 12px; margin-bottom: 12px;';
-                    limiterDesc.textContent = 'Prevents infinite scrolling when many consecutive videos are hidden. Useful if you\'ve hidden years of videos.';
-                    limiterSection.appendChild(limiterDesc);
-
-                    const limiterToggleContainer = document.createElement('div');
-                    limiterToggleContainer.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 12px;';
-
-                    const limiterCheckbox = document.createElement('input');
-                    limiterCheckbox.type = 'checkbox';
-                    limiterCheckbox.id = 'ytkit-subs-load-limit';
-                    limiterCheckbox.checked = appState.settings.hideVideosSubsLoadLimit !== false;
-                    limiterCheckbox.style.cssText = 'width: 18px; height: 18px; accent-color: #3ea6ff;';
-                    limiterCheckbox.onchange = async () => {
-                        appState.settings.hideVideosSubsLoadLimit = limiterCheckbox.checked;
-                        await settingsManager.save(appState.settings);
-                    };
-
-                    const limiterCheckboxLabel = document.createElement('label');
-                    limiterCheckboxLabel.htmlFor = 'ytkit-subs-load-limit';
-                    limiterCheckboxLabel.style.cssText = 'color: #ccc; font-size: 13px; cursor: pointer;';
-                    limiterCheckboxLabel.textContent = 'Enable load limiter on subscriptions page';
-
-                    limiterToggleContainer.appendChild(limiterCheckbox);
-                    limiterToggleContainer.appendChild(limiterCheckboxLabel);
-                    limiterSection.appendChild(limiterToggleContainer);
-
-                    const thresholdLabel = document.createElement('label');
-                    thresholdLabel.style.cssText = 'color: #ccc; font-size: 13px; display: block; margin-bottom: 8px;';
-                    thresholdLabel.textContent = 'Stop loading after consecutive hidden batches:';
-
-                    const thresholdInput = document.createElement('input');
-                    thresholdInput.type = 'number';
-                    thresholdInput.min = '1';
-                    thresholdInput.max = '20';
-                    thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold || 3;
-                    thresholdInput.style.cssText = 'width: 80px; padding: 8px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;';
-                    thresholdInput.onchange = async () => {
-                        appState.settings.hideVideosSubsLoadThreshold = Math.max(1, Math.min(20, parseInt(thresholdInput.value) || 3));
-                        thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold;
-                        await settingsManager.save(appState.settings);
-                    };
-
-                    const thresholdHint = document.createElement('div');
-                    thresholdHint.style.cssText = 'color: #666; font-size: 11px; margin-top: 4px;';
-                    thresholdHint.textContent = 'Lower = stops faster, Higher = loads more before stopping (1-20)';
-
-                    limiterSection.appendChild(thresholdLabel);
-                    limiterSection.appendChild(thresholdInput);
-                    limiterSection.appendChild(thresholdHint);
-                    content.appendChild(limiterSection);
-
-                    const stats = document.createElement('div');
-                    stats.className = 'ytkit-hm-stats';
-                    stats.textContent = `Stats: ${this._getHiddenVideos().length} hidden videos, ${this._getBlockedChannels().length} blocked channels`;
-                    content.appendChild(stats);
-                }
+                // No longer needed - handled by main settings panel
             },
 
             _shouldHide(element) {
@@ -1930,32 +1734,6 @@
                     #ytkit-hide-toast.show { transform:translateX(-50%) translateY(0);opacity:1; }
                     #ytkit-hide-toast button { background:transparent;border:none;color:#3ea6ff;cursor:pointer;font-size:14px;font-weight:500;padding:4px 8px;border-radius:4px; }
                     #ytkit-hide-toast button:hover { background:rgba(62,166,255,0.1); }
-                    #ytkit-hide-manager-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99998;opacity:0;transition:opacity 0.3s;pointer-events:none; }
-                    #ytkit-hide-manager-overlay.show { opacity:1;pointer-events:auto; }
-                    #ytkit-hide-manager { position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:#212121;border-radius:12px;width:90%;max-width:600px;max-height:80vh;z-index:99999;opacity:0;transition:all 0.3s;display:flex;flex-direction:column;overflow:hidden; }
-                    #ytkit-hide-manager.show { opacity:1;transform:translate(-50%,-50%) scale(1); }
-                    .ytkit-hm-header { display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #333; }
-                    .ytkit-hm-header h3 { margin:0;color:#fff;font-size:18px; }
-                    .ytkit-hm-header button { background:none;border:none;color:#aaa;font-size:24px;cursor:pointer;padding:0 8px; }
-                    .ytkit-hm-tabs { display:flex;border-bottom:1px solid #333; }
-                    .ytkit-hm-tabs button { flex:1;padding:12px;background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;transition:all 0.2s; }
-                    .ytkit-hm-tabs button.active { color:#fff;background:#333; }
-                    .ytkit-hm-content { padding:20px;overflow-y:auto;flex:1; }
-                    .ytkit-hm-empty { color:#888;text-align:center;padding:40px; }
-                    .ytkit-hm-list { display:flex;flex-direction:column;gap:8px; }
-                    .ytkit-hm-item { display:flex;align-items:center;gap:12px;padding:8px;background:#2a2a2a;border-radius:8px; }
-                    .ytkit-hm-item img { width:80px;height:45px;object-fit:cover;border-radius:4px; }
-                    .ytkit-hm-info { flex:1;display:flex;flex-direction:column;gap:4px; }
-                    .ytkit-hm-info span { color:#fff;font-size:13px; }
-                    .ytkit-hm-info small { color:#888;font-size:11px; }
-                    .ytkit-hm-info a { color:#3ea6ff;font-size:12px;text-decoration:none; }
-                    .ytkit-hm-item button { padding:6px 12px;background:#333;border:none;color:#fff;border-radius:4px;cursor:pointer;font-size:12px; }
-                    .ytkit-hm-item button:hover { background:#c00; }
-                    .ytkit-hm-clear { margin-top:16px;padding:10px;width:100%;background:#c00;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:14px; }
-                    .ytkit-hm-textarea { width:100%;min-height:100px;margin-top:8px;padding:12px;background:#2a2a2a;border:1px solid #444;border-radius:8px;color:#fff;font-size:13px;resize:vertical; }
-                    .ytkit-hm-content label { color:#ccc;font-size:13px; }
-                    .ytkit-hm-content input[type="number"] { width:80px;margin:8px 0 16px;padding:8px;background:#2a2a2a;border:1px solid #444;border-radius:4px;color:#fff; }
-                    .ytkit-hm-stats { margin-top:20px;padding:12px;background:#2a2a2a;border-radius:8px;color:#888;font-size:12px; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
                 this._processAllVideos();
@@ -1964,9 +1742,17 @@
                 // Debounce for batch tracking
                 let batchBuffer = [];
                 let batchTimeout = null;
+                // Store reference for clearing when blocking
+                this._clearBatchBuffer = () => {
+                    batchBuffer = [];
+                    if (batchTimeout) {
+                        clearTimeout(batchTimeout);
+                        batchTimeout = null;
+                    }
+                };
 
                 const processBatch = () => {
-                    if (batchBuffer.length > 0) {
+                    if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
                         this._trackSubsLoadBatch(batchBuffer);
                         batchBuffer = [];
                     }
@@ -1993,15 +1779,20 @@
                 this._observer.observe(document.body, { childList: true, subtree: true });
 
                 // Navigation handler for subscriptions page Hide All button
+                let wasOnSubsPage = window.location.pathname === '/feed/subscriptions';
                 const checkSubsPage = () => {
-                    if (window.location.pathname === '/feed/subscriptions') {
-                        // Reset load state when entering subscriptions page
-                        this._resetSubsLoadState();
+                    const isOnSubsPage = window.location.pathname === '/feed/subscriptions';
+                    if (isOnSubsPage) {
+                        // Only reset load state when ENTERING subscriptions page (not while staying on it)
+                        if (!wasOnSubsPage) {
+                            this._resetSubsLoadState();
+                        }
                         setTimeout(() => this._createSubsHideAllButton(), 1000);
                     } else {
                         this._removeSubsHideAllButton();
                         this._removeLoadBlocker();
                     }
+                    wasOnSubsPage = isOnSubsPage;
                 };
 
                 addNavigateRule('hideVideosFromHomeNav', () => {
@@ -6030,6 +5821,7 @@
         'Interface': { icon: 'interface', color: '#60a5fa' },
         'Appearance': { icon: 'appearance', color: '#f472b6' },
         'Content': { icon: 'content', color: '#34d399' },
+        'Video Hider': { icon: 'eye-off', color: '#ef4444' },
         'Video Player': { icon: 'player', color: '#a78bfa' },
         'Playback': { icon: 'playback', color: '#fb923c' },
         'SponsorBlock': { icon: 'sponsor', color: '#22d3ee' },
@@ -6091,7 +5883,7 @@
     function buildSettingsPanel() {
         if (document.getElementById('ytkit-settings-panel')) return;
 
-        const categoryOrder = ['Interface', 'Appearance', 'Content', 'Video Player', 'Playback', 'SponsorBlock', 'Quality', 'Clutter', 'Live Chat', 'Action Buttons', 'Player Controls', 'Downloads'];
+        const categoryOrder = ['Interface', 'Appearance', 'Content', 'Video Hider', 'Video Player', 'Playback', 'SponsorBlock', 'Quality', 'Clutter', 'Live Chat', 'Action Buttons', 'Player Controls', 'Downloads'];
         const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
         features.forEach(f => { if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f); });
 
@@ -6223,6 +6015,46 @@
         sidebar.appendChild(divider);
 
         categoryOrder.forEach((cat, index) => {
+            // Special handling for Video Hider
+            if (cat === 'Video Hider') {
+                const config = CATEGORY_CONFIG[cat];
+                const catId = cat.replace(/ /g, '-');
+                const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
+                const videoCount = (typeof videoHiderFeature?._getHiddenVideos === 'function' ? videoHiderFeature._getHiddenVideos() : []).length;
+                const channelCount = (typeof videoHiderFeature?._getBlockedChannels === 'function' ? videoHiderFeature._getBlockedChannels() : []).length;
+
+                const btn = document.createElement('button');
+                btn.className = 'ytkit-nav-btn';
+                btn.dataset.tab = catId;
+
+                const iconWrap = document.createElement('span');
+                iconWrap.className = 'ytkit-nav-icon';
+                iconWrap.style.setProperty('--cat-color', config.color);
+                const iconFn = ICONS['eye-off'] || ICONS.settings;
+                iconWrap.appendChild(iconFn());
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'ytkit-nav-label';
+                labelSpan.textContent = cat;
+
+                const countSpan = document.createElement('span');
+                countSpan.className = 'ytkit-nav-count';
+                countSpan.textContent = `${videoCount + channelCount}`;
+                countSpan.title = `${videoCount} videos, ${channelCount} channels`;
+
+                const arrowSpan = document.createElement('span');
+                arrowSpan.className = 'ytkit-nav-arrow';
+                arrowSpan.appendChild(ICONS.chevronRight());
+
+                btn.appendChild(iconWrap);
+                btn.appendChild(labelSpan);
+                btn.appendChild(countSpan);
+                btn.appendChild(arrowSpan);
+
+                sidebar.appendChild(btn);
+                return;
+            }
+
             const categoryFeatures = featuresByCategory[cat];
             if (!categoryFeatures || categoryFeatures.length === 0) return;
 
@@ -6265,7 +6097,485 @@
         const content = document.createElement('div');
         content.className = 'ytkit-content';
 
+        // Special builder for Video Hider pane
+        function buildVideoHiderPane(config) {
+            const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
+
+            const pane = document.createElement('section');
+            pane.id = 'ytkit-pane-Video-Hider';
+            pane.className = 'ytkit-pane ytkit-vh-pane';
+
+            // Pane header
+            const paneHeader = document.createElement('div');
+            paneHeader.className = 'ytkit-pane-header';
+
+            const paneTitle = document.createElement('div');
+            paneTitle.className = 'ytkit-pane-title';
+
+            const paneIcon = document.createElement('span');
+            paneIcon.className = 'ytkit-pane-icon';
+            paneIcon.style.setProperty('--cat-color', config.color);
+            const paneIconFn = ICONS['eye-off'] || ICONS.settings;
+            paneIcon.appendChild(paneIconFn());
+
+            const paneTitleH2 = document.createElement('h2');
+            paneTitleH2.textContent = 'Video Hider';
+
+            paneTitle.appendChild(paneIcon);
+            paneTitle.appendChild(paneTitleH2);
+
+            // Enable toggle for Video Hider
+            const toggleLabel = document.createElement('label');
+            toggleLabel.className = 'ytkit-toggle-all';
+            toggleLabel.style.marginLeft = 'auto';
+
+            const toggleText = document.createElement('span');
+            toggleText.textContent = 'Enabled';
+
+            const toggleSwitch = document.createElement('div');
+            toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
+
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.id = 'ytkit-toggle-hideVideosFromHome';
+            toggleInput.checked = appState.settings.hideVideosFromHome;
+            toggleInput.onchange = async () => {
+                appState.settings.hideVideosFromHome = toggleInput.checked;
+                toggleSwitch.classList.toggle('active', toggleInput.checked);
+                await settingsManager.save(appState.settings);
+                if (toggleInput.checked) {
+                    videoHiderFeature?.init?.();
+                } else {
+                    videoHiderFeature?.destroy?.();
+                }
+                updateAllToggleStates();
+            };
+
+            const toggleTrack = document.createElement('span');
+            toggleTrack.className = 'ytkit-switch-track';
+
+            toggleSwitch.appendChild(toggleInput);
+            toggleSwitch.appendChild(toggleTrack);
+            toggleLabel.appendChild(toggleText);
+            toggleLabel.appendChild(toggleSwitch);
+
+            paneHeader.appendChild(paneTitle);
+            paneHeader.appendChild(toggleLabel);
+            pane.appendChild(paneHeader);
+
+            // Tab navigation
+            const tabNav = document.createElement('div');
+            tabNav.className = 'ytkit-vh-tabs';
+            tabNav.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--ytkit-border);margin-bottom:20px;';
+
+            const tabs = ['Videos', 'Channels', 'Keywords', 'Settings'];
+            tabs.forEach((tabName, i) => {
+                const tab = document.createElement('button');
+                tab.className = 'ytkit-vh-tab' + (i === 0 ? ' active' : '');
+                tab.dataset.tab = tabName.toLowerCase();
+                tab.textContent = tabName;
+                tab.style.cssText = `
+                    flex:1;padding:12px 16px;background:transparent;border:none;
+                    color:var(--ytkit-text-muted);font-size:13px;font-weight:500;
+                    cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent;
+                `;
+                tab.onmouseenter = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-secondary)'; };
+                tab.onmouseleave = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-muted)'; };
+                tab.onclick = () => {
+                    tabNav.querySelectorAll('.ytkit-vh-tab').forEach(t => {
+                        t.classList.remove('active');
+                        t.style.color = 'var(--ytkit-text-muted)';
+                        t.style.borderBottomColor = 'transparent';
+                    });
+                    tab.classList.add('active');
+                    tab.style.color = config.color;
+                    tab.style.borderBottomColor = config.color;
+                    renderTabContent(tabName.toLowerCase());
+                };
+                if (i === 0) {
+                    tab.style.color = config.color;
+                    tab.style.borderBottomColor = config.color;
+                }
+                tabNav.appendChild(tab);
+            });
+            pane.appendChild(tabNav);
+
+            // Tab content container
+            const tabContent = document.createElement('div');
+            tabContent.id = 'ytkit-vh-content';
+            pane.appendChild(tabContent);
+
+            function renderTabContent(tab) {
+                while (tabContent.firstChild) tabContent.removeChild(tabContent.firstChild);
+
+                if (tab === 'videos') {
+                    const videos = videoHiderFeature?._getHiddenVideos() || [];
+                    if (videos.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.style.cssText = 'text-align:center;padding:60px 20px;color:var(--ytkit-text-muted);';
+
+                        const emptyIcon = document.createElement('div');
+                        emptyIcon.style.cssText = 'font-size:48px;margin-bottom:16px;opacity:0.5;';
+                        emptyIcon.textContent = '📺';
+
+                        const emptyTitle = document.createElement('div');
+                        emptyTitle.style.cssText = 'font-size:15px;margin-bottom:8px;';
+                        emptyTitle.textContent = 'No hidden videos yet';
+
+                        const emptyDesc = document.createElement('div');
+                        emptyDesc.style.cssText = 'font-size:13px;opacity:0.7;';
+                        emptyDesc.textContent = 'Click the X button on video thumbnails to hide them';
+
+                        empty.appendChild(emptyIcon);
+                        empty.appendChild(emptyTitle);
+                        empty.appendChild(emptyDesc);
+                        tabContent.appendChild(empty);
+                    } else {
+                        const grid = document.createElement('div');
+                        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;';
+
+                        videos.forEach(vid => {
+                            const item = document.createElement('div');
+                            item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;background:var(--ytkit-bg-surface);border-radius:8px;border:1px solid var(--ytkit-border);';
+
+                            const thumb = document.createElement('img');
+                            thumb.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
+                            thumb.style.cssText = 'width:100px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;';
+                            thumb.onerror = () => { thumb.style.background = 'var(--ytkit-bg-elevated)'; };
+
+                            const info = document.createElement('div');
+                            info.style.cssText = 'flex:1;min-width:0;';
+                            const vidId = document.createElement('div');
+                            vidId.style.cssText = 'font-size:12px;color:var(--ytkit-text-secondary);font-family:monospace;margin-bottom:4px;';
+                            vidId.textContent = vid;
+                            const link = document.createElement('a');
+                            link.href = `https://youtube.com/watch?v=${vid}`;
+                            link.target = '_blank';
+                            link.style.cssText = 'font-size:12px;color:var(--ytkit-accent);text-decoration:none;';
+                            link.textContent = 'View on YouTube →';
+                            info.appendChild(vidId);
+                            info.appendChild(link);
+
+                            const removeBtn = document.createElement('button');
+                            removeBtn.textContent = 'Unhide';
+                            removeBtn.style.cssText = 'padding:6px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;';
+                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#dc2626'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#dc2626'; };
+                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
+                            removeBtn.onclick = () => {
+                                const h = videoHiderFeature._getHiddenVideos();
+                                const idx = h.indexOf(vid);
+                                if (idx > -1) { h.splice(idx, 1); videoHiderFeature._setHiddenVideos(h); }
+                                item.remove();
+                                videoHiderFeature._processAllVideos();
+                                if (videoHiderFeature._getHiddenVideos().length === 0) renderTabContent('videos');
+                            };
+
+                            item.appendChild(thumb);
+                            item.appendChild(info);
+                            item.appendChild(removeBtn);
+                            grid.appendChild(item);
+                        });
+
+                        tabContent.appendChild(grid);
+
+                        // Clear all button
+                        const clearBtn = document.createElement('button');
+                        clearBtn.textContent = `Clear All Hidden Videos (${videos.length})`;
+                        clearBtn.style.cssText = 'margin-top:20px;padding:12px 24px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:background 0.2s;';
+                        clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
+                        clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
+                        clearBtn.onclick = () => {
+                            if (!confirm(`Clear all ${videos.length} hidden videos?`)) return;
+                            videoHiderFeature._setHiddenVideos([]);
+                            videoHiderFeature._processAllVideos();
+                            renderTabContent('videos');
+                        };
+                        tabContent.appendChild(clearBtn);
+                    }
+                } else if (tab === 'channels') {
+                    const channels = videoHiderFeature?._getBlockedChannels() || [];
+                    if (channels.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.style.cssText = 'text-align:center;padding:60px 20px;color:var(--ytkit-text-muted);';
+
+                        const emptyIcon = document.createElement('div');
+                        emptyIcon.style.cssText = 'font-size:48px;margin-bottom:16px;opacity:0.5;';
+                        emptyIcon.textContent = '📢';
+
+                        const emptyTitle = document.createElement('div');
+                        emptyTitle.style.cssText = 'font-size:15px;margin-bottom:8px;';
+                        emptyTitle.textContent = 'No blocked channels yet';
+
+                        const emptyDesc = document.createElement('div');
+                        emptyDesc.style.cssText = 'font-size:13px;opacity:0.7;';
+                        emptyDesc.textContent = 'Right-click the X button on thumbnails to block channels';
+
+                        empty.appendChild(emptyIcon);
+                        empty.appendChild(emptyTitle);
+                        empty.appendChild(emptyDesc);
+                        tabContent.appendChild(empty);
+                    } else {
+                        const list = document.createElement('div');
+                        list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+                        channels.forEach(ch => {
+                            const item = document.createElement('div');
+                            item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:var(--ytkit-bg-surface);border-radius:8px;border:1px solid var(--ytkit-border);';
+
+                            const icon = document.createElement('div');
+                            icon.style.cssText = 'width:40px;height:40px;border-radius:50%;background:var(--ytkit-bg-elevated);display:flex;align-items:center;justify-content:center;font-size:18px;';
+                            icon.textContent = '📺';
+
+                            const info = document.createElement('div');
+                            info.style.cssText = 'flex:1;';
+                            const name = document.createElement('div');
+                            name.style.cssText = 'font-size:14px;color:var(--ytkit-text-primary);font-weight:500;';
+                            name.textContent = ch.name || ch.id;
+                            const handle = document.createElement('div');
+                            handle.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);';
+                            handle.textContent = ch.id;
+                            info.appendChild(name);
+                            info.appendChild(handle);
+
+                            const removeBtn = document.createElement('button');
+                            removeBtn.textContent = 'Unblock';
+                            removeBtn.style.cssText = 'padding:6px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;';
+                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#22c55e'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#22c55e'; };
+                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
+                            removeBtn.onclick = () => {
+                                const c = videoHiderFeature._getBlockedChannels();
+                                const idx = c.findIndex(x => x.id === ch.id);
+                                if (idx > -1) { c.splice(idx, 1); videoHiderFeature._setBlockedChannels(c); }
+                                item.remove();
+                                videoHiderFeature._processAllVideos();
+                                if (videoHiderFeature._getBlockedChannels().length === 0) renderTabContent('channels');
+                            };
+
+                            item.appendChild(icon);
+                            item.appendChild(info);
+                            item.appendChild(removeBtn);
+                            list.appendChild(item);
+                        });
+
+                        tabContent.appendChild(list);
+
+                        // Clear all button
+                        const clearBtn = document.createElement('button');
+                        clearBtn.textContent = `Unblock All Channels (${channels.length})`;
+                        clearBtn.style.cssText = 'margin-top:20px;padding:12px 24px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:background 0.2s;';
+                        clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
+                        clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
+                        clearBtn.onclick = () => {
+                            if (!confirm(`Unblock all ${channels.length} channels?`)) return;
+                            videoHiderFeature._setBlockedChannels([]);
+                            videoHiderFeature._processAllVideos();
+                            renderTabContent('channels');
+                        };
+                        tabContent.appendChild(clearBtn);
+                    }
+                } else if (tab === 'keywords') {
+                    const container = document.createElement('div');
+                    container.style.cssText = 'padding:0;';
+
+                    const desc = document.createElement('div');
+                    desc.style.cssText = 'color:var(--ytkit-text-muted);font-size:13px;margin-bottom:16px;line-height:1.5;';
+                    desc.textContent = 'Videos with titles containing these keywords will be automatically hidden. Separate multiple keywords with commas.';
+                    container.appendChild(desc);
+
+                    const textarea = document.createElement('textarea');
+                    textarea.style.cssText = 'width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:8px;color:var(--ytkit-text-primary);font-size:13px;resize:vertical;font-family:inherit;';
+                    textarea.placeholder = 'e.g., reaction, unboxing, prank, shorts';
+                    textarea.value = appState.settings.hideVideosKeywordFilter || '';
+                    textarea.onchange = async () => {
+                        appState.settings.hideVideosKeywordFilter = textarea.value;
+                        await settingsManager.save(appState.settings);
+                        videoHiderFeature?._processAllVideos();
+                    };
+                    container.appendChild(textarea);
+
+                    const hint = document.createElement('div');
+                    hint.style.cssText = 'color:var(--ytkit-text-muted);font-size:11px;margin-top:8px;';
+                    hint.textContent = 'Changes apply immediately. Keywords are case-insensitive.';
+                    container.appendChild(hint);
+
+                    tabContent.appendChild(container);
+                } else if (tab === 'settings') {
+                    const container = document.createElement('div');
+                    container.style.cssText = 'display:flex;flex-direction:column;gap:24px;';
+
+                    // Duration filter
+                    const durSection = document.createElement('div');
+                    durSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
+
+                    const durTitle = document.createElement('div');
+                    durTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:8px;';
+                    durTitle.textContent = 'Duration Filter';
+                    durSection.appendChild(durTitle);
+
+                    const durDesc = document.createElement('div');
+                    durDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:12px;';
+                    durDesc.textContent = 'Automatically hide videos shorter than the specified duration.';
+                    durSection.appendChild(durDesc);
+
+                    const durRow = document.createElement('div');
+                    durRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
+
+                    const durInput = document.createElement('input');
+                    durInput.type = 'number';
+                    durInput.min = '0';
+                    durInput.max = '60';
+                    durInput.value = appState.settings.hideVideosDurationFilter || 0;
+                    durInput.style.cssText = 'width:80px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;';
+                    durInput.onchange = async () => {
+                        appState.settings.hideVideosDurationFilter = parseInt(durInput.value) || 0;
+                        await settingsManager.save(appState.settings);
+                        videoHiderFeature?._processAllVideos();
+                    };
+
+                    const durLabel = document.createElement('span');
+                    durLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
+                    durLabel.textContent = 'minutes (0 = disabled)';
+
+                    durRow.appendChild(durInput);
+                    durRow.appendChild(durLabel);
+                    durSection.appendChild(durRow);
+                    container.appendChild(durSection);
+
+                    // Subscription Load Limiter
+                    const limiterSection = document.createElement('div');
+                    limiterSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
+
+                    const limiterTitle = document.createElement('div');
+                    limiterTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:8px;';
+                    limiterTitle.textContent = 'Subscription Page Load Limiter';
+                    limiterSection.appendChild(limiterTitle);
+
+                    const limiterDesc = document.createElement('div');
+                    limiterDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:16px;line-height:1.5;';
+                    limiterDesc.textContent = 'Prevents infinite scrolling when many consecutive videos are hidden. Useful if you\'ve hidden years of subscription videos.';
+                    limiterSection.appendChild(limiterDesc);
+
+                    // Enable toggle
+                    const limiterToggleRow = document.createElement('div');
+                    limiterToggleRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px;background:var(--ytkit-bg-elevated);border-radius:8px;';
+
+                    const limiterToggleLabel = document.createElement('span');
+                    limiterToggleLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
+                    limiterToggleLabel.textContent = 'Enable load limiter';
+
+                    const limiterSwitch = document.createElement('div');
+                    limiterSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosSubsLoadLimit !== false ? ' active' : '');
+                    limiterSwitch.style.cssText = 'cursor:pointer;';
+
+                    const limiterInput = document.createElement('input');
+                    limiterInput.type = 'checkbox';
+                    limiterInput.checked = appState.settings.hideVideosSubsLoadLimit !== false;
+                    limiterInput.onchange = async () => {
+                        appState.settings.hideVideosSubsLoadLimit = limiterInput.checked;
+                        limiterSwitch.classList.toggle('active', limiterInput.checked);
+                        await settingsManager.save(appState.settings);
+                    };
+
+                    const limiterTrack = document.createElement('span');
+                    limiterTrack.className = 'ytkit-switch-track';
+
+                    limiterSwitch.appendChild(limiterInput);
+                    limiterSwitch.appendChild(limiterTrack);
+                    limiterToggleRow.appendChild(limiterToggleLabel);
+                    limiterToggleRow.appendChild(limiterSwitch);
+                    limiterSection.appendChild(limiterToggleRow);
+
+                    // Threshold setting
+                    const thresholdRow = document.createElement('div');
+                    thresholdRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
+
+                    const thresholdLabel = document.createElement('span');
+                    thresholdLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;flex:1;';
+                    thresholdLabel.textContent = 'Stop after consecutive hidden batches:';
+
+                    const thresholdInput = document.createElement('input');
+                    thresholdInput.type = 'number';
+                    thresholdInput.min = '1';
+                    thresholdInput.max = '20';
+                    thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold || 3;
+                    thresholdInput.style.cssText = 'width:70px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;text-align:center;';
+                    thresholdInput.onchange = async () => {
+                        appState.settings.hideVideosSubsLoadThreshold = Math.max(1, Math.min(20, parseInt(thresholdInput.value) || 3));
+                        thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold;
+                        await settingsManager.save(appState.settings);
+                    };
+
+                    thresholdRow.appendChild(thresholdLabel);
+                    thresholdRow.appendChild(thresholdInput);
+                    limiterSection.appendChild(thresholdRow);
+
+                    const thresholdHint = document.createElement('div');
+                    thresholdHint.style.cssText = 'color:var(--ytkit-text-muted);font-size:11px;margin-top:8px;';
+                    thresholdHint.textContent = 'Lower = stops faster, Higher = loads more before stopping (1-20)';
+                    limiterSection.appendChild(thresholdHint);
+
+                    container.appendChild(limiterSection);
+
+                    // Stats section
+                    const statsSection = document.createElement('div');
+                    statsSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
+
+                    const statsTitle = document.createElement('div');
+                    statsTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:12px;';
+                    statsTitle.textContent = 'Statistics';
+                    statsSection.appendChild(statsTitle);
+
+                    const statsGrid = document.createElement('div');
+                    statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
+
+                    const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
+                    const channelCount = videoHiderFeature?._getBlockedChannels()?.length || 0;
+
+                    const videoStat = document.createElement('div');
+                    videoStat.style.cssText = 'background:var(--ytkit-bg-elevated);padding:16px;border-radius:8px;text-align:center;';
+                    const videoStatNum = document.createElement('div');
+                    videoStatNum.style.cssText = `font-size:24px;font-weight:700;color:${config.color};`;
+                    videoStatNum.textContent = videoCount;
+                    const videoStatLabel = document.createElement('div');
+                    videoStatLabel.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-top:4px;';
+                    videoStatLabel.textContent = 'Hidden Videos';
+                    videoStat.appendChild(videoStatNum);
+                    videoStat.appendChild(videoStatLabel);
+
+                    const channelStat = document.createElement('div');
+                    channelStat.style.cssText = 'background:var(--ytkit-bg-elevated);padding:16px;border-radius:8px;text-align:center;';
+                    const channelStatNum = document.createElement('div');
+                    channelStatNum.style.cssText = `font-size:24px;font-weight:700;color:${config.color};`;
+                    channelStatNum.textContent = channelCount;
+                    const channelStatLabel = document.createElement('div');
+                    channelStatLabel.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-top:4px;';
+                    channelStatLabel.textContent = 'Blocked Channels';
+                    channelStat.appendChild(channelStatNum);
+                    channelStat.appendChild(channelStatLabel);
+
+                    statsGrid.appendChild(videoStat);
+                    statsGrid.appendChild(channelStat);
+                    statsSection.appendChild(statsGrid);
+                    container.appendChild(statsSection);
+
+                    tabContent.appendChild(container);
+                }
+            }
+
+            // Initial render
+            renderTabContent('videos');
+
+            return pane;
+        }
+
         categoryOrder.forEach((cat, index) => {
+            // Special handling for Video Hider
+            if (cat === 'Video Hider') {
+                const config = CATEGORY_CONFIG[cat];
+                content.appendChild(buildVideoHiderPane(config));
+                return;
+            }
+
             const categoryFeatures = featuresByCategory[cat];
             if (!categoryFeatures || categoryFeatures.length === 0) return;
 
@@ -6402,7 +6712,7 @@
 
         // YouTube Tools Installer Link
         const ytToolsLink = document.createElement('a');
-        ytToolsLink.href = 'https://github.com/SysAdminDoc/YTKit/releases/download/v7.0/Install-YouTubeTools.ps1';
+        ytToolsLink.href = 'https://raw.githubusercontent.com/SysAdminDoc/YTKit/refs/heads/main/Install-YouTubeTools.ps1';
         ytToolsLink.target = '_blank';
         ytToolsLink.className = 'ytkit-github';
         ytToolsLink.title = 'Download YouTube Tools (VLC/Download integration)';
@@ -6413,7 +6723,7 @@
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v9.2';
+        versionSpan.textContent = 'v9.3';
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'ytkit-shortcut';
@@ -7254,6 +7564,17 @@ body.ytkit-panel-open #ytkit-settings-panel {
 }
 .ytkit-pane.active {
     display: block;
+}
+.ytkit-pane.ytkit-vh-pane.active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: calc(85vh - 180px);
+}
+#ytkit-vh-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
 }
 @keyframes ytkit-fade-in {
     from { opacity: 0; transform: translateX(8px); }
