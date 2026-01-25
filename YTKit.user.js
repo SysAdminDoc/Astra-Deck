@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      9.4
+// @version      9.5
 // @description  Ultimate YouTube customization with VLC streaming, video/channel hiding with bulk hide support, playback enhancements, Return YouTube Dislike, and more.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -132,39 +132,39 @@
             return true; // Skip, we just injected this
         }
 
-        // Check if button exists AND is in a valid container
+        // Check if button exists AND is in a valid container (NOT in clarify-box)
         const existingBtn = document.querySelector(config.checkSelector);
         if (existingBtn) {
-            // Verify it's actually in the action buttons area
+            // Verify it's actually in the action buttons area and NOT in the clarify-box info panel
             const parent = existingBtn.closest('#top-level-buttons-computed, .ytkit-button-container');
-            if (parent) {
+            const inClarifyBox = existingBtn.closest('#clarify-box, ytd-info-panel-container-renderer, ytd-clarification-renderer');
+            if (parent && !inClarifyBox) {
                 return true; // Button exists and is in correct container
             } else {
-                // Button exists but is detached - remove it so we can re-add
+                // Button exists but is detached or in wrong container - remove it so we can re-add
                 existingBtn.remove();
             }
         }
 
         // Try MANY possible parent selectors - YouTube changes these frequently
+        // IMPORTANT: Exclude #clarify-box which has its own #top-level-buttons-computed
         const parentSelectors = [
-            '#top-level-buttons-computed',
             'ytd-watch-metadata #top-level-buttons-computed',
-            'ytd-menu-renderer #top-level-buttons-computed',
             '#actions #top-level-buttons-computed',
             '#actions-inner #top-level-buttons-computed',
             '#actions ytd-menu-renderer #top-level-buttons-computed',
             '#actions-inner #menu #top-level-buttons-computed',
             'ytd-watch-metadata ytd-menu-renderer #top-level-buttons-computed',
             '#below ytd-watch-metadata #top-level-buttons-computed',
+            '#above-the-fold #top-level-buttons-computed',
+            '#above-the-fold #actions ytd-menu-renderer',
+            'ytd-watch-metadata #actions #menu',
             '#actions #menu',
             '#actions-inner #menu',
-            'ytd-watch-metadata #actions #menu',
             '#actions ytd-menu-renderer',
             '#actions-inner ytd-menu-renderer',
             'ytd-watch-metadata #actions-inner',
             '#owner #actions',
-            '#above-the-fold #top-level-buttons-computed',
-            '#above-the-fold #actions ytd-menu-renderer',
             'ytd-watch-metadata ytd-menu-renderer',
             '#below #actions',
         ];
@@ -173,8 +173,10 @@
         let foundSelector = null;
         for (const sel of parentSelectors) {
             try {
-                parent = document.querySelector(sel);
-                if (parent) {
+                const candidate = document.querySelector(sel);
+                // IMPORTANT: Skip if this element is inside the clarify-box info panel
+                if (candidate && !candidate.closest('#clarify-box, ytd-info-panel-container-renderer, ytd-clarification-renderer')) {
+                    parent = candidate;
                     foundSelector = sel;
                     break;
                 }
@@ -186,8 +188,10 @@
         // Also check if our fallback container exists
         if (!parent) {
             parent = document.querySelector('.ytkit-button-container');
-            if (parent) {
+            if (parent && !parent.closest('#clarify-box, ytd-info-panel-container-renderer')) {
                 foundSelector = '.ytkit-button-container (existing)';
+            } else {
+                parent = null;
             }
         }
 
@@ -1063,6 +1067,29 @@
             icon: 'badge',
             _styleElement: null,
             init() { this._styleElement = injectStyle('ytd-paid-content-overlay-renderer, ytm-paid-content-overlay-renderer', this.id); },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'hideInfoPanels',
+            name: 'Hide Info Panels',
+            description: 'Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)',
+            group: 'Content',
+            icon: 'info-off',
+            _styleElement: null,
+            init() {
+                const css = `
+                    #clarify-box,
+                    #clarify-box.attached-message,
+                    ytd-info-panel-container-renderer,
+                    ytd-watch-flexy #clarify-box,
+                    ytd-watch-flexy ytd-info-panel-container-renderer,
+                    ytd-clarification-renderer,
+                    .ytd-info-panel-container-renderer {
+                        display: none !important;
+                    }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
             destroy() { this._styleElement?.remove(); }
         },
         {
