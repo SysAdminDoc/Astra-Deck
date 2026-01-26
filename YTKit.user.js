@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      12.1
-// @description  Ultimate YouTube customization with VLC streaming, video/channel hiding, playback enhancements, and more. Optimized for performance.
+// @version      12.2
+// @description  Ultimate YouTube customization with VLC streaming, video/channel hiding, playback enhancements, and more. Optimized for performance. Enhanced transcript download with multi-method failover.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
 // @match        https://*.youtube-nocookie.com/*
@@ -73,7 +73,7 @@
     // YouTube enforces Trusted Types which blocks direct innerHTML assignments
     const TrustedHTML = (() => {
         let policy = null;
-        
+
         // Try to create a Trusted Types policy
         if (typeof window.trustedTypes !== 'undefined' && window.trustedTypes.createPolicy) {
             try {
@@ -85,7 +85,7 @@
                 console.log('[YTKit] Trusted Types policy creation failed, using fallback');
             }
         }
-        
+
         return {
             // Set innerHTML safely
             setHTML(element, html) {
@@ -115,7 +115,7 @@
                     }
                 }
             },
-            
+
             // Create HTML string (for cases where we need TrustedHTML)
             create(html) {
                 if (policy) {
@@ -184,6 +184,422 @@
                 GM_setValue(key, value);
             } catch (e) {
                 console.error('[YTKit Storage] Sync save failed:', key, e);
+            }
+        }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  TRANSCRIPT SERVICE - Multi-Method Extraction with Failover
+    // ══════════════════════════════════════════════════════════════════════════
+    const TranscriptService = {
+        config: {
+            preferredLanguages: ['en', 'en-US', 'en-GB'],
+            preferManualCaptions: true,
+            includeTimestamps: true,
+            debug: false
+        },
+
+        // Main entry point - downloads transcript with automatic failover
+        async downloadTranscript(options = {}) {
+            const videoId = new URLSearchParams(window.location.search).get('v');
+            if (!videoId) {
+                showToast('No video ID found', '#ef4444');
+                return { success: false, error: 'No video ID' };
+            }
+
+            showToast('Fetching transcript...', '#3b82f6');
+            this._log('Starting transcript fetch for:', videoId);
+
+            try {
+                const trackData = await this._getCaptionTracks(videoId);
+
+                if (!trackData || !trackData.tracks || trackData.tracks.length === 0) {
+                    showToast('No transcript available for this video', '#ef4444');
+                    return { success: false, error: 'No captions available' };
+                }
+
+                const selectedTrack = this._selectBestTrack(trackData.tracks);
+                this._log('Selected track:', selectedTrack.languageCode, selectedTrack.kind);
+
+                const segments = await this._fetchTranscriptContent(selectedTrack.baseUrl);
+
+                if (!segments || segments.length === 0) {
+                    showToast('Failed to parse transcript content', '#ef4444');
+                    return { success: false, error: 'Parse failed' };
+                }
+
+                const videoTitle = this._sanitizeFilename(trackData.videoTitle || videoId);
+                const content = this._formatTranscript(segments);
+
+                this._downloadFile(content, `${videoTitle}_transcript.txt`);
+
+                showToast(`Transcript downloaded! (${segments.length} segments)`, '#22c55e');
+                return { success: true, segments: segments.length, language: selectedTrack.languageCode };
+
+            } catch (error) {
+                console.error('[YTKit TranscriptService] Error:', error);
+                showToast('Failed to download transcript', '#ef4444');
+                return { success: false, error: error.message };
+            }
+        },
+
+        // Multi-method caption track retrieval with automatic failover
+        async _getCaptionTracks(videoId) {
+            const methods = [
+                { name: 'ytInitialPlayerResponse', fn: () => this._method1_WindowVariable(videoId) },
+                { name: 'Innertube API', fn: () => this._method2_InnertubeAPI(videoId) },
+                { name: 'HTML Page Fetch', fn: () => this._method3_HTMLPageFetch(videoId) },
+                { name: 'captionTracks Regex', fn: () => this._method4_CaptionTracksRegex(videoId) },
+                { name: 'DOM Panel Scrape', fn: () => this._method5_DOMPanelScrape(videoId) }
+            ];
+
+            for (const method of methods) {
+                try {
+                    this._log(`Trying method: ${method.name}`);
+                    const result = await method.fn();
+
+                    if (result && result.tracks && result.tracks.length > 0) {
+                        this._log(`Success with method: ${method.name}`, result.tracks.length, 'tracks found');
+                        return result;
+                    }
+                } catch (error) {
+                    this._log(`Method ${method.name} failed:`, error.message);
+                }
+            }
+
+            return null;
+        },
+
+        // Method 1: window.ytInitialPlayerResponse (fastest for fresh page loads)
+        _method1_WindowVariable(videoId) {
+            const playerResponse = window.ytInitialPlayerResponse;
+
+            if (!playerResponse?.videoDetails?.videoId) {
+                throw new Error('ytInitialPlayerResponse not available');
+            }
+
+            if (playerResponse.videoDetails.videoId !== videoId) {
+                throw new Error('ytInitialPlayerResponse is stale (different video)');
+            }
+
+            return this._extractFromPlayerResponse(playerResponse);
+        },
+
+        // Method 2: Innertube API (most reliable for SPA navigation)
+        async _method2_InnertubeAPI(videoId) {
+            const apiKey = this._getInnertubeApiKey() || 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+            const clientVersion = this._getClientVersion() || '2.20250120.00.00';
+
+            const response = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    context: {
+                        client: {
+                            clientName: 'WEB',
+                            clientVersion: clientVersion
+                        }
+                    },
+                    videoId: videoId
+                })
+            });
+
+            if (!response.ok) throw new Error(`Innertube API returned ${response.status}`);
+
+            const data = await response.json();
+            return this._extractFromPlayerResponse(data);
+        },
+
+        // Method 3: Fetch HTML and extract ytInitialPlayerResponse
+        async _method3_HTMLPageFetch(videoId) {
+            const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+            if (!response.ok) throw new Error(`Page fetch returned ${response.status}`);
+
+            const html = await response.text();
+
+            const patterns = [
+                /ytInitialPlayerResponse\s*=\s*({.+?});\s*(?:var\s|const\s|let\s|<\/script>)/s,
+                /ytInitialPlayerResponse\s*=\s*({.+?});/s,
+                /var\s+ytInitialPlayerResponse\s*=\s*({.+?});/s
+            ];
+
+            for (const pattern of patterns) {
+                const match = html.match(pattern);
+                if (match && match[1]) {
+                    try {
+                        const playerResponse = JSON.parse(match[1]);
+                        return this._extractFromPlayerResponse(playerResponse);
+                    } catch (parseError) {
+                        this._log('JSON parse failed for pattern, trying next');
+                    }
+                }
+            }
+
+            throw new Error('Could not extract ytInitialPlayerResponse from HTML');
+        },
+
+        // Method 4: Direct captionTracks regex extraction
+        async _method4_CaptionTracksRegex(videoId) {
+            const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+            if (!response.ok) throw new Error(`Page fetch returned ${response.status}`);
+
+            const html = await response.text();
+
+            const captionMatch = html.match(/"captionTracks":(\[.*?\])(?:,|\})/);
+            if (!captionMatch || !captionMatch[1]) {
+                throw new Error('captionTracks not found in page');
+            }
+
+            const captionJson = captionMatch[1].replace(/\\u0026/g, '&');
+            const tracks = JSON.parse(captionJson);
+
+            let videoTitle = videoId;
+            const titleMatch = html.match(/"title":"([^"]+)"/);
+            if (titleMatch && titleMatch[1]) {
+                videoTitle = titleMatch[1].replace(/\\u0026/g, '&').replace(/\\"/g, '"');
+            }
+
+            return {
+                tracks: tracks.map(t => ({
+                    baseUrl: t.baseUrl?.replace(/\\u0026/g, '&'),
+                    languageCode: t.languageCode,
+                    name: t.name?.simpleText || t.name?.runs?.[0]?.text || t.languageCode,
+                    kind: t.kind || (t.vssId?.startsWith('a.') ? 'asr' : 'manual'),
+                    vssId: t.vssId
+                })),
+                videoTitle: videoTitle
+            };
+        },
+
+        // Method 5: DOM panel scraping (final fallback)
+        async _method5_DOMPanelScrape(videoId) {
+            const transcriptRenderer = document.querySelector('ytd-transcript-renderer');
+            if (!transcriptRenderer) throw new Error('Transcript panel not found in DOM');
+
+            const data = transcriptRenderer.__data?.data || transcriptRenderer.data;
+            if (!data) throw new Error('No data in transcript renderer');
+
+            const footer = data.content?.transcriptSearchPanelRenderer?.footer?.transcriptFooterRenderer;
+            const languageMenu = footer?.languageMenu?.sortFilterSubMenuRenderer?.subMenuItems;
+
+            if (!languageMenu || languageMenu.length === 0) {
+                throw new Error('No language menu found in panel data');
+            }
+
+            const tracks = languageMenu.map(item => ({
+                baseUrl: item.continuation?.reloadContinuationData?.continuation,
+                languageCode: item.languageCode || 'unknown',
+                name: item.title || 'Unknown',
+                kind: item.title?.toLowerCase().includes('auto') ? 'asr' : 'manual'
+            }));
+
+            const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || videoId;
+
+            return { tracks, videoTitle };
+        },
+
+        // Extract track info from player response object
+        _extractFromPlayerResponse(playerResponse) {
+            if (!playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
+                throw new Error('No caption tracks in player response');
+            }
+
+            const captionTracks = playerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
+            const videoTitle = playerResponse.videoDetails?.title || '';
+
+            return {
+                tracks: captionTracks.map(t => ({
+                    baseUrl: t.baseUrl,
+                    languageCode: t.languageCode,
+                    name: t.name?.simpleText || t.name?.runs?.[0]?.text || t.languageCode,
+                    kind: t.kind || (t.vssId?.startsWith('a.') ? 'asr' : 'manual'),
+                    vssId: t.vssId
+                })),
+                videoTitle: videoTitle
+            };
+        },
+
+        // Select best track based on language and type preferences
+        _selectBestTrack(tracks) {
+            if (tracks.length === 1) return tracks[0];
+
+            const { preferredLanguages, preferManualCaptions } = this.config;
+
+            const scored = tracks.map(track => {
+                let score = 0;
+
+                const langIndex = preferredLanguages.findIndex(lang =>
+                    track.languageCode?.toLowerCase().startsWith(lang.toLowerCase())
+                );
+                if (langIndex !== -1) {
+                    score += (preferredLanguages.length - langIndex) * 10;
+                }
+
+                if (preferManualCaptions && track.kind !== 'asr') {
+                    score += 5;
+                } else if (!preferManualCaptions && track.kind === 'asr') {
+                    score += 5;
+                }
+
+                return { track, score };
+            });
+
+            scored.sort((a, b) => b.score - a.score);
+            return scored[0].track;
+        },
+
+        // Fetch and parse transcript content from baseUrl
+        async _fetchTranscriptContent(baseUrl) {
+            if (!baseUrl) throw new Error('No baseUrl provided for transcript');
+
+            const formats = ['json3', 'xml'];
+
+            for (const fmt of formats) {
+                try {
+                    const url = fmt === 'xml' ? baseUrl : `${baseUrl}&fmt=${fmt}`;
+                    const response = await fetch(url);
+
+                    if (!response.ok) continue;
+
+                    const content = await response.text();
+
+                    if (fmt === 'json3') {
+                        return this._parseJSON3(content);
+                    } else {
+                        return this._parseXML(content);
+                    }
+                } catch (e) {
+                    this._log(`Format ${fmt} failed:`, e.message);
+                }
+            }
+
+            throw new Error('Failed to fetch transcript in any format');
+        },
+
+        // Parse JSON3 format (word-level timing)
+        _parseJSON3(content) {
+            const data = JSON.parse(content);
+            const segments = [];
+
+            if (!data.events) throw new Error('No events in JSON3 response');
+
+            for (const event of data.events) {
+                if (!event.segs) continue;
+
+                const text = event.segs
+                    .map(seg => seg.utf8 || '')
+                    .join('')
+                    .replace(/\n/g, ' ')
+                    .trim();
+
+                if (text) {
+                    segments.push({
+                        startMs: event.tStartMs || 0,
+                        endMs: (event.tStartMs || 0) + (event.dDurationMs || 0),
+                        text: text
+                    });
+                }
+            }
+
+            return segments;
+        },
+
+        // Parse XML format (fallback)
+        _parseXML(content) {
+            const segments = [];
+            const textRegex = /<text[^>]*start="([^"]*)"[^>]*(?:dur="([^"]*)")?[^>]*>([\s\S]*?)<\/text>/g;
+
+            let match;
+            while ((match = textRegex.exec(content)) !== null) {
+                const startSeconds = parseFloat(match[1]) || 0;
+                const duration = parseFloat(match[2]) || 0;
+                const text = this._decodeHTMLEntities(match[3])
+                    .replace(/<[^>]*>/g, '')
+                    .trim();
+
+                if (text) {
+                    segments.push({
+                        startMs: Math.round(startSeconds * 1000),
+                        endMs: Math.round((startSeconds + duration) * 1000),
+                        text: text
+                    });
+                }
+            }
+
+            return segments;
+        },
+
+        // Format segments into transcript text
+        _formatTranscript(segments) {
+            return segments.map(s => {
+                if (this.config.includeTimestamps) {
+                    const timestamp = this._formatTimestamp(s.startMs);
+                    return `[${timestamp}] ${s.text}`;
+                }
+                return s.text;
+            }).join('\n');
+        },
+
+        _formatTimestamp(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            if (hours > 0) {
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        },
+
+        _getInnertubeApiKey() {
+            const match = document.body?.innerHTML?.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
+            return match ? match[1] : null;
+        },
+
+        _getClientVersion() {
+            if (typeof window.ytcfg !== 'undefined' && window.ytcfg.get) {
+                return window.ytcfg.get('INNERTUBE_CLIENT_VERSION');
+            }
+            return null;
+        },
+
+        _decodeHTMLEntities(text) {
+            return text
+                .replace(/&#39;/g, "'")
+                .replace(/&apos;/g, "'")
+                .replace(/&quot;/g, '"')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
+                .replace(/&#x([a-fA-F0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        },
+
+        _sanitizeFilename(name) {
+            return name
+                .replace(/[<>:"/\\|?*]/g, '')
+                .replace(/[^\x00-\x7F]/g, '')
+                .replace(/\s+/g, '_')
+                .toLowerCase()
+                .substring(0, 50);
+        },
+
+        _downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        },
+
+        _log(...args) {
+            if (this.config.debug) {
+                console.log('[YTKit TranscriptService]', ...args);
             }
         }
     };
@@ -722,7 +1138,7 @@
             if (!this._running) return;
 
             const now = performance.now();
-            
+
             for (const [id, handler] of this._handlers) {
                 if (now - handler.lastRun >= handler.interval) {
                     try {
@@ -742,7 +1158,7 @@
     function throttle(fn, limit) {
         let inThrottle = false;
         let lastArgs = null;
-        
+
         return function(...args) {
             if (!inThrottle) {
                 fn.apply(this, args);
@@ -1241,14 +1657,15 @@
             hideSidebar: true,
             hideNotificationButton: false,
             hideNotificationBadge: false,
-            
+
             // ═══ Appearance ═══
-            theme: 'betterDark',
-            uiStyle: 'square',
-            noAmbientMode: true,
-            noFrostedGlass: true,
-            compactLayout: true,
-            
+            // Consolidated: theme replaces nativeDarkMode, betterDarkMode, catppuccinMocha
+            theme: 'betterDark', // 'system' | 'dark' | 'betterDark' | 'catppuccin'
+            uiStyle: 'rounded', // 'rounded' | 'square' (replaces squarify, squareAvatars, squareSearchBar)
+            noAmbientMode: false,
+            noFrostedGlass: false,
+            compactLayout: false,
+
             // ═══ Content ═══
             removeAllShorts: true,
             redirectShorts: true,
@@ -1258,20 +1675,21 @@
             fiveVideosPerRow: true,
             hidePaidContentOverlay: true,
             redirectToVideosTab: true,
-            hidePlayables: true,
-            hideMembersOnly: true,
-            hideNewsHome: true,
-            hidePlaylistsHome: true,
-            
+            hidePlayables: false,
+            hideMembersOnly: false,
+            hideNewsHome: false,
+            hidePlaylistsHome: false,
+
             // ═══ Video Hider ═══
             hideVideosFromHome: true,
             hideVideosBlockChannels: true,
+            // Consolidated: single keyword filter that auto-detects regex (starts with /)
             hideVideosKeywordFilter: '',
             hideVideosDurationFilter: 0,
             hideVideosBlockedChannels: [],
             hideVideosSubsLoadLimit: true,
             hideVideosSubsLoadThreshold: 3,
-            
+
             // ═══ Video Player ═══
             fitPlayerToWindow: true,
             hideRelatedVideos: true,
@@ -1281,8 +1699,9 @@
             hideDescriptionRow: false,
             autoTheaterMode: false,
             persistentProgressBar: false,
+            // Consolidated: replaces hideVideoEndCards, hideVideoEndScreen, hideEndVideoStills
             hideVideoEndContent: true,
-            
+
             // ═══ Playback ═══
             preventAutoplay: false,
             autoExpandDescription: false,
@@ -1291,7 +1710,7 @@
             autoOpenTranscript: false,
             chronologicalNotifications: false,
             autoSkipStillWatching: true,
-            
+
             // ═══ Playback Enhancements ═══
             playbackSpeedPresets: true,
             defaultPlaybackSpeed: 1,
@@ -1300,55 +1719,59 @@
             timestampBookmarks: true,
             autoSkipIntroOutro: false,
             enablePerChannelSettings: true,
-            
+            // REMOVED: returnYouTubeDislike (API dependency removed)
+            // REMOVED: channelPlaybackSpeeds (replaced by enablePerChannelSettings)
+
             // ═══ SponsorBlock ═══
-            skipSponsors: true,
+            skipSponsors: false, // Changed default to false (network request)
             hideSponsorBlockLabels: true,
-            
+
             // ═══ Video Quality ═══
             autoMaxResolution: true,
             useEnhancedBitrate: true,
             hideQualityPopup: true,
-            
+
             // ═══ Clutter ═══
             hideMerchShelf: true,
-            hideInfoPanel: true,
-            hideInfoPanels: true,
+            hideInfoPanel: true, // Consolidated: replaces hideClarifyBoxes + hideInfoPanel
             hideDescriptionExtras: true,
             hideHashtags: true,
             hidePinnedComments: true,
-            hideCommentActionMenu: false,
+            hideCommentActionMenu: false, // Changed default - was blocking delete!
             condenseComments: true,
             hideLiveChatEngagement: true,
             hidePaidPromotionWatch: true,
-            hideFundraiser: true,
+            hideFundraiser: false,
             hideLatestPosts: false,
-            
+
             // ═══ Live Chat - Consolidated into array ═══
+            // Replaces 17 individual settings with multi-select
             hiddenChatElements: [
                 'header', 'menu', 'popout', 'reactions', 'timestamps',
                 'polls', 'ticker', 'leaderboard', 'support', 'banner',
                 'emoji', 'topFan', 'superChats', 'levelUp', 'bots'
             ],
             chatKeywordFilter: '',
-            
+
             // ═══ Action Buttons - Consolidated into array ═══
+            // Replaces 10 individual hide settings
             hiddenActionButtons: [
-                'like', 'dislike', 'share', 'ask', 'clip', 
+                'like', 'dislike', 'share', 'ask', 'clip',
                 'thanks', 'save', 'sponsor', 'moreActions'
             ],
             autolikeVideos: true,
             replaceWithCobaltDownloader: true,
-            
+
             // ═══ Player Controls - Consolidated into array ═══
+            // Replaces 9 individual hide settings
             hiddenPlayerControls: [
                 'sponsorBlock', 'next', 'autoplay', 'subtitles',
                 'captions', 'miniplayer', 'pip', 'theater', 'fullscreen'
             ],
-            
-            // ═══ Watch Page Elements ═══
+
+            // ═══ Watch Page Elements - Hide elements below videos ═══
             hiddenWatchElements: [],
-            
+
             // ═══ Downloads ═══
             showVlcButton: true,
             showVlcQueueButton: false,
@@ -1361,23 +1784,23 @@
             autoEmbedOnVisit: false,
             videoContextMenu: true,
             autoDownloadOnVisit: false,
-            downloadQuality: 'best',
+            downloadQuality: '1080',
             preferredMediaPlayer: 'vlc',
             downloadProvider: 'cobalt',
-            
+
             // ═══ Advanced ═══
-            hideCollaborations: true,
+            hideCollaborations: false,
             keyboardShortcuts: {
                 openSettings: 'ctrl+alt+y',
                 hideVideo: 'shift+h',
-                downloadVideo: 'ctrl+shift+d'
+                downloadVideo: 'ctrl+shift+d',
+                toggleTheater: 't'
             },
             debugMode: false,
             showStatisticsDashboard: true,
             customCssEnabled: false,
             customCssCode: '',
             useIntersectionObserver: true,
-            _version: 3,
         },
 
         // Migration map for old settings to new
@@ -1398,17 +1821,17 @@
             'hideClarifyBoxes': (val, settings) => { if (val) settings.hideInfoPanel = true; },
             // Regex filter consolidation
             'useRegexKeywordFilter': () => {}, // No longer needed - auto-detected
-            'hideVideosRegexFilter': (val, settings) => { 
-                if (val) settings.hideVideosKeywordFilter = val; 
+            'hideVideosRegexFilter': (val, settings) => {
+                if (val) settings.hideVideosKeywordFilter = val;
             },
         },
 
         async load() {
             let savedSettings = await StorageManager.get('ytSuiteSettings', {});
-            
+
             // Migrate old settings to new format
             savedSettings = this._migrateOldSettings(savedSettings);
-            
+
             // Run version migrations if needed
             if (!savedSettings._version || savedSettings._version < SETTINGS_VERSION) {
                 savedSettings = await SettingsMigration.migrate(savedSettings);
@@ -1419,7 +1842,7 @@
 
         _migrateOldSettings(saved) {
             const migrated = { ...saved };
-            
+
             // Migrate action buttons to array format
             if (saved.hideLikeButton !== undefined) {
                 const hidden = [];
@@ -1440,7 +1863,7 @@
                 delete migrated.hideSaveButton; delete migrated.hideSponsorButton;
                 delete migrated.hideMoreActionsButton;
             }
-            
+
             // Migrate player controls to array format
             if (saved.hideSponsorBlockButton !== undefined) {
                 const hidden = [];
@@ -1461,7 +1884,7 @@
                 delete migrated.hidePipButton; delete migrated.hideTheaterButton;
                 delete migrated.hideFullscreenButton;
             }
-            
+
             // Migrate chat elements to array format
             if (saved.hideLiveChatHeader !== undefined) {
                 const hidden = [];
@@ -1493,7 +1916,7 @@
                 delete migrated.hideLevelUp; delete migrated.hideChatBots;
                 delete migrated.keywordFilterList;
             }
-            
+
             // Apply other migrations
             for (const [oldKey, migrateFn] of Object.entries(this._migrationMap)) {
                 if (saved[oldKey] !== undefined) {
@@ -1501,11 +1924,11 @@
                     delete migrated[oldKey];
                 }
             }
-            
+
             // Remove returnYouTubeDislike completely
             delete migrated.returnYouTubeDislike;
             delete migrated.channelPlaybackSpeeds;
-            
+
             return migrated;
         },
 
@@ -1732,22 +2155,22 @@
             settingKey: 'theme',
             _styleElement: null,
             _ruleId: 'themeManagerRule',
-            
+
             init() {
                 const theme = appState.settings.theme || 'betterDark';
                 this._applyTheme(theme);
                 addMutationRule(this._ruleId, () => this._applyTheme(theme));
             },
-            
+
             _applyTheme(theme) {
                 // Remove existing theme styles
                 document.getElementById('ytkit-theme-style')?.remove();
-                
+
                 // Always force dark mode for non-system themes
                 if (theme !== 'system') {
                     document.documentElement.setAttribute('dark', '');
                 }
-                
+
                 // Apply specific theme CSS
                 if (theme === 'betterDark') {
                     const customCss = GM_getResourceText('betterDarkMode');
@@ -1769,7 +2192,7 @@
                     }
                 }
             },
-            
+
             destroy() {
                 document.documentElement.removeAttribute('dark');
                 this._styleElement?.remove();
@@ -1791,7 +2214,7 @@
             },
             settingKey: 'uiStyle',
             _styleElement: null,
-            
+
             init() {
                 const style = appState.settings.uiStyle || 'rounded';
                 if (style === 'square') {
@@ -1804,7 +2227,7 @@
                     this._styleElement = injectStyle(css, this.id, true);
                 }
             },
-            
+
             destroy() { this._styleElement?.remove(); }
         },
         {
@@ -2151,7 +2574,7 @@
                 const hidden = appState.settings.hiddenWatchElements || [];
                 const metadata = document.querySelector('ytd-watch-metadata');
                 if (!metadata) return;
-                
+
                 // Hide buttons by finding them via aria-label
                 Object.entries(this._buttonAriaLabels).forEach(([key, ariaLabel]) => {
                     if (hidden.includes(key)) {
@@ -2172,23 +2595,23 @@
             init() {
                 const hidden = appState.settings.hiddenWatchElements || [];
                 if (hidden.length === 0) return;
-                
+
                 // Build CSS for elements that can use pure CSS hiding
                 const cssSelectors = hidden
                     .filter(key => this._cssSelectors[key])
                     .map(key => this._cssSelectors[key])
                     .filter(Boolean);
-                
+
                 if (cssSelectors.length > 0) {
                     this._styleElement = injectStyle(cssSelectors.join(', '), this.id);
                 }
-                
+
                 // Use mutation observer for button hiding (aria-label based)
                 const hasButtonsToHide = hidden.some(key => this._buttonAriaLabels[key]);
                 if (hasButtonsToHide) {
                     // Initial hide attempt
                     this._hideButtons();
-                    
+
                     // Add mutation rule to catch dynamically loaded content
                     addMutationRule(this._ruleId, () => this._hideButtons());
                 }
@@ -2197,7 +2620,7 @@
                 this._styleElement?.remove();
                 this._styleElement = null;
                 removeMutationRule(this._ruleId);
-                
+
                 // Restore hidden buttons
                 document.querySelectorAll('[ytkit-hidden]').forEach(el => {
                     if (!(el instanceof HTMLElement)) return;
@@ -2622,12 +3045,12 @@
                 if (videoId && this._getHiddenVideos().includes(videoId)) return true;
                 const channelInfo = this._extractChannelInfo(element);
                 if (channelInfo && this._getBlockedChannels().find(c => c.id === channelInfo.id)) return true;
-                
+
                 // Unified keyword/regex filter - auto-detects regex if starts with /
                 const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
                 if (filterStr) {
                     const title = this._extractTitle(element);
-                    
+
                     // Check if it's a regex pattern (starts with /)
                     if (filterStr.startsWith('/')) {
                         try {
@@ -2645,7 +3068,7 @@
                         if (keywords.some(k => title.includes(k))) return true;
                     }
                 }
-                
+
                 const minDuration = (appState.settings.hideVideosDurationFilter || 0) * 60;
                 if (minDuration > 0) {
                     const duration = this._extractDuration(element);
@@ -4127,11 +4550,11 @@
                     .map(key => this._selectors[key])
                     .filter(Boolean)
                     .join(', ');
-                
+
                 if (selectors) {
                     this._styleElement = injectStyle(selectors, this.id);
                 }
-                
+
                 // Bot filter uses mutation observer
                 if (hidden.includes('bots')) {
                     addMutationRule('chatBotFilter', applyBotFilter);
@@ -4173,7 +4596,7 @@
             },
             destroy() { removeNavigateRule(this.id); }
         },
-        
+
         // ═══ Consolidated Action Buttons Feature ═══
         {
             id: 'hiddenActionButtonsManager',
@@ -4597,98 +5020,7 @@
             icon: 'file-text',
 
             async _downloadTranscript() {
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                if (!videoId) {
-                    showToast('❌ No video ID found', '#ef4444');
-                    return;
-                }
-
-                showToast('📝 Fetching transcript...', '#3b82f6');
-
-                try {
-                    let playerResponse = null;
-
-                    // Method 1: Try window.ytInitialPlayerResponse (only works on fresh load)
-                    if (window.ytInitialPlayerResponse &&
-                        window.ytInitialPlayerResponse.videoDetails &&
-                        window.ytInitialPlayerResponse.videoDetails.videoId === videoId) {
-                        playerResponse = window.ytInitialPlayerResponse;
-                    }
-
-                    // Method 2: Fetch fresh data if the variable is stale (SPA navigation)
-                    if (!playerResponse) {
-                        const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-                        const html = await response.text();
-                        // Extract the player response JSON from the HTML
-                        const match = html.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
-                        if (match && match[1]) {
-                            playerResponse = JSON.parse(match[1]);
-                        }
-                    }
-
-                    if (!playerResponse || !playerResponse.captions) {
-                        showToast('❌ No transcript available for this video', '#ef4444');
-                        return;
-                    }
-
-                    // Navigate the JSON object to find caption tracks
-                    const captionTracks = playerResponse.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!captionTracks || captionTracks.length === 0) {
-                        showToast('❌ No transcript tracks found', '#ef4444');
-                        return;
-                    }
-
-                    // Get first available track (usually auto-generated or primary language)
-                    const trackUrl = captionTracks[0].baseUrl;
-                    const videoTitle = (playerResponse.videoDetails?.title || videoId)
-                        .replace(/[^a-z0-9]/gi, '_')
-                        .toLowerCase()
-                        .substring(0, 50);
-
-                    // Fetch the XML transcript
-                    const transcriptResponse = await fetch(trackUrl);
-                    const transcriptXml = await transcriptResponse.text();
-
-                    // Parse XML using regex (CSP-safe, avoids TrustedHTML requirement)
-                    const textRegex = /<text[^>]*start="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
-                    const matches = [...transcriptXml.matchAll(textRegex)];
-
-                    let transcript = '';
-                    for (const match of matches) {
-                        const startSeconds = parseFloat(match[1]);
-                        const text = match[2]
-                            .replace(/&#39;/g, "'")
-                            .replace(/&quot;/g, '"')
-                            .replace(/&amp;/g, '&')
-                            .replace(/&lt;/g, '<')
-                            .replace(/&gt;/g, '>')
-                            .replace(/<[^>]*>/g, '');
-
-                        // Format time as HH:MM:SS
-                        const date = new Date(0);
-                        date.setSeconds(startSeconds);
-                        const timestamp = date.toISOString().substring(11, 19);
-
-                        transcript += `[${timestamp}] ${text}\n`;
-                    }
-
-                    // Download as text file
-                    const blob = new Blob([transcript], { type: 'text/plain;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${videoTitle}_transcript.txt`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-
-                    showToast('✅ Transcript downloaded!', '#22c55e');
-
-                } catch (e) {
-                    console.error('[YTKit] Transcript download error:', e);
-                    showToast('❌ Failed to download transcript', '#ef4444');
-                }
+                await TranscriptService.downloadTranscript();
             },
 
             _createButton(parent) {
@@ -6259,103 +6591,12 @@
             },
 
             async _downloadTranscript() {
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                if (!videoId) {
-                    showToast('❌ No video ID found', '#ef4444');
-                    return;
-                }
-
-                showToast('📝 Fetching transcript...', '#3b82f6');
-
-                try {
-                    let playerResponse = null;
-
-                    // Method 1: Try window.ytInitialPlayerResponse (only works on fresh load)
-                    if (window.ytInitialPlayerResponse &&
-                        window.ytInitialPlayerResponse.videoDetails &&
-                        window.ytInitialPlayerResponse.videoDetails.videoId === videoId) {
-                        playerResponse = window.ytInitialPlayerResponse;
-                    }
-
-                    // Method 2: Fetch fresh data if the variable is stale (SPA navigation)
-                    if (!playerResponse) {
-                        const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-                        const html = await response.text();
-                        // Extract the player response JSON from the HTML
-                        const match = html.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
-                        if (match && match[1]) {
-                            playerResponse = JSON.parse(match[1]);
-                        }
-                    }
-
-                    if (!playerResponse || !playerResponse.captions) {
-                        showToast('❌ No transcript available for this video', '#ef4444');
-                        return;
-                    }
-
-                    // Navigate the JSON object to find caption tracks
-                    const captionTracks = playerResponse.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!captionTracks || captionTracks.length === 0) {
-                        showToast('❌ No transcript tracks found', '#ef4444');
-                        return;
-                    }
-
-                    // Get first available track (usually auto-generated or primary language)
-                    const trackUrl = captionTracks[0].baseUrl;
-                    const videoTitle = (playerResponse.videoDetails?.title || videoId)
-                        .replace(/[^a-z0-9]/gi, '_')
-                        .toLowerCase()
-                        .substring(0, 50);
-
-                    // Fetch the XML transcript
-                    const transcriptResponse = await fetch(trackUrl);
-                    const transcriptXml = await transcriptResponse.text();
-
-                    // Parse XML using regex (CSP-safe, avoids TrustedHTML requirement)
-                    const textRegex = /<text[^>]*start="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
-                    const matches = [...transcriptXml.matchAll(textRegex)];
-
-                    let transcript = '';
-                    for (const match of matches) {
-                        const startSeconds = parseFloat(match[1]);
-                        const text = match[2]
-                            .replace(/&#39;/g, "'")
-                            .replace(/&quot;/g, '"')
-                            .replace(/&amp;/g, '&')
-                            .replace(/&lt;/g, '<')
-                            .replace(/&gt;/g, '>')
-                            .replace(/<[^>]*>/g, '');
-
-                        // Format time as HH:MM:SS
-                        const date = new Date(0);
-                        date.setSeconds(startSeconds);
-                        const timestamp = date.toISOString().substring(11, 19);
-
-                        transcript += `[${timestamp}] ${text}\n`;
-                    }
-
-                    // Download as text file
-                    const blob = new Blob([transcript], { type: 'text/plain;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${videoTitle}_transcript.txt`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-
-                    showToast('✅ Transcript downloaded!', '#22c55e');
-
-                } catch (e) {
-                    console.error('[YTKit] Transcript download error:', e);
-                    showToast('❌ Failed to download transcript', '#ef4444');
-                }
+                await TranscriptService.downloadTranscript();
             },
 
             _streamVLC() {
                 const url = window.location.href;
-                showToast('🎬 Sending to VLC...', '#f97316');
+                showToast('Sending to VLC...', '#f97316');
                 window.location.href = 'ytvlc://' + encodeURIComponent(url);
             },
 
@@ -6520,17 +6761,17 @@
             icon: 'keyboard',
             init() {
                 KeyboardManager.init();
-                
+
                 // Register default shortcuts
                 const shortcuts = appState.settings.keyboardShortcuts || {};
-                
+
                 // Open settings panel
                 if (shortcuts.openSettings) {
                     KeyboardManager.register(shortcuts.openSettings, () => {
                         document.body.classList.toggle('ytkit-panel-open');
                     }, 'Open YTKit Settings');
                 }
-                
+
                 // Hide current video (only on watch page)
                 if (shortcuts.hideVideo) {
                     KeyboardManager.register(shortcuts.hideVideo, () => {
@@ -6558,7 +6799,7 @@
                         }
                     }, 'Hide Current Video');
                 }
-                
+
                 // Download video shortcut
                 if (shortcuts.downloadVideo) {
                     KeyboardManager.register(shortcuts.downloadVideo, () => {
@@ -6604,7 +6845,7 @@
                             DebugManager.log('StillWatching', 'Dismissed popup');
                         }
                     }
-                    
+
                     // Also check for the pause overlay
                     const pauseOverlay = document.querySelector('.ytp-pause-overlay');
                     if (pauseOverlay && pauseOverlay.style.display !== 'none') {
@@ -6813,7 +7054,7 @@
             icon: 'gauge',
             init() {
                 VisibilityObserver.init();
-                
+
                 // Add CSS containment for better rendering performance
                 const style = document.createElement('style');
                 style.id = 'ytkit-performance-css';
@@ -6824,7 +7065,7 @@
                     ytd-compact-video-renderer {
                         contain: content;
                     }
-                    
+
                     ytd-thumbnail {
                         contain: strict;
                     }
@@ -6889,7 +7130,7 @@
                 <button id="ytkit-channel-close" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 20px;">&times;</button>
             </div>
             <p style="color: #94a3b8; margin-bottom: 20px; font-size: 14px;">Settings for: <strong style="color: #60a5fa;">${channelName || channelId}</strong></p>
-            
+
             <div style="margin-bottom: 16px;">
                 <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #94a3b8;">Playback Speed</label>
                 <select id="ytkit-channel-speed" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 14px;">
@@ -6903,12 +7144,12 @@
                     <option value="2" ${currentSpeed === 2 ? 'selected' : ''}>2x</option>
                 </select>
             </div>
-            
+
             <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #94a3b8;">Default Volume: <span id="ytkit-vol-display">${currentVolume}%</span></label>
                 <input type="range" id="ytkit-channel-volume" min="0" max="100" value="${currentVolume}" style="width: 100%; accent-color: #60a5fa;">
             </div>
-            
+
             <div style="display: flex; gap: 12px;">
                 <button id="ytkit-channel-save" style="flex: 1; padding: 12px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: background 0.2s;">Save</button>
                 <button id="ytkit-channel-reset" style="flex: 1; padding: 12px; background: #334155; border: none; border-radius: 8px; color: #e2e8f0; font-weight: 600; cursor: pointer; transition: background 0.2s;">Reset</button>
@@ -6952,7 +7193,7 @@
         dialog.querySelector('#ytkit-channel-save').onclick = async () => {
             const speed = parseFloat(dialog.querySelector('#ytkit-channel-speed').value);
             const volume = parseInt(volumeSlider.value) / 100;
-            
+
             await ChannelSettingsManager.setForChannel(channelId, {
                 name: channelName,
                 playbackSpeed: speed,
@@ -6985,7 +7226,7 @@
     // ══════════════════════════════════════════════════════════════════════════
     async function buildStatisticsDashboard() {
         const stats = await StatsTracker.getAll();
-        
+
         const container = document.createElement('div');
         container.className = 'ytkit-stats-dashboard';
         TrustedHTML.setHTML(container, `
@@ -7043,12 +7284,12 @@
     // ══════════════════════════════════════════════════════════════════════════
     async function buildProfilesUI() {
         const profiles = await ProfilesManager.getAll();
-        
+
         const container = document.createElement('div');
         container.className = 'ytkit-profiles-ui';
-        
+
         let html = '<div style="margin-bottom: 16px;"><h4 style="margin: 0 0 12px 0; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Built-in Profiles</h4>';
-        
+
         // Built-in profiles
         for (const [key, profile] of Object.entries(profiles.builtIn)) {
             html += `
@@ -7062,12 +7303,12 @@
                 </div>
             `;
         }
-        
+
         html += '</div>';
-        
+
         // Custom profiles section
         html += '<div style="margin-bottom: 16px;"><h4 style="margin: 0 0 12px 0; color: #94a3b8; font-size: 13px; text-transform: uppercase;">Custom Profiles</h4>';
-        
+
         if (Object.keys(profiles.custom).length === 0) {
             html += '<p style="color: #64748b; font-size: 13px; margin: 0;">No custom profiles yet.</p>';
         } else {
@@ -7085,18 +7326,18 @@
                 `;
             }
         }
-        
+
         html += '</div>';
-        
+
         // Save current as profile button
         html += `
             <button id="ytkit-save-profile" style="width: 100%; padding: 12px; background: #334155; border: none; border-radius: 8px; color: #e2e8f0; font-weight: 500; cursor: pointer; transition: background 0.2s;">
                 Save Current Settings as Profile
             </button>
         `;
-        
+
         TrustedHTML.setHTML(container, html);
-        
+
         // Event listeners
         container.querySelectorAll('.ytkit-profile-apply').forEach(btn => {
             btn.onclick = async (e) => {
@@ -7104,7 +7345,7 @@
                 const item = btn.closest('.ytkit-profile-item');
                 const profileKey = item.dataset.profile;
                 const isBuiltIn = item.dataset.builtin === 'true';
-                
+
                 if (confirm(`Apply the "${profileKey}" profile? This will change your current settings.`)) {
                     await ProfilesManager.applyProfile(profileKey, isBuiltIn);
                     showToast(`Profile "${profileKey}" applied! Refreshing...`, '#22c55e');
@@ -7112,13 +7353,13 @@
                 }
             };
         });
-        
+
         container.querySelectorAll('.ytkit-profile-delete').forEach(btn => {
             btn.onclick = async (e) => {
                 e.stopPropagation();
                 const item = btn.closest('.ytkit-profile-item');
                 const profileKey = item.dataset.profile;
-                
+
                 if (confirm(`Delete the "${profileKey}" profile?`)) {
                     await ProfilesManager.deleteCustomProfile(profileKey);
                     showToast(`Profile "${profileKey}" deleted`, '#f97316');
@@ -7129,7 +7370,7 @@
                 }
             };
         });
-        
+
         container.querySelector('#ytkit-save-profile').onclick = async () => {
             const name = prompt('Enter a name for this profile:');
             if (name && name.trim()) {
@@ -7141,7 +7382,7 @@
                 parent?.appendChild(await buildProfilesUI());
             }
         };
-        
+
         return container;
     }
 
@@ -7166,25 +7407,25 @@
             <button class="ytkit-bulk-unhide" style="padding: 6px 12px; background: #22c55e; border: none; border-radius: 6px; color: white; font-size: 12px; cursor: pointer;">Unhide Selected</button>
             <button class="ytkit-bulk-cancel" style="padding: 6px 12px; background: #64748b; border: none; border-radius: 6px; color: white; font-size: 12px; cursor: pointer;">Cancel</button>
         `);
-        
+
         container.insertBefore(bulkBar, container.firstChild);
-        
+
         let selectedItems = new Set();
-        
+
         const updateBulkBar = () => {
             bulkBar.style.display = selectedItems.size > 0 ? 'flex' : 'none';
             bulkBar.querySelector('.ytkit-bulk-count').textContent = `${selectedItems.size} selected`;
         };
-        
+
         bulkBar.querySelector('.ytkit-bulk-cancel').onclick = () => {
             selectedItems.clear();
             container.querySelectorAll('.ytkit-item-checkbox').forEach(cb => cb.checked = false);
             updateBulkBar();
         };
-        
+
         bulkBar.querySelector('.ytkit-bulk-unhide').onclick = () => {
             if (selectedItems.size === 0) return;
-            
+
             const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
             if (videoHiderFeature) {
                 selectedItems.forEach(id => {
@@ -7195,12 +7436,12 @@
                 showToast(`Unhid ${selectedItems.size} videos`, '#22c55e');
                 selectedItems.clear();
                 updateBulkBar();
-                
+
                 // Trigger refresh of the list
                 container.dispatchEvent(new CustomEvent('ytkit-refresh-list'));
             }
         };
-        
+
         return {
             addCheckbox: (item, id) => {
                 const checkbox = document.createElement('input');
@@ -9167,27 +9408,27 @@ pause
             // Multi-select with checkboxes
             const settingKey = f.settingKey || f.id;
             const currentValues = appState.settings[settingKey] || [];
-            
+
             const wrapper = document.createElement('div');
             wrapper.className = 'ytkit-multiselect';
             wrapper.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;max-width:300px;';
-            
+
             // Create "Edit" button to expand options
             const editBtn = document.createElement('button');
             editBtn.className = 'ytkit-multiselect-btn';
             editBtn.style.cssText = 'padding:6px 12px;border-radius:6px;background:var(--ytkit-bg-hover);color:#fff;border:1px solid rgba(255,255,255,0.1);cursor:pointer;font-size:12px;';
             editBtn.textContent = `${currentValues.length} of ${f.options.length} selected`;
-            
+
             const dropdown = document.createElement('div');
             dropdown.className = 'ytkit-multiselect-dropdown';
             dropdown.style.cssText = 'display:none;position:absolute;right:0;top:100%;background:var(--ytkit-bg-elevated);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;z-index:100;max-height:200px;overflow-y:auto;min-width:200px;';
-            
+
             f.options.forEach(opt => {
                 const label = document.createElement('label');
                 label.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;cursor:pointer;font-size:12px;color:#e2e8f0;';
                 label.onmouseenter = () => { label.style.background = 'rgba(255,255,255,0.05)'; };
                 label.onmouseleave = () => { label.style.background = 'transparent'; };
-                
+
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
                 cb.value = opt.value;
@@ -9196,22 +9437,22 @@ pause
                 cb.dataset.featureId = f.id;
                 cb.dataset.settingKey = settingKey;
                 cb.className = 'ytkit-multiselect-cb';
-                
+
                 label.appendChild(cb);
                 label.appendChild(document.createTextNode(opt.label));
                 dropdown.appendChild(label);
             });
-            
+
             editBtn.onclick = (e) => {
                 e.stopPropagation();
                 dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
             };
-            
+
             wrapper.style.position = 'relative';
             wrapper.appendChild(editBtn);
             wrapper.appendChild(dropdown);
             card.appendChild(wrapper);
-            
+
             // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!wrapper.contains(e.target)) {
@@ -9307,7 +9548,7 @@ pause
             const featureToggles = pane.querySelectorAll('.ytkit-feature-cb');
             const allChecked = featureToggles.length > 0 && Array.from(featureToggles).every(t => t.checked);
             cb.checked = allChecked;
-            
+
             // Update switch visual state
             const switchEl = cb.closest('.ytkit-switch');
             if (switchEl) {
@@ -9485,13 +9726,13 @@ pause
                 const isEnabled = e.target.checked;
                 const catId = e.target.dataset.category;
                 const pane = doc.getElementById(`ytkit-pane-${catId}`);
-                
+
                 // Update the switch visual state
                 const switchEl = e.target.closest('.ytkit-switch');
                 if (switchEl) {
                     switchEl.classList.toggle('active', isEnabled);
                 }
-                
+
                 if (pane) {
                     pane.querySelectorAll('.ytkit-feature-card:not(.ytkit-sub-card) .ytkit-feature-cb').forEach(cb => {
                         if (cb.checked !== isEnabled) {
@@ -9515,7 +9756,7 @@ pause
                     feature.destroy?.();
                     feature.init?.();
                 }
-                
+
                 // Special case: if customCssCode changed, update the customCssEnabled feature
                 if (featureId === 'customCssCode' && appState.settings.customCssEnabled) {
                     const cssFeature = features.find(f => f.id === 'customCssEnabled');
@@ -9529,14 +9770,14 @@ pause
                 const card = e.target.closest('[data-feature-id]');
                 const featureId = card.dataset.featureId;
                 const feature = features.find(f => f.id === featureId);
-                
+
                 // Use settingKey if specified, otherwise use featureId
                 const settingKey = feature?.settingKey || featureId;
                 const newValue = e.target.value;
-                
+
                 appState.settings[settingKey] = newValue;
                 await settingsManager.save(appState.settings);
-                
+
                 // Reinitialize the feature to apply changes immediately
                 if (feature) {
                     if (typeof feature.destroy === 'function') {
@@ -9546,7 +9787,7 @@ pause
                         try { feature.init(); } catch (e) { console.warn('[YTKit] Feature reinit error:', e); }
                     }
                 }
-                
+
                 const selectedText = e.target.options[e.target.selectedIndex].text;
                 createToast(`${feature?.name || 'Setting'} changed to ${selectedText}`, 'success');
             }
@@ -9556,11 +9797,11 @@ pause
                 const featureId = card.dataset.featureId;
                 const settingKey = e.target.dataset.settingKey;
                 const feature = features.find(f => f.id === featureId);
-                
+
                 // Get current array and update it
                 let currentValues = appState.settings[settingKey] || [];
                 if (!Array.isArray(currentValues)) currentValues = [];
-                
+
                 const value = e.target.value;
                 if (e.target.checked) {
                     if (!currentValues.includes(value)) {
@@ -9569,16 +9810,16 @@ pause
                 } else {
                     currentValues = currentValues.filter(v => v !== value);
                 }
-                
+
                 appState.settings[settingKey] = currentValues;
                 await settingsManager.save(appState.settings);
-                
+
                 // Update button text
                 const btn = card.querySelector('.ytkit-multiselect-btn');
                 if (btn && feature) {
                     btn.textContent = `${currentValues.length} of ${feature.options.length} selected`;
                 }
-                
+
                 // Reinitialize the feature to apply changes immediately
                 if (feature) {
                     if (typeof feature.destroy === 'function') {
@@ -10482,16 +10723,16 @@ ytd-live-chat-frame {
             // For regular features, check if the feature is enabled
             const isMultiSelect = f.type === 'multiSelect';
             const settingKey = f.settingKey || f.id;
-            const isEnabled = isMultiSelect 
+            const isEnabled = isMultiSelect
                 ? (appState.settings[settingKey] && appState.settings[settingKey].length > 0)
                 : appState.settings[f.id];
-            
+
             if (isEnabled) {
                 // Check if feature should run on this page (lazy-loading)
                 if (f.pages && !f.pages.includes(appState.currentPage)) {
                     return; // Skip this feature on this page
                 }
-                
+
                 // Check feature dependencies
                 if (f.dependsOn && !appState.settings[f.dependsOn]) {
                     return; // Skip if dependency not enabled
@@ -10530,19 +10771,19 @@ ytd-live-chat-frame {
                 const oldPage = appState.currentPage;
                 appState.currentPage = newPage;
                 DebugManager.log('Navigation', `Page changed: ${oldPage} -> ${newPage}`);
-                
+
                 // Re-initialize features that are page-specific
                 features.forEach(f => {
                     const isMultiSelect = f.type === 'multiSelect';
                     const settingKey = f.settingKey || f.id;
-                    const isEnabled = isMultiSelect 
+                    const isEnabled = isMultiSelect
                         ? (appState.settings[settingKey] && appState.settings[settingKey].length > 0)
                         : appState.settings[f.id];
-                    
+
                     if (isEnabled && f.pages) {
                         const wasActive = f.pages.includes(oldPage);
                         const shouldBeActive = f.pages.includes(newPage);
-                        
+
                         if (!wasActive && shouldBeActive) {
                             try { f.init?.(); } catch(e) {}
                         } else if (wasActive && !shouldBeActive) {
@@ -10556,8 +10797,8 @@ ytd-live-chat-frame {
         // Initialize statistics tracker
         await StatsTracker.load();
 
-        console.log('[YTKit] v12.1 Initialized - Optimized Edition');
-        DebugManager.log('Init', 'YTKit v12.1 started', { page: appState.currentPage, features: Object.keys(appState.settings).filter(k => appState.settings[k]).length });
+        console.log('[YTKit] v12.2 Initialized - Enhanced Transcript Edition');
+        DebugManager.log('Init', 'YTKit v12.2 started', { page: appState.currentPage, features: Object.keys(appState.settings).filter(k => appState.settings[k]).length });
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
