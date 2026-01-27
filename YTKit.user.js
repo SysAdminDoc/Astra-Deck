@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      12.3
+// @version      12.4
 // @description  Ultimate YouTube customization with VLC streaming, video/channel hiding, playback enhancements, and more. Uses YTYT-Downloader for local downloads.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
@@ -929,7 +929,7 @@
                 icon: 'download',
                 settings: {
                     showVlcButton: true, showVlcQueueButton: true, showLocalDownloadButton: true,
-                    showTranscriptButton: true, videoContextMenu: true, replaceWithCobaltDownloader: true
+                    showMp3DownloadButton: true, showTranscriptButton: true, videoContextMenu: true, replaceWithCobaltDownloader: true
                 }
             },
             binge: {
@@ -1473,6 +1473,7 @@
                             if (node.nodeType === 1 && node.classList && (
                                 node.classList.contains('ytkit-vlc-btn') ||
                                 node.classList.contains('ytkit-local-dl-btn') ||
+                                node.classList.contains('ytkit-mp3-dl-btn') ||
                                 node.classList.contains('ytkit-embed-btn') ||
                                 node.classList.contains('ytkit-mpv-btn') ||
                                 node.classList.contains('ytkit-dlplay-btn') ||
@@ -1760,7 +1761,7 @@
                 'thanks', 'save', 'sponsor', 'moreActions'
             ],
             autolikeVideos: true,
-            replaceWithCobaltDownloader: true,
+            replaceWithCobaltDownloader: false,
 
             // ═══ Player Controls - Consolidated into array ═══
             // Replaces 9 individual hide settings
@@ -1776,6 +1777,7 @@
             showVlcButton: true,
             showVlcQueueButton: false,
             showLocalDownloadButton: true,
+            showMp3DownloadButton: true,
             showTranscriptButton: true,
             showMpvButton: false,
             showDownloadPlayButton: false,
@@ -4640,9 +4642,9 @@
         },
         {
             id: 'replaceWithCobaltDownloader',
-            name: 'Download Button',
-            description: 'Add a download button using your chosen provider',
-            group: 'Action Buttons',
+            name: 'Web Download Button',
+            description: 'Add a web-based download button (Cobalt, y2mate, etc). Disabled by default when YTYT local download is enabled.',
+            group: 'Downloads',
             icon: 'download',
             _styleElement: null,
             _providers: {
@@ -5010,6 +5012,44 @@
             destroy() {
                 unregisterPersistentButton('localDownloadButton');
                 document.querySelector('.ytkit-local-dl-btn')?.remove();
+            }
+        },
+        {
+            id: 'showMp3DownloadButton',
+            name: 'MP3 Download Button',
+            description: 'Add button to download audio as MP3 via yt-dlp',
+            group: 'Downloads',
+            icon: 'music',
+            _createButton(parent) {
+                const btn = document.createElement('button');
+                btn.className = 'ytkit-mp3-dl-btn';
+                btn.title = 'Download MP3 (requires YTYT-Downloader)';
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '20');
+                svg.setAttribute('height', '20');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+                path.setAttribute('fill', 'white');
+                svg.appendChild(path);
+                btn.appendChild(svg);
+                btn.appendChild(document.createTextNode(' MP3'));
+                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#8b5cf6;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
+                btn.onmouseenter = () => { btn.style.background = '#7c3aed'; };
+                btn.onmouseleave = () => { btn.style.background = '#8b5cf6'; };
+                btn.addEventListener('click', () => {
+                    showToast('🎵 Starting MP3 download...', '#8b5cf6');
+                    window.location.href = 'ytdl://' + encodeURIComponent(window.location.href) + '?ytyt_audio_only=1';
+                });
+                parent.appendChild(btn);
+            },
+            init() {
+                registerPersistentButton('mp3DownloadButton', '#top-level-buttons-computed', '.ytkit-mp3-dl-btn', this._createButton.bind(this));
+                startButtonChecker();
+            },
+            destroy() {
+                unregisterPersistentButton('mp3DownloadButton');
+                document.querySelector('.ytkit-mp3-dl-btn')?.remove();
             }
         },
         {
@@ -9285,7 +9325,7 @@ echo ========================================
 echo.
 echo Downloading and running installer...
 echo.
-powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/SysAdminDoc/YTKit/refs/heads/main/Install-YTYT.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/src/Install-YTYT.ps1 | iex"
 echo.
 echo If the window closes immediately, right-click and Run as Administrator.
 pause
@@ -9305,7 +9345,7 @@ pause
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v12.2';
+        versionSpan.textContent = 'v12.4';
 
         const shortcutSpan = document.createElement('span');
         shortcutSpan.className = 'ytkit-shortcut';
@@ -9894,6 +9934,8 @@ pause
 /* YTKit Download Buttons - Force Visibility */
 .ytkit-vlc-btn,
 .ytkit-local-dl-btn,
+.ytkit-mp3-dl-btn,
+.ytkit-transcript-btn,
 .ytkit-mpv-btn,
 .ytkit-dlplay-btn,
 .ytkit-embed-btn {
@@ -10797,8 +10839,8 @@ ytd-live-chat-frame {
         // Initialize statistics tracker
         await StatsTracker.load();
 
-        console.log('[YTKit] v12.2 Initialized - Enhanced Transcript Edition');
-        DebugManager.log('Init', 'YTKit v12.2 started', { page: appState.currentPage, features: Object.keys(appState.settings).filter(k => appState.settings[k]).length });
+        console.log('[YTKit] v12.4 Initialized - MP3 Download Edition');
+        DebugManager.log('Init', 'YTKit v12.4 started', { page: appState.currentPage, features: Object.keys(appState.settings).filter(k => appState.settings[k]).length });
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
