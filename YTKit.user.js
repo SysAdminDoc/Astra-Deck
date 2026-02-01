@@ -12,8 +12,6 @@
 // @exclude      https://m.youtube.com/*
 // @exclude      https://www.youtube.com/playlist?list=*
 // @exclude      https://studio.youtube.com/*
-// @exclude      https://www.youtube.com/results?*
-// @exclude      https://www.youtube.com/@*/shorts
 // @icon         https://github.com/SysAdminDoc/YTKit/blob/main/assets/ytlogo.png?raw=true
 // @grant        GM_setValue
 // @grant        GM_getValue
