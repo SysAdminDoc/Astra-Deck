@@ -7,10 +7,7 @@
 // @match        https://*.youtube.com/*
 // @match        https://*.youtube-nocookie.com/*
 // @match        https://youtu.be/*
-// @exclude      https://*.youtube.com/embed/*
-// @exclude      https://music.youtube.com/*
 // @exclude      https://m.youtube.com/*
-// @exclude      https://www.youtube.com/playlist?list=*
 // @exclude      https://studio.youtube.com/*
 // @icon         https://github.com/SysAdminDoc/YTKit/blob/main/assets/ytlogo.png?raw=true
 // @grant        GM_setValue
@@ -2342,7 +2339,7 @@
             _styleElement: null,
             _observer: null,
             init() {
-                const isChannelPage = () => /^\/@[^/]+/.test(window.location.pathname);
+                const isExemptPage = () => /^\/@[^/]+/.test(window.location.pathname) || window.location.pathname.startsWith('/results');
 
                 const hideShort = (a) => {
                     let parent = a.parentElement;
@@ -2362,7 +2359,14 @@
                 };
 
                 const scanPage = () => {
-                    if (isChannelPage()) return;
+                    if (isExemptPage()) {
+                        // Restore any previously hidden shorts when navigating to exempt pages
+                        document.querySelectorAll('[data-ytkit-shorts-hidden]').forEach(el => {
+                            el.style.display = '';
+                            delete el.dataset.ytkitShortsHidden;
+                        });
+                        return;
+                    }
                     document.querySelectorAll('a[href^="/shorts"]').forEach(hideShort);
                 };
 
@@ -2371,7 +2375,7 @@
 
                 // Targeted observer - only processes newly added nodes
                 this._observer = new MutationObserver(mutations => {
-                    if (isChannelPage()) return;
+                    if (isExemptPage()) return;
                     for (const m of mutations) {
                         for (const node of m.addedNodes) processNode(node);
                     }
@@ -2382,19 +2386,27 @@
                 addNavigateRule(this.id, scanPage);
 
                 const css = `
-                    ytd-reel-shelf-renderer,
-                    ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]) {
+                    body:not([data-ytkit-search-page]) ytd-reel-shelf-renderer,
+                    body:not([data-ytkit-search-page]) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]) {
                         display: none !important;
                     }
                 `;
                 this._styleElement = injectStyle(css, this.id + '-style', true);
+
+                // Toggle body attribute for CSS scoping
+                this._searchPageRule = () => {
+                    document.body.toggleAttribute('data-ytkit-search-page', window.location.pathname.startsWith('/results'));
+                };
+                addNavigateRule(this.id + '-search', this._searchPageRule);
+                this._searchPageRule();
             },
             destroy() {
                 this._observer?.disconnect();
                 this._observer = null;
                 removeNavigateRule(this.id);
+                removeNavigateRule(this.id + '-search');
                 this._styleElement?.remove();
-                // Restore hidden shorts
+                document.body.removeAttribute('data-ytkit-search-page');
                 document.querySelectorAll('[data-ytkit-shorts-hidden]').forEach(el => {
                     el.style.display = '';
                     delete el.dataset.ytkitShortsHidden;
@@ -3448,6 +3460,8 @@
                 this._styleElement.textContent = `
                     html.yt-suite-fit-to-window, body.yt-suite-fit-to-window { overflow-y: auto !important; height: auto !important; }
                     body.yt-suite-fit-to-window #movie_player { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100vh !important; z-index: 9999 !important; background-color: #000 !important; }
+                    body.yt-suite-fit-to-window #movie_player .html5-video-container { width: 100% !important; height: 100% !important; }
+                    body.yt-suite-fit-to-window #movie_player video.html5-main-video { width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; object-fit: contain !important; }
                     html.yt-suite-fit-to-window { padding-top: calc(100vh) !important; }
                     html.yt-suite-fit-to-window ytd-masthead { display: none !important; }
                     body.yt-suite-fit-to-window #page-manager { margin-top: 0 !important; }
