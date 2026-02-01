@@ -1,18 +1,19 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      12.4
-// @description  Ultimate YouTube customization with VLC streaming, video/channel hiding, playback enhancements, and more. Uses YTYT-Downloader for local downloads.
+// @version      13
+// @description  Ultimate YouTube customization with VLC streaming, video/channel hiding, playback enhancements, sticky video, and more. Uses YTYT-Downloader for local downloads.
 // @author       Matthew Parker
 // @match        https://*.youtube.com/*
 // @match        https://*.youtube-nocookie.com/*
 // @match        https://youtu.be/*
 // @exclude      https://*.youtube.com/embed/*
 // @exclude      https://music.youtube.com/*
-// @exclude      https://www.youtube.com/shorts/*
 // @exclude      https://m.youtube.com/*
 // @exclude      https://www.youtube.com/playlist?list=*
 // @exclude      https://studio.youtube.com/*
+// @exclude      https://www.youtube.com/results?*
+// @exclude      https://www.youtube.com/@*/shorts
 // @icon         https://github.com/SysAdminDoc/YTKit/blob/main/assets/ytlogo.png?raw=true
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -1655,6 +1656,7 @@
             hideVoiceSearch: true,
             logoToSubscriptions: true,
             widenSearchBar: true,
+            subscriptionsGrid: true,
             hideSidebar: true,
             hideNotificationButton: false,
             hideNotificationBadge: false,
@@ -1663,9 +1665,10 @@
             // Consolidated: theme replaces nativeDarkMode, betterDarkMode, catppuccinMocha
             theme: 'betterDark', // 'system' | 'dark' | 'betterDark' | 'catppuccin'
             uiStyle: 'rounded', // 'rounded' | 'square' (replaces squarify, squareAvatars, squareSearchBar)
-            noAmbientMode: false,
-            noFrostedGlass: false,
-            compactLayout: false,
+            noAmbientMode: true,
+            noFrostedGlass: true,
+            compactLayout: true,
+            thinScrollbar: true,
 
             // ═══ Content ═══
             removeAllShorts: true,
@@ -1676,10 +1679,10 @@
             fiveVideosPerRow: true,
             hidePaidContentOverlay: true,
             redirectToVideosTab: true,
-            hidePlayables: false,
-            hideMembersOnly: false,
-            hideNewsHome: false,
-            hidePlaylistsHome: false,
+            hidePlayables: true,
+            hideMembersOnly: true,
+            hideNewsHome: true,
+            hidePlaylistsHome: true,
 
             // ═══ Video Hider ═══
             hideVideosFromHome: true,
@@ -1702,10 +1705,12 @@
             persistentProgressBar: false,
             // Consolidated: replaces hideVideoEndCards, hideVideoEndScreen, hideEndVideoStills
             hideVideoEndContent: true,
+            stickyVideo: true,
 
             // ═══ Playback ═══
             preventAutoplay: false,
             autoExpandDescription: false,
+            preloadComments: true,
             sortCommentsNewestFirst: false,
             autoOpenChapters: false,
             autoOpenTranscript: false,
@@ -1724,7 +1729,7 @@
             // REMOVED: channelPlaybackSpeeds (replaced by enablePerChannelSettings)
 
             // ═══ SponsorBlock ═══
-            skipSponsors: false, // Changed default to false (network request)
+            skipSponsors: true,
             hideSponsorBlockLabels: true,
 
             // ═══ Video Quality ═══
@@ -1742,7 +1747,7 @@
             condenseComments: true,
             hideLiveChatEngagement: true,
             hidePaidPromotionWatch: true,
-            hideFundraiser: false,
+            hideFundraiser: true,
             hideLatestPosts: false,
 
             // ═══ Live Chat - Consolidated into array ═══
@@ -1791,18 +1796,18 @@
             downloadProvider: 'cobalt',
 
             // ═══ Advanced ═══
-            hideCollaborations: false,
+            hideCollaborations: true,
             keyboardShortcuts: {
                 openSettings: 'ctrl+alt+y',
                 hideVideo: 'shift+h',
-                downloadVideo: 'ctrl+shift+d',
-                toggleTheater: 't'
+                downloadVideo: 'ctrl+shift+d'
             },
             debugMode: false,
             showStatisticsDashboard: true,
             customCssEnabled: false,
             customCssCode: '',
             useIntersectionObserver: true,
+            hideInfoPanels: true,
         },
 
         // Migration map for old settings to new
@@ -2075,6 +2080,32 @@
             destroy() { this._styleElement?.remove(); }
         },
         {
+            id: 'subscriptionsGrid',
+            name: 'Subscriptions Grid',
+            description: 'Use a denser grid layout on the subscriptions page',
+            group: 'Interface',
+            icon: 'layout-grid',
+            pages: [PageTypes.SUBSCRIPTIONS],
+            _styleElement: null,
+            init() {
+                const css = `
+                    #contents.ytd-rich-grid-renderer {
+                        display: grid !important;
+                        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                        gap: 8px;
+                        width: 99%;
+                    }
+                    ytd-rich-item-renderer.ytd-rich-grid-renderer {
+                        width: 100% !important;
+                        margin: 0 !important;
+                        margin-left: 2px !important;
+                    }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
             id: 'hideSidebar',
             name: 'Hide Sidebar',
             description: 'Remove the left navigation sidebar completely',
@@ -2283,6 +2314,25 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
+        {
+            id: 'thinScrollbar',
+            name: 'Thin Scrollbar',
+            description: 'Use a slim, unobtrusive scrollbar',
+            group: 'Appearance',
+            icon: 'grip-vertical',
+            _styleElement: null,
+            init() {
+                const css = `
+                    *::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
+                    *::-webkit-scrollbar-track { background: transparent !important; }
+                    *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2) !important; border-radius: 10px !important; }
+                    *::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35) !important; }
+                    * { scrollbar-width: thin !important; scrollbar-color: rgba(255,255,255,0.2) transparent !important; }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
 
         // ─── Content ───
         {
@@ -2292,17 +2342,47 @@
             group: 'Content',
             icon: 'video-off',
             _styleElement: null,
+            _observer: null,
             init() {
-                const removeShortsRule = () => {
-                    document.querySelectorAll('a[href^="/shorts"]').forEach(a => {
-                        let parent = a.parentElement;
-                        while (parent && (!parent.tagName.startsWith('YTD-') || parent.tagName === 'YTD-THUMBNAIL')) {
-                            parent = parent.parentElement;
-                        }
-                        if (parent instanceof HTMLElement) parent.style.display = 'none';
-                    });
+                const isChannelPage = () => /^\/@[^/]+/.test(window.location.pathname);
+
+                const hideShort = (a) => {
+                    let parent = a.parentElement;
+                    while (parent && (!parent.tagName.startsWith('YTD-') || parent.tagName === 'YTD-THUMBNAIL')) {
+                        parent = parent.parentElement;
+                    }
+                    if (parent instanceof HTMLElement && !parent.dataset.ytkitShortsHidden) {
+                        parent.style.display = 'none';
+                        parent.dataset.ytkitShortsHidden = '1';
+                    }
                 };
-                addMutationRule(this.id, removeShortsRule);
+
+                const processNode = (node) => {
+                    if (node.nodeType !== 1) return;
+                    if (node.matches?.('a[href^="/shorts"]')) hideShort(node);
+                    node.querySelectorAll?.('a[href^="/shorts"]').forEach(hideShort);
+                };
+
+                const scanPage = () => {
+                    if (isChannelPage()) return;
+                    document.querySelectorAll('a[href^="/shorts"]').forEach(hideShort);
+                };
+
+                // Initial scan
+                scanPage();
+
+                // Targeted observer - only processes newly added nodes
+                this._observer = new MutationObserver(mutations => {
+                    if (isChannelPage()) return;
+                    for (const m of mutations) {
+                        for (const node of m.addedNodes) processNode(node);
+                    }
+                });
+                this._observer.observe(document.body, { childList: true, subtree: true });
+
+                // Re-scan on navigation
+                addNavigateRule(this.id, scanPage);
+
                 const css = `
                     ytd-reel-shelf-renderer,
                     ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]) {
@@ -2312,8 +2392,15 @@
                 this._styleElement = injectStyle(css, this.id + '-style', true);
             },
             destroy() {
-                removeMutationRule(this.id);
+                this._observer?.disconnect();
+                this._observer = null;
+                removeNavigateRule(this.id);
                 this._styleElement?.remove();
+                // Restore hidden shorts
+                document.querySelectorAll('[data-ytkit-shorts-hidden]').forEach(el => {
+                    el.style.display = '';
+                    delete el.dataset.ytkitShortsHidden;
+                });
             }
         },
         {
@@ -3509,6 +3596,955 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
+        {
+            id: 'stickyVideo',
+            name: 'Sticky Video',
+            description: 'Float the video in the corner when scrolling down to read comments',
+            group: 'Video Player',
+            icon: 'picture-in-picture-2',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _scrollHandler: null,
+            _isFloating: false,
+            _manuallyDismissed: false,
+            _lastVideoId: null,
+            _floatThreshold: null,
+            _lastActionTime: 0,
+            _floatingContainer: null,
+            _dragState: null,
+            _originalVideoParent: null,
+            _originalVideoNextSibling: null,
+            _originalVideoStyle: null,
+            _timeUpdateHandler: null,
+            _playHandler: null,
+            _pauseHandler: null,
+            _volumeHandler: null,
+
+            _getVideo() {
+                return document.querySelector('video.html5-main-video');
+            },
+
+            _getPlayerAnchor() {
+                return document.querySelector('#player-container');
+            },
+
+            _createFloatingContainer() {
+                const container = document.createElement('div');
+                container.id = 'ytkit-floating-video-container';
+
+                // Helper to create SVG elements
+                const createSvg = (width, height, viewBox) => {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', width);
+                    svg.setAttribute('height', height);
+                    svg.setAttribute('viewBox', viewBox);
+                    svg.setAttribute('fill', 'white');
+                    return svg;
+                };
+
+                const createPath = (d) => {
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', d);
+                    return path;
+                };
+
+                // Controls overlay
+                const controls = document.createElement('div');
+                controls.id = 'ytkit-floating-controls';
+
+                // Play/Pause button (center)
+                const playPauseBtn = document.createElement('button');
+                playPauseBtn.id = 'ytkit-floating-playpause';
+                playPauseBtn.title = 'Play/Pause';
+
+                // Play icon
+                const playIcon = createSvg('40', '40', '0 0 24 24');
+                playIcon.classList.add('play-icon');
+                playIcon.appendChild(createPath('M8 5v14l11-7z'));
+
+                // Pause icon
+                const pauseIcon = createSvg('40', '40', '0 0 24 24');
+                pauseIcon.classList.add('pause-icon');
+                pauseIcon.appendChild(createPath('M6 19h4V5H6v14zm8-14v14h4V5h-4z'));
+
+                playPauseBtn.appendChild(playIcon);
+                playPauseBtn.appendChild(pauseIcon);
+
+                playPauseBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const video = container.querySelector('video');
+                    if (video) {
+                        if (video.paused) {
+                            video.play();
+                        } else {
+                            video.pause();
+                        }
+                    }
+                };
+
+                // Bottom bar (progress + volume)
+                const bottomBar = document.createElement('div');
+                bottomBar.id = 'ytkit-floating-bottombar';
+
+                // Progress bar
+                const progressContainer = document.createElement('div');
+                progressContainer.id = 'ytkit-floating-progress-container';
+
+                const progressBar = document.createElement('div');
+                progressBar.id = 'ytkit-floating-progress';
+
+                const progressFilled = document.createElement('div');
+                progressFilled.id = 'ytkit-floating-progress-filled';
+
+                const progressHandle = document.createElement('div');
+                progressHandle.id = 'ytkit-floating-progress-handle';
+
+                progressBar.appendChild(progressFilled);
+                progressBar.appendChild(progressHandle);
+                progressContainer.appendChild(progressBar);
+
+                // Time display
+                const timeDisplay = document.createElement('span');
+                timeDisplay.id = 'ytkit-floating-time';
+                timeDisplay.textContent = '0:00 / 0:00';
+
+                // Volume control
+                const volumeContainer = document.createElement('div');
+                volumeContainer.id = 'ytkit-floating-volume-container';
+
+                const volumeBtn = document.createElement('button');
+                volumeBtn.id = 'ytkit-floating-volume-btn';
+
+                // Volume high icon
+                const volumeHighIcon = createSvg('20', '20', '0 0 24 24');
+                volumeHighIcon.classList.add('volume-high');
+                volumeHighIcon.appendChild(createPath('M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z'));
+
+                // Volume muted icon
+                const volumeMutedIcon = createSvg('20', '20', '0 0 24 24');
+                volumeMutedIcon.classList.add('volume-muted');
+                volumeMutedIcon.appendChild(createPath('M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z'));
+
+                volumeBtn.appendChild(volumeHighIcon);
+                volumeBtn.appendChild(volumeMutedIcon);
+
+                volumeBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const video = container.querySelector('video');
+                    if (video) {
+                        video.muted = !video.muted;
+                        this._updateVolumeUI(container);
+                    }
+                };
+
+                const volumeSlider = document.createElement('input');
+                volumeSlider.type = 'range';
+                volumeSlider.id = 'ytkit-floating-volume-slider';
+                volumeSlider.min = '0';
+                volumeSlider.max = '1';
+                volumeSlider.step = '0.05';
+                volumeSlider.value = '1';
+                volumeSlider.oninput = (e) => {
+                    const video = container.querySelector('video');
+                    if (video) {
+                        video.volume = e.target.value;
+                        video.muted = e.target.value == 0;
+                        this._updateVolumeUI(container);
+                    }
+                };
+
+                volumeContainer.appendChild(volumeBtn);
+                volumeContainer.appendChild(volumeSlider);
+
+                bottomBar.appendChild(progressContainer);
+                bottomBar.appendChild(timeDisplay);
+                bottomBar.appendChild(volumeContainer);
+
+                controls.appendChild(playPauseBtn);
+                controls.appendChild(bottomBar);
+
+                // Close button
+                const closeBtn = document.createElement('button');
+                closeBtn.id = 'ytkit-floating-close';
+                closeBtn.title = 'Close';
+
+                const closeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                closeSvg.setAttribute('width', '14');
+                closeSvg.setAttribute('height', '14');
+                closeSvg.setAttribute('viewBox', '0 0 24 24');
+                closeSvg.setAttribute('fill', 'none');
+                closeSvg.setAttribute('stroke', 'currentColor');
+                closeSvg.setAttribute('stroke-width', '2.5');
+
+                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line1.setAttribute('x1', '18');
+                line1.setAttribute('y1', '6');
+                line1.setAttribute('x2', '6');
+                line1.setAttribute('y2', '18');
+
+                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line2.setAttribute('x1', '6');
+                line2.setAttribute('y1', '6');
+                line2.setAttribute('x2', '18');
+                line2.setAttribute('y2', '18');
+
+                closeSvg.appendChild(line1);
+                closeSvg.appendChild(line2);
+                closeBtn.appendChild(closeSvg);
+
+                closeBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this._manuallyDismissed = true;
+                    this._unfloatVideo();
+                };
+
+                // Progress bar click handling
+                progressContainer.onclick = (e) => {
+                    e.stopPropagation();
+                    const video = container.querySelector('video');
+                    if (video && video.duration) {
+                        const rect = progressBar.getBoundingClientRect();
+                        const percent = (e.clientX - rect.left) / rect.width;
+                        video.currentTime = percent * video.duration;
+                    }
+                };
+
+                container.appendChild(controls);
+                container.appendChild(closeBtn);
+
+                // Resize handles
+                const resizeHandle = document.createElement('div');
+                resizeHandle.id = 'ytkit-floating-resize';
+                resizeHandle.dataset.corner = 'br';
+                container.appendChild(resizeHandle);
+
+                const resizeHandleLeft = document.createElement('div');
+                resizeHandleLeft.id = 'ytkit-floating-resize-left';
+                resizeHandleLeft.dataset.corner = 'bl';
+                container.appendChild(resizeHandleLeft);
+
+                document.body.appendChild(container);
+                this._initDrag(container);
+                this._initResize(container, [resizeHandle, resizeHandleLeft]);
+                return container;
+            },
+
+            _formatTime(seconds) {
+                if (isNaN(seconds)) return '0:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            },
+
+            _updateProgress(container) {
+                const video = container.querySelector('video');
+                if (!video) return;
+
+                const progressFilled = container.querySelector('#ytkit-floating-progress-filled');
+                const progressHandle = container.querySelector('#ytkit-floating-progress-handle');
+                const timeDisplay = container.querySelector('#ytkit-floating-time');
+
+                if (video.duration) {
+                    const percent = (video.currentTime / video.duration) * 100;
+                    if (progressFilled) progressFilled.style.width = percent + '%';
+                    if (progressHandle) progressHandle.style.left = percent + '%';
+                    if (timeDisplay) {
+                        timeDisplay.textContent = `${this._formatTime(video.currentTime)} / ${this._formatTime(video.duration)}`;
+                    }
+                }
+            },
+
+            _updatePlayPauseUI(container) {
+                const video = container.querySelector('video');
+                const btn = container.querySelector('#ytkit-floating-playpause');
+                if (!video || !btn) return;
+
+                if (video.paused) {
+                    btn.classList.remove('playing');
+                } else {
+                    btn.classList.add('playing');
+                }
+            },
+
+            _updateVolumeUI(container) {
+                const video = container.querySelector('video');
+                const btn = container.querySelector('#ytkit-floating-volume-btn');
+                const slider = container.querySelector('#ytkit-floating-volume-slider');
+                if (!video || !btn) return;
+
+                if (video.muted || video.volume === 0) {
+                    btn.classList.add('muted');
+                } else {
+                    btn.classList.remove('muted');
+                }
+                if (slider && !video.muted) {
+                    slider.value = video.volume;
+                }
+            },
+
+            _setupVideoListeners(video) {
+                if (!this._floatingContainer) return;
+
+                const container = this._floatingContainer;
+
+                // Update progress
+                this._timeUpdateHandler = () => this._updateProgress(container);
+                video.addEventListener('timeupdate', this._timeUpdateHandler);
+
+                // Update play/pause state
+                this._playHandler = () => this._updatePlayPauseUI(container);
+                this._pauseHandler = () => this._updatePlayPauseUI(container);
+                video.addEventListener('play', this._playHandler);
+                video.addEventListener('pause', this._pauseHandler);
+
+                // Update volume
+                this._volumeHandler = () => this._updateVolumeUI(container);
+                video.addEventListener('volumechange', this._volumeHandler);
+
+                // Initial state
+                this._updatePlayPauseUI(container);
+                this._updateVolumeUI(container);
+                this._updateProgress(container);
+            },
+
+            _removeVideoListeners(video) {
+                if (this._timeUpdateHandler) {
+                    video.removeEventListener('timeupdate', this._timeUpdateHandler);
+                }
+                if (this._playHandler) {
+                    video.removeEventListener('play', this._playHandler);
+                }
+                if (this._pauseHandler) {
+                    video.removeEventListener('pause', this._pauseHandler);
+                }
+                if (this._volumeHandler) {
+                    video.removeEventListener('volumechange', this._volumeHandler);
+                }
+            },
+
+            _getSavedLayout() {
+                try {
+                    const saved = localStorage.getItem('ytkit-floating-layout');
+                    if (saved) return JSON.parse(saved);
+                } catch (e) {}
+                try {
+                    const pos = localStorage.getItem('ytkit-floating-pos');
+                    if (pos) return JSON.parse(pos);
+                } catch (e) {}
+                return null;
+            },
+
+            _saveLayout(x, y, w, h) {
+                try {
+                    localStorage.setItem('ytkit-floating-layout', JSON.stringify({ x, y, w, h }));
+                } catch (e) {}
+            },
+
+            _applyPosition(container) {
+                const layout = this._getSavedLayout();
+                if (layout) {
+                    if (layout.w && layout.h) {
+                        container.style.width = Math.max(240, Math.min(layout.w, window.innerWidth - 20)) + 'px';
+                        container.style.height = Math.max(135, Math.min(layout.h, window.innerHeight - 20)) + 'px';
+                    }
+                    if (layout.x != null && layout.y != null) {
+                        const maxX = window.innerWidth - container.offsetWidth;
+                        const maxY = window.innerHeight - container.offsetHeight;
+                        container.style.left = Math.max(0, Math.min(layout.x, maxX)) + 'px';
+                        container.style.top = Math.max(0, Math.min(layout.y, maxY)) + 'px';
+                        container.style.right = 'auto';
+                    }
+                }
+            },
+
+            _initDrag(container) {
+                const onMouseDown = (e) => {
+                    if (e.target.closest('button, input, #ytkit-floating-progress-container, #ytkit-floating-volume-container, #ytkit-floating-resize, #ytkit-floating-resize-left')) return;
+                    e.preventDefault();
+                    const rect = container.getBoundingClientRect();
+                    this._dragState = {
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        origLeft: rect.left,
+                        origTop: rect.top,
+                        dragged: false
+                    };
+                };
+
+                const onMouseMove = (e) => {
+                    if (!this._dragState) return;
+                    const dx = e.clientX - this._dragState.startX;
+                    const dy = e.clientY - this._dragState.startY;
+                    if (!this._dragState.dragged && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+                    this._dragState.dragged = true;
+                    const maxX = window.innerWidth - container.offsetWidth;
+                    const maxY = window.innerHeight - container.offsetHeight;
+                    const newX = Math.max(0, Math.min(this._dragState.origLeft + dx, maxX));
+                    const newY = Math.max(0, Math.min(this._dragState.origTop + dy, maxY));
+                    container.style.left = newX + 'px';
+                    container.style.top = newY + 'px';
+                    container.style.right = 'auto';
+                    container.style.transition = 'none';
+                };
+
+                const onMouseUp = () => {
+                    if (!this._dragState) return;
+                    if (this._dragState.dragged) {
+                        const rect = container.getBoundingClientRect();
+                        this._saveLayout(rect.left, rect.top, rect.width, rect.height);
+                    }
+                    container.style.transition = '';
+                    this._dragState = null;
+                };
+
+                container.addEventListener('mousedown', onMouseDown);
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+
+                this._dragCleanup = () => {
+                    container.removeEventListener('mousedown', onMouseDown);
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                };
+            },
+
+            _initResize(container, handles) {
+                let resizeState = null;
+
+                const onMouseDown = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const rect = container.getBoundingClientRect();
+                    resizeState = {
+                        corner: e.target.dataset.corner,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        origW: rect.width,
+                        origH: rect.height,
+                        origLeft: rect.left
+                    };
+                    container.style.transition = 'none';
+                };
+
+                const onMouseMove = (e) => {
+                    if (!resizeState) return;
+                    const dh = e.clientY - resizeState.startY;
+                    const newH = Math.max(135, Math.min(resizeState.origH + dh, window.innerHeight - container.offsetTop));
+
+                    if (resizeState.corner === 'bl') {
+                        const dw = resizeState.startX - e.clientX;
+                        const newW = Math.max(240, Math.min(resizeState.origW + dw, resizeState.origLeft + resizeState.origW));
+                        const newLeft = resizeState.origLeft + (resizeState.origW - newW);
+                        container.style.width = newW + 'px';
+                        container.style.left = Math.max(0, newLeft) + 'px';
+                        container.style.right = 'auto';
+                    } else {
+                        const dw = e.clientX - resizeState.startX;
+                        const newW = Math.max(240, Math.min(resizeState.origW + dw, window.innerWidth - container.offsetLeft));
+                        container.style.width = newW + 'px';
+                    }
+                    container.style.height = newH + 'px';
+                };
+
+                const onMouseUp = () => {
+                    if (!resizeState) return;
+                    resizeState = null;
+                    container.style.transition = '';
+                    const rect = container.getBoundingClientRect();
+                    this._saveLayout(rect.left, rect.top, rect.width, rect.height);
+                };
+
+                handles.forEach(h => h.addEventListener('mousedown', onMouseDown));
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+
+                this._resizeCleanup = () => {
+                    handles.forEach(h => h.removeEventListener('mousedown', onMouseDown));
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                };
+            },
+
+            _floatVideo() {
+                if (this._isFloating || this._manuallyDismissed) return;
+                if (Date.now() - this._lastActionTime < 500) return;
+
+                const video = this._getVideo();
+                if (!video) {
+                    console.log('[YTKit Sticky] No video element');
+                    return;
+                }
+
+                // Create floating container if needed
+                if (!this._floatingContainer) {
+                    this._floatingContainer = this._createFloatingContainer();
+                }
+
+                // Store original position and styles
+                this._originalVideoParent = video.parentElement;
+                this._originalVideoNextSibling = video.nextSibling;
+                this._originalVideoStyle = video.getAttribute('style') || '';
+                this._floatThreshold = window.scrollY;
+
+                // Move video to floating container (insert before controls)
+                const controls = this._floatingContainer.querySelector('#ytkit-floating-controls');
+                this._floatingContainer.insertBefore(video, controls);
+                this._floatingContainer.classList.add('ytkit-floating-visible');
+                this._applyPosition(this._floatingContainer);
+
+                // Force video to fill container
+                video.style.cssText = 'width:100%!important;height:100%!important;left:0!important;top:0!important;position:absolute!important;object-fit:contain!important;';
+
+                // Setup event listeners for controls
+                this._setupVideoListeners(video);
+
+                this._isFloating = true;
+                this._lastActionTime = Date.now();
+                console.log('[YTKit Sticky] Floated video');
+            },
+
+            _unfloatVideo() {
+                if (!this._isFloating) return;
+
+                const video = this._floatingContainer?.querySelector('video');
+
+                if (video) {
+                    // Remove our event listeners
+                    this._removeVideoListeners(video);
+
+                    if (this._originalVideoParent) {
+                        // Restore video to original position
+                        if (this._originalVideoNextSibling && this._originalVideoNextSibling.parentElement === this._originalVideoParent) {
+                            this._originalVideoParent.insertBefore(video, this._originalVideoNextSibling);
+                        } else {
+                            this._originalVideoParent.appendChild(video);
+                        }
+
+                        // Restore original styles
+                        if (this._originalVideoStyle) {
+                            video.setAttribute('style', this._originalVideoStyle);
+                        } else {
+                            video.removeAttribute('style');
+                        }
+                    }
+                }
+
+                if (this._floatingContainer) {
+                    this._floatingContainer.classList.remove('ytkit-floating-visible');
+                }
+
+                this._originalVideoParent = null;
+                this._originalVideoNextSibling = null;
+                this._originalVideoStyle = null;
+                this._isFloating = false;
+                this._floatThreshold = null;
+                this._lastActionTime = Date.now();
+                console.log('[YTKit Sticky] Unfloated video');
+            },
+
+            _checkScroll() {
+                if (!window.location.pathname.startsWith('/watch')) {
+                    if (this._isFloating) this._unfloatVideo();
+                    return;
+                }
+
+                const currentVideoId = new URLSearchParams(window.location.search).get('v');
+                if (currentVideoId !== this._lastVideoId) {
+                    this._lastVideoId = currentVideoId;
+                    this._manuallyDismissed = false;
+                    this._floatThreshold = null;
+                    if (this._isFloating) this._unfloatVideo();
+                    return;
+                }
+
+                const anchor = this._getPlayerAnchor();
+                if (!anchor) return;
+
+                const rect = anchor.getBoundingClientRect();
+
+                // If floating, check if we should unfloat
+                if (this._isFloating) {
+                    // Only unfloat when scrolled significantly back up
+                    if (this._floatThreshold !== null && window.scrollY < this._floatThreshold - 200) {
+                        console.log('[YTKit Sticky] Scrolled back up, unfloating. scrollY:', window.scrollY, 'threshold:', this._floatThreshold);
+                        this._unfloatVideo();
+                    }
+                    return;
+                }
+
+                // Not floating - check if we should float
+                if (this._manuallyDismissed) {
+                    if (rect.top > 0) {
+                        this._manuallyDismissed = false;
+                    }
+                    return;
+                }
+
+                if (rect.bottom < 100) {
+                    console.log('[YTKit Sticky] Floating - rect.bottom:', rect.bottom);
+                    this._floatVideo();
+                }
+            },
+
+            init() {
+                const css = `
+                    #ytkit-floating-video-container {
+                        position: fixed;
+                        top: 70px;
+                        right: 20px;
+                        width: 400px;
+                        height: 225px;
+                        z-index: 2147483647;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1);
+                        background: #000;
+                        display: none;
+                        cursor: grab;
+                        user-select: none;
+                    }
+
+                    #ytkit-floating-video-container:active {
+                        cursor: grabbing;
+                    }
+
+                    #ytkit-floating-video-container.ytkit-floating-visible {
+                        display: block;
+                    }
+
+                    #ytkit-floating-video-container:hover {
+                        box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.2);
+                    }
+
+                    #ytkit-floating-video-container video {
+                        width: 100% !important;
+                        height: 100% !important;
+                        object-fit: contain !important;
+                    }
+
+                    /* Controls overlay */
+                    #ytkit-floating-controls {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        opacity: 0;
+                        transition: opacity 0.2s;
+                        pointer-events: none;
+                        z-index: 10;
+                    }
+
+                    #ytkit-floating-video-container:hover #ytkit-floating-controls {
+                        opacity: 1;
+                    }
+
+                    /* Play/Pause button */
+                    #ytkit-floating-playpause {
+                        width: 60px;
+                        height: 60px;
+                        border-radius: 50%;
+                        background: rgba(0,0,0,0.6);
+                        border: none;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: background 0.2s, transform 0.1s;
+                        pointer-events: auto;
+                    }
+
+                    #ytkit-floating-playpause:hover {
+                        background: rgba(0,0,0,0.8);
+                        transform: scale(1.1);
+                    }
+
+                    #ytkit-floating-playpause .play-icon {
+                        display: block;
+                    }
+                    #ytkit-floating-playpause .pause-icon {
+                        display: none;
+                    }
+                    #ytkit-floating-playpause.playing .play-icon {
+                        display: none;
+                    }
+                    #ytkit-floating-playpause.playing .pause-icon {
+                        display: block;
+                    }
+
+                    /* Bottom bar */
+                    #ytkit-floating-bottombar {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        padding: 8px 12px;
+                        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        pointer-events: auto;
+                    }
+
+                    /* Progress bar */
+                    #ytkit-floating-progress-container {
+                        flex: 1;
+                        height: 20px;
+                        display: flex;
+                        align-items: center;
+                        cursor: pointer;
+                    }
+
+                    #ytkit-floating-progress {
+                        width: 100%;
+                        height: 4px;
+                        background: rgba(255,255,255,0.3);
+                        border-radius: 2px;
+                        position: relative;
+                        transition: height 0.1s;
+                    }
+
+                    #ytkit-floating-progress-container:hover #ytkit-floating-progress {
+                        height: 6px;
+                    }
+
+                    #ytkit-floating-progress-filled {
+                        height: 100%;
+                        background: #ff0000;
+                        border-radius: 2px;
+                        width: 0%;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                    }
+
+                    #ytkit-floating-progress-handle {
+                        width: 12px;
+                        height: 12px;
+                        background: #ff0000;
+                        border-radius: 50%;
+                        position: absolute;
+                        top: 50%;
+                        left: 0%;
+                        transform: translate(-50%, -50%) scale(0);
+                        transition: transform 0.1s;
+                    }
+
+                    #ytkit-floating-progress-container:hover #ytkit-floating-progress-handle {
+                        transform: translate(-50%, -50%) scale(1);
+                    }
+
+                    /* Time display */
+                    #ytkit-floating-time {
+                        color: white;
+                        font-size: 11px;
+                        font-family: 'YouTube Sans', 'Roboto', sans-serif;
+                        white-space: nowrap;
+                        min-width: 75px;
+                        text-align: center;
+                    }
+
+                    /* Volume control */
+                    #ytkit-floating-volume-container {
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+
+                    #ytkit-floating-volume-btn {
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        padding: 4px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0.9;
+                        transition: opacity 0.2s;
+                    }
+
+                    #ytkit-floating-volume-btn:hover {
+                        opacity: 1;
+                    }
+
+                    #ytkit-floating-volume-btn .volume-high {
+                        display: block;
+                    }
+                    #ytkit-floating-volume-btn .volume-muted {
+                        display: none;
+                    }
+                    #ytkit-floating-volume-btn.muted .volume-high {
+                        display: none;
+                    }
+                    #ytkit-floating-volume-btn.muted .volume-muted {
+                        display: block;
+                    }
+
+                    #ytkit-floating-volume-slider {
+                        width: 0;
+                        opacity: 0;
+                        transition: width 0.2s, opacity 0.2s;
+                        cursor: pointer;
+                        accent-color: white;
+                        height: 4px;
+                    }
+
+                    #ytkit-floating-volume-container:hover #ytkit-floating-volume-slider {
+                        width: 60px;
+                        opacity: 1;
+                    }
+
+                    /* Close button */
+                    #ytkit-floating-close {
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        background: rgba(0,0,0,0.75);
+                        border: none;
+                        color: white;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0;
+                        transition: opacity 0.2s, background 0.2s;
+                        z-index: 20;
+                    }
+
+                    #ytkit-floating-video-container:hover #ytkit-floating-close {
+                        opacity: 1;
+                    }
+
+                    #ytkit-floating-close:hover {
+                        background: rgba(220,38,38,0.9);
+                    }
+
+                    /* Resize handles */
+                    #ytkit-floating-resize, #ytkit-floating-resize-left {
+                        position: absolute;
+                        bottom: 0;
+                        width: 18px;
+                        height: 18px;
+                        z-index: 25;
+                        background: transparent;
+                    }
+                    #ytkit-floating-resize { right: 0; cursor: nwse-resize; }
+                    #ytkit-floating-resize-left { left: 0; cursor: nesw-resize; }
+                    #ytkit-floating-resize::after, #ytkit-floating-resize-left::after {
+                        content: '';
+                        position: absolute;
+                        bottom: 3px;
+                        width: 8px;
+                        height: 8px;
+                        opacity: 0;
+                        transition: opacity 0.2s;
+                    }
+                    #ytkit-floating-resize::after {
+                        right: 3px;
+                        border-right: 2px solid rgba(255,255,255,0.4);
+                        border-bottom: 2px solid rgba(255,255,255,0.4);
+                    }
+                    #ytkit-floating-resize-left::after {
+                        left: 3px;
+                        border-left: 2px solid rgba(255,255,255,0.4);
+                        border-bottom: 2px solid rgba(255,255,255,0.4);
+                    }
+                    #ytkit-floating-video-container:hover #ytkit-floating-resize::after,
+                    #ytkit-floating-video-container:hover #ytkit-floating-resize-left::after {
+                        opacity: 1;
+                    }
+
+                    @media (max-width: 1200px) {
+                        #ytkit-floating-video-container {
+                            width: 320px;
+                            height: 180px;
+                        }
+                        #ytkit-floating-playpause {
+                            width: 50px;
+                            height: 50px;
+                        }
+                        #ytkit-floating-playpause svg {
+                            width: 30px;
+                            height: 30px;
+                        }
+                        #ytkit-floating-time {
+                            font-size: 10px;
+                            min-width: 65px;
+                        }
+                    }
+
+                    @media (max-width: 768px) {
+                        #ytkit-floating-video-container {
+                            width: 280px;
+                            height: 158px;
+                            top: auto;
+                            bottom: 70px;
+                            right: 10px;
+                        }
+                        #ytkit-floating-playpause {
+                            width: 44px;
+                            height: 44px;
+                        }
+                        #ytkit-floating-playpause svg {
+                            width: 26px;
+                            height: 26px;
+                        }
+                        #ytkit-floating-bottombar {
+                            padding: 6px 8px;
+                            gap: 6px;
+                        }
+                        #ytkit-floating-time {
+                            display: none;
+                        }
+                    }
+                `;
+                this._styleElement = injectStyle(css, this.id, true);
+
+                // Scroll handler
+                let scrollTimeout = null;
+                this._scrollHandler = () => {
+                    if (scrollTimeout) return;
+                    scrollTimeout = setTimeout(() => {
+                        scrollTimeout = null;
+                        this._checkScroll();
+                    }, 150);
+                };
+
+                window.addEventListener('scroll', this._scrollHandler, { passive: true });
+
+                setTimeout(() => {
+                    console.log('[YTKit Sticky] Init complete');
+                }, 1000);
+
+                console.log('[YTKit] Sticky Video initialized');
+            },
+
+            destroy() {
+                this._unfloatVideo();
+                this._styleElement?.remove();
+                this._dragCleanup?.();
+                this._resizeCleanup?.();
+
+                if (this._floatingContainer) {
+                    this._floatingContainer.remove();
+                    this._floatingContainer = null;
+                }
+
+                if (this._scrollHandler) {
+                    window.removeEventListener('scroll', this._scrollHandler);
+                }
+            }
+        },
 
         // ─── Playback ───
         {
@@ -3553,6 +4589,36 @@
                     }
                 };
                 addNavigateRule(this.id, expandRule);
+            },
+            destroy() { removeNavigateRule(this.id); }
+        },
+        {
+            id: 'preloadComments',
+            name: 'Preload Comments',
+            description: 'Eagerly load the comment section so it is ready when you scroll down',
+            group: 'Playback',
+            icon: 'message-square',
+            init() {
+                const preloadRule = () => {
+                    if (!window.location.pathname.startsWith('/watch')) return;
+                    const tryPreload = (attempts = 0) => {
+                        if (document.querySelector('ytd-comments#comments ytd-comment-thread-renderer')) return;
+                        const continuation = document.querySelector('ytd-comments#comments ytd-continuation-item-renderer');
+                        if (!continuation) {
+                            if (attempts < 30) setTimeout(() => tryPreload(attempts + 1), 500);
+                            return;
+                        }
+                        const orig = continuation.style.cssText;
+                        continuation.style.cssText = 'position:fixed!important;top:0!important;left:0!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;z-index:-1!important;';
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                continuation.style.cssText = orig;
+                            });
+                        });
+                    };
+                    setTimeout(() => tryPreload(), 1500);
+                };
+                addNavigateRule(this.id, preloadRule);
             },
             destroy() { removeNavigateRule(this.id); }
         },
@@ -4101,7 +5167,7 @@
             _createPreviewBar() {
                 const container = document.createElement("ul");
                 container.id = "ytkit-sb-previewbar";
-                container.style.cssText = "position:absolute;width:100%;height:100%;padding:0;margin:0;overflow:visible;pointer-events:none;z-index:42;list-style:none;transform:scaleY(0.6);transition:transform 0.1s cubic-bezier(0, 0, 0.2, 1);";
+                container.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;padding:0;margin:0;overflow:visible;pointer-events:none;z-index:42;list-style:none;transform:scaleY(0.6);transition:transform 0.1s cubic-bezier(0, 0, 0.2, 1);";
                 return container;
             },
 
@@ -4127,7 +5193,8 @@
                     bar.className = "ytkit-sb-segment";
                     const startPercent = (segment.segment[0] / duration) * 100;
                     const endPercent = (segment.segment[1] / duration) * 100;
-                    bar.style.cssText = `position:absolute;height:100%;min-width:1px;display:inline-block;opacity:0.7;left:${startPercent}%;right:${100 - endPercent}%;background-color:${this._categoryColors[segment.category] || "#888"};`;
+                    const widthPercent = endPercent - startPercent;
+                    bar.style.cssText = `position:absolute;top:0;height:100%;min-width:1px;opacity:0.7;left:${startPercent}%;width:${widthPercent}%;background-color:${this._categoryColors[segment.category] || "#888"};`;
                     bar.title = segment.category.replace(/_/g, " ");
                     this._state.previewBarContainer.appendChild(bar);
                 }
@@ -7107,7 +8174,7 @@
                     }
 
                     ytd-thumbnail {
-                        contain: strict;
+                        contain: content;
                     }
                 `;
                 document.head.appendChild(style);
@@ -10839,8 +11906,8 @@ ytd-live-chat-frame {
         // Initialize statistics tracker
         await StatsTracker.load();
 
-        console.log('[YTKit] v12.4 Initialized - MP3 Download Edition');
-        DebugManager.log('Init', 'YTKit v12.4 started', { page: appState.currentPage, features: Object.keys(appState.settings).filter(k => appState.settings[k]).length });
+        console.log('[YTKit] v12.5 Initialized - Sticky Video Edition');
+        DebugManager.log('Init', 'YTKit v12.5 started', { page: appState.currentPage, features: Object.keys(appState.settings).filter(k => appState.settings[k]).length });
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
