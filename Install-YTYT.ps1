@@ -7,10 +7,11 @@
     - ffmpeg (auto-download)
     - VLC protocol handler (ytvlc://)
     - Download protocol handler (ytdl://)
+    - Ollama local LLM for AI-powered chapters (optional)
     - Userscript for YouTube integration
 .NOTES
     Author: SysAdminDoc
-    Version: 2.0.0
+    Version: 2.2.0
     Repository: https://github.com/SysAdminDoc/YTYT-Downloader
 #>
 
@@ -32,13 +33,24 @@ $consolePtr = [Console.Window]::GetConsoleWindow()
 # CONFIGURATION
 # ============================================
 $script:AppName = "YTYT-Downloader"
-$script:AppVersion = "2.0.0"
+$script:AppVersion = "2.2.0"
 $script:InstallPath = "$env:LOCALAPPDATA\YTYT-Downloader"
 $script:YtDlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 $script:DefaultDownloadPath = "$env:USERPROFILE\Videos\YouTube"
 $script:GitHubRepo = "https://github.com/SysAdminDoc/YTYT-Downloader"
 $script:UserscriptUrl = "https://github.com/SysAdminDoc/YTYT-Downloader/raw/refs/heads/main/src/YTYT_downloader.user.js"
 $script:YTKitUrl = "https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js"
+
+# Ollama Configuration
+$script:OllamaInstallerUrl = "https://ollama.com/download/OllamaSetup.exe"
+$script:OllamaModels = [ordered]@{
+    "llama3.2:3b"  = "Best balance (2 GB) - Recommended"
+    "llama3.2:1b"  = "Lightweight fast (1 GB)"
+    "qwen2.5:7b"   = "Strong reasoning (4 GB)"
+    "gemma2:9b"    = "Highest quality (5 GB)"
+    "phi3:3.8b"    = "Efficient capable (2 GB)"
+    "mistral:7b"   = "General purpose (4 GB)"
+}
 
 # Image URLs
 $script:IconUrl = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/icons/ytyticn.ico"
@@ -198,13 +210,47 @@ foreach ($path in $vlcPaths) {
     }
 }
 
+# Check for Ollama
+$ollamaPaths = @(
+    "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe",
+    "$env:ProgramFiles\Ollama\ollama.exe",
+    "$env:USERPROFILE\AppData\Local\Programs\Ollama\ollama.exe"
+)
+$script:OllamaFound = $null
+foreach ($path in $ollamaPaths) {
+    if (Test-Path $path) {
+        $script:OllamaFound = $path
+        break
+    }
+}
+# Also check PATH
+if (-not $script:OllamaFound) {
+    $ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
+    if ($ollamaCmd) { $script:OllamaFound = $ollamaCmd.Source }
+}
+
+# Check if Ollama is running and get installed models
+$script:OllamaRunning = $false
+$script:OllamaInstalledModels = @()
+if ($script:OllamaFound) {
+    try {
+        $response = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
+        if ($response.models) {
+            $script:OllamaRunning = $true
+            $script:OllamaInstalledModels = $response.models | ForEach-Object { $_.name }
+        }
+    } catch {
+        $script:OllamaRunning = $false
+    }
+}
+
 # ============================================
 # XAML GUI DEFINITION
 # ============================================
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="YTYT-Downloader Setup" Height="980" Width="900"
+        Title="YTYT-Downloader Setup" Height="1080" Width="900"
         WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize"
         WindowState="Normal"
         Background="#0a0a0a">
@@ -389,6 +435,101 @@ foreach ($path in $vlcPaths) {
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Padding" Value="0"/>
         </Style>
+        
+        <!-- ComboBox Toggle Button Template (required for dark dropdown) -->
+        <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="20"/>
+                </Grid.ColumnDefinitions>
+                <Border x:Name="Border" Grid.ColumnSpan="2" Background="#141414" BorderBrush="#2a2a2a" BorderThickness="1" CornerRadius="6"/>
+                <Border Grid.Column="0" Background="#141414" BorderBrush="Transparent" BorderThickness="0" CornerRadius="6,0,0,6" Margin="1"/>
+                <Path x:Name="Arrow" Grid.Column="1" Fill="#a1a1aa" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M0,0 L4,4 L8,0 Z"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="#1f1f1f"/>
+                    <Setter TargetName="Border" Property="BorderBrush" Value="#22c55e"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="Border" Property="Background" Value="#1f1f1f"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        
+        <!-- ComboBox Full Template -->
+        <ControlTemplate x:Key="ComboBoxTemplate" TargetType="ComboBox">
+            <Grid>
+                <ToggleButton Name="ToggleButton" Template="{StaticResource ComboBoxToggleButton}" 
+                              Focusable="False" ClickMode="Press"
+                              IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                <ContentPresenter Name="ContentSite" IsHitTestVisible="False" 
+                                  Content="{TemplateBinding SelectionBoxItem}" 
+                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
+                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" 
+                                  Margin="8,3,25,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" 
+                       AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                    <Grid Name="DropDown" SnapsToDevicePixels="True" 
+                          MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                        <Border x:Name="DropDownBorder" Background="#141414" BorderThickness="1" BorderBrush="#2a2a2a" CornerRadius="6">
+                            <Border.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="3" Opacity="0.6"/>
+                            </Border.Effect>
+                        </Border>
+                        <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Popup>
+            </Grid>
+        </ControlTemplate>
+        
+        <!-- ComboBox Style -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#fafafa"/>
+            <Setter Property="Background" Value="#141414"/>
+            <Setter Property="BorderBrush" Value="#2a2a2a"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Template" Value="{StaticResource ComboBoxTemplate}"/>
+        </Style>
+        
+        <!-- ComboBoxItem Style -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#fafafa"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4" Margin="0,1">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1f1f1f"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1f1f1f"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#22c55e"/>
+                                <Setter Property="Foreground" Value="#0a0a0a"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     
     <Grid>
@@ -414,7 +555,7 @@ foreach ($path in $vlcPaths) {
                     <TextBlock x:Name="txtSubtitle" Text="Stream to VLC and download with yt-dlp" FontSize="14" Foreground="{StaticResource TextSecondary}" FontFamily="Segoe UI" Margin="0,4,0,0"/>
                 </StackPanel>
                 
-                <TextBlock Grid.Column="2" Text="v2.0.0" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Top" FontFamily="Segoe UI Semibold"/>
+                <TextBlock Grid.Column="2" Text="v2.2.0" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Top" FontFamily="Segoe UI Semibold"/>
             </Grid>
         </Border>
         
@@ -461,33 +602,35 @@ foreach ($path in $vlcPaths) {
                         
                         <!-- Left Column: Configuration -->
                         <StackPanel Grid.Column="0">
-                            <!-- VLC Status -->
+                            <!-- VLC Streaming (Optional) -->
+                            <TextBlock Text="VLC Streaming (Optional)" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
                             <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Ellipse x:Name="vlcIndicator" Width="10" Height="10" Fill="{StaticResource AccentRed}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="VLC Media Player" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
-                                        <TextBlock x:Name="txtVlcStatus" Text="Not detected" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
-                                    </StackPanel>
-                                    <Button x:Name="btnInstallVlc" Content="Install" Grid.Column="2" Style="{StaticResource SecondaryButton}" Padding="12,6"/>
-                                </Grid>
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse x:Name="vlcIndicator" Width="10" Height="10" Fill="{StaticResource AccentRed}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="VLC Media Player" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                            <TextBlock x:Name="txtVlcStatus" Text="Not detected" FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                        </StackPanel>
+                                        <Button x:Name="btnInstallVlc" Content="Install" Grid.Column="2" Style="{StaticResource SecondaryButton}" Padding="10,4" FontSize="11"/>
+                                    </Grid>
+                                    <CheckBox x:Name="chkInstallVlc" Content="Enable VLC streaming (install via winget if needed)" IsChecked="False" Margin="0,0,0,6"/>
+                                    <TextBlock Text="VLC Path" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,0,0,4"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="txtVlcPath" Grid.Column="0" FontSize="11"/>
+                                        <Button x:Name="btnBrowseVlc" Content="..." Grid.Column="1" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Padding="10,6" Width="36"/>
+                                    </Grid>
+                                </StackPanel>
                             </Border>
-                            
-                            <!-- VLC Path -->
-                            <TextBlock Text="VLC Path" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="txtVlcPath" Grid.Column="0" FontSize="12"/>
-                                <Button x:Name="btnBrowseVlc" Content="..." Grid.Column="1" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Padding="12,8" Width="40"/>
-                            </Grid>
                             
                             <!-- Download Path -->
                             <TextBlock Text="Download Folder" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
@@ -507,6 +650,30 @@ foreach ($path in $vlcPaths) {
                                     <CheckBox x:Name="chkAutoUpdate" Content="Auto-update yt-dlp before downloads" IsChecked="True" Margin="0,0,0,8"/>
                                     <CheckBox x:Name="chkNotifications" Content="Show toast notifications" IsChecked="True" Margin="0,0,0,8"/>
                                     <CheckBox x:Name="chkDesktopShortcut" Content="Create desktop shortcut" IsChecked="False"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- AI Enhancement (Ollama) -->
+                            <TextBlock Text="AI Enhancement (Local LLM)" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,12,0,8"/>
+                            <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="8" Padding="16">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse x:Name="ollamaIndicator" Width="10" Height="10" Fill="{StaticResource AccentRed}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Ollama (Local AI)" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                            <TextBlock x:Name="txtOllamaStatus" Text="Not detected" FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                        </StackPanel>
+                                        <Button x:Name="btnInstallOllama" Content="Install" Grid.Column="2" Style="{StaticResource SecondaryButton}" Padding="10,4" FontSize="11"/>
+                                    </Grid>
+                                    <CheckBox x:Name="chkInstallOllama" Content="Install Ollama + AI model for chapters" IsChecked="False" Margin="0,0,0,6"/>
+                                    <TextBlock Text="Model" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,0,0,4"/>
+                                    <ComboBox x:Name="cmbOllamaModel" SelectedIndex="0"/>
+                                    <TextBlock x:Name="txtOllamaModelInfo" Text="Powers YTKit ChapterForge with high-quality chapter generation, summaries, and POIs" FontSize="10" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -651,7 +818,7 @@ foreach ($path in $vlcPaths) {
                                     </Border>
                                     <TextBlock Text="YTKit" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
                                     <TextBlock Text="Full Featured Suite" FontSize="12" Foreground="#a78bfa" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                                    <TextBlock Text="Complete YouTube customization: downloads, themes, video/channel hiding, playback enhancements, and more." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" Height="54"/>
+                                    <TextBlock Text="Complete YouTube customization: downloads, themes, AI-powered chapters via Ollama, and more." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" Height="54"/>
                                     <Button x:Name="btnInstallYTKit" Content="Install YTKit" Style="{StaticResource SecondaryButton}" Padding="24,12" FontSize="14"/>
                                 </StackPanel>
                             </Border>
@@ -663,7 +830,7 @@ foreach ($path in $vlcPaths) {
                                 <TextBlock Text="OK" FontSize="16" Foreground="{StaticResource AccentGreen}" FontWeight="Bold" Margin="0,0,16,0" VerticalAlignment="Top"/>
                                 <StackPanel>
                                     <TextBlock Text="Setup Complete!" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource AccentGreen}" Margin="0,0,0,4"/>
-                                    <TextBlock Text="After installing either userscript, visit any YouTube video. You'll see download buttons next to the like/share buttons." FontSize="13" Foreground="#86efac" TextWrapping="Wrap"/>
+                                    <TextBlock Text="After installing either userscript, visit any YouTube video. You'll see download buttons next to the like/share buttons. If you installed YTKit with Ollama, set ChapterForge provider to 'Ollama' in its settings panel." FontSize="13" Foreground="#86efac" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -696,7 +863,9 @@ foreach ($path in $vlcPaths) {
                             <TextBlock Text="[X] yt-dlp and ffmpeg executables" Foreground="{StaticResource TextMuted}" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,4"/>
                             <TextBlock Text="[X] Configuration files" Foreground="{StaticResource TextMuted}" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,4"/>
                             <TextBlock Text="[X] Desktop and startup shortcuts" Foreground="{StaticResource TextMuted}" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,4"/>
-                            <TextBlock Text="[!] Userscript must be removed manually from browser" Foreground="{StaticResource AccentOrange}" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,12,0,0"/>
+                            <TextBlock Text="[!] Ollama and AI models are installed separately" Foreground="{StaticResource AccentOrange}" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,8,0,0"/>
+                            <TextBlock Text="    Run: ollama rm model-name  to remove models" Foreground="{StaticResource TextMuted}" FontFamily="Cascadia Code, Consolas" FontSize="10" Margin="0,2,0,0"/>
+                            <TextBlock Text="[!] Userscript must be removed manually from browser" Foreground="{StaticResource AccentOrange}" FontFamily="Cascadia Code, Consolas" FontSize="12" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>
                     
@@ -751,6 +920,7 @@ $tabWizard = $window.FindName("tabWizard")
 $vlcIndicator = $window.FindName("vlcIndicator")
 $txtVlcStatus = $window.FindName("txtVlcStatus")
 $btnInstallVlc = $window.FindName("btnInstallVlc")
+$chkInstallVlc = $window.FindName("chkInstallVlc")
 $txtVlcPath = $window.FindName("txtVlcPath")
 $btnBrowseVlc = $window.FindName("btnBrowseVlc")
 $txtDownloadPath = $window.FindName("txtDownloadPath")
@@ -792,6 +962,14 @@ $btnUninstall = $window.FindName("btnUninstall")
 $btnBack = $window.FindName("btnBack")
 $btnNext = $window.FindName("btnNext")
 
+# Ollama controls
+$ollamaIndicator = $window.FindName("ollamaIndicator")
+$txtOllamaStatus = $window.FindName("txtOllamaStatus")
+$btnInstallOllama = $window.FindName("btnInstallOllama")
+$chkInstallOllama = $window.FindName("chkInstallOllama")
+$cmbOllamaModel = $window.FindName("cmbOllamaModel")
+$txtOllamaModelInfo = $window.FindName("txtOllamaModelInfo")
+
 # ============================================
 # LOAD IMAGES
 # ============================================
@@ -818,11 +996,45 @@ if ($vlcFound) {
     $vlcIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
     $txtVlcStatus.Text = "Detected: $vlcFound"
     $btnInstallVlc.Visibility = "Collapsed"
+    $chkInstallVlc.IsChecked = $true
 } else {
     $txtVlcPath.Text = ""
-    $txtVlcStatus.Text = "Not detected - click Install VLC or browse manually"
+    $txtVlcStatus.Text = "Not detected - check box below to install"
 }
 $txtDownloadPath.Text = $script:DefaultDownloadPath
+
+# Set Ollama defaults
+foreach ($entry in $script:OllamaModels.GetEnumerator()) {
+    $cmbOllamaModel.Items.Add("$($entry.Key) - $($entry.Value)") | Out-Null
+}
+$cmbOllamaModel.SelectedIndex = 0
+
+if ($script:OllamaFound) {
+    $ollamaIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
+    if ($script:OllamaRunning) {
+        $modelCount = $script:OllamaInstalledModels.Count
+        $txtOllamaStatus.Text = "Running ($modelCount model(s) installed)"
+        $btnInstallOllama.Visibility = "Collapsed"
+        $chkInstallOllama.IsChecked = $true
+        # If a recommended model is already installed, pre-select it
+        $modelKeys = @($script:OllamaModels.Keys)
+        for ($i = 0; $i -lt $modelKeys.Count; $i++) {
+            $modelName = $modelKeys[$i]
+            foreach ($installed in $script:OllamaInstalledModels) {
+                if ($installed -like "$modelName*") {
+                    $cmbOllamaModel.SelectedIndex = $i
+                    break
+                }
+            }
+        }
+    } else {
+        $txtOllamaStatus.Text = "Installed (not running - will start during install)"
+        $btnInstallOllama.Visibility = "Collapsed"
+        $chkInstallOllama.IsChecked = $true
+    }
+} else {
+    $txtOllamaStatus.Text = "Not detected - check box below to install"
+}
 
 # Track wizard state
 $script:CurrentStep = 1
@@ -953,6 +1165,7 @@ $btnInstallVlc.Add_Click({
                     $vlcIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
                     $txtVlcStatus.Text = "Installed: $path"
                     $btnInstallVlc.Visibility = "Collapsed"
+                    $chkInstallVlc.IsChecked = $true
                     Update-Status "VLC installed successfully!"
                     break
                 }
@@ -962,13 +1175,52 @@ $btnInstallVlc.Add_Click({
         }
         $btnInstallVlc.IsEnabled = $true
     } else {
-        [System.Windows.MessageBox]::Show("winget is not available. Please install VLC manually from https://www.videolan.org/vlc/", "YTYT-Downloader", "OK", "Warning")
         Start-Process "https://www.videolan.org/vlc/"
     }
 })
 
 # Browser buttons
 $btnChrome.Add_Click({ Show-BrowserLinks -Browser "Chrome" })
+
+# Install Ollama manually
+$btnInstallOllama.Add_Click({
+    $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+    if ($wingetPath) {
+        Update-Status "Installing Ollama via winget..."
+        $btnInstallOllama.IsEnabled = $false
+        try {
+            Start-Process -FilePath "winget" -ArgumentList "install", "--id", "Ollama.Ollama", "--accept-package-agreements", "--accept-source-agreements", "-h" -Wait -NoNewWindow
+            Start-Sleep -Seconds 3
+            # Re-check for Ollama
+            foreach ($path in $ollamaPaths) {
+                if (Test-Path $path) {
+                    $script:OllamaFound = $path
+                    $ollamaIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
+                    $txtOllamaStatus.Text = "Installed: $path"
+                    $btnInstallOllama.Visibility = "Collapsed"
+                    $chkInstallOllama.IsChecked = $true
+                    Update-Status "  [OK] Ollama installed"
+                    break
+                }
+            }
+            if (-not $script:OllamaFound) {
+                $ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
+                if ($ollamaCmd) {
+                    $script:OllamaFound = $ollamaCmd.Source
+                    $ollamaIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
+                    $txtOllamaStatus.Text = "Installed via PATH"
+                    $btnInstallOllama.Visibility = "Collapsed"
+                    $chkInstallOllama.IsChecked = $true
+                }
+            }
+        } catch {
+            Update-Status "  [!] Error installing Ollama: $($_.Exception.Message)"
+        }
+        $btnInstallOllama.IsEnabled = $true
+    } else {
+        Start-Process "https://ollama.com/download"
+    }
+})
 $btnFirefox.Add_Click({ Show-BrowserLinks -Browser "Firefox" })
 $btnEdge.Add_Click({ Show-BrowserLinks -Browser "Edge" })
 $btnSafari.Add_Click({ Show-BrowserLinks -Browser "Safari" })
@@ -1148,12 +1400,15 @@ $btnNext.Add_Click({
                     Update-Status "Saving configuration..."
                     $config = @{
                         VlcPath = $txtVlcPath.Text
+                        VlcEnabled = [bool]$chkInstallVlc.IsChecked
                         DownloadPath = $dlPath
                         AutoUpdate = $chkAutoUpdate.IsChecked
                         Notifications = $chkNotifications.IsChecked
                         SponsorBlock = $true
                         YtDlpPath = $ytdlpPath
                         FfmpegPath = $ffmpegPath
+                        OllamaEnabled = [bool]$chkInstallOllama.IsChecked
+                        OllamaModel = ($cmbOllamaModel.SelectedItem -split " - ")[0]
                     }
                     $config | ConvertTo-Json | Set-Content (Join-Path $script:InstallPath "config.json") -Encoding UTF8
                     Update-Status "  [OK] Configuration saved"
@@ -1162,8 +1417,38 @@ $btnNext.Add_Click({
                     # Step 5: Create handlers
                     Update-Status "Creating protocol handlers..."
                     
-                    # VLC Handler
-                    $vlcHandler = @'
+                    # VLC handlers (only if VLC enabled)
+                    if ($chkInstallVlc.IsChecked) {
+                        # Auto-install VLC via winget if not found
+                        $vlcPath = $txtVlcPath.Text
+                        if (-not $vlcPath -or -not (Test-Path $vlcPath)) {
+                            $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+                            if ($wingetPath) {
+                                Update-Status "  Installing VLC via winget..."
+                                try {
+                                    Start-Process -FilePath "winget" -ArgumentList "install", "--id", "VideoLAN.VLC", "--accept-package-agreements", "--accept-source-agreements", "-h" -Wait -NoNewWindow
+                                    Start-Sleep -Seconds 2
+                                    foreach ($path in $vlcPaths) {
+                                        if (Test-Path $path) {
+                                            $txtVlcPath.Text = $path
+                                            $vlcPath = $path
+                                            $vlcIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
+                                            $txtVlcStatus.Text = "Installed: $path"
+                                            $btnInstallVlc.Visibility = "Collapsed"
+                                            Update-Status "  [OK] VLC installed: $path"
+                                            break
+                                        }
+                                    }
+                                } catch {
+                                    Update-Status "  [!] VLC install failed: $($_.Exception.Message)"
+                                }
+                            } else {
+                                Update-Status "  [!] winget not available - install VLC manually from videolan.org"
+                            }
+                        }
+                        
+                        # VLC Handler
+                        $vlcHandler = @'
 param([string]$url)
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -1232,6 +1517,7 @@ if ($config.Notifications) {
 '@
                     $vlcHandler | Set-Content (Join-Path $script:InstallPath "ytvlc-handler.ps1") -Encoding UTF8
                     Update-Status "  [OK] VLC handler"
+                    } # end VLC handler conditional
                     Set-Progress 50
                     
                     # Download Handler with Progress UI
@@ -1667,7 +1953,8 @@ $form.Add_FormClosed({
                     Update-Status "  [OK] Download handler (with progress UI)"
                     Set-Progress 55
                     
-                    # VLC Queue Handler
+                    # VLC Queue Handler (only if VLC enabled)
+                    if ($chkInstallVlc.IsChecked) {
                     $vlcQueueHandler = @'
 param([string]$url)
 Add-Type -AssemblyName System.Windows.Forms
@@ -1722,6 +2009,7 @@ if ($config.Notifications) {
 '@
                     $vlcQueueHandler | Set-Content (Join-Path $script:InstallPath "ytvlcq-handler.ps1") -Encoding UTF8
                     Update-Status "  [OK] VLC queue handler"
+                    } # end VLC queue handler conditional
                     Set-Progress 60
                     
                     # Download icon for notifications
@@ -1737,9 +2025,16 @@ if ($config.Notifications) {
 Set objShell = CreateObject("WScript.Shell")
 objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{SCRIPT}"" """ & WScript.Arguments(0) & """", 0, False
 '@
-                    @("ytvlc", "ytvlcq", "ytdl") | ForEach-Object {
-                        $vbs = $vbsTemplate -replace '{SCRIPT}', (Join-Path $script:InstallPath "$_-handler.ps1")
-                        $vbs | Set-Content (Join-Path $script:InstallPath "$_-launcher.vbs") -Encoding ASCII
+                    # Always create download launcher
+                    $vbs = $vbsTemplate -replace '{SCRIPT}', (Join-Path $script:InstallPath "ytdl-handler.ps1")
+                    $vbs | Set-Content (Join-Path $script:InstallPath "ytdl-launcher.vbs") -Encoding ASCII
+                    
+                    # VLC launchers only if VLC enabled
+                    if ($chkInstallVlc.IsChecked) {
+                        @("ytvlc", "ytvlcq") | ForEach-Object {
+                            $vbs = $vbsTemplate -replace '{SCRIPT}', (Join-Path $script:InstallPath "$_-handler.ps1")
+                            $vbs | Set-Content (Join-Path $script:InstallPath "$_-launcher.vbs") -Encoding ASCII
+                        }
                     }
                     Update-Status "  [OK] Silent launchers created"
                     Set-Progress 70
@@ -1747,23 +2042,26 @@ objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "
                     # Step 7: Register protocols
                     Update-Status "Registering URL protocols..."
                     
-                    # ytvlc://
-                    $protocolRoot = "HKCU:\Software\Classes\ytvlc"
-                    New-Item -Path $protocolRoot -Force | Out-Null
-                    Set-ItemProperty -Path $protocolRoot -Name "(Default)" -Value "URL:YTVLC Protocol"
-                    Set-ItemProperty -Path $protocolRoot -Name "URL Protocol" -Value ""
-                    New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
-                    Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytvlc-launcher.vbs')`" `"%1`""
+                    # VLC protocols (only if VLC enabled)
+                    if ($chkInstallVlc.IsChecked) {
+                        # ytvlc://
+                        $protocolRoot = "HKCU:\Software\Classes\ytvlc"
+                        New-Item -Path $protocolRoot -Force | Out-Null
+                        Set-ItemProperty -Path $protocolRoot -Name "(Default)" -Value "URL:YTVLC Protocol"
+                        Set-ItemProperty -Path $protocolRoot -Name "URL Protocol" -Value ""
+                        New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
+                        Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytvlc-launcher.vbs')`" `"%1`""
+                        
+                        # ytvlcq://
+                        $protocolRoot = "HKCU:\Software\Classes\ytvlcq"
+                        New-Item -Path $protocolRoot -Force | Out-Null
+                        Set-ItemProperty -Path $protocolRoot -Name "(Default)" -Value "URL:YTVLCQ Protocol"
+                        Set-ItemProperty -Path $protocolRoot -Name "URL Protocol" -Value ""
+                        New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
+                        Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytvlcq-launcher.vbs')`" `"%1`""
+                    }
                     
-                    # ytvlcq://
-                    $protocolRoot = "HKCU:\Software\Classes\ytvlcq"
-                    New-Item -Path $protocolRoot -Force | Out-Null
-                    Set-ItemProperty -Path $protocolRoot -Name "(Default)" -Value "URL:YTVLCQ Protocol"
-                    Set-ItemProperty -Path $protocolRoot -Name "URL Protocol" -Value ""
-                    New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
-                    Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytvlcq-launcher.vbs')`" `"%1`""
-                    
-                    # ytdl://
+                    # ytdl:// (always)
                     $protocolRoot = "HKCU:\Software\Classes\ytdl"
                     New-Item -Path $protocolRoot -Force | Out-Null
                     Set-ItemProperty -Path $protocolRoot -Name "(Default)" -Value "URL:YTDL Protocol"
@@ -1771,7 +2069,9 @@ objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "
                     New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
                     Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytdl-launcher.vbs')`" `"%1`""
                     
-                    Update-Status "  [OK] Registered: ytvlc://, ytvlcq://, ytdl://"
+                    $registeredProtocols = "ytdl://"
+                    if ($chkInstallVlc.IsChecked) { $registeredProtocols = "ytvlc://, ytvlcq://, ytdl://" }
+                    Update-Status "  [OK] Registered: $registeredProtocols"
                     Set-Progress 80
                     
                     # Step 8: Create userscript
@@ -1893,9 +2193,164 @@ objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "
 '@
                     $userscript | Set-Content (Join-Path $script:InstallPath "YTYT-Downloader.user.js") -Encoding UTF8
                     Update-Status "  [OK] Userscript created"
-                    Set-Progress 90
+                    Set-Progress 85
                     
-                    # Step 9: Desktop shortcut (optional)
+                    # Step 9: Ollama + AI Model (optional)
+                    if ($chkInstallOllama.IsChecked) {
+                        $selectedModel = ($cmbOllamaModel.SelectedItem -split " - ")[0]
+                        
+                        # Install Ollama if not present
+                        if (-not $script:OllamaFound) {
+                            Update-Status "Installing Ollama (Local AI runtime)..."
+                            Set-Progress 87
+                            $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+                            if ($wingetPath) {
+                                try {
+                                    $ollamaProc = Start-Process -FilePath "winget" -ArgumentList "install", "--id", "Ollama.Ollama", "--accept-package-agreements", "--accept-source-agreements", "-h" -Wait -NoNewWindow -PassThru
+                                    Start-Sleep -Seconds 3
+                                    # Re-check for Ollama after install
+                                    foreach ($path in $ollamaPaths) {
+                                        if (Test-Path $path) {
+                                            $script:OllamaFound = $path
+                                            break
+                                        }
+                                    }
+                                    if (-not $script:OllamaFound) {
+                                        $ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
+                                        if ($ollamaCmd) { $script:OllamaFound = $ollamaCmd.Source }
+                                    }
+                                    if ($script:OllamaFound) {
+                                        Update-Status "  [OK] Ollama installed: $($script:OllamaFound)"
+                                    } else {
+                                        Update-Status "  [!] Ollama install may need a restart to complete"
+                                        Update-Status "      Download manually from: https://ollama.com/download"
+                                    }
+                                } catch {
+                                    Update-Status "  [!] Winget install failed: $($_.Exception.Message)"
+                                    Update-Status "      Download manually from: https://ollama.com/download"
+                                }
+                            } else {
+                                # Direct download fallback
+                                try {
+                                    Update-Status "  Downloading Ollama installer..."
+                                    $ollamaSetup = Join-Path $env:TEMP "OllamaSetup.exe"
+                                    Invoke-WebRequest -Uri $script:OllamaInstallerUrl -OutFile $ollamaSetup -UseBasicParsing
+                                    Update-Status "  Running Ollama installer (silent)..."
+                                    Start-Process -FilePath $ollamaSetup -ArgumentList "/SILENT" -Wait
+                                    Start-Sleep -Seconds 3
+                                    Remove-Item $ollamaSetup -Force -ErrorAction SilentlyContinue
+                                    foreach ($path in $ollamaPaths) {
+                                        if (Test-Path $path) {
+                                            $script:OllamaFound = $path
+                                            break
+                                        }
+                                    }
+                                    if ($script:OllamaFound) {
+                                        Update-Status "  [OK] Ollama installed: $($script:OllamaFound)"
+                                    }
+                                } catch {
+                                    Update-Status "  [!] Download failed: $($_.Exception.Message)"
+                                }
+                            }
+                        } else {
+                            Update-Status "Ollama already installed: $($script:OllamaFound)"
+                        }
+                        Set-Progress 90
+                        
+                        # Ensure Ollama service is running
+                        if ($script:OllamaFound) {
+                            Update-Status "Starting Ollama service..."
+                            try {
+                                # Try to reach the API first
+                                $apiUp = $false
+                                try {
+                                    $null = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get -TimeoutSec 2 -ErrorAction Stop
+                                    $apiUp = $true
+                                } catch {}
+                                
+                                if (-not $apiUp) {
+                                    # Start Ollama serve in background
+                                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                                    $psi.FileName = $script:OllamaFound
+                                    $psi.Arguments = "serve"
+                                    $psi.CreateNoWindow = $true
+                                    $psi.UseShellExecute = $false
+                                    $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+                                    [System.Diagnostics.Process]::Start($psi) | Out-Null
+                                    Start-Sleep -Seconds 4
+                                    # Verify it started
+                                    try {
+                                        $null = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get -TimeoutSec 3 -ErrorAction Stop
+                                        $apiUp = $true
+                                        Update-Status "  [OK] Ollama service started"
+                                    } catch {
+                                        Update-Status "  [!] Ollama service may need manual start"
+                                    }
+                                } else {
+                                    Update-Status "  [OK] Ollama service already running"
+                                }
+                            } catch {
+                                Update-Status "  [!] Could not start Ollama: $($_.Exception.Message)"
+                            }
+                            Set-Progress 92
+                            
+                            # Pull the selected model
+                            # Check if model is already installed
+                            $modelInstalled = $false
+                            try {
+                                $tagResponse = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
+                                if ($tagResponse.models) {
+                                    foreach ($m in $tagResponse.models) {
+                                        if ($m.name -like "$selectedModel*") {
+                                            $modelInstalled = $true
+                                            break
+                                        }
+                                    }
+                                }
+                            } catch {}
+                            
+                            if ($modelInstalled) {
+                                Update-Status "  [OK] Model '$selectedModel' already installed"
+                            } else {
+                                Update-Status "Pulling AI model: $selectedModel (this may take a few minutes)..."
+                                Set-Progress 93
+                                try {
+                                    $pullBody = @{ name = $selectedModel; stream = $false } | ConvertTo-Json
+                                    $pullResponse = Invoke-RestMethod -Uri "http://localhost:11434/api/pull" -Method Post -Body $pullBody -ContentType "application/json" -TimeoutSec 600 -ErrorAction Stop
+                                    Update-Status "  [OK] Model '$selectedModel' ready"
+                                } catch {
+                                    # Streaming response may cause parse error but still succeed
+                                    # Verify by checking tags again
+                                    Start-Sleep -Seconds 2
+                                    $verified = $false
+                                    try {
+                                        $tagResponse = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
+                                        if ($tagResponse.models) {
+                                            foreach ($m in $tagResponse.models) {
+                                                if ($m.name -like "$selectedModel*") { $verified = $true; break }
+                                            }
+                                        }
+                                    } catch {}
+                                    
+                                    if ($verified) {
+                                        Update-Status "  [OK] Model '$selectedModel' ready"
+                                    } else {
+                                        Update-Status "  [!] Model pull may still be in progress"
+                                        Update-Status "      Run manually: ollama pull $selectedModel"
+                                    }
+                                }
+                            }
+                            
+                            # Update Ollama indicator
+                            $window.Dispatcher.Invoke([action]{
+                                $ollamaIndicator.Fill = [System.Windows.Media.Brushes]::LimeGreen
+                                $txtOllamaStatus.Text = "Ready with $selectedModel"
+                            }, [System.Windows.Threading.DispatcherPriority]::Render)
+                        }
+                    }
+                    Set-Progress 96
+                    
+                    # Step 10: Desktop shortcut (optional)
                     if ($chkDesktopShortcut.IsChecked) {
                         Update-Status "Creating desktop shortcut..."
                         $WshShell = New-Object -ComObject WScript.Shell
@@ -1910,7 +2365,16 @@ objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "
                     Set-Progress 100
                     Update-Status ""
                     Update-Status "========================================"
-                    Update-Status "Base tools installation complete!"
+                    Update-Status "Installation complete!"
+                    Update-Status ""
+                    Update-Status "  Installed: yt-dlp, ffmpeg, ytdl:// protocol"
+                    if ($chkInstallVlc.IsChecked) {
+                        Update-Status "  VLC: ytvlc://, ytvlcq:// protocols"
+                    }
+                    if ($chkInstallOllama.IsChecked) {
+                        Update-Status "  AI: Ollama + $(($cmbOllamaModel.SelectedItem -split ' - ')[0])"
+                        Update-Status "      YTKit ChapterForge auto-detects at localhost:11434"
+                    }
                     Update-Status "========================================"
                     
                     $script:BaseToolsInstalled = $true
