@@ -8,7 +8,8 @@
 
 > A comprehensive Tampermonkey userscript that transforms YouTube into a distraction-free, privacy-respecting experience — with built-in ad blocking, AI-powered chapters, SponsorBlock, DeArrow, media player integration, and over 100 individually configurable features.
 
-![YTKit Settings Panel](assets/screenshot.png)
+<img width="2065" height="1050" alt="image" src="https://github.com/user-attachments/assets/2ba9c62f-e64b-44db-acb6-5062f7ccd61b" />
+
 
 ---
 
