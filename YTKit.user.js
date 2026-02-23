@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      25.22
+// @version      1.0.4
 // @description  Ultimate YouTube customization with ad blocking, VLC streaming, video/channel hiding, playback enhancements, sticky video, and more.
 // @author       Matthew Parker
 // @license      MIT
@@ -66,7 +66,6 @@
             'fullscreenAdRenderer', 'interstitialAdRenderer',
             'sponsoredTextRenderers', 'adBreaks',
             'playerResponse.playerConfig.adConfig',
-            'playerResponse.adBreakHeartbeatParams',
         ];
         const REPLACE_MAP = { adPlacements: 'no_ads', adSlots: 'no_ads', playerAds: 'no_ads', adBreakHeartbeatParams: 'no_ads' };
         const INTERCEPT_URLS = [
@@ -123,7 +122,7 @@
             for (let i = 0; i < INTERCEPT_URLS.length; i++) { if (url.indexOf(INTERCEPT_URLS[i]) !== -1) return true; }
             return false;
         }
-        const _replaceRe = new W.RegExp('"(' + W.Object.keys(REPLACE_MAP).join('|') + ')"', 'g');
+        const _replaceRe = new W.RegExp('"(' + W.Object.keys(REPLACE_MAP).map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('|') + ')"', 'g');
         function replaceAdKeys(text) {
             if (typeof text !== 'string') return text;
             return text.replace(_replaceRe, function(m, k) { return '"' + REPLACE_MAP[k] + '"'; });
@@ -132,8 +131,8 @@
         // ── Deep Recursive Ad Pruner ──
         function deepPruneAds(obj, depth) {
             if (!obj || typeof obj !== 'object' || (depth || 0) > 12) return false;
-            // Skip small objects that couldn't possibly contain ad data
-            const keys = W.Array.isArray(obj) ? null : W.Object.keys(obj);
+            // Skip trivially small objects (0-1 keys can't contain ad renderer pairs)
+            var keys = W.Array.isArray(obj) ? null : W.Object.keys(obj);
             if (keys && keys.length < 2) return false;
             let pruned = false;
             const d = (depth || 0) + 1;
@@ -176,10 +175,10 @@
 
         function pruneObject(obj) {
             if (!obj || typeof obj !== 'object') return false;
-            let pruned = false;
-            for (let i = 0; i < PRUNE_KEYS.length; i++) { if (deleteNested(obj, PRUNE_KEYS[i])) pruned = true; }
+            var pruned = false;
+            for (var i = 0; i < PRUNE_KEYS.length; i++) { if (deleteNested(obj, PRUNE_KEYS[i])) pruned = true; }
             if (obj.entries && W.Array.isArray(obj.entries)) {
-                const before = obj.entries.length;
+                var before = obj.entries.length;
                 obj.entries = obj.entries.filter(function(e) {
                     return !(e && e.command && e.command.reelWatchEndpoint &&
                              e.command.reelWatchEndpoint.adClientParams &&
@@ -187,7 +186,12 @@
                 });
                 if (obj.entries.length < before) pruned = true;
             }
-            pruned = deepPruneAds(obj) || pruned;
+            // Deep walk only if top-level prune didn't already strip the main ad keys —
+            // avoids expensive recursive traversal on responses that were already cleaned.
+            // Still runs if pruned=false (may have nested ad renderers without top-level keys).
+            if (!pruned || obj.contents || obj.onResponseReceivedActions || obj.richGridRenderer) {
+                pruned = deepPruneAds(obj) || pruned;
+            }
             if (pruned) stats.pruned++;
             return pruned;
         }
@@ -195,9 +199,9 @@
         // Pre-check strings: known ad keys that must appear for pruneObject to do any work.
         // Avoids expensive deep traversal on the hundreds of small JSON.parse calls YouTube
         // makes per second for analytics, metrics, and UI state updates.
-        const AD_KEY_HINTS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams', 'auxiliaryUi', 'adSlotRenderer', 'promotedVideoRenderer'];
+        const AD_KEY_HINTS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams', 'auxiliaryUi', 'adSlotRenderer', 'promotedVideoRenderer', 'inFeedAdLayoutRenderer', 'displayAdRenderer', 'compactPromotedVideoRenderer', 'adBreakServiceRenderer'];
         function jsonNeedsPruning(str) {
-            if (typeof str !== 'string' || str.length < 200) return false;
+            if (typeof str !== 'string' || str.length < 500) return false;
             for (let i = 0; i < AD_KEY_HINTS.length; i++) {
                 if (str.indexOf(AD_KEY_HINTS[i]) !== -1) return true;
             }
@@ -287,7 +291,12 @@
                 try {
                     if (node instanceof W.HTMLIFrameElement && node.src === 'about:blank') {
                         const res = W.Reflect.apply(target, thisArg, args);
-                        if (node.contentWindow) { node.contentWindow.fetch = W.fetch; node.contentWindow.JSON.parse = W.JSON.parse; }
+                        // Skip sandboxed iframes without allow-scripts (accessing contentWindow throws)
+                        try {
+                            const sb = node.getAttribute('sandbox');
+                            if (sb !== null && sb.indexOf('allow-scripts') === -1) return res;
+                            if (node.contentWindow) { node.contentWindow.fetch = W.fetch; node.contentWindow.JSON.parse = W.JSON.parse; }
+                        } catch(ignored) {}
                         return res;
                     }
                     if (node instanceof W.HTMLScriptElement) {
@@ -357,6 +366,8 @@
         }
         // Strategy: Click skip buttons only. No playbackRate/mute manipulation.
         // Uses MutationObserver on player + low-frequency poll as fallback.
+        // NOTE: `var` is intentional here — this code runs in the real page context
+        // via unsafeWindow, and `var` hoisting avoids TDZ issues across execution contexts.
         var adNeutTimer = null;
         var adObserver = null;
 
@@ -382,7 +393,7 @@
 
                 // Close overlay ads
                 var overlays = W.document.querySelectorAll(
-                    '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container, .ytp-ad-overlay-close-button'
+                    '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container'
                 );
                 for (var oc = 0; oc < overlays.length; oc++) {
                     try { overlays[oc].click(); } catch(e) {}
@@ -426,10 +437,17 @@
             }
 
             // Fallback poll: set up observer when player appears, click skip if ad detected
+            // Once observer is ready, clear the interval — observer handles the rest.
             if (adNeutTimer) return;
             var observerReady = setupObserver();
+            if (observerReady) return; // Observer already watching, no poll needed
             adNeutTimer = W.setInterval(function() {
                 if (!observerReady) observerReady = setupObserver();
+                if (observerReady) {
+                    // Observer is live — stop polling, it's redundant now
+                    W.clearInterval(adNeutTimer); adNeutTimer = null;
+                    return;
+                }
                 // Light check - only look for skip buttons, no video element manipulation
                 var player = W.document.getElementById('movie_player');
                 if (player && player.classList.contains('ad-showing')) {
@@ -638,18 +656,94 @@
     updateCSS(combined);
 
     // Fix: YouTube's sidebar drawer scrim (.opened) blocks all page interaction
+    // Scoped to tp-yt-app-drawer to avoid nuking any element with class .opened
     const _openedFix = document.createElement('style');
     _openedFix.id = 'ytkit-opened-fix';
-    _openedFix.textContent = '.opened { display: none !important; }';
+    _openedFix.textContent = 'tp-yt-app-drawer[opened] + .opened, #scrim.opened { display: none !important; pointer-events: none !important; }';
     (document.head || document.documentElement).appendChild(_openedFix);
 
-    // Re-inject protection
+    // Early chat cleanup — runs at document-start in the live_chat iframe
+    // (features init via main() may not reach the chat iframe context)
+    if (window.location.pathname.startsWith('/live_chat')) {
+        const _chatFix = document.createElement('style');
+        _chatFix.id = 'ytkit-chat-early';
+        _chatFix.textContent = [
+            'yt-live-chat-toast-renderer, yt-live-chat-viewer-engagement-message-renderer { display: none !important; }',
+            // Clean up monetization clutter in restricted participation panel
+            'yt-live-chat-restricted-participation-renderer yt-live-chat-product-picker-panel-view-model { display: none !important; }',
+            'yt-live-chat-restricted-participation-renderer yt-reaction-control-panel-overlay-view-model { display: none !important; }',
+            'yt-live-chat-restricted-participation-renderer #picker-buttons { display: none !important; }',
+            // Style the YTKit subscribe button
+            '#ytkit-chat-subscribe { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 6px 14px; background: #c00; color: #fff; border: none; border-radius: 18px; font-size: 12px; font-weight: 600; font-family: "Roboto","Arial",sans-serif; cursor: pointer; transition: background 0.2s, transform 0.15s; text-decoration: none; white-space: nowrap; }',
+            '#ytkit-chat-subscribe:hover { background: #e00; transform: scale(1.03); }',
+            '#ytkit-chat-subscribe svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }',
+            // Restyle the restricted message row to be cleaner
+            'yt-live-chat-restricted-participation-renderer #explanation { display: flex !important; align-items: center !important; flex-wrap: wrap !important; gap: 4px !important; }',
+        ].join('\n');
+        (document.head || document.documentElement).appendChild(_chatFix);
+
+        // Inject subscribe button when "Subscribers-only mode" detected
+        const _injectSubscribeBtn = () => {
+            const renderer = document.querySelector('yt-live-chat-restricted-participation-renderer');
+            if (!renderer || document.getElementById('ytkit-chat-subscribe')) return;
+            const msgEl = renderer.querySelector('#message');
+            if (!msgEl || !msgEl.textContent.includes('Subscribers-only')) return;
+
+            // Extract channel handle from support button tooltip/aria-label
+            let handle = '';
+            const supportBtn = renderer.querySelector('button[aria-label*="@"]');
+            if (supportBtn) {
+                const m = supportBtn.getAttribute('aria-label').match(/@[\w.-]+/);
+                if (m) handle = m[0];
+            }
+            if (!handle) {
+                const tooltip = renderer.querySelector('tp-yt-paper-tooltip');
+                if (tooltip) {
+                    const m = (tooltip.textContent || '').match(/@[\w.-]+/);
+                    if (m) handle = m[0];
+                }
+            }
+
+            const btn = document.createElement('a');
+            btn.id = 'ytkit-chat-subscribe';
+            btn.target = '_blank';
+            btn.rel = 'noopener';
+            btn.href = handle ? `https://www.youtube.com/${handle}?sub_confirmation=1` : '#';
+            btn.title = handle ? 'Subscribe to ' + handle : 'Subscribe to this channel';
+            // Build with DOM API (chat iframe enforces Trusted Types)
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M10 20h4c0 1.1-.9 2-2 2s-2-.9-2-2zm10-2.65V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C9.63 5.36 8 7.92 8 11v6.35l-2 2V20h16v-.65l-2-2z');
+            svg.appendChild(path);
+            btn.appendChild(svg);
+            btn.appendChild(document.createTextNode(' Subscribe' + (handle ? ' to ' + handle : '')));
+
+            const body = renderer.querySelector('#body') || renderer.querySelector('#explanation');
+            if (body) body.appendChild(btn);
+        };
+
+        const _chatSubObs = new MutationObserver(_injectSubscribeBtn);
+        const _startChatSubObs = () => {
+            _injectSubscribeBtn();
+            _chatSubObs.observe(document.body, { childList: true, subtree: true });
+        };
+        if (document.body) _startChatSubObs();
+        else document.addEventListener('DOMContentLoaded', _startChatSubObs);
+    }
+
+    // Re-inject protection (debounced — head gets many mutations from YT scripts)
+    let _ensureCSSTimer = null;
     const _ensureCSS = () => {
-        if (!cosmeticEl || !cosmeticEl.parentNode) {
-            cosmeticEl = null;
-            const c = [GM_getValue('ytab_cached_selectors', ''), GM_getValue('ytab_custom_filters', '')].filter(Boolean).join(',\n');
-            updateCSS(c);
-        }
+        if (_ensureCSSTimer) return;
+        _ensureCSSTimer = setTimeout(() => {
+            _ensureCSSTimer = null;
+            if (!cosmeticEl || !cosmeticEl.parentNode) {
+                cosmeticEl = null;
+                const c = [GM_getValue('ytab_cached_selectors', ''), GM_getValue('ytab_custom_filters', '')].filter(Boolean).join(',\n');
+                updateCSS(c);
+            }
+        }, 200);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _ensureCSS);
     const _cssObserver = new MutationObserver(_ensureCSS);
@@ -684,6 +778,8 @@
     }
     function scanForAds(root) {
         if (!root || typeof root.querySelectorAll !== 'function') return;
+        // Fast path: check root itself before traversing children
+        if (root.tagName && AD_REMOVAL_TAGS.has(root.tagName)) { nukeAdNode(root); return; }
         for (const tag of AD_REMOVAL_TAGS) { for (const el of root.querySelectorAll(tag.toLowerCase())) nukeAdNode(el); }
         for (const el of root.querySelectorAll('[layout*="display-ad-"]')) nukeAdNode(el);
     }
@@ -702,8 +798,17 @@
             if (_pendingRoots.length && !_rafId) {
                 _rafId = requestAnimationFrame(() => {
                     _rafId = null;
-                    const roots = _pendingRoots.splice(0);
+                    // Process in batches to avoid blocking main thread on heavy DOM mutations
+                    const roots = _pendingRoots.splice(0, 50);
                     for (const root of roots) scanForAds(root);
+                    // If more remain, schedule another frame
+                    if (_pendingRoots.length) {
+                        _rafId = requestAnimationFrame(() => {
+                            _rafId = null;
+                            const more = _pendingRoots.splice(0);
+                            for (const r of more) scanForAds(r);
+                        });
+                    }
                 });
             }
         });
@@ -776,10 +881,7 @@
     // ── Timing Constants ──
     const TIMING = {
         NAV_DEBOUNCE: 50,         // Navigation detection debounce (ms)
-        MUTATION_THROTTLE: 500,   // Mutation observer throttle (ms)
-        BUTTON_DEBOUNCE: 300,     // Button checker mutation debounce (ms)
         SAVE_DEBOUNCE: 500,       // Settings save debounce (ms)
-        NAV_SETTLE: 1000,         // Time for YouTube SPA to settle after nav (ms)
         ELEMENT_TIMEOUT: 3000,    // waitForElement timeout (ms)
         LABEL_MAX_ATTEMPTS: 20,   // SponsorBlock label retry limit
     };
@@ -1251,8 +1353,18 @@
         },
 
         _getInnertubeApiKey() {
-            const match = document.body?.innerHTML?.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
-            return match ? match[1] : null;
+            // Prefer ytcfg (cheap) over innerHTML regex (forces full DOM serialization)
+            if (typeof window.ytcfg !== 'undefined' && window.ytcfg.get) {
+                const key = window.ytcfg.get('INNERTUBE_API_KEY');
+                if (key) return key;
+            }
+            // Fallback: check script tags instead of body.innerHTML (much cheaper)
+            const scripts = document.querySelectorAll('script');
+            for (const s of scripts) {
+                const m = s.textContent.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
+                if (m) return m[1];
+            }
+            return null;
         },
 
         _getClientVersion() {
@@ -1289,10 +1401,12 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
-            document.body.appendChild(a);
+            a.style.display = 'none';
+            (document.body || document.documentElement).appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            a.remove();
+            // Delay revoke to ensure download starts
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         },
 
         _log(...args) {
@@ -1302,85 +1416,15 @@
         }
     };
 
-    // Settings Migration System
-
-    // Undo System for Video Hiding
-    const UndoManager = {
-        _stack: [],
-        _maxItems: 10,
-
-        push(action) {
-            this._stack.push({
-                ...action,
-                timestamp: Date.now()
-            });
-            if (this._stack.length > this._maxItems) {
-                this._stack.shift();
-            }
+    // Debug Mode Manager — gated behind a flag, no-op in production
+    const DebugManager = {
+        _enabled: GM_getValue('ytkit_debug', false),
+        log(category, ...args) {
+            if (!this._enabled) return;
+            console.log(`%c[YTKit:${category}]`, 'color:#60a5fa;font-weight:bold', ...args);
         },
-
-        pop() {
-            return this._stack.pop();
-        },
-
-        peek() {
-            return this._stack[this._stack.length - 1];
-        },
-
-        canUndo() {
-            return this._stack.length > 0;
-        },
-
-        clear() {
-            this._stack = [];
-        }
-    };
-
-    // Debug Mode Manager
-    const DebugManager = { log() {} };
-    // Statistics Tracker
-    const StatsTracker = { load() {}, increment() {}, getAll() { return {}; }, formatTime() { return '0s'; }, reset() {} };
-
-    // IntersectionObserver Helper for Performance
-    const VisibilityObserver = {
-        _observer: null,
-        _callbacks: new Map(),
-        _options: {
-            root: null,
-            rootMargin: '200px',
-            threshold: 0
-        },
-
-        init() {
-            if (this._observer) return;
-            this._observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const callback = this._callbacks.get(entry.target);
-                    if (callback) {
-                        callback(entry.isIntersecting, entry);
-                    }
-                });
-            }, this._options);
-        },
-
-        observe(element, callback) {
-            this.init();
-            this._callbacks.set(element, callback);
-            this._observer.observe(element);
-        },
-
-        unobserve(element) {
-            if (!this._observer) return;
-            this._callbacks.delete(element);
-            this._observer.unobserve(element);
-        },
-
-        disconnect() {
-            if (this._observer) {
-                this._observer.disconnect();
-                this._callbacks.clear();
-            }
-        }
+        enable()  { this._enabled = true; GM_setValue('ytkit_debug', true); },
+        disable() { this._enabled = false; GM_setValue('ytkit_debug', false); }
     };
 
     //  SECTION 0B: DYNAMIC CONTENT/STYLE ENGINE
@@ -1392,12 +1436,22 @@
     function waitForElement(selector, callback, timeout = TIMING.ELEMENT_TIMEOUT) {
         const el = document.querySelector(selector);
         if (el) { callback(el); return; }
-        const obs = new MutationObserver(() => {
+        let _fired = false;
+        const obs = new MutationObserver((mutations) => {
+            if (_fired) return;
+            // Fast-path: check added nodes directly before full querySelectorAll
+            for (const m of mutations) {
+                for (const node of m.addedNodes) {
+                    if (node.nodeType !== 1) continue;
+                    if (node.matches?.(selector)) { _fired = true; obs.disconnect(); callback(node); return; }
+                }
+            }
+            // Fallback: full query (handles deeply nested insertions)
             const el = document.querySelector(selector);
-            if (el) { obs.disconnect(); callback(el); }
+            if (el) { _fired = true; obs.disconnect(); callback(el); }
         });
         obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
-        setTimeout(() => obs.disconnect(), timeout);
+        setTimeout(() => { if (!_fired) obs.disconnect(); }, timeout);
     }
 
     // waitForPageContent — fires callback when YouTube's page content is actually rendered,
@@ -1449,8 +1503,15 @@
             ghost.dataset.pcId = id;
             ghost.title = 'Restore: ' + label;
             ghost.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px dashed rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.3);font-family:"Roboto",Arial,sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;`;
-            TrustedHTML.setHTML(ghost, '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span></span>');
-            ghost.querySelector('span').textContent = label;
+            // Build restore icon via DOM API (avoids TrustedHTML issues in non-policy browsers)
+            const _svgNS = 'http://www.w3.org/2000/svg';
+            const _ico = document.createElementNS(_svgNS, 'svg');
+            _ico.setAttribute('viewBox', '0 0 24 24'); _ico.setAttribute('width', '12'); _ico.setAttribute('height', '12');
+            _ico.setAttribute('fill', 'none'); _ico.setAttribute('stroke', 'currentColor'); _ico.setAttribute('stroke-width', '2');
+            const _pl = document.createElementNS(_svgNS, 'polyline'); _pl.setAttribute('points', '1 4 1 10 7 10'); _ico.appendChild(_pl);
+            const _pa = document.createElementNS(_svgNS, 'path'); _pa.setAttribute('d', 'M3.51 15a9 9 0 1 0 .49-3.5'); _ico.appendChild(_pa);
+            ghost.appendChild(_ico);
+            const _lbl = document.createElement('span'); _lbl.textContent = label; ghost.appendChild(_lbl);
             ghost.onmouseenter = () => { ghost.style.color = 'rgba(255,255,255,0.7)'; ghost.style.borderColor = 'rgba(255,255,255,0.5)'; };
             ghost.onmouseleave = () => { ghost.style.color = 'rgba(255,255,255,0.3)'; ghost.style.borderColor = 'rgba(255,255,255,0.2)'; };
             ghost.addEventListener('click', (e) => {
@@ -1577,6 +1638,12 @@
             document.querySelector(config.checkSelector)?.remove();
         }
         persistentButtons.delete(id);
+        // Clean up observer when no buttons remain
+        if (persistentButtons.size === 0 && buttonObserver) {
+            buttonObserver.disconnect();
+            buttonObserver = null;
+            buttonCheckStarted = false;
+        }
     }
 
     function tryInjectButton(id) {
@@ -1857,8 +1924,6 @@
             homepageGridAlign: true,
             styledFilterChips: true,
             hideSidebar: true,
-            // Consolidated: theme — only 'dark' supported
-            theme: 'dark',
             uiStyle: 'square',
             noAmbientMode: true,
             compactLayout: true,
@@ -1880,7 +1945,6 @@
             hideRelatedVideos: true,
             expandVideoWidth: true,
             floatingLogoOnWatch: true,
-            playerOverlayControls: true, // true = hover overlay on player, false = below video
             hideDescriptionRow: true,
             // Consolidated: replaces hideVideoEndCards, hideVideoEndScreen, hideEndVideoStills
             hideVideoEndContent: true,
@@ -1888,6 +1952,7 @@
             cleanShareUrls: true,
             videosPerRow: 0,                // 0 = dynamic, 3-8 = fixed columns
             quickLinkMenu: true,
+            quickLinkItems: 'History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /',
             ytAdBlock: false,
             adblockCosmeticHide: true,
             adblockSsapAutoSkip: true,
@@ -1904,6 +1969,7 @@
             hideMerchShelf: true,
             hideAiSummary: true,
             autoResumePosition: true,
+            gpuContextRecovery: true,
             autoResumeThreshold: 15, // seconds from start before saving position
 
             hideDescriptionExtras: true,
@@ -1914,6 +1980,7 @@
             hideCommentTeaser: true,
             hideLiveChatEngagement: true,
             hidePaidPromotionWatch: true,
+            hideChannelJoinButton: true,
             hideFundraiser: true,
             hiddenChatElementsManager: true,
             hiddenChatElements: [
@@ -1943,8 +2010,8 @@
             showMp3DownloadButton: true,
             videoContextMenu: true,
             downloadProvider: 'cobalt',
+            cobaltUrl: 'https://cobalt.meowing.de/#',
             hideCollaborations: true,
-            useIntersectionObserver: true,
             hideInfoPanels: true,
 
         },
@@ -1985,7 +2052,7 @@
                 bookmarks: bookmarks,
                 exportVersion: 3,
                 exportDate: new Date().toISOString(),
-                ytkitVersion: '10.1'
+                ytkitVersion: '1.0.4'
             };
             return JSON.stringify(exportData, null, 2);
         },
@@ -2184,7 +2251,7 @@
                 const css = `ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px;width:99%;} ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer.ytd-rich-grid-renderer{width:100% !important;margin:0 !important;margin-left:2px !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         {
             id: 'homepageGridAlign',
@@ -2198,7 +2265,7 @@
                 const css = `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(310px,1fr)) !important;gap:16px !important;} ytd-browse[page-subtype="home"] ytd-rich-grid-row,ytd-browse[page-subtype="home"] ytd-rich-grid-row > #contents{display:contents !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer{width:100% !important;margin:0 !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer.ytkit-video-hidden{display:none !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #details.ytd-rich-grid-media{min-height:68px !important;max-height:68px !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #video-title.ytd-rich-grid-media{display:-webkit-box !important;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;max-height:4.4rem !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line.ytd-video-meta-block{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer ytd-thumbnail{aspect-ratio:16/9 !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-section-renderer,ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer{grid-column:1 / -1 !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         {
             id: 'styledFilterChips',
@@ -2212,7 +2279,7 @@
                 const css = `ytd-feed-filter-chip-bar-renderer #chips-wrapper{background:transparent !important;} ytd-feed-filter-chip-bar-renderer #scroll-container{padding:4px 0 !important;} ytd-feed-filter-chip-bar-renderer #left-arrow,ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to right,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to left,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} yt-chip-cloud-chip-renderer .ytChipShapeChip{min-width:72px !important;height:32px !important;padding:0 14px !important;display:flex !important;align-items:center !important;justify-content:center !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:8px !important;transition:all 0.2s ease !important;backdrop-filter:blur(8px) !important;-webkit-backdrop-filter:blur(8px) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive{background:rgba(255,255,255,0.06) !important;color:rgba(255,255,255,0.7) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive:hover{background:rgba(255,255,255,0.12) !important;border-color:rgba(255,255,255,0.2) !important;color:#fff !important;transform:translateY(-1px) !important;box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;} yt-chip-cloud-chip-renderer .ytChipShapeActive{background:rgba(255,255,255,0.95) !important;color:#0f0f0f !important;border-color:transparent !important;font-weight:600 !important;box-shadow:0 2px 6px rgba(0,0,0,0.25) !important;} yt-chip-cloud-chip-renderer .ytChipShapeTextContent{font-size:13px !important;line-height:1 !important;white-space:nowrap !important;letter-spacing:0.2px !important;} iron-selector#chips yt-chip-cloud-chip-renderer{margin:0 4px !important;} iron-selector#chips yt-chip-cloud-chip-renderer:first-child{margin-left:0 !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         {
             id: 'hideSidebar',
@@ -2224,41 +2291,15 @@
             init() {
                 const css = `
                     #guide, #guide-button, ytd-mini-guide-renderer, tp-yt-app-drawer { display: none !important; }
-                    .opened { display: none !important; }
+                    tp-yt-app-drawer[opened] + .opened, #scrim.opened { display: none !important; pointer-events: none !important; }
                     ytd-page-manager { margin-left: 0 !important; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
 
         // ─── Appearance ───
-        {
-            id: 'themeManager',
-            name: 'Theme',
-            description: 'Dark mode theme',
-            group: 'Appearance',
-            icon: 'moon',
-            _styleElement: null,
-            _ruleId: 'themeManagerRule',
-
-            init() {
-                this._applyTheme();
-                addMutationRule(this._ruleId, () => this._applyTheme());
-            },
-
-            _applyTheme() {
-                // Force dark mode
-                document.documentElement.setAttribute('dark', '');
-            },
-
-            destroy() {
-                document.documentElement.removeAttribute('dark');
-                this._styleElement?.remove();
-                document.getElementById('ytkit-theme-style')?.remove();
-                removeMutationRule(this._ruleId);
-            }
-        },
         {
             id: 'uiStyleManager',
             name: 'UI Style',
@@ -2286,7 +2327,7 @@
                 }
             },
 
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         cssFeature('noAmbientMode', 'Disable Ambient Mode', 'Turn off the glowing background effect that matches video colors', 'Appearance', 'sun-dim',
             `#cinematics, #cinematics-container,
@@ -2312,11 +2353,12 @@
             icon: 'layout',
             _styleElement: null,
             init() {
-                if (!window.location.pathname.startsWith('/watch')) return;
-                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing:-0.025em !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#yt-suite-watch-logo{display:none !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(167,139,250,0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius:14px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}button[id^="downloadBtn"]{height:30px !important;min-height:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}button[id^="downloadBtn"]:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}.ytkit-vlc-btn:hover,.ytkit-local-dl-btn:hover,.ytkit-mp3-dl-btn:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn svg,.ytkit-local-dl-btn svg,.ytkit-mp3-dl-btn svg{width:14px !important;height:14px !important}.ytkit-vlc-btn svg path,.ytkit-local-dl-btn svg path,.ytkit-mp3-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}.ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}.ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(167,139,250,0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(167,139,250,0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(167,139,250,0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}dislike-button-view-model{display:none !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing:-0.01em !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer #comments-panel-button,ytd-comments-header-renderer #leading-section,ytd-comments-header-renderer #title{display:none !important}ytd-comments-header-renderer #additional-section{display:none !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(167,139,250,0.25) !important}ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}`;
+                // CSS selectors are scoped to ytd-watch-metadata — safe to inject globally
+                // (removing path guard so styles persist across SPA navigations)
+                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing:-0.025em !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(167,139,250,0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius:14px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}button[id^="downloadBtn"]{height:30px !important;min-height:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}button[id^="downloadBtn"]:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}.ytkit-vlc-btn:hover,.ytkit-local-dl-btn:hover,.ytkit-mp3-dl-btn:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn svg,.ytkit-local-dl-btn svg,.ytkit-mp3-dl-btn svg{width:14px !important;height:14px !important}.ytkit-vlc-btn svg path,.ytkit-local-dl-btn svg path,.ytkit-mp3-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}ytd-watch-flexy .ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}ytd-watch-flexy .ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(167,139,250,0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(167,139,250,0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(167,139,250,0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing:-0.01em !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer #comments-panel-button,ytd-comments-header-renderer #leading-section,ytd-comments-header-renderer #title{display:none !important}ytd-comments-header-renderer #additional-section{display:none !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(167,139,250,0.25) !important}ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}h1.style-scope.ytd-watch-metadata{margin-top:20px !important;font-weight:900 !important;font-style:normal !important;text-align:center !important;text-transform:capitalize !important;max-width:100% !important;overflow:hidden !important;text-overflow:ellipsis !important}yt-formatted-string.style-scope.ytd-watch-metadata{margin-bottom:0 !important;word-break:break-word !important;overflow-wrap:break-word !important}#primary.ytd-watch-flexy{max-width:100% !important;overflow:hidden !important}ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}#title.ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}div.yt-spec-touch-feedback-shape__fill{display:none !important}div.yt-spec-touch-feedback-shape__stroke{display:none !important}yt-touch-feedback-shape.yt-spec-touch-feedback-shape.yt-spec-touch-feedback-shape--touch-response{display:none !important}ytd-watch-metadata tp-yt-paper-button.dropdown-trigger.style-scope.yt-dropdown-menu{display:none !important}yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer{display:none !important}yt-formatted-string.style-scope.ytd-video-owner-renderer{display:none !important}ytd-watch-flexy button.ytkit-trigger-btn{display:none !important}ytd-watch-flexy yt-icon.style-scope.ytd-logo{display:none !important}div.item.style-scope.ytd-watch-metadata{display:none !important}ytd-watch-metadata #info-container span.style-scope.yt-formatted-string{display:none !important}#actions.ytd-watch-metadata button.yt-spec-button-shape-next.yt-spec-button-shape-next--tonal.yt-spec-button-shape-next--mono.yt-spec-button-shape-next--size-m.yt-spec-button-shape-next--icon-leading.yt-spec-button-shape-next--segmented-start.yt-spec-button-shape-next--enable-backdrop-filter-experiment{text-align:right !important}ytd-comment-view-model span.style-scope.yt-formatted-string,ytd-comment-renderer span.style-scope.yt-formatted-string,ytd-comment-thread-renderer span.style-scope.yt-formatted-string,ytd-comments-header-renderer span.style-scope.yt-formatted-string,ytd-comment-simplebox-renderer span.style-scope.yt-formatted-string{display:inline !important}ytd-comment-view-model yt-formatted-string,ytd-comment-renderer yt-formatted-string{display:inline !important}ytd-comments#comments{display:block !important;visibility:visible !important}ytd-comments#comments ytd-item-section-renderer{display:block !important}div.ytkit-pm-header{display:none !important}button.ytkit-pm-card.on{display:none !important}div.ytkit-pm-footer{display:none !important}div.ytkit-pm-grid{display:none !important}div.thread-hitbox.style-scope.ytd-comment-thread-renderer{display:none !important}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         {
             id: 'chatStyleComments',
@@ -2327,8 +2369,9 @@
             _styleElement: null,
             _observer: null,
             init() {
-                if (!window.location.pathname.startsWith('/watch')) return;
-                const css = `ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:10px 4px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(167,139,250,0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:#a78bfa !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:#c4b5fd !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(167,139,250,0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(167,139,250,0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:#c4b5fd !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar{display:block !important;margin:4px 0 0 !important;padding:0 !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:relative !important;align-items:center !important;gap:4px !important;margin-top:4px !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(167,139,250,0.6) !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}#reply-dialog ytd-commentbox:not([hidden]),ytd-comment-engagement-bar ytd-comment-reply-dialog-renderer:not([hidden]){padding:0 !important;margin:0 !important;width:100% !important}#reply-dialog ytd-commentbox #creation-box,#reply-dialog ytd-commentbox #commentbox-background,#reply-dialog ytd-commentbox #main,#reply-dialog ytd-commentbox #header,#reply-dialog ytd-commentbox #container,#reply-dialog ytd-commentbox #commentbox{width:100% !important}#reply-dialog #contenteditable-textarea,#reply-dialog #contenteditable-root,#reply-dialog yt-formatted-string[contenteditable],#reply-dialog [contenteditable="true"],ytd-comment-engagement-bar ytd-commentbox #contenteditable-textarea,ytd-comment-engagement-bar ytd-commentbox yt-formatted-string[contenteditable]{font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(167,139,250,0.2) !important;border-radius:8px !important;min-height:60px !important;height:auto !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s !important}#reply-dialog #contenteditable-textarea:focus,#reply-dialog #contenteditable-root:focus,#reply-dialog yt-formatted-string[contenteditable]:focus,#reply-dialog [contenteditable="true"]:focus{border-color:rgba(167,139,250,0.45) !important;background:rgba(255,255,255,0.06) !important}#reply-dialog #placeholder-area,#reply-dialog #contenteditable-textarea[aria-label]:empty::before{font-size:13px !important;color:rgba(255,255,255,0.25) !important}#reply-dialog #author-thumbnail,ytd-comment-engagement-bar ytd-commentbox #author-thumbnail{display:none !important}#reply-dialog #emoji-picker-button,#reply-dialog yt-emoji-picker-renderer{display:none !important}#reply-dialog #footer,#reply-dialog ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;justify-content:flex-end !important}#reply-dialog #footer .yt-spec-button-shape-next,#reply-dialog #footer button,#reply-dialog #cancel-button .yt-spec-button-shape-next,#reply-dialog #submit-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 14px !important;min-height:unset !important;border-radius:6px !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(167,139,250,0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(167,139,250,0.3) !important;background:rgba(167,139,250,0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.12) !important;color:rgba(167,139,250,0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.35) !important;min-height:unset !important;background:rgba(167,139,250,0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}`;
+                // CSS selectors are scoped to comment elements — safe to inject globally
+                // (removing path guard so styles persist across SPA navigations)
+                const css = `ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:8px 4px 6px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(167,139,250,0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:#a78bfa !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:#c4b5fd !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(167,139,250,0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(167,139,250,0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:#c4b5fd !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar,ytd-comment-renderer ytd-comment-engagement-bar{position:absolute !important;top:6px !important;right:4px !important;margin:0 !important;padding:0 !important;z-index:2 !important;pointer-events:none !important}ytd-comment-view-model:hover ytd-comment-engagement-bar,ytd-comment-renderer:hover ytd-comment-engagement-bar{pointer-events:auto !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:static !important;align-items:center !important;gap:4px !important;margin:0 !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar,ytd-comment-renderer:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(167,139,250,0.6) !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important;overflow:visible !important;border:none !important;outline:none !important;background:transparent !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}#reply-dialog ytd-commentbox:not([hidden]),ytd-comment-engagement-bar ytd-comment-reply-dialog-renderer:not([hidden]){padding:0 !important;margin:0 !important;width:100% !important;border:none !important;outline:none !important;background:transparent !important;box-shadow:none !important;box-sizing:border-box !important;overflow:visible !important}#reply-dialog ytd-commentbox #creation-box,#reply-dialog ytd-commentbox #commentbox-background,#reply-dialog ytd-commentbox #main,#reply-dialog ytd-commentbox #header,#reply-dialog ytd-commentbox #container,#reply-dialog ytd-commentbox #commentbox{width:100% !important;border:none !important;outline:none !important;background:transparent !important;box-shadow:none !important;padding:0 !important;margin:0 !important;box-sizing:border-box !important}#reply-dialog ytd-commentbox,#reply-dialog ytd-comment-reply-dialog-renderer{border:none !important;outline:none !important;background:transparent !important;box-shadow:none !important;overflow:visible !important;width:100% !important;box-sizing:border-box !important}#reply-dialog #contenteditable-textarea,#reply-dialog #contenteditable-root,#reply-dialog yt-formatted-string[contenteditable],#reply-dialog [contenteditable="true"],ytd-comment-engagement-bar ytd-commentbox #contenteditable-textarea,ytd-comment-engagement-bar ytd-commentbox yt-formatted-string[contenteditable],ytd-commentbox yt-formatted-string.ytd-commentbox{font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(167,139,250,0.2) !important;border-radius:8px !important;min-height:60px !important;height:auto !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s !important}#reply-dialog #contenteditable-textarea:focus,#reply-dialog #contenteditable-root:focus,#reply-dialog yt-formatted-string[contenteditable]:focus,#reply-dialog [contenteditable="true"]:focus,ytd-commentbox yt-formatted-string.ytd-commentbox:focus{border-color:rgba(167,139,250,0.45) !important;background:rgba(255,255,255,0.06) !important}#reply-dialog #placeholder-area,#reply-dialog #contenteditable-textarea[aria-label]:empty::before{font-size:13px !important;color:rgba(255,255,255,0.25) !important}#reply-dialog #author-thumbnail,ytd-comment-engagement-bar ytd-commentbox #author-thumbnail{display:none !important}#reply-dialog #emoji-picker-button,#reply-dialog yt-emoji-picker-renderer{display:none !important}#reply-dialog #footer,#reply-dialog ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;justify-content:flex-end !important}#reply-dialog #footer .yt-spec-button-shape-next,#reply-dialog #footer button,#reply-dialog #cancel-button .yt-spec-button-shape-next,#reply-dialog #submit-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 14px !important;min-height:unset !important;border-radius:6px !important}.ytkit-replying ytd-comment-engagement-bar{position:relative !important;top:auto !important;right:auto !important;pointer-events:auto !important;margin:4px 0 0 !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(167,139,250,0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(167,139,250,0.3) !important;background:rgba(167,139,250,0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.12) !important;color:rgba(167,139,250,0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.35) !important;min-height:unset !important;background:rgba(167,139,250,0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}`;
                 this._styleElement = injectStyle(css, this.id, true);
 
                 const thumbSVG = '<svg viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z"/></svg>';
@@ -2789,38 +2832,33 @@
                     document.head.appendChild(this._styleElement);
                 }
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         {
             id: 'floatingLogoOnWatch',
-            name: 'YTKit Controls on Video',
-            description: 'Show YouTube logo on watch pages. Choose overlay (on player hover) or inline (below video).',
+            name: 'YTKit Player Controls',
+            description: 'Replace native player right-controls with YouTube logo (quick links dropdown) and YTKit settings gear',
             group: 'Video Player',
             icon: 'youtube',
-            isParent: true,
             _ruleId: 'floatingLogoRule',
             _styleEl: null,
             _cleanup() {
-                document.getElementById('ytkit-player-overlay')?.remove();
-                document.getElementById('yt-suite-watch-logo')?.remove();
+                document.getElementById('ytkit-player-controls')?.remove();
                 this._styleEl?.remove();
                 this._styleEl = null;
             },
             _getLogoHref() {
                 return appState.settings.logoToSubscriptions ? '/feed/subscriptions' : '/';
             },
-            _getLogoTitle() {
-                return appState.settings.logoToSubscriptions ? 'Subscriptions' : 'YouTube Home';
-            },
-            _injectOverlay() {
-                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('ytkit-player-overlay')?.remove(); return; }
-                const player = document.querySelector('#movie_player');
-                if (!player || document.getElementById('ytkit-player-overlay')) return;
+            _inject() {
+                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('ytkit-player-controls')?.remove(); return; }
+                const rightControls = document.querySelector('.ytp-right-controls');
+                if (!rightControls || document.getElementById('ytkit-player-controls')) return;
 
-                const overlay = document.createElement('div');
-                overlay.id = 'ytkit-player-overlay';
+                const wrap = document.createElement('div');
+                wrap.id = 'ytkit-player-controls';
 
-                // ── Minimal transparent YouTube logo with quickLink dropdown ──
+                // YouTube logo with quick links dropdown
                 const logoWrap = document.createElement('div');
                 logoWrap.id = 'ytkit-po-logo-wrap';
 
@@ -2828,97 +2866,42 @@
                 logoLink.href = this._getLogoHref();
                 logoLink.title = 'YouTube — hover for quick links';
                 logoLink.className = 'ytkit-po-btn ytkit-po-logo';
-                // Inline SVG: minimal YouTube play-button mark, white @ 22% opacity
-                // Play-button icon mark from the PremiumYTM logo (just the icon, no wordmark)
-                TrustedHTML.setHTML(logoLink, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 174" width="32" height="22" aria-label="YouTube" style="opacity:0.85">
+                TrustedHTML.setHTML(logoLink, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 174" width="28" height="20" aria-label="YouTube" style="opacity:0.9">
   <path fill="#ff0000" d="M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z"/>
   <path fill="#ffffff" d="M 99.22,124.03 163.67,86.82 99.22,49.61 Z"/>
 </svg>`);
                 logoWrap.appendChild(logoLink);
 
-                // Dropdown menu (same items as header quickLinkMenu)
+                // Build quick links dropdown
                 const qlFeature = features.find(f => f.id === 'quickLinkMenu');
-                const menuItems = qlFeature ? qlFeature.menuItems : [
-                    { text: 'History',       url: '/feed/history',       icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
-                    { text: 'Watch Later',   url: '/playlist?list=WL',   icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
-                    { text: 'Subscriptions', url: '/feed/subscriptions', icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
-                    { text: 'Liked Videos',  url: '/playlist?list=LL',   icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
-                ];
-                const drop = document.createElement('div');
-                drop.id = 'ytkit-po-drop';
-                menuItems.forEach(item => {
-                    const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
-                    TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
-                    drop.appendChild(a);
-                });
-                logoWrap.appendChild(drop);
-                overlay.appendChild(logoWrap);
+                if (qlFeature && qlFeature._buildMenu) {
+                    qlFeature._buildMenu(logoWrap, 'ytkit-po-drop');
+                }
+                wrap.appendChild(logoWrap);
 
-                // Settings gear button
+                // Settings gear
                 const gearBtn = document.createElement('button');
-                gearBtn.className = 'ytkit-po-btn ytkit-po-gear';
+                gearBtn.className = 'ytp-button ytkit-po-btn ytkit-po-gear';
                 gearBtn.title = 'YTKit Settings';
                 TrustedHTML.setHTML(gearBtn, `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`);
                 gearBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.body.classList.toggle('ytkit-panel-open');
                 });
-                overlay.appendChild(gearBtn);
+                wrap.appendChild(gearBtn);
 
-                player.appendChild(overlay);
-            },
-            _injectInline() {
-                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('yt-suite-watch-logo')?.remove(); return; }
-                waitForElement('#top-row #owner', (ownerDiv) => {
-                    if (document.getElementById('yt-suite-watch-logo')) return;
-
-                    const container = document.createElement('div');
-                    container.id = 'yt-suite-watch-logo';
-                    container.style.cssText = 'display:flex;align-items:center;gap:12px;margin-right:12px;';
-
-                    const link = document.createElement('a');
-                    link.href = this._getLogoHref();
-                    link.title = this._getLogoTitle();
-                    link.style.cssText = 'display:flex;align-items:center;';
-                    const originalLogo = document.querySelector('ytd-topbar-logo-renderer ytd-logo');
-                    if (originalLogo) link.appendChild(originalLogo.cloneNode(true));
-                    container.appendChild(link);
-
-                    ownerDiv.prepend(container);
-                });
+                rightControls.appendChild(wrap);
             },
             init() {
-                // Inject CSS for player overlay
-                this._styleEl = GM_addStyle(`#ytkit-player-overlay{position:absolute;top:0;left:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:transparent;z-index:59;opacity:0;pointer-events:none;transition:opacity 0.2s ease;} #movie_player:hover #ytkit-player-overlay{opacity:1;pointer-events:auto;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;} #ytkit-po-logo-wrap:hover #ytkit-po-drop,#ytkit-po-drop:hover{display:flex;} #ytkit-po-drop{display:none;flex-direction:column;position:absolute;top:calc(100% + 8px);left:0;background:rgba(22,22,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.7);padding:6px 0;z-index:9999;min-width:190px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);} .ytkit-po-btn{display:flex;align-items:center;justify-content:center;padding:4px 6px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);}`);
+                this._styleEl = GM_addStyle(`/* Hide native right controls, keep our injected elements */ .ytp-right-controls > *:not(#ytkit-player-controls){display:none !important;} #ytkit-player-controls{display:flex;align-items:center;gap:2px;height:100%;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;} .ytkit-po-btn{display:flex;align-items:center;justify-content:center;padding:6px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);} button.ytp-button.ytp-autonav-toggle.delhi-fast-follow-autonav-toggle{display:none !important;}`);
 
                 const self = this;
-                const handler = () => {
-                    // Always show inline below video
-                    self._injectInline();
-                    // Show overlay on player if enabled
-                    if (appState.settings.playerOverlayControls) {
-                        self._injectOverlay();
-                    } else {
-                        document.getElementById('ytkit-player-overlay')?.remove();
-                    }
-                };
-                addNavigateRule(this._ruleId, handler);
+                addNavigateRule(this._ruleId, () => self._inject());
             },
             destroy() {
                 removeNavigateRule(this._ruleId);
                 this._cleanup();
             }
-        },
-        {
-            id: 'playerOverlayControls',
-            name: 'Overlay on Player',
-            description: 'Also show controls as hover overlay on video player (logo + gear always shown below video)',
-            group: 'Video Player',
-            icon: 'youtube',
-            isSubFeature: true,
-            parentId: 'floatingLogoOnWatch',
-            init() {},
-            destroy() {}
         },
         cssFeature('hideDescriptionRow', 'Hide Description', 'Remove the video description panel below the player', 'Video Player', 'file-minus',
             'ytd-watch-metadata #bottom-row'),
@@ -3054,35 +3037,41 @@
                 }
             },
 
-            // Poll for chat frame (max 10s) then position it over the right panel
+            // Wait for chat frame via MutationObserver (replaces 10s polling loop)
             _waitForChat(rightPct, topOffset, heightStr) {
-                let attempts = 0;
-                const poll = () => {
-                    if (!this._isSplit || !this._isActive) return;
-                    const chatEl = this._getChatEl();
-                    if (chatEl) {
-                        this._positionOverRight(chatEl, rightPct, topOffset, heightStr);
-                        chatEl.removeAttribute('collapsed');
-                        // Tight layout matching _expandSplit
-                        chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
-                        chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
-                        chatEl.style.setProperty('border-radius', '0', 'important');
-                        this._forceChatFill(chatEl);
-                        if (!this._scrollTarget) this._scrollTarget = chatEl;
-                        if (this._videoType === 'vod') {
-                            chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
-                            const below = this._getBelow();
-                            if (below && below.style.getPropertyValue('top') === '0') {
-                                below.style.setProperty('top', '45vh', 'important');
-                                below.style.setProperty('height', '55vh', 'important');
-                            }
+                const self = this;
+                let _chatObs = null;
+                const _onFound = (chatEl) => {
+                    if (_chatObs) { _chatObs.disconnect(); _chatObs = null; }
+                    if (!self._isSplit || !self._isActive) return;
+                    self._positionOverRight(chatEl, rightPct, topOffset, heightStr);
+                    chatEl.removeAttribute('collapsed');
+                    chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                    chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
+                    chatEl.style.setProperty('border-radius', '0', 'important');
+                    self._forceChatFill(chatEl);
+                    if (!self._scrollTarget) self._scrollTarget = chatEl;
+                    if (self._videoType === 'vod') {
+                        chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                        const below = self._getBelow();
+                        if (below && below.style.getPropertyValue('top') === '0') {
+                            below.style.setProperty('top', '45vh', 'important');
+                            below.style.setProperty('height', '55vh', 'important');
                         }
-                        DebugManager.log('Theater', 'Late chat frame found and positioned');
-                        return;
                     }
-                    if (++attempts < 20) setTimeout(poll, 500);
+                    DebugManager.log('Theater', 'Late chat frame found and positioned');
                 };
-                setTimeout(poll, 500);
+                // Check immediately
+                const existing = this._getChatEl();
+                if (existing) { _onFound(existing); return; }
+                // Observe for chat frame insertion (faster + less CPU than polling)
+                _chatObs = new MutationObserver(() => {
+                    const chatEl = self._getChatEl();
+                    if (chatEl) _onFound(chatEl);
+                });
+                _chatObs.observe(document.body, { childList: true, subtree: true });
+                // Safety timeout: disconnect after 10s
+                setTimeout(() => { if (_chatObs) { _chatObs.disconnect(); _chatObs = null; } }, 10000);
             },
 
             // ── Build the fixed overlay (video full-width, right panel hidden) ──
@@ -3170,7 +3159,7 @@
                         });
                         const strip = wrapper.querySelector('#ytkit-split-collapse-strip');
                         if (strip) strip.style.width = `calc(${newRightPct}% - 2px)`;
-                        try { sessionStorage.setItem('ytkit-split-ratio', 100 - newRightPct); } catch(err) {}
+                        try { GM_setValue('ytkit_split_ratio', 100 - newRightPct); } catch(err) {}
                     };
                     const onUp = () => {
                         dragShield.remove();
@@ -3377,7 +3366,7 @@
                 if (closeBtn) closeBtn.style.opacity = '0.3';
 
                 let leftPct = 75;
-                try { const s = sessionStorage.getItem('ytkit-split-ratio'); if (s) leftPct = parseFloat(s); } catch(e) {}
+                try { leftPct = parseFloat(GM_getValue('ytkit_split_ratio', 75)); } catch(e) {}
                 leftPct = Math.max(25, Math.min(85, leftPct));
                 const rightPct = 100 - leftPct;
 
@@ -3676,7 +3665,7 @@
             },
 
             init() {
-                const css = `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active body{padding-top:0!important;} #ytkit-split-left,#ytkit-split-left #player-container,#ytkit-split-left #player-container-inner,#ytkit-split-left #player-theater-container,#ytkit-split-left ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} #ytkit-split-left #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} #ytkit-split-left .html5-video-container{width:100%!important;height:100%!important;} #ytkit-split-left .ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important;} #ytkit-split-left .ytp-progress-bar-container{width:100%!important;} #ytkit-split-left .ytp-chrome-controls{width:100%!important;} #ytkit-split-left video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} #ytkit-split-left ytd-player > #container,#ytkit-split-left #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below[style*="position:fixed"],html.ytkit-split-active #below[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below[style*="position"] #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;} html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;} html.ytkit-split-active #below[style*="position"] #actions button,html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander,html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below[style*="position"] #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer,html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below[style*="position"] #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below[style*="position"] #author-text{font-size:12px!important;} html.ytkit-split-active #below[style*="position"] #published-time-text{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer,html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below[style*="position"] yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:24px;z-index:10002;cursor:n-resize;background:transparent;transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:24px;height:2px;background:rgba(255,255,255,0.12);border-radius:1px;margin:8px auto 0;opacity:0;transition:opacity 0.2s;} #ytkit-split-collapse-strip:hover::after{opacity:1;}  `;
+                const css = `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active body{padding-top:0!important;} #ytkit-split-left,#ytkit-split-left #player-container,#ytkit-split-left #player-container-inner,#ytkit-split-left #player-theater-container,#ytkit-split-left ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} #ytkit-split-left #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} #ytkit-split-left .html5-video-container{width:100%!important;height:100%!important;} #ytkit-split-left .ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important;} #ytkit-split-left .ytp-progress-bar-container{width:100%!important;} #ytkit-split-left .ytp-chrome-controls{width:100%!important;} #ytkit-split-left video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} #ytkit-split-left ytd-player > #container,#ytkit-split-left #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below[style*="position:fixed"],html.ytkit-split-active #below[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below[style*="position"] #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;} html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;} html.ytkit-split-active #below[style*="position"] #actions button,html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander,html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below[style*="position"] #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer,html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below[style*="position"] #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below[style*="position"] #author-text{font-size:12px!important;} html.ytkit-split-active #below[style*="position"] #published-time-text{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer,html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below[style*="position"] yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:none;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:24px;z-index:10002;cursor:n-resize;background:transparent;transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:24px;height:2px;background:rgba(255,255,255,0.12);border-radius:1px;margin:8px auto 0;opacity:0;transition:opacity 0.2s;} #ytkit-split-collapse-strip:hover::after{opacity:1;}  `;
                 this._styleEl = injectStyle(css, this.id, true);
                 addNavigateRule(this._navRuleId, () => this._activate());
                 DebugManager.log('Theater', 'Theater Split initialized');
@@ -4189,9 +4178,11 @@
         cssFeature('hideCommentTeaser', 'Hide Comment Teaser', 'Remove the "Scroll for comments" prompt on watch pages', 'Clutter', 'message-square-off',
             'ytd-comments-entry-point-header-renderer, ytd-comments-entry-point-teaser-renderer'),
         cssFeature('hideLiveChatEngagement', 'Hide Chat Engagement', 'Remove engagement prompts in live chat', 'Clutter', 'message-circle-off',
-            'yt-live-chat-viewer-engagement-message-renderer'),
+            'yt-live-chat-viewer-engagement-message-renderer,yt-live-chat-toast-renderer'),
         cssFeature('hidePaidPromotionWatch', 'Hide Paid Promotion', 'Remove "paid promotion" labels on watch pages', 'Clutter', 'dollar-sign',
             '.ytp-paid-content-overlay'),
+        cssFeature('hideChannelJoinButton', 'Hide Channel Join Button', 'Remove the Join/membership button on channel pages', 'Clutter', 'dollar-sign',
+            '.ytFlexibleActionsViewModelAction:has(button[aria-label="Join this channel"])'),
         {
             id: 'hideVideoEndContent',
             name: 'Hide Video End Content',
@@ -4207,7 +4198,7 @@
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
         cssFeature('hideFundraiser', 'Hide Fundraisers', 'Remove fundraiser and donation badges', 'Clutter', 'heart-off',
             `ytd-donation-shelf-renderer,
@@ -4298,7 +4289,7 @@
                     this._styleElement = injectStyle(selectors, this.id);
                 }
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
                 // Auto-generated Action Buttons sub-features
         ...([['like','Like Button','Hide like button below videos'],['dislike','Dislike Button','Hide dislike button below videos'],['share','Share Button','Hide share button below videos'],['ask','Ask/AI Button','Hide Ask or AI button below videos'],['clip','Clip Button','Hide clip button below videos'],['thanks','Thanks Button','Hide thanks button below videos'],['save','Save Button','Hide save button below videos'],['sponsor','Join/Sponsor Button','Hide join/sponsor button below videos'],['moreActions','More Actions (...)','Hide more actions button below videos']].map(([v,n,d])=>({id:'abHide_'+v,name:n,description:d,group:'Action Buttons',icon:'eye-off',isSubFeature:true,parentId:'hiddenActionButtonsManager',_arrayKey:'hiddenActionButtons',_arrayValue:v,init(){},destroy(){}}))),
@@ -4381,7 +4372,7 @@
                     this._styleElement = injectStyle(selectors, this.id);
                 }
             },
-            destroy() { this._styleElement?.remove(); }
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
                 // Auto-generated Player Controls sub-features
         ...([['sponsorBlock','SponsorBlock Button','Hide SponsorBlock button from player'],['next','Next Video Button','Hide next video button from player'],['autoplay','Autoplay Toggle','Hide autoplay toggle from player'],['subtitles','Subtitles Button','Hide subtitles button from player'],['captions','Captions Display','Hide captions overlay on video'],['miniplayer','Miniplayer Button','Hide miniplayer button from player'],['pip','Picture-in-Picture','Hide PiP button from player'],['theater','Theater Mode Button','Hide theater mode button from player'],['fullscreen','Fullscreen Button','Hide fullscreen button from player']].map(([v,n,d])=>({id:'pcHide_'+v,name:n,description:d,group:'Player Controls',icon:'eye-off',isSubFeature:true,parentId:'hiddenPlayerControlsManager',_arrayKey:'hiddenPlayerControls',_arrayValue:v,init(){},destroy(){}}))),
@@ -4396,19 +4387,34 @@
             icon: 'download-cloud',
             type: 'select',
             options: {
-                'cobalt': 'Cobalt (cobalt.meowing.de)',
+                'cobalt': 'Cobalt (configurable)',
                 'y2mate': 'Y2Mate',
                 'savefrom': 'SaveFrom.net',
                 'ssyoutube': 'SSYouTube'
             },
             _providers: {
-                'cobalt': 'https://cobalt.meowing.de/#',
+                get cobalt() { return GM_getValue('ytkit_cobalt_url', 'https://cobalt.meowing.de/#'); },
                 'y2mate': 'https://www.y2mate.com/youtube/',
                 'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
                 'ssyoutube': 'https://ssyoutube.com/watch?v='
             },
             init() {
                 // This is a config-only feature, the download button uses this setting
+            },
+            destroy() {}
+        },
+        {
+            id: 'cobaltUrl',
+            name: 'Cobalt Instance URL',
+            description: 'Custom Cobalt API instance URL (Cobalt instances change frequently)',
+            group: 'Downloads',
+            icon: 'link',
+            type: 'textarea',
+            placeholder: 'https://cobalt.meowing.de/#',
+            init() {
+                // Sync textarea value to GM storage for the download provider getter
+                const val = appState.settings.cobaltUrl;
+                if (val) GM_setValue('ytkit_cobalt_url', val);
             },
             destroy() {}
         },
@@ -5054,80 +5060,168 @@
             init() {},
             destroy() {}
         },
-        // ─── Comment Navigator ───
-
-        // ─── Statistics Dashboard ───
-        // ─── Regex Keyword Filter ───
-
-        // ─── Custom CSS Injection ───
-        // ─── IntersectionObserver Performance Mode ───
+        // ─── GPU Context Recovery (monitor switch fix) ───
         {
-            id: 'useIntersectionObserver',
-            name: 'Performance Mode',
-            description: 'Use IntersectionObserver to only process visible videos (improves performance on long feeds)',
-            group: 'Advanced',
-            icon: 'gauge',
+            id: 'gpuContextRecovery',
+            name: 'Monitor Switch Fix',
+            description: 'Automatically recovers video when moving browser between monitors (fixes black screen with audio)',
+            group: 'Video Player',
+            icon: 'monitor',
+            _resizeHandler: null,
+            _screenHandler: null,
+            _lastScreen: null,
+            _debounceTimer: null,
+            _forceRepaint() {
+                const video = document.querySelector('video.html5-main-video');
+                if (!video || video.paused) return;
+                // Force GPU recomposite by cycling a transform
+                video.style.transform = 'translateZ(0)';
+                requestAnimationFrame(() => {
+                    video.style.transform = '';
+                    // If still black, nudge currentTime by a tiny amount
+                    requestAnimationFrame(() => {
+                        if (video.videoWidth === 0 || (video.getVideoPlaybackQuality && video.getVideoPlaybackQuality().droppedVideoFrames > 0)) {
+                            const t = video.currentTime;
+                            video.currentTime = t + 0.001;
+                        }
+                    });
+                });
+            },
+            _checkScreenChange() {
+                const s = `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
+                if (this._lastScreen && this._lastScreen !== s) {
+                    // Screen changed — debounce and repaint
+                    clearTimeout(this._debounceTimer);
+                    this._debounceTimer = setTimeout(() => this._forceRepaint(), 300);
+                }
+                this._lastScreen = s;
+            },
             init() {
-                VisibilityObserver.init();
+                this._lastScreen = `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
 
-                // Add CSS containment for better rendering performance
-                const style = document.createElement('style');
-                style.id = 'ytkit-performance-css';
-                style.textContent = `
-                    ytd-rich-item-renderer,
-                    ytd-video-renderer,
-                    ytd-grid-video-renderer,
-                    ytd-compact-video-renderer {
-                        contain: content;
-                    }
+                // resize fires when window moves to monitor with different scale/size
+                this._resizeHandler = () => this._checkScreenChange();
+                window.addEventListener('resize', this._resizeHandler, { passive: true });
 
-                    ytd-thumbnail {
-                        contain: content;
+                // screenchange API (where supported)
+                if (window.screen?.addEventListener) {
+                    this._screenHandler = () => {
+                        clearTimeout(this._debounceTimer);
+                        this._debounceTimer = setTimeout(() => this._forceRepaint(), 300);
+                    };
+                    window.screen.addEventListener('change', this._screenHandler);
+                }
+
+                // Also recover on visibility change (alt-tab back after moving)
+                this._visHandler = () => {
+                    if (!document.hidden) {
+                        clearTimeout(this._debounceTimer);
+                        this._debounceTimer = setTimeout(() => this._forceRepaint(), 200);
                     }
-                `;
-                document.head.appendChild(style);
-                this._styleElement = style;
+                };
+                document.addEventListener('visibilitychange', this._visHandler);
+
+                // WebGL context loss on the video element
+                this._contextHandler = () => {
+                    clearTimeout(this._debounceTimer);
+                    this._debounceTimer = setTimeout(() => this._forceRepaint(), 500);
+                };
+                const vid = document.querySelector('video.html5-main-video');
+                if (vid) vid.addEventListener('webglcontextlost', this._contextHandler);
             },
             destroy() {
-                VisibilityObserver.disconnect();
-                this._styleElement?.remove();
+                window.removeEventListener('resize', this._resizeHandler);
+                if (this._screenHandler && window.screen?.removeEventListener) {
+                    window.screen.removeEventListener('change', this._screenHandler);
+                }
+                document.removeEventListener('visibilitychange', this._visHandler);
+                const vid = document.querySelector('video.html5-main-video');
+                if (vid) vid.removeEventListener('webglcontextlost', this._contextHandler);
+                clearTimeout(this._debounceTimer);
+                this._resizeHandler = null;
+                this._screenHandler = null;
+                this._visHandler = null;
+                this._contextHandler = null;
             }
         },
+
 
         // ALCHEMY-INSPIRED FEATURES
         {
             id: 'quickLinkMenu',
             name: 'Logo Quick Links',
-            description: 'Hover over the YouTube logo to reveal a dropdown with History, Watch Later, Playlists, and Liked Videos',
+            description: 'Hover over the YouTube logo to reveal a customizable dropdown menu',
             group: 'Interface',
             icon: 'menu',
             _wrapper: null,
             _styleEl: null,
-            menuItems: [
-                { text: 'History',       url: '/feed/history',          icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
-                { text: 'Watch Later',   url: '/playlist?list=WL',      icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
-                { text: 'Playlists',     url: '/feed/library',          icon: 'M22,7H2v1h20V7z M13,12H2v-1h11V12z M13,16H2v-1h11V16z M15,19v-8l7,4L15,19z' },
-                { text: 'Liked Videos',  url: '/playlist?list=LL',      icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
-                { text: 'Subscriptions', url: '/feed/subscriptions',    icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
-            ],
+            _iconMap: {
+                '/feed/history':       'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
+                '/playlist?list=WL':   'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z',
+                '/feed/library':       'M22,7H2v1h20V7z M13,12H2v-1h11V12z M13,16H2v-1h11V16z M15,19v-8l7,4L15,19z',
+                '/playlist?list=LL':   'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z',
+                '/feed/subscriptions': 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z',
+                '/':                   'M12 2L3.5 9.25V22h6.25V15.5h4.5V22h6.25V9.25L12 2zm0 2.5l6.5 5.5V20h-2.25v-6.5h-8.5V20H5.5V10L12 4.5z',
+                '/feed/trending':      'M17.53 11.2c-.23-.3-.5-.56-.76-.82-.65-.6-1.4-1.03-2.03-1.66C13.3 7.26 13 5.64 13.41 4c-1.59.5-2.8 1.5-3.7 2.82-2.06 3.05-1.53 7.03 1.21 9.43.17.15.31.34.36.56.07.29-.03.58-.27.8-.24.22-.56.34-.88.27-.29-.06-.54-.27-.68-.53-.85-1.32-.95-2.88-.46-4.35a7.932 7.932 0 00-1.59 4.27c-.07.81.07 1.62.33 2.39.3.95.81 1.81 1.49 2.54 1.48 1.52 3.58 2.36 5.71 2.28 2.27-.09 4.33-1.25 5.53-3.09 1.33-2.04 1.6-4.77.37-6.92z',
+                '/feed/channels':      'M4 20h14v1H3V6h1v14zM6 3v14h15V3H6zm13 2v10H8V5h11z',
+                '_default':            'M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19V6.413L11.2071 14.2071L9.79289 12.7929L17.585 5H13V3H21Z',
+            },
+            _parseItems() {
+                const raw = appState.settings.quickLinkItems || '';
+                return raw.split('\n').map(line => {
+                    const sep = line.indexOf('|');
+                    if (sep === -1) return null;
+                    const text = line.substring(0, sep).trim();
+                    const url = line.substring(sep + 1).trim();
+                    if (!text || !url) return null;
+                    const icon = this._iconMap[url] || this._iconMap['_default'];
+                    return { text, url, icon };
+                }).filter(Boolean);
+            },
             _buildMenu(parentEl, dropId) {
+                const existing = parentEl.querySelector('#' + dropId);
+                if (existing) existing.remove();
                 const menu = document.createElement('div');
                 menu.id = dropId;
-                this.menuItems.forEach(item => {
+                menu.className = 'ytkit-ql-drop';
+                this._parseItems().forEach(item => {
                     const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
                     TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
                     menu.appendChild(a);
                 });
+                // Settings link — compact
+                const divider = document.createElement('div');
+                divider.style.cssText = 'height:1px;background:rgba(255,255,255,0.06);margin:3px 0;';
+                menu.appendChild(divider);
+                const gear = document.createElement('a');
+                gear.href = '#';
+                gear.className = 'ytkit-ql-item ytkit-ql-settings';
+                gear.onclick = (e) => { e.preventDefault(); document.body.classList.toggle('ytkit-panel-open'); };
+                TrustedHTML.setHTML(gear, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span>`);
+                menu.appendChild(gear);
                 parentEl.appendChild(menu);
+
+                // JS hover with delayed hide
+                let hideTimer = null;
+                const show = () => { clearTimeout(hideTimer); menu.classList.add('ytkit-ql-visible'); };
+                const scheduleHide = () => { hideTimer = setTimeout(() => menu.classList.remove('ytkit-ql-visible'), 1500); };
+                parentEl.addEventListener('mouseenter', show);
+                parentEl.addEventListener('mouseleave', scheduleHide);
+                menu.addEventListener('mouseenter', show);
+                menu.addEventListener('mouseleave', scheduleHide);
+
                 return menu;
+            },
+            rebuildMenus() {
+                if (this._wrapper) this._buildMenu(this._wrapper, 'ytkit-ql-menu');
+                // Also rebuild watch page dropdown if present
+                const poLogoWrap = document.getElementById('ytkit-po-logo-wrap');
+                if (poLogoWrap) this._buildMenu(poLogoWrap, 'ytkit-po-drop');
             },
             init() {
                 const self = this;
-                // Inject CSS once — not per-navigation
-                self._styleEl = GM_addStyle(`#ytkit-ql-wrap{position:relative;display:inline-block} #ytkit-ql-menu{position:absolute;top:40px;left:0;background:var(--yt-spec-menu-background,#282828);border:1px solid rgba(255,255,255,.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;flex-direction:column;padding:8px 0;z-index:9999;min-width:200px} #ytkit-ql-wrap:hover #ytkit-ql-menu{display:flex} .ytkit-ql-item{display:flex;align-items:center;padding:10px 16px;color:var(--yt-spec-text-primary,#fff);text-decoration:none;font-size:14px;font-family:"Roboto","Arial",sans-serif;transition:background .2s} .ytkit-ql-item:hover{background:rgba(255,255,255,.1)} .ytkit-ql-icon{margin-right:14px;fill:var(--yt-spec-text-primary,#fff);width:22px;height:22px;flex-shrink:0}`);
+                self._styleEl = GM_addStyle(`#ytkit-ql-wrap{position:relative;display:inline-block} .ytkit-ql-drop{position:absolute;flex-direction:column;background:rgba(22,22,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);padding:4px 0;z-index:9999;min-width:180px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(4px);transition:opacity 0.25s ease,visibility 0.25s ease,transform 0.25s ease;display:flex} .ytkit-ql-drop.ytkit-ql-visible{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)} #ytkit-ql-menu{top:38px;left:0} #ytkit-po-drop{bottom:calc(100% + 6px);right:0} .ytkit-ql-item{display:flex;align-items:center;padding:7px 14px;color:#fff;text-decoration:none;font-size:13px;font-family:"Roboto","Arial",sans-serif;transition:background .15s;gap:10px} .ytkit-ql-item:hover{background:rgba(255,255,255,.08)} .ytkit-ql-icon{fill:#fff;width:18px;height:18px;flex-shrink:0} .ytkit-ql-settings{padding:5px 14px;opacity:0.4;font-size:11px} .ytkit-ql-settings .ytkit-ql-icon{width:14px;height:14px} .ytkit-ql-settings:hover{opacity:0.8}`);
 
-                // ytd-topbar-logo-renderer is part of the persistent masthead shell —
-                // inject once as soon as the element exists, never needs to re-run per navigation.
                 waitForElement('ytd-topbar-logo-renderer', (logo) => {
                     if (document.getElementById('ytkit-ql-wrap')) return;
                     const wrapper = document.createElement('div'); wrapper.id = 'ytkit-ql-wrap';
@@ -5145,6 +5239,28 @@
                 }
                 this._styleEl?.remove(); this._styleEl = null;
             }
+        },
+        {
+            id: 'quickLinkEditor',
+            name: 'Edit Quick Links',
+            description: 'Customize the logo dropdown menu. One link per line: Label | URL',
+            group: 'Interface',
+            icon: 'menu',
+            isSubFeature: true,
+            parentId: 'quickLinkMenu',
+            type: 'textarea',
+            placeholder: 'History | /feed/history\nWatch Later | /playlist?list=WL',
+            settingKey: 'quickLinkItems',
+            init() {
+                // Listen for setting changes to rebuild menus
+                document.addEventListener('ytkit-settings-changed', (e) => {
+                    if (e.detail?.key === 'quickLinkItems') {
+                        const ql = features.find(f => f.id === 'quickLinkMenu');
+                        if (ql && ql.rebuildMenus) ql.rebuildMenus();
+                    }
+                });
+            },
+            destroy() {}
         },
     ];
 
@@ -5637,12 +5753,7 @@
                 waitForElement('#top-row #owner', (ownerDiv) => {
                     if (document.getElementById('ytkit-watch-btn')) return;
                     const btn = createButton('ytkit-watch-btn');
-                    const logo = document.getElementById('yt-suite-watch-logo');
-                    if (logo && logo.parentElement === ownerDiv) {
-                        ownerDiv.insertBefore(btn, logo.nextSibling);
-                    } else {
-                        ownerDiv.prepend(btn);
-                    }
+                    ownerDiv.prepend(btn);
                 });
             } else {
                 // Remove watch button if we're not on watch page
@@ -6083,6 +6194,42 @@
             statusRow.appendChild(statusText);
             filterSection.appendChild(statusRow);
 
+            // ── Live Ad-Block Stats ──
+            if (isActive) {
+                const statsRow = document.createElement('div');
+                statsRow.style.cssText = 'display:flex;gap:12px;margin-top:8px;padding:8px 10px;background:var(--ytkit-bg-card);border-radius:6px;';
+                const abStats = _rw.__ytab?.stats || { blocked: 0, pruned: 0, ssapSkipped: 0 };
+                const statItems = [
+                    { label: 'Blocked', value: abStats.blocked, color: '#22c55e' },
+                    { label: 'Pruned', value: abStats.pruned, color: '#3b82f6' },
+                    { label: 'Skipped', value: abStats.ssapSkipped, color: '#f59e0b' }
+                ];
+                statItems.forEach(s => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'display:flex;align-items:center;gap:4px;';
+                    const dot = document.createElement('span');
+                    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:' + s.color + ';flex-shrink:0;';
+                    const lbl = document.createElement('span');
+                    lbl.style.cssText = 'font-size:11px;color:var(--ytkit-text-muted);';
+                    lbl.textContent = s.label + ': ' + s.value;
+                    item.appendChild(dot);
+                    item.appendChild(lbl);
+                    statsRow.appendChild(item);
+                });
+                filterSection.appendChild(statsRow);
+                // Auto-refresh stats every 5s while panel is open
+                const statsInterval = setInterval(() => {
+                    if (!document.body.classList.contains('ytkit-panel-open')) {
+                        clearInterval(statsInterval); return;
+                    }
+                    const live = _rw.__ytab?.stats || {};
+                    const labels = statsRow.querySelectorAll('span:last-child');
+                    if (labels[0]) labels[0].textContent = 'Blocked: ' + (live.blocked || 0);
+                    if (labels[1]) labels[1].textContent = 'Pruned: ' + (live.pruned || 0);
+                    if (labels[2]) labels[2].textContent = 'Skipped: ' + (live.ssapSkipped || 0);
+                }, 5000);
+            }
+
             pane.appendChild(filterSection);
 
             // ── Custom Filters Section ──
@@ -6397,22 +6544,22 @@ pause
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v25.22';
+        versionSpan.textContent = 'v1.0.4';
         versionSpan.style.position = 'relative';
         versionSpan.style.cursor = 'pointer';
         // What's New badge
-        const CURRENT_VER = '19';
+        const CURRENT_VER = '1.0.4';
         const lastSeenVer = GM_getValue('ytkit_last_seen_version', '');
         if (lastSeenVer !== CURRENT_VER) {
             const badge = document.createElement('span');
             badge.id = 'ytkit-whats-new-badge';
             badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
             versionSpan.appendChild(badge);
-            versionSpan.title = 'New in v19: Auto-Resume, Speed OSD, Watch Time Tracker, Comment Navigator, Speed Badge, Theater Auto-Scroll, Screenshot Format, Search Highlighting';
+            versionSpan.title = 'New in v1.0.4: Watch page alignment fixes, ad-block stats display, configurable Cobalt URL, performance optimizations';
             versionSpan.onclick = () => {
                 GM_setValue('ytkit_last_seen_version', CURRENT_VER);
                 badge.remove();
-                showToast('v25.22: Redesigned comments and metadata - card layout with avatars, timestamps, refined thread lines', '#3b82f6', { duration: 6 });
+                showToast('v1.0.0: Watch page alignment fixes, live ad-block stats, configurable Cobalt URL, 35+ performance & robustness improvements', '#3b82f6', { duration: 6 });
             };
         }
 
@@ -6499,7 +6646,17 @@ pause
             textarea.className = 'ytkit-input';
             textarea.id = `ytkit-input-${f.id}`;
             textarea.placeholder = f.placeholder || 'word1, word2, phrase';
-            textarea.value = appState.settings[f.id] || '';
+            textarea.value = appState.settings[f.settingKey || f.id] || appState.settings[f.id] || '';
+            // Auto-save on blur for textarea features
+            textarea.addEventListener('blur', () => {
+                const key = f.settingKey || f.id;
+                appState.settings[key] = textarea.value;
+                settingsManager.save(appState.settings);
+                document.dispatchEvent(new CustomEvent('ytkit-settings-changed', { detail: { key } }));
+                if (f.id === 'cobaltUrl' && textarea.value) {
+                    GM_setValue('ytkit_cobalt_url', textarea.value);
+                }
+            });
             card.appendChild(textarea);
         } else if (f.type === 'select') {
             const select = document.createElement('select');
@@ -6963,11 +7120,14 @@ pause
 
     //  SECTION 5: STYLES
     function injectPanelStyles() {
-        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99998;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:99999;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:100000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);} #yt-suite-watch-logo{display:flex;align-items:center;margin-right:12px;} #yt-suite-watch-logo a{display:flex;align-items:center;} #yt-suite-watch-logo ytd-logo{width:90px;height:auto;} ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);} background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));border:1px solid var(--ytkit-border-subtle);border-radius:var(--ytkit-radius-md);padding:16px;text-align:center;transition:all var(--ytkit-transition);} background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04));border-color:var(--ytkit-border);} font-size:24px;font-weight:700;color:var(--ytkit-accent);margin-bottom:4px;} font-size:12px;color:var(--ytkit-text-muted);text-transform:uppercase;letter-spacing:0.5px;} background:rgba(255,255,255,0.06) !important;} filter:brightness(1.1);} .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }`);
+        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99998;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:99999;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:100000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);}ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);}  .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }`);
     }
 
     //  SECTION 6: BOOTSTRAP
+    let _mainRan = false;
     function main() {
+        if (_mainRan) return; // Guard against double-init (YouTube SPA can re-trigger)
+        _mainRan = true;
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
 
@@ -7257,6 +7417,16 @@ pause
         window.ytkit = {
             safe() { GM_setValue('ytkit_safe_mode', true); location.reload(); },
             unsafe() { GM_setValue('ytkit_safe_mode', false); location.reload(); },
+            debug(on) {
+                if (on === undefined) return DebugManager._enabled;
+                on ? DebugManager.enable() : DebugManager.disable();
+                console.log('[YTKit] Debug ' + (on ? 'enabled' : 'disabled'));
+            },
+            stats() {
+                const ab = _rw.__ytab?.stats || {};
+                console.table({ 'Ads Blocked': ab.blocked || 0, 'Responses Pruned': ab.pruned || 0, 'SSAP Skipped': ab.ssapSkipped || 0 });
+                return ab;
+            },
             diagCSS() {
                 document.getElementById('ytab-cosmetic')?.remove();
                 document.getElementById('ytkit-opened-fix')?.remove();
@@ -7295,6 +7465,7 @@ pause
             },
             settings: appState.settings,
             features,
+            version: '1.0.0',
         };
 
         if (isSafeMode) {
@@ -7309,7 +7480,7 @@ pause
             //         the video is playing. Deferred 1500ms via requestIdleCallback.
             const CRITICAL_IDS = new Set([
                 'ytAdBlock','adblockCosmeticHide','adblockSsapAutoSkip','adblockAntiDetect',
-                'stickyVideo','themeManager','uiStyleManager',
+                'stickyVideo','uiStyleManager',
             ]);
             const LAZY_IDS = new Set([
                 // Only defer watch-page-only features that are heavy or network-bound
@@ -7342,7 +7513,7 @@ pause
             // Tier 1: after first paint
             requestAnimationFrame(() => {
                 normal.forEach(f => { initFeature(f); if (f._initialized) normalLog.push(f.id); });
-                console.log(`[YTKit] v25.22 | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
+                console.log(`[YTKit] v1.0.0 | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
             });
 
             // Tier 2: after page is interactive
@@ -7403,12 +7574,12 @@ pause
         });
         } // end !isSafeMode
 
-        console.log(`%c[YTKit] v25.22 Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+        console.log(`%c[YTKit] v1.0.0 Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         main();
     } else {
-        window.addEventListener('DOMContentLoaded', main);
+        window.addEventListener('DOMContentLoaded', main, { once: true });
     }
 })();
