@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      25.11
-// @description  Ultimate YouTube customization with ad blocking, VLC streaming, video/channel hiding, playback enhancements, sticky video, ChapterForge AI chapters, DeArrow clickbait removal, and more.
+// @version      25.22
+// @description  Ultimate YouTube customization with ad blocking, VLC streaming, video/channel hiding, playback enhancements, sticky video, and more.
 // @author       Matthew Parker
 // @license      MIT
 // @match        https://*.youtube.com/*
@@ -13,40 +13,23 @@
 // @icon         https://github.com/SysAdminDoc/YTKit/blob/main/assets/ytlogo.png?raw=true
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant        GM_getResourceText
 // @grant        GM.xmlHttpRequest
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @connect      sponsor.ajay.app
-// @connect      dearrow-thumb.ajay.app
 // @connect      raw.githubusercontent.com
-// @connect      googlevideo.com
-// @connect      gstatic.com
-// @connect      lrclib.net
-// @connect      cdn-lfs-us-1.hf.co
-// @connect      cdn-lfs.hf.co
-// @connect      huggingface.co
-// @connect      cobalt-api.meowing.de
 // @connect      cobalt.meowing.de
 // @connect      meowing.de
-// @connect      api.openai.com
-// @connect      openrouter.ai
-// @connect      localhost
-// @connect      127.0.0.1
 // @connect      *
-// @resource     betterDarkMode https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/youtube-dark-theme.css
-// @resource     catppuccinMocha https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/Themes/youtube-catppuccin-theme.css
 // @updateURL    https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js
 // @downloadURL  https://github.com/SysAdminDoc/YTKit/raw/refs/heads/main/YTKit.user.js
 // @run-at       document-start
 // ==/UserScript==
 
-// ══════════════════════════════════════════════════════════════════════════
 //  AD BLOCKER BOOTSTRAP - Split Architecture
 //  PHASE 1: Proxy engine injected into REAL page context via <script>
 //           (bypasses Tampermonkey sandbox so YouTube sees the proxies)
 //  PHASE 2: CSS / DOM observer / SSAP stay in sandbox (shared DOM access)
-// ══════════════════════════════════════════════════════════════════════════
 (function ytAdBlockBootstrap() {
     'use strict';
 
@@ -59,11 +42,9 @@
         return;
     }
 
-    // ══════════════════════════════════════════════════════════════════
     //  PHASE 1: Page-context proxy engine
     //  This function is serialized and injected via <script> element
     //  so it runs on the REAL window, not Tampermonkey's sandbox.
-    // ══════════════════════════════════════════════════════════════════
     function pageContextEngine(cfg, W) {
         // W = the real page window (unsafeWindow). ALL globals must use W.*
         // because this function's scope chain is still the Tampermonkey sandbox.
@@ -77,13 +58,24 @@
             'playerResponse.adPlacements', 'playerResponse.adSlots', 'playerResponse.playerAds',
             'auxiliaryUi.messageRenderers.upsellDialogRenderer',
             'adBreakHeartbeatParams', 'playerResponse.adBreakHeartbeatParams',
-            'responseContext.adSignalsInfo'
+            'responseContext.adSignalsInfo',
+            // Extended ad keys for newer YT player versions
+            'playerResponse.adBreakParams', 'playerResponse.adParams',
+            'playerConfig.adConfig', 'playerResponse.underlay',
+            'topbarAdRenderer', 'companionAdRenderer',
+            'fullscreenAdRenderer', 'interstitialAdRenderer',
+            'sponsoredTextRenderers', 'adBreaks',
+            'playerResponse.playerConfig.adConfig',
+            'playerResponse.adBreakHeartbeatParams',
         ];
         const REPLACE_MAP = { adPlacements: 'no_ads', adSlots: 'no_ads', playerAds: 'no_ads', adBreakHeartbeatParams: 'no_ads' };
         const INTERCEPT_URLS = [
             '/youtubei/v1/player', '/youtubei/v1/get_watch',
             '/youtubei/v1/browse', '/youtubei/v1/search', '/youtubei/v1/next',
-            '/watch?', '/playlist?list=', '/reel_watch_sequence'
+            '/watch?', '/playlist?list=', '/reel_watch_sequence',
+            // Ad-specific endpoints to intercept aggressively
+            '/youtubei/v1/log_event', '/youtubei/v1/ad_break',
+            '/pagead/', '/doubleclick.net/', '/googleadservices.com/',
         ];
         const AD_RENDERER_KEYS_ARR = [
             'adSlotRenderer', 'displayAdRenderer', 'promotedVideoRenderer',
@@ -95,7 +87,13 @@
             'adSlotAndLayoutRenderer', 'videoMastheadAdV3Renderer',
             'privetimePromoRenderer', 'movieOfferModuleRenderer',
             'mealbarPromoRenderer', 'backgroundPromoRenderer',
-            'enforcementMessageViewModel'
+            'enforcementMessageViewModel',
+            // Additional ad renderers
+            'instreamVideoAdRenderer', 'adBreakServiceRenderer',
+            'playerLegacyDesktopYpcOfferRenderer', 'ypcTrailerRenderer',
+            'compactMovieRenderer', 'gridMovieRenderer',
+            'movieRenderer', 'clarificationRenderer',
+            'externalVideoRenderer', 'sponsoredItemsPreRenderer',
         ];
         const AD_RENDERER_SET = {};
         for (let i = 0; i < AD_RENDERER_KEYS_ARR.length; i++) AD_RENDERER_SET[AD_RENDERER_KEYS_ARR[i]] = true;
@@ -125,14 +123,10 @@
             for (let i = 0; i < INTERCEPT_URLS.length; i++) { if (url.indexOf(INTERCEPT_URLS[i]) !== -1) return true; }
             return false;
         }
+        const _replaceRe = new W.RegExp('"(' + W.Object.keys(REPLACE_MAP).join('|') + ')"', 'g');
         function replaceAdKeys(text) {
             if (typeof text !== 'string') return text;
-            let t = text;
-            const keys = W.Object.keys(REPLACE_MAP);
-            for (let i = 0; i < keys.length; i++) {
-                t = t.split('"' + keys[i] + '"').join('"' + REPLACE_MAP[keys[i]] + '"');
-            }
-            return t;
+            return text.replace(_replaceRe, function(m, k) { return '"' + REPLACE_MAP[k] + '"'; });
         }
 
         // ── Deep Recursive Ad Pruner ──
@@ -197,8 +191,6 @@
             if (pruned) stats.pruned++;
             return pruned;
         }
-
-        // ═══ 1. JSON.parse Proxy ═══
         const origParse = W.JSON.parse;
         // Pre-check strings: known ad keys that must appear for pruneObject to do any work.
         // Avoids expensive deep traversal on the hundreds of small JSON.parse calls YouTube
@@ -222,8 +214,6 @@
                 return result;
             }
         }));
-
-        // ═══ 2. fetch() Proxy ═══
         const origFetch = W.fetch;
         safeOverride(W, 'fetch', new W.Proxy(origFetch, {
             apply: function(target, thisArg, args) {
@@ -256,8 +246,6 @@
                 });
             }
         }));
-
-        // ═══ 3. XMLHttpRequest Proxy ═══
         const origXHROpen = W.XMLHttpRequest.prototype.open;
         const origXHRSend = W.XMLHttpRequest.prototype.send;
         safeOverride(W.XMLHttpRequest.prototype, 'open', function() {
@@ -292,8 +280,6 @@
             });
             return origXHRSend.call(this, body);
         });
-
-        // ═══ 4. DOM Bypass Prevention ═══
         const origAppendChild = W.Node.prototype.appendChild;
         safeOverride(W.Node.prototype, 'appendChild', new W.Proxy(origAppendChild, {
             apply: function(target, thisArg, args) {
@@ -315,8 +301,6 @@
                 return W.Reflect.apply(target, thisArg, args);
             }
         }));
-
-        // ═══ 5. Timer Neutralization ═══
         const origSetTimeout = W.setTimeout;
         safeOverride(W, 'setTimeout', new W.Proxy(origSetTimeout, {
             apply: function(target, thisArg, args) {
@@ -327,8 +311,6 @@
                 return W.Reflect.apply(target, thisArg, args);
             }
         }));
-
-        // ═══ 6. Promise.then Anti-Detection ═══
         if (cfg.antiDetect) {
             const origThen = W.Promise.prototype.then;
             safeOverride(W.Promise.prototype, 'then', new W.Proxy(origThen, {
@@ -340,8 +322,6 @@
                 }
             }));
         }
-
-        // ═══ 7. Property Traps ═══
         const SET_UNDEFINED = [
             'ytInitialPlayerResponse.playerAds', 'ytInitialPlayerResponse.adPlacements',
             'ytInitialPlayerResponse.adSlots', 'ytInitialPlayerResponse.adBreakHeartbeatParams',
@@ -375,8 +355,6 @@
                 } catch(e) {}
             })(SET_UNDEFINED[si]);
         }
-
-        // ═══ 8. Video Ad Neutralizer (runs in page context for player API access) ═══
         // Strategy: Click skip buttons only. No playbackRate/mute manipulation.
         // Uses MutationObserver on player + low-frequency poll as fallback.
         var adNeutTimer = null;
@@ -470,8 +448,6 @@
         } else {
             startVideoAdNeutralizer();
         }
-
-        // ═══ Expose API on the real window ═══
         W.__ytab = {
             active: true, stats: stats,
             startVideoAdNeutralizer: startVideoAdNeutralizer,
@@ -498,15 +474,12 @@
     const pageWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
     pageContextEngine.call(pageWindow, { antiDetect: antiDetect }, pageWindow);
 
-    // ══════════════════════════════════════════════════════════════════
     //  PHASE 2: CSS / DOM Observer / SSAP — stays in sandbox
     //  (operates on shared DOM, needs GM_* for settings)
-    // ══════════════════════════════════════════════════════════════════
     const realWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
 
     // ── Cosmetic CSS Injection ──
     const COSMETIC_SELECTORS = [
-        // ═══ Masthead / Top-Level Ad Containers ═══
         '#masthead-ad',
         '#masthead-ad.ytd-rich-grid-renderer',
         '#promotion-shelf',
@@ -515,8 +488,6 @@
         '#merch-shelf',
         '#panels > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
         '[target-id="engagement-panel-ads"]',
-
-        // ═══ Player Ad UI Elements ═══
         '.video-ads',
         '.ytp-ad-module',
         '.ytp-ad-overlay-slot',
@@ -538,8 +509,6 @@
         '.ytp-suggested-action',
         '.ytp-suggested-action-badge',
         '.ytp-visit-advertiser-link',
-
-        // ═══ General Ad Classes ═══
         '.masthead-ad-control',
         '.ad-div',
         '.pyv-afc-ads-container',
@@ -552,8 +521,6 @@
         '.ytd-compact-promoted-video-renderer',
         'div.ytd-ad-slot-renderer',
         'div.ytd-in-feed-ad-layout-renderer',
-
-        // ═══ Ad Renderer Elements ═══
         'ytd-ad-slot-renderer',
         'ytd-in-feed-ad-layout-renderer',
         'ytd-display-ad-renderer',
@@ -579,14 +546,10 @@
         'ytm-promoted-sparkles-web-renderer',
         'ytm-companion-ad-renderer',
         'ad-slot-renderer',
-
-        // ═══ Attribute-Based Selectors ═══
         '[layout*="display-ad-"]',
         '[layout="display-ad-layout-top-landscape-image"]',
         '[layout="display-ad-layout-top-portrait-image"]',
         '[layout="display-ad-layout-bottom-landscape-image"]',
-
-        // ═══ Feed / Home — Parent Wrappers ═══
         'ytd-rich-item-renderer:has(> #content > ytd-ad-slot-renderer)',
         'ytd-rich-item-renderer:has(ytd-ad-slot-renderer)',
         'ytd-rich-item-renderer:has(ytd-in-feed-ad-layout-renderer)',
@@ -597,44 +560,28 @@
         'ytd-rich-section-renderer:has(ytd-ad-slot-renderer)',
         'ytd-rich-section-renderer:has(ytd-statement-banner-renderer)',
         'ytd-rich-section-renderer:has(ytd-brand-video-shelf-renderer)',
-
-        // ═══ Grid / Browse ═══
         '.grid.ytd-browse > #primary > .style-scope > .ytd-rich-grid-renderer > .ytd-rich-grid-renderer > .ytd-ad-slot-renderer',
         '.ytd-rich-item-renderer.style-scope > .ytd-rich-item-renderer > .ytd-ad-slot-renderer.style-scope',
-
-        // ═══ Search Results ═══
         'ytd-item-section-renderer > .ytd-item-section-renderer > ytd-ad-slot-renderer.style-scope',
         '.ytd-section-list-renderer > .ytd-item-section-renderer > ytd-search-pyv-renderer.ytd-item-section-renderer',
         'ytd-search-pyv-renderer.ytd-item-section-renderer',
-
-        // ═══ Watch Page / Sidebar ═══
         '.ytd-watch-flexy > .ytd-watch-next-secondary-results-renderer > ytd-ad-slot-renderer',
         '.ytd-watch-flexy > .ytd-watch-next-secondary-results-renderer > ytd-ad-slot-renderer.ytd-watch-next-secondary-results-renderer',
-
-        // ═══ Merch / Shopping ═══
         'ytd-merch-shelf-renderer',
         '#description-inner > ytd-merch-shelf-renderer',
         '#description-inner > ytd-merch-shelf-renderer > #main.ytd-merch-shelf-renderer',
         '.ytd-watch-flexy > ytd-merch-shelf-renderer',
         '.ytd-watch-flexy > ytd-merch-shelf-renderer > #main.ytd-merch-shelf-renderer',
-
-        // ═══ Shorts ═══
         '#shorts-inner-container > .ytd-shorts:has(> .ytd-reel-video-renderer > ytd-ad-slot-renderer)',
         '.ytReelMetapanelViewModelHost > .ytReelMetapanelViewModelMetapanelItem > .ytShortsSuggestedActionViewModelStaticHost',
-
-        // ═══ Mobile ═══
         'lazy-list > ad-slot-renderer',
         'ytm-rich-item-renderer > ad-slot-renderer',
         'ytm-companion-slot[data-content-type] > ytm-companion-ad-renderer',
-
-        // ═══ Premium Upsell / Nags ═══
         'ytd-popup-container > .ytd-popup-container > #contentWrapper > .ytd-popup-container[position-type="OPEN_POPUP_POSITION_BOTTOMLEFT"]',
         '#mealbar\\:3 > ytm-mealbar.mealbar-promo-renderer',
         'yt-mealbar-promo-renderer',
         'ytmusic-mealbar-promo-renderer',
         'ytd-enforcement-message-view-model',
-
-        // ═══ Misc / Catch-All ═══
         'tp-yt-paper-dialog:has(> ytd-popup-container)',
         '#feed-pyv-container',
         '#feedmodule-PRO',
@@ -647,8 +594,6 @@
         '.badge-style-type-ad',
         '.GoogleActiveViewElement',
         '.ad-showing .ytp-ad-player-overlay-layout',
-
-        // ═══ Video Ad Speed-Skip Visual Suppression ═══
         '.ad-showing .video-ads',
         '.ad-showing .ytp-ad-module',
         '.ad-showing .ytp-ad-image-overlay',
@@ -659,13 +604,9 @@
         '.ad-showing .ytp-ad-message-container',
         '.ad-showing .ytp-ad-player-overlay-instream-info',
         '.ad-showing .ytp-ad-persistent-progress-bar-container',
-
-        // ═══ Surveys / Recommendation Polls ═══
         'yt-slimline-survey-view-model',
         'lockup-attachments-view-model:has(yt-slimline-survey-view-model)',
         '.ytSlimlineSurveyViewModelHost',
-
-        // ═══ Feed Ad View Models ═══
         '.ytwTopLandscapeImageLayoutViewModelHost',
         '.ytwFeedAdMetadataViewModelHost',
         '.ytwAdButtonViewModelHost',
@@ -748,9 +689,25 @@
     }
     function startDOMCleaner() {
         scanForAds(document);
-        // Use existing mutationObserver infrastructure instead of creating a 3rd full-document
-        // subtree observer. addMutationRule is rAF-debounced so this runs at most once per frame.
-        addMutationRule('_adDomCleaner', (root) => scanForAds(root));
+        // Scan only added nodes, not the full document on every frame — avoids forced reflow.
+        // addMutationRule lives in the main IIFE and isn't available at document-start.
+        let _rafId = null;
+        let _pendingRoots = [];
+        const obs = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                for (const node of m.addedNodes) {
+                    if (node.nodeType === 1) _pendingRoots.push(node);
+                }
+            }
+            if (_pendingRoots.length && !_rafId) {
+                _rafId = requestAnimationFrame(() => {
+                    _rafId = null;
+                    const roots = _pendingRoots.splice(0);
+                    for (const root of roots) scanForAds(root);
+                });
+            }
+        });
+        obs.observe(document.documentElement, { childList: true, subtree: true });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startDOMCleaner);
     else startDOMCleaner();
@@ -777,9 +734,7 @@
     setTimeout(() => { try { _patchAPI(); } catch(e) {} }, 0);
 })();
 
-// ══════════════════════════════════════════════════════════════════════════
 //  MAIN YTKIT (deferred to DOMContentLoaded via bootstrap at bottom)
-// ══════════════════════════════════════════════════════════════════════════
 
 (function() {
     'use strict';
@@ -787,12 +742,9 @@
     // Bridge to real page window (needed because __ytab lives in page context, not sandbox)
     const _rw = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 0A: CORE UTILITIES & UNIFIED STORAGE
-    // ══════════════════════════════════════════════════════════════════════════
 
     // Settings version for migrations
-    const SETTINGS_VERSION = 4;
 
     // Page type detection for lazy-loading features
     const PageTypes = {
@@ -823,18 +775,16 @@
 
     // ── Timing Constants ──
     const TIMING = {
-        NAV_DEBOUNCE: 150,        // Navigation detection debounce (ms)
+        NAV_DEBOUNCE: 50,         // Navigation detection debounce (ms)
         MUTATION_THROTTLE: 500,   // Mutation observer throttle (ms)
         BUTTON_DEBOUNCE: 300,     // Button checker mutation debounce (ms)
         SAVE_DEBOUNCE: 500,       // Settings save debounce (ms)
         NAV_SETTLE: 1000,         // Time for YouTube SPA to settle after nav (ms)
-        ELEMENT_TIMEOUT: 10000,   // waitForElement timeout (ms)
+        ELEMENT_TIMEOUT: 3000,    // waitForElement timeout (ms)
         LABEL_MAX_ATTEMPTS: 20,   // SponsorBlock label retry limit
     };
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  Trusted Types Safe HTML Helper
-    // ══════════════════════════════════════════════════════════════════════════
     // YouTube enforces Trusted Types which blocks direct innerHTML assignments
     const TrustedHTML = (() => {
         let policy = null;
@@ -923,9 +873,7 @@
         }
     };
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  TRANSCRIPT SERVICE - Multi-Method Extraction with Failover
-    // ══════════════════════════════════════════════════════════════════════════
     const TranscriptService = {
         config: {
             preferredLanguages: ['en', 'en-US', 'en-GB'],
@@ -1355,57 +1303,6 @@
     };
 
     // Settings Migration System
-    const SettingsMigration = {
-        migrations: {
-            // Migration from version 1 to 2
-            1: (settings) => {
-                // Rename old setting keys if needed
-                if (settings.hideYouTubeShorts !== undefined) {
-                    settings.removeAllShorts = settings.hideYouTubeShorts;
-                    delete settings.hideYouTubeShorts;
-                }
-                return settings;
-            },
-            // Migration from version 2 to 3: Ollama + captions-first defaults
-            3: (settings) => {
-                // Update Vibe endpoint from old default to WhisperServer port
-                if (!settings.cfVibeEndpoint || settings.cfVibeEndpoint === 'http://localhost:3022') {
-                    settings.cfVibeEndpoint = 'http://localhost:8178';
-                }
-                // Captions-first transcript (instant, free, reliable) — WhisperServer is fallback only
-                if (!settings.cfTranscriptMethod || settings.cfTranscriptMethod === 'vibe') settings.cfTranscriptMethod = 'auto';
-                // Ollama for real AI chapters instead of basic NLP heuristic
-                if (!settings.cfLlmProvider || settings.cfLlmProvider === 'builtin') settings.cfLlmProvider = 'ollama';
-                // Enable ChapterForge + auto mode
-                if (settings.chapterForge === false || settings.chapterForge === undefined) settings.chapterForge = true;
-                if (settings.cfMode === 'manual' || !settings.cfMode) settings.cfMode = 'auto';
-                // Enable filler + pause skipping
-                if (!settings.cfAutoSkipMode || settings.cfAutoSkipMode === 'off') settings.cfAutoSkipMode = 'aggressive';
-                return settings;
-            }
-        },
-
-        migrate(settings) {
-            let currentVersion = settings._version || 1;
-            let migrated = { ...settings };
-
-            while (currentVersion < SETTINGS_VERSION) {
-                const migrationFn = this.migrations[currentVersion];
-                if (migrationFn) {
-                    try {
-                        migrated = migrationFn(migrated);
-                        console.log(`[YTKit] Migrated settings from v${currentVersion} to v${currentVersion + 1}`);
-                    } catch (e) {
-                        console.error(`[YTKit] Migration ${currentVersion} failed:`, e);
-                    }
-                }
-                currentVersion++;
-            }
-
-            migrated._version = SETTINGS_VERSION;
-            return migrated;
-        }
-    };
 
     // Undo System for Video Hiding
     const UndoManager = {
@@ -1443,82 +1340,6 @@
     const DebugManager = { log() {} };
     // Statistics Tracker
     const StatsTracker = { load() {}, increment() {}, getAll() { return {}; }, formatTime() { return '0s'; }, reset() {} };
-    // Per-Channel Settings Manager
-    const ChannelSettingsManager = {
-        _STORAGE_KEY: 'ytkit-channel-settings',
-        _settings: null,
-
-        load() {
-            if (this._settings) return this._settings;
-            this._settings = StorageManager.get(this._STORAGE_KEY, {});
-            return this._settings;
-        },
-
-        save() {
-            if (!this._settings) return;
-            StorageManager.set(this._STORAGE_KEY, this._settings);
-        },
-
-        getForChannel(channelId) {
-            this.load();
-            return this._settings[channelId] || null;
-        },
-
-        setForChannel(channelId, settings) {
-            this.load();
-            this._settings[channelId] = {
-                ...this._settings[channelId],
-                ...settings,
-                updatedAt: Date.now()
-            };
-            this.save();
-        },
-
-        removeChannel(channelId) {
-            this.load();
-            delete this._settings[channelId];
-            this.save();
-        },
-
-        getAllChannels() {
-            this.load();
-            return Object.entries(this._settings).map(([id, settings]) => ({
-                id,
-                ...settings
-            }));
-        },
-
-        getCurrentChannelId() {
-            // Try to extract channel ID from various sources
-            const channelLink = document.querySelector('#owner #channel-name a, #upload-info #channel-name a, ytd-video-owner-renderer a');
-            if (channelLink) {
-                const href = channelLink.href;
-                const match = href.match(/\/@([^\/\?]+)|\/channel\/([^\/\?]+)/);
-                if (match) return match[1] || match[2];
-            }
-            return null;
-        },
-
-        getCurrentChannelName() {
-            const channelName = document.querySelector('#owner #channel-name, #upload-info #channel-name, ytd-video-owner-renderer #channel-name');
-            return channelName?.textContent?.trim() || null;
-        },
-
-        exportAll() {
-            this.load();
-            return JSON.stringify(this._settings, null, 2);
-        },
-
-        importAll(jsonStr) {
-            try {
-                const data = JSON.parse(jsonStr);
-                if (typeof data !== 'object') return false;
-                this._settings = data;
-                this.save();
-                return true;
-            } catch { return false; }
-        }
-    };
 
     // IntersectionObserver Helper for Performance
     const VisibilityObserver = {
@@ -1562,10 +1383,7 @@
         }
     };
 
-
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 0B: DYNAMIC CONTENT/STYLE ENGINE
-    // ══════════════════════════════════════════════════════════════════════════
     let mutationObserver = null;
     const mutationRules = new Map();
     const navigateRules = new Map();
@@ -1582,6 +1400,103 @@
         setTimeout(() => obs.disconnect(), timeout);
     }
 
+    // waitForPageContent — fires callback when YouTube's page content is actually rendered,
+    // rather than using blind setTimeout delays. Uses yt-page-data-updated as the primary
+    // signal (fires when YT pushes data to the page) and falls back to waitForElement
+    // watching for the first rendered video/item. Much faster than fixed 1-2s timeouts.
+    function waitForPageContent(callback, fallbackSelector = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer') {
+        let fired = false;
+        const fire = () => { if (fired) return; fired = true; callback(); };
+
+        // yt-page-data-updated fires when YT renders page data — usually within ~200ms of nav
+        document.addEventListener('yt-page-data-updated', fire, { once: true });
+
+        // Fallback: watch for first content element to appear in DOM
+        waitForElement(fallbackSelector, fire);
+
+        // Hard fallback at 3s in case neither fires (e.g. cached page, rare edge cases)
+        setTimeout(fire, 3000);
+    }
+
+    //  PageControl System — dismissible injected buttons with ghost-pill restore
+    const _pageControlDismissed = {};  // in-memory cache: id -> true/false
+
+    function isPageControlDismissed(id) {
+        if (id in _pageControlDismissed) return _pageControlDismissed[id];
+        const v = GM_getValue('ytkit_pc_' + id, false);
+        _pageControlDismissed[id] = v;
+        return v;
+    }
+
+    function setPageControlDismissed(id, dismissed) {
+        _pageControlDismissed[id] = dismissed;
+        GM_setValue('ytkit_pc_' + id, dismissed);
+    }
+
+    // Wraps an existing element with an X dismiss button and ghost-pill restore.
+    // If currently dismissed, immediately replaces element with ghost pill.
+    // options: { label, color, onRestore }
+    function wrapPageControl(el, id, options = {}) {
+        if (!el || !el.parentNode) return el;
+
+        const label = options.label || id;
+        const accentColor = options.color || 'rgba(255,255,255,0.15)';
+
+        // Ghost pill shown when dismissed
+        const createGhost = () => {
+            const ghost = document.createElement('button');
+            ghost.className = 'ytkit-pc-ghost';
+            ghost.dataset.pcId = id;
+            ghost.title = 'Restore: ' + label;
+            ghost.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px dashed rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.3);font-family:"Roboto",Arial,sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;`;
+            TrustedHTML.setHTML(ghost, '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span></span>');
+            ghost.querySelector('span').textContent = label;
+            ghost.onmouseenter = () => { ghost.style.color = 'rgba(255,255,255,0.7)'; ghost.style.borderColor = 'rgba(255,255,255,0.5)'; };
+            ghost.onmouseleave = () => { ghost.style.color = 'rgba(255,255,255,0.3)'; ghost.style.borderColor = 'rgba(255,255,255,0.2)'; };
+            ghost.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setPageControlDismissed(id, false);
+                ghost.replaceWith(wrap);
+                if (options.onRestore) options.onRestore();
+            });
+            return ghost;
+        };
+
+        // Wrap the element
+        const wrap = document.createElement('span');
+        wrap.className = 'ytkit-pc-wrap';
+        wrap.style.cssText = 'position:relative;display:inline-flex;align-items:center;';
+        el.parentNode.insertBefore(wrap, el);
+        wrap.appendChild(el);
+
+        // Dismiss X button
+        const xBtn = document.createElement('button');
+        xBtn.className = 'ytkit-pc-x';
+        xBtn.title = 'Dismiss ' + label;
+        xBtn.style.cssText = `position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;border:none;background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.6);font-size:10px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0;transition:opacity 0.15s;z-index:10;`;
+        xBtn.textContent = '×';
+        wrap.addEventListener('mouseenter', () => { xBtn.style.opacity = '1'; });
+        wrap.addEventListener('mouseleave', () => { xBtn.style.opacity = '0'; });
+        xBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setPageControlDismissed(id, true);
+            wrap.replaceWith(createGhost());
+        });
+        wrap.appendChild(xBtn);
+
+        // If already dismissed, show ghost immediately
+        if (isPageControlDismissed(id)) {
+            wrap.replaceWith(createGhost());
+        }
+
+        return wrap;
+    }
+
+    // Inject global PageControl CSS once
+    GM_addStyle(`
+        .ytkit-pc-wrap:hover .ytkit-pc-x { opacity: 1 !important; }
+    `);
+
     // Global toast notification function with optional action button
     function showToast(message, color = '#22c55e', options = {}) {
         // Remove existing toast if present
@@ -1589,25 +1504,7 @@
 
         const toast = document.createElement('div');
         toast.className = 'ytkit-global-toast';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: ${color};
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-family: "Roboto", Arial, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 999999;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: ytkit-toast-fade ${options.duration || 2.5}s ease-out forwards;
-        `;
+        toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:12px 24px;border-radius:8px;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;animation:ytkit-toast-fade ${options.duration || 2.5}s ease-out forwards;`;
 
         const textSpan = document.createElement('span');
         textSpan.textContent = message;
@@ -1666,8 +1563,8 @@
     let buttonCheckInterval = null;
     let buttonCheckStarted = false;
 
-    function registerPersistentButton(id, parentSelector, checkSelector, injectFn) {
-        persistentButtons.set(id, { parentSelector, checkSelector, injectFn });
+    function registerPersistentButton(id, parentSelector, checkSelector, injectFn, pcLabel) {
+        persistentButtons.set(id, { parentSelector, checkSelector, injectFn, pcLabel });
         DebugManager.log('Buttons', `Registered: ${id} (total: ${persistentButtons.size})`);
         startButtonChecker();
         // Try immediately
@@ -1681,7 +1578,6 @@
         }
         persistentButtons.delete(id);
     }
-
 
     function tryInjectButton(id) {
         if (!window.location.pathname.startsWith('/watch')) return false;
@@ -1725,19 +1621,23 @@
         }
 
         if (!target) {
-            // Debug: log what we can see to help diagnose
-            if (!tryInjectButton._lastDebugTime || Date.now() - tryInjectButton._lastDebugTime > 5000) {
-                tryInjectButton._lastDebugTime = Date.now();
-                const tlbc = document.querySelector('#top-level-buttons-computed');
-                const actions = document.querySelector('#actions');
-                const menu = document.querySelector('ytd-menu-renderer');
-                const metadata = document.querySelector('ytd-watch-metadata');
-                console.warn(`[YTKit Buttons] No target for ${id}:`,
-                    `#top-level-buttons-computed=${!!tlbc}${tlbc ? '(inClarify=' + !!tlbc.closest('#clarify-box') + ')' : ''}`,
-                    `#actions=${!!actions}`,
-                    `ytd-menu-renderer=${!!menu}`,
-                    `ytd-watch-metadata=${!!metadata}`
-                );
+            // Only warn if we've been on the watch page long enough — the first 2s is normal
+            // Polymer render lag; the 1s/2.5s retry timers will succeed without noise.
+            const onPageFor = Date.now() - (tryInjectButton._pageArrival || Date.now());
+            if (onPageFor > 2000) {
+                if (!tryInjectButton._lastDebugTime || Date.now() - tryInjectButton._lastDebugTime > 5000) {
+                    tryInjectButton._lastDebugTime = Date.now();
+                    const tlbc = document.querySelector('#top-level-buttons-computed');
+                    const actions = document.querySelector('#actions');
+                    const menu = document.querySelector('ytd-menu-renderer');
+                    const metadata = document.querySelector('ytd-watch-metadata');
+                    console.warn(`[YTKit Buttons] No target for ${id}:`,
+                        `#top-level-buttons-computed=${!!tlbc}${tlbc ? '(inClarify=' + !!tlbc.closest('#clarify-box') + ')' : ''}`,
+                        `#actions=${!!actions}`,
+                        `ytd-menu-renderer=${!!menu}`,
+                        `ytd-watch-metadata=${!!metadata}`
+                    );
+                }
             }
             return false;
         }
@@ -1745,6 +1645,11 @@
         try {
             config.injectFn(target);
             DebugManager.log('Buttons', `Injected ${id} into`, target.tagName + '#' + (target.id || ''));
+            // Wrap with dismiss X if a label was provided
+            if (config.pcLabel) {
+                const injected = document.querySelector(config.checkSelector);
+                if (injected) wrapPageControl(injected, id, { label: config.pcLabel });
+            }
             return true;
         } catch (e) {
             console.error(`[YTKit] Failed to inject ${id}:`, e);
@@ -1759,7 +1664,7 @@
         if (!window.location.pathname.startsWith('/watch')) return;
 
         // Check if video changed
-        const currentVideoId = new URLSearchParams(window.location.search).get('v');
+        const currentVideoId = (window.location.search.match(/[?&]v=([^&#]+)/) || [])[1] || null;
         if (currentVideoId && currentVideoId !== lastVideoId) {
             lastVideoId = currentVideoId;
             DebugManager.log('Buttons', `New video: ${currentVideoId}, ${persistentButtons.size} buttons registered`);
@@ -1812,8 +1717,7 @@
                                 node.classList.contains('ytkit-embed-btn') ||
                                 node.classList.contains('ytkit-mpv-btn') ||
                                 node.classList.contains('ytkit-dlplay-btn') ||
-                                node.classList.contains('ytkit-transcript-btn') ||
-                                node.classList.contains('ytkit-summarize-btn'))) {
+                                node.classList.contains('ytkit-transcript-btn'))) {
                                 needsRecheck = true;
                                 break;
                             }
@@ -1845,16 +1749,16 @@
             spaTimers.forEach(t => clearTimeout(t));
             spaTimers = [];
             lastVideoId = null;
-            spaTimers.push(setTimeout(checkAllButtons, 300));
+            tryInjectButton._pageArrival = Date.now();
+            checkAllButtons();
             spaTimers.push(setTimeout(checkAllButtons, 1000));
-            spaTimers.push(setTimeout(checkAllButtons, 2500));
         });
     }
 
-
     const runNavigateRules = () => {
+        const isWatch = window.location.pathname.startsWith('/watch');
         for (const rule of navigateRules.values()) {
-            try { rule(document.body); } catch (e) { console.error('[YTKit] Navigate rule error:', e); }
+            try { rule(document.body, isWatch); } catch (e) { console.error('[YTKit] Navigate rule error:', e); }
         }
     };
 
@@ -1942,12 +1846,9 @@
         if (mutationRules.size === 0) stopObserver();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 1: SETTINGS MANAGER
-    // ══════════════════════════════════════════════════════════════════════════
     const settingsManager = {
         defaults: {
-            // ═══ Interface ═══
             hideCreateButton: true,
             hideVoiceSearch: true,
             logoToSubscriptions: true,
@@ -1956,18 +1857,14 @@
             homepageGridAlign: true,
             styledFilterChips: true,
             hideSidebar: true,
-
-            // ═══ Appearance ═══
-            // Consolidated: theme replaces nativeDarkMode, betterDarkMode, catppuccinMocha
-            theme: 'betterDark', // 'system' | 'dark' | 'betterDark' | 'catppuccin'
-            uiStyle: 'rounded', // 'rounded' | 'square' (replaces squarify, squareAvatars, squareSearchBar)
+            // Consolidated: theme — only 'dark' supported
+            theme: 'dark',
+            uiStyle: 'square',
             noAmbientMode: true,
-            noFrostedGlass: true,
             compactLayout: true,
             thinScrollbar: true,
-            themeAccentColor: '', // empty = use theme default, or hex like '#ff6b6b'
-
-            // ═══ Content ═══
+            watchPageRestyle: true,
+            chatStyleComments: true,
             removeAllShorts: true,
             redirectShorts: true,
             disablePlayOnHover: true,
@@ -1979,129 +1876,45 @@
             hideMembersOnly: true,
             hideNewsHome: true,
             hidePlaylistsHome: true,
-
-            // ═══ Video Hider ═══
-            hideVideosFromHome: true,
-            hideVideosBlockChannels: true,
-            // Consolidated: single keyword filter that auto-detects regex (starts with /)
-            hideVideosKeywordFilter: '',
-            hideVideosDurationFilter: 0,
-            hideVideosMinViewsFilter: 0,          // minimum view count (0 = disabled)
-            hideVideosMaxAgeDaysFilter: 0,        // maximum age in days (0 = disabled)
-            hideVideosBlockedChannels: [],
-            hideVideosSubsLoadLimit: true,
-            hideVideosSubsLoadThreshold: 3,
-
-            // ═══ Video Player ═══
             fitPlayerToWindow: true,
             hideRelatedVideos: true,
-            adaptiveLiveLayout: true,
             expandVideoWidth: true,
             floatingLogoOnWatch: true,
             playerOverlayControls: true, // true = hover overlay on player, false = below video
-            hideDescriptionRow: false,
+            hideDescriptionRow: true,
             // Consolidated: replaces hideVideoEndCards, hideVideoEndScreen, hideEndVideoStills
             hideVideoEndContent: true,
             stickyVideo: true,
-
-            // ═══ Playback ═══
-            preventAutoplay: false,
-            autoExpandDescription: false,
-            preloadComments: true,
-            sortCommentsNewestFirst: false,
-            autoOpenChapters: false,
-            autoOpenTranscript: false,
-            chronologicalNotifications: false,
-            autoSkipStillWatching: true,
-
-            // ═══ Playback Enhancements ═══
-            playbackSpeedPresets: true,
-            defaultPlaybackSpeed: 1,
-            rememberPlaybackSpeed: false,
-            showWatchProgress: true,
-            timestampBookmarks: true,
-            autoSkipIntroOutro: false,
-            enablePerChannelSettings: true,
-            returnYouTubeDislike: true,
             cleanShareUrls: true,
-            reversePlaylist: false,
-
-            // ═══ Alchemy-Inspired Features ═══
             videosPerRow: 0,                // 0 = dynamic, 3-8 = fixed columns
-            persistentProgressBar: true,
-            remainingTimeDisplay: true,
-            colorCodeVideoAge: false,
-            lastSeenVideoMarker: false,
-            channelRSSButton: false,
-            channelPlaylistButtons: false,
-            hideWatchedByPercent: false,
-            hideWatchedPercent: 90,         // 0-100, videos watched past this % get hidden
-            hideWatchedHome: true,
-            hideWatchedSubscriptions: false,
-            hideWatchedSearch: false,
-            restoreFilterChipSelection: false,
-            playlistDirectionControl: false,
-            playlistQuickRemove: false,
-            displayFullTitles: false,
-            autoEnableSubtitles: false,
-            chatDisplayNameRestorer: false,
-            audioEnhancer: false,
-            quickLinkMenu: false,
-            liveChatGoToChannel: false,
-            blockYouTubeTelemetry: true,
-            syncedLyrics: false,
-            subscriptionExporter: false,
-            dimWatchedVideos: false,
-            videoFileSizeDisplay: false,
-            fullDates: false,
-            fullDatesFormat: 'MMM dd yyyy',
-            fullDatesBadges: true,
-            likedVideosTracker: true,
-            likedVideosDim: false,
-            likedVideosHide: false,
-
-            // ═══ Ad Blocker ═══
-            ytAdBlock: true,
+            quickLinkMenu: true,
+            ytAdBlock: false,
             adblockCosmeticHide: true,
             adblockSsapAutoSkip: true,
             adblockAntiDetect: true,
             adblockFilterUrl: 'https://raw.githubusercontent.com/SysAdminDoc/YoutubeAdblock/refs/heads/main/youtube-adblock-filters.txt',
             adblockFilterAutoUpdate: true,
-            adblockFilterLastUpdate: 0,
-
-            // ═══ SponsorBlock ═══
             skipSponsors: true,
             hideSponsorBlockLabels: true,
             sponsorBlockCategories: ['sponsor', 'selfpromo', 'interaction', 'intro', 'outro', 'music_offtopic', 'preview', 'filler'],
-
-            // ═══ Video Quality ═══
             autoMaxResolution: true,
             preferredQuality: 'max', // 'max' | '4320' | '2160' | '1440' | '1080' | '720' | '480'
             useEnhancedBitrate: true,
             hideQualityPopup: true,
-
-            // ═══ Clutter ═══
             hideMerchShelf: true,
             hideAiSummary: true,
-
-            // ═══ v19 New Features ═══
             autoResumePosition: true,
             autoResumeThreshold: 15, // seconds from start before saving position
-            playbackSpeedOSD: true,
-            watchTimeTracker: true,
-            speedIndicatorBadge: false,
 
-            // hideInfoPanel removed — consolidated into hideInfoPanels (Content group)
             hideDescriptionExtras: true,
             hideHashtags: true,
             hidePinnedComments: true,
             hideCommentActionMenu: true,
             condenseComments: true,
+            hideCommentTeaser: true,
             hideLiveChatEngagement: true,
             hidePaidPromotionWatch: true,
             hideFundraiser: true,
-
-            // ═══ Live Chat - Consolidated into array ═══
             hiddenChatElementsManager: true,
             hiddenChatElements: [
                 'header', 'menu', 'popout', 'reactions', 'timestamps',
@@ -2109,232 +1922,41 @@
                 'emoji', 'topFan', 'superChats', 'levelUp', 'bots'
             ],
             chatKeywordFilter: '',
-
-            // ═══ Action Buttons - Consolidated into array ═══
             hiddenActionButtonsManager: true,
             hiddenActionButtons: [
                 'like', 'dislike', 'share', 'ask', 'clip',
                 'thanks', 'save', 'sponsor', 'moreActions'
             ],
-            autolikeVideos: true,
-            replaceWithCobaltDownloader: true,
-
-            // ═══ Player Controls - Consolidated into array ═══
+            replaceWithCobaltDownloader: false,
             hiddenPlayerControlsManager: true,
             hiddenPlayerControls: [
                 'sponsorBlock', 'next', 'autoplay', 'subtitles',
                 'captions', 'miniplayer', 'pip', 'theater', 'fullscreen'
             ],
-
-            // ═══ Watch Page Elements - Hide elements below videos ═══
             hiddenWatchElementsManager: true,
             hiddenWatchElements: [
                 'joinButton', 'askButton', 'saveButton', 'moreActions',
                 'askAISection', 'podcastSection', 'transcriptSection', 'channelInfoCards'
             ],
-
-            // ═══ Downloads ═══
-            showVlcButton: true,
-            showVlcQueueButton: false,
+            showVlcButton: false,
             showLocalDownloadButton: true,
             showMp3DownloadButton: true,
-            showSummarizeButton: true,
-            showDownloadPlayButton: false,
-            subsVlcPlaylist: true,
             videoContextMenu: true,
-            autoDownloadOnVisit: false,
-            downloadQuality: 'best',
-            preferredMediaPlayer: 'vlc',
             downloadProvider: 'cobalt',
-
-            // ═══ Advanced ═══
             hideCollaborations: true,
             useIntersectionObserver: true,
             hideInfoPanels: true,
 
-            // ═══ ChapterForge ═══
-            chapterForge: true,
-
-            // ═══ DeArrow ═══
-            deArrow: false,
-            daReplaceTitles: true,
-            daReplaceThumbs: true,
-            daTitleFormat: 'sentence',    // 'sentence' | 'title_case' | 'original'
-            daFallbackFormat: true,       // format original titles when no submission
-            daShowOriginalHover: true,    // show original title/thumb on hover
-            daCacheTTL: '4',               // hours to cache branding data before background refresh
-            daDebugLog: false,             // verbose DeArrow console logging (off by default)
-            cfMode: 'auto',          // 'manual' | 'auto'
-            cfLlmProvider: 'ollama',  // 'builtin' | 'openai' | 'ollama' | 'openrouter' | 'custom'
-            cfLlmEndpoint: '',         // custom API endpoint (auto-set for known providers)
-            cfLlmApiKey: '',           // API key for provider
-            cfLlmModel: 'gpt-4o',// model name
-            cfShowChapters: true,
-            cfShowPOIs: true,
-            cfChapterOpacity: 0.35,
-            cfTranscriptMethod: 'auto',     // 'auto' | 'captions-only' | 'whisper-only' | 'vibe'
-            cfVibeEndpoint: 'http://localhost:8178',  // WhisperServer transcription endpoint
-            cfWhisperModel: 'whisper-tiny.en',  // 'whisper-tiny.en' | 'whisper-base.en'
-            cfMaxAutoDuration: 60,          // max minutes for auto-processing
-            cfShowPlayerButton: true,       // show player button even in auto mode
-            cfUseInnertube: true,           // audio download via Innertube adaptive formats
-            cfUseCobalt: true,              // audio download via Cobalt API
-            cfUseCapture: true,             // audio capture from player element
-            cfPoiColor: '#ff6b6b',          // POI marker color
-            cfDebugLog: false,              // verbose console logging
-            cfSpeedControl: false,          // chapter-aware speed control
-            cfShowChapterHUD: false,         // show chapter name overlay on video player
-            cfHudPosition: 'top-left',     // 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
-            cfCustomSummaryPrompt: '',     // user-editable summary system prompt (empty = use default)
-            cfCustomChapterPrompt: '',     // user-editable chapter system prompt (empty = use default)
-            cfFillerDetect: true,          // detect filler words in transcript (OpenCut: filler word detection)
-            cfShowFillerMarkers: true,     // show filler markers on progress bar
-            cfFillerWords: 'um, uh, uhh, umm, hmm, hm, er, erm, ah, mhm, you know, I mean, sort of, kind of, okay so, so yeah, yeah so, like',
-            cfTranslateLang: '',           // target language for AI translation (empty = disabled)
-            cfAutoSkipMode: 'aggressive',      // 'off' | 'gentle' | 'normal' | 'aggressive' | 'maximum'
-            cfSkipStyle: 'jump',               // 'jump' (hard cut) | 'speed' (speed through silence)
-            cfShowSkipZones: true,             // show skip zone markers on progress bar
-            cfAutoModel: true,             // auto-select best Ollama model for video length
-            cfOllamaModel: '',             // auto-detected Ollama model name
-            cfSummaryMode: 'paragraph',    // 'paragraph' (clean prose) or 'timestamped' (indexed)
-            cfSummaryLength: 'standard',   // 'brief', 'standard', 'detailed'
-            cfChapterMode: 'standard',     // 'standard' or 'seo' (keyword-optimized titles)
         },
 
         // Migration map for old settings to new
-        _migrationMap: {
-            // Theme consolidation
-            'nativeDarkMode': (val, settings) => { if (val && !settings.betterDarkMode) settings.theme = 'dark'; },
-            'betterDarkMode': (val, settings) => { if (val) settings.theme = 'betterDark'; },
-            'catppuccinMocha': (val, settings) => { if (val) settings.theme = 'catppuccin'; },
-            // UI style consolidation
-            'squarify': (val, settings) => { if (val) settings.uiStyle = 'square'; },
-            'squareAvatars': (val, settings) => { if (val) settings.uiStyle = 'square'; },
-            'squareSearchBar': (val, settings) => { if (val) settings.uiStyle = 'square'; },
-            // Video end consolidation
-            'hideVideoEndCards': (val, settings) => { settings.hideVideoEndContent = val; },
-            'hideVideoEndScreen': (val, settings) => { if (val) settings.hideVideoEndContent = true; },
-            'hideEndVideoStills': (val, settings) => { if (val) settings.hideVideoEndContent = true; },
-            // Info panel consolidation
-            'hideClarifyBoxes': (val, settings) => { if (val) settings.hideInfoPanels = true; },
-            'hideInfoPanel': (val, settings) => { if (val) settings.hideInfoPanels = true; },
-            // Regex filter consolidation
-            'useRegexKeywordFilter': () => {}, // No longer needed - auto-detected
-            'hideVideosRegexFilter': (val, settings) => {
-                if (val) settings.hideVideosKeywordFilter = val;
-            },
-            // Videos per row consolidation
-            'fiveVideosPerRow': (val, settings) => { if (val) settings.videosPerRow = 5; },
-        },
 
         load() {
             let savedSettings = StorageManager.get('ytSuiteSettings', {});
-
-            // Migrate old settings to new format
-            savedSettings = this._migrateOldSettings(savedSettings);
-
-            // Run version migrations if needed
-            if (!savedSettings._version || savedSettings._version < SETTINGS_VERSION) {
-                savedSettings = SettingsMigration.migrate(savedSettings);
-                this.save(savedSettings);
-            }
             return { ...this.defaults, ...savedSettings };
         },
 
-        _migrateOldSettings(saved) {
-            const migrated = { ...saved };
-
-            // Migrate action buttons to array format
-            if (saved.hideLikeButton !== undefined) {
-                const hidden = [];
-                if (saved.hideLikeButton) hidden.push('like');
-                if (saved.hideDislikeButton) hidden.push('dislike');
-                if (saved.hideShareButton) hidden.push('share');
-                if (saved.hideAskButton) hidden.push('ask');
-                if (saved.hideClipButton) hidden.push('clip');
-                if (saved.hideThanksButton) hidden.push('thanks');
-                if (saved.hideSaveButton) hidden.push('save');
-                if (saved.hideSponsorButton) hidden.push('sponsor');
-                if (saved.hideMoreActionsButton) hidden.push('moreActions');
-                migrated.hiddenActionButtons = hidden;
-                // Clean up old keys
-                delete migrated.hideLikeButton; delete migrated.hideDislikeButton;
-                delete migrated.hideShareButton; delete migrated.hideAskButton;
-                delete migrated.hideClipButton; delete migrated.hideThanksButton;
-                delete migrated.hideSaveButton; delete migrated.hideSponsorButton;
-                delete migrated.hideMoreActionsButton;
-            }
-
-            // Migrate player controls to array format
-            if (saved.hideSponsorBlockButton !== undefined) {
-                const hidden = [];
-                if (saved.hideSponsorBlockButton) hidden.push('sponsorBlock');
-                if (saved.hideNextButton) hidden.push('next');
-                if (saved.hideAutoplayToggle) hidden.push('autoplay');
-                if (saved.hideSubtitlesToggle) hidden.push('subtitles');
-                if (saved.hideCaptionsContainer) hidden.push('captions');
-                if (saved.hideMiniplayerButton) hidden.push('miniplayer');
-                if (saved.hidePipButton) hidden.push('pip');
-                if (saved.hideTheaterButton) hidden.push('theater');
-                if (saved.hideFullscreenButton) hidden.push('fullscreen');
-                migrated.hiddenPlayerControls = hidden;
-                // Clean up old keys
-                delete migrated.hideSponsorBlockButton; delete migrated.hideNextButton;
-                delete migrated.hideAutoplayToggle; delete migrated.hideSubtitlesToggle;
-                delete migrated.hideCaptionsContainer; delete migrated.hideMiniplayerButton;
-                delete migrated.hidePipButton; delete migrated.hideTheaterButton;
-                delete migrated.hideFullscreenButton;
-            }
-
-            // Migrate chat elements to array format
-            if (saved.hideLiveChatHeader !== undefined) {
-                const hidden = [];
-                if (saved.hideLiveChatHeader) hidden.push('header');
-                if (saved.hideChatMenu) hidden.push('menu');
-                if (saved.hidePopoutChatButton) hidden.push('popout');
-                if (saved.hideChatReactionsButton) hidden.push('reactions');
-                if (saved.hideChatTimestampsButton) hidden.push('timestamps');
-                if (saved.hideChatPolls || saved.hideChatPollBanner) hidden.push('polls');
-                if (saved.hideChatTicker) hidden.push('ticker');
-                if (saved.hideViewerLeaderboard) hidden.push('leaderboard');
-                if (saved.hideChatSupportButtons) hidden.push('support');
-                if (saved.hideChatBanner) hidden.push('banner');
-                if (saved.hideChatEmojiButton) hidden.push('emoji');
-                if (saved.hideTopFanIcons) hidden.push('topFan');
-                if (saved.hideSuperChats) hidden.push('superChats');
-                if (saved.hideLevelUp) hidden.push('levelUp');
-                if (saved.hideChatBots) hidden.push('bots');
-                migrated.hiddenChatElements = hidden;
-                migrated.chatKeywordFilter = saved.keywordFilterList || '';
-                // Clean up old keys
-                delete migrated.hideLiveChatHeader; delete migrated.hideChatMenu;
-                delete migrated.hidePopoutChatButton; delete migrated.hideChatReactionsButton;
-                delete migrated.hideChatTimestampsButton; delete migrated.hideChatPolls;
-                delete migrated.hideChatPollBanner; delete migrated.hideChatTicker;
-                delete migrated.hideViewerLeaderboard; delete migrated.hideChatSupportButtons;
-                delete migrated.hideChatBanner; delete migrated.hideChatEmojiButton;
-                delete migrated.hideTopFanIcons; delete migrated.hideSuperChats;
-                delete migrated.hideLevelUp; delete migrated.hideChatBots;
-                delete migrated.keywordFilterList;
-            }
-
-            // Apply other migrations
-            for (const [oldKey, migrateFn] of Object.entries(this._migrationMap)) {
-                if (saved[oldKey] !== undefined) {
-                    migrateFn(saved[oldKey], migrated);
-                    delete migrated[oldKey];
-                }
-            }
-
-            // Remove returnYouTubeDislike completely
-            delete migrated.returnYouTubeDislike;
-            delete migrated.channelPlaybackSpeeds;
-
-            return migrated;
-        },
-
         save(settings) {
-            settings._version = SETTINGS_VERSION;
             StorageManager.set('ytSuiteSettings', settings);
         },
         getFirstRunStatus() {
@@ -2363,7 +1985,7 @@
                 bookmarks: bookmarks,
                 exportVersion: 3,
                 exportDate: new Date().toISOString(),
-                ytkitVersion: '10.0'
+                ytkitVersion: '10.1'
             };
             return JSON.stringify(exportData, null, 2);
         },
@@ -2416,9 +2038,7 @@
         }
     };
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 2: FEATURE DEFINITIONS
-    // ══════════════════════════════════════════════════════════════════════════
     // CSS-only feature factory — eliminates boilerplate for features that just inject/remove a style
     function cssFeature(id, name, description, group, icon, css, extra) {
         const isRaw = css.includes('{');
@@ -2435,6 +2055,90 @@
     // App state - declared before features so feature closures can reference it
     let appState = {};
 
+    // ── Fast Video ID getter (avoids URLSearchParams on every call) ──
+    let _cachedVid = null, _cachedHref = '';
+    function getVideoId() {
+        const h = window.location.href;
+        if (h === _cachedHref) return _cachedVid;
+        _cachedHref = h;
+        const m = window.location.search.match(/[?&]v=([^&#]+)/);
+        _cachedVid = m ? m[1] : null;
+        return _cachedVid;
+    }
+    // Centralized detection: 'live' | 'vod' | 'standard' | 'premiere'
+    // Used by Theater Split to decide what goes in the right panel,
+    // and by other features to skip irrelevant operations.
+    const VideoTypeDetector = {
+        _cache: { videoId: null, type: 'standard' },
+
+        // Primary detection via ytInitialPlayerResponse (most reliable)
+        _fromPlayerResponse() {
+            try {
+                const pr = window.ytInitialPlayerResponse;
+                if (!pr?.videoDetails) return null;
+                const d = pr.videoDetails;
+                const vid = getVideoId();
+                if (d.videoId && d.videoId !== vid) return null; // stale response
+                if (d.isUpcoming) return 'premiere';
+                if (d.isLive) return 'live';
+                if (d.isLiveContent || d.isPostLiveDvr) return 'vod';
+                return 'standard';
+            } catch (e) { return null; }
+        },
+
+        // Fallback: DOM signals
+        _fromDOM() {
+            const video = document.querySelector('video.html5-main-video');
+            const liveBadge = document.querySelector('.ytp-live-badge');
+            const liveBadgeActive = liveBadge && !liveBadge.classList.contains('ytp-live-badge-disabled')
+                && window.getComputedStyle(liveBadge).display !== 'none';
+            const chatFrame = document.querySelector('ytd-live-chat-frame, #chat');
+            const hasChatFrame = chatFrame && !chatFrame.hasAttribute('hidden');
+
+            // Currently live: badge active + infinite duration
+            if (liveBadgeActive) return 'live';
+            if (video && !isFinite(video.duration) && hasChatFrame) return 'live';
+
+            // VOD: has chat frame (replay) but not currently live
+            if (hasChatFrame && video && isFinite(video.duration)) return 'vod';
+
+            // Chat frame present but no video yet — likely live or VOD
+            if (hasChatFrame) return 'vod';
+
+            return 'standard';
+        },
+
+        // Get cached type for current video, refreshing if video changed
+        getType() {
+            const vid = getVideoId();
+            if (vid && vid === this._cache.videoId) return this._cache.type;
+            this.refresh();
+            return this._cache.type;
+        },
+
+        // Force refresh detection
+        refresh() {
+            const vid = getVideoId();
+            const type = this._fromPlayerResponse() || this._fromDOM();
+            this._cache = { videoId: vid, type };
+            DebugManager.log('VideoType', `Detected: ${type} for ${vid}`);
+            return type;
+        },
+
+        // Convenience checks
+        isLive()      { return this.getType() === 'live'; },
+        isVOD()       { return this.getType() === 'vod'; },
+        isStandard()  { return this.getType() === 'standard'; },
+        isPremiere()  { return this.getType() === 'premiere'; },
+        hasChat()     { return this.isLive() || this.isVOD(); },
+        hasComments() { return this.isStandard() || this.isVOD(); },
+
+        // Get the chat element (ytd-live-chat-frame or #chat container)
+        getChatEl() {
+            return document.querySelector('ytd-live-chat-frame#chat, ytd-live-chat-frame, #chat');
+        }
+    };
+
     const features = [
         // ─── Interface ───
         cssFeature('hideCreateButton', 'Hide Create Button', 'Remove the "Create" button from the header toolbar', 'Interface', 'plus-circle',
@@ -2447,15 +2151,21 @@
             description: 'Clicking the YouTube logo goes to your subscriptions feed',
             group: 'Interface',
             icon: 'home',
+            _styleEl: null,
             _relinkLogo() {
                 const logoRenderer = document.querySelector('ytd-topbar-logo-renderer');
                 if (!logoRenderer) return;
                 const link = logoRenderer.querySelector('a#logo');
                 if (link) link.href = '/feed/subscriptions';
             },
-            init() { addNavigateRule('relinkLogoRule', () => this._relinkLogo()); },
+            init() {
+                // Replace the YouTube logo icon with the custom PremiumYTM branding
+                this._styleEl = GM_addStyle(`#country-code{display:none;} #logo-icon{width:98px;content:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 846 174'%3E%3Cg%3E%3Cpath style='fill:%23ff0000' d='M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z'/%3E%3Cpath style='fill:%23ffffff' d='M 99.22,124.03 163.67,86.82 99.22,49.61 Z'/%3E%3Cpath style='fill:%23282828' d='m 358.29,55.1 v 6 c 0,30 -13.3,47.53 -42.39,47.53 h -4.43 v 52.5 H 287.71 V 12.36 H 318 c 27.7,0 40.29,11.71 40.29,42.74 z m -25,2.13 c 0,-21.64 -3.9,-26.78 -17.38,-26.78 h -4.43 v 60.48 h 4.08 c 12.77,0 17.74,-9.22 17.74,-29.26 z m 81.22,-6.56 -1.24,28.2 c -10.11,-2.13 -18.45,-0.53 -22.17,6 v 76.26 H 367.52 V 52.44 h 18.8 L 388.45,76 h 0.89 c 2.48,-17.2 10.46,-25.89 20.75,-25.89 a 22.84,22.84 0 0 1 4.42,0.56 z M 441.64,115 v 5.5 c 0,19.16 1.06,25.72 9.22,25.72 7.8,0 9.58,-6 9.75,-18.44 l 21.1,1.24 c 1.6,23.41 -10.64,33.87 -31.39,33.87 -25.18,0 -32.63,-16.49 -32.63,-46.46 v -19 c 0,-31.57 8.34,-47 33.34,-47 25.18,0 31.57,13.12 31.57,45.93 V 115 Z m 0,-22.35 v 7.8 h 17.91 V 92.7 c 0,-20 -1.42,-25.72 -9,-25.72 -7.58,0 -8.91,5.86 -8.91,25.72 z M 604.45,79 v 82.11 H 580 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8.16,2.48 -10.82,7.09 a 35.59,35.59 0 0 1 0.18,4.43 v 82.11 H 537.24 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8,2.48 -10.64,6.92 v 86.72 H 494.5 V 52.44 h 19.33 L 516,66.28 h 0.35 c 5.5,-10.46 14.37,-16.14 24.83,-16.14 10.29,0 16.14,5.14 18.8,14.37 5.68,-9.4 14.19,-14.37 23.94,-14.37 14.86,0 20.53,10.64 20.53,28.86 z m 12.24,-54.4 c 0,-11.71 4.26,-15.07 13.3,-15.07 9.22,0 13.3,3.9 13.3,15.07 0,12.06 -4.08,15.08 -13.3,15.08 -9.04,-0.01 -13.3,-3.02 -13.3,-15.08 z m 1.42,27.84 h 23.41 v 108.72 h -23.41 z m 103.39,0 v 108.72 h -19.15 l -2.13,-13.3 h -0.53 c -5.5,10.64 -13.48,15.07 -23.41,15.07 -14.54,0 -21.11,-9.22 -21.11,-29.26 V 52.44 h 24.47 v 79.81 c 0,9.58 2,13.48 6.92,13.48 A 12.09,12.09 0 0 0 697,138.81 V 52.44 Z M 845.64,79 v 82.11 H 821.17 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8.16,2.48 -10.82,7.09 A 35.59,35.59 0 0 1 802.9,79 v 82.11 H 778.43 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8,2.48 -10.64,6.92 v 86.72 H 735.69 V 52.44 H 755 l 2.13,13.83 h 0.35 c 5.5,-10.46 14.37,-16.14 24.83,-16.14 10.29,0 16.14,5.14 18.8,14.37 5.68,-9.4 14.19,-14.37 23.94,-14.37 14.95,0.01 20.59,10.65 20.59,28.87 z'/%3E%3C/g%3E%3C/svg%3E") !important;} html[dark] #logo-icon{content:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 846 174'%3E%3Cg%3E%3Cpath style='fill:%23ff0000' d='M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z'/%3E%3Cpath style='fill:%23ffffff' d='M 99.22,124.03 163.67,86.82 99.22,49.61 Z'/%3E%3Cpath style='fill:%23ffffff' d='m 358.29,55.1 v 6 c 0,30 -13.3,47.53 -42.39,47.53 h -4.43 v 52.5 H 287.71 V 12.36 H 318 c 27.7,0 40.29,11.71 40.29,42.74 z m -25,2.13 c 0,-21.64 -3.9,-26.78 -17.38,-26.78 h -4.43 v 60.48 h 4.08 c 12.77,0 17.74,-9.22 17.74,-29.26 z m 81.22,-6.56 -1.24,28.2 c -10.11,-2.13 -18.45,-0.53 -22.17,6 v 76.26 H 367.52 V 52.44 h 18.8 L 388.45,76 h 0.89 c 2.48,-17.2 10.46,-25.89 20.75,-25.89 a 22.84,22.84 0 0 1 4.42,0.56 z M 441.64,115 v 5.5 c 0,19.16 1.06,25.72 9.22,25.72 7.8,0 9.58,-6 9.75,-18.44 l 21.1,1.24 c 1.6,23.41 -10.64,33.87 -31.39,33.87 -25.18,0 -32.63,-16.49 -32.63,-46.46 v -19 c 0,-31.57 8.34,-47 33.34,-47 25.18,0 31.57,13.12 31.57,45.93 V 115 Z m 0,-22.35 v 7.8 h 17.91 V 92.7 c 0,-20 -1.42,-25.72 -9,-25.72 -7.58,0 -8.91,5.86 -8.91,25.72 z M 604.45,79 v 82.11 H 580 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8.16,2.48 -10.82,7.09 a 35.59,35.59 0 0 1 0.18,4.43 v 82.11 H 537.24 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8,2.48 -10.64,6.92 v 86.72 H 494.5 V 52.44 h 19.33 L 516,66.28 h 0.35 c 5.5,-10.46 14.37,-16.14 24.83,-16.14 10.29,0 16.14,5.14 18.8,14.37 5.68,-9.4 14.19,-14.37 23.94,-14.37 14.86,0 20.53,10.64 20.53,28.86 z m 12.24,-54.4 c 0,-11.71 4.26,-15.07 13.3,-15.07 9.22,0 13.3,3.9 13.3,15.07 0,12.06 -4.08,15.08 -13.3,15.08 -9.04,-0.01 -13.3,-3.02 -13.3,-15.08 z m 1.42,27.84 h 23.41 v 108.72 h -23.41 z m 103.39,0 v 108.72 h -19.15 l -2.13,-13.3 h -0.53 c -5.5,10.64 -13.48,15.07 -23.41,15.07 -14.54,0 -21.11,-9.22 -21.11,-29.26 V 52.44 h 24.47 v 79.81 c 0,9.58 2,13.48 6.92,13.48 A 12.09,12.09 0 0 0 697,138.81 V 52.44 Z M 845.64,79 v 82.11 H 821.17 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8.16,2.48 -10.82,7.09 A 35.59,35.59 0 0 1 802.9,79 v 82.11 H 778.43 V 80.82 c 0,-8.87 -2.31,-13.3 -7.63,-13.3 -4.26,0 -8,2.48 -10.64,6.92 v 86.72 H 735.69 V 52.44 H 755 l 2.13,13.83 h 0.35 c 5.5,-10.46 14.37,-16.14 24.83,-16.14 10.29,0 16.14,5.14 18.8,14.37 5.68,-9.4 14.19,-14.37 23.94,-14.37 14.95,0.01 20.59,10.65 20.59,28.87 z'/%3E%3C/g%3E%3C/svg%3E") !important;}`);
+                addNavigateRule('relinkLogoRule', () => this._relinkLogo());
+            },
             destroy() {
                 removeNavigateRule('relinkLogoRule');
+                this._styleEl?.remove(); this._styleEl = null;
                 const logoLink = document.querySelector('ytd-topbar-logo-renderer a#logo');
                 if (logoLink) logoLink.href = '/';
             }
@@ -2471,19 +2181,7 @@
             pages: [PageTypes.SUBSCRIPTIONS],
             _styleElement: null,
             init() {
-                const css = `
-                    ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer {
-                        display: grid !important;
-                        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-                        gap: 8px;
-                        width: 99%;
-                    }
-                    ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer.ytd-rich-grid-renderer {
-                        width: 100% !important;
-                        margin: 0 !important;
-                        margin-left: 2px !important;
-                    }
-                `;
+                const css = `ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px;width:99%;} ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer.ytd-rich-grid-renderer{width:100% !important;margin:0 !important;margin-left:2px !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
@@ -2497,60 +2195,7 @@
             pages: [PageTypes.HOME],
             _styleElement: null,
             init() {
-                const css = `
-                    /* Flatten YouTube's row wrappers into a single CSS grid */
-                    ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer {
-                        display: grid !important;
-                        grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)) !important;
-                        gap: 16px !important;
-                    }
-                    /* Make row wrappers transparent to grid layout */
-                    ytd-browse[page-subtype="home"] ytd-rich-grid-row,
-                    ytd-browse[page-subtype="home"] ytd-rich-grid-row > #contents {
-                        display: contents !important;
-                    }
-                    /* Uniform item sizing */
-                    ytd-browse[page-subtype="home"] ytd-rich-item-renderer {
-                        width: 100% !important;
-                        margin: 0 !important;
-                    }
-                    /* Hidden videos must collapse completely — no blank grid cells */
-                    ytd-browse[page-subtype="home"] ytd-rich-item-renderer.ytkit-video-hidden {
-                        display: none !important;
-                        width: 0 !important;
-                        height: 0 !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        overflow: hidden !important;
-                    }
-                    /* Lock metadata height to prevent row variance */
-                    ytd-browse[page-subtype="home"] ytd-rich-item-renderer #details.ytd-rich-grid-media {
-                        min-height: 68px !important;
-                        max-height: 68px !important;
-                        overflow: hidden !important;
-                    }
-                    ytd-browse[page-subtype="home"] ytd-rich-item-renderer #video-title.ytd-rich-grid-media {
-                        display: -webkit-box !important;
-                        -webkit-line-clamp: 2 !important;
-                        -webkit-box-orient: vertical !important;
-                        overflow: hidden !important;
-                        max-height: 4.4rem !important;
-                    }
-                    ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line.ytd-video-meta-block {
-                        white-space: nowrap !important;
-                        overflow: hidden !important;
-                        text-overflow: ellipsis !important;
-                    }
-                    ytd-browse[page-subtype="home"] ytd-rich-item-renderer ytd-thumbnail {
-                        aspect-ratio: 16/9 !important;
-                        overflow: hidden !important;
-                    }
-                    /* Shelves/sections span full width */
-                    ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-section-renderer,
-                    ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer {
-                        grid-column: 1 / -1 !important;
-                    }
-                `;
+                const css = `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(310px,1fr)) !important;gap:16px !important;} ytd-browse[page-subtype="home"] ytd-rich-grid-row,ytd-browse[page-subtype="home"] ytd-rich-grid-row > #contents{display:contents !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer{width:100% !important;margin:0 !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer.ytkit-video-hidden{display:none !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #details.ytd-rich-grid-media{min-height:68px !important;max-height:68px !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #video-title.ytd-rich-grid-media{display:-webkit-box !important;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;max-height:4.4rem !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line.ytd-video-meta-block{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer ytd-thumbnail{aspect-ratio:16/9 !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-section-renderer,ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer{grid-column:1 / -1 !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
@@ -2564,71 +2209,7 @@
             pages: [PageTypes.HOME],
             _styleElement: null,
             init() {
-                const css = `
-                    /* Chip bar container */
-                    ytd-feed-filter-chip-bar-renderer #chips-wrapper {
-                        background: transparent !important;
-                    }
-                    ytd-feed-filter-chip-bar-renderer #scroll-container {
-                        padding: 4px 0 !important;
-                    }
-                    /* Arrow buttons */
-                    ytd-feed-filter-chip-bar-renderer #left-arrow,
-                    ytd-feed-filter-chip-bar-renderer #right-arrow {
-                        background: linear-gradient(to right, var(--yt-spec-base-background, #0f0f0f) 70%, transparent) !important;
-                    }
-                    ytd-feed-filter-chip-bar-renderer #right-arrow {
-                        background: linear-gradient(to left, var(--yt-spec-base-background, #0f0f0f) 70%, transparent) !important;
-                    }
-                    /* All chips — uniform sizing */
-                    yt-chip-cloud-chip-renderer .ytChipShapeChip {
-                        min-width: 72px !important;
-                        height: 32px !important;
-                        padding: 0 14px !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        border: 1px solid rgba(255,255,255,0.1) !important;
-                        border-radius: 8px !important;
-                        transition: all 0.2s ease !important;
-                        backdrop-filter: blur(8px) !important;
-                        -webkit-backdrop-filter: blur(8px) !important;
-                    }
-                    /* Inactive chips */
-                    yt-chip-cloud-chip-renderer .ytChipShapeInactive {
-                        background: rgba(255,255,255,0.06) !important;
-                        color: rgba(255,255,255,0.7) !important;
-                    }
-                    yt-chip-cloud-chip-renderer .ytChipShapeInactive:hover {
-                        background: rgba(255,255,255,0.12) !important;
-                        border-color: rgba(255,255,255,0.2) !important;
-                        color: #fff !important;
-                        transform: translateY(-1px) !important;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
-                    }
-                    /* Active/selected chip */
-                    yt-chip-cloud-chip-renderer .ytChipShapeActive {
-                        background: rgba(255,255,255,0.95) !important;
-                        color: #0f0f0f !important;
-                        border-color: transparent !important;
-                        font-weight: 600 !important;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.25) !important;
-                    }
-                    /* Chip text uniform style */
-                    yt-chip-cloud-chip-renderer .ytChipShapeTextContent {
-                        font-size: 13px !important;
-                        line-height: 1 !important;
-                        white-space: nowrap !important;
-                        letter-spacing: 0.2px !important;
-                    }
-                    /* Uniform spacing between chips */
-                    iron-selector#chips yt-chip-cloud-chip-renderer {
-                        margin: 0 4px !important;
-                    }
-                    iron-selector#chips yt-chip-cloud-chip-renderer:first-child {
-                        margin-left: 0 !important;
-                    }
-                `;
+                const css = `ytd-feed-filter-chip-bar-renderer #chips-wrapper{background:transparent !important;} ytd-feed-filter-chip-bar-renderer #scroll-container{padding:4px 0 !important;} ytd-feed-filter-chip-bar-renderer #left-arrow,ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to right,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to left,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} yt-chip-cloud-chip-renderer .ytChipShapeChip{min-width:72px !important;height:32px !important;padding:0 14px !important;display:flex !important;align-items:center !important;justify-content:center !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:8px !important;transition:all 0.2s ease !important;backdrop-filter:blur(8px) !important;-webkit-backdrop-filter:blur(8px) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive{background:rgba(255,255,255,0.06) !important;color:rgba(255,255,255,0.7) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive:hover{background:rgba(255,255,255,0.12) !important;border-color:rgba(255,255,255,0.2) !important;color:#fff !important;transform:translateY(-1px) !important;box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;} yt-chip-cloud-chip-renderer .ytChipShapeActive{background:rgba(255,255,255,0.95) !important;color:#0f0f0f !important;border-color:transparent !important;font-weight:600 !important;box-shadow:0 2px 6px rgba(0,0,0,0.25) !important;} yt-chip-cloud-chip-renderer .ytChipShapeTextContent{font-size:13px !important;line-height:1 !important;white-space:nowrap !important;letter-spacing:0.2px !important;} iron-selector#chips yt-chip-cloud-chip-renderer{margin:0 4px !important;} iron-selector#chips yt-chip-cloud-chip-renderer:first-child{margin-left:0 !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); }
@@ -2650,118 +2231,35 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
-        // squareSearchBar removed — consolidated into uiStyleManager 'square' mode
 
         // ─── Appearance ───
         {
-            // ═══ Consolidated Theme Feature ═══
             id: 'themeManager',
             name: 'Theme',
-            description: 'Choose your preferred color theme',
+            description: 'Dark mode theme',
             group: 'Appearance',
             icon: 'moon',
-            type: 'select',
-            options: {
-                'system': 'System Default',
-                'dark': 'Dark',
-                'betterDark': 'Enhanced Dark',
-                'catppuccin': 'Catppuccin Mocha'
-            },
-            settingKey: 'theme',
             _styleElement: null,
             _ruleId: 'themeManagerRule',
 
             init() {
-                const theme = appState.settings.theme || 'betterDark';
-                this._applyTheme(theme);
-                addMutationRule(this._ruleId, () => this._applyTheme(theme));
+                this._applyTheme();
+                addMutationRule(this._ruleId, () => this._applyTheme());
             },
 
-            _applyTheme(theme) {
-                // Remove existing theme styles
-                document.getElementById('ytkit-theme-style')?.remove();
-
-                // Always force dark mode for non-system themes
-                if (theme !== 'system') {
-                    document.documentElement.setAttribute('dark', '');
-                }
-
-                // Apply specific theme CSS
-                if (theme === 'betterDark') {
-                    const customCss = GM_getResourceText('betterDarkMode');
-                    if (customCss) {
-                        const style = document.createElement('style');
-                        style.id = 'ytkit-theme-style';
-                        style.textContent = customCss;
-                        document.head.appendChild(style);
-                        this._styleElement = style;
-                    }
-                } else if (theme === 'catppuccin') {
-                    const customCss = GM_getResourceText('catppuccinMocha');
-                    if (customCss) {
-                        const style = document.createElement('style');
-                        style.id = 'ytkit-theme-style';
-                        style.textContent = customCss;
-                        document.head.appendChild(style);
-                        this._styleElement = style;
-                    }
-                }
-                // Apply custom accent color
-                const accent = appState.settings.themeAccentColor;
-                if (accent && /^#[0-9a-f]{3,8}$/i.test(accent)) {
-                    document.getElementById('ytkit-accent-style')?.remove();
-                    const accentStyle = document.createElement('style');
-                    accentStyle.id = 'ytkit-accent-style';
-                    accentStyle.textContent = `
-                        :root {
-                            --ytkit-accent: ${accent} !important;
-                        }
-                        ytd-toggle-button-renderer.style-default-active[is-icon-button] yt-icon,
-                        .yt-spec-button-shape-next--filled[aria-pressed="true"],
-                        .ytp-swatch-background-color,
-                        .ytp-play-progress,
-                        yt-chip-cloud-chip-renderer[selected],
-                        ytd-mini-guide-entry-renderer[active] .guide-icon,
-                        #progress.ytd-thumbnail-overlay-resume-playback-renderer {
-                            color: ${accent} !important;
-                            background-color: ${accent} !important;
-                        }
-                        a:hover, a:focus { color: ${accent} !important; }
-                        .ytp-play-progress { background: ${accent} !important; }
-                    `;
-                    document.head.appendChild(accentStyle);
-                }
+            _applyTheme() {
+                // Force dark mode
+                document.documentElement.setAttribute('dark', '');
             },
 
             destroy() {
                 document.documentElement.removeAttribute('dark');
                 this._styleElement?.remove();
                 document.getElementById('ytkit-theme-style')?.remove();
-                document.getElementById('ytkit-accent-style')?.remove();
                 removeMutationRule(this._ruleId);
             }
         },
         {
-            id: 'themeAccentColor',
-            name: 'Accent Color',
-            description: 'Custom accent color for highlights, progress bar, and active elements',
-            group: 'Appearance',
-            icon: 'palette',
-            isSubFeature: true,
-            parentId: 'themeManager',
-            type: 'color',
-            settingKey: 'themeAccentColor',
-            init() {
-                const accent = appState.settings.themeAccentColor;
-                if (accent && /^#[0-9a-fA-F]{6}$/.test(accent)) {
-                    const themeFeature = features.find(f => f.id === 'themeManager');
-                    if (themeFeature) { themeFeature.destroy?.(); themeFeature.init?.(); }
-                }
-            },
-            destroy() {}
-        },
-        {
-            // ═══ Consolidated UI Style Feature ═══
             id: 'uiStyleManager',
             name: 'UI Style',
             description: 'Choose rounded or square UI elements',
@@ -2769,8 +2267,8 @@
             icon: 'square',
             type: 'select',
             options: {
-                'rounded': 'Rounded (Default)',
-                'square': 'Square'
+                'rounded': 'Rounded',
+                'square': 'Square (Default)'
             },
             settingKey: 'uiStyle',
             _styleElement: null,
@@ -2779,10 +2277,10 @@
                 const style = appState.settings.uiStyle || 'rounded';
                 if (style === 'square') {
                     const css = `
-                        * { border-radius: 0 !important; }
-                        yt-img-shadow, #avatar-link, #author-thumbnail,
-                        ytd-channel-avatar-editor img, yt-img-shadow img,
-                        .yt-spec-avatar-shape--circle { border-radius: 0 !important; }
+                        /* Nuclear squarify — broad selector with surgical exclusions */
+                        *:not(.ytp-spinner-circle):not(.ytp-spinner-dot):not(.ytp-ce-covering-overlay):not(svg):not(circle):not(path):not(use) {
+                            border-radius: 0 !important;
+                        }
                     `;
                     this._styleElement = injectStyle(css, this.id, true);
                 }
@@ -2794,20 +2292,106 @@
             `#cinematics, #cinematics-container,
                     .ytp-autonav-endscreen-upnext-cinematics,
                     #player-container.ytd-watch-flexy::before { display: none !important; }`),
-        cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Appearance', 'droplet-off',
-            `* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
         cssFeature('compactLayout', 'Compact Layout', 'Reduce spacing and padding for a denser interface', 'Appearance', 'minimize',
             `ytd-rich-grid-renderer { --ytd-rich-grid-row-padding: 0 !important; }
                     ytd-rich-item-renderer { margin-bottom: 8px !important; }
                     #contents.ytd-rich-grid-renderer { padding-top: 8px !important; }
                     ytd-two-column-browse-results-renderer { padding: 8px !important; }
-                    ytd-watch-flexy[flexy] #primary.ytd-watch-flexy { padding-top: 0 !important; }`),
+                    ytd-watch-flexy[flexy] #primary.ytd-watch-flexy { padding-top: 12px !important; }`),
         cssFeature('thinScrollbar', 'Thin Scrollbar', 'Use a slim, unobtrusive scrollbar', 'Appearance', 'grip-vertical',
             `*::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
                     *::-webkit-scrollbar-track { background: transparent !important; }
                     *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2) !important; border-radius: 10px !important; }
                     *::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35) !important; }
                     * { scrollbar-width: thin !important; scrollbar-color: rgba(255,255,255,0.2) transparent !important; }`),
+        {
+            id: 'watchPageRestyle',
+            name: 'Watch Page Restyle',
+            description: 'Polished layout for video title, description, and metadata with glassmorphism accents',
+            group: 'Appearance',
+            icon: 'layout',
+            _styleElement: null,
+            init() {
+                if (!window.location.pathname.startsWith('/watch')) return;
+                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing:-0.025em !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#yt-suite-watch-logo{display:none !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(167,139,250,0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius:14px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}button[id^="downloadBtn"]{height:30px !important;min-height:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}button[id^="downloadBtn"]:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}.ytkit-vlc-btn:hover,.ytkit-local-dl-btn:hover,.ytkit-mp3-dl-btn:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn svg,.ytkit-local-dl-btn svg,.ytkit-mp3-dl-btn svg{width:14px !important;height:14px !important}.ytkit-vlc-btn svg path,.ytkit-local-dl-btn svg path,.ytkit-mp3-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}.ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}.ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(167,139,250,0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(167,139,250,0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(167,139,250,0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}dislike-button-view-model{display:none !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing:-0.01em !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer #comments-panel-button,ytd-comments-header-renderer #leading-section,ytd-comments-header-renderer #title{display:none !important}ytd-comments-header-renderer #additional-section{display:none !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(167,139,250,0.25) !important}ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}`;
+                this._styleElement = injectStyle(css, this.id, true);
+            },
+            destroy() { this._styleElement?.remove(); }
+        },
+        {
+            id: 'chatStyleComments',
+            name: 'Refined Comments',
+            description: 'Polished card-based comment layout with avatars and clean thread lines',
+            group: 'Appearance',
+            icon: 'message-square',
+            _styleElement: null,
+            _observer: null,
+            init() {
+                if (!window.location.pathname.startsWith('/watch')) return;
+                const css = `ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:10px 4px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(167,139,250,0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:#a78bfa !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:#c4b5fd !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(167,139,250,0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(167,139,250,0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:#c4b5fd !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar{display:block !important;margin:4px 0 0 !important;padding:0 !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:relative !important;align-items:center !important;gap:4px !important;margin-top:4px !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(167,139,250,0.6) !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}#reply-dialog ytd-commentbox:not([hidden]),ytd-comment-engagement-bar ytd-comment-reply-dialog-renderer:not([hidden]){padding:0 !important;margin:0 !important;width:100% !important}#reply-dialog ytd-commentbox #creation-box,#reply-dialog ytd-commentbox #commentbox-background,#reply-dialog ytd-commentbox #main,#reply-dialog ytd-commentbox #header,#reply-dialog ytd-commentbox #container,#reply-dialog ytd-commentbox #commentbox{width:100% !important}#reply-dialog #contenteditable-textarea,#reply-dialog #contenteditable-root,#reply-dialog yt-formatted-string[contenteditable],#reply-dialog [contenteditable="true"],ytd-comment-engagement-bar ytd-commentbox #contenteditable-textarea,ytd-comment-engagement-bar ytd-commentbox yt-formatted-string[contenteditable]{font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(167,139,250,0.2) !important;border-radius:8px !important;min-height:60px !important;height:auto !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s !important}#reply-dialog #contenteditable-textarea:focus,#reply-dialog #contenteditable-root:focus,#reply-dialog yt-formatted-string[contenteditable]:focus,#reply-dialog [contenteditable="true"]:focus{border-color:rgba(167,139,250,0.45) !important;background:rgba(255,255,255,0.06) !important}#reply-dialog #placeholder-area,#reply-dialog #contenteditable-textarea[aria-label]:empty::before{font-size:13px !important;color:rgba(255,255,255,0.25) !important}#reply-dialog #author-thumbnail,ytd-comment-engagement-bar ytd-commentbox #author-thumbnail{display:none !important}#reply-dialog #emoji-picker-button,#reply-dialog yt-emoji-picker-renderer{display:none !important}#reply-dialog #footer,#reply-dialog ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;justify-content:flex-end !important}#reply-dialog #footer .yt-spec-button-shape-next,#reply-dialog #footer button,#reply-dialog #cancel-button .yt-spec-button-shape-next,#reply-dialog #submit-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 14px !important;min-height:unset !important;border-radius:6px !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(167,139,250,0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(167,139,250,0.3) !important;background:rgba(167,139,250,0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.12) !important;color:rgba(167,139,250,0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.35) !important;min-height:unset !important;background:rgba(167,139,250,0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}`;
+                this._styleElement = injectStyle(css, this.id, true);
+
+                const thumbSVG = '<svg viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z"/></svg>';
+
+                const processComment = (comment) => {
+                    if (comment.dataset.ytkitChat) return;
+                    comment.dataset.ytkitChat = '1';
+
+                    const authorText = comment.querySelector('#author-text');
+                    if (!authorText) return;
+
+                    const voteEl = comment.querySelector('#vote-count-middle');
+                    const voteText = voteEl?.textContent?.trim() || '';
+
+                    const badge = document.createElement('span');
+                    badge.className = 'ytkit-vote-badge';
+                    const html = thumbSVG + '<span>' + (voteText && voteText !== '0' ? voteText : '') + '</span>';
+                    TrustedHTML.setHTML(badge, html);
+                    badge.title = 'Like';
+                    badge.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const likeBtn = comment.querySelector('#like-button button, #like-button yt-button-shape button');
+                        if (likeBtn) {
+                            likeBtn.click();
+                            badge.classList.toggle('ytkit-liked');
+                        }
+                    });
+                    authorText.after(badge);
+
+                    // Check if already liked
+                    const likeBtn = comment.querySelector('#like-button button[aria-pressed="true"]');
+                    if (likeBtn) badge.classList.add('ytkit-liked');
+                };
+
+                const processAll = () => {
+                    document.querySelectorAll('ytd-comment-view-model:not([data-ytkit-chat]), ytd-comment-renderer:not([data-ytkit-chat])').forEach(processComment);
+                    // Toggle .ytkit-replying on comments with active reply dialogs
+                    document.querySelectorAll('ytd-comment-view-model.ytkit-replying, ytd-comment-renderer.ytkit-replying').forEach(c => {
+                        if (!c.querySelector('ytd-comment-reply-dialog-renderer, #reply-dialog ytd-commentbox')) c.classList.remove('ytkit-replying');
+                    });
+                    document.querySelectorAll('ytd-comment-reply-dialog-renderer, #reply-dialog ytd-commentbox').forEach(d => {
+                        const comment = d.closest('ytd-comment-view-model, ytd-comment-renderer');
+                        if (comment) comment.classList.add('ytkit-replying');
+                    });
+
+                    // Auto-cleanup: when reply dialog children are removed by YouTube,
+                    // remove the .ytkit-replying class
+
+                };
+
+                processAll();
+                this._observer = new MutationObserver(() => processAll());
+                const target = document.querySelector('ytd-app') || document.body;
+                this._observer.observe(target, { childList: true, subtree: true });
+            },
+            destroy() {
+                this._styleElement?.remove(); this._styleElement = null;
+                this._observer?.disconnect(); this._observer = null;
+                document.querySelectorAll('.ytkit-vote-badge').forEach(el => el.remove());
+                document.querySelectorAll('[data-ytkit-chat]').forEach(el => delete el.dataset.ytkitChat);
+                document.querySelectorAll('.ytkit-replying').forEach(el => el.classList.remove('ytkit-replying'));
+            }
+        },
 
         // ─── Content ───
         {
@@ -2832,12 +2416,6 @@
                     }
                 };
 
-                const processNode = (node) => {
-                    if (node.nodeType !== 1) return;
-                    if (node.matches?.('a[href^="/shorts"]')) hideShort(node);
-                    node.querySelectorAll?.('a[href^="/shorts"]').forEach(hideShort);
-                };
-
                 const scanPage = () => {
                     if (isExemptPage()) {
                         // Restore any previously hidden shorts when navigating to exempt pages
@@ -2853,8 +2431,9 @@
                 // Initial scan
                 scanPage();
 
-                // Use shared observer for new content
+                // Use shared observer for new content (skip on watch pages — no shorts there)
                 addMutationRule(this.id, () => {
+                    if (window.location.pathname.startsWith('/watch')) return;
                     if (!isExemptPage()) {
                         document.querySelectorAll('a[href^="/shorts"]').forEach(hideShort);
                     }
@@ -2952,17 +2531,7 @@
                     .YtmPaidContentOverlayHost, .ytmPaidContentOverlayHost,
                     .ytp-paid-content-overlay, .ytp-paid-content-overlay-link`),
         cssFeature('hideInfoPanels', 'Hide Info Panels', 'Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)', 'Content', 'info-off',
-            `#clarify-box,
-                    #clarify-box.attached-message,
-                    ytd-info-panel-container-renderer,
-                    ytd-info-panel-content-renderer,
-                    ytd-watch-flexy #clarify-box,
-                    ytd-watch-flexy ytd-info-panel-container-renderer,
-                    ytd-clarification-renderer,
-                    .ytd-info-panel-container-renderer,
-                    .ytp-info-panel-preview {
-                        display: none !important;
-                    }`),
+            `#clarify-box,#clarify-box.attached-message,ytd-info-panel-container-renderer,ytd-info-panel-content-renderer,ytd-watch-flexy #clarify-box,ytd-watch-flexy ytd-info-panel-container-renderer,ytd-clarification-renderer,.ytd-info-panel-container-renderer,.ytp-info-panel-preview{display:none !important;}`),
         {
             id: 'redirectToVideosTab',
             name: 'Channels → Videos Tab',
@@ -3006,16 +2575,6 @@
         cssFeature('hidePlaylistsHome', 'Hide Playlist Shelves', 'Hide playlist sections from the homepage', 'Content', 'list-x',
             `ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-playlist]),
                     ytd-rich-section-renderer:has([is-mixes]) { display: none !important; }`),
-        cssFeature('displayFullTitles', 'Display Full Titles', 'Stop truncating video titles on thumbnails — show the complete title', 'Content', 'text',
-            `#video-title.ytd-rich-grid-media,
-                    #video-title-link yt-formatted-string#video-title,
-                    h3.ytd-rich-grid-media,
-                    #video-title.ytd-compact-video-renderer {
-                        -webkit-line-clamp: unset !important;
-                        max-height: none !important;
-                        overflow: visible !important;
-                    }`),
-        // ═══ Watch Page Elements Hiding ═══
         {
             id: 'hiddenWatchElementsManager',
             name: 'Hide Watch Page Elements',
@@ -3027,16 +2586,7 @@
             _ruleId: 'watchElementsHider',
             // CSS selectors for elements that can be hidden with pure CSS
             _cssSelectors: {
-                title: 'ytd-watch-metadata #title',
-                views: 'ytd-watch-info-text #view-count',
-                date: 'ytd-watch-info-text #date-text',
-                channelAvatar: 'ytd-video-owner-renderer #avatar',
-                channelName: 'ytd-video-owner-renderer #channel-name',
-                subCount: 'ytd-video-owner-renderer #owner-sub-count',
                 joinButton: 'ytd-video-owner-renderer #sponsor-button',
-                subscribeButton: 'ytd-watch-metadata #subscribe-button',
-                likeDislike: 'segmented-like-dislike-button-view-model',
-                description: 'ytd-watch-metadata #description',
                 askAISection: 'yt-video-description-youchat-section-view-model',
                 podcastSection: 'ytd-video-description-course-section-renderer',
                 transcriptSection: 'ytd-video-description-transcript-section-renderer',
@@ -3044,7 +2594,6 @@
             },
             // Button aria-labels for JS-based hiding (find parent yt-button-view-model)
             _buttonAriaLabels: {
-                shareButton: 'Share',
                 askButton: 'Ask',
                 saveButton: 'Save to playlist',
                 moreActions: 'More actions'
@@ -3092,7 +2641,10 @@
                     this._hideButtons();
 
                     // Add mutation rule to catch dynamically loaded content
-                    addMutationRule(this._ruleId, () => this._hideButtons());
+                    addMutationRule(this._ruleId, () => {
+                        if (!window.location.pathname.startsWith('/watch')) return;
+                        this._hideButtons();
+                    });
                 }
             },
             destroy() {
@@ -3108,795 +2660,9 @@
                 });
             }
         },
-        { id: 'wpHide_title', name: 'Video Title', description: 'Hide the video title', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'title', init(){}, destroy(){} },
-        { id: 'wpHide_views', name: 'View Count', description: 'Hide the view count', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'views', init(){}, destroy(){} },
-        { id: 'wpHide_date', name: 'Upload Date', description: 'Hide the upload date', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'date', init(){}, destroy(){} },
-        { id: 'wpHide_channelAvatar', name: 'Channel Avatar', description: 'Hide the channel avatar', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'channelAvatar', init(){}, destroy(){} },
-        { id: 'wpHide_channelName', name: 'Channel Name', description: 'Hide the channel name', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'channelName', init(){}, destroy(){} },
-        { id: 'wpHide_subCount', name: 'Subscriber Count', description: 'Hide subscriber count', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'subCount', init(){}, destroy(){} },
-        { id: 'wpHide_joinButton', name: 'Join Button', description: 'Hide join/membership button', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'joinButton', init(){}, destroy(){} },
-        { id: 'wpHide_subscribeButton', name: 'Subscribe Button', description: 'Hide subscribe button', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'subscribeButton', init(){}, destroy(){} },
-        { id: 'wpHide_likeDislike', name: 'Like/Dislike Buttons', description: 'Hide like/dislike buttons', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'likeDislike', init(){}, destroy(){} },
-        { id: 'wpHide_shareButton', name: 'Share Button', description: 'Hide share button on watch page', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'shareButton', init(){}, destroy(){} },
-        { id: 'wpHide_askButton', name: 'Ask Button', description: 'Hide Ask AI button', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'askButton', init(){}, destroy(){} },
-        { id: 'wpHide_saveButton', name: 'Save Button', description: 'Hide save to playlist button', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'saveButton', init(){}, destroy(){} },
-        { id: 'wpHide_moreActions', name: 'More Actions (...)', description: 'Hide more actions menu button', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'moreActions', init(){}, destroy(){} },
-        { id: 'wpHide_description', name: 'Description Box', description: 'Hide the video description', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'description', init(){}, destroy(){} },
-        { id: 'wpHide_askAISection', name: 'Ask AI Section', description: 'Hide AI section in description', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'askAISection', init(){}, destroy(){} },
-        { id: 'wpHide_podcastSection', name: 'Podcast/Course Section', description: 'Hide podcast/course section in description', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'podcastSection', init(){}, destroy(){} },
-        { id: 'wpHide_transcriptSection', name: 'Transcript Section', description: 'Hide transcript section in description', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'transcriptSection', init(){}, destroy(){} },
-        { id: 'wpHide_channelInfoCards', name: 'Channel Info Cards', description: 'Hide channel info cards in description', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenWatchElementsManager', _arrayKey: 'hiddenWatchElements', _arrayValue: 'channelInfoCards', init(){}, destroy(){} },
-        {
-            id: 'hideVideosFromHome',
-            name: 'Video Hider',
-            description: 'Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking.',
-            group: 'Video Hider',
-            icon: 'eye-off',
-            isParent: true,
-            _styleElement: null,
-            _observer: null,
-            _toastTimeout: null,
-            _lastHidden: null,
-            _STORAGE_KEY: 'ytkit-hidden-videos',
-            _CHANNELS_KEY: 'ytkit-blocked-channels',
-            _subsLoadState: {
-                consecutiveHiddenBatches: 0,
-                lastBatchSize: 0,
-                lastBatchHidden: 0,
-                loadingBlocked: false,
-                totalVideosLoaded: 0,
-                totalVideosHidden: 0
-            },
-
-            _resetSubsLoadState() {
-                this._subsLoadState = {
-                    consecutiveHiddenBatches: 0,
-                    lastBatchSize: 0,
-                    lastBatchHidden: 0,
-                    loadingBlocked: false,
-                    totalVideosLoaded: 0,
-                    totalVideosHidden: 0
-                };
-                this._removeLoadBlocker();
-            },
-
-            _blockSubsLoading() {
-                if (this._subsLoadState.loadingBlocked) return;
-                this._subsLoadState.loadingBlocked = true;
-
-                // Clear any pending batch processing
-                if (this._clearBatchBuffer) this._clearBatchBuffer();
-
-                // Hide the continuation spinner/trigger to prevent more loading
-                const continuations = document.querySelectorAll('ytd-continuation-item-renderer, #continuations, ytd-browse[page-subtype="subscriptions"] ytd-continuation-item-renderer');
-                continuations.forEach(cont => {
-                    if (!(cont instanceof HTMLElement)) return;
-                    cont.style.display = 'none';
-                    cont.dataset.ytkitBlocked = 'true';
-                });
-
-                // Create info banner
-                this._showLoadBlockedBanner();
-                DebugManager.log('VideoHider', 'Subscription loading blocked - too many consecutive hidden batches');
-            },
-
-            _removeLoadBlocker() {
-                this._subsLoadState.loadingBlocked = false;
-                // Restore continuation elements
-                document.querySelectorAll('[data-ytkit-blocked="true"]').forEach(el => {
-                    if (!(el instanceof HTMLElement)) return;
-                    el.style.display = '';
-                    delete el.dataset.ytkitBlocked;
-                });
-                // Remove banner
-                document.getElementById('ytkit-subs-load-banner')?.remove();
-            },
-
-            _showLoadBlockedBanner() {
-                if (document.getElementById('ytkit-subs-load-banner')) return;
-
-                const banner = document.createElement('div');
-                banner.id = 'ytkit-subs-load-banner';
-                banner.style.cssText = `
-                    position: fixed;
-                    bottom: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-                    border: 1px solid #334155;
-                    border-radius: 12px;
-                    padding: 16px 24px;
-                    display: flex;
-                    align-items: center;
-                    gap: 16px;
-                    z-index: 99999;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-                    font-family: "Roboto", Arial, sans-serif;
-                    max-width: 600px;
-                `;
-
-                const icon = document.createElement('div');
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                svg.setAttribute('fill', 'none');
-                svg.setAttribute('stroke', '#f59e0b');
-                svg.setAttribute('stroke-width', '2');
-                svg.setAttribute('stroke-linecap', 'round');
-                svg.setAttribute('stroke-linejoin', 'round');
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', '12');
-                circle.setAttribute('cy', '12');
-                circle.setAttribute('r', '10');
-                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line1.setAttribute('x1', '12');
-                line1.setAttribute('y1', '8');
-                line1.setAttribute('x2', '12');
-                line1.setAttribute('y2', '12');
-                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line2.setAttribute('x1', '12');
-                line2.setAttribute('y1', '16');
-                line2.setAttribute('x2', '12.01');
-                line2.setAttribute('y2', '16');
-                svg.appendChild(circle);
-                svg.appendChild(line1);
-                svg.appendChild(line2);
-                icon.appendChild(svg);
-
-                const textContainer = document.createElement('div');
-                textContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 4px;';
-
-                const title = document.createElement('div');
-                title.style.cssText = 'color: #f1f5f9; font-size: 14px; font-weight: 600;';
-                title.textContent = 'Infinite scroll stopped';
-
-                const subtitle = document.createElement('div');
-                subtitle.style.cssText = 'color: #94a3b8; font-size: 12px;';
-                subtitle.textContent = `${this._subsLoadState.totalVideosHidden} of ${this._subsLoadState.totalVideosLoaded} videos were hidden. Stopped loading to prevent performance issues.`;
-
-                textContainer.appendChild(title);
-                textContainer.appendChild(subtitle);
-
-                const buttonContainer = document.createElement('div');
-                buttonContainer.style.cssText = 'display: flex; gap: 8px;';
-
-                const resumeBtn = document.createElement('button');
-                resumeBtn.textContent = 'Load More';
-                resumeBtn.style.cssText = `
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    border: none;
-                    background: #3b82f6;
-                    color: white;
-                    font-size: 13px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                `;
-                resumeBtn.onmouseenter = () => { resumeBtn.style.background = '#2563eb'; };
-                resumeBtn.onmouseleave = () => { resumeBtn.style.background = '#3b82f6'; };
-                resumeBtn.onclick = () => {
-                    this._subsLoadState.consecutiveHiddenBatches = 0;
-                    this._removeLoadBlocker();
-                    // Scroll slightly to trigger reload
-                    window.scrollBy(0, 100);
-                    setTimeout(() => window.scrollBy(0, -100), 100);
-                };
-
-                const dismissBtn = document.createElement('button');
-                dismissBtn.textContent = '✕';
-                dismissBtn.title = 'Dismiss';
-                dismissBtn.style.cssText = `
-                    padding: 8px 12px;
-                    border-radius: 8px;
-                    border: 1px solid #334155;
-                    background: transparent;
-                    color: #94a3b8;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                `;
-                dismissBtn.onmouseenter = () => { dismissBtn.style.background = '#1e293b'; dismissBtn.style.color = '#f1f5f9'; };
-                dismissBtn.onmouseleave = () => { dismissBtn.style.background = 'transparent'; dismissBtn.style.color = '#94a3b8'; };
-                dismissBtn.onclick = () => banner.remove();
-
-                buttonContainer.appendChild(resumeBtn);
-                buttonContainer.appendChild(dismissBtn);
-
-                banner.appendChild(icon);
-                banner.appendChild(textContainer);
-                banner.appendChild(buttonContainer);
-                document.body.appendChild(banner);
-            },
-
-            _trackSubsLoadBatch(processedVideos) {
-                if (window.location.pathname !== '/feed/subscriptions') return;
-                if (!appState.settings.hideVideosSubsLoadLimit) return;
-                if (this._subsLoadState.loadingBlocked) return;
-
-                const hiddenCount = processedVideos.filter(v => v.hidden).length;
-                const batchSize = processedVideos.length;
-
-                if (batchSize === 0) return;
-
-                this._subsLoadState.totalVideosLoaded += batchSize;
-                this._subsLoadState.totalVideosHidden += hiddenCount;
-                this._subsLoadState.lastBatchSize = batchSize;
-                this._subsLoadState.lastBatchHidden = hiddenCount;
-
-                // Check if ALL videos in this batch were hidden
-                const allHidden = hiddenCount === batchSize;
-                const threshold = appState.settings.hideVideosSubsLoadThreshold || 3;
-
-                if (allHidden) {
-                    this._subsLoadState.consecutiveHiddenBatches++;
-                    DebugManager.log('VideoHider', `Subs load: batch ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} all hidden (${hiddenCount}/${batchSize})`);
-
-                    if (this._subsLoadState.consecutiveHiddenBatches >= threshold) {
-                        this._blockSubsLoading();
-                    }
-                } else {
-                    // Reset counter if we found some visible videos
-                    this._subsLoadState.consecutiveHiddenBatches = 0;
-                }
-            },
-
-            _getHiddenVideos() {
-                try { return GM_getValue(this._STORAGE_KEY, []); }
-                catch(e) { const s = localStorage.getItem(this._STORAGE_KEY); return s ? JSON.parse(s) : []; }
-            },
-            _setHiddenVideos(videos) {
-                try { GM_setValue(this._STORAGE_KEY, videos); }
-                catch(e) { localStorage.setItem(this._STORAGE_KEY, JSON.stringify(videos)); }
-            },
-            _getBlockedChannels() {
-                try { return GM_getValue(this._CHANNELS_KEY, []); }
-                catch(e) { const s = localStorage.getItem(this._CHANNELS_KEY); return s ? JSON.parse(s) : []; }
-            },
-            _setBlockedChannels(channels) {
-                try { GM_setValue(this._CHANNELS_KEY, channels); }
-                catch(e) { localStorage.setItem(this._CHANNELS_KEY, JSON.stringify(channels)); }
-            },
-
-            _extractVideoId(element) {
-                const lockup = element.querySelector('.yt-lockup-view-model[class*="content-id-"]');
-                if (lockup) { const m = lockup.className.match(/content-id-([a-zA-Z0-9_-]+)/); if (m) return m[1]; }
-                const links = element.querySelectorAll('a[href*="/watch?v="], a[href*="/shorts/"]');
-                for (const link of links) {
-                    const watchMatch = link.href.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-                    if (watchMatch) return watchMatch[1];
-                    const shortsMatch = link.href.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
-                    if (shortsMatch) return shortsMatch[1];
-                }
-                const vidEl = element.querySelector('[data-video-id]');
-                return vidEl ? vidEl.getAttribute('data-video-id') : null;
-            },
-
-            _extractChannelInfo(element) {
-                const channelLink = element.querySelector('a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]');
-                if (!channelLink) return null;
-                const href = channelLink.href;
-                let channelId = null;
-                const handleMatch = href.match(/\/@([^/?]+)/);
-                if (handleMatch) channelId = '@' + handleMatch[1];
-                else {
-                    const idMatch = href.match(/\/(channel|c|user)\/([^/?]+)/);
-                    if (idMatch) channelId = idMatch[2];
-                }
-                const channelName = element.querySelector('#channel-name a, .ytd-channel-name a, [id="text"] a')?.textContent?.trim() ||
-                                   element.querySelector('#channel-name, .ytd-channel-name')?.textContent?.trim() || channelId;
-                return channelId ? { id: channelId, name: channelName } : null;
-            },
-
-            _extractDuration(element) {
-                const badge = element.querySelector('ytd-thumbnail-overlay-time-status-renderer, .ytd-thumbnail-overlay-time-status-renderer, [aria-label*=":"]');
-                if (!badge) return 0;
-                const text = badge.textContent?.trim() || badge.getAttribute('aria-label') || '';
-                const match = text.match(/(\d+):(\d+):?(\d+)?/);
-                if (!match) return 0;
-                if (match[3]) return parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]);
-                return parseInt(match[1])*60 + parseInt(match[2]);
-            },
-
-            _extractViewCount(element) {
-                const metaNodes = element.querySelectorAll('#metadata-line span, .ytd-video-meta-block span, span.yt-content-metadata-view-model__metadata-text, .inline-metadata-item');
-                for (const node of metaNodes) {
-                    const text = node.textContent?.trim() || '';
-                    const match = text.match(/([\d,.]+)\s*(K|M|B)?\s*views/i);
-                    if (match) {
-                        let val = parseFloat(match[1].replace(/,/g, ''));
-                        const unit = match[2]?.toUpperCase();
-                        if (unit === 'K') val *= 1e3;
-                        else if (unit === 'M') val *= 1e6;
-                        else if (unit === 'B') val *= 1e9;
-                        return val;
-                    }
-                }
-                return -1; // -1 = couldn't parse (don't filter)
-            },
-
-            _extractAgeDays(element) {
-                const metaNodes = element.querySelectorAll('#metadata-line span, .ytd-video-meta-block span, span.yt-content-metadata-view-model__metadata-text, .inline-metadata-item');
-                const multipliers = { second: 0, minute: 0, hour: 0, day: 1, week: 7, month: 30, year: 365 };
-                for (const node of metaNodes) {
-                    const text = node.textContent?.trim() || '';
-                    const match = text.match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s*ago/i);
-                    if (match) {
-                        const val = parseInt(match[1]);
-                        const unit = match[2].toLowerCase();
-                        return multipliers[unit] !== undefined ? val * multipliers[unit] : -1;
-                    }
-                    // Handle "Streamed X ago" / "Premiered X ago"
-                    const streamMatch = text.match(/(?:streamed|premiered)\s+(\d+)\s*(second|minute|hour|day|week|month|year)s?\s*ago/i);
-                    if (streamMatch) {
-                        const val = parseInt(streamMatch[1]);
-                        const unit = streamMatch[2].toLowerCase();
-                        return multipliers[unit] !== undefined ? val * multipliers[unit] : -1;
-                    }
-                }
-                return -1; // -1 = couldn't parse (don't filter)
-            },
-
-            _extractTitle(element) {
-                return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
-            },
-
-            _findThumbnailContainer(element) {
-                const selectors = ['a.yt-lockup-view-model__content-image', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail'];
-                for (const sel of selectors) { const c = element.querySelector(sel); if (c) return c; }
-                return null;
-            },
-
-            _createSVG(pathD) {
-                const svg = createSVG('0 0 24 24', [{ type: 'path', d: pathD, fill: 'currentColor' }], { fill: 'currentColor', stroke: false });
-                svg.setAttribute('width', '14');
-                svg.setAttribute('height', '14');
-                return svg;
-            },
-
-            _createHideButton() {
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-video-hide-btn';
-                btn.title = 'Hide this video (right-click to block channel)';
-                btn.appendChild(this._createSVG('M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'));
-                return btn;
-            },
-
-            _showToast(message, buttons = []) {
-                // Remove legacy toast if present
-                document.getElementById('ytkit-hide-toast')?.remove();
-                if (this._toastTimeout) clearTimeout(this._toastTimeout);
-                const primaryAction = buttons[0];
-                showToast(message, '#6b7280', {
-                    duration: 5,
-                    action: primaryAction ? { text: primaryAction.text, onClick: primaryAction.onClick } : undefined
-                });
-            },
-
-            _hideVideo(videoId, element) {
-                const hidden = this._getHiddenVideos();
-                if (!hidden.includes(videoId)) { hidden.push(videoId); this._setHiddenVideos(hidden); }
-                element.classList.add('ytkit-video-hidden');
-                this._lastHidden = { type: 'video', id: videoId, element };
-                this._showToast('Video hidden', [
-                    { text: 'Undo', onClick: () => this._undoHide() },
-                    { text: 'Manage', onClick: () => this._showManager() }
-                ]);
-            },
-
-            _blockChannel(channelInfo, element) {
-                if (!channelInfo) return;
-                const channels = this._getBlockedChannels();
-                if (!channels.find(c => c.id === channelInfo.id)) {
-                    channels.push(channelInfo);
-                    this._setBlockedChannels(channels);
-                }
-                this._hideChannelVideos(channelInfo.id);
-                this._lastHidden = { type: 'channel', info: channelInfo };
-                this._showToast(`Blocked: ${channelInfo.name}`, [
-                    { text: 'Undo', onClick: () => this._undoHide() },
-                    { text: 'Manage', onClick: () => this._showManager() }
-                ]);
-            },
-
-            _hideChannelVideos(channelId) {
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(el => {
-                    const info = this._extractChannelInfo(el);
-                    if (info && info.id === channelId) el.classList.add('ytkit-video-hidden');
-                });
-            },
-
-            _undoHide() {
-                if (!this._lastHidden) return;
-                if (this._lastHidden.type === 'video') {
-                    const hidden = this._getHiddenVideos();
-                    const idx = hidden.indexOf(this._lastHidden.id);
-                    if (idx > -1) { hidden.splice(idx, 1); this._setHiddenVideos(hidden); }
-                    this._lastHidden.element?.classList.remove('ytkit-video-hidden');
-                } else if (this._lastHidden.type === 'channel') {
-                    const channels = this._getBlockedChannels();
-                    const idx = channels.findIndex(c => c.id === this._lastHidden.info.id);
-                    if (idx > -1) { channels.splice(idx, 1); this._setBlockedChannels(channels); }
-                    this._processAllVideos();
-                }
-                // Push to UndoManager for extended undo capability
-                UndoManager.push({
-                    type: 'video-restore',
-                    data: this._lastHidden
-                });
-                this._lastHidden = null;
-                document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-            },
-
-            // Public method to unhide a specific video by ID
-            _unhideVideo(videoId) {
-                const hidden = this._getHiddenVideos();
-                const idx = hidden.indexOf(videoId);
-                if (idx > -1) {
-                    hidden.splice(idx, 1);
-                    this._setHiddenVideos(hidden);
-                    // Remove hidden class from any matching elements
-                    document.querySelectorAll(`[data-ytkit-video-id="${videoId}"]`)?.forEach(el => {
-                        el.classList.remove('ytkit-video-hidden');
-                    });
-                    this._processAllVideos(); // Refresh visibility
-                    return true;
-                }
-                return false;
-            },
-
-            _showManager() {
-                document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-                // Open main settings panel and switch to Video Hider tab
-                document.body.classList.add('ytkit-panel-open');
-                // Wait for panel to be visible then switch tab
-                setTimeout(() => {
-                    const navBtn = document.querySelector('.ytkit-nav-btn[data-tab="Video-Hider"]');
-                    if (navBtn) navBtn.click();
-                }, 100);
-            },
-
-            _closeManager() {
-                // No longer needed - handled by main settings panel
-            },
-
-            _shouldHide(element) {
-                const videoId = this._extractVideoId(element);
-                if (videoId && this._getHiddenVideos().includes(videoId)) return true;
-                const channelInfo = this._extractChannelInfo(element);
-                if (channelInfo && this._getBlockedChannels().find(c => c.id === channelInfo.id)) return true;
-
-                // Unified keyword/regex filter - auto-detects regex if starts with /
-                const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
-                if (filterStr) {
-                    const title = this._extractTitle(element);
-                    const channelName = channelInfo?.name?.toLowerCase() || '';
-                    const searchText = (title + ' ' + channelName).toLowerCase();
-
-                    // Check if it's a regex pattern (starts with /)
-                    if (filterStr.startsWith('/')) {
-                        try {
-                            const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
-                            if (regexMatch) {
-                                const regex = new RegExp(regexMatch[1], regexMatch[2]);
-                                if (regex.test(title) || regex.test(channelName)) return true;
-                            }
-                        } catch (e) {
-                            DebugManager.log('Regex', 'Invalid regex pattern', e.message);
-                        }
-                    } else {
-                        // Comma-separated keywords with !negation support
-                        const keywords = filterStr.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
-                        const positiveKw = keywords.filter(k => !k.startsWith('!'));
-                        const negativeKw = keywords.filter(k => k.startsWith('!')).map(k => k.slice(1));
-                        // If any negative keyword matches, DON'T hide (whitelist)
-                        if (negativeKw.length && negativeKw.some(k => searchText.includes(k))) return false;
-                        // If any positive keyword matches title or channel, hide
-                        if (positiveKw.length && positiveKw.some(k => searchText.includes(k))) return true;
-                    }
-                }
-
-                const minDuration = (appState.settings.hideVideosDurationFilter || 0) * 60;
-                if (minDuration > 0) {
-                    const duration = this._extractDuration(element);
-                    if (duration > 0 && duration < minDuration) return true;
-                }
-                const minViews = parseInt(appState.settings.hideVideosMinViewsFilter) || 0;
-                if (minViews > 0) {
-                    const views = this._extractViewCount(element);
-                    if (views >= 0 && views < minViews) return true;
-                }
-                const maxAgeDays = parseInt(appState.settings.hideVideosMaxAgeDaysFilter) || 0;
-                if (maxAgeDays > 0) {
-                    const ageDays = this._extractAgeDays(element);
-                    if (ageDays >= 0 && ageDays > maxAgeDays) return true;
-                }
-                return false;
-            },
-
-            _processVideoElement(element) {
-                if (element.dataset.ytkitHideProcessed) return;
-                element.dataset.ytkitHideProcessed = 'true';
-                if (this._shouldHide(element)) { element.classList.add('ytkit-video-hidden'); }
-                else { element.classList.remove('ytkit-video-hidden'); }
-                const thumbnail = this._findThumbnailContainer(element);
-                if (!thumbnail || thumbnail.querySelector('.ytkit-video-hide-btn')) return;
-                if (window.getComputedStyle(thumbnail).position === 'static') thumbnail.style.position = 'relative';
-                const btn = this._createHideButton();
-                const videoId = this._extractVideoId(element);
-                const channelInfo = this._extractChannelInfo(element);
-                btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (videoId) this._hideVideo(videoId, element); });
-                btn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); if (channelInfo) this._blockChannel(channelInfo, element); });
-                thumbnail.appendChild(btn);
-            },
-
-            // Version that returns whether video was hidden (for batch tracking)
-            _processVideoElementWithResult(element) {
-                if (element.dataset.ytkitHideProcessed) {
-                    return element.classList.contains('ytkit-video-hidden');
-                }
-                element.dataset.ytkitHideProcessed = 'true';
-                const shouldHide = this._shouldHide(element);
-                if (shouldHide) { element.classList.add('ytkit-video-hidden'); }
-                else { element.classList.remove('ytkit-video-hidden'); }
-                const thumbnail = this._findThumbnailContainer(element);
-                if (thumbnail && !thumbnail.querySelector('.ytkit-video-hide-btn')) {
-                    if (window.getComputedStyle(thumbnail).position === 'static') thumbnail.style.position = 'relative';
-                    const btn = this._createHideButton();
-                    const videoId = this._extractVideoId(element);
-                    const channelInfo = this._extractChannelInfo(element);
-                    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (videoId) this._hideVideo(videoId, element); });
-                    btn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); if (channelInfo) this._blockChannel(channelInfo, element); });
-                    thumbnail.appendChild(btn);
-                }
-                return shouldHide;
-            },
-
-            _processAllVideos() {
-                document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer')
-                    .forEach(el => this._processVideoElement(el));
-            },
-
-            // Get all visible (not hidden) videos on the page
-            _getVisibleVideos() {
-                const videos = [];
-                const selectors = ['ytd-rich-item-renderer', 'ytd-video-renderer', 'ytd-grid-video-renderer', 'ytd-compact-video-renderer'];
-                selectors.forEach(selector => {
-                    document.querySelectorAll(selector).forEach(item => {
-                        if (item.classList.contains('ytkit-video-hidden')) return;
-                        const videoId = this._extractVideoId(item);
-                        if (videoId) {
-                            videos.push({ id: videoId, element: item });
-                        }
-                    });
-                });
-                return videos;
-            },
-
-            // Hide all visible videos on the current page
-            _hideAllVideos() {
-                const videos = this._getVisibleVideos();
-                if (videos.length === 0) {
-                    showToast('No visible videos to hide', '#6b7280');
-                    return;
-                }
-                const hidden = this._getHiddenVideos();
-                let newlyHidden = 0;
-                videos.forEach(v => {
-                    if (!hidden.includes(v.id)) {
-                        hidden.push(v.id);
-                        newlyHidden++;
-                    }
-                    v.element.classList.add('ytkit-video-hidden');
-                });
-                this._setHiddenVideos(hidden);
-                this._showToast(`Hidden ${newlyHidden} videos`, [
-                    { text: 'Undo All', onClick: () => this._undoHideAll(videos) },
-                    { text: 'Manage', onClick: () => this._showManager() }
-                ]);
-            },
-
-            // Undo hiding all videos
-            _undoHideAll(videos) {
-                const hidden = this._getHiddenVideos();
-                videos.forEach(v => {
-                    const idx = hidden.indexOf(v.id);
-                    if (idx > -1) hidden.splice(idx, 1);
-                    v.element.classList.remove('ytkit-video-hidden');
-                });
-                this._setHiddenVideos(hidden);
-                document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-                showToast('Restored all videos', '#22c55e');
-            },
-
-            // Create "Hide All" button for subscriptions page - placed in header next to VLC buttons
-            _createSubsHideAllButton() {
-                if (document.querySelector('.ytkit-subs-hide-all-btn')) return;
-                if (window.location.pathname !== '/feed/subscriptions') return;
-
-                // Find the header buttons container (same as VLC buttons)
-                const headerButtons = document.querySelector('#masthead #end #buttons');
-                if (!headerButtons) return;
-
-                // Helper to create SVG elements
-                const ns = 'http://www.w3.org/2000/svg';
-                const createSvgElement = (tag, attrs) => {
-                    const el = document.createElementNS(ns, tag);
-                    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-                    return el;
-                };
-
-                // Hide All button
-                const hideAllBtn = document.createElement('button');
-                hideAllBtn.className = 'ytkit-subs-hide-all-btn';
-                hideAllBtn.title = 'Hide all visible videos on this page';
-
-                // Eye-off SVG icon
-                const svg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-                svg.appendChild(createSvgElement('path', { d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' }));
-                svg.appendChild(createSvgElement('line', { x1: '1', y1: '1', x2: '23', y2: '23' }));
-                hideAllBtn.appendChild(svg);
-
-                const text = document.createElement('span');
-                text.textContent = 'Hide All';
-                hideAllBtn.appendChild(text);
-
-                hideAllBtn.style.cssText = `
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    border: none;
-                    background: #dc2626;
-                    color: white;
-                    font-family: "Roboto", Arial, sans-serif;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                `;
-                hideAllBtn.onmouseenter = () => { hideAllBtn.style.background = '#b91c1c'; };
-                hideAllBtn.onmouseleave = () => { hideAllBtn.style.background = '#dc2626'; };
-                hideAllBtn.addEventListener('click', () => this._hideAllVideos());
-
-                // Insert before the VLC button if it exists, otherwise at the end
-                const vlcBtn = headerButtons.querySelector('.ytkit-subs-vlc-btn');
-                if (vlcBtn) {
-                    headerButtons.insertBefore(hideAllBtn, vlcBtn);
-                } else {
-                    headerButtons.appendChild(hideAllBtn);
-                }
-            },
-
-            _removeSubsHideAllButton() {
-                document.querySelector('.ytkit-subs-hide-all-btn')?.remove();
-            },
-
-            init() {
-                const css = `
-                    .ytkit-video-hide-btn { position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;transition:all 0.15s;padding:0; }
-                    .ytkit-video-hide-btn:hover { background:rgba(200,0,0,0.9);transform:scale(1.1); }
-                    .ytkit-video-hide-btn svg { width:16px;height:16px;fill:#fff;pointer-events:none; }
-                    ytd-rich-item-renderer:hover .ytkit-video-hide-btn, ytd-video-renderer:hover .ytkit-video-hide-btn, ytd-grid-video-renderer:hover .ytkit-video-hide-btn, ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity:1; }
-                    .ytkit-video-hidden { display:none !important; }
-                    #ytkit-hide-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#323232;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:99999;opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3); }
-                    #ytkit-hide-toast.show { transform:translateX(-50%) translateY(0);opacity:1; }
-                    #ytkit-hide-toast button { background:transparent;border:none;color:#3ea6ff;cursor:pointer;font-size:14px;font-weight:500;padding:4px 8px;border-radius:4px; }
-                    #ytkit-hide-toast button:hover { background:rgba(62,166,255,0.1); }
-                `;
-                this._styleElement = injectStyle(css, this.id, true);
-                this._processAllVideos();
-                const selectors = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer';
-
-                // Debounce for batch tracking
-                let batchBuffer = [];
-                let batchTimeout = null;
-                // Store reference for clearing when blocking
-                this._clearBatchBuffer = () => {
-                    batchBuffer = [];
-                    if (batchTimeout) {
-                        clearTimeout(batchTimeout);
-                        batchTimeout = null;
-                    }
-                };
-
-                const processBatch = () => {
-                    if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
-                        this._trackSubsLoadBatch(batchBuffer);
-                        batchBuffer = [];
-                    }
-                };
-
-                this._observer = new MutationObserver(mutations => {
-                    let needsRecycleCheck = false;
-                    for (const m of mutations) {
-                        for (const node of m.addedNodes) {
-                            if (node.nodeType !== 1) continue;
-                            if (node.matches?.(selectors)) {
-                                const wasHidden = this._processVideoElementWithResult(node);
-                                batchBuffer.push({ element: node, hidden: wasHidden });
-                            }
-                            node.querySelectorAll?.(selectors).forEach(el => {
-                                const wasHidden = this._processVideoElementWithResult(el);
-                                batchBuffer.push({ element: el, hidden: wasHidden });
-                            });
-                            // Flag for recycled element check when YouTube swaps inner content
-                            if (!needsRecycleCheck && node.parentElement?.closest?.(selectors)?.dataset.ytkitHideProcessed) {
-                                needsRecycleCheck = true;
-                            }
-                        }
-                    }
-                    // Re-process any "processed" elements whose hide button was removed (recycled by YouTube)
-                    if (needsRecycleCheck) {
-                        document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => {
-                            if (!el.querySelector('.ytkit-video-hide-btn')) {
-                                delete el.dataset.ytkitHideProcessed;
-                                const wasHidden = this._processVideoElementWithResult(el);
-                                batchBuffer.push({ element: el, hidden: wasHidden });
-                            }
-                        });
-                    }
-                    // Debounce batch processing to group rapid mutations
-                    if (batchTimeout) clearTimeout(batchTimeout);
-                    batchTimeout = setTimeout(processBatch, 300);
-                });
-                this._observer.observe(document.body, { childList: true, subtree: true });
-
-                // Navigation handler for subscriptions page Hide All button
-                let wasOnSubsPage = window.location.pathname === '/feed/subscriptions';
-                const checkSubsPage = () => {
-                    const isOnSubsPage = window.location.pathname === '/feed/subscriptions';
-                    if (isOnSubsPage) {
-                        // Only reset load state when ENTERING subscriptions page (not while staying on it)
-                        if (!wasOnSubsPage) {
-                            this._resetSubsLoadState();
-                        }
-                        setTimeout(() => this._createSubsHideAllButton(), 1000);
-                    } else {
-                        this._removeSubsHideAllButton();
-                        this._removeLoadBlocker();
-                    }
-                    wasOnSubsPage = isOnSubsPage;
-                };
-
-                addNavigateRule('hideVideosFromHomeNav', () => {
-                    setTimeout(() => this._processAllVideos(), 500);
-                    checkSubsPage();
-                });
-
-                // Sort chip clicks (e.g. "Recently uploaded") don't trigger navigation —
-                // listen for clicks on the chip bar and reprocess after YouTube swaps grid content
-                document.addEventListener('click', (e) => {
-                    if (e.target.closest('yt-chip-cloud-chip-renderer, ytd-feed-filter-chip-bar-renderer, iron-selector#chips')) {
-                        setTimeout(() => this._processAllVideos(), 800);
-                        setTimeout(() => this._processAllVideos(), 2000);
-                    }
-                }, true);
-
-                // Initial check for subscriptions page
-                checkSubsPage();
-
-                DebugManager.log('VideoHider', 'Initialized:', this._getHiddenVideos().length, 'videos,', this._getBlockedChannels().length, 'channels');
-            },
-
-            destroy() {
-                this._styleElement?.remove();
-                this._observer?.disconnect();
-                removeNavigateRule('hideVideosFromHomeNav');
-                document.querySelectorAll('.ytkit-video-hide-btn').forEach(b => b.remove());
-                document.querySelectorAll('.ytkit-video-hidden').forEach(e => e.classList.remove('ytkit-video-hidden'));
-                document.querySelectorAll('[data-ytkit-hide-processed]').forEach(e => delete e.dataset.ytkitHideProcessed);
-                document.getElementById('ytkit-hide-toast')?.remove();
-                document.getElementById('ytkit-hide-manager')?.remove();
-                document.getElementById('ytkit-hide-manager-overlay')?.remove();
-                this._removeSubsHideAllButton();
-                this._removeLoadBlocker();
-            }
-        },
-        {
+                // Auto-generated Content sub-features
+        ...([['joinButton','Join Button','Hide join/membership button'],['askButton','Ask Button','Hide Ask AI button'],['saveButton','Save Button','Hide save to playlist button'],['moreActions','More Actions (...)','Hide more actions menu button'],['askAISection','Ask AI Section','Hide AI section in description'],['podcastSection','Podcast/Course Section','Hide podcast/course section in description'],['transcriptSection','Transcript Section','Hide transcript section in description'],['channelInfoCards','Channel Info Cards','Hide channel info cards in description']].map(([v,n,d])=>({id:'wpHide_'+v,name:n,description:d,group:'Content',icon:'eye-off',isSubFeature:true,parentId:'hiddenWatchElementsManager',_arrayKey:'hiddenWatchElements',_arrayValue:v,init(){},destroy(){}}))),
+                                                                {
             id: 'cleanShareUrls',
             name: 'Clean Share URLs',
             description: 'Strip tracking params (si, pp, feature) from copied/shared YouTube links',
@@ -3975,6 +2741,8 @@
             _styleElement: null,
             _ruleId: 'fitPlayerToWindowRule',
             applyStyles() {
+                // Theater Split takes full control on watch pages — skip this feature
+                if (appState.settings.stickyVideo && window.location.pathname.startsWith('/watch')) return;
                 const isWatchPage = window.location.pathname.startsWith('/watch');
                 document.documentElement.classList.toggle('yt-suite-fit-to-window', isWatchPage);
                 document.body.classList.toggle('yt-suite-fit-to-window', isWatchPage);
@@ -3988,15 +2756,7 @@
             init() {
                 this._styleElement = document.createElement('style');
                 this._styleElement.id = `yt-suite-style-${this.id}`;
-                this._styleElement.textContent = `
-                    html.yt-suite-fit-to-window, body.yt-suite-fit-to-window { overflow-y: auto !important; height: auto !important; }
-                    body.yt-suite-fit-to-window #movie_player { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100vh !important; z-index: 9999 !important; background-color: #000 !important; }
-                    body.yt-suite-fit-to-window #movie_player .html5-video-container { width: 100% !important; height: 100% !important; }
-                    body.yt-suite-fit-to-window #movie_player video.html5-main-video { width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; object-fit: contain !important; }
-                    html.yt-suite-fit-to-window { padding-top: calc(100vh) !important; }
-                    html.yt-suite-fit-to-window ytd-masthead { display: none !important; }
-                    body.yt-suite-fit-to-window #page-manager { margin-top: 0 !important; }
-                `;
+                this._styleElement.textContent = `html.yt-suite-fit-to-window,body.yt-suite-fit-to-window{overflow-y:auto !important;height:auto !important;} body.yt-suite-fit-to-window #movie_player{position:absolute !important;top:0 !important;left:0 !important;width:100% !important;height:100vh !important;z-index:9999 !important;background-color:#000 !important;} body.yt-suite-fit-to-window #movie_player .html5-video-container{width:100% !important;height:100% !important;} body.yt-suite-fit-to-window #movie_player video.html5-main-video{width:100% !important;height:100% !important;left:0 !important;top:0 !important;object-fit:contain !important;} html.yt-suite-fit-to-window{padding-top:calc(100vh) !important;} html.yt-suite-fit-to-window ytd-masthead{display:none !important;} body.yt-suite-fit-to-window #page-manager{margin-top:0 !important;}`;
                 document.head.appendChild(this._styleElement);
                 addNavigateRule(this._ruleId, () => this.applyStyles());
             },
@@ -4032,25 +2792,6 @@
             destroy() { this._styleElement?.remove(); }
         },
         {
-            id: 'adaptiveLiveLayout',
-            name: 'Adaptive Live Layout',
-            description: 'Automatically adjust layout for live stream chat',
-            group: 'Video Player',
-            icon: 'cast',
-            _ruleId: 'adaptiveLiveLayoutRule',
-            _checkLive() {
-                const isWatchPage = window.location.pathname.startsWith('/watch');
-                const liveBadge = document.querySelector('.ytp-live-badge');
-                const isLive = isWatchPage && liveBadge && window.getComputedStyle(liveBadge).display !== 'none';
-                document.body.classList.toggle('ytkit-adaptive-live', isLive);
-            },
-            init() { addMutationRule(this._ruleId, () => this._checkLive()); },
-            destroy() {
-                removeMutationRule(this._ruleId);
-                document.body.classList.remove('ytkit-adaptive-live');
-            }
-        },
-        {
             id: 'floatingLogoOnWatch',
             name: 'YTKit Controls on Video',
             description: 'Show YouTube logo on watch pages. Choose overlay (on player hover) or inline (below video).',
@@ -4079,52 +2820,51 @@
                 const overlay = document.createElement('div');
                 overlay.id = 'ytkit-player-overlay';
 
-                // YouTube logo link
+                // ── Minimal transparent YouTube logo with quickLink dropdown ──
+                const logoWrap = document.createElement('div');
+                logoWrap.id = 'ytkit-po-logo-wrap';
+
                 const logoLink = document.createElement('a');
                 logoLink.href = this._getLogoHref();
-                logoLink.title = this._getLogoTitle();
+                logoLink.title = 'YouTube — hover for quick links';
                 logoLink.className = 'ytkit-po-btn ytkit-po-logo';
-                const originalLogo = document.querySelector('ytd-topbar-logo-renderer ytd-logo');
-                if (originalLogo) {
-                    const clone = originalLogo.cloneNode(true);
-                    clone.style.cssText = 'display:flex;align-items:center;height:20px;';
-                    const svgs = clone.querySelectorAll('svg');
-                    svgs.forEach(s => { s.style.height = '20px'; s.style.width = 'auto'; });
-                    logoLink.appendChild(clone);
-                } else {
-                    logoLink.textContent = 'YouTube';
-                    logoLink.style.cssText += 'font-weight:700;font-size:14px;color:#fff;text-decoration:none;';
-                }
+                // Inline SVG: minimal YouTube play-button mark, white @ 22% opacity
+                // Play-button icon mark from the PremiumYTM logo (just the icon, no wordmark)
+                TrustedHTML.setHTML(logoLink, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 174" width="32" height="22" aria-label="YouTube" style="opacity:0.85">
+  <path fill="#ff0000" d="M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z"/>
+  <path fill="#ffffff" d="M 99.22,124.03 163.67,86.82 99.22,49.61 Z"/>
+</svg>`);
+                logoWrap.appendChild(logoLink);
+
+                // Dropdown menu (same items as header quickLinkMenu)
+                const qlFeature = features.find(f => f.id === 'quickLinkMenu');
+                const menuItems = qlFeature ? qlFeature.menuItems : [
+                    { text: 'History',       url: '/feed/history',       icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
+                    { text: 'Watch Later',   url: '/playlist?list=WL',   icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
+                    { text: 'Subscriptions', url: '/feed/subscriptions', icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
+                    { text: 'Liked Videos',  url: '/playlist?list=LL',   icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
+                ];
+                const drop = document.createElement('div');
+                drop.id = 'ytkit-po-drop';
+                menuItems.forEach(item => {
+                    const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
+                    TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
+                    drop.appendChild(a);
+                });
+                logoWrap.appendChild(drop);
+                overlay.appendChild(logoWrap);
 
                 // Settings gear button
                 const gearBtn = document.createElement('button');
                 gearBtn.className = 'ytkit-po-btn ytkit-po-gear';
                 gearBtn.title = 'YTKit Settings';
-                const gearSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                gearSvg.setAttribute('viewBox', '0 0 24 24');
-                gearSvg.setAttribute('width', '20');
-                gearSvg.setAttribute('height', '20');
-                gearSvg.setAttribute('fill', 'none');
-                gearSvg.setAttribute('stroke', 'white');
-                gearSvg.setAttribute('stroke-width', '2');
-                gearSvg.setAttribute('stroke-linecap', 'round');
-                gearSvg.setAttribute('stroke-linejoin', 'round');
-                const gearPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                gearPath.setAttribute('d', 'M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z');
-                const gearCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                gearCircle.setAttribute('cx', '12');
-                gearCircle.setAttribute('cy', '12');
-                gearCircle.setAttribute('r', '3');
-                gearSvg.appendChild(gearPath);
-                gearSvg.appendChild(gearCircle);
-                gearBtn.appendChild(gearSvg);
+                TrustedHTML.setHTML(gearBtn, `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`);
                 gearBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.body.classList.toggle('ytkit-panel-open');
                 });
-
-                overlay.appendChild(logoLink);
                 overlay.appendChild(gearBtn);
+
                 player.appendChild(overlay);
             },
             _injectInline() {
@@ -4149,77 +2889,7 @@
             },
             init() {
                 // Inject CSS for player overlay
-                this._styleEl = GM_addStyle(`
-                    #ytkit-player-overlay {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        display: flex;
-                        align-items: center;
-                        gap: 0;
-                        padding: 0;
-                        margin: 0;
-                        padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0;
-                        margin-left: 6px; margin-right: 0; margin-top: -12px; margin-bottom: 0;
-                        background: rgba(0, 0, 0, 0.45);
-                        backdrop-filter: blur(8px);
-                        -webkit-backdrop-filter: blur(8px);
-                        border: 1px solid rgba(255, 255, 255, 0.04);
-                        border-radius: 0 0 6px 6px;
-                        z-index: 59;
-                        opacity: 0;
-                        pointer-events: none;
-                        transition: opacity 0.25s ease, margin-top 0.25s ease;
-                    }
-                    #movie_player:hover #ytkit-player-overlay {
-                        opacity: 0.1;
-                        pointer-events: auto;
-                        margin-top: 0;
-                    }
-                    #ytkit-player-overlay:hover {
-                        opacity: 1 !important;
-                        pointer-events: auto;
-                        margin-top: 0;
-                    }
-                    a.ytkit-po-btn.ytkit-po-logo {
-                        padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0;
-                        margin-top: 0; margin-bottom: 0; margin-right: 0; margin-left: 0;
-                    }
-                    button.ytkit-po-btn.ytkit-po-gear {
-                        padding-top: 0; padding-bottom: 0; padding-left: 0; padding-right: 0;
-                        margin-top: 0; margin-bottom: 0; margin-right: 0; margin-left: -7px;
-                    }
-                    #ytkit-player-overlay yt-icon span div {
-                        padding: 0; margin: 0;
-                        margin-left: -34px;
-                    }
-                    #ytkit-player-overlay yt-icon.style-scope.ytd-logo {
-                        padding: 0; margin: 0;
-                        margin-right: -12px;
-                    }
-                    .ytkit-po-btn {
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 0;
-                        border: none;
-                        background: transparent;
-                        cursor: pointer;
-                        border-radius: 4px;
-                        transition: background 0.2s;
-                        text-decoration: none;
-                        color: #fff;
-                    }
-                    .ytkit-po-btn:hover {
-                        background: rgba(255, 255, 255, 0.15);
-                    }
-                    .ytkit-po-gear svg {
-                        transition: transform 0.3s ease;
-                    }
-                    .ytkit-po-gear:hover svg {
-                        transform: rotate(45deg);
-                    }
-                `);
+                this._styleEl = GM_addStyle(`#ytkit-player-overlay{position:absolute;top:0;left:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:transparent;z-index:59;opacity:0;pointer-events:none;transition:opacity 0.2s ease;} #movie_player:hover #ytkit-player-overlay{opacity:1;pointer-events:auto;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;} #ytkit-po-logo-wrap:hover #ytkit-po-drop,#ytkit-po-drop:hover{display:flex;} #ytkit-po-drop{display:none;flex-direction:column;position:absolute;top:calc(100% + 8px);left:0;background:rgba(22,22,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.7);padding:6px 0;z-index:9999;min-width:190px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);} .ytkit-po-btn{display:flex;align-items:center;justify-content:center;padding:4px 6px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);}`);
 
                 const self = this;
                 const handler = () => {
@@ -4254,1582 +2924,771 @@
             'ytd-watch-metadata #bottom-row'),
         {
             id: 'stickyVideo',
-            name: 'Sticky Video',
-            description: 'Float the video in the corner when scrolling down to read comments',
+            name: 'Theater Split',
+            description: 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.',
             group: 'Video Player',
             icon: 'picture-in-picture-2',
             pages: [PageTypes.WATCH],
-            _styleElement: null,
-            _scrollHandler: null,
-            _isFloating: false,
-            _manuallyDismissed: false,
+
+            // ── state ──
+            _styleEl: null,
+            _isSplit: false,          // right panel is open
+            _isActive: false,         // overlay is mounted
+            _entering: false,
             _lastVideoId: null,
-            _floatThreshold: null,
-            _lastActionTime: 0,
-            _floatingContainer: null,
-            _dragState: null,
-            _originalVideoParent: null,
-            _originalVideoNextSibling: null,
-            _originalVideoStyle: null,
-            _timeUpdateHandler: null,
-            _playHandler: null,
-            _pauseHandler: null,
-            _volumeHandler: null,
+            _splitWrapper: null,
+            _origPlayerParent: null,
+            _origPlayerNextSibling: null,
+            _navRuleId: '_theaterSplit',
+            _wheelHandler: null,
+            _touchHandler: null,
+            _touchMoveHandler: null,
+            _touchStartY: 0,
+            _rightWheelHandler: null,
+            _rightTouchHandler: null,
+            _rightTouchMoveHandler: null,
+            _rightTouchStartY: 0,
+            _mastheadDisplay: undefined,
+            _playerResizeObs: null,
+            _videoType: 'standard',        // 'live' | 'vod' | 'standard'
+            _positionedEls: [],            // elements we CSS-positioned over right panel
+            _scrollTarget: null,           // which element receives scroll/wheel handlers
 
-            _getVideo() {
-                return document.querySelector('video.html5-main-video');
+            _headerH() {
+                const h = document.querySelector('ytd-masthead, #masthead');
+                if (!h || h.style.display === 'none') return 0;
+                return h.getBoundingClientRect().height || 56;
             },
 
-            _getPlayerAnchor() {
-                return document.querySelector('#player-container');
+            _getPlayer()  { return document.querySelector('#player-container'); },
+            _getBelow()   { return document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement; },
+            _getChatEl()  { return VideoTypeDetector.getChatEl(); },
+
+            // Nudge YouTube's player to recalculate control bar layout
+            _triggerPlayerResize() {
+                clearTimeout(this._resizeTimer);
+                this._resizeTimer = setTimeout(() => {
+                    const cb = document.querySelector('#movie_player .ytp-chrome-bottom');
+                    if (cb) { cb.style.removeProperty('width'); cb.style.removeProperty('left'); }
+                    window.dispatchEvent(new Event('resize'));
+                }, 100);
             },
 
-            _createFloatingContainer() {
-                const container = document.createElement('div');
-                container.id = 'ytkit-floating-video-container';
+            // Position an element over the right panel area via CSS fixed positioning.
+            // Keeps element in original DOM so YT's IntersectionObserver fires.
+            _positionOverRight(el, rightPct, topOffset, heightStr) {
+                if (!el) return;
+                el.style.setProperty('position', 'fixed', 'important');
+                el.style.setProperty('top', topOffset || '0', 'important');
+                el.style.setProperty('right', '0', 'important');
+                el.style.setProperty('width', `calc(${rightPct}% - 6px)`, 'important');
+                el.style.setProperty('max-width', 'none', 'important');
+                el.style.setProperty('height', heightStr || '100vh', 'important');
+                el.style.setProperty('margin', '0', 'important');
+                el.style.setProperty('overflow-y', 'auto', 'important');
+                el.style.setProperty('overflow-x', 'hidden', 'important');
+                el.style.setProperty('z-index', '10001', 'important');
+                el.style.setProperty('background', '#0f0f0f', 'important');
+                el.style.setProperty('padding', '0', 'important');
+                el.style.setProperty('box-sizing', 'border-box', 'important');
+                el.style.setProperty('visibility', 'visible', 'important');
+                el.style.setProperty('pointer-events', 'auto', 'important');
+                el.style.setProperty('display', 'block', 'important');
+                el.style.setProperty('scrollbar-width', 'thin', 'important');
+                el.style.setProperty('scrollbar-color', 'rgba(255,255,255,0.15) transparent', 'important');
+                this._positionedEls.push(el);
+            },
 
-                // Helper to create SVG elements
-                const createSvg = (width, height, viewBox) => {
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('width', width);
-                    svg.setAttribute('height', height);
-                    svg.setAttribute('viewBox', viewBox);
-                    svg.setAttribute('fill', 'white');
-                    return svg;
-                };
+            // Clear all positioning styles from an element
+            _unpositionEl(el) {
+                if (!el) return;
+                const props = ['position','top','right','width','max-width','height','margin',
+                    'overflow-y','overflow-x','z-index','background','padding','box-sizing',
+                    'visibility','pointer-events','display','scrollbar-width','scrollbar-color',
+                    'border-radius'];
+                props.forEach(p => el.style.removeProperty(p));
+            },
 
-                const createPath = (d) => {
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', d);
-                    return path;
-                };
+            // Clean up all positioned elements
+            _unpositionAll() {
+                (this._positionedEls || []).forEach(el => this._unpositionEl(el));
+                this._positionedEls = [];
+                this._scrollTarget = null;
+            },
 
-                // Controls overlay
-                const controls = document.createElement('div');
-                controls.id = 'ytkit-floating-controls';
+            // Force chat frame internals (iframe, container) to fill parent
+            _forceChatFill(chatEl) {
+                if (!chatEl) return;
+                const showHide = chatEl.querySelector('#show-hide-button');
+                if (showHide) showHide.style.setProperty('display', 'none', 'important');
+                const container = chatEl.querySelector('#container');
+                if (container) {
+                    container.style.setProperty('width', '100%', 'important');
+                    container.style.setProperty('height', '100%', 'important');
+                    container.style.setProperty('max-height', 'none', 'important');
+                    container.style.setProperty('min-height', '0', 'important');
+                    container.style.setProperty('border-radius', '0', 'important');
+                }
+                const iframe = chatEl.querySelector('iframe');
+                if (iframe) {
+                    iframe.style.setProperty('width', '100%', 'important');
+                    iframe.style.setProperty('height', '100%', 'important');
+                    iframe.style.setProperty('min-height', '0', 'important');
+                    iframe.style.setProperty('border', 'none', 'important');
+                    iframe.style.setProperty('border-radius', '0', 'important');
+                }
+            },
 
-                // Play/Pause button (center)
-                const playPauseBtn = document.createElement('button');
-                playPauseBtn.id = 'ytkit-floating-playpause';
-                playPauseBtn.title = 'Play/Pause';
+            // Restore chat frame internals
+            _restoreChatFill(chatEl) {
+                if (!chatEl) return;
+                const showHide = chatEl.querySelector('#show-hide-button');
+                if (showHide) showHide.style.removeProperty('display');
+                const container = chatEl.querySelector('#container');
+                if (container) {
+                    ['width','height','max-height','min-height','border-radius'].forEach(p => container.style.removeProperty(p));
+                }
+                const iframe = chatEl.querySelector('iframe');
+                if (iframe) {
+                    ['width','height','min-height','border','border-radius'].forEach(p => iframe.style.removeProperty(p));
+                }
+            },
 
-                // Play icon
-                const playIcon = createSvg('40', '40', '0 0 24 24');
-                playIcon.classList.add('play-icon');
-                playIcon.appendChild(createPath('M8 5v14l11-7z'));
-
-                // Pause icon
-                const pauseIcon = createSvg('40', '40', '0 0 24 24');
-                pauseIcon.classList.add('pause-icon');
-                pauseIcon.appendChild(createPath('M6 19h4V5H6v14zm8-14v14h4V5h-4z'));
-
-                playPauseBtn.appendChild(playIcon);
-                playPauseBtn.appendChild(pauseIcon);
-
-                playPauseBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const video = container.querySelector('video');
-                    if (video) {
-                        if (video.paused) {
-                            video.play();
-                        } else {
-                            video.pause();
+            // Poll for chat frame (max 10s) then position it over the right panel
+            _waitForChat(rightPct, topOffset, heightStr) {
+                let attempts = 0;
+                const poll = () => {
+                    if (!this._isSplit || !this._isActive) return;
+                    const chatEl = this._getChatEl();
+                    if (chatEl) {
+                        this._positionOverRight(chatEl, rightPct, topOffset, heightStr);
+                        chatEl.removeAttribute('collapsed');
+                        // Tight layout matching _expandSplit
+                        chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                        chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
+                        chatEl.style.setProperty('border-radius', '0', 'important');
+                        this._forceChatFill(chatEl);
+                        if (!this._scrollTarget) this._scrollTarget = chatEl;
+                        if (this._videoType === 'vod') {
+                            chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                            const below = this._getBelow();
+                            if (below && below.style.getPropertyValue('top') === '0') {
+                                below.style.setProperty('top', '45vh', 'important');
+                                below.style.setProperty('height', '55vh', 'important');
+                            }
                         }
+                        DebugManager.log('Theater', 'Late chat frame found and positioned');
+                        return;
                     }
+                    if (++attempts < 20) setTimeout(poll, 500);
                 };
+                setTimeout(poll, 500);
+            },
 
-                // Bottom bar (progress + volume)
-                const bottomBar = document.createElement('div');
-                bottomBar.id = 'ytkit-floating-bottombar';
+            // ── Build the fixed overlay (video full-width, right panel hidden) ──
+            _buildOverlay() {
+                const hh = this._headerH();
+                const wrapper = document.createElement('div');
+                wrapper.id = 'ytkit-split-wrapper';
+                wrapper.style.cssText = `display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#000;overflow:hidden;`;
 
-                // Progress bar
-                const progressContainer = document.createElement('div');
-                progressContainer.id = 'ytkit-floating-progress-container';
+                // LEFT — full width initially
+                const left = document.createElement('div');
+                left.id = 'ytkit-split-left';
+                // flex:1 — left fills whatever space the right panel doesn't take.
+                // No fixed width, no transition needed — it reacts automatically.
+                left.style.cssText = `flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;background:#000;position:relative;`;
 
-                const progressBar = document.createElement('div');
-                progressBar.id = 'ytkit-floating-progress';
+                // DIVIDER — hidden until split
+                const divider = document.createElement('div');
+                divider.id = 'ytkit-split-divider';
+                divider.style.cssText = `flex:0 0 0;width:0;cursor:col-resize;position:relative;background:rgba(255,255,255,0.04);transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;z-index:10;`;
+                const pip = document.createElement('div');
+                pip.className = 'ytkit-divider-pip';
+                pip.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:40px;border-radius:2px;background:rgba(255,255,255,0.18);pointer-events:none;`;
+                divider.appendChild(pip);
+                divider.addEventListener('mouseenter', () => { divider.style.background='rgba(59,130,246,0.22)'; pip.style.background='rgba(59,130,246,0.8)'; });
+                divider.addEventListener('mouseleave', () => { divider.style.background='rgba(255,255,255,0.04)'; pip.style.background='rgba(255,255,255,0.18)'; });
+                this._initDividerDrag(divider, left, null);  // right set after creation
 
-                const progressFilled = document.createElement('div');
-                progressFilled.id = 'ytkit-floating-progress-filled';
+                // RIGHT — collapsed initially
+                const right = document.createElement('div');
+                right.id = 'ytkit-split-right';
+                // flex:0 0 0 — right starts at zero width, grows to a fixed size.
+                // Left (flex:1) automatically shrinks as right expands.
+                right.style.cssText = `flex:0 0 0;width:0;height:100%;overflow-y:auto;overflow-x:hidden;background:#0f0f0f;border-left:1px solid rgba(255,255,255,0.06);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;padding:0;box-sizing:border-box;opacity:0;transition:flex-basis 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;`;
+                // wire divider to right panel now that it exists
+                this._initDividerDrag(divider, left, right);
 
-                const progressHandle = document.createElement('div');
-                progressHandle.id = 'ytkit-floating-progress-handle';
-
-                progressBar.appendChild(progressFilled);
-                progressBar.appendChild(progressHandle);
-                progressContainer.appendChild(progressBar);
-
-                // Time display
-                const timeDisplay = document.createElement('span');
-                timeDisplay.id = 'ytkit-floating-time';
-                timeDisplay.textContent = '0:00 / 0:00';
-
-                // Volume control
-                const volumeContainer = document.createElement('div');
-                volumeContainer.id = 'ytkit-floating-volume-container';
-
-                const volumeBtn = document.createElement('button');
-                volumeBtn.id = 'ytkit-floating-volume-btn';
-
-                // Volume high icon
-                const volumeHighIcon = createSvg('20', '20', '0 0 24 24');
-                volumeHighIcon.classList.add('volume-high');
-                volumeHighIcon.appendChild(createPath('M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z'));
-
-                // Volume muted icon
-                const volumeMutedIcon = createSvg('20', '20', '0 0 24 24');
-                volumeMutedIcon.classList.add('volume-muted');
-                volumeMutedIcon.appendChild(createPath('M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z'));
-
-                volumeBtn.appendChild(volumeHighIcon);
-                volumeBtn.appendChild(volumeMutedIcon);
-
-                volumeBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const video = container.querySelector('video');
-                    if (video) {
-                        video.muted = !video.muted;
-                        this._updateVolumeUI(container);
-                    }
-                };
-
-                const volumeSlider = document.createElement('input');
-                volumeSlider.type = 'range';
-                volumeSlider.id = 'ytkit-floating-volume-slider';
-                volumeSlider.min = '0';
-                volumeSlider.max = '1';
-                volumeSlider.step = '0.05';
-                volumeSlider.value = '1';
-                volumeSlider.oninput = (e) => {
-                    const video = container.querySelector('video');
-                    if (video) {
-                        video.volume = e.target.value;
-                        video.muted = e.target.value == 0;
-                        this._updateVolumeUI(container);
-                    }
-                };
-
-                volumeContainer.appendChild(volumeBtn);
-                volumeContainer.appendChild(volumeSlider);
-
-                bottomBar.appendChild(progressContainer);
-                bottomBar.appendChild(timeDisplay);
-                bottomBar.appendChild(volumeContainer);
-
-                controls.appendChild(playPauseBtn);
-                controls.appendChild(bottomBar);
-
-                // Close button
+                // CLOSE button — low opacity, top-right of left panel
                 const closeBtn = document.createElement('button');
-                closeBtn.id = 'ytkit-floating-close';
-                closeBtn.title = 'Close';
+                closeBtn.id = 'ytkit-split-close';
+                closeBtn.title = 'Close side panel';
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const cs = document.createElementNS(svgNS,'svg');
+                cs.setAttribute('viewBox','0 0 24 24'); cs.setAttribute('width','13'); cs.setAttribute('height','13');
+                cs.setAttribute('fill','none'); cs.setAttribute('stroke','currentColor'); cs.setAttribute('stroke-width','2.5');
+                const cl1 = document.createElementNS(svgNS,'line'); cl1.setAttribute('x1','18'); cl1.setAttribute('y1','6'); cl1.setAttribute('x2','6'); cl1.setAttribute('y2','18');
+                const cl2 = document.createElementNS(svgNS,'line'); cl2.setAttribute('x1','6'); cl2.setAttribute('y1','6'); cl2.setAttribute('x2','18'); cl2.setAttribute('y2','18');
+                cs.appendChild(cl1); cs.appendChild(cl2);
+                closeBtn.appendChild(cs);
+                closeBtn.onclick = () => this._collapseSplit(true);
+                left.appendChild(closeBtn);
 
-                const closeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                closeSvg.setAttribute('width', '14');
-                closeSvg.setAttribute('height', '14');
-                closeSvg.setAttribute('viewBox', '0 0 24 24');
-                closeSvg.setAttribute('fill', 'none');
-                closeSvg.setAttribute('stroke', 'currentColor');
-                closeSvg.setAttribute('stroke-width', '2.5');
+                wrapper.appendChild(left);
+                wrapper.appendChild(divider);
+                wrapper.appendChild(right);
+                return wrapper;
+            },
 
-                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line1.setAttribute('x1', '18');
-                line1.setAttribute('y1', '6');
-                line1.setAttribute('x2', '6');
-                line1.setAttribute('y2', '18');
-
-                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line2.setAttribute('x1', '6');
-                line2.setAttribute('y1', '6');
-                line2.setAttribute('x2', '18');
-                line2.setAttribute('y2', '18');
-
-                closeSvg.appendChild(line1);
-                closeSvg.appendChild(line2);
-                closeBtn.appendChild(closeSvg);
-
-                closeBtn.onclick = (e) => {
+            _initDividerDrag(divider, left, right) {
+                if (!right) return;
+                divider.addEventListener('mousedown', (e) => {
+                    if (!this._isSplit) return;
                     e.preventDefault();
-                    e.stopPropagation();
-                    this._manuallyDismissed = true;
-                    this._unfloatVideo();
-                };
-
-                // Progress bar click handling
-                progressContainer.onclick = (e) => {
-                    e.stopPropagation();
-                    const video = container.querySelector('video');
-                    if (video && video.duration) {
-                        const rect = progressBar.getBoundingClientRect();
-                        const percent = (e.clientX - rect.left) / rect.width;
-                        video.currentTime = percent * video.duration;
-                    }
-                };
-
-                container.appendChild(controls);
-                container.appendChild(closeBtn);
-
-                // Resize handles
-                const resizeHandle = document.createElement('div');
-                resizeHandle.id = 'ytkit-floating-resize';
-                resizeHandle.dataset.corner = 'br';
-                container.appendChild(resizeHandle);
-
-                const resizeHandleLeft = document.createElement('div');
-                resizeHandleLeft.id = 'ytkit-floating-resize-left';
-                resizeHandleLeft.dataset.corner = 'bl';
-                container.appendChild(resizeHandleLeft);
-
-                document.body.appendChild(container);
-                this._initDrag(container);
-                this._initResize(container, [resizeHandle, resizeHandleLeft]);
-                return container;
-            },
-
-            _formatTime(seconds) {
-                if (isNaN(seconds)) return '0:00';
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
-            },
-
-            _updateProgress(container) {
-                const video = container.querySelector('video');
-                if (!video) return;
-
-                const progressFilled = container.querySelector('#ytkit-floating-progress-filled');
-                const progressHandle = container.querySelector('#ytkit-floating-progress-handle');
-                const timeDisplay = container.querySelector('#ytkit-floating-time');
-
-                if (video.duration) {
-                    const percent = (video.currentTime / video.duration) * 100;
-                    if (progressFilled) progressFilled.style.width = percent + '%';
-                    if (progressHandle) progressHandle.style.left = percent + '%';
-                    if (timeDisplay) {
-                        timeDisplay.textContent = `${this._formatTime(video.currentTime)} / ${this._formatTime(video.duration)}`;
-                    }
-                }
-            },
-
-            _updatePlayPauseUI(container) {
-                const video = container.querySelector('video');
-                const btn = container.querySelector('#ytkit-floating-playpause');
-                if (!video || !btn) return;
-
-                if (video.paused) {
-                    btn.classList.remove('playing');
-                } else {
-                    btn.classList.add('playing');
-                }
-            },
-
-            _updateVolumeUI(container) {
-                const video = container.querySelector('video');
-                const btn = container.querySelector('#ytkit-floating-volume-btn');
-                const slider = container.querySelector('#ytkit-floating-volume-slider');
-                if (!video || !btn) return;
-
-                if (video.muted || video.volume === 0) {
-                    btn.classList.add('muted');
-                } else {
-                    btn.classList.remove('muted');
-                }
-                if (slider && !video.muted) {
-                    slider.value = video.volume;
-                }
-            },
-
-            _setupVideoListeners(video) {
-                if (!this._floatingContainer) return;
-
-                const container = this._floatingContainer;
-
-                // Update progress
-                this._timeUpdateHandler = () => this._updateProgress(container);
-                video.addEventListener('timeupdate', this._timeUpdateHandler);
-
-                // Update play/pause state
-                this._playHandler = () => this._updatePlayPauseUI(container);
-                this._pauseHandler = () => this._updatePlayPauseUI(container);
-                video.addEventListener('play', this._playHandler);
-                video.addEventListener('pause', this._pauseHandler);
-
-                // Update volume
-                this._volumeHandler = () => this._updateVolumeUI(container);
-                video.addEventListener('volumechange', this._volumeHandler);
-
-                // Initial state
-                this._updatePlayPauseUI(container);
-                this._updateVolumeUI(container);
-                this._updateProgress(container);
-            },
-
-            _removeVideoListeners(video) {
-                if (this._timeUpdateHandler) {
-                    video.removeEventListener('timeupdate', this._timeUpdateHandler);
-                }
-                if (this._playHandler) {
-                    video.removeEventListener('play', this._playHandler);
-                }
-                if (this._pauseHandler) {
-                    video.removeEventListener('pause', this._pauseHandler);
-                }
-                if (this._volumeHandler) {
-                    video.removeEventListener('volumechange', this._volumeHandler);
-                }
-            },
-
-            _getSavedLayout() {
-                try {
-                    const saved = localStorage.getItem('ytkit-floating-layout');
-                    if (saved) return JSON.parse(saved);
-                } catch (e) {}
-                try {
-                    const pos = localStorage.getItem('ytkit-floating-pos');
-                    if (pos) return JSON.parse(pos);
-                } catch (e) {}
-                return null;
-            },
-
-            _saveLayout(x, y, w, h) {
-                try {
-                    localStorage.setItem('ytkit-floating-layout', JSON.stringify({ x, y, w, h }));
-                } catch (e) {}
-            },
-
-            _applyPosition(container) {
-                const layout = this._getSavedLayout();
-                if (layout) {
-                    if (layout.w && layout.h) {
-                        container.style.width = Math.max(240, Math.min(layout.w, window.innerWidth - 20)) + 'px';
-                        container.style.height = Math.max(135, Math.min(layout.h, window.innerHeight - 20)) + 'px';
-                    }
-                    if (layout.x != null && layout.y != null) {
-                        const maxX = window.innerWidth - container.offsetWidth;
-                        const maxY = window.innerHeight - container.offsetHeight;
-                        container.style.left = Math.max(0, Math.min(layout.x, maxX)) + 'px';
-                        container.style.top = Math.max(0, Math.min(layout.y, maxY)) + 'px';
-                        container.style.right = 'auto';
-                    }
-                }
-            },
-
-            _initDrag(container) {
-                const onMouseDown = (e) => {
-                    if (e.target.closest('button, input, #ytkit-floating-progress-container, #ytkit-floating-volume-container, #ytkit-floating-resize, #ytkit-floating-resize-left')) return;
-                    e.preventDefault();
-                    const rect = container.getBoundingClientRect();
-                    this._dragState = {
-                        startX: e.clientX,
-                        startY: e.clientY,
-                        origLeft: rect.left,
-                        origTop: rect.top,
-                        dragged: false
-                    };
-                };
-
-                const onMouseMove = (e) => {
-                    if (!this._dragState) return;
-                    const dx = e.clientX - this._dragState.startX;
-                    const dy = e.clientY - this._dragState.startY;
-                    if (!this._dragState.dragged && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
-                    this._dragState.dragged = true;
-                    const maxX = window.innerWidth - container.offsetWidth;
-                    const maxY = window.innerHeight - container.offsetHeight;
-                    const newX = Math.max(0, Math.min(this._dragState.origLeft + dx, maxX));
-                    const newY = Math.max(0, Math.min(this._dragState.origTop + dy, maxY));
-                    container.style.left = newX + 'px';
-                    container.style.top = newY + 'px';
-                    container.style.right = 'auto';
-                    container.style.transition = 'none';
-                };
-
-                const onMouseUp = () => {
-                    if (!this._dragState) return;
-                    if (this._dragState.dragged) {
-                        const rect = container.getBoundingClientRect();
-                        this._saveLayout(rect.left, rect.top, rect.width, rect.height);
-                    }
-                    container.style.transition = '';
-                    this._dragState = null;
-                };
-
-                container.addEventListener('mousedown', onMouseDown);
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', onMouseUp);
-
-                this._dragCleanup = () => {
-                    container.removeEventListener('mousedown', onMouseDown);
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                };
-            },
-
-            _initResize(container, handles) {
-                let resizeState = null;
-
-                const onMouseDown = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const rect = container.getBoundingClientRect();
-                    resizeState = {
-                        corner: e.target.dataset.corner,
-                        startX: e.clientX,
-                        startY: e.clientY,
-                        origW: rect.width,
-                        origH: rect.height,
-                        origLeft: rect.left
-                    };
-                    container.style.transition = 'none';
-                };
-
-                const onMouseMove = (e) => {
-                    if (!resizeState) return;
-                    const dh = e.clientY - resizeState.startY;
-                    const newH = Math.max(135, Math.min(resizeState.origH + dh, window.innerHeight - container.offsetTop));
-
-                    if (resizeState.corner === 'bl') {
-                        const dw = resizeState.startX - e.clientX;
-                        const newW = Math.max(240, Math.min(resizeState.origW + dw, resizeState.origLeft + resizeState.origW));
-                        const newLeft = resizeState.origLeft + (resizeState.origW - newW);
-                        container.style.width = newW + 'px';
-                        container.style.left = Math.max(0, newLeft) + 'px';
-                        container.style.right = 'auto';
-                    } else {
-                        const dw = e.clientX - resizeState.startX;
-                        const newW = Math.max(240, Math.min(resizeState.origW + dw, window.innerWidth - container.offsetLeft));
-                        container.style.width = newW + 'px';
-                    }
-                    container.style.height = newH + 'px';
-                };
-
-                const onMouseUp = () => {
-                    if (!resizeState) return;
-                    resizeState = null;
-                    container.style.transition = '';
-                    const rect = container.getBoundingClientRect();
-                    this._saveLayout(rect.left, rect.top, rect.width, rect.height);
-                };
-
-                handles.forEach(h => h.addEventListener('mousedown', onMouseDown));
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', onMouseUp);
-
-                this._resizeCleanup = () => {
-                    handles.forEach(h => h.removeEventListener('mousedown', onMouseDown));
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                };
-            },
-
-            _floatVideo() {
-                if (this._isFloating || this._manuallyDismissed) return;
-                if (Date.now() - this._lastActionTime < 500) return;
-
-                const video = this._getVideo();
-                if (!video) {
-                    DebugManager.log('Sticky', 'No video element');
-                    return;
-                }
-
-                // Create floating container if needed
-                if (!this._floatingContainer) {
-                    this._floatingContainer = this._createFloatingContainer();
-                }
-
-                // Store original position and styles
-                this._originalVideoParent = video.parentElement;
-                this._originalVideoNextSibling = video.nextSibling;
-                this._originalVideoStyle = video.getAttribute('style') || '';
-                this._floatThreshold = window.scrollY;
-
-                // Move video to floating container (insert before controls)
-                const controls = this._floatingContainer.querySelector('#ytkit-floating-controls');
-                this._floatingContainer.insertBefore(video, controls);
-                this._floatingContainer.classList.add('ytkit-floating-visible');
-                this._applyPosition(this._floatingContainer);
-
-                // Force video to fill container
-                video.style.cssText = 'width:100%!important;height:100%!important;left:0!important;top:0!important;position:absolute!important;object-fit:contain!important;';
-
-                // Setup event listeners for controls
-                this._setupVideoListeners(video);
-
-                this._isFloating = true;
-                this._lastActionTime = Date.now();
-                DebugManager.log('Sticky', 'Floated video');
-            },
-
-            _unfloatVideo() {
-                if (!this._isFloating) return;
-
-                const video = this._floatingContainer?.querySelector('video');
-
-                if (video) {
-                    // Remove our event listeners
-                    this._removeVideoListeners(video);
-
-                    if (this._originalVideoParent) {
-                        // Restore video to original position
-                        if (this._originalVideoNextSibling && this._originalVideoNextSibling.parentElement === this._originalVideoParent) {
-                            this._originalVideoParent.insertBefore(video, this._originalVideoNextSibling);
-                        } else {
-                            this._originalVideoParent.appendChild(video);
-                        }
-
-                        // Restore original styles
-                        if (this._originalVideoStyle) {
-                            video.setAttribute('style', this._originalVideoStyle);
-                        } else {
-                            video.removeAttribute('style');
-                        }
-                    }
-                }
-
-                if (this._floatingContainer) {
-                    this._floatingContainer.classList.remove('ytkit-floating-visible');
-                }
-
-                this._originalVideoParent = null;
-                this._originalVideoNextSibling = null;
-                this._originalVideoStyle = null;
-                this._isFloating = false;
-                this._floatThreshold = null;
-                this._lastActionTime = Date.now();
-                DebugManager.log('Sticky', 'Unfloated video');
-            },
-
-            _checkScroll() {
-                if (!window.location.pathname.startsWith('/watch')) {
-                    if (this._isFloating) this._unfloatVideo();
-                    return;
-                }
-
-                const currentVideoId = new URLSearchParams(window.location.search).get('v');
-                if (currentVideoId !== this._lastVideoId) {
-                    this._lastVideoId = currentVideoId;
-                    this._manuallyDismissed = false;
-                    this._floatThreshold = null;
-                    if (this._isFloating) this._unfloatVideo();
-                    return;
-                }
-
-                const anchor = this._getPlayerAnchor();
-                if (!anchor) return;
-
-                const rect = anchor.getBoundingClientRect();
-
-                // If floating, check if we should unfloat
-                if (this._isFloating) {
-                    // Only unfloat when scrolled significantly back up
-                    if (this._floatThreshold !== null && window.scrollY < this._floatThreshold - 200) {
-                        DebugManager.log('Sticky', 'Scrolled back up, unfloating', window.scrollY);
-                        this._unfloatVideo();
-                    }
-                    return;
-                }
-
-                // Not floating - check if we should float
-                if (this._manuallyDismissed) {
-                    if (rect.top > 0) {
-                        this._manuallyDismissed = false;
-                    }
-                    return;
-                }
-
-                if (rect.bottom < 100) {
-                    DebugManager.log('Sticky', 'Floating', rect.bottom);
-                    this._floatVideo();
-                }
-            },
-
-            init() {
-                const css = `
-                    #ytkit-floating-video-container {
-                        position: fixed;
-                        top: 70px;
-                        right: 20px;
-                        width: 400px;
-                        height: 225px;
-                        z-index: 2147483647;
-                        border-radius: 12px;
-                        overflow: hidden;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1);
-                        background: #000;
-                        display: none;
-                        cursor: grab;
-                        user-select: none;
-                    }
-
-                    #ytkit-floating-video-container:active {
-                        cursor: grabbing;
-                    }
-
-                    #ytkit-floating-video-container.ytkit-floating-visible {
-                        display: block;
-                    }
-
-                    #ytkit-floating-video-container:hover {
-                        box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.2);
-                    }
-
-                    #ytkit-floating-video-container video {
-                        width: 100% !important;
-                        height: 100% !important;
-                        object-fit: contain !important;
-                    }
-
-                    /* Controls overlay */
-                    #ytkit-floating-controls {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: center;
-                        opacity: 0;
-                        transition: opacity 0.2s;
-                        pointer-events: none;
-                        z-index: 10;
-                    }
-
-                    #ytkit-floating-video-container:hover #ytkit-floating-controls {
-                        opacity: 1;
-                    }
-
-                    /* Play/Pause button */
-                    #ytkit-floating-playpause {
-                        width: 60px;
-                        height: 60px;
-                        border-radius: 50%;
-                        background: rgba(0,0,0,0.6);
-                        border: none;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        transition: background 0.2s, transform 0.1s;
-                        pointer-events: auto;
-                    }
-
-                    #ytkit-floating-playpause:hover {
-                        background: rgba(0,0,0,0.8);
-                        transform: scale(1.1);
-                    }
-
-                    #ytkit-floating-playpause .play-icon {
-                        display: block;
-                    }
-                    #ytkit-floating-playpause .pause-icon {
-                        display: none;
-                    }
-                    #ytkit-floating-playpause.playing .play-icon {
-                        display: none;
-                    }
-                    #ytkit-floating-playpause.playing .pause-icon {
-                        display: block;
-                    }
-
-                    /* Bottom bar */
-                    #ytkit-floating-bottombar {
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        right: 0;
-                        padding: 8px 12px;
-                        background: linear-gradient(transparent, rgba(0,0,0,0.8));
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        pointer-events: auto;
-                    }
-
-                    /* Progress bar */
-                    #ytkit-floating-progress-container {
-                        flex: 1;
-                        height: 20px;
-                        display: flex;
-                        align-items: center;
-                        cursor: pointer;
-                    }
-
-                    #ytkit-floating-progress {
-                        width: 100%;
-                        height: 4px;
-                        background: rgba(255,255,255,0.3);
-                        border-radius: 2px;
-                        position: relative;
-                        transition: height 0.1s;
-                    }
-
-                    #ytkit-floating-progress-container:hover #ytkit-floating-progress {
-                        height: 6px;
-                    }
-
-                    #ytkit-floating-progress-filled {
-                        height: 100%;
-                        background: #ff0000;
-                        border-radius: 2px;
-                        width: 0%;
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                    }
-
-                    #ytkit-floating-progress-handle {
-                        width: 12px;
-                        height: 12px;
-                        background: #ff0000;
-                        border-radius: 50%;
-                        position: absolute;
-                        top: 50%;
-                        left: 0%;
-                        transform: translate(-50%, -50%) scale(0);
-                        transition: transform 0.1s;
-                    }
-
-                    #ytkit-floating-progress-container:hover #ytkit-floating-progress-handle {
-                        transform: translate(-50%, -50%) scale(1);
-                    }
-
-                    /* Time display */
-                    #ytkit-floating-time {
-                        color: white;
-                        font-size: 11px;
-                        font-family: 'YouTube Sans', 'Roboto', sans-serif;
-                        white-space: nowrap;
-                        min-width: 75px;
-                        text-align: center;
-                    }
-
-                    /* Volume control */
-                    #ytkit-floating-volume-container {
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                    }
-
-                    #ytkit-floating-volume-btn {
-                        background: none;
-                        border: none;
-                        cursor: pointer;
-                        padding: 4px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        opacity: 0.9;
-                        transition: opacity 0.2s;
-                    }
-
-                    #ytkit-floating-volume-btn:hover {
-                        opacity: 1;
-                    }
-
-                    #ytkit-floating-volume-btn .volume-high {
-                        display: block;
-                    }
-                    #ytkit-floating-volume-btn .volume-muted {
-                        display: none;
-                    }
-                    #ytkit-floating-volume-btn.muted .volume-high {
-                        display: none;
-                    }
-                    #ytkit-floating-volume-btn.muted .volume-muted {
-                        display: block;
-                    }
-
-                    #ytkit-floating-volume-slider {
-                        width: 0;
-                        opacity: 0;
-                        transition: width 0.2s, opacity 0.2s;
-                        cursor: pointer;
-                        accent-color: white;
-                        height: 4px;
-                    }
-
-                    #ytkit-floating-volume-container:hover #ytkit-floating-volume-slider {
-                        width: 60px;
-                        opacity: 1;
-                    }
-
-                    /* Close button */
-                    #ytkit-floating-close {
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
-                        width: 28px;
-                        height: 28px;
-                        border-radius: 50%;
-                        background: rgba(0,0,0,0.75);
-                        border: none;
-                        color: white;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        opacity: 0;
-                        transition: opacity 0.2s, background 0.2s;
-                        z-index: 20;
-                    }
-
-                    #ytkit-floating-video-container:hover #ytkit-floating-close {
-                        opacity: 1;
-                    }
-
-                    #ytkit-floating-close:hover {
-                        background: rgba(220,38,38,0.9);
-                    }
-
-                    /* Resize handles */
-                    #ytkit-floating-resize, #ytkit-floating-resize-left {
-                        position: absolute;
-                        bottom: 0;
-                        width: 18px;
-                        height: 18px;
-                        z-index: 25;
-                        background: transparent;
-                    }
-                    #ytkit-floating-resize { right: 0; cursor: nwse-resize; }
-                    #ytkit-floating-resize-left { left: 0; cursor: nesw-resize; }
-                    #ytkit-floating-resize::after, #ytkit-floating-resize-left::after {
-                        content: '';
-                        position: absolute;
-                        bottom: 3px;
-                        width: 8px;
-                        height: 8px;
-                        opacity: 0;
-                        transition: opacity 0.2s;
-                    }
-                    #ytkit-floating-resize::after {
-                        right: 3px;
-                        border-right: 2px solid rgba(255,255,255,0.4);
-                        border-bottom: 2px solid rgba(255,255,255,0.4);
-                    }
-                    #ytkit-floating-resize-left::after {
-                        left: 3px;
-                        border-left: 2px solid rgba(255,255,255,0.4);
-                        border-bottom: 2px solid rgba(255,255,255,0.4);
-                    }
-                    #ytkit-floating-video-container:hover #ytkit-floating-resize::after,
-                    #ytkit-floating-video-container:hover #ytkit-floating-resize-left::after {
-                        opacity: 1;
-                    }
-
-                    @media (max-width: 1200px) {
-                        #ytkit-floating-video-container {
-                            width: 320px;
-                            height: 180px;
-                        }
-                        #ytkit-floating-playpause {
-                            width: 50px;
-                            height: 50px;
-                        }
-                        #ytkit-floating-playpause svg {
-                            width: 30px;
-                            height: 30px;
-                        }
-                        #ytkit-floating-time {
-                            font-size: 10px;
-                            min-width: 65px;
-                        }
-                    }
-
-                    @media (max-width: 768px) {
-                        #ytkit-floating-video-container {
-                            width: 280px;
-                            height: 158px;
-                            top: auto;
-                            bottom: 70px;
-                            right: 10px;
-                        }
-                        #ytkit-floating-playpause {
-                            width: 44px;
-                            height: 44px;
-                        }
-                        #ytkit-floating-playpause svg {
-                            width: 26px;
-                            height: 26px;
-                        }
-                        #ytkit-floating-bottombar {
-                            padding: 6px 8px;
-                            gap: 6px;
-                        }
-                        #ytkit-floating-time {
-                            display: none;
-                        }
-                    }
-                `;
-                this._styleElement = injectStyle(css, this.id, true);
-
-                // Scroll handler
-                let scrollTimeout = null;
-                this._scrollHandler = () => {
-                    if (scrollTimeout) return;
-                    scrollTimeout = setTimeout(() => {
-                        scrollTimeout = null;
-                        this._checkScroll();
-                    }, 150);
-                };
-
-                window.addEventListener('scroll', this._scrollHandler, { passive: true });
-
-                setTimeout(() => {
-                    DebugManager.log('Sticky', 'Init complete');
-                }, 1000);
-
-                DebugManager.log('Sticky', 'Sticky Video initialized');
-            },
-
-            destroy() {
-                this._unfloatVideo();
-                this._styleElement?.remove();
-                this._dragCleanup?.();
-                this._resizeCleanup?.();
-
-                if (this._floatingContainer) {
-                    this._floatingContainer.remove();
-                    this._floatingContainer = null;
-                }
-
-                if (this._scrollHandler) {
-                    window.removeEventListener('scroll', this._scrollHandler);
-                }
-            }
-        },
-        // ─── Playback ───
-        {
-            id: 'preventAutoplay',
-            name: 'Prevent Autoplay',
-            description: 'Stop videos from automatically playing on page load',
-            group: 'Playback',
-            icon: 'pause-circle',
-            _navHandler: null,
-            init() {
-                const pauseRule = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    const video = document.querySelector('video.html5-main-video');
-                    const player = document.getElementById('movie_player');
-                    if (video && player && !video.paused) {
-                        video.pause();
-                        player.classList.remove('playing-mode');
-                        player.classList.add('paused-mode');
-                    }
-                };
-                this._navHandler = () => setTimeout(pauseRule, 500);
-                document.addEventListener('yt-navigate-finish', this._navHandler);
-                setTimeout(pauseRule, 500);
-            },
-            destroy() {
-                if (this._navHandler) {
-                    document.removeEventListener('yt-navigate-finish', this._navHandler);
-                    this._navHandler = null;
-                }
-            }
-        },
-        {
-            id: 'autoExpandDescription',
-            name: 'Auto-Expand Description',
-            description: 'Automatically show the full video description',
-            group: 'Playback',
-            icon: 'chevrons-down',
-            init() {
-                const expandRule = () => {
-                    if (window.location.pathname.startsWith('/watch')) {
-                        document.querySelector('ytd-text-inline-expander tp-yt-paper-button#expand')?.click();
-                    }
-                };
-                addNavigateRule(this.id, expandRule);
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'preloadComments',
-            name: 'Preload Comments',
-            description: 'Eagerly load the comment section so it is ready when you scroll down',
-            group: 'Playback',
-            icon: 'message-square',
-            init() {
-                const preloadRule = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    const tryPreload = (attempts = 0) => {
-                        if (document.querySelector('ytd-comments#comments ytd-comment-thread-renderer')) return;
-                        const continuation = document.querySelector('ytd-comments#comments ytd-continuation-item-renderer');
-                        if (!continuation) {
-                            if (attempts < 30) setTimeout(() => tryPreload(attempts + 1), 500);
-                            return;
-                        }
-                        const orig = continuation.style.cssText;
-                        continuation.style.cssText = 'position:fixed!important;top:0!important;left:0!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;z-index:-1!important;';
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                continuation.style.cssText = orig;
-                            });
+                    const wrapper = this._splitWrapper;
+                    const totalW = wrapper.getBoundingClientRect().width;
+                    const startX = e.clientX;
+                    const startLeftPct = left.getBoundingClientRect().width / totalW * 100;
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+
+                    // Full-viewport overlay prevents cross-origin iframe from eating mouse events
+                    const dragShield = document.createElement('div');
+                    dragShield.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;cursor:col-resize;';
+                    document.body.appendChild(dragShield);
+
+                    const onMove = (me) => {
+                        const dx = me.clientX - startX;
+                        const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
+                        const newRightPct = 100 - newLeftPct;
+                        right.style.flexBasis = newRightPct + '%';
+                        right.style.width     = newRightPct + '%';
+                        divider.style.flexBasis = '6px';
+                        (this._positionedEls || []).forEach(el => {
+                            el.style.setProperty('width', `calc(${newRightPct}% - 2px)`, 'important');
                         });
+                        const strip = wrapper.querySelector('#ytkit-split-collapse-strip');
+                        if (strip) strip.style.width = `calc(${newRightPct}% - 2px)`;
+                        try { sessionStorage.setItem('ytkit-split-ratio', 100 - newRightPct); } catch(err) {}
                     };
-                    setTimeout(() => tryPreload(), 1500);
-                };
-                addNavigateRule(this.id, preloadRule);
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'sortCommentsNewestFirst',
-            name: 'Newest Comments First',
-            description: 'Sort comments by newest instead of top',
-            group: 'Playback',
-            icon: 'clock',
-            init() {
-                const sortRule = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    const commentsSection = document.querySelector('ytd-comments#comments');
-                    if (!commentsSection || commentsSection.textContent.includes('Comments are turned off')) return;
-                    const sortButton = commentsSection.querySelector('yt-sort-filter-sub-menu-renderer');
-                    if (sortButton && !sortButton.hasAttribute('data-suite-sorted')) {
-                        sortButton.querySelector('yt-dropdown-menu tp-yt-paper-button')?.click();
-                        setTimeout(() => {
-                            const menuItems = document.querySelectorAll('tp-yt-paper-listbox a.yt-simple-endpoint');
-                            const newestOption = Array.from(menuItems).find(item => item.textContent.trim() === 'Newest first');
-                            if (newestOption) {
-                                newestOption.click();
-                                sortButton.setAttribute('data-suite-sorted', 'true');
-                            } else {
-                                document.body.click();
-                            }
-                        }, 200);
-                    }
-                };
-                addNavigateRule(this.id, sortRule);
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'autoOpenChapters',
-            name: 'Auto-Open Chapters',
-            description: 'Automatically open the chapters panel when available',
-            group: 'Playback',
-            icon: 'list-tree',
-            init() {
-                const openChapters = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    setTimeout(() => {
-                        const chaptersButton = document.querySelector('ytd-video-description-chapters-section-renderer button');
-                        if (chaptersButton && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]')) {
-                            chaptersButton.click();
-                        }
-                    }, 1000);
-                };
-                addNavigateRule(this.id, openChapters);
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'autoOpenTranscript',
-            name: 'Auto-Open Transcript',
-            description: 'Automatically open the transcript panel when available',
-            group: 'Playback',
-            icon: 'scroll-text',
-            init() {
-                const openTranscript = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    setTimeout(() => {
-                        const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
-                        if (moreBtn && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]')) {
-                            moreBtn.click();
-                        }
-                    }, 1200);
-                };
-                addNavigateRule(this.id, openTranscript);
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'chronologicalNotifications',
-            name: 'Sort Notifications',
-            description: 'Sort notifications chronologically (newest first)',
-            group: 'Playback',
-            icon: 'bell-ring',
-            _observer: null,
-            init() {
-                const sortNotifications = () => {
-                    const container = document.querySelector('ytd-notification-renderer');
-                    if (!container) return;
-                    const parent = container.parentElement;
-                    if (!parent || parent.dataset.sorted) return;
-                    const items = Array.from(parent.querySelectorAll('ytd-notification-renderer'));
-                    if (items.length < 2) return;
-                    items.sort((a, b) => {
-                        const timeA = a.querySelector('#message')?.textContent || '';
-                        const timeB = b.querySelector('#message')?.textContent || '';
-                        return timeB.localeCompare(timeA);
-                    });
-                    items.forEach(item => parent.appendChild(item));
-                    parent.dataset.sorted = 'true';
-                };
-                this._observer = new MutationObserver(sortNotifications);
-                const popup = document.querySelector('ytd-popup-container');
-                if (popup) this._observer.observe(popup, { childList: true, subtree: true });
-            },
-            destroy() { this._observer?.disconnect(); }
-        },
-        {
-            id: 'reversePlaylist',
-            name: 'Reverse Playlist',
-            description: 'Add a button to reverse the order of the current playlist',
-            group: 'Playback',
-            icon: 'arrow-down-up',
-            _ruleId: 'reversePlaylistRule',
-            _injectButton() {
-                if (document.getElementById('ytkit-reverse-playlist')) return;
-                const header = document.querySelector('ytd-playlist-panel-renderer #header-contents, ytd-playlist-panel-renderer .header');
-                if (!header) return;
-                const btn = document.createElement('button');
-                btn.id = 'ytkit-reverse-playlist';
-                btn.title = 'Reverse playlist order';
-                btn.textContent = '\u21C5';
-                btn.style.cssText = 'background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:14px;margin-left:8px;';
-                btn.addEventListener('click', () => {
-                    const items = document.querySelector('ytd-playlist-panel-renderer #items');
-                    if (!items) return;
-                    const children = [...items.children];
-                    children.reverse().forEach(c => items.appendChild(c));
-                    showToast('Playlist reversed', '#22c55e');
-                });
-                header.appendChild(btn);
-            },
-            init() { addMutationRule(this._ruleId, () => this._injectButton()); },
-            destroy() {
-                removeMutationRule(this._ruleId);
-                document.getElementById('ytkit-reverse-playlist')?.remove();
-            }
-        },
-
-        // ─── Playback Enhancements ───
-        {
-            id: 'playbackSpeedPresets',
-            name: 'Speed Presets',
-            description: 'Quick buttons for 1.25x, 1.5x, 1.75x, 2x speeds on the player',
-            group: 'Playback',
-            icon: 'gauge',
-            isParent: true,
-            _styleElement: null,
-            _container: null,
-
-            _createSpeedButton(speed, isActive) {
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-speed-btn' + (isActive ? ' active' : '');
-                btn.textContent = speed === 1 ? '1x' : speed + 'x';
-                btn.dataset.speed = speed;
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    const video = document.querySelector('video.html5-main-video');
-                    if (video) {
-                        video.playbackRate = speed;
-                        document.querySelectorAll('.ytkit-speed-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        // Save as default or per-channel
-                        if (appState.settings.rememberPlaybackSpeed) {
-                            const channelId = this._getCurrentChannelId();
-                            if (channelId) {
-                                appState.settings.channelPlaybackSpeeds[channelId] = speed;
-                                settingsManager.save(appState.settings);
-                            }
-                        } else {
-                            // Save as global default
-                            appState.settings.defaultPlaybackSpeed = speed;
-                            settingsManager.save(appState.settings);
-                        }
-                    }
-                };
-                return btn;
-            },
-
-            _getCurrentChannelId() {
-                const link = document.querySelector('ytd-watch-metadata ytd-channel-name a, #owner a');
-                if (!link) return null;
-                const match = link.href.match(/\/@([^/?]+)|\/channel\/([^/?]+)/);
-                return match ? (match[1] || match[2]) : null;
-            },
-
-            _applySpeed(video) {
-                let targetSpeed = appState.settings.defaultPlaybackSpeed || 1;
-
-                // Check for per-channel override
-                if (appState.settings.rememberPlaybackSpeed) {
-                    const channelId = this._getCurrentChannelId();
-                    const channelSpeed = appState.settings.channelPlaybackSpeeds?.[channelId];
-                    if (channelSpeed) targetSpeed = channelSpeed;
-                }
-
-                video.playbackRate = targetSpeed;
-                document.querySelectorAll('.ytkit-speed-btn').forEach(b => {
-                    b.classList.toggle('active', Math.abs(parseFloat(b.dataset.speed) - targetSpeed) < 0.01);
+                    const onUp = () => {
+                        dragShield.remove();
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                        window.removeEventListener('mousemove', onMove);
+                        window.removeEventListener('mouseup', onUp);
+                        this._triggerPlayerResize();
+                    };
+                    window.addEventListener('mousemove', onMove);
+                    window.addEventListener('mouseup', onUp);
                 });
             },
 
-            _injectSpeedControls() {
-                if (!window.location.pathname.startsWith('/watch')) return;
-                if (document.querySelector('.ytkit-speed-controls')) return;
-
-                const player = document.querySelector('.ytp-right-controls');
+            // ── Mount overlay (video fullscreen, comments hidden) ──
+            _mountOverlay() {
+                if (this._isActive) return;
+                const player = this._getPlayer();
+                const below  = this._getBelow();
                 if (!player) return;
+                // For live streams, #below may not exist yet — that's OK
+                if (!below && !VideoTypeDetector.hasChat()) return;
 
-                const container = document.createElement('div');
-                container.className = 'ytkit-speed-controls';
+                // Video type already set by _activate
+                this._positionedEls = [];
+                this._scrollTarget = null;
 
-                const defaultSpeed = appState.settings.defaultPlaybackSpeed || 1;
+                this._origPlayerParent      = player.parentElement;
+                this._origPlayerNextSibling = player.nextSibling;
+                this._isActive = true;
 
-                [1, 1.25, 1.5, 1.75, 2].forEach(speed => {
-                    container.appendChild(this._createSpeedButton(speed, Math.abs(defaultSpeed - speed) < 0.01));
-                });
+                const wrapper = this._buildOverlay();
+                this._splitWrapper = wrapper;
+                document.body.appendChild(wrapper);
 
-                player.insertBefore(container, player.firstChild);
-                this._container = container;
+                const left  = wrapper.querySelector('#ytkit-split-left');
+                const right = wrapper.querySelector('#ytkit-split-right');
 
-                // Apply speed after a short delay
+                // Player into left — save play state before reparenting (Chrome pauses on DOM move)
                 const video = document.querySelector('video.html5-main-video');
-                if (video) {
-                    setTimeout(() => this._applySpeed(video), 500);
-                }
-            },
-
-            init() {
-                const css = `
-                    .ytkit-speed-controls { display:flex;align-items:center;gap:2px;margin-right:8px; }
-                    .ytkit-speed-btn { background:rgba(255,255,255,0.1);border:none;color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:all 0.15s;font-weight:500; }
-                    .ytkit-speed-btn:hover { background:rgba(255,255,255,0.2); }
-                    .ytkit-speed-btn.active { background:#c00;color:#fff; }
-                `;
-                this._styleElement = injectStyle(css, this.id, true);
-                addNavigateRule(this.id, () => setTimeout(() => this._injectSpeedControls(), 1000));
-                setTimeout(() => this._injectSpeedControls(), 1000);
-            },
-
-            destroy() {
-                this._styleElement?.remove();
-                removeNavigateRule(this.id);
-                document.querySelector('.ytkit-speed-controls')?.remove();
-            }
-        },
-        {
-            id: 'rememberPlaybackSpeed',
-            name: 'Per-Channel Speed Override',
-            description: 'Override default speed with per-channel preferences (otherwise uses global default)',
-            group: 'Playback',
-            icon: 'brain',
-            isSubFeature: true,
-            parentId: 'playbackSpeedPresets',
-            init() { /* Handled by parent */ },
-            destroy() { /* Handled by parent */ }
-        },
-        // REMOVED: Return YouTube Dislike - API dependency removed for performance
-        {
-            id: 'showWatchProgress',
-            name: 'Watch Progress Indicator',
-            description: 'Show which videos you\'ve partially watched with a red progress bar',
-            group: 'Playback',
-            icon: 'progress',
-            _styleElement: null,
-            _observer: null,
-            _STORAGE_KEY: 'ytkit-watch-progress',
-
-            _getProgress() {
-                try { return GM_getValue(this._STORAGE_KEY, {}); }
-                catch { const s = localStorage.getItem(this._STORAGE_KEY); return s ? JSON.parse(s) : {}; }
-            },
-            _setProgress(data) {
-                try { GM_setValue(this._STORAGE_KEY, data); }
-                catch { localStorage.setItem(this._STORAGE_KEY, JSON.stringify(data)); }
-            },
-
-            _trackProgress() {
-                if (!window.location.pathname.startsWith('/watch')) return;
-                const video = document.querySelector('video.html5-main-video');
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                if (!video || !videoId) return;
-
-                // Remove previous handlers if any (prevents stacking on SPA nav)
-                if (this._progressHandlers) {
-                    const prev = this._progressHandlers;
-                    prev.video.removeEventListener('timeupdate', prev.handler);
-                    prev.video.removeEventListener('pause', prev.handler);
+                const wasPlaying = video && !video.paused;
+                left.insertBefore(player, wrapper.querySelector('#ytkit-split-close'));
+                player.style.removeProperty('height');
+                player.style.removeProperty('width');
+                player.style.setProperty('width', '100%', 'important');
+                player.style.setProperty('height', '100%', 'important');
+                player.style.setProperty('flex', '1', 'important');
+                player.style.setProperty('min-height', '0', 'important');
+                player.style.setProperty('display', 'flex', 'important');
+                player.style.setProperty('flex-direction', 'column', 'important');
+                // Resume playback if it was playing before reparent
+                if (wasPlaying && video) {
+                    requestAnimationFrame(() => {
+                        video.play().catch(() => {});
+                    });
                 }
 
-                const saveProgress = () => {
-                    if (video.duration > 0) {
-                        const percent = (video.currentTime / video.duration) * 100;
-                        if (percent > 5 && percent < 95) {
-                            const progress = this._getProgress();
-                            progress[videoId] = Math.round(percent);
-                            this._setProgress(progress);
-                        } else if (percent >= 95) {
-                            const progress = this._getProgress();
-                            delete progress[videoId];
-                            this._setProgress(progress);
+                // Force #movie_player to fill parent — clear YT's inline px dimensions
+                // Batched: runs at most once per frame, and stops after layout stabilizes
+                let _fpsPending = false;
+                let _fpsCount = 0;
+                const forcePlayerSize = () => {
+                    if (_fpsPending || _fpsCount > 5) return; // Stop after 5 cycles to prevent fight with YT
+                    _fpsPending = true;
+                    _fpsCount++;
+                    requestAnimationFrame(() => {
+                        _fpsPending = false;
+                        if (!this._isActive) return;
+                        const mp = document.getElementById('movie_player');
+                        if (!mp) return;
+                        mp.style.setProperty('width',  '100%', 'important');
+                        mp.style.setProperty('height', '100%', 'important');
+                        const vc = mp.querySelector('.html5-video-container');
+                        const vid = mp.querySelector('video.html5-main-video');
+                        if (vc)  { vc.style.setProperty('width','100%','important'); vc.style.setProperty('height','100%','important'); }
+                        if (vid) { vid.style.setProperty('width','100%','important'); vid.style.setProperty('height','100%','important'); vid.style.setProperty('object-fit','contain','important'); }
+                        const ytdP = mp.closest('ytd-player');
+                        const innerCont = ytdP?.querySelector('#container');
+                        if (innerCont) { innerCont.style.setProperty('width','100%','important'); innerCont.style.setProperty('height','100%','important'); innerCont.style.setProperty('padding-bottom','0','important'); }
+                        const chromeBottom = mp.querySelector('.ytp-chrome-bottom');
+                        if (chromeBottom) {
+                            chromeBottom.style.removeProperty('width');
+                            chromeBottom.style.removeProperty('left');
                         }
+                    });
+                };
+                forcePlayerSize();
+
+                // Single ResizeObserver on left panel — debounced to avoid fight with YT's player
+                let _resizeDebounce = null;
+                this._playerResizeObs = new ResizeObserver(() => {
+                    clearTimeout(_resizeDebounce);
+                    _resizeDebounce = setTimeout(() => { _fpsCount = 0; forcePlayerSize(); }, 200);
+                });
+                this._playerResizeObs.observe(left);
+
+                // Delayed resize trigger — wait for layout to settle before telling YT to recalculate
+                setTimeout(() => this._triggerPlayerResize(), 600);
+
+                // #below stays in original DOM — overlay at z-index:9999 hides it visually.
+                // DO NOT set visibility:hidden — it can prevent IntersectionObserver from firing.
+                // Just block interaction until split expands.
+                if (below) {
+                    below.style.setProperty('pointer-events', 'none', 'important');
+                }
+
+                // For live/VOD: also hide the chat frame behind overlay
+                const chatEl = this._getChatEl();
+                if (chatEl) {
+                    chatEl.style.setProperty('pointer-events', 'none', 'important');
+                    // Ensure chat iframe isn't collapsed (YT collapses it sometimes)
+                    chatEl.removeAttribute('collapsed');
+                }
+
+                // Pre-scroll to comments so YT's IO fires (behind the overlay, invisible).
+                // Deferred heavily to avoid interfering with video load. Only for standard/VOD.
+                if (this._videoType !== 'live' && below) {
+                    const scrollToComments = () => {
+                        const commentsEl = below.querySelector('ytd-comments');
+                        if (commentsEl) commentsEl.scrollIntoView({ behavior: 'instant', block: 'center' });
+                    };
+                    if (typeof requestIdleCallback === 'function') {
+                        requestIdleCallback(scrollToComments, { timeout: 2000 });
+                    } else {
+                        setTimeout(scrollToComments, 800);
+                    }
+                }
+
+                // Hide related videos sidebar — but NOT the chat frame container.
+                // On live/VOD pages, ytd-live-chat-frame is inside #secondary.
+                // Hiding #secondary with display:none kills the chat completely.
+                const sec = document.querySelector('#secondary');
+                if (sec) {
+                    if (this._videoType === 'live' || this._videoType === 'vod') {
+                        // Only hide #related, keep #secondary visible for chat.
+                        // Force display:block to override hideRelatedVideos CSS !important
+                        const related = sec.querySelector('#related');
+                        if (related) { related.dataset.ytkitSplitHidden='1'; related.style.display='none'; }
+                        sec.style.setProperty('display', 'block', 'important');
+                        sec.style.setProperty('pointer-events', 'none', 'important');
+                        sec.dataset.ytkitSplitHidden='1';
+                    } else {
+                        sec.dataset.ytkitSplitHidden='1'; sec.style.display='none';
+                    }
+                }
+
+                // Masthead hidden via CSS class added in _activate()
+                const mast = document.querySelector('ytd-masthead, #masthead');
+                if (mast) this._mastheadDisplay = mast.style.display;
+
+                // Cache right panel ref for wheel handler (avoid querySelector in hot path)
+                const rightRef = right;
+
+                // Check if event target is in any positioned content element
+                const isInRightContent = (target) => {
+                    if (rightRef.contains(target)) return true;
+                    return (this._positionedEls || []).some(el => el.contains(target));
+                };
+
+                // Wheel/touch on wrapper → open/close comments panel
+                this._wheelHandler = (e) => {
+                    if (!this._isActive) return;
+                    if (!this._isSplit && e.deltaY > 0) { this._expandSplit(); return; }
+                    if (this._isSplit && e.deltaY < 0 && !isInRightContent(e.target)) {
+                        this._collapseSplit(false);
                     }
                 };
-                video.addEventListener('timeupdate', saveProgress);
-                video.addEventListener('pause', saveProgress);
-                this._progressHandlers = { video, handler: saveProgress };
-            },
-
-            _showProgressBars() {
-                const progress = this._getProgress();
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(el => {
-                    if (el.dataset.ytkitProgressProcessed) return;
-                    el.dataset.ytkitProgressProcessed = 'true';
-
-                    const link = el.querySelector('a[href*="/watch?v="]');
-                    if (!link) return;
-                    const match = link.href.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-                    if (!match) return;
-                    const videoId = match[1];
-                    const percent = progress[videoId];
-                    if (!percent) return;
-
-                    const thumbnail = el.querySelector('#thumbnail, ytd-thumbnail, .ytd-thumbnail');
-                    if (!thumbnail || thumbnail.querySelector('.ytkit-progress-bar')) return;
-
-                    const bar = document.createElement('div');
-                    bar.className = 'ytkit-progress-bar';
-                    bar.style.width = percent + '%';
-                    thumbnail.style.position = 'relative';
-                    thumbnail.appendChild(bar);
-                });
-            },
-
-            init() {
-                const css = `
-                    .ytkit-progress-bar { position:absolute;bottom:0;left:0;height:3px;background:#c00;z-index:100;pointer-events:none; }
-                `;
-                this._styleElement = injectStyle(css, this.id, true);
-                this._trackProgress();
-                this._showProgressBars();
-                addMutationRule(this.id + '_bars', () => this._showProgressBars());
-                addNavigateRule(this.id, () => { this._trackProgress(); this._showProgressBars(); });
-            },
-
-            destroy() {
-                this._styleElement?.remove();
-                removeMutationRule(this.id + '_bars');
-                removeNavigateRule(this.id);
-                if (this._progressHandlers) {
-                    const prev = this._progressHandlers;
-                    prev.video.removeEventListener('timeupdate', prev.handler);
-                    prev.video.removeEventListener('pause', prev.handler);
-                    this._progressHandlers = null;
-                }
-                document.querySelectorAll('.ytkit-progress-bar').forEach(b => b.remove());
-            }
-        },
-        {
-            id: 'timestampBookmarks',
-            name: 'Timestamp Bookmarks',
-            description: 'Save bookmarks at specific timestamps (Shift+B to bookmark)',
-            group: 'Playback',
-            icon: 'bookmark',
-            _styleElement: null,
-            _STORAGE_KEY: 'ytkit-timestamp-bookmarks',
-
-            _getBookmarks() {
-                try { return GM_getValue(this._STORAGE_KEY, {}); }
-                catch { const s = localStorage.getItem(this._STORAGE_KEY); return s ? JSON.parse(s) : {}; }
-            },
-            _setBookmarks(data) {
-                try { GM_setValue(this._STORAGE_KEY, data); }
-                catch { localStorage.setItem(this._STORAGE_KEY, JSON.stringify(data)); }
-            },
-
-            _formatTime(seconds) {
-                const h = Math.floor(seconds / 3600);
-                const m = Math.floor((seconds % 3600) / 60);
-                const s = Math.floor(seconds % 60);
-                return h > 0 ? `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}` : `${m}:${s.toString().padStart(2,'0')}`;
-            },
-
-            _addBookmark() {
-                const video = document.querySelector('video.html5-main-video');
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                if (!video || !videoId) return;
-
-                const time = Math.floor(video.currentTime);
-                const bookmarks = this._getBookmarks();
-                if (!bookmarks[videoId]) bookmarks[videoId] = [];
-                if (!bookmarks[videoId].includes(time)) {
-                    bookmarks[videoId].push(time);
-                    bookmarks[videoId].sort((a, b) => a - b);
-                    this._setBookmarks(bookmarks);
-                    this._renderBookmarks();
-                    showToast('Bookmark saved at ' + this._formatTime(time), '#22c55e');
-                }
-            },
-
-            _renderBookmarks() {
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                const bookmarks = this._getBookmarks()[videoId] || [];
-
-                let container = document.querySelector('.ytkit-bookmarks-container');
-                if (bookmarks.length === 0) { container?.remove(); return; }
-
-                if (!container) {
-                    container = document.createElement('div');
-                    container.className = 'ytkit-bookmarks-container';
-                    const descArea = document.querySelector('#bottom-row, ytd-watch-metadata #description');
-                    if (descArea) descArea.parentElement.insertBefore(container, descArea);
-                }
-
-                container.textContent = '';
-                const title = document.createElement('span');
-                title.className = 'ytkit-bookmarks-title';
-                title.textContent = 'Bookmarks:';
-                container.appendChild(title);
-
-                bookmarks.forEach(time => {
-                    const btn = document.createElement('button');
-                    btn.className = 'ytkit-bookmark-btn';
-                    btn.textContent = this._formatTime(time);
-                    btn.onclick = () => {
-                        const video = document.querySelector('video.html5-main-video');
-                        if (video) video.currentTime = time;
-                    };
-                    btn.oncontextmenu = (e) => {
-                        e.preventDefault();
-                        const bm = this._getBookmarks();
-                        bm[videoId] = bm[videoId].filter(t => t !== time);
-                        if (bm[videoId].length === 0) delete bm[videoId];
-                        this._setBookmarks(bm);
-                        this._renderBookmarks();
-                    };
-                    container.appendChild(btn);
-                });
-
-                // Export button
-                const exportBtn = document.createElement('button');
-                exportBtn.className = 'ytkit-bookmark-btn';
-                exportBtn.style.cssText = 'background:#1a365d;margin-left:auto;';
-                exportBtn.textContent = '\u2197 Copy';
-                exportBtn.title = 'Copy bookmarks as YouTube comment timestamps';
-                exportBtn.onclick = () => {
-                    const lines = bookmarks.map(t => this._formatTime(t));
-                    navigator.clipboard.writeText(lines.join('\n')).then(() => showToast('Bookmarks copied', '#22c55e'));
+                this._touchStartY = 0;
+                this._touchHandler = (e) => { const t = e.touches[0]; if (t) this._touchStartY = t.clientY; };
+                this._touchMoveHandler = (e) => {
+                    if (!this._isActive) return;
+                    const t = e.touches[0]; if (!t) return;
+                    if (!this._isSplit && this._touchStartY - t.clientY > 30) { this._expandSplit(); return; }
+                    if (this._isSplit && t.clientY - this._touchStartY > 40 && !isInRightContent(e.target)) {
+                        this._collapseSplit(false);
+                    }
                 };
-                container.appendChild(exportBtn);
-                // Export all as JSON
-                const exportAllBtn = document.createElement('button');
-                exportAllBtn.className = 'ytkit-bookmark-btn';
-                exportAllBtn.style.cssText = 'background:#1a365d;';
-                exportAllBtn.textContent = '\u21E9 JSON';
-                exportAllBtn.title = 'Export all bookmarks as JSON';
-                exportAllBtn.onclick = () => {
-                    const all = this._getBookmarks();
-                    const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = 'ytkit-bookmarks.json';
-                    a.click();
-                    showToast('Bookmarks exported', '#22c55e');
-                };
-                container.appendChild(exportAllBtn);
+                // Use CAPTURE phase — YouTube's player calls stopPropagation() on wheel
+                // events (for volume control), which prevents bubble-phase handlers from firing.
+                // Capture fires parent→child before the player can stop it.
+                this._splitWrapper.addEventListener('wheel', this._wheelHandler, { passive: true, capture: true });
+                this._splitWrapper.addEventListener('touchstart', this._touchHandler, { passive: true, capture: true });
+                this._splitWrapper.addEventListener('touchmove', this._touchMoveHandler, { passive: true, capture: true });
+
+                DebugManager.log('Theater', 'Overlay mounted');
             },
 
-            _keyHandler(e) {
-                if (e.shiftKey && e.key === 'B' && !e.target.matches('input, textarea, [contenteditable]')) {
-                    e.preventDefault();
-                    this._addBookmark();
+            // ── Expand right panel (show comments/chat) ──
+            _expandSplit() {
+                if (this._isSplit || !this._isActive) return;
+                this._isSplit = true;
+                this._entering = true;
+                this._positionedEls = [];
+
+                const wrapper = this._splitWrapper;
+                const left    = wrapper.querySelector('#ytkit-split-left');
+                const right   = wrapper.querySelector('#ytkit-split-right');
+                const divider = wrapper.querySelector('#ytkit-split-divider');
+                const below   = this._getBelow();
+                const chatEl  = this._getChatEl();
+                const type    = this._videoType;
+
+                const closeBtn = wrapper.querySelector('#ytkit-split-close');
+                if (closeBtn) closeBtn.style.opacity = '0.3';
+
+                let leftPct = 75;
+                try { const s = sessionStorage.getItem('ytkit-split-ratio'); if (s) leftPct = parseFloat(s); } catch(e) {}
+                leftPct = Math.max(25, Math.min(85, leftPct));
+                const rightPct = 100 - leftPct;
+
+                // Expand overlay's right panel placeholder
+                right.style.flexBasis = rightPct + '%';
+                right.style.width     = rightPct + '%';
+                divider.style.flexBasis = '6px';
+                divider.style.width     = '6px';
+                if (type === 'live' || type === 'vod') {
+                    // Right panel is just a spacer — chat overlays it via CSS fixed
+                    right.style.opacity = '0';
+                    right.style.background = 'transparent';
+                    right.style.borderLeft = 'none';
+                } else {
+                    right.style.opacity = '1';
                 }
+
+                // Elements stay in original DOM (no reparenting) so YT's IO works.
+                if (type === 'live') {
+                    // LIVE: Chat frame fills right panel
+                    if (chatEl) {
+                        this._positionOverRight(chatEl, rightPct, '0', '100vh');
+                        chatEl.removeAttribute('collapsed');
+                        // Tight layout: minimal left gap (2px divider clearance), 8px right breathing room
+                        chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                        chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
+                        chatEl.style.setProperty('border-radius', '0', 'important');
+                        this._forceChatFill(chatEl);
+                        this._scrollTarget = chatEl;
+                    } else {
+                        this._waitForChat(rightPct, '0', '100vh');
+                    }
+                } else if (type === 'vod') {
+                    // VOD: Chat replay on top (45vh), title+desc+comments below (55vh)
+                    if (chatEl) {
+                        this._positionOverRight(chatEl, rightPct, '0', '45vh');
+                        chatEl.removeAttribute('collapsed');
+                        chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                        chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                        chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
+                        chatEl.style.setProperty('border-radius', '0', 'important');
+                        this._forceChatFill(chatEl);
+                    } else {
+                        this._waitForChat(rightPct, '0', '45vh');
+                    }
+                    if (below) {
+                        const belowTop = chatEl ? '45vh' : '0';
+                        const belowH   = chatEl ? '55vh' : '100vh';
+                        this._positionOverRight(below, rightPct, belowTop, belowH);
+                        below.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                        below.style.setProperty('padding', '0 8px 60px 2px', 'important');
+                    }
+                    this._scrollTarget = chatEl || below;
+                } else {
+                    // STANDARD: #below fills right panel (title, desc, comments)
+                    if (below) {
+                        this._positionOverRight(below, rightPct, '0', '100vh');
+                        below.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                        below.style.setProperty('padding', '0 8px 60px 2px', 'important');
+                        this._scrollTarget = below;
+                    }
+                }
+
+                const onExpanded = () => {
+                    if (right) right.removeEventListener('transitionend', onTransEnd);
+                    this._entering = false;
+                    this._triggerPlayerResize();
+                    // For standard/VOD: scroll to comments to trigger IO
+                    if (type !== 'live' && below) {
+                        const commentsEl = below.querySelector('ytd-comments');
+                        if (commentsEl) below.scrollTop = commentsEl.offsetTop;
+                    }
+                };
+                const onTransEnd = (e) => {
+                    if (e.propertyName === 'flex-basis' || e.propertyName === 'opacity') onExpanded();
+                };
+                right.addEventListener('transitionend', onTransEnd);
+                setTimeout(() => { if (this._entering) onExpanded(); }, 500);
+
+                // Scroll/wheel handlers on the primary scroll target
+                const scrollEl = this._scrollTarget;
+                if (scrollEl) {
+                    this._rightWheelHandler = (e) => {
+                        if (scrollEl.scrollTop === 0 && e.deltaY < 0) this._collapseSplit(false);
+                    };
+                    this._rightTouchStartY = 0;
+                    this._rightTouchHandler = (e) => {
+                        const t = e.touches[0]; if (t) this._rightTouchStartY = t.clientY;
+                    };
+                    this._rightTouchMoveHandler = (e) => {
+                        if (scrollEl.scrollTop !== 0) return;
+                        const t = e.touches[0];
+                        if (t && t.clientY - this._rightTouchStartY > 40) this._collapseSplit(false);
+                    };
+                    scrollEl.addEventListener('wheel', this._rightWheelHandler, { passive: true });
+                    scrollEl.addEventListener('touchstart', this._rightTouchHandler, { passive: true });
+                    scrollEl.addEventListener('touchmove', this._rightTouchMoveHandler, { passive: true });
+                }
+
+                // For live/VOD: chat iframe swallows wheel events (cross-origin).
+                // Add a collapse trigger strip at top of right panel above the iframe z-index.
+                if (type === 'live' || type === 'vod') {
+                    const strip = document.createElement('div');
+                    strip.id = 'ytkit-split-collapse-strip';
+                    strip.style.width = `calc(${rightPct}% - 6px)`;
+                    strip.addEventListener('wheel', (e) => {
+                        if (e.deltaY < 0) this._collapseSplit(false);
+                    }, { passive: true });
+                    strip.addEventListener('touchstart', (e) => {
+                        const t = e.touches[0]; if (t) strip._touchY = t.clientY;
+                    }, { passive: true });
+                    strip.addEventListener('touchmove', (e) => {
+                        const t = e.touches[0];
+                        if (t && t.clientY - (strip._touchY || 0) > 30) this._collapseSplit(false);
+                    }, { passive: true });
+                    strip.addEventListener('click', () => this._collapseSplit(false));
+                    wrapper.appendChild(strip);
+                }
+
+                DebugManager.log('Theater', `Split expanded (${type})`);
             },
 
-            init() {
-                const css = `
-                    .ytkit-bookmarks-container { display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 0;margin-bottom:12px;border-bottom:1px solid #333; }
-                    .ytkit-bookmarks-title { color:#aaa;font-size:13px;font-weight:500; }
-                    .ytkit-bookmark-btn { background:#333;border:none;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;transition:background 0.15s; }
-                    .ytkit-bookmark-btn:hover { background:#c00; }
-                `;
-                this._styleElement = injectStyle(css, this.id, true);
-                this._boundKeyHandler = this._keyHandler.bind(this);
-                document.addEventListener('keydown', this._boundKeyHandler);
-                addNavigateRule(this.id, () => setTimeout(() => this._renderBookmarks(), 1000));
+            // ── Collapse right panel (back to fullscreen video) ──
+            _collapseSplit(dismissed) {
+                if (!this._isSplit) return;
+                this._isSplit = false;
+
+                const wrapper = this._splitWrapper;
+                const right   = wrapper.querySelector('#ytkit-split-right');
+                const divider = wrapper.querySelector('#ytkit-split-divider');
+                const closeBtn = wrapper.querySelector('#ytkit-split-close');
+
+                // Remove scroll handlers from scroll target
+                const scrollEl = this._scrollTarget;
+                if (this._rightWheelHandler && scrollEl) {
+                    scrollEl.removeEventListener('wheel', this._rightWheelHandler);
+                    scrollEl.removeEventListener('touchstart', this._rightTouchHandler);
+                    scrollEl.removeEventListener('touchmove', this._rightTouchMoveHandler);
+                    this._rightWheelHandler = null;
+                    this._rightTouchHandler = null;
+                    this._rightTouchMoveHandler = null;
+                }
+
+                // Collapse overlay placeholder
+                right.style.flexBasis = '0';
+                right.style.width     = '0';
+                divider.style.flexBasis = '0';
+                divider.style.width     = '0';
+                right.style.padding = '0';
+                right.style.opacity = '0';
+
+                // Unposition all elements and hide behind overlay
+                this._unpositionAll();
+                const below = this._getBelow();
+                if (below) below.style.setProperty('pointer-events', 'none', 'important');
+                const chatEl = this._getChatEl();
+                if (chatEl) {
+                    chatEl.style.setProperty('pointer-events', 'none', 'important');
+                    chatEl.style.removeProperty('border-bottom');
+                    this._restoreChatFill(chatEl);
+                }
+
+                if (closeBtn) closeBtn.style.opacity = '0';
+
+                // Remove collapse trigger strip
+                wrapper.querySelector('#ytkit-split-collapse-strip')?.remove();
+
+                this._triggerPlayerResize();
+                DebugManager.log('Theater', 'Split collapsed');
             },
 
-            destroy() {
-                this._styleElement?.remove();
-                document.removeEventListener('keydown', this._boundKeyHandler);
-                removeNavigateRule(this.id);
-                document.querySelector('.ytkit-bookmarks-container')?.remove();
-            }
-        },
-        {
-            id: 'returnYouTubeDislike',
-            name: 'Return YouTube Dislike',
-            description: 'Show community-sourced dislike counts via returnyoutubedislike.com API',
-            group: 'Playback',
-            icon: 'thumbs-down',
-            _currentVideoId: null,
-            _ruleId: 'returnDislikeRule',
-            async _fetchDislikes(videoId) {
-                try {
-                    return new Promise((resolve, reject) => {
-                        GM_xmlhttpRequest({
-                            method: 'GET',
-                            url: `https://returnyoutubedislikeapi.com/votes?videoId=${videoId}`,
-                            onload: (res) => {
-                                try { resolve(JSON.parse(res.responseText)); } catch { reject(); }
-                            },
-                            onerror: reject
+            // ── Unmount overlay entirely (navigate away / feature disabled) ──
+            _unmount(keepClass) {
+                if (!this._isActive) return;
+                clearTimeout(this._resizeTimer);
+
+                // Remove scroll handlers from scroll target
+                const scrollEl = this._scrollTarget;
+                if (this._rightWheelHandler && scrollEl) {
+                    scrollEl.removeEventListener('wheel', this._rightWheelHandler);
+                    scrollEl.removeEventListener('touchstart', this._rightTouchHandler);
+                    scrollEl.removeEventListener('touchmove', this._rightTouchMoveHandler);
+                    this._rightWheelHandler = null;
+                    this._rightTouchHandler = null;
+                    this._rightTouchMoveHandler = null;
+                }
+                if (this._wheelHandler && this._splitWrapper) {
+                    this._splitWrapper.removeEventListener('wheel', this._wheelHandler, true);
+                    this._splitWrapper.removeEventListener('touchstart', this._touchHandler, true);
+                    this._splitWrapper.removeEventListener('touchmove', this._touchMoveHandler, true);
+                }
+                this._wheelHandler = null;
+                this._touchHandler = null;
+                this._touchMoveHandler = null;
+                if (!keepClass) {
+                    const masth = document.querySelector('ytd-masthead, #masthead');
+                    if (masth && this._mastheadDisplay !== undefined) {
+                        masth.style.display = this._mastheadDisplay || '';
+                    }
+                }
+                this._mastheadDisplay = undefined;
+                this._playerResizeObs?.disconnect();
+                this._playerResizeObs = null;
+
+                const player = document.querySelector('#ytkit-split-left #player-container') || this._getPlayer();
+
+                if (player && this._origPlayerParent) {
+                    const vid = document.querySelector('video.html5-main-video');
+                    const wasPlaying = vid && !vid.paused;
+                    player.style.cssText = '';
+                    if (this._origPlayerNextSibling?.parentElement === this._origPlayerParent)
+                        this._origPlayerParent.insertBefore(player, this._origPlayerNextSibling);
+                    else this._origPlayerParent.appendChild(player);
+                    if (wasPlaying && vid) {
+                        requestAnimationFrame(() => { vid.play().catch(() => {}); });
+                    }
+                }
+
+                // Restore all positioned elements — remove fixed positioning styles
+                this._unpositionAll();
+                const below = this._getBelow();
+                if (below) {
+                    below.style.removeProperty('pointer-events');
+                    below.style.removeProperty('border-bottom');
+                }
+                const chatEl = this._getChatEl();
+                if (chatEl) {
+                    chatEl.style.removeProperty('pointer-events');
+                    chatEl.style.removeProperty('border-bottom');
+                    this._restoreChatFill(chatEl);
+                }
+
+                const mp = document.getElementById('movie_player');
+                if (mp) { mp.style.width=''; mp.style.height=''; }
+
+                document.querySelectorAll('[data-ytkit-split-hidden]').forEach(el => {
+                    el.style.display=''; el.style.removeProperty('pointer-events');
+                    delete el.dataset.ytkitSplitHidden;
+                });
+
+                this._splitWrapper?.remove();
+                this._splitWrapper = null;
+                this._isSplit = false;
+                this._isActive = false;
+                this._origPlayerParent = null;
+                this._origPlayerNextSibling = null;
+                this._videoType = 'standard';
+                if (!keepClass) document.documentElement.classList.remove('ytkit-split-active');
+                if (!keepClass) document.documentElement.style.removeProperty('--ytd-masthead-height');
+                // Restore page scroll — we left it scrolled to comments for IO during mount
+                window.scrollTo(0, 0);
+                DebugManager.log('Theater', 'Overlay unmounted');
+            },
+
+            _activate() {
+                if (!window.location.pathname.startsWith('/watch')) return;
+
+                const vid = getVideoId();
+                if (vid !== this._lastVideoId) {
+                    this._lastVideoId = vid;
+                    if (this._isActive) {
+                        // Same overlay, new video — collapse + refresh type (no unmount/remount)
+                        if (this._isSplit) this._collapseSplit(false);
+                        this._videoType = VideoTypeDetector.refresh();
+                        DebugManager.log('Theater', `Video changed to ${vid}, type: ${this._videoType}`);
+                        return;
+                    }
+                }
+                if (this._isActive) return;
+
+                // First mount — detect video type
+                this._videoType = VideoTypeDetector.refresh();
+
+                const doMount = () => {
+                    if (this._isActive) return;
+                    // Apply class right before mount — prevents broken half-state
+                    // where masthead is hidden but overlay hasn’t mounted yet
+                    document.documentElement.classList.add('ytkit-split-active');
+                    document.documentElement.style.setProperty('--ytd-masthead-height', '0px');
+                    this._mountOverlay();
+                };
+
+                const player = this._getPlayer();
+                const below  = this._getBelow();
+                const chatEl = this._getChatEl();
+                const hasContent = below || chatEl;
+                if (player && hasContent) {
+                    doMount();
+                } else {
+                    waitForElement('#player-container', () => {
+                        waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                            if (window.location.pathname.startsWith('/watch')) doMount();
                         });
                     });
-                } catch { return null; }
+                }
             },
-            _formatCount(n) {
-                if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
-                if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-                if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-                return String(n);
-            },
-            async _updateDislikeCount() {
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                if (!videoId || videoId === this._currentVideoId) return;
-                this._currentVideoId = videoId;
-                const data = await this._fetchDislikes(videoId);
-                if (!data || data.dislikes === undefined) return;
-                // Wait for dislike button to appear (race condition fix)
-                const injectCount = () => {
-                    const seg = document.querySelector('ytd-segmented-like-dislike-button-renderer');
-                    if (!seg) return false;
-                    let countEl = seg.querySelector('#ytkit-dislike-count');
-                    if (!countEl) {
-                        countEl = document.createElement('span');
-                        countEl.id = 'ytkit-dislike-count';
-                        countEl.style.cssText = 'font-size:12px;color:var(--yt-spec-text-secondary);margin-left:4px;';
-                        const dislikeArea = seg.querySelector('dislike-button-view-model, ytd-toggle-button-renderer:last-child');
-                        if (dislikeArea) dislikeArea.appendChild(countEl);
-                    }
-                    if (countEl) { countEl.textContent = this._formatCount(data.dislikes); return true; }
-                    return false;
-                };
-                if (injectCount()) return;
-                // Retry with MutationObserver
-                const obs = new MutationObserver(() => { if (injectCount()) obs.disconnect(); });
-                obs.observe(document.body, { childList: true, subtree: true });
-                setTimeout(() => obs.disconnect(), 10000);
-            },
+
             init() {
-                addNavigateRule(this._ruleId, () => {
-                    this._currentVideoId = null; // allow re-fetch on navigation
-                    setTimeout(() => this._updateDislikeCount(), 500);
-                });
+                const css = `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active body{padding-top:0!important;} #ytkit-split-left,#ytkit-split-left #player-container,#ytkit-split-left #player-container-inner,#ytkit-split-left #player-theater-container,#ytkit-split-left ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} #ytkit-split-left #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} #ytkit-split-left .html5-video-container{width:100%!important;height:100%!important;} #ytkit-split-left .ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important;} #ytkit-split-left .ytp-progress-bar-container{width:100%!important;} #ytkit-split-left .ytp-chrome-controls{width:100%!important;} #ytkit-split-left video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} #ytkit-split-left ytd-player > #container,#ytkit-split-left #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below[style*="position:fixed"],html.ytkit-split-active #below[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below[style*="position"] #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;} html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;} html.ytkit-split-active #below[style*="position"] #actions button,html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander,html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below[style*="position"] #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer,html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below[style*="position"] #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below[style*="position"] #author-text{font-size:12px!important;} html.ytkit-split-active #below[style*="position"] #published-time-text{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer,html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below[style*="position"] yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:24px;z-index:10002;cursor:n-resize;background:transparent;transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:24px;height:2px;background:rgba(255,255,255,0.12);border-radius:1px;margin:8px auto 0;opacity:0;transition:opacity 0.2s;} #ytkit-split-collapse-strip:hover::after{opacity:1;}  `;
+                this._styleEl = injectStyle(css, this.id, true);
+                addNavigateRule(this._navRuleId, () => this._activate());
+                DebugManager.log('Theater', 'Theater Split initialized');
             },
+
             destroy() {
-                removeNavigateRule(this._ruleId);
-                document.getElementById('ytkit-dislike-count')?.remove();
+                this._unmount();
+                this._styleEl?.remove();
+                removeNavigateRule(this._navRuleId);
             }
         },
+
         // ─── Ad Blocker (interfaces with document-start bootstrap) ───
         {
             id: 'ytAdBlock',
@@ -6200,38 +4059,8 @@
         },
         cssFeature('hideSponsorBlockLabels', 'Hide SponsorBlock Labels', 'Hide the category labels added by SponsorBlock', 'SponsorBlock', 'tag-off',
             '[id^="ytkit-sb-label-"]', { isSubFeature: true, parentId: 'skipSponsors' }),
-        {
-            id: 'sbCat_sponsor', name: 'Skip: Sponsor', description: 'Auto-skip sponsor segments', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'sponsor', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_selfpromo', name: 'Skip: Self Promotion', description: 'Auto-skip self-promotion segments', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'selfpromo', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_interaction', name: 'Skip: Interaction Reminder', description: 'Auto-skip subscribe/like reminders', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'interaction', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_intro', name: 'Skip: Intro', description: 'Auto-skip intro animations', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'intro', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_outro', name: 'Skip: Outro', description: 'Auto-skip outro/credits', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'outro', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_music_offtopic', name: 'Skip: Off-Topic Music', description: 'Auto-skip non-music in music videos', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'music_offtopic', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_preview', name: 'Skip: Preview/Recap', description: 'Auto-skip preview or recap sections', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'preview', init(){}, destroy(){}
-        },
-        {
-            id: 'sbCat_filler', name: 'Skip: Filler', description: 'Auto-skip filler/tangent sections', group: 'SponsorBlock', icon: 'list',
-            isSubFeature: true, parentId: 'skipSponsors', _arrayKey: 'sponsorBlockCategories', _arrayValue: 'filler', init(){}, destroy(){}
-        },
+                // Auto-generated SponsorBlock sub-features
+        ...([['sponsor','Skip: Sponsor','Auto-skip sponsor segments'],['selfpromo','Skip: Self Promotion','Auto-skip self-promotion segments'],['interaction','Skip: Interaction Reminder','Auto-skip subscribe/like reminders'],['intro','Skip: Intro','Auto-skip intro animations'],['outro','Skip: Outro','Auto-skip outro/credits'],['music_offtopic','Skip: Off-Topic Music','Auto-skip non-music in music videos'],['preview','Skip: Preview/Recap','Auto-skip preview or recap sections'],['filler','Skip: Filler','Auto-skip filler/tangent sections']].map(([v,n,d])=>({id:'sbCat_'+v,name:n,description:d,group:'SponsorBlock',icon:'list',isSubFeature:true,parentId:'skipSponsors',_arrayKey:'sponsorBlockCategories',_arrayValue:v,init(){},destroy(){}}))),
 
         // ─── Quality ───
         {
@@ -6271,7 +4100,7 @@
                 this._lastProcessedVideoId = null;
             },
             setQuality(player) {
-                const currentVideoId = (new URLSearchParams(window.location.search)).get('v');
+                const currentVideoId = getVideoId();
                 if (!player || !currentVideoId || currentVideoId === this._lastProcessedVideoId) return;
                 if (typeof player.getAvailableQualityLevels !== 'function') return;
                 const levels = player.getAvailableQualityLevels();
@@ -6356,22 +4185,14 @@
         cssFeature('hideCommentActionMenu', 'Hide Comment Actions', 'Remove action menu from individual comments', 'Clutter', 'more-horizontal',
             '#action-menu.ytd-comment-view-model, #action-menu.ytd-comment-renderer'),
         cssFeature('condenseComments', 'Condense Comments', 'Reduce spacing between comments for a tighter layout', 'Clutter', 'minimize-2',
-            `ytd-comment-thread-renderer.style-scope.ytd-item-section-renderer {
-                        margin-top: 5px !important;
-                        margin-bottom: 1px !important;
-                    }
-                    ytd-comment-thread-renderer.style-scope.ytd-comment-replies-renderer {
-                        padding-top: 0px !important;
-                        padding-bottom: 0px !important;
-                        margin-top: 0px !important;
-                        margin-bottom: 0px !important;
-                    }`),
+            `ytd-comment-thread-renderer.style-scope.ytd-item-section-renderer{margin-top:5px !important;margin-bottom:1px !important;} ytd-comment-thread-renderer.style-scope.ytd-comment-replies-renderer{padding-top:0px !important;padding-bottom:0px !important;margin-top:0px !important;margin-bottom:0px !important;}`),
+        cssFeature('hideCommentTeaser', 'Hide Comment Teaser', 'Remove the "Scroll for comments" prompt on watch pages', 'Clutter', 'message-square-off',
+            'ytd-comments-entry-point-header-renderer, ytd-comments-entry-point-teaser-renderer'),
         cssFeature('hideLiveChatEngagement', 'Hide Chat Engagement', 'Remove engagement prompts in live chat', 'Clutter', 'message-circle-off',
             'yt-live-chat-viewer-engagement-message-renderer'),
         cssFeature('hidePaidPromotionWatch', 'Hide Paid Promotion', 'Remove "paid promotion" labels on watch pages', 'Clutter', 'dollar-sign',
             '.ytp-paid-content-overlay'),
         {
-            // ═══ Consolidated Video End Content Feature ═══
             id: 'hideVideoEndContent',
             name: 'Hide Video End Content',
             description: 'Remove end cards, end screen, and video grid when videos finish',
@@ -6392,7 +4213,6 @@
             `ytd-donation-shelf-renderer,
                     ytd-button-renderer[button-next]:has([aria-label*="Donate"]),
                     .ytp-donation-shelf { display: none !important; }`),
-        // ═══ Consolidated Live Chat Feature ═══
         {
             id: 'hiddenChatElementsManager',
             name: 'Hide Chat Elements',
@@ -6439,22 +4259,9 @@
                 removeMutationRule('chatBotFilter');
             }
         },
-        { id: 'chatHide_header', name: 'Chat Header', description: 'Hide the live chat header bar', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'header', init(){}, destroy(){} },
-        { id: 'chatHide_menu', name: 'Chat Menu (...)', description: 'Hide the chat overflow menu', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'menu', init(){}, destroy(){} },
-        { id: 'chatHide_popout', name: 'Popout Button', description: 'Hide the popout chat button', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'popout', init(){}, destroy(){} },
-        { id: 'chatHide_reactions', name: 'Reactions', description: 'Hide chat reactions panel', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'reactions', init(){}, destroy(){} },
-        { id: 'chatHide_timestamps', name: 'Timestamps', description: 'Hide chat timestamps', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'timestamps', init(){}, destroy(){} },
-        { id: 'chatHide_polls', name: 'Polls & Poll Banner', description: 'Hide polls in live chat', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'polls', init(){}, destroy(){} },
-        { id: 'chatHide_ticker', name: 'Super Chat Ticker', description: 'Hide the super chat ticker', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'ticker', init(){}, destroy(){} },
-        { id: 'chatHide_leaderboard', name: 'Leaderboard', description: 'Hide chat leaderboard', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'leaderboard', init(){}, destroy(){} },
-        { id: 'chatHide_support', name: 'Support Buttons', description: 'Hide support/buy buttons in chat', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'support', init(){}, destroy(){} },
-        { id: 'chatHide_banner', name: 'Chat Banner', description: 'Hide chat banners', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'banner', init(){}, destroy(){} },
-        { id: 'chatHide_emoji', name: 'Emoji Button', description: 'Hide emoji picker button', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'emoji', init(){}, destroy(){} },
-        { id: 'chatHide_topFan', name: 'Fan Badges', description: 'Hide fan/member badges', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'topFan', init(){}, destroy(){} },
-        { id: 'chatHide_superChats', name: 'Super Chats', description: 'Hide super chat messages', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'superChats', init(){}, destroy(){} },
-        { id: 'chatHide_levelUp', name: 'Level Up Messages', description: 'Hide level up messages', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'levelUp', init(){}, destroy(){} },
-        { id: 'chatHide_bots', name: 'Bot Messages', description: 'Filter out known bot messages', group: 'Live Chat', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenChatElementsManager', _arrayKey: 'hiddenChatElements', _arrayValue: 'bots', init(){}, destroy(){} },
-        {
+                // Auto-generated Live Chat sub-features
+        ...([['header','Chat Header','Hide the live chat header bar'],['menu','Chat Menu (...)','Hide the chat overflow menu'],['popout','Popout Button','Hide the popout chat button'],['reactions','Reactions','Hide chat reactions panel'],['timestamps','Timestamps','Hide chat timestamps'],['polls','Polls & Poll Banner','Hide polls in live chat'],['ticker','Super Chat Ticker','Hide the super chat ticker'],['leaderboard','Leaderboard','Hide chat leaderboard'],['support','Support Buttons','Hide support/buy buttons in chat'],['banner','Chat Banner','Hide chat banners'],['emoji','Emoji Button','Hide emoji picker button'],['topFan','Fan Badges','Hide fan/member badges'],['superChats','Super Chats','Hide super chat messages'],['levelUp','Level Up Messages','Hide level up messages'],['bots','Bot Messages','Filter out known bot messages']].map(([v,n,d])=>({id:'chatHide_'+v,name:n,description:d,group:'Live Chat',icon:'eye-off',isSubFeature:true,parentId:'hiddenChatElementsManager',_arrayKey:'hiddenChatElements',_arrayValue:v,init(){},destroy(){}}))),
+                                                                                                                        {
             id: 'chatKeywordFilter',
             name: 'Chat Keyword Filter',
             description: 'Hide chat messages containing these words (comma-separated)',
@@ -6465,28 +4272,6 @@
             init() { addMutationRule(this.id, applyKeywordFilter); },
             destroy() { removeMutationRule(this.id); }
         },
-
-        // ─── Action Buttons ───
-        {
-            id: 'autolikeVideos',
-            name: 'Auto-Like Videos',
-            description: 'Automatically like videos from subscribed channels',
-            group: 'Action Buttons',
-            icon: 'thumbs-up',
-            init() {
-                const autoLike = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    waitForElement('ytd-video-owner-renderer #subscribe-button tp-yt-paper-button[subscribed]', () => {
-                        const likeBtn = document.querySelector('ytd-segmented-like-dislike-button-renderer button[aria-pressed="false"]');
-                        if (likeBtn) likeBtn.click();
-                    }, 5000);
-                };
-                addNavigateRule(this.id, autoLike);
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-
-        // ═══ Consolidated Action Buttons Feature ═══
         {
             id: 'hiddenActionButtonsManager',
             name: 'Hide Action Buttons',
@@ -6515,16 +4300,9 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
-        { id: 'abHide_like', name: 'Like Button', description: 'Hide like button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'like', init(){}, destroy(){} },
-        { id: 'abHide_dislike', name: 'Dislike Button', description: 'Hide dislike button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'dislike', init(){}, destroy(){} },
-        { id: 'abHide_share', name: 'Share Button', description: 'Hide share button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'share', init(){}, destroy(){} },
-        { id: 'abHide_ask', name: 'Ask/AI Button', description: 'Hide Ask or AI button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'ask', init(){}, destroy(){} },
-        { id: 'abHide_clip', name: 'Clip Button', description: 'Hide clip button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'clip', init(){}, destroy(){} },
-        { id: 'abHide_thanks', name: 'Thanks Button', description: 'Hide thanks button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'thanks', init(){}, destroy(){} },
-        { id: 'abHide_save', name: 'Save Button', description: 'Hide save button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'save', init(){}, destroy(){} },
-        { id: 'abHide_sponsor', name: 'Join/Sponsor Button', description: 'Hide join/sponsor button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'sponsor', init(){}, destroy(){} },
-        { id: 'abHide_moreActions', name: 'More Actions (...)', description: 'Hide more actions button below videos', group: 'Action Buttons', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenActionButtonsManager', _arrayKey: 'hiddenActionButtons', _arrayValue: 'moreActions', init(){}, destroy(){} },
-        {
+                // Auto-generated Action Buttons sub-features
+        ...([['like','Like Button','Hide like button below videos'],['dislike','Dislike Button','Hide dislike button below videos'],['share','Share Button','Hide share button below videos'],['ask','Ask/AI Button','Hide Ask or AI button below videos'],['clip','Clip Button','Hide clip button below videos'],['thanks','Thanks Button','Hide thanks button below videos'],['save','Save Button','Hide save button below videos'],['sponsor','Join/Sponsor Button','Hide join/sponsor button below videos'],['moreActions','More Actions (...)','Hide more actions button below videos']].map(([v,n,d])=>({id:'abHide_'+v,name:n,description:d,group:'Action Buttons',icon:'eye-off',isSubFeature:true,parentId:'hiddenActionButtonsManager',_arrayKey:'hiddenActionButtons',_arrayValue:v,init(){},destroy(){}}))),
+                                                                        {
             id: 'replaceWithCobaltDownloader',
             name: 'Web Download Button',
             description: 'Add a web-based download button (Cobalt, y2mate, etc). Disabled by default when YTYT local download is enabled.',
@@ -6577,8 +4355,6 @@
                 this._styleElement?.remove();
             }
         },
-
-        // ═══ Consolidated Player Controls Feature ═══
         {
             id: 'hiddenPlayerControlsManager',
             name: 'Hide Player Controls',
@@ -6607,28 +4383,11 @@
             },
             destroy() { this._styleElement?.remove(); }
         },
-        { id: 'pcHide_sponsorBlock', name: 'SponsorBlock Button', description: 'Hide SponsorBlock button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'sponsorBlock', init(){}, destroy(){} },
-        { id: 'pcHide_next', name: 'Next Video Button', description: 'Hide next video button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'next', init(){}, destroy(){} },
-        { id: 'pcHide_autoplay', name: 'Autoplay Toggle', description: 'Hide autoplay toggle from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'autoplay', init(){}, destroy(){} },
-        { id: 'pcHide_subtitles', name: 'Subtitles Button', description: 'Hide subtitles button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'subtitles', init(){}, destroy(){} },
-        { id: 'pcHide_captions', name: 'Captions Display', description: 'Hide captions overlay on video', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'captions', init(){}, destroy(){} },
-        { id: 'pcHide_miniplayer', name: 'Miniplayer Button', description: 'Hide miniplayer button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'miniplayer', init(){}, destroy(){} },
-        { id: 'pcHide_pip', name: 'Picture-in-Picture', description: 'Hide PiP button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'pip', init(){}, destroy(){} },
-        { id: 'pcHide_theater', name: 'Theater Mode Button', description: 'Hide theater mode button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'theater', init(){}, destroy(){} },
-        { id: 'pcHide_fullscreen', name: 'Fullscreen Button', description: 'Hide fullscreen button from player', group: 'Player Controls', icon: 'eye-off', isSubFeature: true, parentId: 'hiddenPlayerControlsManager', _arrayKey: 'hiddenPlayerControls', _arrayValue: 'fullscreen', init(){}, destroy(){} },
-        // Individual player control features removed - now consolidated in hiddenPlayerControlsManager
+                // Auto-generated Player Controls sub-features
+        ...([['sponsorBlock','SponsorBlock Button','Hide SponsorBlock button from player'],['next','Next Video Button','Hide next video button from player'],['autoplay','Autoplay Toggle','Hide autoplay toggle from player'],['subtitles','Subtitles Button','Hide subtitles button from player'],['captions','Captions Display','Hide captions overlay on video'],['miniplayer','Miniplayer Button','Hide miniplayer button from player'],['pip','Picture-in-Picture','Hide PiP button from player'],['theater','Theater Mode Button','Hide theater mode button from player'],['fullscreen','Fullscreen Button','Hide fullscreen button from player']].map(([v,n,d])=>({id:'pcHide_'+v,name:n,description:d,group:'Player Controls',icon:'eye-off',isSubFeature:true,parentId:'hiddenPlayerControlsManager',_arrayKey:'hiddenPlayerControls',_arrayValue:v,init(){},destroy(){}}))),
+                                                                        // Individual player control features removed - now consolidated in hiddenPlayerControlsManager
 
         // ─── Downloads (YTYT-Downloader Integration) ───
-        {
-            id: 'youtubeToolsInfo',
-            name: '📦 YTYT-Downloader Setup',
-            description: 'VLC/MPV streaming, local downloads, and the Embed Player require YTYT-Downloader. Click the orange/green button in the footer to download the installer. The embed server starts automatically on boot.',
-            group: 'Downloads',
-            icon: 'info',
-            type: 'info',
-            init() {},
-            destroy() {}
-        },
         {
             id: 'downloadProvider',
             name: 'Download Provider',
@@ -6787,74 +4546,12 @@
                 parent.appendChild(btn);
             },
             init() {
-                registerPersistentButton('vlcButton', '#top-level-buttons-computed', '.ytkit-vlc-btn', this._createButton.bind(this));
+                registerPersistentButton('vlcButton', '#top-level-buttons-computed', '.ytkit-vlc-btn', this._createButton.bind(this), 'VLC');
                 startButtonChecker();
             },
             destroy() {
                 unregisterPersistentButton('vlcButton');
                 document.querySelector('.ytkit-vlc-btn')?.remove();
-            }
-        },
-        {
-            id: 'showVlcQueueButton',
-            name: 'VLC Queue Button',
-            description: 'Add button to queue video in VLC (plays after current)',
-            group: 'Downloads',
-            icon: 'list-plus',
-            _createButton(parent) {
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-vlc-queue-btn';
-                btn.title = 'Add to VLC Queue (requires YTYT-Downloader)';
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '20');
-                svg.setAttribute('height', '20');
-                svg.setAttribute('fill', 'none');
-                svg.setAttribute('stroke', 'white');
-                svg.setAttribute('stroke-width', '2');
-                // List icon with plus
-                const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line1.setAttribute('x1', '8'); line1.setAttribute('y1', '6');
-                line1.setAttribute('x2', '21'); line1.setAttribute('y2', '6');
-                const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line2.setAttribute('x1', '8'); line2.setAttribute('y1', '12');
-                line2.setAttribute('x2', '21'); line2.setAttribute('y2', '12');
-                const line3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line3.setAttribute('x1', '8'); line3.setAttribute('y1', '18');
-                line3.setAttribute('x2', '21'); line3.setAttribute('y2', '18');
-                const plus1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                plus1.setAttribute('x1', '3'); plus1.setAttribute('y1', '12');
-                plus1.setAttribute('x2', '3'); plus1.setAttribute('y2', '12');
-                plus1.setAttribute('stroke-linecap', 'round');
-                const circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle1.setAttribute('cx', '3'); circle1.setAttribute('cy', '6'); circle1.setAttribute('r', '1');
-                circle1.setAttribute('fill', 'white');
-                const circle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle2.setAttribute('cx', '3'); circle2.setAttribute('cy', '12'); circle2.setAttribute('r', '1');
-                circle2.setAttribute('fill', 'white');
-                const circle3 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle3.setAttribute('cx', '3'); circle3.setAttribute('cy', '18'); circle3.setAttribute('r', '1');
-                circle3.setAttribute('fill', 'white');
-                svg.appendChild(line1); svg.appendChild(line2); svg.appendChild(line3);
-                svg.appendChild(circle1); svg.appendChild(circle2); svg.appendChild(circle3);
-                btn.appendChild(svg);
-                btn.appendChild(document.createTextNode(' +Q'));
-                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#ea580c;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
-                btn.onmouseenter = () => { btn.style.background = '#c2410c'; };
-                btn.onmouseleave = () => { btn.style.background = '#ea580c'; };
-                btn.addEventListener('click', () => {
-                    showToast('📋 Adding to VLC queue...', '#ea580c');
-                    window.location.href = 'ytvlcq://' + encodeURIComponent(window.location.href);
-                });
-                parent.appendChild(btn);
-            },
-            init() {
-                registerPersistentButton('vlcQueueButton', '#top-level-buttons-computed', '.ytkit-vlc-queue-btn', this._createButton.bind(this));
-                startButtonChecker();
-            },
-            destroy() {
-                unregisterPersistentButton('vlcQueueButton');
-                document.querySelector('.ytkit-vlc-queue-btn')?.remove();
             }
         },
         {
@@ -6887,7 +4584,7 @@
                 parent.appendChild(btn);
             },
             init() {
-                registerPersistentButton('localDownloadButton', '#top-level-buttons-computed', '.ytkit-local-dl-btn', this._createButton.bind(this));
+                registerPersistentButton('localDownloadButton', '#top-level-buttons-computed', '.ytkit-local-dl-btn', this._createButton.bind(this), 'Download');
                 startButtonChecker();
             },
             destroy() {
@@ -6925,495 +4622,12 @@
                 parent.appendChild(btn);
             },
             init() {
-                registerPersistentButton('mp3DownloadButton', '#top-level-buttons-computed', '.ytkit-mp3-dl-btn', this._createButton.bind(this));
+                registerPersistentButton('mp3DownloadButton', '#top-level-buttons-computed', '.ytkit-mp3-dl-btn', this._createButton.bind(this), 'MP3');
                 startButtonChecker();
             },
             destroy() {
                 unregisterPersistentButton('mp3DownloadButton');
                 document.querySelector('.ytkit-mp3-dl-btn')?.remove();
-            }
-        },
-        {
-            id: 'showSummarizeButton',
-            name: 'Summarize Button',
-            description: 'Add a Summarize button next to video actions — shows AI summary in a popup bubble',
-            group: 'ChapterForge',
-            icon: 'file-text',
-            dependsOn: 'chapterForge',
-            _createButton(parent) {
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-summarize-btn';
-                btn.title = 'AI Summary (ChapterForge)';
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '18');
-                svg.setAttribute('height', '18');
-                svg.setAttribute('fill', 'none');
-                svg.setAttribute('stroke', 'white');
-                svg.setAttribute('stroke-width', '2');
-                svg.setAttribute('stroke-linecap', 'round');
-                svg.setAttribute('stroke-linejoin', 'round');
-                const p1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                p1.setAttribute('d', 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z');
-                const p2 = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-                p2.setAttribute('points', '14 2 14 8 20 8');
-                const p3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                p3.setAttribute('x1', '16'); p3.setAttribute('y1', '13'); p3.setAttribute('x2', '8'); p3.setAttribute('y2', '13');
-                const p4 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                p4.setAttribute('x1', '16'); p4.setAttribute('y1', '17'); p4.setAttribute('x2', '8'); p4.setAttribute('y2', '17');
-                svg.append(p1, p2, p3, p4);
-                btn.appendChild(svg);
-                btn.appendChild(document.createTextNode(' TL;DR'));
-                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#3b82f6;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;`;
-                btn.onmouseenter = () => { btn.style.background = '#2563eb'; };
-                btn.onmouseleave = () => { btn.style.background = '#3b82f6'; };
-                btn.addEventListener('click', async () => {
-                    const cf = features.find(f => f.id === 'chapterForge');
-                    if (!cf) { showToast('Enable ChapterForge first', '#ef4444'); return; }
-                    // If summary already exists, toggle bubble
-                    if (cf._lastSummary) {
-                        const existing = document.getElementById('cf-summary-bubble');
-                        if (existing) { cf._hideSummaryBubble(); return; }
-                        cf._showSummaryBubble(cf._lastSummary);
-                        return;
-                    }
-                    btn.disabled = true; btn.style.opacity = '0.6';
-                    showToast('Generating summary...', '#3b82f6', { duration: 3 });
-                    try {
-                        await cf._generateSummary(true);
-                    } catch(e) {
-                        console.warn('[YTKit] TL;DR error:', e);
-                        showToast('Summary failed: ' + (e.message || 'unknown error'), '#ef4444');
-                    }
-                    btn.disabled = false; btn.style.opacity = '1';
-                });
-                parent.appendChild(btn);
-            },
-            init() {
-                registerPersistentButton('summarizeButton', '#top-level-buttons-computed', '.ytkit-summarize-btn', this._createButton.bind(this));
-                startButtonChecker();
-                // Reset summary on navigation
-                addNavigateRule('summaryBubbleReset', () => {
-                    const cf = features.find(f => f.id === 'chapterForge');
-                    if (cf) { cf._hideSummaryBubble(); cf._lastSummary = null; }
-                });
-            },
-            destroy() {
-                unregisterPersistentButton('summarizeButton');
-                document.querySelector('.ytkit-summarize-btn')?.remove();
-                document.getElementById('cf-summary-bubble')?.remove();
-                removeNavigateRule('summaryBubbleReset');
-            }
-        },
-        {
-            id: 'autoDownloadOnVisit',
-            name: 'Auto-Download Videos',
-            description: 'Automatically start download when visiting a video page',
-            group: 'Downloads',
-            icon: 'download',
-            _lastDownloaded: null,
-            _handleNavigation() {
-                if (!window.location.pathname.startsWith('/watch')) return;
-                const videoId = new URLSearchParams(window.location.search).get('v');
-                if (!videoId || videoId === this._lastDownloaded) return;
-                this._lastDownloaded = videoId;
-                // Small delay to let page load
-                setTimeout(() => {
-                    const videoUrl = window.location.href;
-                    DebugManager.log('Download', 'Auto-downloading:', videoUrl);
-                    window.location.href = 'ytdl://' + encodeURIComponent(videoUrl);
-                }, 2000);
-            },
-            init() {
-                addNavigateRule('autoDownload', this._handleNavigation.bind(this));
-            },
-            destroy() {
-                removeNavigateRule('autoDownload');
-            }
-        },
-        {
-            id: 'downloadQuality',
-            name: 'Download Quality',
-            description: 'Preferred video quality for downloads',
-            group: 'Downloads',
-            icon: 'settings-2',
-            type: 'select',
-            options: {
-                '2160': '4K (2160p)',
-                '1440': '2K (1440p)',
-                '1080': 'Full HD (1080p)',
-                '720': 'HD (720p)',
-                '480': 'SD (480p)',
-                'best': 'Best Available'
-            },
-            init() {},
-            destroy() {}
-        },
-        {
-            id: 'preferredMediaPlayer',
-            name: 'Preferred Media Player',
-            description: 'Default player for streaming videos',
-            group: 'Downloads',
-            icon: 'monitor-play',
-            type: 'select',
-            options: {
-                'vlc': 'VLC Media Player',
-                'mpv': 'MPV',
-                'potplayer': 'PotPlayer',
-                'mpc-hc': 'MPC-HC'
-            },
-            init() {},
-            destroy() {}
-        },
-        {
-            id: 'showDownloadPlayButton',
-            name: 'Download & Play Button',
-            description: 'Download video first, then open in VLC (better quality, works offline)',
-            group: 'Downloads',
-            icon: 'download',
-            _createButton(parent) {
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-dlplay-btn';
-                btn.title = 'Download & Play in VLC';
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '20');
-                svg.setAttribute('height', '20');
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', 'M12 2v8l3-3m-3 3l-3-3m-4 8a9 9 0 1018 0');
-                path.setAttribute('stroke', 'white');
-                path.setAttribute('stroke-width', '2');
-                path.setAttribute('fill', 'none');
-                svg.appendChild(path);
-                btn.appendChild(svg);
-                btn.appendChild(document.createTextNode(' DL+Play'));
-                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:linear-gradient(135deg,#22c55e,#f97316);color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.2s;`;
-                btn.onmouseenter = () => { btn.style.opacity = '0.8'; };
-                btn.onmouseleave = () => { btn.style.opacity = '1'; };
-                btn.addEventListener('click', () => {
-                    showToast('⬇️ Downloading & preparing to play...', '#22c55e');
-                    window.location.href = 'ytdlplay://' + encodeURIComponent(window.location.href);
-                });
-                parent.appendChild(btn);
-            },
-            init() {
-                registerPersistentButton('downloadPlayButton', '#top-level-buttons-computed', '.ytkit-dlplay-btn', this._createButton.bind(this));
-                startButtonChecker();
-            },
-            destroy() {
-                unregisterPersistentButton('downloadPlayButton');
-                document.querySelector('.ytkit-dlplay-btn')?.remove();
-            }
-        },
-        {
-            id: 'subsVlcPlaylist',
-            name: 'Subscriptions VLC Button',
-            description: 'Add button on subscriptions page to queue all videos to VLC playlist',
-            group: 'Downloads',
-            icon: 'list-video',
-            _queuedVideos: new Set(),
-            _styleElement: null,
-
-            _getQueuedVideos() {
-                try {
-                    const stored = localStorage.getItem('ytkit-queued-videos');
-                    return stored ? new Set(JSON.parse(stored)) : new Set();
-                } catch {
-                    return new Set();
-                }
-            },
-
-            _saveQueuedVideos() {
-                try {
-                    localStorage.setItem('ytkit-queued-videos', JSON.stringify([...this._queuedVideos]));
-                } catch {}
-            },
-
-            _markVideoQueued(videoId, element) {
-                this._queuedVideos.add(videoId);
-                this._saveQueuedVideos();
-
-                if (element) {
-                    element.classList.add('ytkit-video-queued');
-                    // Add overlay badge
-                    if (!element.querySelector('.ytkit-queued-badge')) {
-                        const badge = document.createElement('div');
-                        badge.className = 'ytkit-queued-badge';
-                        badge.textContent = '✓ Queued';
-                        const thumbnail = element.querySelector('ytd-thumbnail, #thumbnail');
-                        if (thumbnail) {
-                            thumbnail.style.position = 'relative';
-                            thumbnail.appendChild(badge);
-                        }
-                    }
-                }
-            },
-
-            _isVideoQueued(videoId) {
-                return this._queuedVideos.has(videoId);
-            },
-
-            _getAllVideosOnPage() {
-                const videos = [];
-                // Find all video renderers on subscriptions page
-                const selectors = [
-                    'ytd-rich-item-renderer',
-                    'ytd-grid-video-renderer',
-                    'ytd-video-renderer'
-                ];
-
-                selectors.forEach(selector => {
-                    document.querySelectorAll(selector).forEach(item => {
-                        const link = item.querySelector('a#thumbnail, a.ytd-thumbnail');
-                        if (link && link.href && link.href.includes('/watch?v=')) {
-                            const match = link.href.match(/[?&]v=([^&]+)/);
-                            if (match) {
-                                videos.push({
-                                    id: match[1],
-                                    url: link.href,
-                                    element: item
-                                });
-                            }
-                        }
-                    });
-                });
-
-                return videos;
-            },
-
-            async _queueAllVideos() {
-                const videos = this._getAllVideosOnPage();
-                const unqueuedVideos = videos.filter(v => !this._isVideoQueued(v.id));
-
-                if (unqueuedVideos.length === 0) {
-                    showToast('✅ All videos already queued!', '#22c55e');
-                    return;
-                }
-
-                showToast(`📋 Queueing ${unqueuedVideos.length} videos to VLC...`, '#f97316');
-
-                // Queue videos with small delay between each
-                for (let i = 0; i < unqueuedVideos.length; i++) {
-                    const video = unqueuedVideos[i];
-
-                    // Mark as queued visually
-                    this._markVideoQueued(video.id, video.element);
-
-                    // Send to VLC queue
-                    window.location.href = 'ytvlcq://' + encodeURIComponent(video.url);
-
-                    // Small delay to allow protocol handler to process
-                    if (i < unqueuedVideos.length - 1) {
-                        await new Promise(r => setTimeout(r, 500));
-                    }
-                }
-
-                showToast(`✅ Queued ${unqueuedVideos.length} videos to VLC!`, '#22c55e');
-            },
-
-            _clearQueueMarks() {
-                this._queuedVideos.clear();
-                this._saveQueuedVideos();
-                document.querySelectorAll('.ytkit-video-queued').forEach(el => {
-                    el.classList.remove('ytkit-video-queued');
-                });
-                document.querySelectorAll('.ytkit-queued-badge').forEach(el => el.remove());
-                showToast('🗑️ Queue marks cleared', '#6b7280');
-            },
-
-            _applyQueuedMarks() {
-                const videos = this._getAllVideosOnPage();
-                videos.forEach(video => {
-                    if (this._isVideoQueued(video.id)) {
-                        this._markVideoQueued(video.id, video.element);
-                    }
-                });
-            },
-
-            _createButton() {
-                if (document.querySelector('.ytkit-subs-vlc-btn')) return;
-
-                // Find the header area on subscriptions page
-                const headerContainer = document.querySelector('#title-container, #page-header, ytd-page-manager #header');
-                const buttonContainer = document.querySelector('#buttons, #header-buttons, #start #buttons');
-
-                // Try to find a suitable container
-                let container = buttonContainer || headerContainer;
-                if (!container) {
-                    // Create our own container near the title
-                    const title = document.querySelector('yt-page-header-renderer, #page-header');
-                    if (title) {
-                        container = document.createElement('div');
-                        container.className = 'ytkit-subs-btn-container';
-                        container.style.cssText = 'display:flex;gap:8px;margin-left:auto;padding:8px 16px;';
-                        title.appendChild(container);
-                    }
-                }
-
-                if (!container) return;
-
-                // Helper to create SVG elements
-                const ns = 'http://www.w3.org/2000/svg';
-                const createSvgElement = (tag, attrs) => {
-                    const el = document.createElementNS(ns, tag);
-                    for (const [k, v] of Object.entries(attrs)) {
-                        el.setAttribute(k, v);
-                    }
-                    return el;
-                };
-
-                // Queue All button
-                const queueBtn = document.createElement('button');
-                queueBtn.className = 'ytkit-subs-vlc-btn';
-                queueBtn.title = 'Add all subscription videos to VLC queue';
-
-                // Build SVG using DOM
-                const queueSvg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' });
-                queueSvg.appendChild(createSvgElement('line', { x1: '8', y1: '6', x2: '21', y2: '6' }));
-                queueSvg.appendChild(createSvgElement('line', { x1: '8', y1: '12', x2: '21', y2: '12' }));
-                queueSvg.appendChild(createSvgElement('line', { x1: '8', y1: '18', x2: '21', y2: '18' }));
-                const c1 = createSvgElement('circle', { cx: '3', cy: '6', r: '1.5' }); c1.setAttribute('fill', 'currentColor'); queueSvg.appendChild(c1);
-                const c2 = createSvgElement('circle', { cx: '3', cy: '12', r: '1.5' }); c2.setAttribute('fill', 'currentColor'); queueSvg.appendChild(c2);
-                const c3 = createSvgElement('circle', { cx: '3', cy: '18', r: '1.5' }); c3.setAttribute('fill', 'currentColor'); queueSvg.appendChild(c3);
-                queueBtn.appendChild(queueSvg);
-
-                const queueText = document.createElement('span');
-                queueText.textContent = 'Queue All to VLC';
-                queueBtn.appendChild(queueText);
-
-                queueBtn.style.cssText = `
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    border: none;
-                    background: #f97316;
-                    color: white;
-                    font-family: "Roboto", Arial, sans-serif;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                `;
-                queueBtn.onmouseenter = () => { queueBtn.style.background = '#ea580c'; };
-                queueBtn.onmouseleave = () => { queueBtn.style.background = '#f97316'; };
-                queueBtn.addEventListener('click', () => this._queueAllVideos());
-
-                // Clear button
-                const clearBtn = document.createElement('button');
-                clearBtn.className = 'ytkit-subs-clear-btn';
-                clearBtn.title = 'Clear queue marks';
-
-                // Build clear SVG using DOM
-                const clearSvg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '18', height: '18', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' });
-                clearSvg.appendChild(createSvgElement('path', { d: 'M3 6h18' }));
-                clearSvg.appendChild(createSvgElement('path', { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' }));
-                clearSvg.appendChild(createSvgElement('path', { d: 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' }));
-                clearBtn.appendChild(clearSvg);
-
-                clearBtn.style.cssText = `
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 50%;
-                    border: none;
-                    background: rgba(255,255,255,0.1);
-                    color: white;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                `;
-                clearBtn.onmouseenter = () => { clearBtn.style.background = 'rgba(255,255,255,0.2)'; };
-                clearBtn.onmouseleave = () => { clearBtn.style.background = 'rgba(255,255,255,0.1)'; };
-                clearBtn.addEventListener('click', () => this._clearQueueMarks());
-
-                container.appendChild(queueBtn);
-                container.appendChild(clearBtn);
-            },
-
-            _injectStyles() {
-                if (this._styleElement) return;
-
-                this._styleElement = document.createElement('style');
-                this._styleElement.textContent = `
-                    .ytkit-video-queued ytd-thumbnail,
-                    .ytkit-video-queued #thumbnail {
-                        opacity: 0.6;
-                    }
-
-                    .ytkit-video-queued::after {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        background: rgba(249, 115, 22, 0.1);
-                        pointer-events: none;
-                    }
-
-                    .ytkit-queued-badge {
-                        position: absolute;
-                        top: 8px;
-                        left: 8px;
-                        background: #22c55e;
-                        color: white;
-                        padding: 4px 8px;
-                        border-radius: 4px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        font-family: "Roboto", Arial, sans-serif;
-                        z-index: 100;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                    }
-
-                    .ytkit-subs-btn-container {
-                        position: fixed;
-                        top: 56px;
-                        right: 24px;
-                        z-index: 1000;
-                        display: flex;
-                        gap: 8px;
-                    }
-                `;
-                document.head.appendChild(this._styleElement);
-            },
-
-            init() {
-                this._queuedVideos = this._getQueuedVideos();
-                this._injectStyles();
-
-                // Only activate on subscriptions page
-                const checkAndCreate = () => {
-                    if (window.location.pathname === '/feed/subscriptions') {
-                        setTimeout(() => {
-                            this._createButton();
-                            this._applyQueuedMarks();
-                        }, 1000);
-                    }
-                };
-
-                // Check on navigation
-                addNavigateRule(this.id + '_nav', checkAndCreate);
-                checkAndCreate();
-
-                // Re-apply marks when new content loads
-                addMutationRule(this.id + '_marks', () => {
-                    if (window.location.pathname === '/feed/subscriptions') {
-                        this._applyQueuedMarks();
-                    }
-                });
-            },
-
-            destroy() {
-                this._styleElement?.remove();
-                removeMutationRule(this.id + '_marks');
-                removeNavigateRule(this.id + '_nav');
-                document.querySelector('.ytkit-subs-vlc-btn')?.remove();
-                document.querySelector('.ytkit-subs-clear-btn')?.remove();
-                document.querySelectorAll('.ytkit-queued-badge').forEach(el => el.remove());
             }
         },
         {
@@ -7433,77 +4647,7 @@
 
                 this._styleElement = document.createElement('style');
                 this._styleElement.id = 'ytkit-context-menu-styles';
-                this._styleElement.textContent = `
-                    .ytkit-context-menu {
-                        position: fixed;
-                        z-index: 999999;
-                        background: #1a1a2e;
-                        border: 1px solid #333;
-                        border-radius: 8px;
-                        padding: 6px 0;
-                        min-width: 220px;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-                        font-family: "Roboto", Arial, sans-serif;
-                        font-size: 14px;
-                        animation: ytkit-menu-fade 0.15s ease-out;
-                    }
-
-                    @keyframes ytkit-menu-fade {
-                        from { opacity: 0; transform: scale(0.95); }
-                        to { opacity: 1; transform: scale(1); }
-                    }
-
-                    .ytkit-context-menu-header {
-                        padding: 8px 14px;
-                        color: #888;
-                        font-size: 11px;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        border-bottom: 1px solid #333;
-                        margin-bottom: 4px;
-                    }
-
-                    .ytkit-context-menu-item {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        padding: 10px 14px;
-                        color: #e0e0e0;
-                        cursor: pointer;
-                        transition: background 0.1s;
-                    }
-
-                    .ytkit-context-menu-item:hover {
-                        background: #2d2d44;
-                    }
-
-                    .ytkit-context-menu-item svg {
-                        width: 18px;
-                        height: 18px;
-                        flex-shrink: 0;
-                    }
-
-                    .ytkit-context-menu-item.ytkit-item-video svg { color: #22c55e; }
-                    .ytkit-context-menu-item.ytkit-item-audio svg { color: #8b5cf6; }
-                    .ytkit-context-menu-item.ytkit-item-transcript svg { color: #3b82f6; }
-                    .ytkit-context-menu-item.ytkit-item-vlc svg { color: #f97316; }
-                    .ytkit-context-menu-item.ytkit-item-mpv svg { color: #ec4899; }
-                    .ytkit-context-menu-item.ytkit-item-embed svg { color: #06b6d4; }
-                    .ytkit-context-menu-item.ytkit-item-copy svg { color: #fbbf24; }
-
-                    .ytkit-context-menu-divider {
-                        height: 1px;
-                        background: #333;
-                        margin: 6px 0;
-                    }
-
-                    .ytkit-context-menu-item .ytkit-shortcut {
-                        margin-left: auto;
-                        color: #666;
-                        font-size: 12px;
-                    }
-                `;
+                this._styleElement.textContent = `.ytkit-context-menu{position:fixed;z-index:999999;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:6px 0;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.5);font-family:"Roboto",Arial,sans-serif;font-size:14px;animation:ytkit-menu-fade 0.15s ease-out;} @keyframes ytkit-menu-fade{from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} } .ytkit-context-menu-header{padding:8px 14px;color:#888;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #333;margin-bottom:4px;} .ytkit-context-menu-item{display:flex;align-items:center;gap:12px;padding:10px 14px;color:#e0e0e0;cursor:pointer;transition:background 0.1s;} .ytkit-context-menu-item:hover{background:#2d2d44;} .ytkit-context-menu-item svg{width:18px;height:18px;flex-shrink:0;} .ytkit-context-menu-item.ytkit-item-video svg{color:#22c55e;} .ytkit-context-menu-item.ytkit-item-audio svg{color:#8b5cf6;} .ytkit-context-menu-item.ytkit-item-transcript svg{color:#3b82f6;} .ytkit-context-menu-item.ytkit-item-vlc svg{color:#f97316;} .ytkit-context-menu-item.ytkit-item-mpv svg{color:#ec4899;} .ytkit-context-menu-item.ytkit-item-embed svg{color:#06b6d4;} .ytkit-context-menu-item.ytkit-item-copy svg{color:#fbbf24;} .ytkit-context-menu-divider{height:1px;background:#333;margin:6px 0;} .ytkit-context-menu-item .ytkit-shortcut{margin-left:auto;color:#666;font-size:12px;}`;
                 document.head.appendChild(this._styleElement);
             },
 
@@ -7752,7 +4896,7 @@
             },
 
             _copyID() {
-                const videoId = new URLSearchParams(window.location.search).get('v');
+                const videoId = getVideoId();
                 if (videoId) {
                     navigator.clipboard.writeText(videoId).then(() => {
                         this._showToast('Video ID copied: ' + videoId);
@@ -7794,7 +4938,7 @@
                 document.addEventListener('contextmenu', this._contextHandler, true);
                 document.addEventListener('click', this._clickHandler);
                 this._scrollHandler = () => this._hideMenu();
-                document.addEventListener('scroll', this._scrollHandler);
+                document.addEventListener('scroll', this._scrollHandler, { passive: true });
 
                 // Also add directly to movie_player when it appears
                 this._attachToPlayer = () => {
@@ -7834,63 +4978,12 @@
             }
         },
 
-        {
-            id: 'autoSkipStillWatching',
-            name: 'Auto-Skip "Still Watching?"',
-            description: 'Automatically dismiss the "Video paused. Continue watching?" popup',
-            group: 'Playback',
-            icon: 'skip-forward',
-            _observer: null,
-            _checkInterval: null,
-            init() {
-                const dismissPopup = () => {
-                    // Look for the "Still watching?" / "Continue watching?" dialog
-                    const confirmButton = document.querySelector(
-                        'yt-confirm-dialog-renderer #confirm-button, ' +
-                        '.ytp-pause-overlay-container button, ' +
-                        'ytd-popup-container yt-confirm-dialog-renderer button.yt-spec-button-shape-next--filled, ' +
-                        'tp-yt-paper-dialog #confirm-button, ' +
-                        'ytd-enforcement-message-view-model button'
-                    );
-                    if (confirmButton) {
-                        const dialogText = confirmButton.closest('yt-confirm-dialog-renderer, tp-yt-paper-dialog')?.textContent?.toLowerCase() || '';
-                        if (dialogText.includes('still watching') || dialogText.includes('continue watching') || dialogText.includes('video paused')) {
-                            confirmButton.click();
-                            showToast('Auto-dismissed "Still watching?" popup', '#22c55e');
-                            StatsTracker.increment('stillWatchingDismissed');
-                            DebugManager.log('StillWatching', 'Dismissed popup');
-                        }
-                    }
-
-                    // Also check for the pause overlay
-                    const pauseOverlay = document.querySelector('.ytp-pause-overlay');
-                    if (pauseOverlay && pauseOverlay.style.display !== 'none') {
-                        const playButton = document.querySelector('.ytp-play-button');
-                        if (playButton) {
-                            playButton.click();
-                            showToast('Auto-resumed playback', '#22c55e');
-                        }
-                    }
-                };
-
-                // Check periodically
-                this._checkInterval = setInterval(dismissPopup, 2000);
-
-                // Also detect new dialogs via shared observer
-                addMutationRule(this.id, () => setTimeout(dismissPopup, 100));
-            },
-            destroy() {
-                if (this._checkInterval) clearInterval(this._checkInterval);
-                removeMutationRule(this.id);
-            }
-        },
-
         // ─── Auto-Resume Last Position ───
         {
             id: 'autoResumePosition',
             name: 'Auto-Resume Position',
             description: 'Resume videos from where you left off (saves position for partially watched videos)',
-            group: 'Playback',
+            group: 'Video Player',
             icon: 'play',
             _ruleId: 'autoResumeRule',
             _saveInterval: null,
@@ -7905,7 +4998,7 @@
 
                 const tryResume = () => {
                     if (!window.location.pathname.startsWith('/watch')) return;
-                    const videoId = new URLSearchParams(window.location.search).get('v');
+                    const videoId = getVideoId();
                     if (!videoId) return;
                     const positions = self._getPositions();
                     const saved = positions[videoId];
@@ -7920,14 +5013,14 @@
                     self._setPositions(positions);
                 };
 
-                addNavigateRule(this._ruleId, () => setTimeout(tryResume, 1500));
+                addNavigateRule(this._ruleId, () => waitForPageContent(tryResume));
 
                 // Save position every 10 seconds
                 this._saveInterval = setInterval(() => {
                     if (!window.location.pathname.startsWith('/watch')) return;
                     const video = document.querySelector('video.html5-main-video');
                     if (!video || video.paused || video.duration < 60 || !isFinite(video.duration)) return;
-                    const videoId = new URLSearchParams(window.location.search).get('v');
+                    const videoId = getVideoId();
                     if (!videoId) return;
                     // Don't save if near start or near end (within 10%)
                     if (video.currentTime < threshold || video.currentTime > video.duration * 0.9) return;
@@ -7948,7 +5041,7 @@
             id: 'autoResumeThreshold',
             name: 'Resume Threshold',
             description: 'Seconds into a video before saving resume position',
-            group: 'Playback',
+            group: 'Video Player',
             icon: 'clock',
             isSubFeature: true,
             parentId: 'autoResumePosition',
@@ -7961,231 +5054,10 @@
             init() {},
             destroy() {}
         },
-
-        // ─── Playback Speed OSD ───
-        {
-            id: 'playbackSpeedOSD',
-            name: 'Speed Change OSD',
-            description: 'Show speed overlay on the video player (like VLC) instead of corner toast',
-            group: 'Playback',
-            icon: 'gauge',
-            _observer: null,
-            _lastSpeed: null,
-            _osdTimeout: null,
-            init() {
-                const self = this;
-                const checkSpeed = () => {
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video) return;
-                    if (self._lastSpeed !== null && video.playbackRate !== self._lastSpeed) {
-                        self._showOSD(video.playbackRate);
-                    }
-                    self._lastSpeed = video.playbackRate;
-                };
-                // Poll for speed changes (handles all sources: keyboard, extensions, scroll wheel)
-                this._pollInterval = setInterval(checkSpeed, 200);
-            },
-            _showOSD(speed) {
-                const player = document.querySelector('#movie_player');
-                if (!player) return;
-                let osd = player.querySelector('#ytkit-speed-osd');
-                if (!osd) {
-                    osd = document.createElement('div');
-                    osd.id = 'ytkit-speed-osd';
-                    osd.style.cssText = 'position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.75);color:#fff;padding:6px 14px;border-radius:6px;font-size:18px;font-weight:700;font-family:"Roboto",sans-serif;z-index:60;pointer-events:none;transition:opacity 0.3s;opacity:0;backdrop-filter:blur(4px);';
-                    player.appendChild(osd);
-                }
-                osd.textContent = `${speed}x`;
-                osd.style.opacity = '1';
-                clearTimeout(this._osdTimeout);
-                this._osdTimeout = setTimeout(() => { if (osd) osd.style.opacity = '0'; }, 1200);
-            },
-            destroy() {
-                if (this._pollInterval) clearInterval(this._pollInterval);
-                document.querySelector('#ytkit-speed-osd')?.remove();
-            }
-        },
-
-        // ─── Video Speed Indicator Badge ───
-        {
-            id: 'speedIndicatorBadge',
-            name: 'Speed Indicator Badge',
-            description: 'Persistent badge on video player showing current speed when not 1x',
-            group: 'Playback',
-            icon: 'gauge',
-            _pollInterval: null,
-            _lastShown: null,
-            init() {
-                const self = this;
-                this._pollInterval = setInterval(() => {
-                    const video = document.querySelector('video.html5-main-video');
-                    const player = document.querySelector('#movie_player');
-                    if (!video || !player) return;
-                    const speed = video.playbackRate;
-                    let badge = player.querySelector('#ytkit-speed-badge');
-                    if (speed === 1) {
-                        if (badge) badge.style.opacity = '0';
-                        self._lastShown = null;
-                        return;
-                    }
-                    if (speed === self._lastShown) return;
-                    self._lastShown = speed;
-                    if (!badge) {
-                        badge = document.createElement('div');
-                        badge.id = 'ytkit-speed-badge';
-                        badge.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(204,0,0,0.85);color:#fff;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;font-family:"Roboto",sans-serif;z-index:60;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(4px);';
-                        player.appendChild(badge);
-                    }
-                    badge.textContent = `${speed}x`;
-                    badge.style.opacity = '1';
-                }, 500);
-            },
-            destroy() {
-                if (this._pollInterval) clearInterval(this._pollInterval);
-                document.querySelector('#ytkit-speed-badge')?.remove();
-            }
-        },
-
-        // ─── Watch Time Tracker ───
-        {
-            id: 'watchTimeTracker',
-            name: 'Watch Time Tracker',
-            description: 'Track daily watch time by channel (view in Statistics Dashboard)',
-            group: 'Playback',
-            icon: 'clock',
-            _pollInterval: null,
-            _storageKey: 'ytkit_watch_time',
-            _getWatchTime() {
-                try { return JSON.parse(GM_getValue(this._storageKey, '{}')); } catch { return {}; }
-            },
-            _setWatchTime(d) { GM_setValue(this._storageKey, JSON.stringify(d)); },
-            init() {
-                const self = this;
-                this._pollInterval = setInterval(() => {
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video || video.paused || !window.location.pathname.startsWith('/watch')) return;
-                    const channelEl = document.querySelector('ytd-channel-name #text a, ytd-video-owner-renderer ytd-channel-name a');
-                    const channelName = channelEl?.textContent?.trim() || 'Unknown';
-                    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-                    const data = self._getWatchTime();
-                    if (!data[today]) data[today] = {};
-                    if (!data[today][channelName]) data[today][channelName] = 0;
-                    data[today][channelName] += 30; // 30 seconds per tick
-                    // Prune entries older than 90 days
-                    const cutoff = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
-                    for (const day of Object.keys(data)) { if (day < cutoff) delete data[day]; }
-                    self._setWatchTime(data);
-                }, 30000);
-            },
-            destroy() {
-                if (this._pollInterval) clearInterval(this._pollInterval);
-            }
-        },
-
         // ─── Comment Navigator ───
-        // ─── Per-Channel Settings ───
-        {
-            id: 'enablePerChannelSettings',
-            name: 'Per-Channel Settings',
-            description: 'Remember playback speed, volume, and quality per channel',
-            group: 'Playback',
-            icon: 'users',
-            _lastVideoId: null,
-            init() {
-                const applyChannelSettings = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-
-                    const videoId = new URLSearchParams(window.location.search).get('v');
-                    if (videoId === this._lastVideoId) return;
-                    this._lastVideoId = videoId;
-
-                    const channelId = ChannelSettingsManager.getCurrentChannelId();
-                    if (!channelId) return;
-
-                    const settings = ChannelSettingsManager.getForChannel(channelId);
-                    if (!settings) return;
-
-                    const video = document.querySelector('video');
-                    if (!video) return;
-
-                    // Apply playback speed
-                    if (settings.playbackSpeed && settings.playbackSpeed !== video.playbackRate) {
-                        video.playbackRate = settings.playbackSpeed;
-                        DebugManager.log('ChannelSettings', `Applied speed ${settings.playbackSpeed}x for channel ${channelId}`);
-                    }
-
-                    // Apply volume
-                    if (settings.volume !== undefined && settings.volume !== video.volume) {
-                        video.volume = settings.volume;
-                    }
-                };
-
-                // Save current settings for channel
-                const saveChannelSettings = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-
-                    const channelId = ChannelSettingsManager.getCurrentChannelId();
-                    const channelName = ChannelSettingsManager.getCurrentChannelName();
-                    if (!channelId) return;
-
-                    const video = document.querySelector('video');
-                    if (!video) return;
-
-                    ChannelSettingsManager.setForChannel(channelId, {
-                        name: channelName,
-                        playbackSpeed: video.playbackRate,
-                        volume: video.volume
-                    });
-                };
-
-                // Apply on navigation
-                addNavigateRule('perChannelSettings', () => {
-                    setTimeout(applyChannelSettings, 1000);
-                });
-
-                // Save periodically when video is playing
-                this._saveInterval = setInterval(() => {
-                    const video = document.querySelector('video');
-                    if (video && !video.paused) {
-                        saveChannelSettings();
-                    }
-                }, 30000); // Save every 30 seconds while playing
-            },
-            destroy() {
-                removeNavigateRule('perChannelSettings');
-                if (this._saveInterval) clearInterval(this._saveInterval);
-            }
-        },
-        {
-            id: 'channelSettingsExportImport',
-            name: 'Export/Import Channel Settings',
-            description: 'Backup and restore per-channel speed, volume, and quality preferences',
-            group: 'Playback',
-            icon: 'download',
-            isSubFeature: true,
-            parentId: 'enablePerChannelSettings',
-            type: 'info',
-            init() {},
-            destroy() {}
-        },
 
         // ─── Statistics Dashboard ───
         // ─── Regex Keyword Filter ───
-        {
-            id: 'useRegexKeywordFilter',
-            name: 'Regex Keyword Filter',
-            description: 'Use regular expressions for advanced keyword filtering (e.g., /\\[.*\\]/ to hide bracketed titles)',
-            group: 'Video Hider',
-            icon: 'filter',
-            subFeatureOf: 'hideVideosFromHome',
-            init() {
-                // This modifies the behavior of hideVideosFromHome
-                // The actual regex matching is handled in _shouldHide
-            },
-            destroy() {
-                // Nothing to clean up
-            }
-        },
 
         // ─── Custom CSS Injection ───
         // ─── IntersectionObserver Performance Mode ───
@@ -8222,5559 +5094,7 @@
             }
         },
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  CHAPTERFORGE — AI Chapter & POI Generation
-        // ═══════════════════════════════════════════════════════════════════
-        {
-            id: 'chapterForge',
-            name: 'ChapterForge',
-            description: 'Auto-generate chapters & POIs for YouTube videos — click the player button to view',
-            group: 'ChapterForge',
-            icon: 'player',
-            isParent: true,
-
-            // ── Internal state ──
-            _whisperPipeline: null,
-            _transformersLib: null,
-            _isGenerating: false,
-            _currentVideoId: null,
-            _currentDuration: 0,
-            _chapterData: null,
-            _lastTranscriptSegments: null,
-            _panelEl: null,
-            _activeTab: 'chapters',
-            _searchQuery: '',
-            _searchResults: null,
-            _globalSearchQuery: '',
-            _globalSearchResults: null,
-            _styleElement: null,
-            _resizeObserver: null,
-            _clickHandler: null,
-            _navHandler: null,
-            _barObsHandler: null,
-            _chapterHUDEl: null,
-            _chapterTrackingRAF: null,
-            _lastActiveChapterIdx: -1,
-            _fillerData: null,             // [{time, duration, word, segStart, segEnd}] detected filler words
-            _pauseData: null,              // [{start, end, duration}] detected pauses
-            _autoSkipRAF: null,            // single RAF handle for unified skip loop
-            _autoSkipActive: false,        // whether autoskip is currently running
-            _autoSkipSavedRate: null,      // saved playback rate before silence speedup
-            _lastOllamaModels: null,       // cached list of installed Ollama model names
-            _translatedSummary: null,      // translated summary text
-            _translatedChapters: null,     // translated chapter titles
-            _paceData: null,               // [{start, end, wpm}] speech pace per segment
-            _keywordsPerChapter: null,     // [[keyword,...], ...] per chapter
-            _chatHistory: [],              // [{role:'user'|'assistant', content}] Q&A chat
-            _chatLoading: false,           // chat response in progress
-            _flashcards: null,             // [{q, a}] generated flashcards
-            _flashcardIdx: 0,              // current flashcard index
-            _flashcardFlipped: false,      // whether current card is flipped
-            _flashcardLoading: false,      // flashcard generation in progress
-            _mindMapData: null,            // mind map outline text
-            _mindMapLoading: false,        // mind map generation in progress
-            _blogLoading: false,           // blog post generation in progress
-
-            _CF_PROVIDERS: {
-                builtin:    { name: 'Built-in (NLP)', endpoint: null, needsKey: false, defaultModel: null },
-                ollama:     { name: 'Local AI (Ollama)', endpoint: 'http://localhost:11434/v1/chat/completions', needsKey: false, defaultModel: 'qwen3:32b' },
-                openai:     { name: 'Web AI - OpenAI', endpoint: 'https://api.openai.com/v1/chat/completions', needsKey: true, defaultModel: 'gpt-4o' },
-                openrouter: { name: 'Web AI - OpenRouter', endpoint: 'https://openrouter.ai/api/v1/chat/completions', needsKey: true, defaultModel: 'qwen/qwen3-32b' },
-                custom:     { name: 'Web AI - Custom', endpoint: '', needsKey: false, defaultModel: '' },
-            },
-
-
-
-            _CF_CACHE_PREFIX: 'cf_cache_',
-            _CF_TRANSCRIPT_PREFIX: 'cf_tx_',
-            _CF_NOTES_PREFIX: 'cf_notes_',
-            // Distinct, high-contrast chapter colors — each clearly identifiable
-            _CF_COLORS: ['#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'],
-            // Readable foreground for each color
-            _CF_COLORS_FG: ['#e0d4fc', '#cceeff', '#c6f7e2', '#fef3c7', '#fecaca', '#fce7f3', '#ddd6fe', '#cffafe'],
-
-            _CF_SUMMARY_STYLES: {
-                paragraph: { name: 'Paragraph', prompt: null },
-                timestamped: { name: 'Timestamped', prompt: null },
-                takeaways: { name: 'Key Takeaways', prompt: `ROLE: Video analyst. Extract the most important insights.\n\nTASK: List 5-10 key takeaways from this video transcript.\n\nCONSTRAINTS:\n- Each takeaway is one clear sentence starting with a bullet dash (-)\n- Focus on actionable insights, surprising facts, or core arguments\n- Order from most to least important\n- No timestamps, headers, preamble, or commentary\n- Output ONLY the bullet list. Nothing before. Nothing after.` },
-                bullets: { name: 'Bullet Points', prompt: `ROLE: Video summarizer.\n\nTASK: Summarize this video as a concise bullet-point list.\n\nCONSTRAINTS:\n- Write 6-12 bullet points using dash (-) prefix\n- Each bullet is one sentence covering a distinct topic from the video\n- Cover topics in chronological order\n- No timestamps, headers, preamble, or commentary\n- Output ONLY the bullet list. Nothing before. Nothing after.` },
-                studynotes: { name: 'Study Notes', prompt: `ROLE: Educational note-taker.\n\nTASK: Create structured study notes from this video transcript.\n\nCONSTRAINTS:\n- Start with a one-sentence TOPIC line\n- Group content into 3-5 sections with bold **Section Title** headers\n- Under each section, write 2-4 concise bullet points (dash prefix)\n- Include key terms, definitions, and examples mentioned\n- End with a "KEY TERMS:" line listing important vocabulary (comma-separated)\n- No timestamps, preamble, or commentary\n- Output ONLY the study notes. Nothing before. Nothing after.` },
-                actionitems: { name: 'Action Items', prompt: `ROLE: Productivity assistant.\n\nTASK: Extract all actionable items, recommendations, and steps from this video.\n\nCONSTRAINTS:\n- List each action item as a checkbox line: [ ] Action description\n- Only include concrete, actionable recommendations the speaker makes\n- If the video has no actionable content, output: "No action items found in this video."\n- Order by sequence of appearance\n- No timestamps, headers, preamble, or commentary\n- Output ONLY the action items. Nothing before. Nothing after.` },
-                blog: { name: 'Blog Post', prompt: `ROLE: Blog writer converting video content into a polished article.\n\nTASK: Transform this video transcript into a well-structured blog post.\n\nCONSTRAINTS:\n- Start with a compelling one-sentence hook (no "In this video" openings)\n- Use 3-5 bold **Section Headers** to organize the content\n- Write 2-4 sentences per section in engaging, readable prose\n- Preserve the speaker's key arguments, examples, and data points\n- End with a brief conclusion or takeaway paragraph\n- Write in third person ("the presenter explains..." not "I")\n- Total length: 400-800 words\n- No timestamps, no bullet points, no disclaimers\n- Output ONLY the blog post. Nothing before. Nothing after.` },
-            },
-
-            // ── Debug logging ──
-
-            _log(...args) {
-                if (appState.settings?.cfDebugLog) console.log('[ChapterForge]', ...args);
-            },
-            _warn(...args) {
-                console.warn('[ChapterForge]', ...args);
-            },
-            _esc(str) {
-                if (!str) return '';
-                return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-            },
-
-            // ── Helpers ──
-            _getVideoId() { return new URLSearchParams(window.location.search).get('v'); },
-            _formatTime(seconds) {
-                const s = Math.floor(seconds); const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); const sec = s % 60;
-                if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-                return `${m}:${String(sec).padStart(2,'0')}`;
-            },
-            _seekTo(seconds) { const v = document.querySelector('video.html5-main-video'); if (v) v.currentTime = seconds; },
-            _getVideoDuration() { const v = document.querySelector('video.html5-main-video'); return v ? v.duration : 0; },
-            _getCachedData(videoId) { try { const raw = localStorage.getItem(this._CF_CACHE_PREFIX + videoId); return raw ? JSON.parse(raw) : null; } catch { return null; } },
-            _setCachedData(videoId, data) {
-                try { localStorage.setItem(this._CF_CACHE_PREFIX + videoId, JSON.stringify(data)); } catch(e) {
-                    const keys = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(this._CF_CACHE_PREFIX)) keys.push(k); }
-                    if (keys.length > 20) { keys.slice(0, 5).forEach(k => localStorage.removeItem(k)); try { localStorage.setItem(this._CF_CACHE_PREFIX + videoId, JSON.stringify(data)); } catch(e2) {} }
-                }
-            },
-            _countCache() { let c = 0; for (let i = 0; i < localStorage.length; i++) { if (localStorage.key(i).startsWith(this._CF_CACHE_PREFIX)) c++; } return c; },
-            _clearCache() { const keys = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(this._CF_CACHE_PREFIX)) keys.push(k); } keys.forEach(k => localStorage.removeItem(k)); },
-
-            // ═══ TRANSCRIPT CACHE (for cross-video search) ═══
-            _cacheTranscript(videoId, segments, title) {
-                try {
-                    const compact = segments.map(s => ({ s: Math.round(s.start), t: s.text }));
-                    localStorage.setItem(this._CF_TRANSCRIPT_PREFIX + videoId, JSON.stringify({ title: title || videoId, segments: compact }));
-                } catch(e) {
-                    const keys = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(this._CF_TRANSCRIPT_PREFIX)) keys.push(k); }
-                    if (keys.length > 30) { keys.slice(0, 10).forEach(k => localStorage.removeItem(k)); try { localStorage.setItem(this._CF_TRANSCRIPT_PREFIX + videoId, JSON.stringify({ title: title || videoId, segments: segments.map(s => ({ s: Math.round(s.start), t: s.text })) })); } catch(e2) {} }
-                }
-            },
-            _getCachedTranscript(videoId) { try { const raw = localStorage.getItem(this._CF_TRANSCRIPT_PREFIX + videoId); return raw ? JSON.parse(raw) : null; } catch { return null; } },
-            _countTranscriptCache() { let c = 0; for (let i = 0; i < localStorage.length; i++) { if (localStorage.key(i).startsWith(this._CF_TRANSCRIPT_PREFIX)) c++; } return c; },
-
-            // ═══ NOTES STORAGE ═══
-            _getNotes(videoId) { try { const raw = localStorage.getItem(this._CF_NOTES_PREFIX + videoId); return raw ? JSON.parse(raw) : []; } catch { return []; } },
-            _setNotes(videoId, notes) { try { localStorage.setItem(this._CF_NOTES_PREFIX + videoId, JSON.stringify(notes)); } catch(e) {} },
-            _addNote(videoId, time, text) {
-                const notes = this._getNotes(videoId);
-                notes.push({ time: Math.round(time), text, ts: Date.now() });
-                notes.sort((a, b) => a.time - b.time);
-                this._setNotes(videoId, notes);
-            },
-            _removeNote(videoId, index) {
-                const notes = this._getNotes(videoId);
-                notes.splice(index, 1);
-                this._setNotes(videoId, notes);
-            },
-
-            // ═══ SEARCH WITHIN VIDEO ═══
-            _searchTranscript(query) {
-                if (!this._lastTranscriptSegments?.length || !query?.trim()) return [];
-                const q = query.toLowerCase().trim();
-                const results = [];
-                for (const seg of this._lastTranscriptSegments) {
-                    const idx = seg.text.toLowerCase().indexOf(q);
-                    if (idx !== -1) {
-                        results.push({ time: seg.start, text: seg.text, matchIdx: idx });
-                    }
-                }
-                return results;
-            },
-
-            // ═══ CROSS-VIDEO TRANSCRIPT SEARCH ═══
-            _searchAllTranscripts(query) {
-                if (!query?.trim()) return [];
-                const q = query.toLowerCase().trim();
-                const results = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!key.startsWith(this._CF_TRANSCRIPT_PREFIX)) continue;
-                    const videoId = key.slice(this._CF_TRANSCRIPT_PREFIX.length);
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key));
-                        if (!data?.segments) continue;
-                        const matches = [];
-                        for (const seg of data.segments) {
-                            if (seg.t.toLowerCase().includes(q)) {
-                                matches.push({ time: seg.s, text: seg.t });
-                            }
-                        }
-                        if (matches.length) results.push({ videoId, title: data.title || videoId, matches });
-                    } catch(e) {}
-                }
-                return results;
-            },
-
-            // ═══ VIDEO SUMMARY ═══
-            async _generateSummary(showBubble) {
-                const videoId = this._getVideoId();
-                if (!videoId) { this._log('Summary: no videoId'); return null; }
-                const btn = document.getElementById('cf-summary-btn');
-                const actionBtn = document.querySelector('.ytkit-summarize-btn');
-                const _resetButtons = () => {
-                    if (btn) { btn.disabled = false; btn.textContent = 'Summarize'; }
-                    if (actionBtn) { actionBtn.disabled = false; actionBtn.style.opacity = '1'; }
-                };
-                if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
-                if (actionBtn) { actionBtn.disabled = true; actionBtn.style.opacity = '0.6'; }
-                this._updateStatus('Summarizing...', 'loading', 20);
-
-                try {
-                let segments = this._lastTranscriptSegments;
-                if (!segments?.length) {
-                    this._log('Summary: fetching transcript...');
-                    segments = await this._fetchTranscript(videoId, (m, s, p) => this._updateStatus(m, s, p));
-                    if (segments?.length) this._lastTranscriptSegments = segments;
-                }
-                if (!segments?.length) {
-                    _resetButtons();
-                    this._updateStatus('No transcript', 'error', 0);
-                    showToast('No transcript available', '#ef4444');
-                    return null;
-                }
-                this._log('Summary: got', segments.length, 'segments, provider:', appState.settings.cfLlmProvider || 'builtin');
-
-                const provider = appState.settings.cfLlmProvider || 'builtin';
-                const summaryMode = appState.settings.cfSummaryMode || 'paragraph';
-                let summary;
-
-                // ── System prompts ──
-                const paragraphPrompt = `ROLE: Video summarizer. You write concise, readable summaries.
-
-TASK: Write a clear summary of this video transcript in 3-6 sentences as flowing prose.
-
-CONSTRAINTS:
-- Write in plain paragraphs with NO timestamps, NO bullet points, NO headers, NO formatting
-- Start with what the video is about, then cover the key points
-- Use clear, direct language — no filler phrases like "In this video" or "The speaker goes on to"
-- Do NOT add opinions, disclaimers, fact-checks, or commentary
-- Report claims neutrally: "X explains that..." not "X controversially claims..."
-- Output ONLY the summary paragraph(s). Nothing before. Nothing after.`;
-
-                const timestampedPrompt = `ROLE: Transcript indexer. You extract timestamps and topics from transcripts. You are a machine that outputs structured data. You have no opinions.
-
-TASK: Read the transcript. Output ONLY this format:
-
-TOPIC: [1 sentence: who is speaking and what subject they discuss]
-
-[MM:SS] Speaker discusses [topic]
-[MM:SS] Speaker mentions [topic]
-[MM:SS] Speaker claims [topic]
-
-REFS: [comma list of proper nouns mentioned]
-
-CONSTRAINTS:
-- Output NOTHING before TOPIC and NOTHING after REFS
-- Every line between TOPIC and REFS must begin with a [MM:SS] timestamp from the transcript
-- Use ONLY the verbs: discusses, mentions, claims, describes, states, explains, references, lists, compares, asks
-- Write 5-10 timestamp lines
-- Bold proper nouns with **double asterisks**
-- NEVER add disclaimers, warnings, evaluations, context, fact-checks, or commentary
-- Your output must be a neutral index. Nothing more.`;
-
-                // Allow user override, otherwise use mode-based prompt
-                const stylePreset = this._CF_SUMMARY_STYLES[summaryMode];
-                const presetPrompt = stylePreset?.prompt || (summaryMode === 'timestamped' ? timestampedPrompt : paragraphPrompt);
-                // Apply length modifier
-                const lengthSetting = appState.settings.cfSummaryLength || 'standard';
-                const lengthMod = { brief: '\n\nLENGTH: Keep it very brief — 2-3 sentences or 3-5 bullet points max.', detailed: '\n\nLENGTH: Be thorough — 8-12 sentences or 10-15 bullet points, covering all major topics discussed.' };
-                const basePrompt = presetPrompt + (lengthMod[lengthSetting] || '');
-                const effectivePrompt = appState.settings.cfCustomSummaryPrompt || basePrompt;
-
-                // Post-process: strip any preamble/disclaimer the model adds despite instructions
-                const _stripEditorializing = (text) => {
-                    if (!text) return text;
-                    let lines = text.split('\n');
-                    if (summaryMode === 'timestamped') {
-                        const topicIdx = lines.findIndex(l => /^TOPIC:/i.test(l.trim()));
-                        if (topicIdx > 0) lines = lines.slice(topicIdx);
-                        const refsIdx = lines.findIndex(l => /^REFS:/i.test(l.trim()) || /^NAMES\/REFS:/i.test(l.trim()));
-                        if (refsIdx >= 0) lines = lines.slice(0, refsIdx + 1);
-                    }
-                    const banPatterns = [
-                        /^(it'?s |note:|disclaimer:|important|please |remember |keep in mind|here are|this (is|view|transcript)|consider |be (wary|careful)|crucial|fascinating|controversial|\*\*it)/i,
-                        /critical thinking|healthy skepticism|multiple sources|fact.?check|mainstream support|lacks.*evidence|important to note/i,
-                        /^(in this video|in this transcript|the video|the speaker|this content)/i,
-                    ];
-                    lines = lines.filter(l => {
-                        const t = l.trim();
-                        if (!t) return true;
-                        return !banPatterns.some(p => p.test(t));
-                    });
-                    return lines.join('\n').trim();
-                };
-
-                // TextRank extractive fallback (used by builtin + as error fallback)
-                const _extractiveSummary = (segs) => {
-                    try {
-                    const allText = segs.map(s => s.text).join(' ');
-                    const rawSentences = allText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 25 && s.trim().length < 300);
-                    if (rawSentences.length < 3) return allText.slice(0, 500);
-                    const ranked = this._nlpTextRank(rawSentences, Math.min(6, Math.ceil(rawSentences.length * 0.15)));
-                    return ranked.map(r => r.text.trim()).join(' ');
-                    } catch(e) { this._warn('Extractive summary error:', e); return segs.map(s => s.text).join(' ').slice(0, 500); }
-                };
-
-                if (provider === 'builtin') {
-                    this._log('Summary: using builtin TextRank');
-                    summary = _extractiveSummary(segments);
-                    if (summary.length > 800) summary = summary.slice(0, 797) + '...';
-                } else {
-                    try {
-                        const isLocal = this._isLocalProvider();
-                        const txLimit = isLocal ? 200000 : 30000;
-                        const transcriptText = this._buildTranscriptText(segments, txLimit);
-                        const vidTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || '';
-                        const durationMin = Math.ceil((this._getVideoDuration() || 0) / 60);
-                        this._updateStatus(isLocal ? `Summarizing full transcript locally (${Math.round(transcriptText.length/1000)}K chars)...` : 'Summarizing via API...', 'loading', 50);
-                        const userMsg = summaryMode === 'timestamped'
-                            ? `INDEX THIS TRANSCRIPT. Output TOPIC, timestamped lines, and REFS. Nothing else.\n\nVideo: ${durationMin} minutes${vidTitle ? ', "' + vidTitle + '"' : ''}\n\n${transcriptText}`
-                            : `Process this ${durationMin}-minute video${vidTitle ? ' titled "' + vidTitle + '"' : ''} transcript as instructed.\n\n${transcriptText}`;
-                        this._log('Summary: calling LLM API, mode:', summaryMode, 'prompt:', transcriptText.length, 'chars');
-                        const rawText = await this._callLlmApi(effectivePrompt, userMsg, null);
-                        this._log('Summary: got response,', rawText?.length, 'chars');
-                        summary = (appState.settings.cfCustomSummaryPrompt || stylePreset?.prompt) ? rawText?.trim() : _stripEditorializing(rawText?.trim());
-                    } catch(e) {
-                        this._warn('Summary API error, falling back to extractive:', e.message);
-                        summary = _extractiveSummary(segments);
-                    }
-                }
-
-                this._lastSummary = summary;
-                this._log('Summary: done,', summary?.length, 'chars');
-                this._updateStatus('Done', 'ready', 100);
-                _resetButtons();
-                this._renderPanel();
-                if (showBubble && summary) this._showSummaryBubble(summary);
-                return summary;
-
-                } catch(outerErr) {
-                    this._warn('Summary unexpected error:', outerErr);
-                    showToast('Summary failed: ' + (outerErr.message || 'unknown error'), '#ef4444');
-                    _resetButtons();
-                    this._updateStatus('Summary error', 'error', 0);
-                    return null;
-                }
-            },
-
-            _formatSummaryHTML(text) {
-                if (!text) return '';
-                let html = text
-                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.+?)\*/g, '<em>$1</em>');
-                // Style TOPIC: and REFS: headers
-                html = html.replace(/^TOPIC:\s*/gm, '<span class="cf-bubble-label">TOPIC</span> ');
-                html = html.replace(/^(REFS|NAMES\/REFS):\s*/gm, '<span class="cf-bubble-label">REFS</span> ');
-                html = html.replace(/^OUTLINE:\s*$/gm, '');
-                // Convert [MM:SS] or [H:MM:SS] timestamps to clickable links
-                html = html.replace(/\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g, (match, ts) => {
-                    const parts = ts.split(':').map(Number);
-                    let seconds = 0;
-                    if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-                    else seconds = parts[0] * 60 + parts[1];
-                    return `<a class="cf-bubble-ts" data-cf-seek="${seconds}">[${ts}]</a>`;
-                });
-                // Convert markdown-style lists (- item) to styled lines
-                html = html.replace(/^- /gm, '<span class="cf-bubble-bullet"></span>');
-                // Line breaks, collapse multiple blanks
-                html = html.replace(/\n{3,}/g, '\n\n').replace(/\n/g, '<br>');
-                return html;
-            },
-
-            _showSummaryBubble(summary) {
-                this._hideSummaryBubble();
-                const player = document.getElementById('movie_player');
-                if (!player) return;
-
-                const bubble = document.createElement('div');
-                bubble.id = 'cf-summary-bubble';
-                const providerLabel = this._CF_PROVIDERS[appState.settings.cfLlmProvider || 'builtin']?.name || 'Built-in';
-
-                const headerHTML = `<div class="cf-bubble-header">
-                    <div class="cf-bubble-title-row">
-                        <div class="cf-bubble-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-                        <span class="cf-bubble-title">TL;DR</span>
-                        <span class="cf-bubble-provider">${providerLabel}</span>
-                    </div>
-                    <div class="cf-bubble-actions">
-                        <button class="cf-bubble-btn" id="cf-bubble-copy" title="Copy"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-                        <button class="cf-bubble-btn cf-bubble-close-btn" id="cf-bubble-close" title="Close"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                    </div>
-                </div>`;
-
-                const bodyHTML = `<div class="cf-bubble-body">${this._formatSummaryHTML(summary)}</div>`;
-
-                TrustedHTML.setHTML(bubble, headerHTML + bodyHTML);
-
-                bubble.querySelector('#cf-bubble-close')?.addEventListener('click', () => this._hideSummaryBubble());
-                bubble.querySelector('#cf-bubble-copy')?.addEventListener('click', () => {
-                    navigator.clipboard.writeText(summary);
-                    const btn = bubble.querySelector('#cf-bubble-copy');
-                    if (btn) { TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'); setTimeout(() => { TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'); }, 1500); }
-                });
-                // Clickable timestamps seek the video
-                bubble.querySelectorAll('.cf-bubble-ts').forEach(ts => {
-                    ts.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const seconds = parseInt(ts.dataset.cfSeek, 10);
-                        if (!isNaN(seconds)) {
-                            const video = document.querySelector('video.html5-main-video');
-                            if (video) video.currentTime = seconds;
-                        }
-                    });
-                });
-
-                // Escape key closes
-                bubble._keyHandler = (e) => { if (e.key === 'Escape') this._hideSummaryBubble(); };
-                document.addEventListener('keydown', bubble._keyHandler);
-
-                // Close on click outside
-                bubble._outsideClick = (e) => { if (!bubble.contains(e.target) && !e.target.closest('.ytkit-summarize-btn')) this._hideSummaryBubble(); };
-                setTimeout(() => document.addEventListener('click', bubble._outsideClick), 200);
-
-                // Overlay on the player
-                player.style.position = 'relative';
-                player.appendChild(bubble);
-
-                // Animate in
-                requestAnimationFrame(() => { bubble.classList.add('cf-bubble-visible'); });
-            },
-
-            _hideSummaryBubble() {
-                const existing = document.getElementById('cf-summary-bubble');
-                if (existing) {
-                    if (existing._outsideClick) document.removeEventListener('click', existing._outsideClick);
-                    if (existing._keyHandler) document.removeEventListener('keydown', existing._keyHandler);
-                    existing.classList.remove('cf-bubble-visible');
-                    existing.classList.add('cf-bubble-hiding');
-                    setTimeout(() => existing.remove(), 250);
-                }
-            },
-            _lastSummary: null,
-
-            // ═══ EXPORT CHAPTERS ═══
-            _exportChaptersYouTube() {
-                if (!this._chapterData?.chapters?.length) return;
-                const lines = this._chapterData.chapters.map(ch => `${this._formatTime(ch.start)} ${ch.title}`);
-                navigator.clipboard.writeText(lines.join('\n'));
-            },
-            _exportChaptersJSON() {
-                if (!this._chapterData) return;
-                const blob = new Blob([JSON.stringify(this._chapterData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `chapters_${this._getVideoId()}.json`;
-                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-            },
-
-            // ═══ SMART CLIP LINKS ═══
-            _copyClipLink(startTime, endTime) {
-                const videoId = this._getVideoId();
-                if (!videoId) return;
-                let url = `https://youtu.be/${videoId}?t=${Math.round(startTime)}`;
-                if (endTime) url = `https://youtube.com/clip/${videoId}?t=${Math.round(startTime)}&end=${Math.round(endTime)}`;
-                navigator.clipboard.writeText(url);
-            },
-
-            // ═══ Q&A CHAT ═══
-            async _sendChatMessage(question) {
-                if (!question?.trim() || this._chatLoading) return;
-                const provider = appState.settings.cfLlmProvider || 'builtin';
-                if (provider === 'builtin') { showToast('Q&A Chat requires an AI provider (Ollama, OpenAI, etc.)', '#f59e0b'); return; }
-
-                this._chatHistory.push({ role: 'user', content: question.trim() });
-                this._chatLoading = true;
-                this._renderPanel();
-
-                try {
-                    let segments = this._lastTranscriptSegments;
-                    if (!segments?.length) {
-                        segments = await this._fetchTranscript(this._getVideoId(), null);
-                        if (segments?.length) this._lastTranscriptSegments = segments;
-                    }
-                    if (!segments?.length) throw new Error('No transcript available');
-
-                    const isLocal = this._isLocalProvider();
-                    const txLimit = isLocal ? 200000 : 30000;
-                    const transcriptText = this._buildTranscriptText(segments, txLimit);
-                    const vidTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || '';
-
-                    const systemPrompt = `You are a helpful assistant answering questions about a YouTube video. Use ONLY the transcript provided to answer. If the answer isn't in the transcript, say so. Be concise and direct. When referencing specific moments, include timestamps in [MM:SS] format.`;
-
-                    // Build conversation context (last 6 messages max for context window)
-                    const recentHistory = this._chatHistory.slice(-7, -1);
-                    let userMsg = `Video: "${vidTitle}"\n\nTranscript:\n${transcriptText}\n\n`;
-                    if (recentHistory.length > 0) {
-                        userMsg += `Previous conversation:\n`;
-                        recentHistory.forEach(m => { userMsg += `${m.role === 'user' ? 'Q' : 'A'}: ${m.content}\n`; });
-                        userMsg += `\n`;
-                    }
-                    userMsg += `Question: ${question.trim()}`;
-
-                    const response = await this._callLlmApi(systemPrompt, userMsg, null);
-                    this._chatHistory.push({ role: 'assistant', content: response.trim() });
-                } catch (e) {
-                    this._warn('Chat error:', e);
-                    this._chatHistory.push({ role: 'assistant', content: `Error: ${e.message}` });
-                }
-                this._chatLoading = false;
-                this._renderPanel();
-                // Scroll chat to bottom
-                setTimeout(() => {
-                    const chatBox = this._panelEl?.querySelector('.cf-chat-messages');
-                    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-                }, 60);
-            },
-
-            // ═══ FLASHCARD GENERATION ═══
-            async _generateFlashcards() {
-                const provider = appState.settings.cfLlmProvider || 'builtin';
-                if (provider === 'builtin') { showToast('Flashcards require an AI provider (Ollama, OpenAI, etc.)', '#f59e0b'); return; }
-                if (this._flashcardLoading) return;
-                this._flashcardLoading = true;
-                this._renderPanel();
-
-                try {
-                    let segments = this._lastTranscriptSegments;
-                    if (!segments?.length) {
-                        segments = await this._fetchTranscript(this._getVideoId(), null);
-                        if (segments?.length) this._lastTranscriptSegments = segments;
-                    }
-                    if (!segments?.length) throw new Error('No transcript available');
-
-                    const isLocal = this._isLocalProvider();
-                    const txLimit = isLocal ? 200000 : 30000;
-                    const transcriptText = this._buildTranscriptText(segments, txLimit);
-                    const vidTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || '';
-
-                    const systemPrompt = `ROLE: Educational flashcard generator.
-
-TASK: Generate 8-15 study flashcards from this video transcript.
-
-OUTPUT FORMAT: Output ONLY valid JSON — an array of objects with "q" (question) and "a" (answer) keys.
-Example: [{"q":"What is X?","a":"X is..."},{"q":"How does Y work?","a":"Y works by..."}]
-
-CONSTRAINTS:
-- Questions should test understanding of key concepts, facts, and processes discussed
-- Answers should be concise (1-3 sentences max)
-- Cover different topics from throughout the video
-- Include a mix of: definitions, cause/effect, comparisons, and application questions
-- Do NOT include timestamps
-- Output ONLY the JSON array. No markdown fences, no preamble, no commentary.`;
-
-                    const userMsg = `Generate study flashcards for this video${vidTitle ? ' titled "' + vidTitle + '"' : ''}.\n\n${transcriptText}`;
-                    const rawText = await this._callLlmApi(systemPrompt, userMsg, null);
-
-                    // Parse JSON — strip markdown fences if present
-                    const cleaned = rawText.replace(/```(?:json)?\s*/g, '').replace(/```\s*$/g, '').trim();
-                    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
-                    if (!jsonMatch) throw new Error('LLM did not return valid JSON');
-                    const cards = JSON.parse(jsonMatch[0]);
-                    if (!Array.isArray(cards) || !cards.length || !cards[0].q) throw new Error('Invalid flashcard format');
-
-                    this._flashcards = cards;
-                    this._flashcardIdx = 0;
-                    this._flashcardFlipped = false;
-                    showToast(`Generated ${cards.length} flashcards`, '#10b981');
-                } catch (e) {
-                    this._warn('Flashcard error:', e);
-                    showToast('Flashcard generation failed: ' + e.message, '#ef4444');
-                }
-                this._flashcardLoading = false;
-                this._renderPanel();
-            },
-
-            _exportFlashcardsAnki() {
-                if (!this._flashcards?.length) return;
-                const lines = this._flashcards.map(c => `${c.q}\t${c.a}`);
-                const blob = new Blob([lines.join('\n')], { type: 'text/tab-separated-values' });
-                const url = URL.createObjectURL(blob);
-                const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim()?.replace(/[^\w\s-]/g, '').slice(0, 50) || this._getVideoId();
-                const a = document.createElement('a'); a.href = url; a.download = `flashcards_${title}.tsv`;
-                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                showToast('Exported as TSV (Anki/Quizlet)', '#10b981');
-            },
-
-            // ═══ MIND MAP GENERATION ═══
-            async _generateMindMap() {
-                const provider = appState.settings.cfLlmProvider || 'builtin';
-                if (provider === 'builtin') { showToast('Mind Map requires an AI provider (Ollama, OpenAI, etc.)', '#f59e0b'); return; }
-                if (this._mindMapLoading) return;
-                this._mindMapLoading = true;
-                this._renderPanel();
-
-                try {
-                    let segments = this._lastTranscriptSegments;
-                    if (!segments?.length) {
-                        segments = await this._fetchTranscript(this._getVideoId(), null);
-                        if (segments?.length) this._lastTranscriptSegments = segments;
-                    }
-                    if (!segments?.length) throw new Error('No transcript available');
-
-                    const isLocal = this._isLocalProvider();
-                    const txLimit = isLocal ? 200000 : 30000;
-                    const transcriptText = this._buildTranscriptText(segments, txLimit);
-                    const vidTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || '';
-
-                    const systemPrompt = `ROLE: Content outline generator.
-
-TASK: Create a hierarchical mind map outline of this video's content.
-
-OUTPUT FORMAT: Use indented text with these markers:
-# Main Topic (the video's central subject)
-## Major Section 1
-  - Key point
-  - Key point
-    - Sub-detail
-## Major Section 2
-  - Key point
-  - Key point
-
-CONSTRAINTS:
-- 3-6 major sections (##) covering distinct topics
-- 2-5 key points (-) per section
-- Sub-details only when genuinely important
-- Keep each line under 60 characters
-- No timestamps, no preamble, no commentary
-- Start with exactly one # line for the video's central topic
-- Output ONLY the outline. Nothing before. Nothing after.`;
-
-                    const userMsg = `Generate a mind map outline for this video${vidTitle ? ' titled "' + vidTitle + '"' : ''}.\n\n${transcriptText}`;
-                    const rawText = await this._callLlmApi(systemPrompt, userMsg, null);
-                    this._mindMapData = rawText?.trim();
-                    showToast('Mind map generated', '#10b981');
-                } catch (e) {
-                    this._warn('Mind map error:', e);
-                    showToast('Mind map failed: ' + e.message, '#ef4444');
-                }
-                this._mindMapLoading = false;
-                this._renderPanel();
-            },
-
-            _exportMindMapMermaid() {
-                if (!this._mindMapData) return;
-                const lines = this._mindMapData.split('\n').filter(l => l.trim());
-                let mermaid = 'mindmap\n';
-                lines.forEach(line => {
-                    const stripped = line.replace(/^#+\s*/, '').replace(/^-\s*/, '').trim();
-                    if (!stripped) return;
-                    if (line.match(/^#\s/)) mermaid += `  root((${stripped}))\n`;
-                    else if (line.match(/^##\s/)) mermaid += `    ${stripped}\n`;
-                    else if (line.match(/^\s{4,}-/)) mermaid += `        ${stripped}\n`;
-                    else if (line.match(/^\s*-/)) mermaid += `      ${stripped}\n`;
-                });
-                navigator.clipboard.writeText(mermaid);
-                showToast('Mermaid mind map copied to clipboard', '#10b981');
-            },
-
-            _exportBlogMarkdown() {
-                if (!this._lastSummary) { showToast('Generate a Blog Post summary first', '#f59e0b'); return; }
-                const vidTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || 'Untitled Video';
-                const videoId = this._getVideoId();
-                const url = videoId ? `https://www.youtube.com/watch?v=${videoId}` : '';
-                const md = `# ${vidTitle}\n\n${this._lastSummary}\n\n---\n*Source: [${vidTitle}](${url})*\n`;
-                const blob = new Blob([md], { type: 'text/markdown' });
-                const dlUrl = URL.createObjectURL(blob);
-                const safeName = vidTitle.replace(/[^\w\s-]/g, '').slice(0, 50).trim();
-                const a = document.createElement('a'); a.href = dlUrl; a.download = `${safeName}.md`;
-                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(dlUrl);
-                showToast('Blog post exported as Markdown', '#10b981');
-            },
-
-            // ═══ CUSTOM PROMPT LIBRARY ═══
-            _getSavedPrompts() {
-                try { return JSON.parse(GM_getValue('cf_prompt_library', '[]')); } catch { return []; }
-            },
-            _savePrompt(name, prompt) {
-                const library = this._getSavedPrompts();
-                const existing = library.findIndex(p => p.name === name);
-                if (existing >= 0) library[existing].prompt = prompt;
-                else library.push({ name, prompt });
-                GM_setValue('cf_prompt_library', JSON.stringify(library));
-                showToast(`Prompt "${name}" saved`, '#10b981');
-            },
-            _deletePrompt(name) {
-                const library = this._getSavedPrompts().filter(p => p.name !== name);
-                GM_setValue('cf_prompt_library', JSON.stringify(library));
-                showToast(`Prompt "${name}" deleted`, '#10b981');
-            },
-            _loadPrompt(name) {
-                const prompt = this._getSavedPrompts().find(p => p.name === name);
-                if (prompt) {
-                    appState.settings.cfCustomSummaryPrompt = prompt.prompt;
-                    settingsManager.save(appState.settings);
-                    showToast(`Loaded prompt: "${name}"`, '#10b981');
-                }
-            },
-
-            // ═══ SPONSORBLOCK CHAPTER IMPORT ═══
-            // ═══ CHAPTER-AWARE SPEED CONTROL ═══
-            _speedControlActive: false,
-            _speedControlRAF: null,
-            _speedSettings: { introSpeed: 2, outroSpeed: 2, normalSpeed: 1, skipChapters: {} },
-
-            _toggleSpeedControl() {
-                this._speedControlActive = !this._speedControlActive;
-                appState.settings.cfSpeedControl = this._speedControlActive;
-                settingsManager.save(appState.settings);
-                if (this._speedControlActive) this._startSpeedControl();
-                else this._stopSpeedControl();
-            },
-            _startSpeedControl() {
-                if (this._speedControlRAF) return;
-                const check = () => {
-                    if (!this._speedControlActive) return;
-                    const video = document.querySelector('video.html5-main-video, video');
-                    if (video && this._chapterData?.chapters?.length >= 2 && !video.paused) {
-                        const ct = video.currentTime;
-                        const chapters = this._chapterData.chapters;
-                        const currentChapter = chapters.findIndex((ch, i) => ct >= ch.start && (i === chapters.length - 1 || ct < chapters[i + 1].start));
-
-                        let targetSpeed = this._speedSettings.normalSpeed;
-
-                        if (currentChapter >= 0 && this._speedSettings.skipChapters[currentChapter]) {
-                            const nextChapter = chapters[currentChapter + 1];
-                            if (nextChapter) { video.currentTime = nextChapter.start; }
-                        } else if (currentChapter === 0) {
-                            targetSpeed = this._speedSettings.introSpeed;
-                        } else if (currentChapter === chapters.length - 1) {
-                            targetSpeed = this._speedSettings.outroSpeed;
-                        }
-
-                        if (Math.abs(video.playbackRate - targetSpeed) > 0.01) {
-                            video.playbackRate = targetSpeed;
-                        }
-                    }
-                    this._speedControlRAF = requestAnimationFrame(check);
-                };
-                this._speedControlRAF = requestAnimationFrame(check);
-            },
-            _stopSpeedControl() {
-                if (this._speedControlRAF) { cancelAnimationFrame(this._speedControlRAF); this._speedControlRAF = null; }
-                const video = document.querySelector('video.html5-main-video, video');
-                if (video) video.playbackRate = 1;
-            },
-
-            // ── GM helpers ──
-            _gmGet(url, extraHeaders = {}) {
-                return new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({ method: 'GET', url, anonymous: false,
-                        headers: Object.keys(extraHeaders).length ? extraHeaders : undefined,
-                        onload: (r) => {
-                            this._log(`GM GET ${r.status} ${url.slice(0,80)}... (${(r.responseText||'').length} chars)`);
-                            if (r.status >= 400) { reject(new Error(`GM GET HTTP ${r.status}`)); return; }
-                            resolve(r.responseText || '');
-                        },
-                        onerror: (e) => { this._warn('GM GET error:', url.slice(0,80)); reject(new Error('GM GET error: ' + (e?.statusText || 'unknown'))); },
-                        ontimeout: () => reject(new Error('GM GET timeout')),
-                        timeout: 30000 });
-                });
-            },
-            _gmPostJson(url, data, extraHeaders = {}, customTimeout = 30000) {
-                return new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({ method: 'POST', url, anonymous: false,
-                        headers: { 'Content-Type': 'application/json', ...extraHeaders },
-                        data: typeof data === 'string' ? data : JSON.stringify(data),
-                        onload: (r) => {
-                            this._log(`GM POST ${r.status} ${url.slice(0,80)}... (${(r.responseText||'').length} chars)`);
-                            if (r.status >= 400) { reject(new Error(`GM POST HTTP ${r.status}: ${(r.responseText||'').slice(0,200)}`)); return; }
-                            try { resolve(JSON.parse(r.responseText)); } catch(e) {
-                                // Fallback: try to reassemble streaming NDJSON (SSE) response
-                                const text = r.responseText || '';
-                                if (text.includes('data: ')) {
-                                    try {
-                                        let content = '';
-                                        for (const line of text.split('\n')) {
-                                            if (!line.startsWith('data: ') || line.trim() === 'data: [DONE]') continue;
-                                            const chunk = JSON.parse(line.slice(6));
-                                            const delta = chunk?.choices?.[0]?.delta?.content;
-                                            if (delta) content += delta;
-                                        }
-                                        if (content) {
-                                            resolve({ choices: [{ message: { content } }] });
-                                            return;
-                                        }
-                                    } catch(e2) { /* fall through */ }
-                                }
-                                reject(new Error('GM POST JSON parse error'));
-                            }
-                        },
-                        onerror: (e) => { this._warn('GM POST error:', url.slice(0,80)); reject(new Error('GM POST error')); },
-                        ontimeout: () => reject(new Error('GM POST timeout')),
-                        timeout: customTimeout });
-                });
-            },
-            async _buildSapisidAuth() {
-                try {
-                    const cookies = document.cookie.split(';').map(c => c.trim());
-                    const sapisid = cookies.find(c => c.startsWith('SAPISID=') || c.startsWith('__Secure-3PAPISID='));
-                    if (!sapisid) return null;
-                    const val = sapisid.split('=')[1]; const origin = 'https://www.youtube.com'; const ts = Math.floor(Date.now() / 1000);
-                    const hashBuffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(`${ts} ${val} ${origin}`));
-                    const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-                    return { authorization: `SAPISIDHASH ${ts}_${hash}`, 'x-origin': origin };
-                } catch(e) { return null; }
-            },
-
-            // ═══════════════════════════════════════════
-            //  TRANSCRIPT FETCHER
-            // ═══════════════════════════════════════════
-            async _fetchTranscript(videoId, onStatus) {
-                const transcriptMethod = appState.settings.cfTranscriptMethod || 'auto';
-
-                if (transcriptMethod === 'whisper-only') {
-                    this._log('Transcript method: whisper-only — skipping captions');
-                    return null;
-                }
-
-                if (transcriptMethod === 'vibe') {
-                    this._log('Transcript method: vibe — trying WhisperServer first');
-                    try {
-                        return await this._vibeTranscribe(videoId, onStatus);
-                    } catch(e) {
-                        this._warn('WhisperServer transcription failed:', e.message);
-                        this._log('Falling back to caption-based methods...');
-                    }
-                }
-
-                this._log('=== Fetching transcript for:', videoId, '(method:', transcriptMethod, ') ===');
-                onStatus?.('Fetching transcript...', 'loading', 5);
-
-                // ── PRIMARY: Use YTKit's TranscriptService ──
-                try {
-                    onStatus?.('Trying YTKit TranscriptService...', 'loading', 8);
-                    this._log('Method 1: YTKit TranscriptService._getCaptionTracks');
-                    const trackData = await TranscriptService._getCaptionTracks(videoId);
-                    if (trackData?.tracks?.length) {
-                        this._log('TranscriptService found', trackData.tracks.length, 'tracks:', trackData.tracks.map(t => `${t.languageCode}(${t.kind})`).join(', '));
-                        const selectedTrack = TranscriptService._selectBestTrack(trackData.tracks);
-                        this._log('Selected track:', selectedTrack.languageCode, selectedTrack.kind);
-
-                        if (selectedTrack.baseUrl) {
-                            try {
-                                const tsSegments = await TranscriptService._fetchTranscriptContent(selectedTrack.baseUrl);
-                                if (tsSegments?.length) {
-                                    this._log('TranscriptService delivered', tsSegments.length, 'segments');
-                                    return tsSegments.map(s => ({
-                                        start: (s.startMs || 0) / 1000,
-                                        dur: ((s.endMs || 0) - (s.startMs || 0)) / 1000,
-                                        text: s.text,
-                                        ...(s.words ? { words: s.words } : {})
-                                    }));
-                                }
-                            } catch(e) {
-                                this._log('TranscriptService._fetchTranscriptContent failed:', e.message);
-                            }
-
-                            this._log('Trying GM-backed caption download as fallback...');
-                            onStatus?.('Trying GM caption fetch...', 'loading', 15);
-                            const gmSegments = await this._gmDownloadCaptions(selectedTrack, videoId);
-                            if (gmSegments?.length) {
-                                this._log('GM caption download got', gmSegments.length, 'segments');
-                                return gmSegments;
-                            }
-                        }
-                    } else {
-                        this._log('TranscriptService found no tracks');
-                    }
-                } catch(e) {
-                    this._log('TranscriptService failed:', e.message);
-                }
-
-                // ── FALLBACK 2: Direct page-level variable access via unsafeWindow ──
-                try {
-                    onStatus?.('Trying page context access...', 'loading', 20);
-                    this._log('Method 2: unsafeWindow.ytInitialPlayerResponse');
-                    const pw = _rw;
-                    const pr = pw.ytInitialPlayerResponse;
-                    if (pr?.videoDetails?.videoId === videoId) {
-                        const ct = pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                        if (ct?.length) {
-                            this._log('Found', ct.length, 'tracks via unsafeWindow');
-                            const segments = await this._gmDownloadCaptions(ct[0], videoId, ct);
-                            if (segments?.length) return segments;
-                        } else {
-                            this._log('unsafeWindow PR exists but no captionTracks (captions:', !!pr?.captions, ')');
-                        }
-                    } else {
-                        this._log('unsafeWindow PR missing or stale (prVid:', pr?.videoDetails?.videoId, 'wanted:', videoId, ')');
-                    }
-                } catch(e) {
-                    this._log('unsafeWindow access failed:', e.message);
-                }
-
-                // ── FALLBACK 3: Polymer element data ──
-                try {
-                    onStatus?.('Trying Polymer element data...', 'loading', 25);
-                    this._log('Method 3: ytd-watch-flexy Polymer data');
-                    const wf = document.querySelector('ytd-watch-flexy');
-                    if (wf) {
-                        for (const path of ['playerData_', '__data', 'data']) {
-                            let pr = wf[path]; if (pr?.playerResponse) pr = pr.playerResponse;
-                            if (!pr?.videoDetails || pr.videoDetails.videoId !== videoId) continue;
-                            const ct = pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                            if (ct?.length) {
-                                this._log('Found', ct.length, 'tracks via flexy.' + path);
-                                const segments = await this._gmDownloadCaptions(ct[0], videoId, ct);
-                                if (segments?.length) return segments;
-                            }
-                        }
-                    }
-                    this._log('Polymer element: no tracks found');
-                } catch(e) {
-                    this._log('Polymer access failed:', e.message);
-                }
-
-                // ── FALLBACK 4: GM-backed fresh page fetch ──
-                try {
-                    onStatus?.('Fetching fresh page via GM...', 'loading', 30);
-                    this._log('Method 4: GM page fetch');
-                    const html = await this._gmGet(`https://www.youtube.com/watch?v=${videoId}`);
-                    this._log('Got', html.length, 'chars, captionTracks:', html.includes('captionTracks'), 'timedtext:', html.includes('timedtext'));
-
-                    // 4A: ytInitialPlayerResponse
-                    const prMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;\s*(?:var\s+(?:meta|head)|<\/script|\n)/s);
-                    if (prMatch) {
-                        try {
-                            const pr = JSON.parse(prMatch[1]);
-                            const ct = pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                            if (ct?.length) {
-                                this._log('4A: found', ct.length, 'tracks from page PR');
-                                const segments = await this._gmDownloadCaptions(ct[0], videoId, ct);
-                                if (segments?.length) return segments;
-                            }
-                        } catch(e) { this._log('4A: JSON parse failed:', e.message?.slice(0,80)); }
-                    }
-
-                    // 4B: captionTracks regex
-                    if (html.includes('captionTracks')) {
-                        for (const pat of [/"captionTracks":\s*(\[.*?\])(?=\s*,\s*")/s, /"captionTracks":\s*(\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\])/]) {
-                            const m = html.match(pat);
-                            if (m) {
-                                try {
-                                    const parsed = JSON.parse(m[1]);
-                                    if (parsed?.length) {
-                                        this._log('4B: regex found', parsed.length, 'tracks');
-                                        const segments = await this._gmDownloadCaptions(parsed[0], videoId, parsed);
-                                        if (segments?.length) return segments;
-                                    }
-                                } catch(e) {}
-                            }
-                        }
-                    }
-
-                    // 4C: timedtext URL
-                    if (html.includes('timedtext')) {
-                        const urlMatch = html.match(/(https?:\\\/\\\/[^"]*timedtext[^"]*)/);
-                        if (urlMatch) {
-                            const cleanUrl = urlMatch[1].replace(/\\\//g, '/').replace(/\\u0026/g, '&');
-                            this._log('4C: extracted timedtext URL');
-                            const segments = await this._gmDownloadCaptions({ baseUrl: cleanUrl, languageCode: 'en' }, videoId);
-                            if (segments?.length) return segments;
-                        }
-                    }
-                } catch(e) {
-                    this._log('GM page fetch failed:', e.message);
-                }
-
-                // ── FALLBACK 5: Innertube player API via GM ──
-                try {
-                    onStatus?.('Trying Innertube player API...', 'loading', 40);
-                    this._log('Method 5: Innertube player API');
-                    const pw = _rw;
-                    let apiKey; try { apiKey = pw.ytcfg?.get?.('INNERTUBE_API_KEY'); } catch(e) {}
-                    if (!apiKey) apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
-                    let clientVersion; try { clientVersion = pw.ytcfg?.get?.('INNERTUBE_CLIENT_VERSION'); } catch(e) {}
-                    if (!clientVersion) clientVersion = '2.20250210.01.00';
-
-                    const body = { context: { client: { clientName: 'WEB', clientVersion, hl: 'en', gl: 'US' } }, videoId };
-                    const authHeaders = await this._buildSapisidAuth() || {};
-                    const data = await this._gmPostJson(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`, body, authHeaders);
-                    const ct = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (ct?.length) {
-                        this._log('M5: found', ct.length, 'tracks');
-                        const segments = await this._gmDownloadCaptions(ct[0], videoId, ct);
-                        if (segments?.length) return segments;
-                    } else {
-                        this._log('M5: status:', data?.playabilityStatus?.status, 'reason:', data?.playabilityStatus?.reason?.slice(0,80) || 'none');
-                    }
-                } catch(e) {
-                    this._log('Innertube player API failed:', e.message);
-                }
-
-                // ── FALLBACK 6: Innertube get_transcript ──
-                try {
-                    onStatus?.('Trying Innertube get_transcript...', 'loading', 50);
-                    this._log('Method 6: Innertube get_transcript');
-                    const segments = await this._fetchTranscriptViaInnertube(videoId, 'en');
-                    if (segments?.length) {
-                        this._log('get_transcript delivered', segments.length, 'segments');
-                        return segments;
-                    }
-                } catch(e) {
-                    this._log('get_transcript failed:', e.message);
-                }
-
-                // ── FALLBACK 7: DOM scrape ──
-                try {
-                    onStatus?.('Trying DOM transcript scrape...', 'loading', 55);
-                    this._log('Method 7: DOM scrape');
-                    const segments = await this._scrapeTranscriptFromDOM();
-                    if (segments?.length) {
-                        this._log('DOM scrape got', segments.length, 'segments');
-                        return segments;
-                    }
-                } catch(e) {
-                    this._log('DOM scrape failed:', e.message);
-                }
-
-                this._warn('ALL transcript methods failed for video:', videoId);
-                return null;
-            },
-
-            // GM-backed caption download with SAPISIDHASH auth and multi-format fallback
-            async _gmDownloadCaptions(trackOrFirst, videoId, allTracks) {
-                let track = trackOrFirst;
-                if (allTracks?.length) {
-                    track = allTracks.find(t => t.languageCode === 'en' && t.kind !== 'asr')
-                         || allTracks.find(t => t.languageCode === 'en')
-                         || allTracks.find(t => t.languageCode?.startsWith('en'))
-                         || allTracks[0];
-                }
-                if (!track?.baseUrl) { this._log('No baseUrl in track:', JSON.stringify(track)?.slice(0,200)); return null; }
-
-                let baseUrl = track.baseUrl;
-                if (baseUrl.includes('\\u0026')) baseUrl = baseUrl.replace(/\\u0026/g, '&');
-                if (baseUrl.includes('\\u002F')) baseUrl = baseUrl.replace(/\\u002F/g, '/');
-                if (track.languageCode && !baseUrl.includes('&lang=')) baseUrl += '&lang=' + encodeURIComponent(track.languageCode);
-                if (track.kind && !baseUrl.includes('&kind=')) baseUrl += '&kind=' + encodeURIComponent(track.kind);
-                if (typeof track.name === 'string' && !baseUrl.includes('&name=')) baseUrl += '&name=' + encodeURIComponent(track.name);
-
-                this._log('Downloading captions for track:', track.languageCode, track.kind || 'manual');
-
-                const authHeaders = await this._buildSapisidAuth() || {};
-                for (const fmt of ['json3', null, 'srv3']) {
-                    try {
-                        const url = fmt ? baseUrl + '&fmt=' + fmt : baseUrl;
-                        this._log('A(GM): fmt=' + (fmt || 'xml'));
-                        const text = await this._gmGet(url, authHeaders);
-                        if (!text.length) continue;
-                        const segments = this._parseCaptionResponse(text, fmt);
-                        if (segments?.length) { this._log('A(GM): got', segments.length, 'segments via fmt=' + (fmt || 'xml')); return segments; }
-                    } catch(e) { this._log('A(GM): fmt=' + (fmt || 'xml'), 'error:', e.message); }
-                }
-
-                for (const fmt of ['json3', null, 'srv3']) {
-                    try {
-                        const url = fmt ? baseUrl + '&fmt=' + fmt : baseUrl;
-                        this._log('B(fetch): fmt=' + (fmt || 'xml'));
-                        const resp = await fetch(url, { credentials: 'include' });
-                        const text = await resp.text();
-                        if (!text.length) continue;
-                        const segments = this._parseCaptionResponse(text, fmt);
-                        if (segments?.length) { this._log('B(fetch): got', segments.length, 'segments via fmt=' + (fmt || 'xml')); return segments; }
-                    } catch(e) { this._log('B(fetch): fmt=' + (fmt || 'xml'), 'error:', e.message); }
-                }
-
-                this._log('All caption download methods failed for track:', track.languageCode);
-                return null;
-            },
-
-            _parseCaptionResponse(text, fmt) {
-                if (fmt === 'json3') {
-                    try {
-                        const data = JSON.parse(text); if (!data.events?.length) return null;
-                        const segments = [];
-                        for (const evt of data.events) {
-                            if (!evt.segs) continue;
-                            const t = evt.segs.map(s => s.utf8 || '').join('').trim();
-                            if (!t || t === '\n') continue;
-                            const seg = { start: (evt.tStartMs || 0) / 1000, dur: (evt.dDurationMs || 0) / 1000, text: t.replace(/\n/g, ' ').trim() };
-                            // Preserve word-level timing from tOffsetMs
-                            if (evt.segs.length > 1 && evt.segs.some(s => s.tOffsetMs !== undefined)) {
-                                const evtStart = seg.start, evtEnd = seg.start + seg.dur;
-                                seg.words = [];
-                                for (let i = 0; i < evt.segs.length; i++) {
-                                    const w = (evt.segs[i].utf8 || '').replace(/\n/g, ' ').trim();
-                                    if (!w) continue;
-                                    const wStart = evtStart + (evt.segs[i].tOffsetMs || 0) / 1000;
-                                    const nextOffset = (i < evt.segs.length - 1 && evt.segs[i+1].tOffsetMs !== undefined)
-                                        ? evtStart + evt.segs[i+1].tOffsetMs / 1000 : evtEnd;
-                                    seg.words.push({ text: w, start: wStart, end: nextOffset });
-                                }
-                            }
-                            segments.push(seg);
-                        }
-                        return segments.length ? segments : null;
-                    } catch(e) { return null; }
-                }
-                if (fmt === 'srv3') {
-                    const segments = []; const re = /<p\s+t="(\d+)"(?:\s+d="(\d+)")?[^>]*>([\s\S]*?)<\/p>/g; let m;
-                    while ((m = re.exec(text)) !== null) { const raw = (m[3] || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n/g, ' ').trim(); if (raw) segments.push({ start: parseInt(m[1]||'0')/1000, dur: parseInt(m[2]||'0')/1000, text: raw }); }
-                    return segments.length ? segments : null;
-                }
-                const segments = []; const re = /<text\s+start="([^"]*)"(?:\s+dur="([^"]*)")?[^>]*>([\s\S]*?)<\/text>/g; let m;
-                while ((m = re.exec(text)) !== null) { const raw = (m[3] || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'").replace(/\n/g, ' ').trim(); if (raw) segments.push({ start: parseFloat(m[1]||'0'), dur: parseFloat(m[2]||'0'), text: raw }); }
-                return segments.length ? segments : null;
-            },
-
-            async _fetchTranscriptViaInnertube(videoId, lang) {
-                const pw = _rw;
-                const vidBytes = [...new TextEncoder().encode(videoId)]; const langBytes = [...new TextEncoder().encode(lang || 'en')];
-                function varint(val) { const b = []; while (val > 0x7f) { b.push((val & 0x7f) | 0x80); val >>>= 7; } b.push(val & 0x7f); return b; }
-                function lenField(fieldNum, data) { const tag = varint((fieldNum << 3) | 2); return [...tag, ...varint(data.length), ...data]; }
-                const f1 = lenField(1, vidBytes); const f2 = lenField(2, [...lenField(1, langBytes), ...lenField(3, [])]);
-                const params = btoa(String.fromCharCode(...f1, ...f2));
-                let apiKey; try { apiKey = pw.ytcfg?.get?.('INNERTUBE_API_KEY'); } catch(e) {}
-                if (!apiKey) apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
-                let clientVersion; try { clientVersion = pw.ytcfg?.get?.('INNERTUBE_CLIENT_VERSION'); } catch(e) {}
-                if (!clientVersion) clientVersion = '2.20250210.01.00';
-                const body = { context: { client: { clientName: 'WEB', clientVersion, hl: lang || 'en', gl: 'US' } }, params };
-                try { const si = pw.ytcfg?.get?.('SESSION_INDEX'); if (si !== undefined) body.context.request = { sessionIndex: String(si) }; } catch(e) {}
-                const authHeaders = await this._buildSapisidAuth() || {};
-                const data = await this._gmPostJson(`https://www.youtube.com/youtubei/v1/get_transcript?key=${apiKey}&prettyPrint=false`, body, authHeaders);
-                if (data.error) { this._log('get_transcript error:', data.error.code, data.error.message); return null; }
-                const paths = [data?.actions?.[0]?.updateEngagementPanelAction?.content?.transcriptRenderer?.body?.transcriptBodyRenderer?.transcriptSegmentListRenderer?.initialSegments, data?.actions?.[0]?.updateEngagementPanelAction?.content?.transcriptRenderer?.content?.transcriptSearchPanelRenderer?.body?.transcriptSegmentListRenderer?.initialSegments];
-                for (const segs of paths) { if (segs?.length) return this._parseTranscriptSegments(segs); }
-                this._log('get_transcript: no segments in response');
-                return null;
-            },
-
-            _parseTranscriptSegments(segments) {
-                const result = [];
-                for (const seg of segments) { const r = seg.transcriptSegmentRenderer; if (!r) continue; const text = r.snippet?.runs?.map(x => x.text || '').join('').trim(); if (!text) continue; result.push({ start: parseInt(r.startMs||'0')/1000, dur: (parseInt(r.endMs||'0')-parseInt(r.startMs||'0'))/1000, text: text.replace(/\n/g,' ').trim() }); }
-                return result.length ? result : null;
-            },
-
-            async _scrapeTranscriptFromDOM() {
-                const existing = document.querySelectorAll('ytd-transcript-segment-renderer');
-                if (existing.length) return this._extractTranscriptFromDOM(existing);
-
-                const descExpand = document.querySelector('tp-yt-paper-button#expand, #expand.button, #description-inline-expander #expand');
-                if (descExpand) descExpand.click();
-                await new Promise(r => setTimeout(r, 500));
-
-                const btnSelectors = ['button', 'ytd-button-renderer', 'yt-button-shape button'];
-                for (const sel of btnSelectors) {
-                    for (const btn of document.querySelectorAll(sel)) {
-                        const text = btn.textContent?.trim().toLowerCase() || '';
-                        if (text.includes('show transcript') || text.includes('transcript')) {
-                            this._log('DOM scrape: clicking transcript button:', text);
-                            btn.click();
-                            break;
-                        }
-                    }
-                }
-
-                for (let i = 0; i < 20; i++) {
-                    await new Promise(r => setTimeout(r, 300));
-                    const segs = document.querySelectorAll('ytd-transcript-segment-renderer');
-                    if (segs.length) return this._extractTranscriptFromDOM(segs);
-                }
-                return null;
-            },
-            _extractTranscriptFromDOM(segElements) {
-                const result = [];
-                for (const seg of segElements) {
-                    const timeEl = seg.querySelector('.segment-timestamp, [class*="timestamp"]');
-                    const textEl = seg.querySelector('.segment-text, [class*="text"], yt-formatted-string');
-                    if (!textEl?.textContent?.trim()) continue;
-                    const timeStr = timeEl?.textContent?.trim() || '0:00';
-                    const parts = timeStr.split(':').map(Number);
-                    let secs = 0;
-                    if (parts.length === 3) secs = parts[0]*3600 + parts[1]*60 + parts[2];
-                    else if (parts.length === 2) secs = parts[0]*60 + parts[1];
-                    else secs = parts[0] || 0;
-                    result.push({ start: secs, dur: 5, text: textEl.textContent.trim().replace(/\n/g, ' ') });
-                }
-                return result.length ? result : null;
-            },
-
-            _buildTranscriptText(segments, maxChars = 30000) {
-                // Build 30-second blocks from segments
-                const blocks = []; let currentBlock = { start: 0, texts: [] }; let lastBlockStart = 0;
-                for (const seg of segments) {
-                    if (seg.start - lastBlockStart >= 30 || blocks.length === 0) {
-                        if (currentBlock.texts.length) blocks.push(currentBlock);
-                        currentBlock = { start: seg.start, texts: [] }; lastBlockStart = seg.start;
-                    }
-                    currentBlock.texts.push(seg.text);
-                }
-                if (currentBlock.texts.length) blocks.push(currentBlock);
-                if (!blocks.length) return '';
-
-                const formatBlock = b => `[${this._formatTime(b.start)}] ${b.texts.join(' ')}\n`;
-
-                // If it all fits, return everything
-                const fullText = blocks.map(formatBlock).join('');
-                if (fullText.length <= maxChars) return fullText;
-
-                // Smart truncation: keep intro (25%) + conclusion (15%) + evenly sampled middle (60%)
-                const introCount = Math.max(2, Math.ceil(blocks.length * 0.25));
-                const outroCount = Math.max(1, Math.ceil(blocks.length * 0.15));
-                const introBlocks = blocks.slice(0, introCount);
-                const outroBlocks = blocks.slice(-outroCount);
-                const middleBlocks = blocks.slice(introCount, blocks.length - outroCount);
-
-                let result = '';
-                // Add intro
-                for (const b of introBlocks) {
-                    const line = formatBlock(b);
-                    if (result.length + line.length > maxChars * 0.3) break;
-                    result += line;
-                }
-
-                // Evenly sample middle to fill ~55% of budget
-                if (middleBlocks.length > 0) {
-                    const midBudget = maxChars * 0.55;
-                    const step = Math.max(1, Math.floor(middleBlocks.length / Math.ceil(midBudget / 120)));
-                    let midText = '';
-                    for (let i = 0; i < middleBlocks.length; i += step) {
-                        const line = formatBlock(middleBlocks[i]);
-                        if (midText.length + line.length > midBudget) break;
-                        midText += line;
-                    }
-                    if (midText && result.length > 0) result += '[...]\n';
-                    result += midText;
-                }
-
-                // Add conclusion
-                if (outroBlocks.length > 0) {
-                    const outroBudget = maxChars - result.length - 10;
-                    let outroText = '';
-                    for (const b of outroBlocks) {
-                        const line = formatBlock(b);
-                        if (outroText.length + line.length > outroBudget) break;
-                        outroText += line;
-                    }
-                    if (outroText) {
-                        result += '[...]\n' + outroText;
-                    }
-                }
-                return result;
-            },
-
-            // ═══ TRANSCRIPT DOWNLOAD ═══
-            async _downloadTranscript() {
-                const videoId = this._getVideoId();
-                if (!videoId) return;
-                const btn = document.getElementById('cf-dl-transcript');
-                if (btn) { btn.disabled = true; btn.textContent = 'Fetching...'; btn.classList.add('cf-loading'); }
-                this._updateStatus('Fetching transcript...', 'loading', 5);
-                const segments = await this._fetchTranscript(videoId, (msg, state, pct) => this._updateStatus(msg, state, pct));
-                if (!segments?.length) {
-                    this._updateStatus('No transcript found', 'error', 0);
-                    if (btn) { btn.disabled = false; btn.textContent = 'Transcript: TXT'; btn.classList.remove('cf-loading'); }
-                    return;
-                }
-
-                const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim()
-                    || document.querySelector('#title h1')?.textContent?.trim() || videoId;
-                this._lastTranscriptSegments = segments;
-                const safeName = title.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, '_').slice(0, 60);
-                const lines = segments.map(s => `[${this._formatTime(s.start)}] ${s.text}`);
-                const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `${safeName}_transcript.txt`;
-                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                this._updateStatus('Done', 'ready', 100);
-                if (btn) { btn.disabled = false; btn.textContent = 'Transcript: TXT'; btn.classList.remove('cf-loading'); }
-            },
-
-            // ═══ LIVE VIDEO ROLLING CHAPTERS ═══
-            _liveIntervalId: null,
-            _liveAccumulated: [],
-            _liveLastGenTime: 0,
-            _liveNoNewCount: 0,
-
-            _isLiveVideo() {
-                return !!document.querySelector('.ytp-live-badge:not(.ytp-live-badge-disabled), .ytp-live, .html5-video-player.playing-mode.ytp-live');
-            },
-
-            _isVideoEnded() {
-                const vid = document.querySelector('video.html5-main-video, video');
-                if (!vid) return true;
-                return vid.ended || (vid.paused && vid.currentTime > 0 && vid.duration > 0 && Math.abs(vid.currentTime - vid.duration) < 1);
-            },
-
-            async _startLiveTracking() {
-                if (this._liveIntervalId) return;
-                this._liveAccumulated = [];
-                this._liveLastGenTime = 0;
-                this._liveNoNewCount = 0;
-                this._log('Live tracking started');
-                this._updateStatus('Live tracking...', 'loading', 0);
-
-                this._liveIntervalId = setInterval(async () => {
-                    const videoId = this._getVideoId();
-
-                    if (!videoId || this._isVideoEnded()) {
-                        this._log('Live: video ended or no video, stopping');
-                        this._stopLiveTracking();
-                        return;
-                    }
-                    if (!this._isLiveVideo()) {
-                        this._liveNoNewCount++;
-                        this._log('Live: no longer detected as live, stale count:', this._liveNoNewCount);
-                        if (this._liveNoNewCount >= 3) {
-                            this._stopLiveTracking();
-                            return;
-                        }
-                    }
-
-                    try {
-                        const segments = await this._fetchTranscript(videoId, null);
-                        if (segments?.length) {
-                            const existingTimes = new Set(this._liveAccumulated.map(s => s.start));
-                            let added = 0;
-                            for (const seg of segments) {
-                                if (!existingTimes.has(seg.start)) {
-                                    this._liveAccumulated.push(seg);
-                                    existingTimes.add(seg.start);
-                                    added++;
-                                }
-                            }
-
-                            if (added > 0) {
-                                this._liveNoNewCount = 0;
-                                this._log('Live: added', added, 'new segments, total:', this._liveAccumulated.length);
-                            } else {
-                                this._liveNoNewCount++;
-                            }
-
-                            if (this._liveNoNewCount >= 5) {
-                                this._log('Live: no new content for 5 polls, stopping');
-                                this._stopLiveTracking();
-                                return;
-                            }
-
-                            const now = Date.now();
-                            if (this._liveAccumulated.length >= 10 && now - this._liveLastGenTime > 120000) {
-                                this._liveLastGenTime = now;
-                                this._log('Live: regenerating chapters...');
-                                const duration = this._getVideoDuration() || (this._liveAccumulated[this._liveAccumulated.length - 1].start + 30);
-                                const provider = appState.settings.cfLlmProvider || 'builtin';
-                                let data;
-                                if (provider === 'builtin') {
-                                    data = this._generateChaptersHeuristic(this._liveAccumulated, duration);
-                                } else {
-                                    try {
-                                        const isLocal = this._isLocalProvider();
-                                        const txLimit = isLocal ? 200000 : 30000;
-                                        const transcriptText = this._buildTranscriptText(this._liveAccumulated, txLimit);
-                                        const durationMin = Math.ceil(duration / 60);
-                                        const systemPrompt = this._buildLiveChapterSystemPrompt(durationMin);
-                                        const rawText = await this._callLlmApi(systemPrompt, `Generate chapters for this ${durationMin}-minute live stream.\n\nTranscript (${transcriptText.length} chars):\n\n${transcriptText}`, null);
-                                        data = this._parseChapterJSON(rawText, duration);
-                                    } catch(e) {
-                                        this._log('Live: API failed, falling back to heuristic:', e.message);
-                                        data = this._generateChaptersHeuristic(this._liveAccumulated, duration);
-                                    }
-                                }
-                                if (data?.chapters?.length) {
-                                    this._chapterData = data;
-                                    this._setCachedData(videoId, data);
-                                    this._renderProgressBarOverlay();
-                                    if (this._panelEl?.classList.contains('cf-visible')) this._renderPanel();
-                                    this._log('Live: updated to', data.chapters.length, 'chapters');
-                                }
-                            }
-                        } else {
-                            this._liveNoNewCount++;
-                            this._log('Live: fetch returned empty, stale count:', this._liveNoNewCount);
-                            if (this._liveNoNewCount >= 5) {
-                                this._stopLiveTracking();
-                                return;
-                            }
-                        }
-                    } catch(e) {
-                        this._log('Live poll error:', e.message);
-                        this._liveNoNewCount++;
-                        if (this._liveNoNewCount >= 5) {
-                            this._stopLiveTracking();
-                        }
-                    }
-                }, 30000);
-            },
-
-            _stopLiveTracking() {
-                if (this._liveIntervalId) {
-                    clearInterval(this._liveIntervalId);
-                    this._liveIntervalId = null;
-                    this._liveNoNewCount = 0;
-                    this._log('Live tracking stopped');
-                    if (this._panelEl?.classList.contains('cf-visible')) this._renderPanel();
-                }
-            },
-
-            // ═══ SUBSCRIPTIONS BATCH PROCESSOR ═══
-            _batchProcessing: false,
-            _batchProgress: { done: 0, total: 0, current: '' },
-
-            async _batchProcessSubscriptions() {
-                if (this._batchProcessing) return;
-
-                const videoLinks = new Set();
-                document.querySelectorAll('a#video-title-link[href*="watch"], a.yt-simple-endpoint[href*="watch"], a[href*="/watch?v="]').forEach(a => {
-                    const match = a.href?.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-                    if (match) videoLinks.add(match[1]);
-                });
-                document.querySelectorAll('a#thumbnail[href*="watch"]').forEach(a => {
-                    const match = a.href?.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-                    if (match) videoLinks.add(match[1]);
-                });
-
-                if (!videoLinks.size) { return; }
-
-                const uncached = [...videoLinks].filter(id => !this._getCachedData(id));
-                if (!uncached.length) { return; }
-
-                this._batchProcessing = true;
-                this._batchProgress = { done: 0, total: uncached.length, current: '' };
-                this._updateBatchUI();
-
-                for (const videoId of uncached) {
-                    if (!this._batchProcessing) break;
-                    this._batchProgress.current = videoId;
-                    this._updateBatchUI();
-
-                    try {
-                        const segments = await this._fetchTranscript(videoId, null);
-                        if (segments?.length) {
-                            const provider = appState.settings.cfLlmProvider || 'builtin';
-                            let data;
-                            if (provider === 'builtin') {
-                                data = this._generateChaptersHeuristic(segments, 0);
-                            } else {
-                                try {
-                                    const isLocal = this._isLocalProvider();
-                                    const txLimit = isLocal ? 200000 : 30000;
-                                    const transcriptText = this._buildTranscriptText(segments, txLimit);
-                                    const systemPrompt = appState.settings.cfCustomChapterPrompt || this._buildChapterSystemPrompt(0);
-                                    const rawText = await this._callLlmApi(systemPrompt, `Generate chapters:\n\n${transcriptText}`, null);
-                                    data = this._parseChapterJSON(rawText, 0);
-                                } catch(e) {
-                                    data = this._generateChaptersHeuristic(segments, 0);
-                                }
-                            }
-                            if (data?.chapters?.length) this._setCachedData(videoId, data);
-                        }
-                    } catch(e) { this._log('Batch error for', videoId, ':', e.message); }
-
-                    this._batchProgress.done++;
-                    this._updateBatchUI();
-                    await new Promise(r => setTimeout(r, 500));
-                }
-
-                const done = this._batchProgress.done;
-                this._batchProcessing = false;
-                this._removeBatchUI();
-            },
-
-            _cancelBatch() { this._batchProcessing = false; },
-
-            _updateBatchUI() {
-                let bar = document.getElementById('cf-batch-bar');
-                if (!bar) {
-                    bar = document.createElement('div'); bar.id = 'cf-batch-bar';
-                    bar.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a1a24;border:1px solid rgba(124,58,237,0.4);border-radius:12px;padding:12px 16px;z-index:99999;font-family:-apple-system,sans-serif;color:#e0e0e8;font-size:12px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
-                    document.body.appendChild(bar);
-                }
-                const { done, total, current } = this._batchProgress;
-                const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                TrustedHTML.setHTML(bar, `
-                    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;color:#a78bfa">ChapterForge Batch</span><span style="cursor:pointer;color:rgba(255,255,255,0.4)" id="cf-batch-cancel">&times;</span></div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px">${done}/${total} videos (${pct}%)</div>
-                    <div style="width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:2px;transition:width 0.3s"></div></div>
-                `);
-                bar.querySelector('#cf-batch-cancel')?.addEventListener('click', () => { this._cancelBatch(); this._removeBatchUI(); });
-            },
-            _removeBatchUI() { document.getElementById('cf-batch-bar')?.remove(); },
-
-            _injectSubscriptionsButton() {
-                if (document.getElementById('cf-batch-btn')) return;
-                if (!window.location.pathname.startsWith('/feed/subscriptions')) return;
-
-                const headerButtons = document.querySelector('#masthead #end #buttons');
-                if (!headerButtons) { setTimeout(() => this._injectSubscriptionsButton(), 1000); return; }
-
-                const ns = 'http://www.w3.org/2000/svg';
-                const btn = document.createElement('button');
-                btn.id = 'cf-batch-btn';
-                btn.className = 'cf-batch-btn';
-                btn.title = 'ChapterForge: Process all videos on this page';
-                btn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;border:none;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(124,58,237,0.3);';
-
-                const svg = document.createElementNS(ns, 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '18'); svg.setAttribute('height', '18');
-                svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
-                svg.setAttribute('stroke-width', '2'); svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
-                const p1 = document.createElementNS(ns, 'path'); p1.setAttribute('d', 'M3 12h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V6H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 6v2h14V6H7z');
-                p1.setAttribute('fill', 'currentColor'); p1.setAttribute('stroke', 'none');
-                svg.appendChild(p1);
-                btn.appendChild(svg);
-
-                const text = document.createElement('span');
-                text.textContent = 'Process All';
-                btn.appendChild(text);
-
-                btn.addEventListener('click', () => this._batchProcessSubscriptions());
-                btn.addEventListener('mouseenter', () => { btn.style.background = 'linear-gradient(135deg,#8b5cf6,#7c3aed)'; btn.style.boxShadow = '0 4px 16px rgba(124,58,237,0.5)'; });
-                btn.addEventListener('mouseleave', () => { btn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)'; btn.style.boxShadow = '0 2px 8px rgba(124,58,237,0.3)'; });
-
-                const hideAllBtn = headerButtons.querySelector('.ytkit-subs-hide-all-btn');
-                const vlcBtn = headerButtons.querySelector('.ytkit-subs-vlc-btn');
-                if (hideAllBtn) {
-                    hideAllBtn.after(btn);
-                } else if (vlcBtn) {
-                    headerButtons.insertBefore(btn, vlcBtn);
-                } else {
-                    headerButtons.appendChild(btn);
-                }
-            },
-
-            async _getAudioStreamUrl(videoId) {
-                const pw = _rw;
-                const sources = [];
-
-                try { const pr = pw.ytInitialPlayerResponse; if (pr?.videoDetails?.videoId === videoId && pr?.streamingData?.adaptiveFormats) { sources.push(...pr.streamingData.adaptiveFormats); this._log('Audio: page PR has', pr.streamingData.adaptiveFormats.length, 'adaptiveFormats'); } } catch(e) {}
-
-                try {
-                    const wf = document.querySelector('ytd-watch-flexy');
-                    for (const p of ['playerData_', '__data', 'data']) { let pr = wf?.[p]; if (pr?.playerResponse) pr = pr.playerResponse; if (pr?.videoDetails?.videoId === videoId && pr?.streamingData?.adaptiveFormats) { sources.push(...pr.streamingData.adaptiveFormats); break; } }
-                } catch(e) {}
-
-                if (!sources.some(f => f.mimeType?.startsWith('audio/') && f.url)) {
-                    let visitorData; try { visitorData = pw.ytcfg?.get?.('VISITOR_DATA'); } catch(e) {}
-                    let clientVersion; try { clientVersion = pw.ytcfg?.get?.('INNERTUBE_CLIENT_VERSION') || '2.20250210.01.00'; } catch(e) { clientVersion = '2.20250210.01.00'; }
-                    let apiKey; try { apiKey = pw.ytcfg?.get?.('INNERTUBE_API_KEY'); } catch(e) {}
-                    if (!apiKey) apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
-
-                    const clients = [
-                        { name: 'WEB_CREATOR', body: { context: { client: { clientName: 'WEB_CREATOR', clientVersion: '1.20250210.01.00', hl: 'en', gl: 'US', ...(visitorData ? { visitorData } : {}) } }, videoId, contentCheckOk: true, racyCheckOk: true }, ua: null },
-                        { name: 'WEB', body: { context: { client: { clientName: 'WEB', clientVersion, hl: 'en', gl: 'US', ...(visitorData ? { visitorData } : {}) } }, videoId, contentCheckOk: true, racyCheckOk: true }, ua: null },
-                        { name: 'TVHTML5_EMBEDDED', body: { context: { client: { clientName: 'TVHTML5_SIMPLY_EMBEDDED_PLAYER', clientVersion: '2.0', hl: 'en', gl: 'US' } }, videoId, contentCheckOk: true, racyCheckOk: true, thirdParty: { embedUrl: 'https://www.youtube.com' } }, ua: null },
-                        { name: 'ANDROID', body: { context: { client: { clientName: 'ANDROID', clientVersion: '19.09.37', androidSdkVersion: 30, hl: 'en', gl: 'US' } }, videoId, contentCheckOk: true, racyCheckOk: true }, ua: 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip' },
-                    ];
-
-                    for (const client of clients) {
-                        try {
-                            const hdrs = client.ua ? { 'User-Agent': client.ua } : {};
-                            const sapi = await this._buildSapisidAuth();
-                            if (sapi) Object.assign(hdrs, sapi);
-                            this._log('Audio: trying', client.name, 'client');
-                            const data = await this._gmPostJson(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`, client.body, hdrs);
-                            if (data?.streamingData?.adaptiveFormats) {
-                                const fmts = data.streamingData.adaptiveFormats;
-                                if (client.ua) fmts.forEach(f => f._downloadUA = client.ua);
-                                sources.push(...fmts);
-                                const audioWithUrl = fmts.filter(f => f.mimeType?.startsWith('audio/') && f.url);
-                                this._log('Audio:', client.name, 'returned', fmts.length, 'formats,', audioWithUrl.length, 'audio w/ URL');
-                                if (audioWithUrl.length) break;
-                            }
-                        } catch(e) { this._log('Audio:', client.name, 'failed:', e.message); }
-                    }
-                }
-
-                const audioFormats = sources.filter(f => f.mimeType?.startsWith('audio/') && f.url).sort((a, b) => (a.bitrate || 999999) - (b.bitrate || 999999));
-                if (!audioFormats.length) { this._log('Audio: no usable audio streams found in', sources.length, 'total formats'); return null; }
-                const opus = audioFormats.find(f => f.mimeType?.includes('opus'));
-                const chosen = opus || audioFormats[0];
-                let url = chosen.url; if (url.includes('\\u0026')) url = url.replace(/\\u0026/g, '&');
-                this._log('Audio chosen:', chosen.mimeType, chosen.bitrate + 'bps');
-                return { url, ua: chosen._downloadUA || null };
-            },
-
-            _downloadAudioData(url, onProgress, userAgent) {
-                const self = this;
-                const attempts = [];
-                if (userAgent) attempts.push({ ua: userAgent, anon: true, label: 'custom-UA+anon' });
-                attempts.push({ ua: null, anon: true, label: 'default-UA+anon' });
-                attempts.push({ ua: null, anon: false, label: 'default-UA+cookies' });
-                let attemptIdx = 0;
-                function tryDownload(resolve, reject) {
-                    if (attemptIdx >= attempts.length) { reject(new Error('Audio download failed: all attempts exhausted')); return; }
-                    const attempt = attempts[attemptIdx]; const headers = {};
-                    if (attempt.ua) headers['User-Agent'] = attempt.ua;
-                    self._log('Audio download attempt', attemptIdx + 1, '/', attempts.length, '(' + attempt.label + ')');
-                    GM_xmlhttpRequest({ method: 'GET', url, responseType: 'arraybuffer', anonymous: attempt.anon, headers,
-                        onprogress: (evt) => { if (evt.total > 0) onProgress?.(`Downloading audio... ${Math.round((evt.loaded / evt.total) * 100)}%`, Math.round((evt.loaded / evt.total) * 100)); },
-                        onload: (resp) => {
-                            const bytes = resp.response?.byteLength || 0;
-                            self._log('Audio attempt', attemptIdx + 1, ':', resp.status, (bytes/1024/1024).toFixed(1) + 'MB');
-                            if (resp.status >= 400 || bytes < 1000) { attemptIdx++; tryDownload(resolve, reject); return; }
-                            resolve(resp.response);
-                        },
-                        onerror: () => { attemptIdx++; tryDownload(resolve, reject); },
-                        ontimeout: () => { attemptIdx++; tryDownload(resolve, reject); },
-                        timeout: 120000 });
-                }
-                return new Promise((resolve, reject) => tryDownload(resolve, reject));
-            },
-
-            async _decodeAndResample(arrayBuffer) {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                let audioBuffer;
-                try { audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0)); } finally { audioCtx.close(); }
-                let samples;
-                if (audioBuffer.numberOfChannels === 1) { samples = audioBuffer.getChannelData(0); } else { const ch0 = audioBuffer.getChannelData(0); const ch1 = audioBuffer.getChannelData(1); samples = new Float32Array(ch0.length); for (let i = 0; i < ch0.length; i++) samples[i] = (ch0[i] + ch1[i]) / 2; }
-                const srcRate = audioBuffer.sampleRate; if (srcRate === 16000) return samples;
-                const ratio = 16000 / srcRate; const newLen = Math.round(samples.length * ratio); const resampled = new Float32Array(newLen);
-                for (let i = 0; i < newLen; i++) { const srcIdx = i / ratio; const lo = Math.floor(srcIdx); const hi = Math.min(lo + 1, samples.length - 1); const frac = srcIdx - lo; resampled[i] = samples[lo] * (1 - frac) + samples[hi] * frac; }
-                this._log('Audio resampled:', srcRate + 'Hz -> 16000Hz,', (resampled.length / 16000).toFixed(1) + 's');
-                return resampled;
-            },
-
-            // ═══ SHARED: Transformers.js Library Loader ═══
-            async _loadTransformersLib() {
-                if (this._transformersLib) return this._transformersLib;
-                const cdnUrl = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0/dist/transformers.min.js';
-                let transformers;
-                try {
-                    this._log('Transformers.js: trying GM fetch + blob import...');
-                    const code = await this._gmGet(cdnUrl);
-                    if (code.length < 1000) throw new Error('Fetched code too small: ' + code.length);
-                    const blob = new Blob([code], { type: 'text/javascript' });
-                    const blobUrl = URL.createObjectURL(blob);
-                    try { transformers = await import(blobUrl); } finally { URL.revokeObjectURL(blobUrl); }
-                    this._log('Transformers.js: blob import succeeded');
-                } catch(e1) {
-                    this._log('Transformers.js: blob import failed:', e1.message, '- trying direct import...');
-                    try { transformers = await import(cdnUrl); }
-                    catch(e2) {
-                        this._warn('Transformers.js: all import methods blocked by CSP.');
-                        throw new Error('Transformers.js blocked by YouTube CSP. Try "Captions Only" transcript mode or use an API provider.');
-                    }
-                }
-                transformers.env.allowLocalModels = false;
-                this._transformersLib = transformers;
-                return transformers;
-            },
-
-            async _loadWhisperPipeline(onProgress) {
-                if (this._whisperPipeline) return this._whisperPipeline;
-                const modelId = 'onnx-community/' + (appState.settings.cfWhisperModel || 'whisper-tiny.en');
-                this._log('Loading Whisper model:', modelId);
-                onProgress?.('Loading Whisper library...', 0);
-
-                const transformers = await this._loadTransformersLib();
-                const { pipeline } = transformers;
-
-                onProgress?.('Loading Whisper model: ' + modelId + '...', 10);
-                this._whisperPipeline = await pipeline('automatic-speech-recognition', modelId, {
-                    dtype: 'q4', device: navigator.gpu ? 'webgpu' : 'wasm',
-                    progress_callback: (info) => { if (info.status === 'progress' && info.total) onProgress?.(`Loading Whisper... ${Math.round((info.loaded / info.total) * 100)}%`, Math.round((info.loaded / info.total) * 100)); },
-                });
-                this._log('Whisper model loaded');
-                return this._whisperPipeline;
-            },
-
-            async _getAudioViaCobalt(videoId, onProgress) {
-                this._log('Trying Cobalt API for audio...');
-                onProgress?.('Trying Cobalt API...', 10);
-                const resp = await this._gmPostJson('https://cobalt-api.meowing.de/', { url: `https://www.youtube.com/watch?v=${videoId}`, downloadMode: 'audio', audioFormat: 'opus', filenameStyle: 'basic' }, { Accept: 'application/json' });
-                const dlUrl = resp?.url;
-                if (!dlUrl) throw new Error(`Cobalt API error: ${resp?.error?.code || resp?.status || JSON.stringify(resp).slice(0, 200)}`);
-                this._log('Cobalt URL obtained:', dlUrl.slice(0, 100));
-                return new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({ method: 'GET', url: dlUrl, responseType: 'arraybuffer', anonymous: true,
-                        onprogress: (evt) => { if (evt.total > 0) onProgress?.(`Downloading audio via Cobalt... ${Math.round((evt.loaded / evt.total) * 100)}%`, Math.round((evt.loaded / evt.total) * 100)); },
-                        onload: (r) => { const bytes = r.response?.byteLength || 0; if (r.status >= 400 || bytes < 1000) { reject(new Error(`Cobalt download failed: HTTP ${r.status}, ${bytes} bytes`)); return; } resolve(r.response); },
-                        onerror: (e) => reject(new Error('Cobalt download error')), ontimeout: () => reject(new Error('Cobalt download timeout')), timeout: 120000 });
-                });
-            },
-
-            async _capturePlayerAudio(onStatus) {
-                const video = document.querySelector('video.html5-main-video');
-                if (!video || !video.duration || video.duration > 1800) throw new Error('Player capture: video not available or >30min');
-                onStatus?.('Capturing audio from player...', 10);
-                const videoSrc = video.src || video.currentSrc;
-                if (videoSrc && !videoSrc.startsWith('blob:')) {
-                    try { const resp = await fetch(videoSrc); return await resp.arrayBuffer(); } catch(e) { throw new Error('Cannot fetch video source: ' + e.message); }
-                }
-                const stream = video.captureStream ? video.captureStream() : video.mozCaptureStream?.();
-                if (!stream) throw new Error('captureStream not available');
-                const audioCtx = new AudioContext({ sampleRate: 16000 });
-                audioCtx.createMediaStreamSource(stream);
-                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-                const chunks = [];
-                recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-                return new Promise((resolve, reject) => {
-                    recorder.onstop = async () => { audioCtx.close(); const blob = new Blob(chunks, { type: 'audio/webm' }); resolve(await blob.arrayBuffer()); };
-                    recorder.onerror = () => { audioCtx.close(); reject(new Error('Recording failed')); };
-                    onStatus?.('Real-time audio capture (takes video duration)...', 15);
-                    recorder.start(1000);
-                    setTimeout(() => { try { recorder.stop(); } catch(e) {} }, Math.min(video.duration * 1000, 300000));
-                });
-            },
-
-            async _whisperTranscribe(videoId, onStatus) {
-                const s = appState.settings;
-                const methods = [];
-                if (s.cfUseInnertube !== false) methods.push('innertube');
-                if (s.cfUseCobalt !== false) methods.push('cobalt');
-                if (s.cfUseCapture !== false) methods.push('capture');
-                if (!methods.length) methods.push('innertube', 'cobalt');
-
-                this._log('Whisper audio methods:', methods.join(', '));
-                let audioData = null;
-
-                for (const method of methods) {
-                    if (audioData) break;
-                    try {
-                        if (method === 'innertube') {
-                            onStatus?.('Finding audio stream (Innertube)...', 5);
-                            const audioInfo = await this._getAudioStreamUrl(videoId);
-                            if (audioInfo) audioData = await this._downloadAudioData(audioInfo.url, (msg, pct) => onStatus?.(msg, Math.round(5 + pct * 0.3)), audioInfo.ua);
-                        } else if (method === 'cobalt') {
-                            onStatus?.('Finding audio stream (Cobalt)...', 5);
-                            audioData = await this._getAudioViaCobalt(videoId, (msg, pct) => onStatus?.(msg, Math.round(5 + pct * 0.3)));
-                        } else if (method === 'capture') {
-                            onStatus?.('Capturing audio from player...', 5);
-                            audioData = await this._capturePlayerAudio(onStatus);
-                        }
-                    } catch(e) {
-                        this._warn('Audio method "' + method + '" failed:', e.message);
-                    }
-                }
-
-                if (!audioData) throw new Error('All audio download methods failed (' + methods.join(', ') + ')');
-
-                onStatus?.('Decoding audio...', 38);
-                const samples = await this._decodeAndResample(audioData);
-                this._log('Audio ready:', (samples.length / 16000).toFixed(1) + 's');
-
-                const transcriber = await this._loadWhisperPipeline((msg, pct) => onStatus?.(msg, Math.round(40 + (pct || 0) * 0.2)));
-                onStatus?.('Transcribing with Whisper AI...', 62);
-                const startTime = performance.now();
-                const result = await transcriber(samples, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true, language: 'en' });
-                const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
-
-                const segments = [];
-                if (result.chunks?.length) { for (const chunk of result.chunks) { const text = chunk.text?.trim(); if (!text) continue; segments.push({ start: chunk.timestamp?.[0] || 0, dur: (chunk.timestamp?.[1] || (chunk.timestamp?.[0] || 0) + 5) - (chunk.timestamp?.[0] || 0), text }); } }
-                else if (result.text) { segments.push({ start: 0, dur: samples.length / 16000, text: result.text.trim() }); }
-
-                onStatus?.(`Transcribed ${segments.length} segments in ${elapsed}s`, 100);
-                return segments;
-            },
-
-            // ═══ VIBE TRANSCRIPTION (local Whisper via whisper.cpp server) ═══
-            _vibeCheck() {
-                const endpoint = appState.settings.cfVibeEndpoint || 'http://localhost:8178';
-                return new Promise(resolve => {
-                    GM_xmlhttpRequest({
-                        method: 'GET', url: endpoint + '/health',
-                        timeout: 3000,
-                        onload: (r) => {
-                            // Any HTTP response means the server is running
-                            resolve({ running: true, models: [], version: null });
-                        },
-                        onerror: () => resolve({ running: false, models: [], version: null }),
-                        ontimeout: () => resolve({ running: false, models: [], version: null })
-                    });
-                });
-            },
-
-            async _vibeTranscribe(videoId, onStatus) {
-                const endpoint = appState.settings.cfVibeEndpoint || 'http://localhost:8178';
-                this._log('WhisperServer: starting transcription via', endpoint);
-
-                // Check WhisperServer is running
-                onStatus?.('Checking WhisperServer...', 2);
-                const status = await this._vibeCheck();
-                if (!status.running) throw new Error('WhisperServer is not running. Start it from your Windows Startup folder, or re-run the YTYT installer with WhisperServer checked.');
-
-                // Download audio
-                const s = appState.settings;
-                const methods = [];
-                if (s.cfUseInnertube !== false) methods.push('innertube');
-                if (s.cfUseCobalt !== false) methods.push('cobalt');
-                methods.push('capture');
-                if (!methods.length) methods.push('innertube', 'cobalt', 'capture');
-
-                let audioData = null;
-                for (const method of methods) {
-                    if (audioData) break;
-                    try {
-                        if (method === 'innertube') {
-                            onStatus?.('Finding audio stream (Innertube)...', 5);
-                            const audioInfo = await this._getAudioStreamUrl(videoId);
-                            if (audioInfo) audioData = await this._downloadAudioData(audioInfo.url, (msg, pct) => onStatus?.(msg, Math.round(5 + pct * 0.3)), audioInfo.ua);
-                        } else if (method === 'cobalt') {
-                            onStatus?.('Finding audio stream (Cobalt)...', 5);
-                            audioData = await this._getAudioViaCobalt(videoId, (msg, pct) => onStatus?.(msg, Math.round(5 + pct * 0.3)));
-                        } else if (method === 'capture') {
-                            onStatus?.('Capturing audio from player...', 5);
-                            audioData = await this._capturePlayerAudio((msg, pct) => onStatus?.(msg, Math.round(5 + pct * 0.3)));
-                        }
-                    } catch(e) { this._warn('WhisperServer audio method "' + method + '" failed:', e.message); }
-                }
-                if (!audioData) throw new Error('Audio download failed — cannot send to WhisperServer');
-
-                // Build multipart/form-data body manually (GM_xmlhttpRequest doesn't support FormData)
-                onStatus?.('Sending audio to WhisperServer...', 40);
-                const boundary = '----CFVibeUpload' + Date.now();
-                const audioBytes = new Uint8Array(audioData);
-
-                // Determine audio format from first bytes
-                let mimeType = 'audio/webm';
-                let ext = 'webm';
-                if (audioBytes[0] === 0xFF && (audioBytes[1] & 0xE0) === 0xE0) { mimeType = 'audio/mpeg'; ext = 'mp3'; }
-                else if (audioBytes[0] === 0x4F && audioBytes[1] === 0x67) { mimeType = 'audio/ogg'; ext = 'ogg'; }
-                else if (audioBytes[0] === 0x52 && audioBytes[1] === 0x49) { mimeType = 'audio/wav'; ext = 'wav'; }
-                else if (audioBytes[0] === 0x1A && audioBytes[1] === 0x45) { mimeType = 'audio/webm'; ext = 'webm'; }
-
-                // Build multipart body as ArrayBuffer
-                const enc = new TextEncoder();
-                const parts = [];
-                // File part
-                const fileHeader = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="audio.${ext}"\r\nContent-Type: ${mimeType}\r\n\r\n`;
-                parts.push(enc.encode(fileHeader));
-                parts.push(audioBytes);
-                parts.push(enc.encode('\r\n'));
-                // response_format part
-                parts.push(enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="response_format"\r\n\r\nverbose_json\r\n`));
-                // language part (optional)
-                parts.push(enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\nen\r\n`));
-                // timestamp_granularities part
-                parts.push(enc.encode(`--${boundary}\r\nContent-Disposition: form-data; name="timestamp_granularities[]"\r\n\r\nsegment\r\n`));
-                // Closing boundary
-                parts.push(enc.encode(`--${boundary}--\r\n`));
-
-                // Merge all parts into a single Uint8Array
-                const totalLen = parts.reduce((sum, p) => sum + p.byteLength, 0);
-                const body = new Uint8Array(totalLen);
-                let offset = 0;
-                for (const part of parts) { body.set(part, offset); offset += part.byteLength; }
-
-                this._log('WhisperServer: uploading', (audioBytes.length / 1024 / 1024).toFixed(1) + 'MB audio as', mimeType);
-
-                // Send to WhisperServer
-                const response = await new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: endpoint + '/v1/audio/transcriptions',
-                        headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
-                        data: body.buffer,
-                        responseType: 'json',
-                        timeout: 600000, // 10 min for long videos
-                        onload: (r) => {
-                            if (r.status >= 400) {
-                                const errMsg = typeof r.response === 'object' ? JSON.stringify(r.response) : r.responseText;
-                                reject(new Error(`WhisperServer API error ${r.status}: ${errMsg?.slice(0, 200)}`));
-                                return;
-                            }
-                            resolve(typeof r.response === 'object' ? r.response : JSON.parse(r.responseText));
-                        },
-                        onerror: (e) => reject(new Error('WhisperServer connection failed: ' + (e.error || 'network error'))),
-                        ontimeout: () => reject(new Error('WhisperServer transcription timed out (10 min limit)'))
-                    });
-                });
-
-                onStatus?.('Parsing WhisperServer results...', 90);
-                this._log('WhisperServer response:', JSON.stringify(response)?.slice(0, 500));
-
-                // Parse response — OpenAI verbose_json format
-                const segments = [];
-                if (response?.segments?.length) {
-                    for (const seg of response.segments) {
-                        const text = seg.text?.trim();
-                        if (!text) continue;
-                        segments.push({
-                            start: seg.start || 0,
-                            dur: (seg.end || seg.start || 0) - (seg.start || 0),
-                            text
-                        });
-                    }
-                } else if (response?.text) {
-                    // Fallback: plain text response
-                    segments.push({ start: 0, dur: 0, text: response.text.trim() });
-                }
-
-                if (!segments.length) throw new Error('WhisperServer returned empty transcription');
-                onStatus?.(`WhisperServer: transcribed ${segments.length} segments`, 100);
-                this._log('WhisperServer: got', segments.length, 'segments');
-                return segments;
-            },
-
-            // ═══ OLLAMA MODEL MANAGER ═══
-            _CF_RECOMMENDED_MODELS: {
-                'qwen3:32b':      { size: '~20 GB', speed: 'Medium', quality: 'Excellent', desc: '128K context, hybrid reasoning, best local model for detailed chapters & summaries' },
-            },
-
-            async _ollamaCheck() {
-                return new Promise(resolve => {
-                    GM_xmlhttpRequest({
-                        method: 'GET', url: 'http://localhost:11434/api/tags',
-                        timeout: 3000,
-                        onload: (r) => {
-                            try {
-                                const data = JSON.parse(r.responseText);
-                                resolve({ running: true, models: (data.models || []).map(m => m.name) });
-                            } catch { resolve({ running: true, models: [] }); }
-                        },
-                        onerror: () => resolve({ running: false, models: [] }),
-                        ontimeout: () => resolve({ running: false, models: [] })
-                    });
-                });
-            },
-
-            async _ollamaPull(modelName, onProgress) {
-                return new Promise((resolve, reject) => {
-                    onProgress?.(`Pulling ${modelName}...`, 0);
-                    GM_xmlhttpRequest({
-                        method: 'POST',
-                        url: 'http://localhost:11434/api/pull',
-                        headers: { 'Content-Type': 'application/json' },
-                        data: JSON.stringify({ name: modelName, stream: false }),
-                        timeout: 600000, // 10 minute timeout for large downloads
-                        onload: (r) => {
-                            try {
-                                const data = JSON.parse(r.responseText);
-                                if (data.error) {
-                                    onProgress?.(`Error: ${data.error}`, -1);
-                                    reject(new Error(data.error));
-                                } else {
-                                    onProgress?.(`${modelName} ready`, 100);
-                                    resolve(true);
-                                }
-                            } catch(e) {
-                                // Streaming response — check last line
-                                const lines = r.responseText.trim().split('\n');
-                                const last = lines[lines.length - 1];
-                                try {
-                                    const lastData = JSON.parse(last);
-                                    if (lastData.status === 'success') {
-                                        onProgress?.(`${modelName} ready`, 100);
-                                        resolve(true);
-                                    } else {
-                                        onProgress?.(`${modelName} pull complete`, 100);
-                                        resolve(true);
-                                    }
-                                } catch {
-                                    onProgress?.(`${modelName} pull complete`, 100);
-                                    resolve(true);
-                                }
-                            }
-                        },
-                        onerror: (e) => { onProgress?.('Pull failed — is Ollama running?', -1); reject(new Error('Pull failed')); },
-                        ontimeout: () => { onProgress?.('Pull timed out', -1); reject(new Error('Timeout')); }
-                    });
-                });
-            },
-
-            // ═══ LLM PROMPT BUILDERS (shared across all generation paths) ═══
-            _buildChapterSystemPrompt(durationMin) {
-                const seoMode = appState.settings.cfChapterMode === 'seo';
-                const seoRules = seoMode ? `\n- IMPORTANT: Optimize chapter titles for YouTube SEO — include searchable keywords viewers would actually type
-- Titles should be 4-9 words with specific, keyword-rich language
-- Include topic-specific terms, product names, and action words (e.g. "How to Configure Nginx Reverse Proxy" not "Server Setup")
-- Front-load the most important keyword in each title` : '';
-                return `You are an expert video chapter generator. Analyze the transcript and identify where the speaker changes topics, introduces new concepts, or shifts focus. Output ONLY a valid JSON object (no markdown fences, no commentary).
-
-Format:
-{"chapters":[{"start":0,"title":"..."}],"pois":[{"time":120,"label":"..."}]}
-
-Chapter rules:
-- "start" values are integers (seconds). First chapter MUST start at 0
-- Create 4-10 chapters proportional to the video length (${durationMin} min). ~1 chapter per 3-5 minutes
-- Titles should be ${seoMode ? '4-9' : '3-7'} words, descriptive and specific — name the actual topic discussed
-- Place boundaries where the speaker transitions to a NEW topic, not mid-discussion
-- Avoid generic titles like "Introduction" or "Conclusion" unless that's genuinely what the section is${seoRules}
-
-POI (Points of Interest) rules:
-- 2-6 POIs marking the most valuable, surprising, or actionable moments
-- Labels should be 4-10 words describing what happens at that moment
-- Good POIs: key reveals, important tips, surprising facts, critical warnings, best quotes
-- Don't place POIs at chapter boundaries
-
-Example output for a 15-minute coding tutorial:
-{"chapters":[{"start":0,"title":"${seoMode ? 'Project Setup Installing Required Dependencies' : 'Project Setup and Dependencies'}"},{"start":95,"title":"${seoMode ? 'Building Express API Route Handler From Scratch' : 'Building the API Route Handler'}"},{"start":280,"title":"${seoMode ? 'PostgreSQL Database Schema Design Best Practices' : 'Database Schema Design'}"},{"start":450,"title":"${seoMode ? 'JWT Authentication Middleware Implementation' : 'Authentication Middleware'}"},{"start":680,"title":"${seoMode ? 'Unit Testing and Error Handling Strategies' : 'Testing and Error Handling'}"},{"start":820,"title":"${seoMode ? 'Deploy Node.js App to Production Server' : 'Deployment to Production'}"}],"pois":[{"time":145,"label":"Common gotcha with async middleware"},{"time":340,"label":"Why indexes matter for this query pattern"},{"time":720,"label":"The one test that catches 90% of bugs"}]}
-
-Output ONLY the JSON object.`;
-            },
-
-            _buildLiveChapterSystemPrompt(durationMin) {
-                return `You are a video chapter generator for a LIVE stream (~${durationMin} min so far). Analyze the transcript and output ONLY a valid JSON object:
-{"chapters":[{"start":0,"title":"Stream Opening"}],"pois":[{"time":45,"label":"Key moment"}]}
-
-Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3-7 words, specific to content discussed. Output ONLY JSON.`;
-            },
-
-            // ═══ LLM API (OpenAI-compatible, via GM_xmlhttpRequest — bypasses CSP) ═══
-            _getLlmEndpoint() {
-                const s = appState.settings;
-                const provider = s.cfLlmProvider || 'builtin';
-                if (provider === 'custom') return s.cfLlmEndpoint || '';
-                return this._CF_PROVIDERS[provider]?.endpoint || null;
-            },
-            _getLlmModel() {
-                const s = appState.settings;
-                const provider = s.cfLlmProvider || 'builtin';
-                // Ollama uses its own model setting to prevent cross-contamination with web AI models
-                if (provider === 'ollama') {
-                    // Auto-select when enabled and we have cached installed models
-                    if (s.cfAutoModel && this._lastOllamaModels?.length) {
-                        const durationMin = Math.ceil((this._getVideoDuration() || 300) / 60);
-                        const auto = this._getOptimalModel(durationMin, this._lastOllamaModels);
-                        if (auto) {
-                            this._log('Auto-selected model:', auto, 'for', durationMin, 'min video');
-                            return auto;
-                        }
-                    }
-                    return s.cfOllamaModel || this._CF_PROVIDERS.ollama.defaultModel;
-                }
-                return s.cfLlmModel || this._CF_PROVIDERS[provider]?.defaultModel || 'gpt-4o';
-            },
-            _isLocalProvider() {
-                const p = appState.settings.cfLlmProvider || 'builtin';
-                if (p === 'ollama') return true;
-                if (p === 'custom') {
-                    const ep = appState.settings.cfLlmEndpoint || '';
-                    return ep.includes('localhost') || ep.includes('127.0.0.1');
-                }
-                return false;
-            },
-            async _ensureOllama(onStatus) {
-                // 1. Check if Ollama is running
-                let check = await this._ollamaCheck();
-                if (check.running) {
-                    this._lastOllamaModels = check.models;
-                    // Auto-detect model if none set
-                    if (check.models.length && !appState.settings.cfOllamaModel) {
-                        const rec = Object.keys(this._CF_RECOMMENDED_MODELS);
-                        const match = check.models.find(m => rec.some(r => m.startsWith(r.split(':')[0]))) || check.models[0];
-                        appState.settings.cfOllamaModel = match.replace(':latest', '');
-                        settingsManager.save(appState.settings);
-                        this._log('Auto-detected Ollama model:', appState.settings.cfOllamaModel);
-                    }
-                    return check;
-                }
-                // 2. Try to wake Ollama (some Windows installs sleep until first request)
-                onStatus?.('Ollama not responding, attempting to wake...', 'loading', 40);
-                this._log('Ollama not responding, sending wake requests...');
-                try {
-                    await new Promise((resolve) => {
-                        GM_xmlhttpRequest({ method: 'GET', url: 'http://localhost:11434/', timeout: 5000, onload: () => resolve(), onerror: () => resolve(), ontimeout: () => resolve() });
-                    });
-                    for (let attempt = 1; attempt <= 6; attempt++) {
-                        await new Promise(r => setTimeout(r, 2000));
-                        onStatus?.(`Waiting for Ollama... (attempt ${attempt}/6)`, 'loading', 40 + attempt * 5);
-                        check = await this._ollamaCheck();
-                        if (check.running) {
-                            this._lastOllamaModels = check.models;
-                            this._log('Ollama started on attempt', attempt);
-                            if (check.models.length && !appState.settings.cfOllamaModel) {
-                                const rec = Object.keys(this._CF_RECOMMENDED_MODELS);
-                                const match = check.models.find(m => rec.some(r => m.startsWith(r.split(':')[0]))) || check.models[0];
-                                appState.settings.cfOllamaModel = match.replace(':latest', '');
-                                settingsManager.save(appState.settings);
-                            }
-                            return check;
-                        }
-                    }
-                } catch(e) { this._log('Ollama wake error:', e.message); }
-                return { running: false, models: [] };
-            },
-            async _callLlmApi(systemPrompt, userPrompt, onStatus, opts = {}) {
-                const provider = appState.settings.cfLlmProvider || 'builtin';
-                const isLocal = this._isLocalProvider();
-
-                // For Ollama: ensure server is running and model is detected
-                if (provider === 'ollama') {
-                    const ollamaStatus = await this._ensureOllama(onStatus);
-                    if (!ollamaStatus.running) {
-                        throw new Error('Ollama is not running. Start it from your system tray, or run: ollama serve');
-                    }
-                    if (!ollamaStatus.models.length) {
-                        throw new Error('No models installed in Ollama. Run: ollama pull qwen3:32b');
-                    }
-                }
-
-                const endpoint = this._getLlmEndpoint();
-                const model = this._getLlmModel();
-                const apiKey = appState.settings.cfLlmApiKey || '';
-                if (!endpoint) throw new Error('No LLM endpoint configured');
-
-                const maxTokens = opts.maxTokens || (isLocal ? 4096 : 2048);
-                const timeout = opts.timeout || (isLocal ? 180000 : 60000);
-
-                this._log('LLM API call:', endpoint, 'model:', model, 'local:', isLocal, 'timeout:', timeout);
-                const autoSelected = (appState.settings.cfAutoModel && appState.settings.cfLlmProvider === 'ollama' && this._lastOllamaModels?.length);
-                onStatus?.(isLocal ? `Processing via Ollama (${model}${autoSelected ? ' - auto' : ''})...` : 'Calling LLM API...', 'loading', 80);
-
-                const headers = { 'Content-Type': 'application/json' };
-                if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-                if (provider === 'openrouter') {
-                    headers['HTTP-Referer'] = 'https://github.com/SysAdminDoc/YTKit';
-                    headers['X-Title'] = 'YTKit ChapterForge';
-                }
-
-                const body = {
-                    model,
-                    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-                    temperature: 0.1,
-                    max_tokens: maxTokens,
-                    stream: false,
-                };
-
-                // Ollama needs explicit context window size — default is only 2048 tokens
-                // which truncates anything over ~5 minutes of transcript
-                if (provider === 'ollama') {
-                    // Estimate tokens needed: ~4 chars per token for English
-                    const estimatedTokens = Math.ceil((systemPrompt.length + userPrompt.length) / 3.5);
-                    // Set context window to fit the full prompt + room for response
-                    const numCtx = Math.min(Math.max(estimatedTokens + maxTokens + 512, 8192), 131072);
-                    body.options = { num_ctx: numCtx };
-                    this._log('Ollama num_ctx:', numCtx, '(estimated', estimatedTokens, 'input tokens)');
-                }
-
-                const data = await this._gmPostJson(endpoint, body, headers, timeout);
-                if (data?.error) throw new Error(`LLM API error: ${data.error.message || JSON.stringify(data.error).slice(0, 200)}`);
-                const content = data?.choices?.[0]?.message?.content;
-                if (!content) throw new Error('LLM returned empty response');
-                this._log('LLM response length:', content.length);
-                return content;
-            },
-
-            // ═══ NLP ENGINE (zero dependencies) ═══
-
-            // Stopwords for English — filter these from keyword extraction
-            _NLP_STOPS: new Set(['the','and','that','this','with','for','are','was','were','been','have','has','had','not','but','what','all','can','her','his','from','they','will','one','its','also','just','more','about','would','there','their','which','could','other','than','then','these','some','them','into','only','your','when','very','most','over','such','after','know','like','going','right','think','really','want','well','here','look','make','come','how','did','get','got','say','said','because','way','still','being','those','where','back','does','take','much','many','through','before','should','each','between','must','same','thing','things','even','every','doing','something','anything','nothing','everything','need','let','see','yeah','yes','okay','actually','gonna','kind','sort','mean','basically','literally','stuff','pretty','little','whole','sure','probably','maybe','guess','though','enough','around','might','quite','able','always','never','already','again','another','talking','talk','people','called','start','started','going','really','actually','point','work','working','time','way','lot','part']),
-
-            // Tokenize text into clean lowercase word array
-            _nlpTokenize(text) {
-                return text.toLowerCase().replace(/[^\w\s'-]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !/^\d+$/.test(w));
-            },
-
-            // Extract meaningful bigrams (two-word phrases)
-            _nlpBigrams(tokens) {
-                const bigrams = [];
-                for (let i = 0; i < tokens.length - 1; i++) {
-                    const a = tokens[i], b = tokens[i + 1];
-                    if (!this._NLP_STOPS.has(a) && !this._NLP_STOPS.has(b) && a.length > 2 && b.length > 2) {
-                        bigrams.push(a + ' ' + b);
-                    }
-                }
-                return bigrams;
-            },
-
-            // Compute TF-IDF vectors for an array of documents (each doc is a string)
-            _nlpTFIDF(docs) {
-                const N = docs.length;
-                const docTokens = docs.map(d => this._nlpTokenize(d));
-                const docBigrams = docTokens.map(t => this._nlpBigrams(t));
-
-                // Document frequency for each term
-                const df = {};
-                for (let i = 0; i < N; i++) {
-                    const seen = new Set();
-                    for (const t of docTokens[i]) { if (!this._NLP_STOPS.has(t)) seen.add(t); }
-                    for (const b of docBigrams[i]) seen.add(b);
-                    for (const term of seen) df[term] = (df[term] || 0) + 1;
-                }
-
-                // Compute TF-IDF vectors
-                const vectors = [];
-                for (let i = 0; i < N; i++) {
-                    const tf = {};
-                    const allTerms = [...docTokens[i].filter(t => !this._NLP_STOPS.has(t)), ...docBigrams[i]];
-                    const total = allTerms.length || 1;
-                    for (const t of allTerms) tf[t] = (tf[t] || 0) + 1;
-                    const vec = {};
-                    for (const [term, count] of Object.entries(tf)) {
-                        const idf = Math.log(N / (df[term] || 1));
-                        if (idf > 0.1) vec[term] = (count / total) * idf;
-                    }
-                    vectors.push(vec);
-                }
-                return vectors;
-            },
-
-            // Cosine similarity between two sparse TF-IDF vectors
-            _nlpCosine(a, b) {
-                let dot = 0, normA = 0, normB = 0;
-                for (const [k, v] of Object.entries(a)) {
-                    normA += v * v;
-                    if (b[k]) dot += v * b[k];
-                }
-                for (const v of Object.values(b)) normB += v * v;
-                const denom = Math.sqrt(normA) * Math.sqrt(normB);
-                return denom > 0 ? dot / denom : 0;
-            },
-
-            // Extract top-N key phrases from a TF-IDF vector, preferring bigrams
-            _nlpKeyPhrases(vec, n = 5) {
-                return Object.entries(vec)
-                    .map(([term, score]) => ({ term, score: score * (term.includes(' ') ? 1.5 : 1) }))
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, n)
-                    .map(e => e.term);
-            },
-
-            // Title-case a phrase
-            _nlpTitleCase(phrase) {
-                const minor = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','by','with','vs']);
-                return phrase.split(' ').map((w, i) => {
-                    if (i > 0 && minor.has(w)) return w;
-                    return w.charAt(0).toUpperCase() + w.slice(1);
-                }).join(' ');
-            },
-
-            // TextRank-lite: score sentences by importance using graph-based ranking
-            _nlpTextRank(sentences, topN = 5) {
-                if (sentences.length <= topN) return sentences.map((s, i) => ({ text: s, idx: i, score: 1 }));
-
-                const tokenized = sentences.map(s => new Set(this._nlpTokenize(s).filter(t => !this._NLP_STOPS.has(t))));
-
-                // Build similarity matrix and compute scores (simplified PageRank)
-                const scores = new Float64Array(sentences.length).fill(1);
-                const dampening = 0.85;
-
-                for (let iter = 0; iter < 15; iter++) {
-                    const newScores = new Float64Array(sentences.length).fill(1 - dampening);
-                    for (let i = 0; i < sentences.length; i++) {
-                        let totalSim = 0;
-                        const sims = new Float64Array(sentences.length);
-                        for (let j = 0; j < sentences.length; j++) {
-                            if (i === j) continue;
-                            const intersection = [...tokenized[i]].filter(t => tokenized[j].has(t)).length;
-                            const union = new Set([...tokenized[i], ...tokenized[j]]).size;
-                            sims[j] = union > 0 ? intersection / union : 0;
-                            totalSim += sims[j];
-                        }
-                        if (totalSim > 0) {
-                            for (let j = 0; j < sentences.length; j++) {
-                                newScores[j] += dampening * (sims[j] / totalSim) * scores[i];
-                            }
-                        }
-                    }
-                    for (let i = 0; i < sentences.length; i++) scores[i] = newScores[i];
-                }
-
-                // Position bias: first and last sentences get a boost
-                const posBoost = (idx) => {
-                    if (idx <= 1) return 1.3;
-                    if (idx >= sentences.length - 2) return 1.15;
-                    return 1.0;
-                };
-
-                return Array.from(scores)
-                    .map((score, idx) => ({ text: sentences[idx], idx, score: score * posBoost(idx) }))
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, topN)
-                    .sort((a, b) => a.idx - b.idx); // restore document order
-            },
-
-            // ═══ BUILT-IN HEURISTIC CHAPTER GENERATOR (TF-IDF + Cosine Similarity) ═══
-            _generateChaptersHeuristic(segments, duration) {
-                this._log('NLP heuristic generator:', segments.length, 'segments');
-                const totalSecs = duration || segments[segments.length - 1]?.start + 30 || 300;
-
-                // ── Step 1: Build time-windowed documents (30-second windows) ──
-                const windowSize = 30;
-                const windows = [];
-                for (const seg of segments) {
-                    const idx = Math.floor(seg.start / windowSize);
-                    while (windows.length <= idx) windows.push({ start: windows.length * windowSize, texts: [] });
-                    windows[idx].texts.push(seg.text);
-                }
-
-                // ── Step 2: Merge into fixed ~60-second analysis groups ──
-                // Keep groups small regardless of video length so TF-IDF vectors stay distinctive.
-                // Previous approach scaled groups with video length, making them 3-4 min for long videos,
-                // which caused vectors to converge and chapters to stop being detected past ~10 min.
-                const groupWindowCount = 2; // 2 × 30s = 60s per group — consistent resolution
-                const groups = [];
-                for (let i = 0; i < windows.length; i += groupWindowCount) {
-                    const slice = windows.slice(i, i + groupWindowCount);
-                    const text = slice.map(w => w.texts.join(' ')).join(' ');
-                    if (text.trim()) groups.push({ start: slice[0]?.start || 0, text });
-                }
-                if (groups.length < 2) {
-                    return { chapters: [{ start: 0, title: 'Full Video', end: totalSecs }], pois: [] };
-                }
-
-                // ── Step 3: Compute TF-IDF vectors for each group ──
-                const groupDocs = groups.map(g => g.text);
-                const vectors = this._nlpTFIDF(groupDocs);
-
-                // ── Step 4: Find topic boundaries via cosine similarity drops ──
-                const similarities = [];
-                for (let i = 1; i < groups.length; i++) {
-                    similarities.push({ idx: i, sim: this._nlpCosine(vectors[i - 1], vectors[i]) });
-                }
-
-                // Adaptive threshold: use percentile-based approach for long videos
-                const sims = similarities.map(s => s.sim);
-                const sortedSims = [...sims].sort((a, b) => a - b);
-                const meanSim = sims.reduce((a, b) => a + b, 0) / sims.length;
-                const stdSim = Math.sqrt(sims.reduce((a, b) => a + (b - meanSim) ** 2, 0) / sims.length);
-                // Use lower of: mean - 0.5*std OR 25th percentile — whichever finds more boundaries
-                const statThreshold = meanSim - 0.5 * stdSim;
-                const pctThreshold = sortedSims[Math.floor(sortedSims.length * 0.25)] || 0;
-                const threshold = Math.max(0.05, Math.min(statThreshold, pctThreshold + 0.05));
-                this._log('Cosine threshold:', threshold.toFixed(3), 'mean:', meanSim.toFixed(3), 'std:', stdSim.toFixed(3), 'p25:', pctThreshold.toFixed(3));
-
-                // Minimum gap between boundaries is time-based (90 seconds), not group-count-based
-                const minGapSeconds = 90;
-                const boundaries = [0];
-                for (const { idx, sim } of similarities) {
-                    if (sim < threshold) {
-                        const lastBoundaryTime = groups[boundaries[boundaries.length - 1]].start;
-                        const thisTime = groups[idx].start;
-                        if (thisTime - lastBoundaryTime >= minGapSeconds) {
-                            boundaries.push(idx);
-                        }
-                    }
-                }
-
-                // Target chapter count based on video length: ~1 per 3-5 minutes
-                const targetMin = Math.max(3, Math.floor(totalSecs / 300)); // 1 per 5 min, min 3
-                const targetMax = Math.max(6, Math.ceil(totalSecs / 180));  // 1 per 3 min
-                const targetCap = Math.min(targetMax, 15); // hard cap
-
-                // Trim excess: remove boundaries with smallest similarity drops
-                while (boundaries.length > targetCap) {
-                    let bestMerge = 1, bestSim = -1;
-                    for (let i = 1; i < boundaries.length; i++) {
-                        // Find the boundary with highest similarity (weakest topic change)
-                        const s = similarities.find(s => s.idx === boundaries[i])?.sim ?? 1;
-                        if (s > bestSim) { bestSim = s; bestMerge = i; }
-                    }
-                    boundaries.splice(bestMerge, 1);
-                }
-
-                // Add boundaries if too few: split largest chapters at biggest similarity drops
-                if (boundaries.length < targetMin && groups.length >= 4) {
-                    // Find low-similarity points not yet used as boundaries
-                    const unusedDrops = similarities
-                        .filter(s => !boundaries.includes(s.idx) && s.sim < meanSim)
-                        .sort((a, b) => a.sim - b.sim);
-                    for (const drop of unusedDrops) {
-                        if (boundaries.length >= targetMin) break;
-                        // Check time gap from nearest existing boundary
-                        const dropTime = groups[drop.idx].start;
-                        const tooClose = boundaries.some(bIdx => Math.abs(groups[bIdx].start - dropTime) < 60);
-                        if (!tooClose) {
-                            boundaries.push(drop.idx);
-                            boundaries.sort((a, b) => a - b);
-                        }
-                    }
-                }
-
-                // ── Step 5: Generate descriptive titles using key phrases ──
-                const chapters = boundaries.map((bIdx, i) => {
-                    const endIdx = i < boundaries.length - 1 ? boundaries[i + 1] : groups.length;
-                    const mergedVec = {};
-                    for (let g = bIdx; g < endIdx; g++) {
-                        for (const [term, score] of Object.entries(vectors[g])) {
-                            mergedVec[term] = (mergedVec[term] || 0) + score;
-                        }
-                    }
-                    const keyPhrases = this._nlpKeyPhrases(mergedVec, 4);
-
-                    let title;
-                    if (keyPhrases.length >= 2) {
-                        if (keyPhrases[0].includes(' ')) {
-                            title = this._nlpTitleCase(keyPhrases[0]);
-                        } else if (keyPhrases[1].includes(' ')) {
-                            title = this._nlpTitleCase(keyPhrases[1]);
-                        } else {
-                            title = this._nlpTitleCase(keyPhrases[0] + ' ' + keyPhrases[1]);
-                        }
-                        if (title.length < 10 && keyPhrases.length >= 3) {
-                            const extra = keyPhrases[2].includes(' ') ? keyPhrases[2].split(' ')[0] : keyPhrases[2];
-                            title += ' ' + this._nlpTitleCase(extra);
-                        }
-                    } else if (keyPhrases.length === 1) {
-                        title = this._nlpTitleCase(keyPhrases[0]);
-                    } else {
-                        title = `Section ${i + 1}`;
-                    }
-
-                    return { start: Math.round(groups[bIdx].start), title: title.slice(0, 50) };
-                });
-
-                if (chapters.length && chapters[0].start > 5) chapters[0].start = 0;
-                for (let i = 0; i < chapters.length; i++) {
-                    chapters[i].end = i < chapters.length - 1 ? chapters[i + 1].start : totalSecs;
-                }
-
-                // ── Step 6: POI detection (multi-signal scoring) ──
-                const pois = this._detectPOIs(segments, chapters, totalSecs);
-
-                this._log('NLP result:', chapters.length, 'chapters,', pois.length, 'POIs from', groups.length, 'groups');
-                return { chapters, pois };
-            },
-
-            // ═══ POI DETECTION (multi-signal scoring) ═══
-            _detectPOIs(segments, chapters, totalSecs) {
-                const candidates = [];
-                const emphasisRe = /\b(important|key point|remember|crucial|breaking|announce|reveal|surprise|incredible|amazing|game.?changer|mind.?blow|breakthrough|discover|secret|tip|trick|hack|milestone|highlight|takeaway|essential|critical|warning|danger|careful|watch out|pay attention)\b/i;
-                const enumerationRe = /\b(first(ly)?|second(ly)?|third(ly)?|step one|step two|number one|number two|finally|in conclusion|to summarize|the main|the biggest|the most|in summary|bottom line|key takeaway|most importantly)\b/i;
-
-                for (let i = 0; i < segments.length; i++) {
-                    const seg = segments[i];
-                    let score = 0;
-
-                    if (emphasisRe.test(seg.text)) score += 4;
-                    if (enumerationRe.test(seg.text)) score += 3;
-
-                    // Question cluster
-                    const nearbyQ = segments.filter(s => Math.abs(s.start - seg.start) < 60 && s.text.includes('?')).length;
-                    if (nearbyQ >= 3) score += 2;
-
-                    // Time gap (pause = emphasis)
-                    if (i > 0 && seg.start - segments[i - 1].start > 8) score += 2;
-
-                    // Substantive length
-                    if (seg.text.length > 100) score += 1;
-                    if (seg.text.includes('!')) score += 1;
-
-                    // Named entities (capitalized words mid-sentence)
-                    const caps = seg.text.match(/\b[A-Z][a-z]{2,}/g);
-                    if (caps && caps.length >= 2) score += 1;
-
-                    if (score >= 3) {
-                        let label = seg.text.trim();
-                        const sents = label.split(/[.!?]+/).filter(s => s.trim().length > 10);
-                        if (sents.length > 1) {
-                            label = (sents.find(s => emphasisRe.test(s) || enumerationRe.test(s)) || sents[0]).trim();
-                        }
-                        if (label.length > 70) label = label.slice(0, 67) + '...';
-                        candidates.push({ time: Math.round(seg.start), label, score });
-                    }
-                }
-
-                candidates.sort((a, b) => b.score - a.score);
-                const pois = [];
-                for (const p of candidates) {
-                    if (pois.length >= 6) break;
-                    if (pois.some(e => Math.abs(e.time - p.time) < 90)) continue;
-                    if (chapters.some(c => Math.abs(c.start - p.time) < 10)) continue;
-                    pois.push(p);
-                }
-                pois.sort((a, b) => a.time - b.time);
-                return pois;
-            },
-
-
-            // ═══ CHAPTER GENERATION (routes between builtin/API) ═══
-            async _generateChapters(videoId, onStatus) {
-                if (this._isGenerating) return null;
-                this._isGenerating = true;
-                try {
-                    const transcriptMethod = appState.settings.cfTranscriptMethod || 'auto';
-                    let segments = null;
-
-                    if (transcriptMethod !== 'whisper-only') {
-                        segments = await this._fetchTranscript(videoId, onStatus);
-                    }
-
-                    if (!segments?.length && (transcriptMethod === 'auto' || transcriptMethod === 'whisper-only')) {
-                        onStatus?.('Captions unavailable — trying Whisper AI...', 'loading', 0);
-                        try { segments = await this._whisperTranscribe(videoId, (msg, pct) => onStatus?.(msg, 'loading', Math.round(pct * 0.4))); }
-                        catch(e) { this._warn('Whisper failed:', e.message); onStatus?.(`Whisper failed: ${e.message}`, 'error', 0); this._isGenerating = false; return null; }
-                    }
-
-                    if (!segments?.length) {
-                        const reason = transcriptMethod === 'captions-only' ? 'No captions found (Whisper disabled)' : transcriptMethod === 'vibe' ? 'WhisperServer transcription failed — is WhisperServer running?' : 'No transcript available';
-                        onStatus?.(reason, 'error', 0);
-                        this._isGenerating = false; return null;
-                    }
-
-                    this._log('Got', segments.length, 'transcript segments');
-                    this._lastTranscriptSegments = segments;
-                    const vidTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim() || videoId;
-                    this._cacheTranscript(videoId, segments, vidTitle);
-                    const duration = this._getVideoDuration();
-                    const provider = appState.settings.cfLlmProvider || 'builtin';
-
-                    let data;
-                    if (provider === 'builtin') {
-                        onStatus?.('Analyzing transcript (built-in)...', 'loading', 60);
-                        data = this._generateChaptersHeuristic(segments, duration);
-                    } else {
-                        try {
-                            const endpoint = this._getLlmEndpoint();
-                            if (!endpoint) throw new Error('No LLM endpoint configured');
-                            const needsKey = this._CF_PROVIDERS[provider]?.needsKey;
-                            if (needsKey && !appState.settings.cfLlmApiKey) throw new Error(`API key required for ${this._CF_PROVIDERS[provider]?.name || provider}`);
-
-                            onStatus?.('Preparing transcript for AI...', 'loading', 55);
-                            const isLocal = this._isLocalProvider();
-                            const txLimit = isLocal ? 200000 : 30000;
-                            const transcriptText = this._buildTranscriptText(segments, txLimit);
-                            const durationMin = Math.ceil(duration / 60);
-
-                            const systemPrompt = appState.settings.cfCustomChapterPrompt || this._buildChapterSystemPrompt(durationMin);
-                            const userPrompt = `Generate chapters and points of interest for this ${durationMin}-minute video titled "${vidTitle}".\n\nFull transcript (${segments.length} segments, ${transcriptText.length} chars):\n\n${transcriptText}`;
-
-                            onStatus?.(isLocal ? `Processing full transcript locally (${Math.round(transcriptText.length/1000)}K chars)...` : 'Calling LLM API...', 'loading', 70);
-                            const rawText = await this._callLlmApi(systemPrompt, userPrompt, onStatus);
-                            onStatus?.('Parsing AI results...', 'loading', 95);
-                            data = this._parseChapterJSON(rawText, duration);
-                            if (!data?.chapters?.length) {
-                                this._log('Raw AI output:', rawText);
-                                throw new Error('AI returned unparseable response');
-                            }
-                        } catch(aiErr) {
-                            this._warn('AI chapter gen failed, falling back to built-in:', aiErr.message);
-                            if (aiErr.message?.includes('unparseable')) {
-                                this._log('Hint: If using Ollama, ensure version >= 0.1.14 for OpenAI-compatible endpoint');
-                            }
-                            onStatus?.('AI failed — using built-in analysis...', 'loading', 80);
-                            data = this._generateChaptersHeuristic(segments, duration);
-                        }
-                    }
-
-                    if (data?.chapters?.length) {
-                        this._setCachedData(videoId, data);
-                        onStatus?.(`Generated ${data.chapters.length} chapters, ${data.pois.length} POIs`, 'ready', 100);
-                        this._isGenerating = false; return data;
-                    } else { onStatus?.('Generation produced no chapters', 'error', 0); this._isGenerating = false; return null; }
-                } catch(e) { this._warn('Generation error:', e); onStatus?.(e.message || 'Generation failed', 'error', 0); this._isGenerating = false; return null; }
-            },
-
-            _parseChapterJSON(raw, duration) {
-                let json = null;
-                try { json = JSON.parse(raw); } catch(e) {}
-                if (!json) { const match = raw.match(/```(?:json)?\s*([\s\S]*?)```/); if (match) try { json = JSON.parse(match[1].trim()); } catch(e) {} }
-                if (!json) { const match = raw.match(/\{[\s\S]*\}/); if (match) try { json = JSON.parse(match[0]); } catch(e) {} }
-                if (!json) return null;
-                const chapters = (json.chapters || []).filter(c => typeof c.start === 'number' && typeof c.title === 'string').map(c => ({ start: Math.max(0, Math.min(c.start, duration || Infinity)), title: c.title.slice(0, 60) })).sort((a, b) => a.start - b.start);
-                const pois = (json.pois || json.poi || []).filter(p => typeof p.time === 'number' && typeof p.label === 'string').map(p => ({ time: Math.max(0, Math.min(p.time, duration || Infinity)), label: p.label.slice(0, 80) })).sort((a, b) => a.time - b.time);
-                if (chapters.length && chapters[0].start > 0) chapters.unshift({ start: 0, title: 'Introduction' });
-                for (let i = 0; i < chapters.length; i++) chapters[i].end = (i < chapters.length - 1) ? chapters[i + 1].start : (duration || chapters[i].start + 300);
-                return { chapters, pois };
-            },
-
-            // ═══════════════════════════════════════════════════════
-            //  OpenCut-inspired Analysis Engine (browser-native)
-            // ═══════════════════════════════════════════════════════
-
-            // Filler word detection — user-editable via cfFillerWords setting
-            _getFillerSets() {
-                const raw = appState.settings.cfFillerWords || '';
-                const words = raw.split(',').map(w => w.trim().toLowerCase()).filter(w => w.length > 0);
-                const simple = new Set();
-                const multi = [];
-                for (const w of words) {
-                    if (w.includes(' ')) {
-                        const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        multi.push({ pattern: new RegExp(`\\b(${escaped})\\b`, 'gi'), word: w });
-                    } else {
-                        simple.add(w);
-                    }
-                }
-                // "like" with comma is a special case (filler "like," vs normal "like")
-                if (simple.has('like')) {
-                    simple.delete('like');
-                    multi.push({ pattern: /\b(like)\s*[,]/gi, word: 'like' });
-                }
-                return { simple, multi };
-            },
-
-            _detectFillers(segments) {
-                if (!segments?.length) return [];
-                const { simple, multi } = this._getFillerSets();
-                if (simple.size === 0 && multi.length === 0) return [];
-                const fillers = [];
-                let wordTimingUsed = 0;
-                for (const seg of segments) {
-                    const text = seg.text || '';
-                    const segDur = seg.dur || seg.duration || 3;
-                    const segEnd = seg.start + segDur;
-
-                    // ── Word-level timing path (precise, from json3 tOffsetMs) ──
-                    if (seg.words?.length) {
-                        for (const w of seg.words) {
-                            const clean = w.text.replace(/[^a-zA-Z\s]/g, '').toLowerCase().trim();
-                            if (simple.has(clean)) {
-                                fillers.push({ time: w.start, end: w.end, duration: w.end - w.start, word: clean, segStart: seg.start, segEnd, precise: true });
-                                wordTimingUsed++;
-                            }
-                        }
-                        // Multi-word filler check against full segment text with word timing
-                        for (const { pattern, word } of multi) {
-                            pattern.lastIndex = 0;
-                            let m;
-                            while ((m = pattern.exec(text)) !== null) {
-                                const matched = m[0].toLowerCase().trim();
-                                if (simple.has(matched)) continue;
-                                // Find the word(s) that correspond to this match position
-                                const matchWords = matched.split(/\s+/);
-                                const firstWord = matchWords[0];
-                                const hit = seg.words.find(w => w.text.toLowerCase().replace(/[^a-z]/g, '') === firstWord && w.start >= seg.start);
-                                if (hit) {
-                                    const lastWord = matchWords.length > 1
-                                        ? seg.words.find(w => w.start >= hit.start && w.text.toLowerCase().replace(/[^a-z]/g, '') === matchWords[matchWords.length - 1])
-                                        : hit;
-                                    const end = lastWord ? lastWord.end : hit.end;
-                                    fillers.push({ time: hit.start, end, duration: end - hit.start, word: matched, segStart: seg.start, segEnd, precise: true });
-                                    wordTimingUsed++;
-                                }
-                            }
-                        }
-                        continue;
-                    }
-
-                    // ── Fallback: interpolated timing (less precise) ──
-                    const words = text.split(/\s+/);
-                    for (let wi = 0; wi < words.length; wi++) {
-                        const clean = words[wi].replace(/[^a-zA-Z\s]/g, '').toLowerCase().trim();
-                        if (simple.has(clean)) {
-                            const offset = (wi / Math.max(words.length, 1)) * segDur;
-                            fillers.push({ time: seg.start + offset, duration: 0.8, word: clean, segStart: seg.start, segEnd, precise: false });
-                        }
-                    }
-                    for (const { pattern, word } of multi) {
-                        pattern.lastIndex = 0;
-                        let m;
-                        while ((m = pattern.exec(text)) !== null) {
-                            const matched = m[0].toLowerCase().trim();
-                            if (simple.has(matched)) continue;
-                            const charPos = m.index / Math.max(text.length, 1);
-                            fillers.push({ time: seg.start + charPos * segDur, duration: 1.0, word: matched, segStart: seg.start, segEnd, precise: false });
-                        }
-                    }
-                }
-                fillers.sort((a, b) => a.time - b.time);
-                const deduped = []; let lastT = -2;
-                for (const f of fillers) { if (f.time - lastT > 1.0) { deduped.push(f); lastT = f.time; } }
-                this._log('Filler detection:', deduped.length, 'fillers in', segments.length, 'segments (' + wordTimingUsed + ' word-level precise)');
-                return deduped;
-            },
-
-            // ═══════════════════════════════════════════════════════
-            //  AutoSkip Engine (unified pause + filler skip)
-            //  Inspired by AutoCut aggression presets
-            // ═══════════════════════════════════════════════════════
-
-            // AutoSkip mode presets — controls pause threshold, filler skip, and silence speedup
-            _AUTOSKIP_PRESETS: {
-                gentle:     { pauseThreshold: 1.5, skipFillers: false, silenceSpeed: null, label: 'Gentle',     desc: 'Skip pauses >1.5s' },
-                normal:     { pauseThreshold: 0.6, skipFillers: true,  silenceSpeed: null, label: 'Normal',     desc: 'Skip pauses >0.6s + fillers' },
-                aggressive: { pauseThreshold: 0.3, skipFillers: true,  silenceSpeed: 4.0,  label: 'Aggressive', desc: 'Skip all gaps, 4x silence' },
-                maximum:    { pauseThreshold: 0.15, skipFillers: true, silenceSpeed: 6.0,  label: 'Maximum',    desc: 'Cut everything, 6x silence' },
-            },
-
-            _getAutoSkipPreset() {
-                const mode = appState.settings.cfAutoSkipMode || 'off';
-                return this._AUTOSKIP_PRESETS[mode] || null;
-            },
-
-            // Pause detection — recomputed per aggression level
-            _detectPauses(segments, threshold) {
-                if (!segments?.length || segments.length < 2) return [];
-                const pauses = [];
-                for (let i = 0; i < segments.length - 1; i++) {
-                    const segEnd = segments[i].start + (segments[i].dur || segments[i].duration || 3);
-                    const nextStart = segments[i + 1].start;
-                    const gap = nextStart - segEnd;
-                    if (gap >= threshold) {
-                        pauses.push({ start: segEnd, end: nextStart, duration: Math.round(gap * 10) / 10 });
-                    }
-                }
-                this._log('Pause detection:', pauses.length, 'pauses >', threshold + 's in', segments.length, 'segments');
-                return pauses;
-            },
-
-            // Recompute pauses for current preset and store
-            _recomputePauses() {
-                if (!this._lastTranscriptSegments?.length) return;
-                const preset = this._getAutoSkipPreset();
-                const threshold = preset ? preset.pauseThreshold : 1.5;
-                this._pauseData = this._detectPauses(this._lastTranscriptSegments, threshold);
-            },
-
-            // Unified skip loop — one RAF handles both pause and filler skipping
-            _startAutoSkip() {
-                if (this._autoSkipRAF) return;
-                const preset = this._getAutoSkipPreset();
-                if (!preset) return;
-                this._autoSkipActive = true;
-
-                // Recompute pauses for this aggression level
-                this._recomputePauses();
-
-                // Build a sorted skip list: [{start, end, type}]
-                // This lets us binary-search instead of scanning every filler/pause per frame
-                const skipZones = [];
-                if (this._pauseData?.length) {
-                    for (const p of this._pauseData) {
-                        skipZones.push({ start: p.start, end: p.end, type: 'pause' });
-                    }
-                }
-                if (preset.skipFillers && this._fillerData?.length) {
-                    // Nasal fillers like "um"/"uh" have a longer onset — need more pre-buffer
-                    const preBuffer = { um: 0.35, uh: 0.35, umm: 0.35, uhh: 0.35, hmm: 0.3 };
-                    const defaultBuffer = 0.15;
-                    for (const f of this._fillerData) {
-                        if (f.precise && f.end) {
-                            const buf = preBuffer[f.word] || defaultBuffer;
-                            skipZones.push({ start: Math.max(f.time - buf, 0), end: f.end, type: 'filler' });
-                        } else {
-                            // Interpolated fallback: use wider window
-                            const windowStart = Math.max(f.time - 1.0, f.segStart);
-                            const windowEnd = Math.min(f.time + f.duration + 0.5, f.segEnd);
-                            skipZones.push({ start: windowStart, end: windowEnd, type: 'filler' });
-                        }
-                    }
-                }
-                skipZones.sort((a, b) => a.start - b.start);
-
-                // Merge overlapping zones
-                const merged = [];
-                for (const z of skipZones) {
-                    const last = merged[merged.length - 1];
-                    if (last && z.start <= last.end + 0.2) {
-                        last.end = Math.max(last.end, z.end);
-                        if (z.type === 'pause') last.type = 'pause'; // pause takes priority for speedup
-                    } else {
-                        merged.push({ ...z });
-                    }
-                }
-
-                this._log('AutoSkip started:', merged.length, 'skip zones (mode:', appState.settings.cfAutoSkipMode + ')');
-                this._autoSkipZones = merged;
-
-                let zoneIdx = 0; // cursor for binary-search optimization
-                const silenceSpeed = preset.silenceSpeed;
-                const jumpCut = appState.settings.cfSkipStyle === 'jump'; // hard-skip everything
-                const self = this;
-
-                const tick = () => {
-                    if (!self._autoSkipActive) return;
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video || video.paused) {
-                        self._autoSkipRAF = requestAnimationFrame(tick);
-                        return;
-                    }
-
-                    const ct = video.currentTime;
-
-                    // Reset cursor if we seeked backwards
-                    if (zoneIdx > 0 && merged[zoneIdx - 1]?.end > ct + 1) zoneIdx = 0;
-
-                    // Advance cursor to current position
-                    while (zoneIdx < merged.length && merged[zoneIdx].end <= ct) zoneIdx++;
-
-                    // Check if we're inside a skip zone
-                    if (zoneIdx < merged.length) {
-                        const zone = merged[zoneIdx];
-                        if (ct >= zone.start && ct < zone.end) {
-                            if (!jumpCut && zone.type === 'pause' && silenceSpeed) {
-                                // Speed-through mode: ramp playback rate through silence
-                                if (self._autoSkipSavedRate === null) {
-                                    self._autoSkipSavedRate = video.playbackRate;
-                                    video.playbackRate = silenceSpeed;
-                                }
-                            } else {
-                                // Jump cut: hard skip past the zone instantly
-                                video.currentTime = zone.end + 0.05;
-                                zoneIdx++;
-                            }
-                            self._autoSkipRAF = requestAnimationFrame(tick);
-                            return;
-                        }
-                    }
-
-                    // Not in a skip zone — restore normal speed if we were speeding through silence
-                    if (self._autoSkipSavedRate !== null) {
-                        video.playbackRate = self._autoSkipSavedRate;
-                        self._autoSkipSavedRate = null;
-                    }
-
-                    self._autoSkipRAF = requestAnimationFrame(tick);
-                };
-
-                this._autoSkipRAF = requestAnimationFrame(tick);
-
-                // Re-render progress bar to show skip zone markers
-                this._renderProgressBarOverlay();
-            },
-
-            _stopAutoSkip() {
-                this._autoSkipActive = false;
-                if (this._autoSkipRAF) { cancelAnimationFrame(this._autoSkipRAF); this._autoSkipRAF = null; }
-                // Restore playback rate if we were speeding through silence
-                if (this._autoSkipSavedRate !== null) {
-                    const video = document.querySelector('video.html5-main-video');
-                    if (video) video.playbackRate = this._autoSkipSavedRate;
-                    this._autoSkipSavedRate = null;
-                }
-                this._autoSkipZones = null;
-                // Re-render to remove skip zone markers
-                this._renderProgressBarOverlay();
-            },
-
-            // Auto model selection — pick best Ollama model for video length
-            _MODEL_CONTEXT: {
-                'qwen3:32b':   { ctx: 131072, priority: 1 },
-                'qwen3:14b':   { ctx: 131072, priority: 2 },
-                'qwen3:8b':    { ctx: 131072, priority: 3 },
-                'llama3.3:70b': { ctx: 131072, priority: 1 },
-                'llama3.1:70b': { ctx: 131072, priority: 1 },
-            },
-            _getOptimalModel(durationMin, installedModels) {
-                if (!installedModels?.length) return null;
-                // Estimate required context: ~100 tokens/min of transcript + prompt overhead
-                const estTokens = Math.max(durationMin * 100, 4000) + 2000;
-                // Filter to models that can handle the transcript
-                const viable = installedModels
-                    .map(name => {
-                        const baseName = name.replace(/:latest$/, '');
-                        const info = this._MODEL_CONTEXT[baseName];
-                        if (!info) return { name, ctx: 131072, priority: 10 }; // unknown model, assume large ctx
-                        return { name, ctx: info.ctx, priority: info.priority };
-                    })
-                    .filter(m => m.ctx >= estTokens);
-                if (!viable.length) {
-                    // None can handle it — pick the largest context available
-                    const all = installedModels.map(name => {
-                        const baseName = name.replace(/:latest$/, '');
-                        const info = this._MODEL_CONTEXT[baseName];
-                        return { name, ctx: info?.ctx || 131072, priority: info?.priority || 10 };
-                    });
-                    all.sort((a, b) => b.ctx - a.ctx || a.priority - b.priority);
-                    return all[0]?.name || installedModels[0];
-                }
-                // Sort by quality (priority ascending = better model first)
-                viable.sort((a, b) => a.priority - b.priority);
-                return viable[0].name;
-            },
-
-            // Speech pace analysis — from OpenCut audio analysis
-            _analyzePace(segments) {
-                if (!segments?.length) return [];
-                const pace = [];
-                for (const seg of segments) {
-                    const words = (seg.text || '').split(/\s+/).filter(w => w.length > 0).length;
-                    const dur = seg.duration || 3;
-                    pace.push({ start: seg.start, end: seg.start + dur, wpm: Math.round((words / dur) * 60), words });
-                }
-                return pace;
-            },
-            _getPaceStats(paceData) {
-                if (!paceData?.length) return null;
-                const wpms = paceData.map(p => p.wpm).filter(w => w > 0);
-                if (!wpms.length) return null;
-                const avg = Math.round(wpms.reduce((a, b) => a + b, 0) / wpms.length);
-                return { avg, max: Math.max(...wpms), min: Math.min(...wpms), fast: paceData.filter(p => p.wpm > avg * 1.4).length, slow: paceData.filter(p => p.wpm > 0 && p.wpm < avg * 0.6).length, total: wpms.length };
-            },
-
-            // Keyword extraction per chapter — from OpenCut NLP + scene detection
-            _extractKeywords(segments, chapters) {
-                if (!segments?.length || !chapters?.length) return [];
-                const result = [];
-                for (const ch of chapters) {
-                    const chSegs = segments.filter(s => s.start >= ch.start && s.start < (ch.end || Infinity));
-                    const text = chSegs.map(s => s.text).join(' ').toLowerCase();
-                    const words = text.split(/[^a-z0-9']+/).filter(w => w.length > 3 && !this._NLP_STOPS.has(w));
-                    const freq = {};
-                    for (const w of words) freq[w] = (freq[w] || 0) + 1;
-                    result.push(Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => e[0]));
-                }
-                return result;
-            },
-
-            // AI Translation — from OpenCut deep-translator module
-            async _translateContent(text, targetLang, onStatus) {
-                const provider = appState.settings.cfLlmProvider;
-                if (!provider || provider === 'builtin') throw new Error('Translation requires an AI provider (Ollama, OpenAI, etc.)');
-                const systemPrompt = `You are a professional translator. Translate the following text to ${targetLang}. Preserve all timestamps, formatting, and structure exactly. Only translate the spoken content. Output ONLY the translated text, nothing else.`;
-                return await this._callLlmApi(systemPrompt, text, onStatus);
-            },
-
-            async _translateChaptersAndSummary(targetLang) {
-                if (!targetLang) return;
-                const provider = appState.settings.cfLlmProvider;
-                if (!provider || provider === 'builtin') { this._log('Translation requires AI provider'); return; }
-                if (this._chapterData?.chapters?.length) {
-                    const titles = this._chapterData.chapters.map((c, i) => `${i + 1}. ${c.title}`).join('\n');
-                    try {
-                        const translated = await this._translateContent(titles, targetLang);
-                        if (translated) {
-                            this._translatedChapters = translated.trim().split('\n').map(line => {
-                                const m = line.match(/^\d+\.\s*(.+)/);
-                                return m ? m[1].trim() : line.trim();
-                            });
-                        }
-                    } catch (e) { this._log('Chapter translation error:', e.message); }
-                }
-                if (this._lastSummary) {
-                    try { this._translatedSummary = await this._translateContent(this._lastSummary, targetLang); } catch (e) { this._log('Summary translation error:', e.message); }
-                }
-            },
-
-            // Export: SRT format — from OpenCut transcript export module
-            _exportSRT() {
-                const segs = this._lastTranscriptSegments;
-                if (!segs?.length) return;
-                let srt = '';
-                segs.forEach((seg, i) => {
-                    const start = this._fmtSRT(seg.start);
-                    const end = this._fmtSRT(seg.start + (seg.duration || 3));
-                    srt += `${i + 1}\n${start} --> ${end}\n${seg.text}\n\n`;
-                });
-                this._dlFile(srt, `transcript_${this._getVideoId()}.srt`, 'text/srt');
-            },
-            _exportVTT() {
-                const segs = this._lastTranscriptSegments;
-                if (!segs?.length) return;
-                let vtt = 'WEBVTT\n\n';
-                segs.forEach((seg) => {
-                    const start = this._fmtSRT(seg.start).replace(',', '.');
-                    const end = this._fmtSRT(seg.start + (seg.duration || 3)).replace(',', '.');
-                    vtt += `${start} --> ${end}\n${seg.text}\n\n`;
-                });
-                this._dlFile(vtt, `transcript_${this._getVideoId()}.vtt`, 'text/vtt');
-            },
-            _exportChaptersSRT() {
-                if (!this._chapterData?.chapters?.length) return;
-                let srt = '';
-                this._chapterData.chapters.forEach((ch, i) => {
-                    const start = this._fmtSRT(ch.start);
-                    const end = this._fmtSRT(ch.end || ch.start + 60);
-                    const title = this._translatedChapters?.[i] || ch.title;
-                    srt += `${i + 1}\n${start} --> ${end}\n${title}\n\n`;
-                });
-                this._dlFile(srt, `chapters_${this._getVideoId()}.srt`, 'text/srt');
-            },
-            _fmtSRT(sec) {
-                const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60), ms = Math.round((sec % 1) * 1000);
-                return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
-            },
-            _dlFile(content, filename, type) {
-                const blob = new Blob([content], { type });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = filename;
-                document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-            },
-
-            // Run all analysis after transcript is available
-            _runAnalysis(segments) {
-                if (!segments?.length) return;
-                if (appState.settings.cfFillerDetect) this._fillerData = this._detectFillers(segments);
-                // Detect pauses at finest granularity (0.5s) — AutoSkip filters by mode at runtime
-                this._pauseData = this._detectPauses(segments, 0.5);
-                this._paceData = this._analyzePace(segments);
-                if (this._chapterData?.chapters?.length) this._keywordsPerChapter = this._extractKeywords(segments, this._chapterData.chapters);
-            },
-
-
-            // ═══════════════════════════════════════════════════════════
-            //  UI: Progress Bar Overlay (FIXED — no z-index conflicts)
-            // ═══════════════════════════════════════════════════════════
-            _renderProgressBarOverlay() {
-                // Clean up all previous overlays
-                document.querySelectorAll('.cf-bar-overlay,.cf-chapter-markers,.cf-chapter-label-row,.cf-filler-markers,.cf-skip-markers').forEach(el => el.remove());
-                document.getElementById('cf-transcript-tip')?.remove();
-                if (!this._chapterData) return;
-                const progressBar = document.querySelector('.ytp-progress-bar');
-                if (!progressBar) return;
-                const duration = this._getVideoDuration();
-                if (!duration) return;
-                if (getComputedStyle(progressBar).position === 'static') progressBar.style.position = 'relative';
-                const s = appState.settings;
-                const poiColor = s.cfPoiColor || '#ff6b6b';
-
-                // ── Chapter segments on the progress bar ──
-                if (s.cfShowChapters && this._chapterData.chapters.length > 1) {
-                    const markerContainer = document.createElement('div');
-                    markerContainer.className = 'cf-chapter-markers';
-
-                    // Label row above the progress bar — shows chapter names
-                    const labelRow = document.createElement('div');
-                    labelRow.className = 'cf-chapter-label-row';
-
-                    this._chapterData.chapters.forEach((ch, i) => {
-                        const left = (ch.start / duration) * 100;
-                        const width = ((ch.end - ch.start) / duration) * 100;
-                        const color = this._CF_COLORS[i % this._CF_COLORS.length];
-                        const fg = this._CF_COLORS_FG[i % this._CF_COLORS_FG.length];
-
-                        // Chapter segment (colored bar)
-                        const seg = document.createElement('div');
-                        seg.className = 'cf-chapter-seg';
-                        seg.style.cssText = `left:${left}%;width:${width}%;--cf-seg-color:${color};--cf-seg-opacity:${s.cfChapterOpacity || 0.35}`;
-                        seg.dataset.cfChapterIdx = i;
-                        seg.addEventListener('click', (e) => { e.stopPropagation(); this._seekTo(ch.start); });
-
-                        // Tooltip on hover (positioned well above bar)
-                        const tip = document.createElement('div');
-                        tip.className = 'cf-bar-tooltip cf-chapter-tip';
-                        TrustedHTML.setHTML(tip, `<span class="cf-tip-time">${this._formatTime(ch.start)}</span><span class="cf-tip-title">${ch.title}</span>`);
-                        seg.appendChild(tip);
-                        seg.addEventListener('mouseenter', () => tip.style.opacity = '1');
-                        seg.addEventListener('mouseleave', () => tip.style.opacity = '0');
-
-                        // Gap divider between chapters
-                        if (i > 0) {
-                            const gap = document.createElement('div');
-                            gap.className = 'cf-chapter-gap';
-                            gap.style.left = `${left}%`;
-                            markerContainer.appendChild(gap);
-                        }
-
-                        markerContainer.appendChild(seg);
-
-                        // Chapter label (name inside the colored segment area, above bar)
-                        const label = document.createElement('div');
-                        label.className = 'cf-chapter-label';
-                        label.style.cssText = `left:${left}%;width:${width}%;--cf-label-color:${color};--cf-label-fg:${fg}`;
-                        label.textContent = ch.title;
-                        label.addEventListener('click', (e) => { e.stopPropagation(); this._seekTo(ch.start); });
-                        labelRow.appendChild(label);
-                    });
-
-                    progressBar.appendChild(markerContainer);
-                    // Append label row to progress bar itself — purely absolute, no layout impact
-                    progressBar.appendChild(labelRow);
-                }
-
-                // ── POI markers ──
-                const overlay = document.createElement('div'); overlay.className = 'cf-bar-overlay';
-
-                if (s.cfShowPOIs && this._chapterData.pois.length) {
-                    this._chapterData.pois.forEach(p => {
-                        const left = (p.time / duration) * 100;
-                        const hitbox = document.createElement('div');
-                        hitbox.className = 'cf-poi-hitbox';
-                        hitbox.style.left = `${left}%`;
-                        hitbox.addEventListener('click', (e) => { e.stopPropagation(); this._seekTo(p.time); });
-
-                        const diamond = document.createElement('div');
-                        diamond.className = 'cf-poi-diamond';
-                        diamond.style.background = poiColor;
-                        hitbox.appendChild(diamond);
-
-                        const tip = document.createElement('div');
-                        tip.className = 'cf-bar-tooltip cf-poi-tip';
-                        TrustedHTML.setHTML(tip, `<span class="cf-tip-poi-icon">&#9733;</span><span class="cf-tip-time">${this._formatTime(p.time)}</span><span class="cf-tip-label">${p.label}</span>`);
-                        hitbox.appendChild(tip);
-                        hitbox.addEventListener('mouseenter', () => { tip.style.opacity = '1'; diamond.classList.add('cf-poi-hover'); });
-                        hitbox.addEventListener('mouseleave', () => { tip.style.opacity = '0'; diamond.classList.remove('cf-poi-hover'); });
-                        overlay.appendChild(hitbox);
-                    });
-                }
-
-                // ── Enhanced transcript hover ──
-                if (this._lastTranscriptSegments?.length) {
-                    const transcriptTip = document.createElement('div');
-                    transcriptTip.id = 'cf-transcript-tip';
-                    transcriptTip.className = 'cf-transcript-tip';
-                    const chapters = this._chapterData?.chapters || [];
-
-                    overlay.addEventListener('mousemove', (e) => {
-                        const rect = progressBar.getBoundingClientRect();
-                        const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                        const hoverTime = percent * duration;
-
-                        let bestIdx = -1;
-                        for (let si = 0; si < this._lastTranscriptSegments.length; si++) {
-                            const seg = this._lastTranscriptSegments[si];
-                            if (seg.start <= hoverTime && hoverTime <= seg.start + (seg.dur || 5)) { bestIdx = si; break; }
-                            if (seg.start > hoverTime) break;
-                            bestIdx = si;
-                        }
-
-                        if (bestIdx >= 0) {
-                            const segs = this._lastTranscriptSegments;
-                            const lines = [];
-                            if (bestIdx > 0) lines.push({ time: segs[bestIdx - 1].start, text: segs[bestIdx - 1].text, dim: true });
-                            lines.push({ time: segs[bestIdx].start, text: segs[bestIdx].text, dim: false });
-                            if (bestIdx < segs.length - 1) lines.push({ time: segs[bestIdx + 1].start, text: segs[bestIdx + 1].text, dim: true });
-
-                            let chapterName = '';
-                            for (let ci = chapters.length - 1; ci >= 0; ci--) {
-                                if (hoverTime >= chapters[ci].start) { chapterName = chapters[ci].title; break; }
-                            }
-
-                            let html = '';
-                            if (chapterName) html += `<div class="cf-tx-chapter">${chapterName}</div>`;
-                            for (const ln of lines) {
-                                const txt = ln.text.length > 80 ? ln.text.slice(0, 77) + '...' : ln.text;
-                                html += `<div class="cf-tx-line${ln.dim ? ' cf-tx-dim' : ''}"><span class="cf-tx-ts">${this._formatTime(ln.time)}</span> ${txt}</div>`;
-                            }
-
-                            TrustedHTML.setHTML(transcriptTip, html);
-                            transcriptTip.style.opacity = '1';
-                            const tipWidth = 300;
-                            const xPos = Math.max(5, Math.min(rect.width - tipWidth - 5, e.clientX - rect.left - tipWidth / 2));
-                            transcriptTip.style.left = xPos + 'px';
-                        } else {
-                            transcriptTip.style.opacity = '0';
-                        }
-                    });
-                    overlay.addEventListener('mouseleave', () => { transcriptTip.style.opacity = '0'; });
-                    overlay.appendChild(transcriptTip);
-                }
-
-                progressBar.appendChild(overlay);
-
-                // ── Filler word markers (OpenCut: filler detection) ──
-                if (s.cfShowFillerMarkers && this._fillerData?.length) {
-                    const fillerContainer = document.createElement('div');
-                    fillerContainer.className = 'cf-filler-markers';
-                    this._fillerData.forEach(f => {
-                        const left = (f.time / duration) * 100;
-                        const marker = document.createElement('div');
-                        marker.className = 'cf-filler-marker';
-                        marker.style.left = `${left}%`;
-                        marker.title = f.word;
-                        const tip = document.createElement('div');
-                        tip.className = 'cf-bar-tooltip cf-filler-tip';
-                        tip.textContent = `"${f.word}" @ ${this._formatTime(f.time)}`;
-                        marker.appendChild(tip);
-                        marker.addEventListener('mouseenter', () => tip.style.opacity = '1');
-                        marker.addEventListener('mouseleave', () => tip.style.opacity = '0');
-                        marker.addEventListener('click', (e) => { e.stopPropagation(); this._seekTo(f.time); });
-                        fillerContainer.appendChild(marker);
-                    });
-                    progressBar.appendChild(fillerContainer);
-                }
-
-                // ── Skip zone markers (dead air / auto-skip regions) ──
-                if (s.cfShowSkipZones && this._autoSkipZones?.length) {
-                    const skipContainer = document.createElement('div');
-                    skipContainer.className = 'cf-skip-markers';
-                    this._autoSkipZones.forEach(z => {
-                        const left = (z.start / duration) * 100;
-                        const width = Math.max(0.15, ((z.end - z.start) / duration) * 100);
-                        const marker = document.createElement('div');
-                        marker.className = 'cf-skip-zone';
-                        marker.style.cssText = `left:${left}%;width:${width}%`;
-                        const tip = document.createElement('div');
-                        tip.className = 'cf-bar-tooltip cf-skip-tip';
-                        const durMs = Math.round((z.end - z.start) * 10) / 10;
-                        tip.textContent = `${z.type === 'filler' ? 'Filler' : 'Dead air'}: ${durMs}s skip @ ${this._formatTime(z.start)}`;
-                        marker.appendChild(tip);
-                        marker.addEventListener('mouseenter', () => tip.style.opacity = '1');
-                        marker.addEventListener('mouseleave', () => tip.style.opacity = '0');
-                        skipContainer.appendChild(marker);
-                    });
-                    progressBar.appendChild(skipContainer);
-                }
-
-                // Start chapter HUD tracking
-                this._startChapterTracking();
-            },
-
-            // ═══ CHAPTER HUD — Floating current chapter indicator on video ═══
-            _startChapterTracking() {
-                this._stopChapterTracking();
-                if (!appState.settings.cfShowChapterHUD || !this._chapterData?.chapters?.length) return;
-
-                const track = () => {
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video || !this._chapterData?.chapters?.length) {
-                        this._chapterTrackingRAF = requestAnimationFrame(track);
-                        return;
-                    }
-                    const ct = video.currentTime;
-                    const chapters = this._chapterData.chapters;
-                    let idx = -1;
-                    for (let i = chapters.length - 1; i >= 0; i--) {
-                        if (ct >= chapters[i].start) { idx = i; break; }
-                    }
-                    if (idx !== this._lastActiveChapterIdx) {
-                        this._lastActiveChapterIdx = idx;
-                        this._updateChapterHUD(idx);
-                        // Highlight active segment on progress bar
-                        document.querySelectorAll('.cf-chapter-seg').forEach((seg, si) => {
-                            seg.classList.toggle('cf-seg-active', si === idx);
-                        });
-                        document.querySelectorAll('.cf-chapter-label').forEach((lbl, li) => {
-                            lbl.classList.toggle('cf-label-active', li === idx);
-                        });
-                    }
-                    this._chapterTrackingRAF = requestAnimationFrame(track);
-                };
-                this._chapterTrackingRAF = requestAnimationFrame(track);
-            },
-
-            _stopChapterTracking() {
-                if (this._chapterTrackingRAF) {
-                    cancelAnimationFrame(this._chapterTrackingRAF);
-                    this._chapterTrackingRAF = null;
-                }
-                this._lastActiveChapterIdx = -1;
-            },
-
-            _updateChapterHUD(chapterIdx) {
-                if (!appState.settings.cfShowChapterHUD) {
-                    this._chapterHUDEl?.remove();
-                    this._chapterHUDEl = null;
-                    return;
-                }
-                const player = document.getElementById('movie_player');
-                if (!player) return;
-
-                if (!this._chapterHUDEl) {
-                    this._chapterHUDEl = document.createElement('div');
-                    this._chapterHUDEl.className = 'cf-chapter-hud';
-                    player.appendChild(this._chapterHUDEl);
-                }
-
-                // Apply position
-                const pos = appState.settings.cfHudPosition || 'top-left';
-                this._chapterHUDEl.setAttribute('data-cf-pos', pos);
-
-                if (chapterIdx < 0 || !this._chapterData?.chapters?.[chapterIdx]) {
-                    this._chapterHUDEl.style.opacity = '0';
-                    return;
-                }
-
-                const chapters = this._chapterData.chapters;
-                const ch = chapters[chapterIdx];
-                const color = this._CF_COLORS[chapterIdx % this._CF_COLORS.length];
-                const hasPrev = chapterIdx > 0;
-                const hasNext = chapterIdx < chapters.length - 1;
-                const counter = `${chapterIdx + 1}/${chapters.length}`;
-
-                let html = `<button class="cf-hud-nav ${hasPrev ? '' : 'cf-hud-disabled'}" data-cf-nav="prev" title="Previous chapter"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>`;
-                html += `<span class="cf-hud-dot" style="background:${color}"></span>`;
-                html += `<span class="cf-hud-title">${this._esc(ch.title)}</span>`;
-                html += `<span class="cf-hud-counter">${counter}</span>`;
-                html += `<button class="cf-hud-nav ${hasNext ? '' : 'cf-hud-disabled'}" data-cf-nav="next" title="Next chapter"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>`;
-
-                TrustedHTML.setHTML(this._chapterHUDEl, html);
-                this._chapterHUDEl.style.opacity = '1';
-                this._chapterHUDEl.style.setProperty('--cf-hud-accent', color);
-
-                // Wire nav buttons
-                this._chapterHUDEl.querySelectorAll('.cf-hud-nav').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const dir = btn.dataset.cfNav;
-                        const video = document.querySelector('video.html5-main-video');
-                        if (!video) return;
-                        const targetIdx = dir === 'prev' ? chapterIdx - 1 : chapterIdx + 1;
-                        if (targetIdx >= 0 && targetIdx < chapters.length) {
-                            video.currentTime = chapters[targetIdx].start + 0.5;
-                        }
-                    });
-                });
-            },
-
-            // ═══ UI: Panel ═══
-            _createPanel() {
-                if (this._panelEl) return this._panelEl;
-                this._panelEl = document.createElement('div'); this._panelEl.id = 'cf-panel'; this._panelEl.className = 'cf-panel';
-                // Prevent ALL panel clicks from reaching the outside-click handler
-                this._panelEl.addEventListener('click', (e) => e.stopPropagation());
-                document.body.appendChild(this._panelEl); this._renderPanel(); return this._panelEl;
-            },
-            _togglePanel() { const p = this._createPanel(); if (p.classList.contains('cf-visible')) { p.classList.remove('cf-visible'); } else { p.classList.add('cf-visible'); this._renderPanel(); } },
-            _renderPanel() {
-                if (!this._panelEl) return;
-                this._lastRenderTime = Date.now();
-                const hasData = !!this._chapterData?.chapters?.length;
-                const s = appState.settings;
-                let bodyHTML = '';
-
-                if (this._isGenerating) {
-                    bodyHTML = `<div class="cf-empty" style="padding:20px"><div style="color:#a78bfa;font-weight:600;margin-bottom:8px;animation:cfPulse 1.5s infinite">Generating chapters...</div><div class="cf-status-bar" style="display:block;margin-top:10px"><div class="cf-status-fill" id="cf-status-fill"></div><span class="cf-status-text" id="cf-status-text"></span></div></div>`;
-                } else if (hasData) {
-                    bodyHTML = `<div class="cf-section-label">Chapters (${this._chapterData.chapters.length})</div><ul class="cf-chapter-list">`;
-                    this._chapterData.chapters.forEach((c, i) => {
-                        const color = this._CF_COLORS[i % this._CF_COLORS.length];
-                        bodyHTML += `<li class="cf-chapter-item" data-cf-seek="${c.start}"><span class="cf-chapter-dot" style="background:${color}"></span><span class="cf-chapter-time">${this._formatTime(c.start)}</span><span class="cf-chapter-title">${this._esc(c.title)}</span></li>`;
-                    });
-                    bodyHTML += `</ul>`;
-                    if (this._chapterData.pois?.length) {
-                        const poiColor = s.cfPoiColor || '#ff6b6b';
-                        bodyHTML += `<div class="cf-section-label">Points of Interest</div><ul class="cf-chapter-list">`;
-                        this._chapterData.pois.forEach(p => {
-                            bodyHTML += `<li class="cf-chapter-item" data-cf-seek="${p.time}"><span class="cf-chapter-dot" style="background:${poiColor}"></span><span class="cf-chapter-time">${this._formatTime(p.time)}</span><span class="cf-chapter-title">${this._esc(p.label)}<span class="cf-poi-badge">POI</span></span></li>`;
-                        });
-                        bodyHTML += `</ul>`;
-                    }
-                    if (this._autoSkipActive && this._autoSkipZones?.length) {
-                        bodyHTML += `<div style="margin-top:10px;padding:6px 10px;border-radius:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);font-size:10px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#7c3aed;animation:cfPulse 1.5s infinite"></span>AutoSkip active — ${this._autoSkipZones.length} skip zones</div>`;
-                    }
-                } else {
-                    bodyHTML = `<div class="cf-empty"><svg viewBox="0 0 24 24" style="width:36px;height:36px;fill:rgba(255,255,255,0.08);margin-bottom:10px"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><div style="color:rgba(255,255,255,0.3)">No chapters yet</div><div style="margin-top:4px;font-size:10px;color:rgba(255,255,255,0.15)">Navigate to a video — chapters generate automatically</div></div>`;
-                }
-
-                TrustedHTML.setHTML(this._panelEl, `
-                    <div class="cf-panel-header"><div><span class="cf-panel-title">ChapterForge</span><span class="cf-panel-version">v25.10</span></div><button class="cf-panel-close" id="cf-close">&times;</button></div>
-                    <div class="cf-panel-body">${bodyHTML}</div>
-                `);
-
-                // ── Bindings ──
-                const self = this;
-                this._panelEl.querySelector('#cf-close')?.addEventListener('click', () => self._togglePanel());
-                this._panelEl.querySelectorAll('[data-cf-seek]').forEach(el => {
-                    el.addEventListener('click', () => self._seekTo(parseFloat(el.dataset.cfSeek)));
-                });
-            },
-
-            _updateStatus(text, state, pct) {
-                // Update player button mini-progress
-                let indicator = document.getElementById('cf-mini-progress');
-                const btn = document.getElementById('cf-player-btn');
-                if (!indicator && btn) {
-                    indicator = document.createElement('div');
-                    indicator.id = 'cf-mini-progress';
-                    indicator.style.cssText = 'position:absolute;bottom:-4px;left:0;width:100%;height:3px;border-radius:2px;overflow:hidden;pointer-events:none;';
-                    btn.style.position = 'relative';
-                    btn.appendChild(indicator);
-                }
-                if (indicator) {
-                    if (state === 'loading') {
-                        indicator.style.display = 'block';
-                        const fill = typeof pct === 'number' ? pct : 30;
-                        TrustedHTML.setHTML(indicator, `<div style="width:${fill}%;height:100%;background:#a78bfa;border-radius:2px;transition:width 0.4s"></div>`);
-                        btn?.classList.add('cf-btn-active');
-                    } else {
-                        indicator.style.display = 'none';
-                        btn?.classList.remove('cf-btn-active');
-                    }
-                }
-                // Update panel status bar
-                const statusBar = document.getElementById('cf-status-bar');
-                const statusFill = document.getElementById('cf-status-fill');
-                const statusText = document.getElementById('cf-status-text');
-                if (statusBar) {
-                    statusBar.style.display = state === 'loading' ? 'block' : 'none';
-                }
-                if (statusFill && typeof pct === 'number') {
-                    statusFill.style.width = `${pct}%`;
-                }
-                if (statusText) statusText.textContent = text || '';
-            },
-
-            async _handleGenerate() {
-                const videoId = this._getVideoId();
-                if (!videoId) return;
-                this._renderPanel(); // show loading state
-                const data = await this._generateChapters(videoId, (t, s, p) => this._updateStatus(t, s, p));
-                if (data) {
-                    this._chapterData = data;
-                    this._currentDuration = this._getVideoDuration();
-                    this._runAnalysis(this._lastTranscriptSegments);
-                    if (appState.settings.cfAutoSkipMode && appState.settings.cfAutoSkipMode !== 'off') {
-                        this._startAutoSkip();
-                    }
-                    this._renderPanel();
-                    this._renderProgressBarOverlay();
-                }
-                this._updateStatus(data ? 'Done' : 'Failed', data ? 'ready' : 'error', data ? 100 : 0);
-            },
-
-            // ═══ UI: Player Button ═══
-            _injectPlayerButton() {
-                if (document.getElementById('cf-player-btn')) return;
-                const controls = document.querySelector('.ytp-right-controls');
-                if (!controls) return;
-                const btn = document.createElement('button');
-                btn.id = 'cf-player-btn'; btn.className = 'ytp-button cf-btn'; btn.title = 'Chapters';
-                TrustedHTML.setHTML(btn, `<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`);
-                btn.addEventListener('click', () => this._togglePanel());
-                controls.insertBefore(btn, controls.firstChild);
-            },
-
-            // ═══ LIFECYCLE ═══
-            _onVideoChange() {
-                const videoId = this._getVideoId();
-                if (!videoId || videoId === this._currentVideoId) return;
-                if (!window.location.pathname.startsWith('/watch')) return;
-                this._currentVideoId = videoId;
-                this._chapterData = null;
-                this._lastTranscriptSegments = null;
-                this._lastActiveChapterIdx = -1;
-                this._fillerData = null;
-                this._pauseData = null;
-                this._paceData = null;
-                this._keywordsPerChapter = null;
-                this._translatedSummary = null;
-                this._translatedChapters = null;
-                this._lastSummary = null;
-                this._chatHistory = [];
-                this._flashcards = null;
-                this._flashcardIdx = 0;
-                this._flashcardFlipped = false;
-                this._mindMapData = null;
-                this._mindMapData = null;
-                this._stopAutoSkip();
-                const cached = this._getCachedData(videoId);
-                if (cached) this._chapterData = cached;
-
-                // Clean HUD on video change
-                this._stopChapterTracking();
-                this._chapterHUDEl?.remove();
-                this._chapterHUDEl = null;
-
-                this._waitForPlayer().then(() => {
-                    this._currentDuration = this._getVideoDuration();
-                    const s = appState.settings;
-
-                    this._injectPlayerButton();
-                    this._renderProgressBarOverlay();
-                    if (this._panelEl?.classList.contains('cf-visible')) this._renderPanel();
-
-                    const btn = document.getElementById('cf-player-btn');
-                    if (btn) { const badge = btn.querySelector('.cf-badge'); if (this._chapterData && !badge) { const b = document.createElement('span'); b.className = 'cf-badge'; btn.appendChild(b); } else if (!this._chapterData && badge) badge.remove(); }
-
-                    if (s.cfMode === 'auto' && !this._chapterData) {
-                        const maxDur = (s.cfMaxAutoDuration || 60) * 60;
-                        if (this._currentDuration <= maxDur || maxDur >= 599940) {
-                            this._handleGenerate();
-                        } else {
-                            this._log('Auto-skip: video duration', Math.round(this._currentDuration/60), 'min exceeds limit', s.cfMaxAutoDuration, 'min');
-                        }
-                    }
-
-                    if (s.cfMode === 'auto' && this._isLiveVideo() && !this._liveIntervalId) {
-                        this._startLiveTracking();
-                    }
-                });
-            },
-
-            _waitForPlayer(timeout = 10000) {
-                return new Promise((resolve) => {
-                    const check = () => { const player = document.getElementById('movie_player'); const video = document.querySelector('video.html5-main-video'); if (player && video && video.duration) return resolve(); if (timeout <= 0) return resolve(); timeout -= 200; setTimeout(check, 200); };
-                    check();
-                });
-            },
-
-            // ═══ INIT / DESTROY ═══
-
-            init() {
-                const css = `
-                    .cf-btn { position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.2s;color:#fff; }
-                    .cf-btn:hover { background:rgba(255,255,255,0.1); }
-                    .cf-btn .cf-badge { position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#7c3aed; }
-                    .cf-panel { position:fixed;top:80px;right:20px;width:380px;max-height:calc(100vh - 120px);background:#0f0f14;border:1px solid rgba(124,58,237,0.3);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 40px rgba(124,58,237,0.08);z-index:99999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e8;overflow:hidden;display:none;animation:cfSlideIn 0.25s cubic-bezier(0.16,1,0.3,1); }
-                    @keyframes cfSlideIn { from{opacity:0;transform:translateY(-10px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-                    .cf-panel.cf-visible { display:flex;flex-direction:column; }
-                    .cf-panel-header { display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06);background:linear-gradient(180deg,rgba(124,58,237,0.08) 0%,transparent 100%); }
-                    .cf-panel-title { font-size:14px;font-weight:700;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.5px; }
-                    .cf-panel-version { font-size:10px;color:rgba(255,255,255,0.25);margin-left:8px; }
-                    .cf-panel-close { width:28px;height:28px;border:none;background:transparent;color:rgba(255,255,255,0.4);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.15s; }
-                    .cf-panel-close:hover { background:rgba(255,255,255,0.08);color:#fff; }
-                    .cf-panel-body { flex:1;overflow-y:auto;padding:12px 16px 16px;scrollbar-width:thin;scrollbar-color:rgba(124,58,237,0.3) transparent; }
-                    .cf-panel-body::-webkit-scrollbar { width:5px; } .cf-panel-body::-webkit-scrollbar-thumb { background:rgba(124,58,237,0.3);border-radius:10px; }
-                    @keyframes cfPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-                    .cf-generate-btn { width:100%;padding:10px;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;transition:all 0.2s;margin-bottom:12px; }
-                    .cf-generate-btn:hover:not(:disabled) { background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 4px 16px rgba(124,58,237,0.3); } .cf-generate-btn:disabled { opacity:0.4;cursor:not-allowed; }
-                    .cf-generate-btn.cf-loading { position:relative;overflow:hidden; } .cf-generate-btn.cf-loading::after { content:'';position:absolute;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#e0e0e8,transparent);animation:cfSlide 1.2s infinite; }
-                    .cf-action-btn { flex:1;padding:7px 8px;border:1px solid rgba(124,58,237,0.25);border-radius:8px;cursor:pointer;font-size:11px;font-weight:500;background:rgba(124,58,237,0.08);color:rgba(255,255,255,0.6);transition:all 0.15s;font-family:inherit;position:relative;overflow:hidden; } .cf-action-btn:hover { background:rgba(124,58,237,0.15);color:#e0e0e8;border-color:rgba(124,58,237,0.4); } .cf-action-btn:disabled { opacity:0.5;cursor:not-allowed; }
-                    .cf-action-btn.cf-loading::after { content:'';position:absolute;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,#a78bfa,transparent);animation:cfSlide 1.2s infinite; }
-                    @keyframes cfSlide { 0% { width:0;left:0; } 50% { width:60%;left:20%; } 100% { width:0;left:100%; } }
-                    .cf-live-btn { border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:rgba(239,68,68,0.7); } .cf-live-btn:hover { background:rgba(239,68,68,0.15);color:#ef4444; }
-                    .cf-chapter-list { list-style:none;padding:0;margin:0; }
-                    .cf-chapter-item { display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;margin-bottom:2px; } .cf-chapter-item:hover { background:rgba(255,255,255,0.05); }
-                    .cf-chapter-time { font-size:11px;font-weight:600;font-family:'SF Mono','Cascadia Code',monospace;color:#a78bfa;min-width:48px;padding-top:1px;flex-shrink:0; }
-                    .cf-chapter-title { font-size:12.5px;color:rgba(255,255,255,0.8);line-height:1.4; }
-                    .cf-chapter-dot { width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0; }
-                    .cf-poi-badge { display:inline-block;font-size:9px;font-weight:700;color:#ff6b6b;background:rgba(255,107,107,0.1);padding:1px 5px;border-radius:4px;margin-left:6px;vertical-align:middle;letter-spacing:0.5px; }
-                    .cf-section-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,0.2);margin:14px 0 8px;padding-left:2px; } .cf-section-label:first-child { margin-top:0; }
-                    .cf-settings-row { display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:12px; }
-                    .cf-settings-label { color:rgba(255,255,255,0.6); }
-                    .cf-select { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#e0e0e8;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;cursor:pointer;max-width:180px; } .cf-select:focus { border-color:rgba(124,58,237,0.5); }
-                    .cf-input { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#e0e0e8;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;max-width:180px;width:180px;font-family:inherit; } .cf-input:focus { border-color:rgba(124,58,237,0.5); } .cf-input::placeholder { color:rgba(255,255,255,0.2); }
-                    .cf-toggle-track { width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0; } .cf-toggle-track.active { background:#7c3aed; }
-                    .cf-toggle-knob { width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform 0.2s; } .cf-toggle-track.active .cf-toggle-knob { transform:translateX(16px); }
-                    .cf-tab-bar { display:flex;gap:0;padding:0 16px;border-bottom:1px solid rgba(255,255,255,0.06); }
-                    .cf-tab { padding:8px 10px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.5px;flex:1;text-align:center; } .cf-tab:hover { color:rgba(255,255,255,0.6); } .cf-tab.active { color:#a78bfa;border-bottom-color:#7c3aed; }
-                    .cf-empty { text-align:center;padding:30px 20px;color:rgba(255,255,255,0.25);font-size:12px; }
-                    .cf-clear-btn { background:transparent;border:1px solid rgba(239,68,68,0.3);color:rgba(239,68,68,0.7);border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;transition:all 0.15s;margin-top:8px; } .cf-clear-btn:hover { background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.5); }
-
-                    /* ═══ PROGRESS BAR: Chapter segments (FIXED z-index layering) ═══ */
-                    .cf-bar-overlay { position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:25; }
-                    .cf-chapter-markers { position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:24; }
-                    .cf-chapter-seg { position:absolute;top:0;height:100%;pointer-events:auto;cursor:pointer;transition:opacity 0.15s; }
-                    .cf-chapter-seg::before { content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:var(--cf-seg-color);opacity:var(--cf-seg-opacity,0.35);transition:opacity 0.15s;border-radius:1px; }
-                    .cf-chapter-seg:hover::before { opacity:0.55; }
-                    .cf-chapter-seg.cf-seg-active::before { opacity:0.5; }
-                    .cf-chapter-gap { position:absolute;top:-1px;bottom:-1px;width:3px;transform:translateX(-50%);background:#0f0f14;z-index:1;pointer-events:none;border-radius:1px; }
-
-                    /* Chapter name labels — absolutely positioned above progress bar, zero layout impact */
-                    .cf-chapter-label-row { position:absolute;bottom:100%;left:0;width:100%;height:0;pointer-events:none;z-index:25;opacity:0;transition:opacity 0.2s; }
-                    .ytp-progress-bar:hover .cf-chapter-label-row,
-                    .ytp-progress-bar-container:hover .cf-chapter-label-row { opacity:1; }
-                    .cf-chapter-label { position:absolute;bottom:4px;height:14px;display:flex;align-items:center;padding:0 3px;font-size:9px;font-weight:600;color:var(--cf-label-fg, #e0e0e8);background:color-mix(in srgb, var(--cf-label-color, #7c3aed) 25%, #0f0f14 75%);border-radius:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;pointer-events:auto;transition:all 0.15s;letter-spacing:0.2px;border:1px solid color-mix(in srgb, var(--cf-label-color, #7c3aed) 20%, transparent);box-sizing:border-box;line-height:1; }
-                    .cf-chapter-label:hover { background:color-mix(in srgb, var(--cf-label-color, #7c3aed) 40%, #0f0f14 60%);z-index:2; }
-                    .cf-chapter-label.cf-label-active { background:color-mix(in srgb, var(--cf-label-color, #7c3aed) 45%, #0f0f14 55%);border-color:color-mix(in srgb, var(--cf-label-color, #7c3aed) 50%, transparent); }
-
-                    /* POI markers */
-                    .cf-poi-hitbox { position:absolute;top:50%;width:34px;height:34px;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:26; }
-                    .cf-poi-diamond { position:absolute;top:50%;left:50%;width:10px;height:10px;transform:translate(-50%,-50%) rotate(45deg);border-radius:2px;transition:all 0.2s;box-shadow:0 0 6px rgba(255,107,107,0.4);pointer-events:none; }
-                    .cf-poi-hover { transform:translate(-50%,-50%) rotate(45deg) scale(1.6);box-shadow:0 0 12px rgba(255,107,107,0.7),0 0 24px rgba(255,107,107,0.3); }
-
-                    /* Tooltips — positioned well above the bar to avoid YouTube overlap */
-                    .cf-bar-tooltip { position:absolute;bottom:28px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:8px;font-size:11px;white-space:nowrap;pointer-events:none;z-index:50;opacity:0;transition:opacity 0.15s; }
-                    .cf-chapter-tip { background:rgba(15,15,20,0.95);color:#e0e0e8;border:1px solid rgba(124,58,237,0.25);box-shadow:0 4px 16px rgba(0,0,0,0.5);display:flex;gap:8px;align-items:center;backdrop-filter:blur(8px); }
-                    .cf-tip-time { font-weight:700;color:#a78bfa;font-size:10px;font-variant-numeric:tabular-nums; }
-                    .cf-tip-title { color:#e0e0e8;font-weight:500; }
-
-                    .cf-poi-tip { background:linear-gradient(135deg,rgba(30,10,10,0.95),rgba(15,15,20,0.95));color:#fca5a5;border:1px solid rgba(255,107,107,0.35);box-shadow:0 4px 20px rgba(255,107,107,0.15),0 0 40px rgba(255,107,107,0.05);display:flex;gap:6px;align-items:center;animation:cfGlow 2s ease-in-out infinite;backdrop-filter:blur(8px); }
-                    .cf-tip-poi-icon { font-size:12px;color:#ff6b6b;filter:drop-shadow(0 0 3px rgba(255,107,107,0.6)); }
-                    .cf-tip-label { color:#fca5a5;font-weight:500; }
-                    @keyframes cfGlow { 0%,100%{box-shadow:0 4px 20px rgba(255,107,107,0.15)} 50%{box-shadow:0 4px 24px rgba(255,107,107,0.3),0 0 8px rgba(255,107,107,0.1)} }
-                    .cf-poi-hitbox .cf-bar-tooltip { bottom:30px; }
-
-                    /* Transcript hover preview */
-                    .cf-transcript-tip { position:absolute;bottom:38px;background:rgba(10,10,15,0.95);color:rgba(255,255,255,0.8);padding:8px 12px;border-radius:8px;font-size:11px;width:300px;white-space:normal;word-wrap:break-word;pointer-events:none;z-index:30;opacity:0;transition:opacity 0.12s;border:1px solid rgba(124,58,237,0.15);box-shadow:0 4px 16px rgba(0,0,0,0.5);line-height:1.5;backdrop-filter:blur(8px); }
-                    .cf-tx-chapter { font-size:10px;font-weight:700;color:#a78bfa;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(124,58,237,0.15);text-transform:uppercase;letter-spacing:0.5px; }
-                    .cf-tx-line { font-size:11px;color:rgba(255,255,255,0.85);line-height:1.5;margin:2px 0; }
-                    .cf-tx-dim { color:rgba(255,255,255,0.3);font-size:10px; }
-                    .cf-tx-ts { font-family:'SF Mono','Cascadia Code',monospace;font-size:9px;color:#a78bfa;opacity:0.6;margin-right:4px; }
-
-                    /* ═══ CHAPTER HUD — Floating overlay on video player ═══ */
-                    .cf-chapter-hud { position:absolute;display:flex;align-items:center;gap:6px;padding:5px 8px 5px 6px;background:rgba(10,10,15,0.82);border-radius:10px;border:1px solid color-mix(in srgb, var(--cf-hud-accent, #7c3aed) 25%, transparent);backdrop-filter:blur(16px);z-index:60;pointer-events:auto;opacity:0;transition:opacity 0.3s, transform 0.2s;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.5);max-width:70%; }
-                    .cf-chapter-hud[data-cf-pos="top-left"] { top:12px;left:12px; }
-                    .cf-chapter-hud[data-cf-pos="top-right"] { top:12px;right:12px; }
-                    .cf-chapter-hud[data-cf-pos="bottom-left"] { bottom:60px;left:12px; }
-                    .cf-chapter-hud[data-cf-pos="bottom-right"] { bottom:60px;right:12px; }
-                    .cf-chapter-hud[style*="opacity: 1"] { opacity:1; }
-                    .cf-hud-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px color-mix(in srgb, var(--cf-hud-accent, #7c3aed) 50%, transparent); }
-                    .cf-hud-title { font-size:12px;font-weight:600;color:#e0e0e8;letter-spacing:0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-                    .cf-hud-counter { font-size:9px;color:rgba(255,255,255,0.25);font-weight:600;flex-shrink:0;letter-spacing:0.5px; }
-                    .cf-hud-nav { width:24px;height:24px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0;flex-shrink:0; }
-                    .cf-hud-nav:hover { background:rgba(255,255,255,0.14);color:#fff; }
-                    .cf-hud-nav.cf-hud-disabled { opacity:0.2;pointer-events:none; }
-                    /* Hide HUD when controls are hidden (fullscreen idle) */
-                    .ytp-autohide .cf-chapter-hud { opacity:0 !important; }
-
-                    .cf-btn-active { animation:cfBtnPulse 1.5s infinite; }
-                    @keyframes cfBtnPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
-                    .cf-search-row { display:flex;align-items:center;gap:6px;margin-bottom:8px; }
-                    .cf-search-input { flex:1; }
-                    .cf-search-count { font-size:10px;color:#a78bfa;white-space:nowrap;min-width:40px;text-align:right; }
-                    .cf-search-hit { cursor:pointer; } .cf-search-hit:hover { background:rgba(124,58,237,0.12); }
-                    .cf-search-text { font-size:11px;color:rgba(255,255,255,0.6); }
-                    .cf-global-result { margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.04); }
-                    .cf-global-title { font-size:11px;margin-bottom:4px;display:flex;align-items:center;gap:6px; }
-                    .cf-video-link { color:#a78bfa;text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;display:inline-block; } .cf-video-link:hover { text-decoration:underline; }
-                    .cf-global-link { display:flex;align-items:flex-start;gap:8px;text-decoration:none;color:inherit;width:100%; } .cf-global-link:hover { color:#e0e0e8; }
-                    .cf-match-count { font-size:10px;color:rgba(255,255,255,0.25);flex-shrink:0; }
-                    .cf-summary-box { font-size:12px;line-height:1.5;color:rgba(255,255,255,0.65);padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);margin-bottom:6px; }
-                    .cf-clip-btn { cursor:pointer;font-size:12px;opacity:0;transition:opacity 0.15s;margin-left:auto;flex-shrink:0;padding:0 2px; } .cf-chapter-item:hover .cf-clip-btn { opacity:0.5; } .cf-clip-btn:hover { opacity:1 !important; }
-                    .cf-note-row { display:flex;gap:6px;margin-bottom:10px; }
-                    .cf-note-input { flex:1; }
-                    .cf-note-add-btn { width:32px;height:32px;border:none;background:rgba(124,58,237,0.3);color:#a78bfa;border-radius:8px;cursor:pointer;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background 0.2s; } .cf-note-add-btn:hover { background:rgba(124,58,237,0.5); }
-                    .cf-note-item { position:relative; }
-                    .cf-note-del { position:absolute;right:4px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(255,255,255,0.15);font-size:14px;padding:2px 4px;border-radius:4px;opacity:0;transition:opacity 0.15s; } .cf-note-item:hover .cf-note-del { opacity:1; } .cf-note-del:hover { color:#ef4444;background:rgba(239,68,68,0.1); }
-                    #cf-summary-bubble { position:absolute;top:12px;right:12px;bottom:60px;width:380px;max-width:40%;z-index:60;background:linear-gradient(165deg, rgba(8,8,14,0.94) 0%, rgba(12,12,22,0.96) 50%, rgba(8,10,18,0.94) 100%);backdrop-filter:blur(24px) saturate(1.6);border:1px solid rgba(59,130,246,0.15);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.7), 0 0 40px rgba(59,130,246,0.06), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 30px rgba(59,130,246,0.02);opacity:0;transform:translateX(20px) scale(0.96);transition:opacity 0.3s cubic-bezier(0.16,1,0.3,1), transform 0.3s cubic-bezier(0.16,1,0.3,1);display:flex;flex-direction:column;overflow:hidden; }
-                    #cf-summary-bubble.cf-bubble-visible { opacity:1;transform:translateX(0) scale(1); }
-                    #cf-summary-bubble.cf-bubble-hiding { opacity:0;transform:translateX(20px) scale(0.96); }
-                    #cf-summary-bubble::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(59,130,246,0.3), rgba(139,92,246,0.2), transparent);z-index:1; }
-                    .cf-bubble-header { display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;background:rgba(255,255,255,0.01); }
-                    .cf-bubble-title-row { display:flex;align-items:center;gap:8px; }
-                    .cf-bubble-icon { width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.15));border-radius:8px;color:#60a5fa;flex-shrink:0; }
-                    .cf-bubble-title { font-size:13px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:0.5px; }
-                    .cf-bubble-actions { display:flex;align-items:center;gap:2px; }
-                    .cf-bubble-provider { font-size:8px;color:rgba(59,130,246,0.55);background:rgba(59,130,246,0.08);padding:3px 8px;border-radius:6px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-right:4px; }
-                    .cf-bubble-btn { width:28px;height:28px;border:none;background:transparent;color:rgba(255,255,255,0.3);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0; }
-                    .cf-bubble-btn:hover { background:rgba(255,255,255,0.08);color:#fff; }
-                    .cf-bubble-close-btn:hover { background:rgba(239,68,68,0.15);color:#f87171; }
-                    .cf-bubble-body { padding:14px 16px;font-size:13px;line-height:1.75;color:rgba(255,255,255,0.78);flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(59,130,246,0.15) transparent; }
-                    .cf-bubble-body strong { color:#93c5fd;font-weight:600; }
-                    .cf-bubble-body em { color:rgba(255,255,255,0.55);font-style:italic; }
-                    .cf-bubble-body::-webkit-scrollbar { width:4px; } .cf-bubble-body::-webkit-scrollbar-track { background:transparent; } .cf-bubble-body::-webkit-scrollbar-thumb { background:rgba(59,130,246,0.15);border-radius:4px; }
-                    .cf-bubble-ts { color:#60a5fa;cursor:pointer;font-family:"Cascadia Code","Consolas",monospace;font-size:11.5px;font-weight:600;padding:2px 6px;border-radius:5px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.1);transition:all 0.15s;text-decoration:none;display:inline-block;line-height:1; }
-                    .cf-bubble-ts:hover { background:rgba(59,130,246,0.22);border-color:rgba(59,130,246,0.25);color:#93c5fd;box-shadow:0 0 8px rgba(59,130,246,0.15); }
-                    .cf-bubble-bullet { display:inline-block;width:4px;height:4px;background:linear-gradient(135deg, #3b82f6, #8b5cf6);border-radius:50%;margin-right:8px;vertical-align:middle;flex-shrink:0; }
-                    .cf-bubble-label { display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(59,130,246,0.6);background:rgba(59,130,246,0.08);padding:2px 7px;border-radius:4px;margin-right:4px;vertical-align:middle; }
-
-                    /* OpenCut-inspired: Filler markers */
-                    .cf-filler-markers { position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:52; }
-                    .cf-filler-marker { position:absolute;top:-2px;width:3px;height:calc(100% + 4px);background:#f97316;border-radius:1px;opacity:0.7;pointer-events:auto;cursor:pointer;transition:opacity .15s,transform .15s; }
-                    .cf-filler-marker:hover { opacity:1;transform:scaleX(2); }
-                    .cf-skip-markers { position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:23; }
-                    .cf-skip-zone { position:absolute;top:0;height:100%;background:repeating-linear-gradient(90deg,rgba(239,68,68,0.35) 0px,rgba(239,68,68,0.35) 2px,transparent 2px,transparent 4px);border-radius:1px;pointer-events:auto;cursor:pointer;transition:opacity .15s;min-width:2px; }
-                    .cf-skip-zone:hover { background:repeating-linear-gradient(90deg,rgba(239,68,68,0.6) 0px,rgba(239,68,68,0.6) 2px,transparent 2px,transparent 4px); }
-                    .cf-skip-tip { background:rgba(15,15,20,0.95);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);box-shadow:0 4px 16px rgba(0,0,0,0.5);font-size:10px;white-space:nowrap; }
-                    .cf-filler-tip { white-space:nowrap;font-size:10px;background:rgba(249,115,22,0.95);color:#fff;border:none; }
-
-                    /* OpenCut-inspired: Analysis boxes */
-                    .cf-analysis-box { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;margin-bottom:8px; }
-                    .cf-analysis-stat { display:inline-flex;flex-direction:column;align-items:center;padding:6px 12px;min-width:70px; }
-                    .cf-stat-value { font-size:20px;font-weight:700;color:#e2e8f0;line-height:1.2; }
-                    .cf-stat-label { font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px; }
-                    .cf-filler-breakdown { margin-top:8px; }
-                    .cf-filler-row { display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px; }
-                    .cf-filler-word { color:#f97316;font-weight:600;min-width:70px;font-family:monospace; }
-                    .cf-filler-bar-bg { flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden; }
-                    .cf-filler-bar-fill { height:100%;background:linear-gradient(90deg,#f97316,#fb923c);border-radius:3px;transition:width .3s; }
-                    .cf-filler-count { color:rgba(255,255,255,0.5);min-width:20px;text-align:right; }
-                    .cf-muted { font-size:11px;color:rgba(255,255,255,0.3);padding:4px 0; }
-
-                    /* OpenCut-inspired: Speech pace */
-                    .cf-pace-box { padding:8px 10px; }
-                    .cf-pace-grid { display:flex;gap:12px;justify-content:center; }
-                    .cf-pace-normal .cf-stat-value { color:#10b981; }
-                    .cf-pace-fast .cf-stat-value { color:#f97316; }
-                    .cf-pace-slow .cf-stat-value { color:#60a5fa; }
-                    .cf-pace-detail { font-size:10px;color:rgba(255,255,255,0.35);text-align:center;margin-top:6px; }
-
-                    /* OpenCut-inspired: Keywords */
-                    .cf-keywords-box { margin-bottom:8px; }
-                    .cf-kw-row { display:flex;align-items:baseline;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04); }
-                    .cf-kw-row:last-child { border-bottom:none; }
-                    .cf-kw-chapter { font-size:10px;color:rgba(255,255,255,0.5);min-width:80px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-                    .cf-kw-tags { display:flex;flex-wrap:wrap;gap:3px; }
-                    .cf-kw-tag { display:inline-block;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.15); }
-
-                    /* Status bar (in-panel progress) */
-                    .cf-status-bar { position:relative;height:22px;background:rgba(255,255,255,0.04);border-radius:6px;overflow:hidden;margin:-6px 0 10px; }
-                    .cf-status-fill { position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,rgba(124,58,237,0.3),rgba(124,58,237,0.5));border-radius:6px;transition:width 0.4s ease; }
-                    .cf-status-text { position:relative;z-index:1;display:block;font-size:10px;color:rgba(255,255,255,0.5);text-align:center;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px; }
-
-                    /* First-time onboarding */
-                    .cf-onboard { margin-top:16px;padding:12px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.12);border-radius:8px;text-align:left; }
-                    .cf-onboard-title { font-size:11px;font-weight:700;color:rgba(124,58,237,0.7);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px; }
-                    .cf-onboard-step { display:flex;align-items:flex-start;gap:8px;font-size:11px;color:rgba(255,255,255,0.35);line-height:1.5;margin-bottom:6px; }
-                    .cf-onboard-num { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(124,58,237,0.2);color:#a78bfa;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px; }
-
-                    /* ═══ AI Chat ═══ */
-                    .cf-chat-messages { max-height:220px;min-height:60px;overflow-y:auto;margin-bottom:8px;padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;border:1px solid rgba(255,255,255,0.04);scrollbar-width:thin;scrollbar-color:rgba(124,58,237,0.2) transparent;display:flex;flex-direction:column;gap:6px; }
-                    .cf-chat-messages::-webkit-scrollbar { width:4px; } .cf-chat-messages::-webkit-scrollbar-thumb { background:rgba(124,58,237,0.2);border-radius:4px; }
-                    .cf-chat-empty { font-size:11px;color:rgba(255,255,255,0.15);text-align:center;padding:16px 8px; }
-                    .cf-chat-msg { font-size:11.5px;line-height:1.5;padding:8px 10px;border-radius:8px;max-width:92%;word-wrap:break-word; }
-                    .cf-chat-user { background:rgba(124,58,237,0.15);color:rgba(255,255,255,0.8);align-self:flex-end;border:1px solid rgba(124,58,237,0.2); }
-                    .cf-chat-ai { background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);align-self:flex-start;border:1px solid rgba(255,255,255,0.06); }
-                    .cf-chat-ai strong { color:#a78bfa; }
-                    .cf-chat-thinking { opacity:0.5;animation:cfPulse 1.5s infinite; }
-                    .cf-chat-input-row { display:flex;gap:6px;align-items:center; }
-                    .cf-chat-input { flex:1;max-width:none;width:auto; }
-
-                    /* ═══ Flashcards ═══ */
-                    .cf-flashcard-container { display:flex;flex-direction:column;align-items:center;gap:8px; }
-                    .cf-flashcard { width:100%;min-height:120px;cursor:pointer;perspective:600px;position:relative; }
-                    .cf-flashcard-face { position:absolute;top:0;left:0;width:100%;min-height:120px;padding:16px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;backface-visibility:hidden;transition:transform 0.4s cubic-bezier(0.16,1,0.3,1),opacity 0.4s;box-sizing:border-box; }
-                    .cf-flashcard-front { background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(59,130,246,0.08));border:1px solid rgba(124,58,237,0.2);transform:rotateY(0deg);opacity:1; }
-                    .cf-flashcard-back { background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(59,130,246,0.06));border:1px solid rgba(16,185,129,0.2);transform:rotateY(180deg);opacity:0; }
-                    .cf-flipped .cf-flashcard-front { transform:rotateY(-180deg);opacity:0; }
-                    .cf-flipped .cf-flashcard-back { transform:rotateY(0deg);opacity:1; }
-                    .cf-flashcard-label { font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;opacity:0.4; }
-                    .cf-flashcard-front .cf-flashcard-label { color:#a78bfa; }
-                    .cf-flashcard-back .cf-flashcard-label { color:#10b981; }
-                    .cf-flashcard-text { font-size:12.5px;line-height:1.5;color:rgba(255,255,255,0.8); }
-                    .cf-flashcard-nav { display:flex;align-items:center;gap:12px;justify-content:center; }
-                    .cf-fc-counter { font-size:11px;color:rgba(255,255,255,0.3);font-weight:600;min-width:50px;text-align:center; }
-                    .cf-mindmap-outline { padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;border:1px solid rgba(255,255,255,0.04);max-height:280px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(124,58,237,0.2) transparent; }
-                    .cf-mindmap-outline::-webkit-scrollbar { width:4px; } .cf-mindmap-outline::-webkit-scrollbar-thumb { background:rgba(124,58,237,0.2);border-radius:4px; }
-                    .cf-mm-root { font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(124,58,237,0.15); }
-                    .cf-mm-section { font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.7);margin:8px 0 4px;padding-left:8px;border-left:2px solid rgba(124,58,237,0.3); }
-                    .cf-mm-point { font-size:11px;color:rgba(255,255,255,0.5);padding:2px 0 2px 20px;line-height:1.5; }
-                    .cf-mm-sub { font-size:10px;color:rgba(255,255,255,0.3);padding:1px 0 1px 34px;line-height:1.5;font-style:italic; }
-                    .cf-prompt-list { max-height:120px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(124,58,237,0.2) transparent; }
-                    .cf-prompt-list::-webkit-scrollbar { width:4px; } .cf-prompt-list::-webkit-scrollbar-thumb { background:rgba(124,58,237,0.2);border-radius:4px; }
-                    .cf-prompt-item { display:flex;align-items:center;justify-content:space-between;padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.03);transition:background 0.15s; }
-                    .cf-prompt-item:hover { background:rgba(124,58,237,0.06); }
-                    .cf-prompt-name { font-size:11px;color:rgba(255,255,255,0.5);cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-                    .cf-prompt-name:hover { color:#a78bfa; }
-                    .cf-prompt-del { font-size:14px;color:rgba(255,255,255,0.15);cursor:pointer;padding:0 4px;flex:0 0 auto; }
-                    .cf-prompt-del:hover { color:rgba(239,68,68,0.6); }
-                `;
-                this._styleElement = document.createElement('style'); this._styleElement.id = 'chapterforge-styles'; this._styleElement.textContent = css; document.head.appendChild(this._styleElement);
-
-                this._navHandler = () => {
-                    this._onVideoChange();
-                    if (window.location.pathname.startsWith('/feed/subscriptions')) {
-                        setTimeout(() => this._injectSubscriptionsButton(), 1000);
-                    }
-                    if (!window.location.pathname.startsWith('/watch') && this._liveIntervalId) {
-                        this._stopLiveTracking();
-                    }
-                    // Clean HUD when leaving watch page
-                    if (!window.location.pathname.startsWith('/watch')) {
-                        this._stopChapterTracking();
-                        this._chapterHUDEl?.remove();
-                        this._chapterHUDEl = null;
-                    }
-                };
-                document.addEventListener('yt-navigate-finish', this._navHandler);
-
-                this._clickHandler = (e) => {
-                    if (!this._panelEl?.classList.contains('cf-visible')) return;
-                    // Debounce: ignore clicks within 300ms of a panel render (DOM rebuild race condition)
-                    if (Date.now() - (this._lastRenderTime || 0) < 300) return;
-                    // Check if click is inside panel (handles DOM rebuild edge cases)
-                    if (this._panelEl.contains(e.target)) return;
-                    if (e.target.closest('#cf-panel')) return;
-                    const rect = this._panelEl.getBoundingClientRect();
-                    if (rect.width > 0 && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) return;
-                    if (e.target.closest('#cf-player-btn')) return;
-                    this._panelEl.classList.remove('cf-visible');
-                };
-                document.addEventListener('click', this._clickHandler);
-
-                this._resizeObserver = new ResizeObserver(() => { if (this._chapterData) this._renderProgressBarOverlay(); });
-                this._barObsHandler = () => { setTimeout(() => { const bar = document.querySelector('.ytp-progress-bar'); if (bar) this._resizeObserver.observe(bar); }, 1000); };
-                document.addEventListener('yt-navigate-finish', this._barObsHandler);
-                setTimeout(this._barObsHandler, 2000);
-
-                if (window.location.pathname.startsWith('/watch')) setTimeout(() => this._onVideoChange(), 500);
-                if (window.location.pathname.startsWith('/feed/subscriptions')) setTimeout(() => this._injectSubscriptionsButton(), 1500);
-                if (appState.settings?.cfDebugLog) console.log('[ChapterForge] v25.10 initialized — Provider:', appState.settings.cfLlmProvider || 'builtin');
-            },
-
-            destroy() {
-                this._stopLiveTracking();
-                this._stopChapterTracking();
-                this._removeBatchUI();
-                this._chapterHUDEl?.remove(); this._chapterHUDEl = null;
-                if (this._navHandler) document.removeEventListener('yt-navigate-finish', this._navHandler);
-                if (this._clickHandler) document.removeEventListener('click', this._clickHandler);
-                if (this._barObsHandler) document.removeEventListener('yt-navigate-finish', this._barObsHandler);
-                if (this._resizeObserver) this._resizeObserver.disconnect();
-                this._styleElement?.remove();
-                this._panelEl?.remove(); this._panelEl = null;
-                document.getElementById('cf-player-btn')?.remove();
-                document.getElementById('cf-batch-btn')?.remove();
-                document.querySelectorAll('.cf-bar-overlay,.cf-chapter-markers,.cf-chapter-label-row,.cf-skip-markers').forEach(el => el.remove());
-            }
-
-        },
-        // ── ChapterForge sub-features (shown in YTKit settings panel) ──
-        {
-            id: 'cfMode', name: 'Processing Mode', description: 'Auto: generate chapters for every video. Manual: player button to trigger.',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'manual': 'Manual (Player Button)', 'auto': 'Auto (All Videos)' }, init() {}, destroy() {}
-        },
-        // ══════════════════════════════════════════════════════════════
-        //  DeArrow — Crowdsourced Better Titles & Thumbnails
-        // ══════════════════════════════════════════════════════════════
-        {
-            id: 'deArrow',
-            name: 'DeArrow',
-            description: 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database',
-            group: 'DeArrow',
-            icon: 'player',
-            isParent: true,
-
-            _DA_API: 'https://sponsor.ajay.app/api/branding',
-            _DA_THUMB_API: 'https://dearrow-thumb.ajay.app/api/v1/getThumbnail',
-            _cache: {},           // in-memory: videoId -> branding data
-            _cacheMeta: {},       // in-memory: videoId -> { ts: timestamp }
-            _pendingFetches: {},
-            _persistKey: 'da_branding_cache',
-            _maxCacheEntries: 2000,
-            _observer: null,
-            _navHandler: null,
-            _hoverHandler: null,
-            _hoverOutHandler: null,
-            _styleEl: null,
-            _processTimer: null,
-            _persistTimer: null,
-            _persistDirty: false,
-            _generation: 0,       // monotonic counter — incremented on navigation to abort stale processing
-            _isProcessing: false, // flag to prevent re-entrant batch processing
-            _stats: { fetched: 0, cached: 0, titles: 0, thumbs: 0, formatted: 0, errors: 0 },
-
-            _log(...args) { if (appState.settings.daDebugLog) console.log('[DeArrow]', ...args); },
-
-            _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
-
-            // ── Persistent cache: load from GM storage ──
-            _loadCache() {
-                const ttl = parseInt(appState.settings.daCacheTTL) || 0;
-                if (ttl <= 0) { this._log('Persistent cache disabled'); return; }
-                try {
-                    const stored = GM_getValue(this._persistKey, null);
-                    if (stored) {
-                        const parsed = typeof stored === 'string' ? JSON.parse(stored) : stored;
-                        const now = Date.now();
-                        const ttlH = parseInt(appState.settings.daCacheTTL);
-                        const maxAge = (isNaN(ttlH) ? 4 : ttlH) * 3600000 * 6; // hard-expire at 6x TTL
-                        let count = 0;
-                        for (const [vid, entry] of Object.entries(parsed)) {
-                            if (entry?.ts && (now - entry.ts) < maxAge && entry.data) {
-                                this._cache[vid] = entry.data;
-                                this._cacheMeta[vid] = { ts: entry.ts };
-                                count++;
-                            }
-                        }
-                        this._log(`Loaded ${count} cached entries from storage`);
-                    }
-                } catch (e) {
-                    this._log('Cache load error:', e.message);
-                }
-            },
-
-            // ── Persistent cache: save to GM storage (debounced) ──
-            _schedulePersist() {
-                if ((parseInt(appState.settings.daCacheTTL) || 0) <= 0) return;
-                this._persistDirty = true;
-                if (this._persistTimer) return;
-                this._persistTimer = setTimeout(() => {
-                    this._persistTimer = null;
-                    if (!this._persistDirty) return;
-                    this._persistDirty = false;
-                    this._persistCache();
-                }, 5000); // batch writes every 5s
-            },
-
-            _persistCache() {
-                try {
-                    const out = {};
-                    const entries = Object.entries(this._cache);
-                    // If over limit, keep only the most recent entries
-                    const sorted = entries
-                        .map(([vid, data]) => ({ vid, data, ts: this._cacheMeta[vid]?.ts || 0 }))
-                        .sort((a, b) => b.ts - a.ts)
-                        .slice(0, this._maxCacheEntries);
-                    for (const { vid, data, ts } of sorted) {
-                        out[vid] = { data, ts };
-                    }
-                    GM_setValue(this._persistKey, JSON.stringify(out));
-                    this._log(`Persisted ${sorted.length} cache entries`);
-                } catch (e) {
-                    this._log('Cache persist error:', e.message);
-                }
-            },
-
-            // ── API: Fetch branding data (with persistent cache + background refresh) ──
-            async _fetchBranding(videoId) {
-                const now = Date.now();
-                const ttlHours = parseInt(appState.settings.daCacheTTL);
-                const ttlMs = (isNaN(ttlHours) ? 4 : ttlHours) * 3600000;
-
-                // Cache disabled — always fetch fresh
-                if (ttlMs <= 0) {
-                    if (this._pendingFetches[videoId]) return this._pendingFetches[videoId];
-                    return this._fetchFromAPI(videoId);
-                }
-                const meta = this._cacheMeta[videoId];
-
-                // Fresh cache hit — return immediately
-                if (this._cache[videoId] && meta && (now - meta.ts) < ttlMs) {
-                    this._stats.cached++;
-                    return this._cache[videoId];
-                }
-
-                // Stale cache hit — return immediately but refresh in background
-                if (this._cache[videoId] && meta) {
-                    this._stats.cached++;
-                    this._backgroundRefresh(videoId);
-                    return this._cache[videoId];
-                }
-
-                // No cache — fetch synchronously
-                if (this._pendingFetches[videoId]) return this._pendingFetches[videoId];
-                return this._fetchFromAPI(videoId);
-            },
-
-            _fetchFromAPI(videoId) {
-                const url = `${this._DA_API}?videoID=${videoId}`;
-                this._pendingFetches[videoId] = new Promise((resolve) => {
-                    GM_xmlhttpRequest({
-                        method: 'GET',
-                        url,
-                        anonymous: true,
-                        timeout: 8000,
-                        onload: (r) => {
-                            delete this._pendingFetches[videoId];
-                            if (r.status === 200) {
-                                try {
-                                    const data = JSON.parse(r.responseText);
-                                    this._cacheStore(videoId, data);
-                                    this._stats.fetched++;
-                                    resolve(data);
-                                } catch(e) {
-                                    this._log('Parse error for', videoId, e.message);
-                                    this._stats.errors++;
-                                    resolve(null);
-                                }
-                            } else if (r.status === 404) {
-                                const empty = { titles: [], thumbnails: [], randomTime: 0, videoDuration: null };
-                                this._cacheStore(videoId, empty);
-                                resolve(empty);
-                            } else {
-                                this._log('API returned', r.status, 'for', videoId);
-                                this._stats.errors++;
-                                resolve(null);
-                            }
-                        },
-                        onerror: (e) => { delete this._pendingFetches[videoId]; this._log('Network error for', videoId); this._stats.errors++; resolve(null); },
-                        ontimeout: () => { delete this._pendingFetches[videoId]; this._log('Timeout for', videoId); this._stats.errors++; resolve(null); }
-                    });
-                });
-                return this._pendingFetches[videoId];
-            },
-
-            _cacheStore(videoId, data) {
-                this._cache[videoId] = data;
-                this._cacheMeta[videoId] = { ts: Date.now() };
-                this._schedulePersist();
-            },
-
-            // ── Background refresh for stale entries (no UI blocking) ──
-            _backgroundRefresh(videoId) {
-                if (this._pendingFetches[videoId]) return; // already fetching
-                const url = `${this._DA_API}?videoID=${videoId}`;
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url,
-                    anonymous: true,
-                    timeout: 10000,
-                    onload: (r) => {
-                        if (r.status === 200) {
-                            try {
-                                const data = JSON.parse(r.responseText);
-                                this._cacheStore(videoId, data);
-                            } catch(e) { /* silent */ }
-                        } else if (r.status === 404) {
-                            this._cacheStore(videoId, { titles: [], thumbnails: [], randomTime: 0, videoDuration: null });
-                        }
-                    },
-                    onerror: () => {},
-                    ontimeout: () => {}
-                });
-            },
-
-            // ── Title formatting ──
-            _formatTitle(title, format) {
-                if (!title) return title;
-                // DeArrow uses > before words to prevent auto-formatting those words
-                let clean = title.replace(/>\s*/g, '');
-                if (format === 'original') return clean;
-
-                const words = clean.split(/(\s+)/);
-                const lowerWords = new Set(['a','an','and','as','at','but','by','for','in','nor','of','on','or','so','the','to','up','yet','is','it','be','do','no','vs']);
-                const allCapsPattern = /^[A-Z0-9]{2,}$/;
-
-                if (format === 'sentence') {
-                    let first = true;
-                    return words.map(w => {
-                        if (/^\s+$/.test(w)) return w;
-                        if (allCapsPattern.test(w)) return w;
-                        if (first) { first = false; return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }
-                        return w.toLowerCase();
-                    }).join('');
-                }
-                if (format === 'title_case') {
-                    return words.map((w, i) => {
-                        if (/^\s+$/.test(w)) return w;
-                        if (allCapsPattern.test(w)) return w;
-                        if (i > 0 && lowerWords.has(w.toLowerCase())) return w.toLowerCase();
-                        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-                    }).join('');
-                }
-                return clean;
-            },
-
-            _formatOriginalTitle(title) {
-                if (!appState.settings.daFallbackFormat) return title;
-                return this._formatTitle(title, appState.settings.daTitleFormat || 'sentence');
-            },
-
-            // ── Get best title/thumbnail from branding data ──
-            _getBestTitle(data) {
-                if (!data?.titles?.length) return null;
-                const best = data.titles[0];
-                if (!best.original && (best.locked || best.votes >= 0)) {
-                    return this._formatTitle(best.title, appState.settings.daTitleFormat || 'sentence');
-                }
-                return null;
-            },
-
-            _getBestThumbnailTime(data) {
-                if (!data?.thumbnails?.length) return null;
-                const best = data.thumbnails[0];
-                if (!best.original && (best.locked || best.votes >= 0) && best.timestamp != null) {
-                    return best.timestamp;
-                }
-                if (data.randomTime != null && data.randomTime > 0) return data.randomTime;
-                return null;
-            },
-
-            _getThumbnailUrl(videoId, time) {
-                return `${this._DA_THUMB_API}?videoID=${videoId}&time=${time}`;
-            },
-
-            // ── Extract video ID from elements ──
-            _getVideoIdFromElement(el) {
-                const link = el.querySelector('a[href*="/watch?v="], a[href*="/shorts/"]') || el.closest('a[href*="/watch?v="], a[href*="/shorts/"]');
-                if (link) {
-                    const href = link.getAttribute('href') || '';
-                    const match = href.match(/[?&]v=([a-zA-Z0-9_-]{11})/) || href.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
-                    if (match) return match[1];
-                }
-                return null;
-            },
-
-            // ── Title selectors for all YouTube layouts ──
-            // DeArrow approach: NEVER modify the original element text.
-            // Instead, clone it, hide original with display:none, show clone.
-            // This avoids fighting YouTube's Polymer re-renders entirely.
-            _TITLE_SELECTORS: [
-                // New YouTube layout (subscriptions feed, home, etc.)
-                '.yt-lockup-metadata-view-model-wiz__title .yt-core-attributed-string',
-                '.yt-lockup-metadata-view-model__title .yt-core-attributed-string',
-                // Shorts in new layout
-                '.ShortsLockupViewModelHostMetadataTitle .yt-core-attributed-string',
-                '.shortsLockupViewModelHostMetadataTitle .yt-core-attributed-string',
-                // Classic layout selectors
-                'yt-formatted-string#video-title',
-                '#video-title-link yt-formatted-string',
-                '#video-title yt-formatted-string',
-                'a#video-title',
-                '#video-title',
-                'h3 a yt-formatted-string',
-                'h3 yt-formatted-string',
-                '[id="video-title"]',
-            ],
-
-            _WATCH_TITLE_SELECTORS: [
-                'h1.ytd-watch-metadata yt-formatted-string',
-                'ytd-watch-metadata h1 yt-formatted-string',
-                'h1.ytd-watch-metadata',
-                '#title h1 yt-formatted-string',
-                'ytd-video-primary-info-renderer h1 yt-formatted-string',
-                // New layout watch page
-                'h1 .yt-core-attributed-string',
-            ],
-
-            // ── Find the ORIGINAL title element (exclude our clones) ──
-            _findTitleElement(el, requireText = true) {
-                for (const sel of this._TITLE_SELECTORS) {
-                    const found = el.querySelector(`${sel}:not(.daCustomTitle)`);
-                    if (found) {
-                        if (!requireText) return found;
-                        const text = found.textContent?.trim();
-                        if (text && text.length > 0) return found;
-                    }
-                }
-                return null;
-            },
-
-            // ── Get or create the custom title clone ──
-            _getOrCreateClone(originalEl) {
-                // Check if a clone already exists as a sibling
-                const existing = originalEl.parentElement?.querySelector('.daCustomTitle');
-                if (existing) return existing;
-                // Clone the element (shallow — no children)
-                const clone = originalEl.cloneNode(false);
-                clone.classList.add('daCustomTitle');
-                // Remove id to avoid duplicate IDs
-                clone.removeAttribute('id');
-                // Remove Polymer-specific attributes that cause re-render binding
-                clone.removeAttribute('is-empty');
-                clone.removeAttribute('disable-upgrade');
-                // Insert clone right before the original
-                originalEl.parentElement?.insertBefore(clone, originalEl);
-                return clone;
-            },
-
-            // ── Set text on our clone element ──
-            _setCloneText(clone, text) {
-                // Clear any children and set plain text
-                while (clone.firstChild) clone.removeChild(clone.firstChild);
-                clone.appendChild(document.createTextNode(text));
-                clone.title = text;
-            },
-
-            // ── Show custom title, hide original ──
-            _showCustomTitle(originalEl, clone) {
-                originalEl.style.setProperty('display', 'none', 'important');
-                clone.style.removeProperty('display');
-                // Clear parent tooltip so it doesn't show the old title
-                const parentLink = originalEl.closest('a');
-                if (parentLink) {
-                    parentLink.setAttribute('title', clone.textContent || '');
-                    parentLink.setAttribute('aria-label', clone.textContent || '');
-                }
-            },
-
-            // ── Show original title, hide clone ──
-            _showOriginalTitle(originalEl) {
-                const clone = originalEl.parentElement?.querySelector('.daCustomTitle');
-                if (clone) clone.style.setProperty('display', 'none', 'important');
-                // Restore original display — use -webkit-box for line clamping (YouTube default)
-                if (originalEl.closest('.ytp-title-link')) {
-                    originalEl.style.removeProperty('display');
-                } else {
-                    originalEl.style.setProperty('display', '-webkit-box', 'important');
-                }
-                const parentLink = originalEl.closest('a');
-                if (parentLink) {
-                    parentLink.setAttribute('title', originalEl.textContent?.trim() || '');
-                    parentLink.setAttribute('aria-label', originalEl.textContent?.trim() || '');
-                }
-            },
-
-            // ── Wait for title text to appear (YouTube lazy-renders) ──
-            _waitForTitleText(el, maxWait = 3000) {
-                return new Promise(resolve => {
-                    const titleEl = this._findTitleElement(el, false);
-                    if (!titleEl) return resolve(null);
-                    const text = titleEl.textContent?.trim();
-                    if (text && text.length > 0) return resolve(titleEl);
-                    const start = Date.now();
-                    const check = () => {
-                        const t = titleEl.textContent?.trim();
-                        if (t && t.length > 0) return resolve(titleEl);
-                        if (Date.now() - start > maxWait) {
-                            const fresh = this._findTitleElement(el, true);
-                            return resolve(fresh);
-                        }
-                        setTimeout(check, 150);
-                    };
-                    setTimeout(check, 150);
-                });
-            },
-
-            // ── Process a single video element (clone approach) ──
-            async _processVideoElement(el) {
-                if (el.dataset.daProcessed) return;
-                const videoId = this._getVideoIdFromElement(el);
-                if (!videoId) return;
-                el.dataset.daProcessed = videoId;
-
-                const data = await this._fetchBranding(videoId);
-                if (!data) { this._log('No data for', videoId); return; }
-
-                const s = appState.settings;
-
-                // ── Replace title using clone approach ──
-                if (s.daReplaceTitles) {
-                    const originalEl = await this._waitForTitleText(el);
-                    if (!originalEl) {
-                        if (this._stats.errors < 5) this._log('No title element for', videoId, '- tag:', el.tagName);
-                    } else {
-                        const originalText = originalEl.textContent.trim();
-                        const newTitle = this._getBestTitle(data);
-
-                        if (newTitle && newTitle !== originalText) {
-                            // Crowdsourced title available — clone, set text, swap visibility
-                            const clone = this._getOrCreateClone(originalEl);
-                            this._setCloneText(clone, newTitle);
-                            clone.classList.add('da-replaced-title');
-                            clone.dataset.daOriginal = originalText;
-                            clone.dataset.daVideoId = videoId;
-                            this._showCustomTitle(originalEl, clone);
-                            this._stats.titles++;
-                            if (this._stats.titles <= 5) this._log('Replaced:', originalText.substring(0, 50), '=>', newTitle.substring(0, 50));
-                        } else if (s.daFallbackFormat && !newTitle) {
-                            // No crowdsourced title — format original if enabled
-                            const formatted = this._formatOriginalTitle(originalText);
-                            if (formatted !== originalText) {
-                                const clone = this._getOrCreateClone(originalEl);
-                                this._setCloneText(clone, formatted);
-                                clone.classList.add('da-formatted-title');
-                                clone.dataset.daOriginal = originalText;
-                                clone.dataset.daVideoId = videoId;
-                                this._showCustomTitle(originalEl, clone);
-                                this._stats.formatted++;
-                            }
-                        }
-                        if (this._stats.fetched <= 5 && !newTitle) {
-                            this._log('No DeArrow submission for', videoId);
-                        }
-                    }
-                }
-
-                // ── Replace thumbnail ──
-                if (s.daReplaceThumbs) {
-                    const thumbTime = this._getBestThumbnailTime(data);
-                    if (thumbTime != null) {
-                        const thumbContainer = el.querySelector('ytd-thumbnail, ytd-playlist-thumbnail');
-                        const img = thumbContainer?.querySelector('img');
-                        if (img && img.src) {
-                            img.dataset.daOriginalSrc = img.src;
-                            const newSrc = this._getThumbnailUrl(videoId, thumbTime);
-                            const probe = new Image();
-                            probe.onload = () => {
-                                if (probe.naturalWidth > 1) {
-                                    img.src = newSrc;
-                                    img.classList.add('da-replaced-thumb');
-                                    this._stats.thumbs++;
-                                }
-                            };
-                            probe.src = newSrc;
-                        }
-                    }
-                }
-            },
-
-            // ── Process watch page title (clone approach) ──
-            async _processWatchPage() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const videoId = urlParams.get('v');
-                if (!videoId) return;
-
-                const data = await this._fetchBranding(videoId);
-                if (!data) return;
-
-                const s = appState.settings;
-                if (!s.daReplaceTitles) return;
-
-                // Find original watch page title (exclude our clones)
-                let originalEl = null;
-                for (const sel of this._WATCH_TITLE_SELECTORS) {
-                    originalEl = document.querySelector(`${sel}:not(.daCustomTitle)`);
-                    if (originalEl?.textContent?.trim()) break;
-                }
-                if (!originalEl || originalEl.dataset.daWatchProcessed === videoId) return;
-                originalEl.dataset.daWatchProcessed = videoId;
-
-                const originalText = originalEl.textContent.trim();
-                const newTitle = this._getBestTitle(data);
-
-                if (newTitle && newTitle !== originalText) {
-                    const clone = this._getOrCreateClone(originalEl);
-                    this._setCloneText(clone, newTitle);
-                    clone.classList.add('da-replaced-title');
-                    clone.dataset.daOriginal = originalText;
-                    clone.dataset.daVideoId = videoId;
-                    this._showCustomTitle(originalEl, clone);
-                    this._stats.titles++;
-                } else if (s.daFallbackFormat) {
-                    const formatted = this._formatOriginalTitle(originalText);
-                    if (formatted !== originalText) {
-                        const clone = this._getOrCreateClone(originalEl);
-                        this._setCloneText(clone, formatted);
-                        clone.classList.add('da-formatted-title');
-                        clone.dataset.daOriginal = originalText;
-                        clone.dataset.daVideoId = videoId;
-                        this._showCustomTitle(originalEl, clone);
-                        this._stats.formatted++;
-                    }
-                }
-            },
-
-            // ── Scan page for video elements ──
-            _abortProcessing() {
-                this._generation++;
-                if (this._processTimer) { clearTimeout(this._processTimer); this._processTimer = null; }
-                this._isProcessing = false;
-                // Abandon pending fetches — they'll resolve but results are discarded
-                this._pendingFetches = {};
-                this._log('Aborted processing (gen', this._generation, ')');
-            },
-
-            _processPage() {
-                // KILL on watch pages — no scanning, no processing, no observer
-                if (this._isWatchPage()) return;
-                if (this._processTimer || this._isProcessing) return;
-                const gen = this._generation;
-                this._processTimer = setTimeout(async () => {
-                    this._processTimer = null;
-                    if (gen !== this._generation) return;
-                    if (this._isWatchPage()) return; // double-check after delay
-                    this._isProcessing = true;
-                    try {
-
-                    // Pause observer during processing to prevent feedback loop
-                    if (this._observer) this._observer.disconnect();
-
-                    const selectors = [
-                        'ytd-rich-item-renderer',
-                        'ytd-video-renderer',
-                        'ytd-compact-video-renderer',
-                        'ytd-grid-video-renderer',
-                        'ytd-reel-item-renderer',
-                        'ytd-playlist-video-renderer',
-                    ].join(', ');
-                    const els = [...document.querySelectorAll(selectors)].filter(el => !el.dataset.daProcessed);
-                    if (els.length > 0) {
-                        this._log(`Processing ${els.length} videos on ${window.location.pathname} (gen ${gen})`);
-                        const BATCH = 10;
-                        const DELAY = 100;
-                        for (let i = 0; i < els.length; i += BATCH) {
-                            if (gen !== this._generation || this._isWatchPage()) { this._log('Batch aborted at', i, '/', els.length); break; }
-                            const batch = els.slice(i, i + BATCH);
-                            await Promise.all(batch.map(el => this._processVideoElement(el)));
-                            if (gen !== this._generation) break;
-                            if (i + BATCH < els.length) await new Promise(r => setTimeout(r, DELAY));
-                        }
-                        if (gen === this._generation) this._log('Batch complete — Stats:', JSON.stringify(this._stats));
-                    }
-
-                    // Resume observer after processing (only if still not on watch page)
-                    if (gen === this._generation && this._observer && !this._isWatchPage()) {
-                        const target = document.querySelector('ytd-app') || document.body;
-                        this._observer.observe(target, { childList: true, subtree: true });
-                    }
-
-                    } finally { this._isProcessing = false; }
-                }, 300);
-            },
-
-            // ── Hover: toggle between clone and original ──
-            _setupHoverRestore() {
-                this._hoverHandler = (e) => {
-                    if (!appState.settings.daShowOriginalHover) return;
-                    const t = e.target;
-                    if (!t || !t.closest) return;
-                    // Check if hovering a clone title
-                    const clone = t.closest('.da-replaced-title, .da-formatted-title');
-                    if (clone?.classList.contains('daCustomTitle') && clone.dataset.daOriginal) {
-                        // Find the original sibling (next sibling since clone is inserted before)
-                        const originalEl = clone.nextElementSibling;
-                        if (originalEl && !originalEl.classList.contains('daCustomTitle')) {
-                            this._showOriginalTitle(originalEl);
-                            clone._daHoverActive = true;
-                        }
-                    }
-                    // Thumbnail hover
-                    const img = t.closest('.da-replaced-thumb');
-                    if (img?.dataset.daOriginalSrc) {
-                        img.dataset.daCurrent = img.src;
-                        img.src = img.dataset.daOriginalSrc;
-                    }
-                };
-                this._hoverOutHandler = (e) => {
-                    const t = e.target;
-                    if (!t || !t.closest) return;
-                    const clone = t.closest('.da-replaced-title, .da-formatted-title');
-                    if (clone?.classList.contains('daCustomTitle') && clone._daHoverActive) {
-                        const originalEl = clone.nextElementSibling;
-                        if (originalEl && !originalEl.classList.contains('daCustomTitle')) {
-                            this._showCustomTitle(originalEl, clone);
-                        }
-                        delete clone._daHoverActive;
-                    }
-                    const img = t.closest('.da-replaced-thumb');
-                    if (img?.dataset.daCurrent) {
-                        img.src = img.dataset.daCurrent;
-                        delete img.dataset.daCurrent;
-                    }
-                };
-                document.addEventListener('mouseenter', this._hoverHandler, true);
-                document.addEventListener('mouseleave', this._hoverOutHandler, true);
-            },
-
-            init() {
-                const css = `
-                    .daCustomTitle { transition:opacity 0.15s; }
-                    .da-replaced-thumb { transition:opacity 0.2s; }
-                    /* Ensure clones inherit the same line-clamp behavior as originals */
-                    .daCustomTitle {
-                        -webkit-line-clamp: inherit;
-                        -webkit-box-orient: inherit;
-                        overflow: inherit;
-                        text-overflow: inherit;
-                        display: -webkit-box;
-                    }
-                `;
-                this._styleEl = injectStyle(css, 'deArrow', true);
-                this._stats = { fetched: 0, cached: 0, titles: 0, thumbs: 0, formatted: 0, errors: 0 };
-
-                // Load persistent cache from GM storage
-                this._loadCache();
-
-                // Process initial page after a short delay (skip on watch pages)
-                if (!this._isWatchPage()) {
-                    setTimeout(() => this._processPage(), 800);
-                }
-
-                // SPA navigation — abort all in-flight processing immediately
-                this._navHandler = () => {
-                    this._abortProcessing();
-                    // Always disconnect observer during navigation
-                    if (this._observer) this._observer.disconnect();
-                    // Remove all clones and unhide originals on navigation
-                    document.querySelectorAll('.daCustomTitle').forEach(clone => {
-                        const originalEl = clone.nextElementSibling;
-                        if (originalEl) {
-                            originalEl.style.removeProperty('display');
-                            delete originalEl.dataset.daWatchProcessed;
-                        }
-                        clone.remove();
-                    });
-                    document.querySelectorAll('[data-da-processed]').forEach(el => delete el.dataset.daProcessed);
-                    // On watch pages: stay dead — no processing, no observer
-                    if (this._isWatchPage()) {
-                        this._log('Watch page — DeArrow dormant');
-                        return;
-                    }
-                    // On feed/browse pages: resume after settle
-                    setTimeout(() => this._processPage(), 1000);
-                };
-                document.addEventListener('yt-navigate-finish', this._navHandler);
-
-                // MutationObserver for dynamically loaded content (infinite scroll, etc.)
-                // Completely dormant on watch pages — no throttle timers, no processing
-                let mutationThrottle = null;
-                const DA_TAGS = new Set(['YTD-RICH-ITEM-RENDERER', 'YTD-VIDEO-RENDERER', 'YTD-COMPACT-VIDEO-RENDERER', 'YTD-GRID-VIDEO-RENDERER', 'YTD-REEL-ITEM-RENDERER', 'YTD-PLAYLIST-VIDEO-RENDERER']);
-                this._observer = new MutationObserver((mutations) => {
-                    if (this._isWatchPage()) return;
-                    if (mutationThrottle) return;
-                    // Only trigger when video renderers are actually added
-                    let hasRelevant = false;
-                    for (const m of mutations) {
-                        for (const node of m.addedNodes) {
-                            if (node.nodeType !== 1) continue;
-                            if (DA_TAGS.has(node.tagName) || node.querySelector?.('ytd-rich-item-renderer,ytd-video-renderer,ytd-compact-video-renderer')) {
-                                hasRelevant = true;
-                                break;
-                            }
-                        }
-                        if (hasRelevant) break;
-                    }
-                    if (!hasRelevant) return;
-                    mutationThrottle = setTimeout(() => { mutationThrottle = null; this._processPage(); }, TIMING.MUTATION_THROTTLE);
-                });
-                // Only attach observer if not on a watch page
-                if (!this._isWatchPage()) {
-                    const target = document.querySelector('ytd-app') || document.body;
-                    this._observer.observe(target, { childList: true, subtree: true });
-                }
-
-                // Hover restore
-                this._setupHoverRestore();
-
-                this._log('Initialized (clone approach) — Titles:', appState.settings.daReplaceTitles, 'Thumbs:', appState.settings.daReplaceThumbs, 'Format:', appState.settings.daTitleFormat);
-            },
-
-            destroy() {
-                this._abortProcessing();
-                if (this._navHandler) document.removeEventListener('yt-navigate-finish', this._navHandler);
-                if (this._observer) this._observer.disconnect();
-                if (this._hoverHandler) document.removeEventListener('mouseenter', this._hoverHandler, true);
-                if (this._hoverOutHandler) document.removeEventListener('mouseleave', this._hoverOutHandler, true);
-                this._styleEl?.remove();
-                // Remove all clones and restore originals
-                document.querySelectorAll('.daCustomTitle').forEach(clone => {
-                    const originalEl = clone.nextElementSibling;
-                    if (originalEl) {
-                        originalEl.style.removeProperty('display');
-                    }
-                    clone.remove();
-                });
-                document.querySelectorAll('.da-replaced-thumb').forEach(img => {
-                    if (img.dataset.daOriginalSrc) img.src = img.dataset.daOriginalSrc;
-                    img.classList.remove('da-replaced-thumb');
-                });
-                document.querySelectorAll('[data-da-processed]').forEach(el => delete el.dataset.daProcessed);
-                document.querySelectorAll('[data-da-watch-processed]').forEach(el => delete el.dataset.daWatchProcessed);
-                // Flush any pending cache writes
-                if (this._persistTimer) { clearTimeout(this._persistTimer); this._persistTimer = null; }
-                if (this._persistDirty) this._persistCache();
-                this._cache = {};
-                this._cacheMeta = {};
-                this._pendingFetches = {};
-                if (this._processTimer) { clearTimeout(this._processTimer); this._processTimer = null; }
-                this._log('Destroyed — Stats:', this._stats);
-            }
-        },
-        // ── DeArrow sub-features ──
-        {
-            id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives',
-            group: 'DeArrow', icon: 'settings-2', dependsOn: 'deArrow', init() {}, destroy() {}
-        },
-        {
-            id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots',
-            group: 'DeArrow', icon: 'settings-2', dependsOn: 'deArrow', init() {}, destroy() {}
-        },
-        {
-            id: 'daTitleFormat', name: 'Title Format', description: 'How to format replacement titles',
-            group: 'DeArrow', icon: 'settings-2', type: 'select', dependsOn: 'deArrow',
-            options: { 'sentence': 'Sentence case', 'title_case': 'Title Case', 'original': 'As Submitted' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'daFallbackFormat', name: 'Format Original Titles', description: 'When no crowdsourced title exists, format the original title to your preferred case',
-            group: 'DeArrow', icon: 'settings-2', dependsOn: 'deArrow', init() {}, destroy() {}
-        },
-        {
-            id: 'daShowOriginalHover', name: 'Show Original on Hover', description: 'Hover over a title or thumbnail to briefly see the original',
-            group: 'DeArrow', icon: 'settings-2', dependsOn: 'deArrow', init() {}, destroy() {}
-        },
-        {
-            id: 'daCacheTTL', name: 'Cache Duration', description: 'Hours to cache branding data locally before refreshing (0 = no cache)',
-            group: 'DeArrow', icon: 'settings-2', type: 'select', dependsOn: 'deArrow',
-            options: { '0': 'Disabled', '1': '1 hour', '4': '4 hours', '12': '12 hours', '24': '24 hours', '72': '3 days' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'daDebugLog', name: 'Debug Logging', description: 'Enable verbose DeArrow console logging for troubleshooting',
-            group: 'DeArrow', icon: 'settings-2', dependsOn: 'deArrow', init() {}, destroy() {}
-        },
-        {
-            id: 'cfLlmProvider', name: 'Chapter AI Provider', description: 'Built-in (local heuristic), Ollama (local AI), or cloud providers',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'builtin': 'Built-in (NLP)', 'ollama': 'Local AI (Ollama)', 'openai': 'Web AI - OpenAI', 'openrouter': 'Web AI - OpenRouter', 'custom': 'Web AI - Custom' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfTranscriptMethod', name: 'Transcript Source', description: 'How to get the video transcript: captions, Whisper (in-browser), or WhisperServer (local GPU-accelerated transcription)',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'auto': 'Auto (Captions -> Whisper)', 'captions-only': 'Captions Only', 'whisper-only': 'Whisper Only (Browser)', 'vibe': 'WhisperServer (Local)' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfVibeEndpoint', name: 'WhisperServer Address', description: 'HTTP endpoint for local whisper.cpp server. Auto-starts on login if installed via the YTYT installer.',
-            group: 'ChapterForge', icon: 'settings-2', type: 'text', dependsOn: 'chapterForge',
-            placeholder: 'http://localhost:8178',
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfWhisperModel', name: 'Whisper Model', description: 'Speech-to-text model size — Tiny is fast, Base is more accurate',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'whisper-tiny.en': 'Tiny (fastest, ~75MB)', 'whisper-base.en': 'Base (better, ~150MB)' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfMaxAutoDuration', name: 'Auto Max Duration', description: 'Maximum video length (minutes) for auto-processing in Auto mode',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { '15': '15 minutes', '30': '30 minutes', '60': '60 minutes', '120': '2 hours', '9999': 'No Limit' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfShowPlayerButton', name: 'Always Show Player Button', description: 'Show ChapterForge button on the player even in Auto mode',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfDebugLog', name: 'Debug Logging', description: 'Enable verbose console logging for transcript/audio troubleshooting',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfShowChapterHUD', name: 'Chapter HUD Overlay', description: 'Show current chapter name overlay on the video player during playback',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfHudPosition', name: 'HUD Position', description: 'Where to display the chapter HUD overlay on the video player',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'top-left': 'Top Left', 'top-right': 'Top Right', 'bottom-left': 'Bottom Left', 'bottom-right': 'Bottom Right' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfSpeedControl', name: 'Speed Control', description: 'Auto-speed intro/outro sections and skip selected chapters',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfAutoSkipMode', name: 'AutoSkip Mode', description: 'Skip pauses and filler words during playback (Gentle = pauses >1.5s, Normal = >0.6s + fillers, Aggressive = all gaps 4x, Maximum = cut everything 6x)',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'off': 'Off', 'gentle': 'Gentle — pauses >1.5s', 'normal': 'Normal — pauses + fillers', 'aggressive': 'Aggressive — all gaps 4x', 'maximum': 'Maximum — cut everything 6x' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfSkipStyle', name: 'Skip Style', description: 'Jump Cut: instant hard-skip over dead air (like real jump cuts). Speed: fast-forward through silence at preset speed.',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'jump': 'Jump Cut (hard skip)', 'speed': 'Speed Through Silence' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfShowSkipZones', name: 'Show Skip Zones on Bar', description: 'Mark dead air and filler skip zones on the progress bar with red hatched regions',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfShowChapters', name: 'Show Chapters on Bar', description: 'Display chapter markers on the YouTube progress bar',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfShowPOIs', name: 'Show POI Markers', description: 'Display points of interest markers on the progress bar',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfChapterOpacity', name: 'Chapter Opacity', description: 'Opacity of chapter overlay segments on the progress bar',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            settingKey: 'cfChapterOpacity',
-            options: { '0.15': '15%', '0.25': '25%', '0.35': '35%', '0.5': '50%', '0.7': '70%' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfShowFillerMarkers', name: 'Show Filler Markers', description: 'Display detected filler word markers on the progress bar',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfFillerWords', name: 'Filler Words', description: 'Comma-separated list of filler words/phrases to detect and optionally skip',
-            group: 'ChapterForge', icon: 'settings-2', type: 'textarea', dependsOn: 'chapterForge',
-            placeholder: 'um, uh, you know, I mean, like, sort of',
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfSummaryMode', name: 'Summary Mode', description: 'Format for AI-generated summaries — clean prose or timestamped index',
-            group: 'ChapterForge', icon: 'settings-2', type: 'select', dependsOn: 'chapterForge',
-            options: { 'paragraph': 'Paragraph (clean prose)', 'timestamped': 'Timestamped Index' },
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfAutoModel', name: 'Auto-select Ollama Model', description: 'Automatically pick the best installed Ollama model for the video length',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfUseInnertube', name: 'Audio: Innertube', description: 'Use YouTube Innertube API for direct audio extraction (for Whisper)',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfUseCobalt', name: 'Audio: Cobalt API', description: 'Use Cobalt API as fallback for audio extraction (for Whisper)',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfUseCapture', name: 'Audio: Player Capture', description: 'Capture audio directly from the video player element (for Whisper)',
-            group: 'ChapterForge', icon: 'settings-2', dependsOn: 'chapterForge', init() {}, destroy() {}
-        },
-        {
-            id: 'cfCustomSummaryPrompt', name: 'Custom Summary Prompt', description: 'Override the default AI system prompt for summaries (leave empty for default)',
-            group: 'ChapterForge', icon: 'settings-2', type: 'textarea', dependsOn: 'chapterForge',
-            placeholder: 'Leave empty to use default prompt...',
-            init() {}, destroy() {}
-        },
-        {
-            id: 'cfCustomChapterPrompt', name: 'Custom Chapter Prompt', description: 'Override the default AI system prompt for chapter generation (leave empty for default)',
-            group: 'ChapterForge', icon: 'settings-2', type: 'textarea', dependsOn: 'chapterForge',
-            placeholder: 'Leave empty to use default prompt...',
-            init() {}, destroy() {}
-        },
-        // ═══════════════════════════════════════════════════════════════
         // ALCHEMY-INSPIRED FEATURES
-        // ═══════════════════════════════════════════════════════════════
-        {
-            id: 'persistentProgressBar',
-            name: 'Persistent Progress Bar',
-            description: 'Always-visible thin progress bar below the player even when controls auto-hide, with chapter gap masking and buffer display',
-            group: 'Playback',
-            icon: 'bar-chart-2',
-            _barEl: null,
-            _progressEl: null,
-            _bufferEl: null,
-            _animId: null,
-            _cleanup: null,
-            init() {
-                const self = this;
-                const apply = () => {
-                    if (self._cleanup) self._cleanup(true);
-                    const player = document.getElementById('movie_player');
-                    if (!player) return;
-                    const video = document.querySelector('video.html5-main-video');
-                    const progressBarContainer = player.querySelector('.ytp-progress-bar-container');
-                    if (!video || !progressBarContainer) return;
-
-                    // Create bar elements
-                    const bar = document.createElement('div');
-                    bar.id = 'ytkit-pbar-bar';
-                    bar.style.cssText = 'width:100%;height:3px;background:rgba(255,255,255,.2);position:absolute;bottom:0;z-index:60;pointer-events:none;transition:opacity .3s';
-                    const progress = document.createElement('div');
-                    progress.id = 'ytkit-pbar-progress';
-                    progress.style.cssText = 'width:100%;height:3px;transform-origin:0 0;position:absolute;background:#f00;filter:none;transform:scaleX(0)';
-                    const buffer = document.createElement('div');
-                    buffer.id = 'ytkit-pbar-buffer';
-                    buffer.style.cssText = 'width:100%;height:3px;transform-origin:0 0;position:absolute;background:rgba(255,255,255,.3);transform:scaleX(0)';
-                    bar.appendChild(buffer);
-                    bar.appendChild(progress);
-                    player.appendChild(bar);
-                    self._barEl = bar; self._progressEl = progress; self._bufferEl = buffer;
-
-                    // Chapter segments for gap masking
-                    let chapterSegments = [];
-                    let totalActiveWidth = 0;
-                    let currentBarWidth = 0;
-
-                    const getVisualProgress = (fraction) => {
-                        if (chapterSegments.length === 0 || totalActiveWidth === 0 || currentBarWidth === 0) return fraction;
-                        let targetActivePx = fraction * totalActiveWidth;
-                        let currentActiveSum = 0;
-                        for (const seg of chapterSegments) {
-                            if (currentActiveSum + seg.width >= targetActivePx) {
-                                const offset = targetActivePx - currentActiveSum;
-                                return (seg.left + offset) / currentBarWidth;
-                            }
-                            currentActiveSum += seg.width;
-                        }
-                        return 1;
-                    };
-
-                    const updateLayout = () => {
-                        const pbRect = progressBarContainer.getBoundingClientRect();
-                        const playerRect = player.getBoundingClientRect();
-                        currentBarWidth = pbRect.width;
-                        if (!currentBarWidth) return;
-                        bar.style.position = 'absolute';
-                        bar.style.left = (pbRect.left - playerRect.left) + 'px';
-                        bar.style.width = currentBarWidth + 'px';
-
-                        // Build chapter mask
-                        chapterSegments = [];
-                        totalActiveWidth = 0;
-                        const chapContainer = player.querySelector('.ytp-chapters-container');
-                        if (chapContainer) {
-                            const segs = chapContainer.querySelectorAll('.ytp-chapter-hover-container');
-                            if (segs.length >= 2) {
-                                segs.forEach(el => {
-                                    const r = el.getBoundingClientRect();
-                                    const relX = r.left - pbRect.left;
-                                    chapterSegments.push({ left: relX, width: r.width });
-                                    totalActiveWidth += r.width;
-                                });
-                                // SVG mask
-                                const svgW = 100, svgH = 10;
-                                let rects = '';
-                                chapterSegments.forEach(seg => {
-                                    const x = (seg.left / currentBarWidth) * svgW;
-                                    const w = (seg.width / currentBarWidth) * svgW;
-                                    if (w > 0) rects += `<rect x="${x}" y="0" width="${w}" height="${svgH}" fill="white"/>`;
-                                });
-                                if (!rects) rects = `<rect x="0" y="0" width="${svgW}" height="${svgH}" fill="white"/>`;
-                                const svg = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
-                                const mask = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg).replace(/%20/g, ' ')}")`;
-                                bar.style.maskImage = bar.style.webkitMaskImage = mask;
-                                bar.style.maskRepeat = bar.style.webkitMaskRepeat = 'no-repeat';
-                                bar.style.maskSize = bar.style.webkitMaskSize = '100% 100%';
-                            } else {
-                                bar.style.maskImage = bar.style.webkitMaskImage = '';
-                            }
-                        }
-                    };
-
-                    // Use requestVideoFrameCallback for frame-accurate sync
-                    const animateProgress = typeof video.requestVideoFrameCallback === 'function'
-                        ? (_ts, meta) => {
-                            if (video.duration > 0) {
-                                progress.style.transform = `scaleX(${getVisualProgress(meta.mediaTime / video.duration)})`;
-                            }
-                            self._animId = video.requestVideoFrameCallback(animateProgress);
-                        }
-                        : () => {
-                            if (video.duration > 0) {
-                                progress.style.transform = `scaleX(${getVisualProgress(video.currentTime / video.duration)})`;
-                            }
-                            self._animId = requestAnimationFrame(animateProgress);
-                        };
-
-                    const renderBuffer = () => {
-                        if (!video.duration) return;
-                        for (let i = video.buffered.length - 1; i >= 0; i--) {
-                            if (video.currentTime < video.buffered.start(i)) continue;
-                            buffer.style.transform = `scaleX(${getVisualProgress(video.buffered.end(i) / video.duration)})`;
-                            break;
-                        }
-                    };
-
-                    const handlePlay = () => {
-                        if (!self._animId) self._animId = typeof video.requestVideoFrameCallback === 'function'
-                            ? video.requestVideoFrameCallback(animateProgress)
-                            : requestAnimationFrame(animateProgress);
-                    };
-                    const handlePause = () => {
-                        if (self._animId) {
-                            typeof video.cancelVideoFrameCallback === 'function'
-                                ? video.cancelVideoFrameCallback(self._animId)
-                                : cancelAnimationFrame(self._animId);
-                            self._animId = null;
-                        }
-                    };
-                    const handleEnded = () => { handlePause(); progress.style.transform = 'scaleX(1)'; };
-
-                    // Hide when native controls visible
-                    const hideWhenControlsVisible = () => {
-                        bar.style.opacity = player.classList.contains('ytp-autohide') ? '1' : '0';
-                    };
-                    const controlsObs = new MutationObserver(hideWhenControlsVisible);
-                    controlsObs.observe(player, { attributes: true, attributeFilter: ['class'] });
-                    hideWhenControlsVisible();
-
-                    video.addEventListener('progress', renderBuffer);
-                    video.addEventListener('seeking', renderBuffer);
-                    video.addEventListener('ended', handleEnded);
-                    video.addEventListener('play', handlePlay);
-                    video.addEventListener('pause', handlePause);
-                    if (!video.paused) handlePlay();
-
-                    const resizeObs = new ResizeObserver(() => { requestAnimationFrame(updateLayout); });
-                    resizeObs.observe(progressBarContainer);
-                    updateLayout();
-                    renderBuffer();
-
-                    self._cleanup = (fullReset = false) => {
-                        handlePause();
-                        video.removeEventListener('progress', renderBuffer);
-                        video.removeEventListener('seeking', renderBuffer);
-                        video.removeEventListener('ended', handleEnded);
-                        video.removeEventListener('play', handlePlay);
-                        video.removeEventListener('pause', handlePause);
-                        controlsObs.disconnect();
-                        resizeObs.disconnect();
-                        if (fullReset) bar.remove();
-                        self._barEl = self._progressEl = self._bufferEl = null;
-                    };
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() {
-                if (this._cleanup) this._cleanup(true);
-                this._cleanup = null;
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'remainingTimeDisplay',
-            name: 'Remaining Time Display',
-            description: 'Show remaining video time adjusted for playback speed and SponsorBlock segments',
-            group: 'Playback',
-            icon: 'clock',
-            _el: null,
-            _raf: null,
-            _cleanup: null,
-            init() {
-                const self = this;
-                const apply = () => {
-                    if (self._cleanup) self._cleanup();
-                    const video = document.querySelector('video.html5-main-video');
-                    const container = document.querySelector('#above-the-fold, #info-contents');
-                    if (!video || !container) return;
-
-                    const el = document.createElement('div');
-                    el.id = 'ytkit-remaining-time';
-                    el.style.cssText = 'position:relative;display:block;height:0;top:4px;text-align:right;font-family:"Roboto","Arial",sans-serif;font-size:1.3rem;font-weight:500;color:var(--yt-spec-text-primary);pointer-events:none;opacity:.7;z-index:5';
-                    container.prepend(el);
-                    self._el = el;
-
-                    const fmtTime = (s) => {
-                        if (!Number.isFinite(s) || s < 0) s = 0;
-                        const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60);
-                        return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}` : `${m}:${sec.toString().padStart(2, '0')}`;
-                    };
-
-                    // Read SB segments from previewbar DOM
-                    const getSBSegments = () => {
-                        const segs = [];
-                        const previewbar = document.getElementById('previewbar');
-                        if (!previewbar || !video.duration) return segs;
-                        previewbar.querySelectorAll('li.previewbar').forEach(li => {
-                            const style = li.getAttribute('style') || '';
-                            const leftM = style.match(/left:\s*([\d.]+)%/);
-                            const rightM = style.match(/right:\s*([\d.]+)%/);
-                            if (leftM && rightM) {
-                                const start = video.duration * (parseFloat(leftM[1]) / 100);
-                                const end = video.duration * (1 - parseFloat(rightM[1]) / 100);
-                                if (end > start) segs.push({ start, end });
-                            }
-                        });
-                        // Merge overlapping
-                        segs.sort((a, b) => a.start - b.start);
-                        const merged = [];
-                        for (const s of segs) {
-                            if (merged.length && s.start < merged[merged.length - 1].end + 0.1) {
-                                merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, s.end);
-                            } else merged.push({ ...s });
-                        }
-                        return merged;
-                    };
-
-                    const update = () => {
-                        if (!video.duration) { self._raf = requestAnimationFrame(update); return; }
-                        const rate = video.playbackRate || 1;
-                        const rawRemaining = video.duration - video.currentTime;
-                        // Subtract SB segments still ahead
-                        const sbSegs = getSBSegments();
-                        let sbRemaining = 0;
-                        for (const seg of sbSegs) {
-                            if (seg.end > video.currentTime) {
-                                sbRemaining += seg.end - Math.max(seg.start, video.currentTime);
-                            }
-                        }
-                        const effective = Math.max(0, rawRemaining - sbRemaining) / rate;
-                        el.textContent = `-${fmtTime(effective)}` + (rate !== 1 ? ` @ ${rate}x` : '') + (sbRemaining > 0 ? ' (SB)' : '');
-                        self._raf = requestAnimationFrame(update);
-                    };
-                    self._raf = requestAnimationFrame(update);
-
-                    self._cleanup = () => {
-                        if (self._raf) cancelAnimationFrame(self._raf);
-                        self._raf = null;
-                        self._el?.remove(); self._el = null;
-                    };
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() {
-                if (this._cleanup) this._cleanup();
-                this._cleanup = null;
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'colorCodeVideoAge',
-            name: 'Color-Code Video Age',
-            description: 'Tint video metadata by age: yellow (<1 day), orange (1-7 days), blue (1-4 weeks), dim (>1 year), red (live/streamed), green (upcoming)',
-            group: 'Content',
-            icon: 'palette',
-            _observer: null,
-            _styleEl: null,
-            _categoriesCache: {},
-            init() {
-                const self = this;
-                // Generate locale-aware time phrases using Intl.RelativeTimeFormat
-                const getCategories = (locale) => {
-                    if (self._categoriesCache[locale]) return self._categoriesCache[locale];
-                    try {
-                        const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'always' });
-                        const fmt = (n, u) => rtf.format(-n, u).replace(/^-?\d+\s*/, '').toLowerCase();
-                        const uniq = arr => [...new Set(arr)];
-                        const newly = uniq([[1,'day'],[2,'hour'],[1,'hour'],[2,'minute'],[1,'minute'],[2,'second'],[1,'second']].map(([n,u]) => fmt(n,u)));
-                        const recent = uniq([[1,'week'],[7,'day'],[6,'day'],[5,'day'],[4,'day'],[3,'day'],[2,'day']].map(([n,u]) => fmt(n,u)));
-                        const lately = uniq([[1,'month'],[2,'week'],[14,'day'],[13,'day'],[12,'day'],[11,'day'],[10,'day'],[9,'day'],[8,'day']].map(([n,u]) => fmt(n,u)));
-                        const latterly = uniq([12,11,10,9,8,7,6,5,4,3,2].map(n => fmt(n,'month')));
-                        const old = uniq([[2,'year'],[1,'year']].map(([n,u]) => fmt(n,u)));
-                        return self._categoriesCache[locale] = {
-                            live: ['watching', 'live', 'espectadores', 'zuschauer', 'spectateurs'],
-                            upcoming: ['waiting', 'scheduled', 'en attente', 'wartend', 'esperando'],
-                            streamed: ['streamed', 'gestreamt', 'diffusé', 'transmitido'],
-                            newly, recent, lately, latterly, old
-                        };
-                    } catch { return null; }
-                };
-
-                const colorMap = {
-                    live: '#FF0000', upcoming: '#32CD32', streamed: '#FF0000',
-                    newly: '#FFFF00', recent: '#FF9B00', lately: '#006DFF',
-                    latterly: 'rgba(255,255,255,.35)', old: 'rgba(255,255,255,.25)'
-                };
-
-                const classify = (text) => {
-                    if (!text) return null;
-                    const t = text.toLowerCase().trim();
-                    const locale = document.documentElement.lang || 'en';
-                    const cats = getCategories(locale) || getCategories('en');
-                    if (!cats) return null;
-                    for (const [cat, phrases] of Object.entries(cats)) {
-                        for (const phrase of phrases) {
-                            if (t.includes(phrase)) return cat;
-                        }
-                    }
-                    return null;
-                };
-
-                const process = () => {
-                    document.querySelectorAll('ytd-rich-item-renderer:not([data-ytkit-age-coded]), ytd-video-renderer:not([data-ytkit-age-coded]), ytd-compact-video-renderer:not([data-ytkit-age-coded])').forEach(item => {
-                        item.setAttribute('data-ytkit-age-coded', '1');
-                        const metaLine = item.querySelector('#metadata-line, .ytd-video-meta-block, .inline-metadata-item');
-                        if (!metaLine) return;
-                        const spans = metaLine.querySelectorAll('span');
-                        for (const span of spans) {
-                            const cat = classify(span.textContent);
-                            if (cat && colorMap[cat]) {
-                                span.style.color = colorMap[cat];
-                                if (cat === 'old' || cat === 'latterly') {
-                                    const thumb = item.querySelector('ytd-thumbnail, .yt-lockup-view-model__content-image');
-                                    if (thumb) thumb.style.opacity = '0.6';
-                                }
-                                break;
-                            }
-                        }
-                    });
-                };
-
-                const run = () => {
-                    process();
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver(() => { clearTimeout(self._debounce); self._debounce = setTimeout(process, 200); });
-                    const target = document.querySelector('ytd-browse, ytd-search, ytd-watch-flexy #related');
-                    if (target) self._observer.observe(target, { childList: true, subtree: true });
-                };
-
-                addNavigateRule(this.id, () => setTimeout(run, 1000));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                document.querySelectorAll('[data-ytkit-age-coded]').forEach(el => el.removeAttribute('data-ytkit-age-coded'));
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'lastSeenVideoMarker',
-            name: 'Last Seen Video Marker',
-            description: 'On subscriptions page, highlights where you left off and optionally scrolls to it',
-            group: 'Content',
-            icon: 'bookmark',
-            _GM_KEY: 'ytkit_lastSeenVideoID',
-            init() {
-                const self = this;
-                const apply = async () => {
-                    const subsPage = document.querySelector('ytd-browse[page-subtype="subscriptions"]:not([hidden])');
-                    if (!subsPage) return;
-                    const containers = subsPage.querySelectorAll('ytd-rich-item-renderer');
-                    if (!containers.length) return;
-
-                    // Remove old marker
-                    subsPage.querySelector('.ytkit-last-seen')?.classList.remove('ytkit-last-seen');
-
-                    const extractId = (el) => {
-                        const a = el.querySelector('a[href*="/watch?v="]');
-                        if (!a) return null;
-                        try { return new URL(a.href, location.origin).searchParams.get('v'); } catch { return null; }
-                    };
-
-                    const lastSeenID = await GM_getValue(self._GM_KEY, null);
-                    let newFirstID = null;
-                    let targetEl = null;
-
-                    for (const c of containers) {
-                        // Skip live/upcoming
-                        if (c.querySelector('.yt-badge-shape--thumbnail-live, .ytLockupAttachmentsViewModelHost:not(:has(.yt-content-metadata-view-model__delimiter))')) continue;
-                        const vid = extractId(c);
-                        if (!vid) continue;
-                        if (!newFirstID) newFirstID = vid;
-                        if (vid === lastSeenID) {
-                            c.classList.add('ytkit-last-seen');
-                            targetEl = c;
-                        }
-                        if (newFirstID && targetEl) break;
-                    }
-
-                    if (newFirstID && newFirstID !== lastSeenID) GM_setValue(self._GM_KEY, newFirstID);
-
-                    if (targetEl) {
-                        requestAnimationFrame(() => targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-                    }
-
-                    // Inject marker style
-                    if (!document.getElementById('ytkit-last-seen-style')) {
-                        const s = document.createElement('style');
-                        s.id = 'ytkit-last-seen-style';
-                        s.textContent = `.ytkit-last-seen { border-left: 3px solid #7F00FF !important; padding-left: 8px !important; }`;
-                        document.head.appendChild(s);
-                    }
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 2000));
-            },
-            destroy() {
-                document.getElementById('ytkit-last-seen-style')?.remove();
-                document.querySelector('.ytkit-last-seen')?.classList.remove('ytkit-last-seen');
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'channelRSSButton',
-            name: 'Channel RSS Button',
-            description: 'Add an RSS feed button to channel pages',
-            group: 'Content',
-            icon: 'rss',
-            init() {
-                const apply = () => {
-                    document.querySelector('.ytkit-rss-btn')?.remove();
-                    const rssLink = document.querySelector('link[rel="alternate"][type="application/rss+xml"]');
-                    if (!rssLink) return;
-                    const actions = document.querySelector('.ytFlexibleActionsViewModelHost');
-                    if (!actions) return;
-
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'ytFlexibleActionsViewModelAction';
-                    const btn = document.createElement('a');
-                    btn.className = 'yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m ytkit-rss-btn';
-                    btn.href = rssLink.getAttribute('href');
-                    btn.target = '_blank';
-                    btn.rel = 'noopener noreferrer';
-                    btn.title = 'RSS Feed — right-click to copy link';
-                    btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:0 12px;height:36px;border-radius:18px;font-size:14px;text-decoration:none;color:var(--yt-spec-text-primary)';
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                    svg.setAttribute('width', '20');
-                    svg.setAttribute('height', '20');
-                    svg.style.fill = '#FF9800';
-                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                    circle.setAttribute('cx', '6.18'); circle.setAttribute('cy', '17.82'); circle.setAttribute('r', '2.18');
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', 'M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56zm0 5.66v2.83c3.9 0 7.07 3.17 7.07 7.07h2.83c0-5.47-4.43-9.9-9.9-9.9z');
-                    svg.appendChild(circle); svg.appendChild(path);
-                    btn.appendChild(svg);
-                    btn.appendChild(document.createTextNode('RSS'));
-                    wrapper.appendChild(btn);
-                    actions.appendChild(wrapper);
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() { document.querySelector('.ytkit-rss-btn')?.parentElement?.remove(); removeNavigateRule(this.id); }
-        },
-        {
-            id: 'channelPlaylistButtons',
-            name: 'Channel Playlist Buttons',
-            description: 'Add "All Uploads", "Videos", and "Shorts" playlist buttons to channel pages using hidden YouTube playlist URLs',
-            group: 'Content',
-            icon: 'list-video',
-            init() {
-                const apply = () => {
-                    document.querySelectorAll('.ytkit-ch-pl-btn').forEach(el => el.remove());
-                    const channelID = document.querySelector('[itemprop="identifier"]')?.content;
-                    if (!channelID) return;
-                    const actions = document.querySelector('.ytFlexibleActionsViewModelHost');
-                    if (!actions) return;
-
-                    const makeBtn = (url, label) => {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'ytFlexibleActionsViewModelAction ytkit-ch-pl-btn';
-                        const a = document.createElement('a');
-                        a.className = 'yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-m';
-                        a.href = url; a.target = '_self'; a.rel = 'noopener noreferrer';
-                        a.title = `Open ${label} Playlist`;
-                        a.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:0 12px;height:36px;border-radius:18px;font-size:14px;text-decoration:none;color:var(--yt-spec-text-primary)';
-                        a.textContent = label;
-                        wrapper.appendChild(a);
-                        return wrapper;
-                    };
-
-                    const base = channelID.slice(2);
-                    if (!appState.settings.removeAllShorts) actions.appendChild(makeBtn(`https://www.youtube.com/playlist?list=UU${base}`, 'All Uploads'));
-                    actions.appendChild(makeBtn(`https://www.youtube.com/playlist?list=UULF${base}`, 'Videos'));
-                    if (!appState.settings.removeAllShorts) actions.appendChild(makeBtn(`https://www.youtube.com/playlist?list=UUSH${base}`, 'Shorts'));
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() { document.querySelectorAll('.ytkit-ch-pl-btn').forEach(el => el.remove()); removeNavigateRule(this.id); }
-        },
-        {
-            id: 'hideWatchedByPercent',
-            name: 'Hide Watched Videos',
-            description: 'Hide videos you have already watched past a configured percentage threshold',
-            group: 'Content',
-            icon: 'eye-off',
-            isParent: true,
-            _observer: null,
-            _styleEl: null,
-            init() {
-                const self = this;
-                const process = () => {
-                    const s = appState.settings;
-                    const pct = parseInt(s.hideWatchedPercent) || 90;
-                    const homeTarget = s.hideWatchedHome ? document.querySelector('ytd-browse[page-subtype="home"]:not([hidden]) #contents') : null;
-                    const subsTarget = s.hideWatchedSubscriptions ? document.querySelector('ytd-browse[page-subtype="subscriptions"]:not([hidden]) #contents') : null;
-                    const searchTarget = s.hideWatchedSearch ? document.querySelector('ytd-search:not([hidden]) #contents') : null;
-                    const target = homeTarget || subsTarget || searchTarget;
-                    if (!target) return;
-
-                    const tags = 'ytd-rich-item-renderer, yt-lockup-view-model, ytd-grid-video-renderer, ytd-video-renderer';
-                    target.querySelectorAll(`${tags}`).forEach(container => {
-                        if (container.hasAttribute('data-ytkit-watched-check')) return;
-                        container.setAttribute('data-ytkit-watched-check', '1');
-                        const progressBar = container.querySelector('.ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment, #overlays #progress, #progress');
-                        if (progressBar) {
-                            const percent = parseFloat(progressBar.style.width?.replace('%', '')) || 0;
-                            if (percent >= pct) container.style.display = 'none';
-                        }
-                    });
-                };
-
-                const run = () => {
-                    process();
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver(() => { clearTimeout(self._debounce); self._debounce = setTimeout(process, 150); });
-                    const target = document.querySelector('ytd-browse:not([hidden]) #contents, ytd-search:not([hidden]) #contents');
-                    if (target) self._observer.observe(target, { childList: true, subtree: true });
-                };
-
-                addNavigateRule(this.id, () => setTimeout(run, 1000));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                document.querySelectorAll('[data-ytkit-watched-check]').forEach(el => { el.removeAttribute('data-ytkit-watched-check'); el.style.display = ''; });
-                removeNavigateRule(this.id);
-            }
-        },
-        { id: 'hideWatchedPercent', name: 'Watch Threshold %', description: 'Hide videos watched past this percentage (0-100)', group: 'Content', icon: 'settings', type: 'select', isSubFeature: true, parentId: 'hideWatchedByPercent',
-            options: { '50': '50%', '60': '60%', '70': '70%', '80': '80%', '90': '90%', '95': '95%', '100': '100%' }, init(){}, destroy(){} },
-        { id: 'hideWatchedHome', name: 'Hide on Home', description: 'Apply watched filter on homepage', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hideWatchedByPercent', init(){}, destroy(){} },
-        { id: 'hideWatchedSubscriptions', name: 'Hide on Subscriptions', description: 'Apply watched filter on subscriptions', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hideWatchedByPercent', init(){}, destroy(){} },
-        { id: 'hideWatchedSearch', name: 'Hide on Search', description: 'Apply watched filter on search results', group: 'Content', icon: 'eye-off', isSubFeature: true, parentId: 'hideWatchedByPercent', init(){}, destroy(){} },
-        {
-            id: 'restoreFilterChipSelection',
-            name: 'Restore Filter Chip',
-            description: 'Remember your last selected homepage filter chip (Gaming, Music, etc.) and restore it on page load',
-            group: 'Content',
-            icon: 'tag',
-            _GM_KEY: 'ytkit_lastFilterChip',
-            _observer: null,
-            init() {
-                const self = this;
-                const apply = async () => {
-                    const homePage = document.querySelector('ytd-browse[page-subtype="home"]:not([hidden])');
-                    const chipContainer = homePage?.querySelector('#header #chips');
-                    if (!chipContainer) return;
-
-                    const chipSel = 'yt-chip-cloud-chip-renderer.ytd-feed-filter-chip-bar-renderer';
-                    const selectedSel = chipSel + '.iron-selected';
-
-                    const lastChip = await GM_getValue(self._GM_KEY, null);
-                    if (lastChip) {
-                        const chips = chipContainer.querySelectorAll(chipSel);
-                        for (const chip of chips) {
-                            const text = chip.querySelector('.ytChipShapeChip')?.textContent?.trim();
-                            if (text === lastChip) {
-                                chip.querySelector('button[role="tab"]')?.click();
-                                break;
-                            }
-                        }
-                    }
-
-                    // Watch for chip changes
-                    const checkChips = async () => {
-                        const selected = chipContainer.querySelector(selectedSel + ':not(:first-child)');
-                        if (selected) {
-                            const text = selected.querySelector('.ytChipShapeChip')?.textContent?.trim();
-                            if (text) GM_setValue(self._GM_KEY, text);
-                        }
-                    };
-                    document.addEventListener('yt-service-request-completed', checkChips);
-
-                    // Watch for "All" chip reset
-                    const allChip = chipContainer.querySelector(chipSel + ':first-child');
-                    if (allChip) {
-                        if (self._observer) self._observer.disconnect();
-                        self._observer = new MutationObserver(async () => {
-                            if (allChip.hasAttribute('selected')) GM_deleteValue(self._GM_KEY);
-                        });
-                        self._observer.observe(allChip, { attributes: true, attributeFilter: ['selected'] });
-                    }
-
-                    const cleanup = () => {
-                        self._observer?.disconnect();
-                        document.removeEventListener('yt-service-request-completed', checkChips);
-                    };
-                    document.addEventListener('yt-navigate-start', cleanup, { once: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() { this._observer?.disconnect(); this._observer = null; removeNavigateRule(this.id); }
-        },
-        {
-            id: 'playlistDirectionControl',
-            name: 'Playlist Direction',
-            description: 'Add up/down buttons to reverse playlist playback order',
-            group: 'Playback',
-            icon: 'arrow-up-down',
-            _GM_KEY: 'ytkit_playlistDirection',
-            init() {
-                const self = this;
-                const apply = async () => {
-                    const watchFlexy = document.querySelector('ytd-watch-flexy');
-                    if (!watchFlexy) return;
-                    const playlistPanel = watchFlexy.querySelector('ytd-playlist-panel-renderer:not([hidden])');
-                    if (!playlistPanel) return;
-                    const selectedVideo = playlistPanel.querySelector('ytd-playlist-panel-video-renderer[selected]');
-                    if (!selectedVideo) return;
-
-                    let savedDir = await GM_getValue(self._GM_KEY, 'down');
-                    let reversed = savedDir === 'up';
-                    const items = [...playlistPanel.querySelectorAll('ytd-playlist-panel-video-renderer')];
-                    if (items.length <= 1) return;
-                    const currentIdx = items.indexOf(selectedVideo);
-                    if (currentIdx === -1) return;
-                    const nextButton = watchFlexy.querySelector('.ytp-next-button');
-
-                    const getVideoInfo = (el) => {
-                        if (!el) return null;
-                        const link = el.querySelector('a#wc-endpoint');
-                        const title = el.querySelector('#video-title');
-                        if (!link || !title) return null;
-                        const href = link.href;
-                        let thumb = el.querySelector('ytd-thumbnail img')?.src;
-                        if (!thumb) { const m = href?.match(/[?&]v=([^&#]*)/); if (m) thumb = `https://i.ytimg.com/vi/${m[1]}/mqdefault.jpg`; }
-                        return { href, thumb, title: title.textContent?.trim() };
-                    };
-
-                    const updateNext = () => {
-                        if (!nextButton) return;
-                        const targetIdx = reversed ? currentIdx - 1 : currentIdx + 1;
-                        const info = getVideoInfo(items[targetIdx]);
-                        if (info?.href) {
-                            nextButton.href = info.href;
-                            if (info.thumb) nextButton.dataset.preview = info.thumb;
-                            if (info.title) nextButton.dataset.tooltipText = info.title;
-                        }
-                    };
-
-                    // Create buttons
-                    const actionMenu = playlistPanel.querySelector('#playlist-action-menu .top-level-buttons, #playlist-action-menu');
-                    if (!actionMenu) return;
-                    document.getElementById('ytkit-playlist-dir')?.remove();
-                    const container = document.createElement('div');
-                    container.id = 'ytkit-playlist-dir';
-                    container.style.cssText = 'display:flex;align-items:center;gap:4px;padding:4px 8px';
-
-                    const makeBtn = (isUp) => {
-                        const b = document.createElement('button');
-                        b.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:4px 8px;cursor:pointer;color:var(--yt-spec-text-primary);font-size:12px;display:flex;align-items:center';
-                        b.title = isUp ? 'Play ascending' : 'Play descending (default)';
-                        b.textContent = isUp ? '▲ Up' : '▼ Down';
-                        if ((isUp && reversed) || (!isUp && !reversed)) b.style.borderColor = b.style.color = '#3ea6ff';
-                        b.addEventListener('click', async () => {
-                            reversed = isUp;
-                            GM_setValue(self._GM_KEY, isUp ? 'up' : 'down');
-                            updateNext();
-                            container.querySelectorAll('button').forEach(btn => { btn.style.borderColor = btn.style.color = 'rgba(255,255,255,.2)'; });
-                            b.style.borderColor = b.style.color = '#3ea6ff';
-                        });
-                        return b;
-                    };
-                    const label = document.createElement('span');
-                    label.textContent = 'Direction:';
-                    label.style.cssText = 'font-size:12px;color:var(--yt-spec-text-secondary);margin-right:4px';
-                    container.appendChild(label);
-                    container.appendChild(makeBtn(true));
-                    container.appendChild(makeBtn(false));
-                    actionMenu.appendChild(container);
-                    updateNext();
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() { document.getElementById('ytkit-playlist-dir')?.remove(); removeNavigateRule(this.id); }
-        },
-        {
-            id: 'playlistQuickRemove',
-            name: 'Playlist Quick Remove',
-            description: 'Add a trash icon to each video in owned playlists for instant removal',
-            group: 'Playback',
-            icon: 'trash-2',
-            _observer: null,
-            init() {
-                const self = this;
-                const apply = () => {
-                    // Only on owned playlists (no save button visible = owned)
-                    const saveBtn = document.querySelector('toggle-button-view-model:not(#header *), ytd-playlist-header-renderer ytd-toggle-button-renderer:not([button-next]):not([hidden])');
-                    if (saveBtn) return;
-                    const playlistPage = document.querySelector('ytd-browse[page-subtype="playlist"]:not([hidden])');
-                    if (!playlistPage) return;
-                    const container = playlistPage.querySelector('ytd-playlist-video-list-renderer > #contents');
-                    if (!container) return;
-
-                    const attachTrash = (videoEl) => {
-                        if (videoEl.hasAttribute('data-ytkit-trash')) return;
-                        videoEl.setAttribute('data-ytkit-trash', '1');
-                        const meta = videoEl.querySelector('#meta, #content');
-                        if (!meta) return;
-
-                        const btn = document.createElement('button');
-                        btn.className = 'ytkit-trash-btn';
-                        btn.title = 'Remove from playlist';
-                        btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:4px;opacity:.4;transition:opacity .2s;flex-shrink:0';
-                        TrustedHTML.setHTML(btn, '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
-                        btn.addEventListener('mouseenter', () => { btn.style.opacity = '1'; });
-                        btn.addEventListener('mouseleave', () => { btn.style.opacity = '.4'; });
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault(); e.stopPropagation();
-                            const menuBtn = videoEl.querySelector('button.yt-icon-button, #button.ytd-menu-renderer button, yt-icon-button#button');
-                            if (menuBtn) {
-                                menuBtn.click();
-                                setTimeout(() => {
-                                    const menuItems = document.querySelectorAll('ytd-menu-service-item-renderer, tp-yt-paper-item.ytd-menu-popup-renderer');
-                                    for (const item of menuItems) {
-                                        const text = item.textContent?.toLowerCase() || '';
-                                        if (text.includes('remove') || text.includes('delete') || text.includes('supprimer') || text.includes('entfernen') || text.includes('eliminar')) {
-                                            item.click();
-                                            break;
-                                        }
-                                    }
-                                }, 300);
-                            }
-                        });
-                        meta.style.display = 'flex';
-                        meta.style.alignItems = 'center';
-                        meta.appendChild(btn);
-                    };
-
-                    container.querySelectorAll('ytd-playlist-video-renderer').forEach(attachTrash);
-
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver(muts => {
-                        for (const m of muts) {
-                            for (const n of m.addedNodes) {
-                                if (n.nodeType !== 1) continue;
-                                if (n.matches?.('ytd-playlist-video-renderer')) attachTrash(n);
-                                else n.querySelectorAll?.('ytd-playlist-video-renderer').forEach(attachTrash);
-                            }
-                        }
-                    });
-                    self._observer.observe(container, { childList: true, subtree: true });
-
-                    document.addEventListener('yt-navigate-start', () => {
-                        self._observer?.disconnect();
-                        document.querySelectorAll('.ytkit-trash-btn').forEach(el => el.remove());
-                    }, { once: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                document.querySelectorAll('.ytkit-trash-btn').forEach(el => el.remove());
-                document.querySelectorAll('[data-ytkit-trash]').forEach(el => el.removeAttribute('data-ytkit-trash'));
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'autoEnableSubtitles',
-            name: 'Auto-Enable Subtitles',
-            description: 'Automatically turn on captions/subtitles when a video starts playing (if available)',
-            group: 'Playback',
-            icon: 'subtitles',
-            _handler: null,
-            init() {
-                const self = this;
-                const apply = () => {
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video) return;
-                    if (self._handler) video.removeEventListener('playing', self._handler);
-                    self._handler = () => {
-                        setTimeout(() => {
-                            const ccBtn = document.querySelector('.ytp-subtitles-button.ytp-button');
-                            if (!ccBtn) return;
-                            // Only enable if subtitles are available and currently off
-                            const isUnavailable = ccBtn.innerHTML?.includes('unavailable') || ccBtn.style.display === 'none';
-                            const isOff = ccBtn.getAttribute('aria-pressed') === 'false';
-                            if (!isUnavailable && isOff) ccBtn.click();
-                        }, 500);
-                    };
-                    video.addEventListener('playing', self._handler, { once: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 1500));
-            },
-            destroy() {
-                const video = document.querySelector('video.html5-main-video');
-                if (video && this._handler) video.removeEventListener('playing', this._handler);
-                this._handler = null;
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'chatDisplayNameRestorer',
-            name: 'Chat Display Names',
-            description: 'Replace @usernames in live chat with actual display names (fetches from channel pages)',
-            group: 'Content',
-            icon: 'user',
-            _observer: null,
-            _cache: null,
-            _pending: null,
-            init() {
-                const self = this;
-                // Only activate inside live_chat frames
-                if (!window.location.pathname.includes('/live_chat')) return;
-
-                self._cache = new Map();
-                self._pending = new Map();
-
-                const fetchDisplayName = (username) => {
-                    if (self._cache.has(username)) return Promise.resolve(self._cache.get(username));
-                    if (self._pending.has(username)) return self._pending.get(username);
-                    const p = fetch(`https://www.youtube.com/${username}`)
-                        .then(r => r.text())
-                        .then(html => {
-                            const m = html.match(/<title>([^<]+)<\/title>/i);
-                            if (!m) return null;
-                            const name = m[1].trim().replace(/\s*-\s*YouTube\s*$/, '').trim();
-                            self._cache.set(username, name);
-                            return name;
-                        })
-                        .catch(() => null)
-                        .finally(() => self._pending.delete(username));
-                    self._pending.set(username, p);
-                    return p;
-                };
-
-                const processNode = (node) => {
-                    if (!(node instanceof HTMLElement) || node.id !== 'author-name') return;
-                    const text = node.textContent;
-                    if (!text || !text.startsWith('@')) return;
-                    fetchDisplayName(text).then(name => { if (name) node.textContent = name; });
-                };
-
-                const startObserving = () => {
-                    const chat = document.querySelector('yt-live-chat-app');
-                    if (!chat) { setTimeout(startObserving, 500); return; }
-                    self._observer = new MutationObserver(mutations => {
-                        for (const m of mutations) {
-                            for (const node of m.addedNodes) {
-                                if (!(node instanceof HTMLElement)) continue;
-                                if (node.id === 'author-name') processNode(node);
-                                else node.querySelectorAll?.('#author-name').forEach(processNode);
-                            }
-                        }
-                    });
-                    self._observer.observe(chat, { childList: true, subtree: true });
-                };
-                startObserving();
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                this._cache?.clear(); this._cache = null;
-                this._pending?.clear(); this._pending = null;
-            }
-        },
-        {
-            id: 'audioEnhancer',
-            name: 'Audio Enhancer',
-            description: 'Cinema-quality audio EQ: sub-bass boost, impact peak, mid cut, high rolloff, dynamics compressor. Toggle button appears in player controls.',
-            group: 'Playback',
-            icon: 'music',
-            _btn: null,
-            _styleEl: null,
-            _chain: null,
-            _ctx: null,
-            _source: null,
-            init() {
-                const self = this;
-                const CSS = `.ytkit-audio-btn{display:inline-flex!important;align-items:center;justify-content:center;width:48px;height:100%;cursor:pointer;background:none;border:0;opacity:.9}.ytkit-audio-btn:hover{opacity:1}.ytkit-audio-btn.active svg{fill:#3ea6ff!important;filter:drop-shadow(0 0 6px rgba(62,166,255,.8))}.ytkit-audio-btn svg{width:24px;height:24px;fill:#fff;pointer-events:none}`;
-
-                const getCtx = () => {
-                    if (!self._ctx) self._ctx = new AudioContext();
-                    if (self._ctx.state === 'suspended') self._ctx.resume();
-                    return self._ctx;
-                };
-
-                const buildChain = (video) => {
-                    if (self._chain) return;
-                    const ctx = getCtx();
-                    if (!self._source) self._source = ctx.createMediaElementSource(video);
-                    const src = self._source;
-                    const sub = ctx.createBiquadFilter(); sub.type = 'lowshelf'; sub.frequency.value = 85; sub.gain.value = 10;
-                    const impact = ctx.createBiquadFilter(); impact.type = 'peaking'; impact.frequency.value = 55; impact.Q.value = 1.4; impact.gain.value = 4.5;
-                    const cut = ctx.createBiquadFilter(); cut.type = 'peaking'; cut.frequency.value = 400; cut.Q.value = 1.0; cut.gain.value = -3.5;
-                    const high = ctx.createBiquadFilter(); high.type = 'highshelf'; high.frequency.value = 8000; high.gain.value = -2;
-                    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -26; comp.knee.value = 35; comp.ratio.value = 5; comp.attack.value = 0.02; comp.release.value = 0.15;
-                    const gain = ctx.createGain(); gain.gain.value = 1.25;
-                    src.disconnect();
-                    src.connect(sub).connect(impact).connect(cut).connect(high).connect(comp).connect(gain).connect(ctx.destination);
-                    self._chain = [sub, impact, cut, high, comp, gain];
-                };
-
-                const destroyChain = (video) => {
-                    if (!self._chain) return;
-                    self._chain.forEach(n => { try { n.disconnect(); } catch {} });
-                    self._chain = null;
-                    if (self._source) { try { self._source.disconnect(); self._source.connect(getCtx().destination); } catch {} }
-                };
-
-                const inject = () => {
-                    const controls = document.querySelector('.ytp-left-controls');
-                    if (!controls || controls.querySelector('.ytkit-audio-btn')) return;
-                    if (!self._styleEl) {
-                        self._styleEl = document.createElement('style'); self._styleEl.id = 'ytkit-audio-enhance-css';
-                        self._styleEl.textContent = CSS; document.head.appendChild(self._styleEl);
-                    }
-                    const btn = document.createElement('button');
-                    btn.className = 'ytp-button ytkit-audio-btn';
-                    btn.title = 'Audio Enhancer';
-                    TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3z"/></svg>');
-                    const enabled = GM_getValue('ytkit_audioEnhanced', false);
-                    if (enabled) {
-                        const v = document.querySelector('video'); if (v) { buildChain(v); btn.classList.add('active'); }
-                    }
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const v = document.querySelector('video'); if (!v) return;
-                        if (self._chain) { destroyChain(v); btn.classList.remove('active'); GM_setValue('ytkit_audioEnhanced', false); }
-                        else { buildChain(v); btn.classList.add('active'); GM_setValue('ytkit_audioEnhanced', true); }
-                    });
-                    const vol = controls.querySelector('.ytp-volume-panel');
-                    if (vol?.nextSibling) controls.insertBefore(btn, vol.nextSibling);
-                    else controls.appendChild(btn);
-                    self._btn = btn;
-                };
-                addNavigateRule(this.id, () => {
-                    const video = document.querySelector('video');
-                    if (self._chain) destroyChain(video);
-                    setTimeout(inject, 1500);
-                    const enabled = GM_getValue('ytkit_audioEnhanced', false);
-                    if (enabled) setTimeout(() => { const v = document.querySelector('video'); if (v) buildChain(v); }, 2000);
-                });
-            },
-            destroy() {
-                const video = document.querySelector('video');
-                if (this._chain) {
-                    this._chain.forEach(n => { try { n.disconnect(); } catch {} }); this._chain = null;
-                    if (this._source) { try { this._source.disconnect(); this._source.connect(this._ctx.destination); } catch {} }
-                }
-                this._btn?.remove(); this._btn = null;
-                this._styleEl?.remove(); this._styleEl = null;
-                removeNavigateRule(this.id);
-            }
-        },
         {
             id: 'quickLinkMenu',
             name: 'Logo Quick Links',
@@ -13783,38 +5103,39 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             icon: 'menu',
             _wrapper: null,
             _styleEl: null,
+            menuItems: [
+                { text: 'History',       url: '/feed/history',          icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
+                { text: 'Watch Later',   url: '/playlist?list=WL',      icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
+                { text: 'Playlists',     url: '/feed/library',          icon: 'M22,7H2v1h20V7z M13,12H2v-1h11V12z M13,16H2v-1h11V16z M15,19v-8l7,4L15,19z' },
+                { text: 'Liked Videos',  url: '/playlist?list=LL',      icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
+                { text: 'Subscriptions', url: '/feed/subscriptions',    icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
+            ],
+            _buildMenu(parentEl, dropId) {
+                const menu = document.createElement('div');
+                menu.id = dropId;
+                this.menuItems.forEach(item => {
+                    const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
+                    TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
+                    menu.appendChild(a);
+                });
+                parentEl.appendChild(menu);
+                return menu;
+            },
             init() {
                 const self = this;
-                const menuItems = [
-                    { text: 'History', url: '/feed/history', icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
-                    { text: 'Watch Later', url: '/playlist?list=WL', icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
-                    { text: 'Playlists', url: '/feed/library', icon: 'M22,7H2v1h20V7z M13,12H2v-1h11V12z M13,16H2v-1h11V16z M15,19v-8l7,4L15,19z' },
-                    { text: 'Liked Videos', url: '/playlist?list=LL', icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
-                    { text: 'Subscriptions', url: '/feed/subscriptions', icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
-                ];
-                const CSS = `#ytkit-ql-wrap{position:relative;display:inline-block}#ytkit-ql-menu{position:absolute;top:40px;left:0;background:var(--yt-spec-menu-background,#282828);border:1px solid rgba(255,255,255,.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;flex-direction:column;padding:8px 0;z-index:9999;min-width:200px}#ytkit-ql-wrap:hover #ytkit-ql-menu{display:flex}.ytkit-ql-item{display:flex;align-items:center;padding:10px 16px;color:var(--yt-spec-text-primary,#fff);text-decoration:none;font-size:14px;font-family:"Roboto","Arial",sans-serif;transition:background .2s}.ytkit-ql-item:hover{background:rgba(255,255,255,.1)}.ytkit-ql-icon{margin-right:14px;fill:var(--yt-spec-text-primary,#fff);width:22px;height:22px;flex-shrink:0}`;
+                // Inject CSS once — not per-navigation
+                self._styleEl = GM_addStyle(`#ytkit-ql-wrap{position:relative;display:inline-block} #ytkit-ql-menu{position:absolute;top:40px;left:0;background:var(--yt-spec-menu-background,#282828);border:1px solid rgba(255,255,255,.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;flex-direction:column;padding:8px 0;z-index:9999;min-width:200px} #ytkit-ql-wrap:hover #ytkit-ql-menu{display:flex} .ytkit-ql-item{display:flex;align-items:center;padding:10px 16px;color:var(--yt-spec-text-primary,#fff);text-decoration:none;font-size:14px;font-family:"Roboto","Arial",sans-serif;transition:background .2s} .ytkit-ql-item:hover{background:rgba(255,255,255,.1)} .ytkit-ql-icon{margin-right:14px;fill:var(--yt-spec-text-primary,#fff);width:22px;height:22px;flex-shrink:0}`);
 
-                const inject = () => {
+                // ytd-topbar-logo-renderer is part of the persistent masthead shell —
+                // inject once as soon as the element exists, never needs to re-run per navigation.
+                waitForElement('ytd-topbar-logo-renderer', (logo) => {
                     if (document.getElementById('ytkit-ql-wrap')) return;
-                    const logo = document.querySelector('ytd-topbar-logo-renderer');
-                    if (!logo) return;
-                    if (!self._styleEl) {
-                        self._styleEl = document.createElement('style'); self._styleEl.id = 'ytkit-ql-css';
-                        self._styleEl.textContent = CSS; document.head.appendChild(self._styleEl);
-                    }
                     const wrapper = document.createElement('div'); wrapper.id = 'ytkit-ql-wrap';
                     logo.parentNode.insertBefore(wrapper, logo);
                     wrapper.appendChild(logo);
-                    const menu = document.createElement('div'); menu.id = 'ytkit-ql-menu';
-                    menuItems.forEach(item => {
-                        const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
-                        TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
-                        menu.appendChild(a);
-                    });
-                    wrapper.appendChild(menu);
+                    self._buildMenu(wrapper, 'ytkit-ql-menu');
                     self._wrapper = wrapper;
-                };
-                addNavigateRule(this.id, () => setTimeout(inject, 1500));
+                });
             },
             destroy() {
                 if (this._wrapper) {
@@ -13823,768 +5144,6 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
                     this._wrapper.remove(); this._wrapper = null;
                 }
                 this._styleEl?.remove(); this._styleEl = null;
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'liveChatGoToChannel',
-            name: 'Chat: Go To Channel',
-            description: 'Restore "Go to Channel" option in live chat and replay context menus (opens in new tab)',
-            group: 'Content',
-            icon: 'external-link',
-            _origFetch: null,
-            _clickHandler: null,
-            init() {
-                // Only activate inside live_chat frames
-                if (!window.location.pathname.includes('/live_chat')) return;
-                const self = this;
-                const channelMap = new Map();
-
-                const captureFromActions = (actions) => {
-                    if (!Array.isArray(actions)) return;
-                    actions.forEach(action => {
-                        const inner = action.addChatItemAction ? action : action.replayChatItemAction?.actions?.[0];
-                        if (!inner) return;
-                        const add = inner.addChatItemAction;
-                        if (!add) return;
-                        const item = add.item.liveChatTextMessageRenderer ?? add.item.liveChatPaidMessageRenderer ?? add.item.liveChatMembershipItemRenderer ?? add.item.liveChatPaidStickerRenderer;
-                        if (item?.authorExternalChannelId && item?.contextMenuEndpoint) {
-                            const params = item.contextMenuEndpoint.liveChatItemContextMenuEndpoint.params;
-                            channelMap.set(params, item.authorExternalChannelId);
-                        }
-                    });
-                };
-
-                const captureChannelIds = (data) => {
-                    const actions = data?.continuationContents?.liveChatContinuation?.actions;
-                    if (actions) captureFromActions(actions);
-                };
-
-                // Parse ytInitialData for initial channel IDs
-                try {
-                    const scripts = document.getElementsByTagName('script');
-                    for (const script of scripts) {
-                        if (script.textContent.includes('ytInitialData')) {
-                            const match = script.textContent.match(/ytInitialData"\]\s*=\s*(\{.*\});/);
-                            if (match) { captureChannelIds(JSON.parse(match[1])); break; }
-                        }
-                    }
-                } catch {}
-
-                // Patch fetch to intercept live chat API responses
-                self._origFetch = window.fetch;
-                window.fetch = async (...args) => {
-                    const res = await self._origFetch(...args);
-                    const url = res.url;
-                    let text = await res.text();
-                    let modified = text;
-                    try {
-                        if (url.includes('/youtubei/v1/live_chat/get_live_chat') || url.includes('/youtubei/v1/live_chat/get_live_chat_replay')) {
-                            captureChannelIds(JSON.parse(text));
-                        }
-                        if (url.includes('/youtubei/v1/live_chat/get_item_context_menu')) {
-                            const json = JSON.parse(text);
-                            const params = new URLSearchParams(new URL(url).search).get('params');
-                            const channelId = channelMap.get(params);
-                            if (channelId) {
-                                const channelUrl = `/channel/${channelId}`;
-                                const menu = json.liveChatItemContextMenuSupportedRenderers?.menuRenderer;
-                                if (menu?.items) {
-                                    menu.items.unshift({
-                                        menuNavigationItemRenderer: {
-                                            text: { runs: [{ text: 'Go to Channel' }] },
-                                            icon: { iconType: 'ACCOUNT_CIRCLE' },
-                                            navigationEndpoint: {
-                                                commandMetadata: { webCommandMetadata: { url: channelUrl, webPageType: 'WEB_PAGE_TYPE_CHANNEL', rootVe: 3611 } },
-                                                browseEndpoint: { browseId: channelId, canonicalBaseUrl: channelUrl }
-                                            }
-                                        }
-                                    });
-                                    modified = JSON.stringify(json);
-                                }
-                            }
-                        }
-                    } catch {}
-                    return new Response(modified, { status: res.status, statusText: res.statusText, headers: res.headers });
-                };
-
-                // Intercept clicks on "Go to Channel" to open in new tab
-                self._clickHandler = (e) => {
-                    const item = e.target.closest('ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer');
-                    if (!item || !item.innerText.includes('Go to Channel')) return;
-                    const anchor = item.querySelector('a');
-                    if (!anchor?.href) return;
-                    e.stopImmediatePropagation(); e.preventDefault();
-                    window.open(anchor.href, '_blank', 'noopener');
-                };
-                document.addEventListener('click', self._clickHandler, true);
-            },
-            destroy() {
-                if (this._origFetch) { window.fetch = this._origFetch; this._origFetch = null; }
-                if (this._clickHandler) { document.removeEventListener('click', this._clickHandler, true); this._clickHandler = null; }
-            }
-        },
-        {
-            id: 'blockYouTubeTelemetry',
-            name: 'Block Telemetry',
-            description: 'Stub YouTube analytics/telemetry beacon calls (ytcsi, ytStats) to reduce tracking overhead',
-            group: 'Playback',
-            icon: 'shield',
-            init() {
-                const noop = () => {};
-                try {
-                    window.ytcsi = { tick: noop, span: noop, info: noop, setTick: noop, lastTick: noop };
-                    window.ytStats = noop;
-                } catch {}
-            },
-            destroy() {
-                // Cannot un-stub — requires page reload
-            }
-        },
-        {
-            id: 'syncedLyrics',
-            name: 'Synced Lyrics',
-            description: 'Display synced lyrics from LRCLib in a side panel, synchronized to video playback. Click any line to seek. Works best on music videos.',
-            group: 'Playback',
-            icon: 'music',
-            _container: null,
-            _raf: null,
-            _lastVideoId: null,
-            _lyricsData: [],
-            _searchResults: [],
-            _styleEl: null,
-            init() {
-                const self = this;
-                const API_ROOT = 'https://lrclib.net/api';
-                const CSS = `#ytkit-lyrics{position:fixed;right:0;top:var(--ytd-masthead-height,56px);bottom:0;width:350px;background:#0d0d0d;border-left:1px solid #333;z-index:2000;display:flex;flex-direction:column;box-shadow:-2px 0 10px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:transform .3s}#ytkit-lyrics.hidden{transform:translateX(100%)}#ytkit-lyrics-hdr{padding:12px 15px;border-bottom:1px solid #333;background:#151515;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:15px;font-weight:500}#ytkit-lyrics-body{flex:1;overflow-y:auto;padding:10px;text-align:center;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#555 #0d0d0d}.ytkit-lyric-line{padding:8px 5px;font-size:15px;color:#666;cursor:pointer;transition:color .2s,transform .2s;line-height:1.4;border-radius:4px;margin-bottom:2px}.ytkit-lyric-line:hover{background:rgba(255,255,255,.05);color:#bbb}.ytkit-lyric-line.active{color:#fff;font-weight:bold;font-size:17px;transform:scale(1.02);text-shadow:0 0 10px rgba(255,255,255,.15)}.ytkit-lyric-src{text-align:left;padding:10px;border-bottom:1px solid #333;cursor:pointer;color:#ccc;font-size:13px}.ytkit-lyric-src:hover{background:rgba(255,255,255,.08)}.ytkit-lyric-src .artist{color:#888;font-size:12px}.ytkit-lyrics-status{color:#888;padding:40px 20px;font-size:14px;line-height:1.6}#ytkit-lyrics-toggle{position:fixed;right:12px;bottom:80px;z-index:2001;width:40px;height:40px;border-radius:50%;background:#222;border:1px solid #444;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.4)}#ytkit-lyrics-toggle:hover{background:#333}`;
-
-                const parseTitleArtist = (title) => {
-                    const t = (title || '').replace(/\s*\(official.*?\)/gi, '').replace(/\s*\[official.*?\]/gi, '').replace(/\s*\(audio\)/gi, '').replace(/\s*\(lyrics?\)/gi, '').replace(/\s*\[lyrics?\]/gi, '').replace(/\s*\(music\s*video\)/gi, '').replace(/\s*MV$/i, '').trim();
-                    const sep = [' - ', ' — ', ' – ', ' | ', ' // '];
-                    for (const s of sep) {
-                        const idx = t.indexOf(s);
-                        if (idx > 0) return { artist: t.slice(0, idx).trim(), title: t.slice(idx + s.length).trim() };
-                    }
-                    const channel = document.querySelector('#owner #channel-name a, ytd-video-owner-renderer #text a')?.textContent?.trim()?.replace(/\s*-\s*Topic$/, '') || '';
-                    return { artist: channel, title: t };
-                };
-
-                const parseLRC = (lrc) => {
-                    if (!lrc) return [];
-                    const lines = [];
-                    lrc.split('\n').forEach(l => {
-                        const m = l.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
-                        if (m) lines.push({ time: parseInt(m[1]) * 60 + parseInt(m[2]) + parseInt(m[3]) / (m[3].length === 3 ? 1000 : 100), text: m[4].trim() });
-                    });
-                    return lines.sort((a, b) => a.time - b.time);
-                };
-
-                const buildUI = () => {
-                    if (document.getElementById('ytkit-lyrics')) return;
-                    if (!self._styleEl) { self._styleEl = document.createElement('style'); self._styleEl.id = 'ytkit-lyrics-css'; self._styleEl.textContent = CSS; document.head.appendChild(self._styleEl); }
-                    const container = document.createElement('div'); container.id = 'ytkit-lyrics'; container.className = 'hidden';
-                    TrustedHTML.setHTML(container, '<div id="ytkit-lyrics-hdr"><span>Lyrics</span><div style="display:flex;gap:12px"><span class="ytkit-lyric-src-btn" style="cursor:pointer;color:#aaa;font-size:13px" title="Search sources">Sources</span><span style="cursor:pointer;color:#aaa" id="ytkit-lyrics-close" title="Close">&times;</span></div></div><div id="ytkit-lyrics-body"><div class="ytkit-lyrics-status">Waiting for music...</div></div>');
-                    document.body.appendChild(container); self._container = container;
-                    container.querySelector('#ytkit-lyrics-close').addEventListener('click', () => container.classList.toggle('hidden'));
-                    container.querySelector('.ytkit-lyric-src-btn').addEventListener('click', () => self._showSources());
-
-                    const toggle = document.createElement('button'); toggle.id = 'ytkit-lyrics-toggle'; toggle.title = 'Toggle Lyrics'; toggle.textContent = '\u266B';
-                    toggle.addEventListener('click', () => container.classList.toggle('hidden'));
-                    document.body.appendChild(toggle);
-                };
-
-                self._showSources = () => {
-                    const body = document.getElementById('ytkit-lyrics-body');
-                    if (!body || !self._searchResults.length) return;
-                    body.innerHTML = '';
-                    self._searchResults.forEach((r, i) => {
-                        const div = document.createElement('div'); div.className = 'ytkit-lyric-src';
-                        const nameEl = document.createElement('div'); nameEl.textContent = r.trackName || 'Unknown';
-                        const artEl = document.createElement('div'); artEl.className = 'artist'; artEl.textContent = `${r.artistName || ''} ${r.albumName ? '- ' + r.albumName : ''} (${r.duration ? Math.floor(r.duration / 60) + ':' + String(r.duration % 60).padStart(2, '0') : '?'})`;
-                        div.appendChild(nameEl); div.appendChild(artEl);
-                        div.addEventListener('click', () => { self._displayLyrics(r.syncedLyrics || r.plainLyrics, r); });
-                        body.appendChild(div);
-                    });
-                };
-
-                self._displayLyrics = (lrc, info) => {
-                    const body = document.getElementById('ytkit-lyrics-body');
-                    if (!body) return;
-                    self._lyricsData = parseLRC(lrc);
-                    if (!self._lyricsData.length && lrc) {
-                        const status = document.createElement('div'); status.className = 'ytkit-lyrics-status'; status.style.whiteSpace = 'pre-wrap'; status.textContent = lrc;
-                        body.innerHTML = ''; body.appendChild(status);
-                        return;
-                    }
-                    if (!self._lyricsData.length) { TrustedHTML.setHTML(body, '<div class="ytkit-lyrics-status">No lyrics found</div>'); return; }
-                    body.innerHTML = '';
-                    const hdr = document.getElementById('ytkit-lyrics-hdr')?.querySelector('span');
-                    if (hdr && info) hdr.textContent = `${info.trackName || 'Lyrics'}`;
-                    self._lyricsData.forEach((line, i) => {
-                        const div = document.createElement('div'); div.className = 'ytkit-lyric-line'; div.dataset.idx = i;
-                        div.textContent = line.text || '\u266A'; div.addEventListener('click', () => { const v = document.querySelector('video'); if (v) v.currentTime = line.time; });
-                        body.appendChild(div);
-                    });
-                };
-
-                const fetchLyrics = async () => {
-                    const vid = new URLSearchParams(window.location.search).get('v');
-                    if (!vid || vid === self._lastVideoId) return;
-                    self._lastVideoId = vid;
-                    const body = document.getElementById('ytkit-lyrics-body');
-                    if (!body) return;
-                    TrustedHTML.setHTML(body, '<div class="ytkit-lyrics-status">Searching lyrics...</div>');
-                    self._lyricsData = []; self._searchResults = [];
-                    const titleEl = document.querySelector('yt-formatted-string.ytd-watch-metadata, #title h1 yt-formatted-string');
-                    if (!titleEl) { TrustedHTML.setHTML(body, '<div class="ytkit-lyrics-status">Waiting for title...</div>'); return; }
-                    const { artist, title } = parseTitleArtist(titleEl.textContent);
-                    const video = document.querySelector('video');
-                    const dur = video ? Math.round(video.duration) : 0;
-                    try {
-                        const params = new URLSearchParams({ track_name: title, artist_name: artist });
-                        if (dur > 0) params.set('duration', dur);
-                        const res = await fetch(`${API_ROOT}/search?${params}`);
-                        if (!res.ok) throw new Error(res.status);
-                        const data = await res.json();
-                        self._searchResults = data;
-                        if (!data.length) { TrustedHTML.setHTML(body, '<div class="ytkit-lyrics-status">No lyrics found for this track</div>'); return; }
-                        const best = data.find(r => r.syncedLyrics) || data[0];
-                        self._displayLyrics(best.syncedLyrics || best.plainLyrics, best);
-                        self._container?.classList.remove('hidden');
-                    } catch { TrustedHTML.setHTML(body, '<div class="ytkit-lyrics-status">Could not fetch lyrics</div>'); }
-                };
-
-                const syncPlayback = () => {
-                    const video = document.querySelector('video');
-                    if (!video || !self._lyricsData.length) { self._raf = requestAnimationFrame(syncPlayback); return; }
-                    const t = video.currentTime;
-                    let activeIdx = -1;
-                    for (let i = self._lyricsData.length - 1; i >= 0; i--) { if (t >= self._lyricsData[i].time) { activeIdx = i; break; } }
-                    const body = document.getElementById('ytkit-lyrics-body');
-                    if (body) {
-                        const prev = body.querySelector('.ytkit-lyric-line.active');
-                        if (prev && parseInt(prev.dataset.idx) !== activeIdx) prev.classList.remove('active');
-                        if (activeIdx >= 0) {
-                            const el = body.querySelector(`.ytkit-lyric-line[data-idx="${activeIdx}"]`);
-                            if (el && !el.classList.contains('active')) { el.classList.add('active'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-                        }
-                    }
-                    self._raf = requestAnimationFrame(syncPlayback);
-                };
-
-                addNavigateRule(this.id, () => {
-                    self._lastVideoId = null;
-                    setTimeout(() => { buildUI(); fetchLyrics(); if (!self._raf) self._raf = requestAnimationFrame(syncPlayback); }, 2000);
-                });
-            },
-            destroy() {
-                if (this._raf) cancelAnimationFrame(this._raf); this._raf = null;
-                this._container?.remove(); this._container = null;
-                document.getElementById('ytkit-lyrics-toggle')?.remove();
-                this._styleEl?.remove(); this._styleEl = null;
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'subscriptionExporter',
-            name: 'Export Subscriptions',
-            description: 'Adds an "Export Subscriptions" button on the Channels page (/feed/channels) to download all subscriptions as a text file',
-            group: 'Content',
-            icon: 'download',
-            _btn: null,
-            init() {
-                const self = this;
-                const BTN_ID = 'ytkit-subs-export';
-
-                const delay = ms => new Promise(r => setTimeout(r, ms));
-
-                const scrollToLoadAll = async () => {
-                    let lastH = 0, unchanged = 0;
-                    while (unchanged < 3) {
-                        window.scrollTo(0, document.documentElement.scrollHeight);
-                        await delay(1000);
-                        const h = document.documentElement.scrollHeight;
-                        if (h === lastH) unchanged++; else unchanged = 0;
-                        lastH = h;
-                    }
-                    window.scrollTo(0, 0); await delay(300);
-                };
-
-                const fetchChannelId = async (url) => {
-                    try {
-                        const res = await fetch(url); if (!res.ok) return null;
-                        const html = await res.text();
-                        for (const pat of [/"channelId":"(UC[a-zA-Z0-9_-]{22})"/, /"externalId":"(UC[a-zA-Z0-9_-]{22})"/, /\/channel\/(UC[a-zA-Z0-9_-]{22})/]) {
-                            const m = html.match(pat); if (m?.[1]) return m[1];
-                        }
-                    } catch {} return null;
-                };
-
-                const extractChannelInfo = (el) => {
-                    const info = { name: null, channelId: null, handleUrl: null };
-                    try { const d = el.data; if (d?.channelId) info.channelId = d.channelId; if (d?.title?.simpleText) info.name = d.title.simpleText; } catch {}
-                    if (!info.name) { const t = el.querySelector('yt-formatted-string#text.ytd-channel-name, #channel-title yt-formatted-string'); if (t) info.name = t.textContent.trim(); }
-                    const link = el.querySelector('a#main-link');
-                    if (link?.href) {
-                        if (link.href.includes('/channel/UC')) { const m = link.href.match(/\/channel\/(UC[a-zA-Z0-9_-]{22})/); if (m) info.channelId = m[1]; }
-                        else if (link.href.includes('/@')) info.handleUrl = link.href;
-                    }
-                    return info.name ? info : null;
-                };
-
-                const handleExport = async () => {
-                    const btn = document.getElementById(BTN_ID); if (!btn) return;
-                    const updateBtn = (t, d) => { btn.textContent = t; btn.disabled = d; btn.style.opacity = d ? '.7' : '1'; };
-                    try {
-                        updateBtn('Scrolling...', true); await scrollToLoadAll();
-                        updateBtn('Reading channels...', true); await delay(300);
-                        const elements = document.querySelectorAll('ytd-channel-renderer');
-                        const channels = []; elements.forEach(el => { const i = extractChannelInfo(el); if (i) channels.push(i); });
-                        if (!channels.length) { updateBtn('No channels found', false); await delay(2000); updateBtn('Export Subscriptions', false); return; }
-                        const needsFetch = channels.filter(c => !c.channelId && c.handleUrl);
-                        if (needsFetch.length) {
-                            let done = 0;
-                            for (let i = 0; i < needsFetch.length; i += 10) {
-                                const batch = needsFetch.slice(i, i + 10);
-                                await Promise.all(batch.map(async (ch) => { ch.channelId = await fetchChannelId(ch.handleUrl); done++; updateBtn(`Fetching ${done}/${needsFetch.length}...`, true); }));
-                                if (i + 10 < needsFetch.length) await delay(200);
-                            }
-                        }
-                        const lines = channels.map(c => `${c.name}\n${c.channelId ? 'https://www.youtube.com/channel/' + c.channelId : c.handleUrl}`);
-                        const blob = new Blob([lines.join('\n\n')], { type: 'text/plain;charset=utf-8' });
-                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-                        a.download = `youtube_subscriptions_${new Date().toISOString().slice(0, 10)}.txt`;
-                        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-                        updateBtn(`Exported ${channels.length} channels`, false); await delay(3000);
-                    } catch { updateBtn('Error', false); await delay(2000); }
-                    const b = document.getElementById(BTN_ID); if (b) { b.textContent = 'Export Subscriptions'; b.disabled = false; b.style.opacity = '1'; }
-                };
-
-                const check = () => {
-                    const onPage = window.location.pathname === '/feed/channels';
-                    const existing = document.getElementById(BTN_ID);
-                    if (onPage && !existing && document.body) {
-                        const btn = document.createElement('button'); btn.id = BTN_ID;
-                        btn.textContent = 'Export Subscriptions';
-                        btn.style.cssText = 'position:fixed;top:80px;right:20px;z-index:2100;padding:10px 20px;background:#c00;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3)';
-                        btn.addEventListener('click', handleExport);
-                        btn.addEventListener('mouseenter', () => { btn.style.background = '#a00'; });
-                        btn.addEventListener('mouseleave', () => { btn.style.background = '#c00'; });
-                        document.body.appendChild(btn); self._btn = btn;
-                    } else if (!onPage && existing) { existing.remove(); self._btn = null; }
-                };
-                addNavigateRule(this.id, () => setTimeout(check, 1000));
-            },
-            destroy() { this._btn?.remove(); this._btn = null; removeNavigateRule(this.id); }
-        },
-        {
-            id: 'dimWatchedVideos',
-            name: 'Dim Watched Videos',
-            description: 'Progressively dim watched videos based on how much you have watched (more watched = more transparent), using a smooth sigmoid curve',
-            group: 'Content',
-            icon: 'eye',
-            _observer: null,
-            _styleEl: null,
-            init() {
-                const self = this;
-                const THRESHOLD = 15; // min % to start dimming
-                const MIN_OPACITY = 0.15;
-                const MAX_OPACITY = 0.65;
-
-                const calcOpacity = (pct) => {
-                    const clamped = Math.max(THRESHOLD, Math.min(100, pct));
-                    const norm = (clamped - THRESHOLD) / (100 - THRESHOLD);
-                    const shifted = (norm - 0.5) * 4;
-                    const sigmoid = 1 / (1 + Math.exp(-shifted));
-                    return Math.max(MIN_OPACITY, Math.min(MAX_OPACITY, MIN_OPACITY + (1 - sigmoid) * (MAX_OPACITY - MIN_OPACITY)));
-                };
-
-                const process = () => {
-                    if (window.location.href.includes('/feed/history')) return;
-                    const bars = document.querySelectorAll('.ytd-thumbnail-overlay-resume-playback-renderer, .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment, .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegmentModern');
-                    bars.forEach(bar => {
-                        const pct = parseInt(bar.style.width, 10);
-                        if (!pct || pct < THRESHOLD) return;
-                        const item = bar.closest('ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-video-renderer, yt-lockup-view-model');
-                        if (!item || item.dataset.ytkitDimmed) return;
-                        item.dataset.ytkitDimmed = '1';
-                        item.style.opacity = calcOpacity(pct).toFixed(2);
-                        item.style.transition = 'opacity .3s';
-                    });
-                };
-
-                const run = () => {
-                    process();
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver(() => { clearTimeout(self._debounce); self._debounce = setTimeout(process, 200); });
-                    const target = document.querySelector('ytd-browse:not([hidden]) #contents, ytd-search:not([hidden]) #contents, ytd-watch-flexy #related');
-                    if (target) self._observer.observe(target, { childList: true, subtree: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(run, 1000));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                document.querySelectorAll('[data-ytkit-dimmed]').forEach(el => { el.removeAttribute('data-ytkit-dimmed'); el.style.opacity = ''; el.style.transition = ''; });
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'videoFileSizeDisplay',
-            name: 'Video File Size',
-            description: 'Show estimated file size for each quality level in the quality settings menu, extracted from YouTube streaming data',
-            group: 'Playback',
-            icon: 'hard-drive',
-            _observer: null,
-            init() {
-                const self = this;
-                const fmtSize = (bytes) => {
-                    if (!bytes || bytes <= 0) return '';
-                    if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
-                    if (bytes >= 1e6) return (bytes / 1e6).toFixed(0) + ' MB';
-                    return (bytes / 1e3).toFixed(0) + ' KB';
-                };
-
-                const getSizeMap = () => {
-                    try {
-                        const data = window.ytInitialPlayerResponse?.streamingData || document.querySelector('ytd-player')?.player_?.getPlayerResponse?.()?.streamingData;
-                        if (!data) return null;
-                        const formats = [...(data.formats || []), ...(data.adaptiveFormats || [])];
-                        const videoByHeight = {};
-                        const audioSizes = [];
-                        formats.forEach(f => {
-                            const size = parseInt(f.contentLength) || 0;
-                            if (!size) return;
-                            if (f.mimeType?.startsWith('audio/')) { audioSizes.push(size); return; }
-                            const h = f.height;
-                            if (h && (!videoByHeight[h] || size > videoByHeight[h])) videoByHeight[h] = size;
-                        });
-                        const bestAudio = audioSizes.length ? Math.max(...audioSizes) : 0;
-                        const map = {};
-                        for (const [h, vs] of Object.entries(videoByHeight)) map[parseInt(h)] = vs + bestAudio;
-                        return Object.keys(map).length ? map : null;
-                    } catch { return null; }
-                };
-
-                const labelQualityItems = () => {
-                    const sizeMap = getSizeMap();
-                    if (!sizeMap) return;
-                    const qualityMenu = document.querySelector('.ytp-quality-menu, .ytp-panel-menu');
-                    if (!qualityMenu) return;
-                    qualityMenu.querySelectorAll('.ytp-menuitem, .ytp-panel-menu-item').forEach(item => {
-                        if (item.dataset.ytkitSize) return;
-                        const label = item.querySelector('.ytp-menuitem-label, .ytp-panel-menu-item-label')?.textContent?.trim() || '';
-                        const hMatch = label.match(/(\d{3,4})p/);
-                        if (hMatch) {
-                            const h = parseInt(hMatch[1]);
-                            const size = sizeMap[h];
-                            if (size) {
-                                item.dataset.ytkitSize = '1';
-                                const badge = document.createElement('span');
-                                badge.style.cssText = 'margin-left:8px;font-size:11px;color:#aaa;font-weight:400';
-                                badge.textContent = `(${fmtSize(size)})`;
-                                const labelEl = item.querySelector('.ytp-menuitem-label, .ytp-panel-menu-item-label');
-                                if (labelEl) labelEl.appendChild(badge);
-                            }
-                        }
-                    });
-                };
-
-                const apply = () => {
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver(() => { clearTimeout(self._debounce); self._debounce = setTimeout(labelQualityItems, 100); });
-                    const player = document.getElementById('movie_player');
-                    if (player) self._observer.observe(player, { childList: true, subtree: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(apply, 2000));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                document.querySelectorAll('[data-ytkit-size]').forEach(el => el.removeAttribute('data-ytkit-size'));
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'fullDates',
-            name: 'Full Dates',
-            description: 'Replace "1 year ago" with exact upload dates (e.g. "Mar 15 2024"). Color badges: green = this week, purple = this year, yellow = older. Fetches dates via YouTube internal API.',
-            group: 'Content',
-            icon: 'calendar',
-            _observer: null,
-            _styleEl: null,
-            _cache: null,
-            _pending: 0,
-            _queue: [],
-            init() {
-                const self = this;
-                self._cache = new Map();
-                const ATTR = 'data-ytkit-dated';
-                const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-                const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-                const CSS = `.ytkit-date-thisweek{color:#4caf50!important;font-weight:500}.ytkit-date-thisyear{color:#ab47bc!important}.ytkit-date-oldyear{color:#fdd835!important}`;
-
-                if (!self._styleEl) { self._styleEl = document.createElement('style'); self._styleEl.id = 'ytkit-fulldates-css'; self._styleEl.textContent = CSS; document.head.appendChild(self._styleEl); }
-
-                const pad = n => String(n).padStart(2, '0');
-
-                const formatDate = (dateStr) => {
-                    const d = new Date(dateStr);
-                    if (isNaN(d.getTime())) return null;
-                    const now = new Date();
-                    const diffDays = (now - d) / 864e5;
-                    const isThisWeek = diffDays >= 0 && diffDays < 7;
-                    const isThisYear = d.getFullYear() === now.getFullYear() && !isThisWeek;
-                    const isOld = d.getFullYear() < now.getFullYear();
-
-                    const hours24 = d.getHours();
-                    const tokens = {
-                        yyyy: d.getFullYear(), yy: String(d.getFullYear()).slice(-2),
-                        MMMM: MONTHS_FULL[d.getMonth()], MMM: MONTHS[d.getMonth()], MM: pad(d.getMonth() + 1),
-                        dd: pad(d.getDate()), ww: DAYS_SHORT[d.getDay()],
-                        HH: pad(hours24), hh: pad(hours24 % 12 || 12), mm: pad(d.getMinutes()), ap: hours24 < 12 ? 'AM' : 'PM'
-                    };
-                    let fmt = appState.settings.fullDatesFormat || 'MMM dd yyyy';
-                    // Smart year: hide year token if this year
-                    if (isThisYear) fmt = fmt.replace(/\s*yyyy\s*/g, ' ').replace(/\s*yy\s*/g, ' ');
-                    let text = fmt.replace(/yyyy|yy|MMMM|MMM|MM|dd|ww|HH|hh|mm|ap/g, m => tokens[m]).replace(/,/g, '').replace(/\s+/g, ' ').trim();
-                    let tier = isThisWeek ? 'thisweek' : isThisYear ? 'thisyear' : isOld ? 'oldyear' : 'none';
-                    return { text, tier };
-                };
-
-                const fetchUploadDate = async (videoId) => {
-                    if (self._cache.has(videoId)) return self._cache.get(videoId);
-                    try {
-                        const res = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ context: { client: { clientName: 'WEB', clientVersion: '2.20240416.01.00' } }, videoId })
-                        });
-                        if (!res.ok) return null;
-                        const data = await res.json();
-                        const info = data?.microformat?.playerMicroformatRenderer;
-                        const date = info?.liveBroadcastDetails?.isLiveNow ? info.liveBroadcastDetails.startTimestamp : (info?.publishDate || info?.uploadDate);
-                        if (date) self._cache.set(videoId, date);
-                        return date || null;
-                    } catch { return null; }
-                };
-
-                const hasRelativeDate = (text) => {
-                    if (!text) return false;
-                    const t = text.toLowerCase();
-                    const agoWords = ['ago', 'streamed', 'just now', 'yesterday', 'today', 'premiere', 'updated', 'edited'];
-                    const unitWords = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
-                    return agoWords.some(k => t.includes(k)) && unitWords.some(k => t.includes(k));
-                };
-
-                const getVideoId = (url) => {
-                    if (!url) return null;
-                    const m = url.match(/\/shorts\/([^/?&#]+)/) || url.match(/[?&]v=([^&#]+)/) || url.match(/\/live\/([^/?&#]+)/);
-                    return m ? m[1] : null;
-                };
-
-                const processQueue = async () => {
-                    while (self._queue.length > 0 && self._pending < 3) {
-                        const task = self._queue.shift(); self._pending++;
-                        try { await task(); } catch {} self._pending--;
-                    }
-                };
-
-                const processElement = (container) => {
-                    const dateSelectors = ['#metadata-line > span', '.inline-metadata-item', '#video-info > span', 'ytd-video-meta-block #metadata-line span', '#byline-container span'];
-                    let dateEl = null;
-                    for (const sel of dateSelectors) {
-                        for (const el of container.querySelectorAll(sel)) {
-                            if (!el.hasAttribute(ATTR) && el.textContent && hasRelativeDate(el.textContent)) { dateEl = el; break; }
-                        }
-                        if (dateEl) break;
-                    }
-                    if (!dateEl) return;
-
-                    const linkSelectors = ['a#thumbnail', 'a#video-title-link', 'h3 > a', 'a[href*="watch"]', 'a[href*="shorts"]', 'a[href*="live"]'];
-                    let href = null;
-                    for (const sel of linkSelectors) { const a = container.querySelector(sel); if (a?.href) { href = a.href; break; } }
-                    const videoId = getVideoId(href);
-                    if (!videoId) return;
-
-                    dateEl.setAttribute(ATTR, 'pending');
-                    self._queue.push(async () => {
-                        const uploadDate = await fetchUploadDate(videoId);
-                        if (!uploadDate) { dateEl.removeAttribute(ATTR); return; }
-                        const result = formatDate(uploadDate);
-                        if (!result) { dateEl.removeAttribute(ATTR); return; }
-                        dateEl.textContent = result.text;
-                        dateEl.setAttribute(ATTR, 'done');
-                        dateEl.classList.remove('ytkit-date-thisweek', 'ytkit-date-thisyear', 'ytkit-date-oldyear');
-                        if (appState.settings.fullDatesBadges && result.tier !== 'none') dateEl.classList.add(`ytkit-date-${result.tier}`);
-                    });
-                    processQueue();
-                };
-
-                const scanAll = () => {
-                    const containers = ['ytd-rich-item-renderer', 'ytd-video-renderer', 'ytd-compact-video-renderer', 'ytd-playlist-video-renderer', 'ytd-grid-video-renderer', 'yt-lockup-view-model', 'ytd-reel-item-renderer', 'ytd-playlist-panel-video-renderer'];
-                    containers.forEach(sel => document.querySelectorAll(sel).forEach(c => processElement(c)));
-                };
-
-                const run = () => {
-                    scanAll();
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver(() => { clearTimeout(self._debounce); self._debounce = setTimeout(scanAll, 300); });
-                    const target = document.querySelector('#content, ytd-app');
-                    if (target) self._observer.observe(target, { childList: true, subtree: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(run, 1500));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                this._styleEl?.remove(); this._styleEl = null;
-                this._cache?.clear(); this._cache = null;
-                document.querySelectorAll('[data-ytkit-dated]').forEach(el => el.removeAttribute('data-ytkit-dated'));
-                removeNavigateRule(this.id);
-            }
-        },
-        {
-            id: 'likedVideosTracker',
-            name: 'Liked Videos Tracker',
-            description: 'Monitors the like button and tracks which videos you have liked. Shows heart badges on thumbnails across all pages. Can dim or hide liked videos.',
-            group: 'Content',
-            icon: 'heart',
-            _observer: null,
-            _styleEl: null,
-            _index: null,
-            _heartMap: null,
-            _listeners: null,
-            _raf: null,
-            init() {
-                const self = this;
-                self._index = new Set((() => { try { return JSON.parse(GM_getValue('ytkit_likedIndex', '[]')); } catch { return []; } })());
-                self._heartMap = new WeakMap();
-                self._listeners = [];
-                const persist = () => GM_setValue('ytkit_likedIndex', JSON.stringify([...self._index]));
-
-                const VIDEO_SELS = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer, yt-lockup-view-model, .ytp-videowall-still, .ytp-modern-videowall-still, .ytp-ce-element';
-
-                const CSS = `:root{--ytkit-liked-color:#ff0033;--ytkit-liked-dim:0.65}.ytkit-liked-heart{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;background:var(--ytkit-liked-color);display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}.ytkit-liked-heart svg{width:14px;height:14px;fill:#fff}.ytkit-liked-heart-hidden{display:none!important}body.ytkit-liked-dim :is(ytd-rich-item-renderer,ytd-video-renderer,ytd-grid-video-renderer,ytd-compact-video-renderer,ytd-playlist-video-renderer,yt-lockup-view-model):has(.ytkit-liked-heart:not(.ytkit-liked-heart-hidden)){opacity:var(--ytkit-liked-dim)!important}body.ytkit-liked-hide :is(ytd-rich-item-renderer,ytd-video-renderer,ytd-grid-video-renderer,ytd-compact-video-renderer,ytd-playlist-video-renderer,yt-lockup-view-model):has(.ytkit-liked-heart:not(.ytkit-liked-heart-hidden)){display:none!important}body.ytkit-liked-title :is(ytd-rich-item-renderer,ytd-video-renderer,ytd-grid-video-renderer,ytd-compact-video-renderer,yt-lockup-view-model):has(.ytkit-liked-heart:not(.ytkit-liked-heart-hidden)) :is(#video-title,.yt-lockup-metadata-view-model__title){color:var(--ytkit-liked-color)!important}`;
-
-                if (!self._styleEl) { self._styleEl = document.createElement('style'); self._styleEl.id = 'ytkit-liked-css'; self._styleEl.textContent = CSS; document.head.appendChild(self._styleEl); }
-                document.body.classList.toggle('ytkit-liked-dim', !!appState.settings.likedVideosDim);
-                document.body.classList.toggle('ytkit-liked-hide', !!appState.settings.likedVideosHide);
-                document.body.classList.add('ytkit-liked-title');
-
-                const HEART_SVG = '<svg viewBox="-4 0 40 32"><path d="M15.217 29.2C15.752 29.5 16.396 29.484 16.928 29.18C20.511 27.132 26.737 22.418 29.182 16.295C32.771 8.322 24.344 1.958 18.52 6.536C17.912 7.013 17.148 7.56 16.623 8.077C16.385 8.311 15.966 8.335 15.719 8.111C15.028 7.482 13.948 6.675 13.254 6.206C8.289 2.846 -0.746 7.275 3.108 16.726C4.52 20.968 11.247 26.986 15.217 29.2Z"/></svg>';
-
-                const extractId = (el) => {
-                    if (el.classList?.contains('ytp-videowall-still') || el.classList?.contains('ytp-modern-videowall-still')) {
-                        const m = el.href?.match(/[?&]v=([^&#]+)/); return m ? m[1] : null;
-                    }
-                    const a = el.querySelector('a[href*="/watch"], a[href*="/shorts"]');
-                    if (!a) return null;
-                    const m = a.href.match(/[?&]v=([^&#]+)/) || a.href.match(/\/shorts\/([^/?&#]+)/);
-                    return m ? m[1] : null;
-                };
-
-                const getThumb = (el) => {
-                    for (const sel of ['a.yt-lockup-view-model__content-image', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail', '.ytp-videowall-still-image']) {
-                        const t = el.querySelector(sel) || (el.matches(sel) ? el : null);
-                        if (t) return t;
-                    }
-                    return null;
-                };
-
-                const addHeart = (el) => {
-                    const id = extractId(el);
-                    if (!id || !self._index.has(id)) return;
-                    if (el.querySelector('.ytkit-liked-heart')) return;
-                    const host = getThumb(el);
-                    if (!host) return;
-                    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-                    const heart = document.createElement('div');
-                    heart.className = 'ytkit-liked-heart';
-                    heart.dataset.id = id;
-                    TrustedHTML.setHTML(heart, HEART_SVG);
-                    host.appendChild(heart);
-                    self._heartMap.set(el, heart);
-                };
-
-                const updateDisplay = (el) => {
-                    const id = extractId(el);
-                    if (!id) return;
-                    let heart = self._heartMap.get(el);
-                    if (!self._index.has(id)) { if (heart) { heart.remove(); self._heartMap.delete(el); } return; }
-                    if (heart && !el.contains(heart)) { heart = null; self._heartMap.delete(el); }
-                    if (!heart) { addHeart(el); heart = self._heartMap.get(el); }
-                };
-
-                const processAll = () => { document.querySelectorAll(VIDEO_SELS).forEach(updateDisplay); };
-
-                // Listen for like button clicks
-                const getCurrentVideoId = () => document.querySelector('ytd-watch-flexy')?.videoId || null;
-                const getCurrentShortId = () => {
-                    const a = document.querySelector('ytd-reel-video-renderer[is-active] a[href*="/shorts/"]');
-                    return a ? a.href.split('/shorts/').pop().split('?')[0] : null;
-                };
-
-                const listenLikes = (selector, getIdFn) => {
-                    const handler = (e) => {
-                        const host = e.target.closest(selector);
-                        if (!host) return;
-                        const id = getIdFn(); if (!id) return;
-                        const btn = host.querySelector('like-button-view-model button[aria-pressed]');
-                        if (!btn) return;
-                        setTimeout(() => {
-                            const liked = btn.getAttribute('aria-pressed') === 'true';
-                            if (liked && !self._index.has(id)) { self._index.add(id); persist(); }
-                            else if (!liked && self._index.has(id)) { self._index.delete(id); persist(); }
-                            processAll();
-                        }, 0);
-                    };
-                    document.addEventListener('click', handler, true);
-                    self._listeners.push(['click', handler, true]);
-                };
-                listenLikes('segmented-like-dislike-button-view-model', getCurrentVideoId);
-                listenLikes('yt-player-quick-action-buttons', getCurrentVideoId);
-                listenLikes('reel-action-bar-view-model', getCurrentShortId);
-
-                // Sync initial like state on SPA navigation
-                const navHandler = () => {
-                    setTimeout(() => {
-                        const vid = getCurrentVideoId(); if (!vid) return;
-                        const btn = document.querySelector('segmented-like-dislike-button-view-model like-button-view-model button[aria-pressed]');
-                        if (!btn) return;
-                        const liked = btn.getAttribute('aria-pressed') === 'true';
-                        if (liked && !self._index.has(vid)) { self._index.add(vid); persist(); }
-                        else if (!liked && self._index.has(vid)) { self._index.delete(vid); persist(); }
-                    }, 0);
-                };
-                document.addEventListener('yt-navigate-finish', navHandler);
-                self._listeners.push(['yt-navigate-finish', navHandler]);
-
-                const run = () => {
-                    processAll();
-                    if (self._observer) self._observer.disconnect();
-                    self._observer = new MutationObserver((muts) => {
-                        let needsProcess = false;
-                        for (const m of muts) {
-                            if (m.type === 'childList' && m.addedNodes.length) {
-                                for (const n of m.addedNodes) {
-                                    if (n instanceof HTMLElement && !n.classList?.contains('ytkit-liked-heart')) { needsProcess = true; break; }
-                                }
-                            }
-                            if (needsProcess) break;
-                        }
-                        if (needsProcess) { clearTimeout(self._debounce); self._debounce = setTimeout(processAll, 250); }
-                    });
-                    const target = document.querySelector('#content, ytd-app');
-                    if (target) self._observer.observe(target, { childList: true, subtree: true });
-                };
-                addNavigateRule(this.id, () => setTimeout(run, 1000));
-            },
-            destroy() {
-                this._observer?.disconnect(); this._observer = null;
-                this._styleEl?.remove(); this._styleEl = null;
-                this._listeners?.forEach(([evt, fn, cap]) => document.removeEventListener(evt, fn, cap));
-                this._listeners = null;
-                document.querySelectorAll('.ytkit-liked-heart').forEach(el => el.remove());
-                document.body.classList.remove('ytkit-liked-dim', 'ytkit-liked-hide', 'ytkit-liked-title');
-                removeNavigateRule(this.id);
             }
         },
     ];
@@ -14599,9 +5158,7 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
         return style;
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 3: HELPERS
-    // ══════════════════════════════════════════════════════════════════════════
 
     function applyBotFilter() {
         if (!window.location.pathname.startsWith('/watch')) return;
@@ -14654,9 +5211,7 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
         });
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 4: PREMIUM UI (Trusted Types Safe)
-    // ══════════════════════════════════════════════════════════════════════════
 
     // SVG Icon Factory - Creates icons using DOM methods (Trusted Types safe)
     function createSVG(viewBox, paths, options = {}) {
@@ -14710,11 +5265,12 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
         return svg;
     }
 
+    const _S = { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' };
     const ICONS = {
         settings: () => createSVG('0 0 24 24', [
             { type: 'circle', cx: 12, cy: 12, r: 3 },
             { type: 'path', d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         close: () => createSVG('0 0 24 24', [
             { type: 'line', x1: 18, y1: 6, x2: 6, y2: 18 },
@@ -14760,62 +5316,58 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
             { type: 'path', d: 'M3 9h18' },
             { type: 'path', d: 'M9 21V9' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         appearance: () => createSVG('0 0 24 24', [
             { type: 'circle', cx: 12, cy: 12, r: 5 },
             { type: 'path', d: 'M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         content: () => createSVG('0 0 24 24', [
             { type: 'rect', x: 2, y: 2, width: 20, height: 20, rx: 2 },
             { type: 'line', x1: 7, y1: 2, x2: 7, y2: 22 },
             { type: 'line', x1: 17, y1: 2, x2: 17, y2: 22 },
             { type: 'line', x1: 2, y1: 12, x2: 22, y2: 12 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         player: () => createSVG('0 0 24 24', [
             { type: 'rect', x: 2, y: 3, width: 20, height: 14, rx: 2 },
             { type: 'path', d: 'm10 8 5 3-5 3z' },
             { type: 'line', x1: 2, y1: 20, x2: 22, y2: 20 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        playback: () => createSVG('0 0 24 24', [
-            { type: 'polygon', points: '5 3 19 12 5 21 5 3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         sponsor: () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         shield: () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
             { type: 'path', d: 'M9 12l2 2 4-4' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         quality: () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8' },
             { type: 'circle', cx: 12, cy: 12, r: 4 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         clutter: () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6' },
             { type: 'path', d: 'M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2' },
             { type: 'line', x1: 10, y1: 11, x2: 10, y2: 17 },
             { type: 'line', x1: 14, y1: 11, x2: 14, y2: 17 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         livechat: () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
             { type: 'circle', cx: 12, cy: 10, r: 1, fill: 'currentColor' },
             { type: 'circle', cx: 8, cy: 10, r: 1, fill: 'currentColor' },
             { type: 'circle', cx: 16, cy: 10, r: 1, fill: 'currentColor' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         actions: () => createSVG('0 0 24 24', [
             { type: 'circle', cx: 12, cy: 12, r: 10 },
             { type: 'path', d: 'M12 8v4l3 3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         controls: () => createSVG('0 0 24 24', [
             { type: 'line', x1: 4, y1: 21, x2: 4, y2: 14 },
@@ -14827,19 +5379,13 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             { type: 'circle', cx: 4, cy: 12, r: 2, fill: 'currentColor' },
             { type: 'circle', cx: 12, cy: 10, r: 2, fill: 'currentColor' },
             { type: 'circle', cx: 20, cy: 14, r: 2, fill: 'currentColor' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        advanced: () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M12 2L2 7l10 5 10-5-10-5z' },
-            { type: 'path', d: 'M2 17l10 5 10-5' },
-            { type: 'path', d: 'M2 12l10 5 10-5' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         downloads: () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' },
             { type: 'polyline', points: '7 10 12 15 17 10' },
             { type: 'line', x1: 12, y1: 15, x2: 12, y2: 3 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'list-plus': () => createSVG('0 0 24 24', [
             { type: 'line', x1: 8, y1: 6, x2: 21, y2: 6 },
@@ -14848,323 +5394,113 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             { type: 'circle', cx: 3, cy: 6, r: 1, fill: 'currentColor' },
             { type: 'circle', cx: 3, cy: 12, r: 1, fill: 'currentColor' },
             { type: 'circle', cx: 3, cy: 18, r: 1, fill: 'currentColor' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
-        'list-video': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 10, y1: 6, x2: 21, y2: 6 },
-            { type: 'line', x1: 10, y1: 12, x2: 21, y2: 12 },
-            { type: 'line', x1: 10, y1: 18, x2: 21, y2: 18 },
-            { type: 'polygon', points: '3 6 7 9 3 12 3 6', fill: 'currentColor' },
-            { type: 'circle', cx: 5, cy: 18, r: 1.5, fill: 'currentColor' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        // Playback Enhancement Icons
-        gauge: () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
-            { type: 'path', d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        brain: () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.54' },
-            { type: 'path', d: 'M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.54' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'thumbs-down': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        progress: () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M5 12h14' },
-            { type: 'path', d: 'M12 5v14' },
-            { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        bookmark: () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'minimize-2': () => createSVG('0 0 24 24', [
-            { type: 'polyline', points: '4 14 10 14 10 20' },
-            { type: 'polyline', points: '20 10 14 10 14 4' },
-            { type: 'line', x1: 14, y1: 10, x2: 21, y2: 3 },
-            { type: 'line', x1: 3, y1: 21, x2: 10, y2: 14 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'grid-3x3': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
-            { type: 'line', x1: 3, y1: 9, x2: 21, y2: 9 },
-            { type: 'line', x1: 3, y1: 15, x2: 21, y2: 15 },
-            { type: 'line', x1: 9, y1: 3, x2: 9, y2: 21 },
-            { type: 'line', x1: 15, y1: 3, x2: 15, y2: 21 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        // ─── Additional Feature Icons ───
+        // Feature Icons
         'eye-off': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' },
             { type: 'line', x1: 1, y1: 1, x2: 23, y2: 23 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bell-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M13.73 21a2 2 0 0 1-3.46 0' },
-            { type: 'path', d: 'M18.63 13A17.89 17.89 0 0 1 18 8' },
-            { type: 'path', d: 'M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14' },
-            { type: 'path', d: 'M18 8a6 6 0 0 0-9.33-5' },
-            { type: 'line', x1: 1, y1: 1, x2: 23, y2: 23 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bell-minus': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9' },
-            { type: 'path', d: 'M13.73 21a2 2 0 0 1-3.46 0' },
-            { type: 'line', x1: 8, y1: 2, x2: 16, y2: 2 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'moon': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'sun-dim': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 4 },
-            { type: 'path', d: 'M12 4h.01M12 20h.01M4 12h.01M20 12h.01M6.34 6.34h.01M17.66 6.34h.01M6.34 17.66h.01M17.66 17.66h.01' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'contrast': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 10 },
-            { type: 'path', d: 'M12 2v20' },
-            { type: 'path', d: 'M12 2a10 10 0 0 1 0 20', fill: 'currentColor' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'palette': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 13.5, cy: 6.5, r: 0.5, fill: 'currentColor' },
-            { type: 'circle', cx: 17.5, cy: 10.5, r: 0.5, fill: 'currentColor' },
-            { type: 'circle', cx: 8.5, cy: 7.5, r: 0.5, fill: 'currentColor' },
-            { type: 'circle', cx: 6.5, cy: 12.5, r: 0.5, fill: 'currentColor' },
-            { type: 'path', d: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'square': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'user-square': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
-            { type: 'circle', cx: 12, cy: 10, r: 3 },
-            { type: 'path', d: 'M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'droplet-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M12 2v5' },
-            { type: 'path', d: 'M6.8 11.2A6 6 0 0 0 12 22a6 6 0 0 0 5.3-8.8' },
-            { type: 'path', d: 'M12 2l3.5 5.5' },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'minimize': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M8 3v3a2 2 0 0 1-2 2H3' },
-            { type: 'path', d: 'M21 8h-3a2 2 0 0 1-2-2V3' },
-            { type: 'path', d: 'M3 16h3a2 2 0 0 1 2 2v3' },
-            { type: 'path', d: 'M16 21v-3a2 2 0 0 1 2-2h3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'video-off': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M10.66 6H14a2 2 0 0 1 2 2v2.34l1 1L22 8v8' },
             { type: 'path', d: 'M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2' },
             { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'external-link': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' },
             { type: 'polyline', points: '15 3 21 3 21 9' },
             { type: 'line', x1: 10, y1: 14, x2: 21, y2: 3 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'pause': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 6, y: 4, width: 4, height: 16 },
-            { type: 'rect', x: 14, y: 4, width: 4, height: 16 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'maximize': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M8 3H5a2 2 0 0 0-2 2v3' },
-            { type: 'path', d: 'M21 8V5a2 2 0 0 0-2-2h-3' },
-            { type: 'path', d: 'M3 16v3a2 2 0 0 0 2 2h3' },
-            { type: 'path', d: 'M16 21h3a2 2 0 0 0 2-2v-3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'layout': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
             { type: 'line', x1: 3, y1: 9, x2: 21, y2: 9 },
             { type: 'line', x1: 9, y1: 21, x2: 9, y2: 9 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'grid': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 3, y: 3, width: 7, height: 7 },
             { type: 'rect', x: 14, y: 3, width: 7, height: 7 },
             { type: 'rect', x: 14, y: 14, width: 7, height: 7 },
             { type: 'rect', x: 3, y: 14, width: 7, height: 7 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'badge': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'info-off': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 10 },
-            { type: 'line', x1: 12, y1: 16, x2: 12, y2: 12 },
-            { type: 'line', x1: 12, y1: 8, x2: 12.01, y2: 8 },
-            { type: 'line', x1: 4, y1: 4, x2: 20, y2: 20 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'folder-video': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z' },
             { type: 'polygon', points: '10 13 15 10.5 10 8 10 13' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'gamepad': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 6, y1: 12, x2: 10, y2: 12 },
-            { type: 'line', x1: 8, y1: 10, x2: 8, y2: 14 },
-            { type: 'line', x1: 15, y1: 13, x2: 15.01, y2: 13 },
-            { type: 'line', x1: 18, y1: 11, x2: 18.01, y2: 11 },
-            { type: 'rect', x: 2, y: 6, width: 20, height: 12, rx: 2 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'lock': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 11, width: 18, height: 11, rx: 2 },
-            { type: 'path', d: 'M7 11V7a5 5 0 0 1 10 0v4' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'newspaper': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2' },
-            { type: 'path', d: 'M18 14h-8M15 18h-5M10 6h8v4h-8V6Z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'list-x': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 11, y1: 6, x2: 21, y2: 6 },
-            { type: 'line', x1: 11, y1: 12, x2: 21, y2: 12 },
-            { type: 'line', x1: 11, y1: 18, x2: 21, y2: 18 },
-            { type: 'line', x1: 3, y1: 4, x2: 7, y2: 8 },
-            { type: 'line', x1: 7, y1: 4, x2: 3, y2: 8 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'fullscreen': () => createSVG('0 0 24 24', [
             { type: 'polyline', points: '15 3 21 3 21 9' },
             { type: 'polyline', points: '9 21 3 21 3 15' },
             { type: 'polyline', points: '21 15 21 21 15 21' },
             { type: 'polyline', points: '3 9 3 3 9 3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'panel-right': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
-            { type: 'line', x1: 15, y1: 3, x2: 15, y2: 21 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'arrows-horizontal': () => createSVG('0 0 24 24', [
             { type: 'polyline', points: '18 8 22 12 18 16' },
             { type: 'polyline', points: '6 8 2 12 6 16' },
             { type: 'line', x1: 2, y1: 12, x2: 22, y2: 12 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'cast': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6' },
-            { type: 'path', d: 'M2 12a9 9 0 0 1 8 8' },
-            { type: 'path', d: 'M2 16a5 5 0 0 1 4 4' },
-            { type: 'line', x1: 2, y1: 20, x2: 2.01, y2: 20 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'youtube': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z' },
             { type: 'polygon', points: '9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'file-minus': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' },
-            { type: 'polyline', points: '14 2 14 8 20 8' },
-            { type: 'line', x1: 9, y1: 15, x2: 15, y2: 15 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'tv': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 2, y: 7, width: 20, height: 15, rx: 2 },
             { type: 'polyline', points: '17 2 12 7 7 2' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'align-horizontal-justify-center': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 5, width: 6, height: 14, rx: 2 },
-            { type: 'rect', x: 16, y: 7, width: 6, height: 10, rx: 2 },
-            { type: 'line', x1: 12, y1: 2, x2: 12, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'pause-circle': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 10 },
-            { type: 'line', x1: 10, y1: 15, x2: 10, y2: 9 },
-            { type: 'line', x1: 14, y1: 15, x2: 14, y2: 9 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'chevrons-down': () => createSVG('0 0 24 24', [
-            { type: 'polyline', points: '7 13 12 18 17 13' },
-            { type: 'polyline', points: '7 6 12 11 17 6' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'plus-circle': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 10 },
-            { type: 'line', x1: 12, y1: 8, x2: 12, y2: 16 },
-            { type: 'line', x1: 8, y1: 12, x2: 16, y2: 12 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'mic-off': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 1, y1: 1, x2: 23, y2: 23 },
-            { type: 'path', d: 'M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6' },
-            { type: 'path', d: 'M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23' },
-            { type: 'line', x1: 12, y1: 19, x2: 12, y2: 23 },
-            { type: 'line', x1: 8, y1: 23, x2: 16, y2: 23 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'home': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
             { type: 'polyline', points: '9 22 9 12 15 12 15 22' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'sidebar': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
             { type: 'line', x1: 9, y1: 3, x2: 9, y2: 21 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'skip-forward': () => createSVG('0 0 24 24', [
             { type: 'polygon', points: '5 4 15 12 5 20 5 4' },
             { type: 'line', x1: 19, y1: 5, x2: 19, y2: 19 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'thumbs-up': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'play-circle': () => createSVG('0 0 24 24', [
             { type: 'circle', cx: 12, cy: 12, r: 10 },
             { type: 'polygon', points: '10 8 16 12 10 16 10 8' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'monitor': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 2, y: 3, width: 20, height: 14, rx: 2 },
             { type: 'line', x1: 8, y1: 21, x2: 16, y2: 21 },
             { type: 'line', x1: 12, y1: 17, x2: 12, y2: 21 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'monitor-play': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 3, width: 20, height: 14, rx: 2 },
-            { type: 'polygon', points: '10 8 15 10 10 12 10 8' },
-            { type: 'line', x1: 8, y1: 21, x2: 16, y2: 21 },
-            { type: 'line', x1: 12, y1: 17, x2: 12, y2: 21 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'menu': () => createSVG('0 0 24 24', [
             { type: 'line', x1: 3, y1: 12, x2: 21, y2: 12 },
             { type: 'line', x1: 3, y1: 6, x2: 21, y2: 6 },
             { type: 'line', x1: 3, y1: 18, x2: 21, y2: 18 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'hash': () => createSVG('0 0 24 24', [
             { type: 'line', x1: 4, y1: 9, x2: 20, y2: 9 },
             { type: 'line', x1: 4, y1: 15, x2: 20, y2: 15 },
             { type: 'line', x1: 10, y1: 3, x2: 8, y2: 21 },
             { type: 'line', x1: 16, y1: 3, x2: 14, y2: 21 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'file-text': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' },
@@ -15172,314 +5508,62 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             { type: 'line', x1: 16, y1: 13, x2: 8, y2: 13 },
             { type: 'line', x1: 16, y1: 17, x2: 8, y2: 17 },
             { type: 'polyline', points: '10 9 9 9 8 9' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'info': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 10 },
-            { type: 'line', x1: 12, y1: 16, x2: 12, y2: 12 },
-            { type: 'line', x1: 12, y1: 8, x2: 12.01, y2: 8 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'link': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' },
             { type: 'path', d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'music': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M9 18V5l12-2v13' },
             { type: 'circle', cx: 6, cy: 18, r: 3 },
             { type: 'circle', cx: 18, cy: 16, r: 3 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'hard-drive-download': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M12 2v8' },
             { type: 'path', d: 'm16 6-4 4-4-4' },
             { type: 'rect', x: 2, y: 14, width: 20, height: 8, rx: 2 },
             { type: 'line', x1: 6, y1: 18, x2: 6.01, y2: 18 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'zap-off': () => createSVG('0 0 24 24', [
-            { type: 'polyline', points: '12.41 6.75 13 2 10.57 4.92' },
-            { type: 'polyline', points: '18.57 12.91 21 10 15.66 10' },
-            { type: 'polyline', points: '8 8 3 14 12 14 11 22 16 16' },
-            { type: 'line', x1: 1, y1: 1, x2: 23, y2: 23 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'trophy': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M6 9H4.5a2.5 2.5 0 0 1 0-5H6' },
-            { type: 'path', d: 'M18 9h1.5a2.5 2.5 0 0 0 0-5H18' },
-            { type: 'path', d: 'M4 22h16' },
-            { type: 'path', d: 'M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22' },
-            { type: 'path', d: 'M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22' },
-            { type: 'path', d: 'M18 2H6v7a6 6 0 0 0 12 0V2Z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'trending-up': () => createSVG('0 0 24 24', [
-            { type: 'polyline', points: '23 6 13.5 15.5 8.5 10.5 1 18' },
-            { type: 'polyline', points: '17 6 23 6 23 12' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'timer': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 14, r: 8 },
-            { type: 'line', x1: 12, y1: 14, x2: 12, y2: 10 },
-            { type: 'line', x1: 12, y1: 2, x2: 12, y2: 4 },
-            { type: 'line', x1: 8, y1: 2, x2: 16, y2: 2 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'ticket': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z' },
-            { type: 'path', d: 'M13 5v2' },
-            { type: 'path', d: 'M13 17v2' },
-            { type: 'path', d: 'M13 11v2' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'users': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' },
-            { type: 'circle', cx: 9, cy: 7, r: 4 },
-            { type: 'path', d: 'M23 21v-2a4 4 0 0 0-3-3.87' },
-            { type: 'path', d: 'M16 3.13a4 4 0 0 1 0 7.75' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'users-x': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' },
             { type: 'circle', cx: 9, cy: 7, r: 4 },
             { type: 'line', x1: 18, y1: 8, x2: 23, y2: 13 },
             { type: 'line', x1: 23, y1: 8, x2: 18, y2: 13 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'award': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 8, r: 6 },
-            { type: 'path', d: 'M15.477 12.89 17 22l-5-3-5 3 1.523-9.11' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bar-chart': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 12, y1: 20, x2: 12, y2: 10 },
-            { type: 'line', x1: 18, y1: 20, x2: 18, y2: 4 },
-            { type: 'line', x1: 6, y1: 20, x2: 6, y2: 16 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bell-ring': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9' },
-            { type: 'path', d: 'M13.73 21a2 2 0 0 1-3.46 0' },
-            { type: 'path', d: 'M2 8c0-2.2.7-4.3 2-6' },
-            { type: 'path', d: 'M22 8a10 10 0 0 0-2-6' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bot': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 11, width: 18, height: 10, rx: 2 },
-            { type: 'circle', cx: 12, cy: 5, r: 2 },
-            { type: 'path', d: 'M12 7v4' },
-            { type: 'line', x1: 8, y1: 16, x2: 8, y2: 16 },
-            { type: 'line', x1: 16, y1: 16, x2: 16, y2: 16 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'captions-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M10.5 5H19a2 2 0 0 1 2 2v8.5' },
-            { type: 'path', d: 'M17 11h-.5' },
-            { type: 'path', d: 'M19 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2' },
-            { type: 'path', d: 'M2 2 22 22' },
-            { type: 'path', d: 'M7 11h4' },
-            { type: 'path', d: 'M7 15h2.5' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'clapperboard': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M4 11v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8H4Z' },
-            { type: 'path', d: 'm4 11-.88-2.87a2 2 0 0 1 1.33-2.5l11.48-3.5a2 2 0 0 1 2.5 1.32l.87 2.87L4 11.01Z' },
-            { type: 'path', d: 'm6.6 4.99 3.38 4.2' },
-            { type: 'path', d: 'm11.86 3.38 3.38 4.2' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'clock': () => createSVG('0 0 24 24', [
             { type: 'circle', cx: 12, cy: 12, r: 10 },
             { type: 'polyline', points: '12 6 12 12 16 14' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'dollar-sign': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 12, y1: 2, x2: 12, y2: 22 },
-            { type: 'path', d: 'M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'download-cloud': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242' },
             { type: 'path', d: 'M12 12v9' },
             { type: 'path', d: 'm8 17 4 4 4-4' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'filter': () => createSVG('0 0 24 24', [
             { type: 'polygon', points: '22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'file-x': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' },
-            { type: 'polyline', points: '14 2 14 8 20 8' },
-            { type: 'line', x1: 9.5, y1: 12.5, x2: 14.5, y2: 17.5 },
-            { type: 'line', x1: 14.5, y1: 12.5, x2: 9.5, y2: 17.5 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'flag-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M8 2c3 0 5 2 8 2s4-1 4-1v11' },
-            { type: 'path', d: 'M4 22V4' },
-            { type: 'path', d: 'M4 15s1-1 4-1 5 2 8 2' },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'gift': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 8, width: 18, height: 4, rx: 1 },
-            { type: 'path', d: 'M12 8v13' },
-            { type: 'path', d: 'M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7' },
-            { type: 'path', d: 'M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'heart': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'heart-off': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 },
-            { type: 'path', d: 'M16.5 16.5 12 21l-7-7c-1.5-1.45-3-3.2-3-5.5a5.5 5.5 0 0 1 2.14-4.35' },
-            { type: 'path', d: 'M8.76 3.1c1.15.22 2.13.78 3.24 1.9 1.5-1.5 2.74-2 4.5-2A5.5 5.5 0 0 1 22 8.5c0 2.12-1.3 3.78-2.67 5.17' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'layout-grid': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 3, y: 3, width: 7, height: 7, rx: 1 },
             { type: 'rect', x: 14, y: 3, width: 7, height: 7, rx: 1 },
             { type: 'rect', x: 14, y: 14, width: 7, height: 7, rx: 1 },
             { type: 'rect', x: 3, y: 14, width: 7, height: 7, rx: 1 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'list-tree': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M21 12h-8' },
-            { type: 'path', d: 'M21 6H8' },
-            { type: 'path', d: 'M21 18h-8' },
-            { type: 'path', d: 'M3 6v4c0 1.1.9 2 2 2h3' },
-            { type: 'path', d: 'M3 10v6c0 1.1.9 2 2 2h3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'megaphone-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M9.26 9.26 3 11v3l14.14 3.14' },
-            { type: 'path', d: 'M21 15.34V6l-7.31 2.03' },
-            { type: 'path', d: 'M11.6 16.8a3 3 0 1 1-5.8-1.6' },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'message-circle-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M20.5 14.9A9 9 0 0 0 9.1 3.5' },
-            { type: 'path', d: 'M5.5 5.5A9 9 0 0 0 3 12c0 .78.1 1.53.28 2.25a9 9 0 0 0 .61 1.6l-1.7 5.47a.5.5 0 0 0 .61.63l5.58-1.48c.48.27.99.49 1.52.66' },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'message-square': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'message-square-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M21 15V5a2 2 0 0 0-2-2H9' },
-            { type: 'path', d: 'M3 3l18 18' },
-            { type: 'path', d: 'M3 6v15l4-4h5' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'more-horizontal': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 1 },
-            { type: 'circle', cx: 19, cy: 12, r: 1 },
-            { type: 'circle', cx: 5, cy: 12, r: 1 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'more-vertical': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 1 },
-            { type: 'circle', cx: 12, cy: 5, r: 1 },
-            { type: 'circle', cx: 12, cy: 19, r: 1 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'panel-top': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
-            { type: 'line', x1: 3, y1: 9, x2: 21, y2: 9 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'picture-in-picture': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 4, width: 20, height: 16, rx: 2 },
-            { type: 'rect', x: 12, y: 12, width: 8, height: 6 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'pip': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 4, width: 20, height: 16, rx: 2 },
-            { type: 'rect', x: 12, y: 12, width: 8, height: 6 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'pin-off': () => createSVG('0 0 24 24', [
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 },
-            { type: 'line', x1: 12, y1: 17, x2: 12, y2: 22 },
-            { type: 'path', d: 'M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h12' },
-            { type: 'path', d: 'M15 9.34V6h1a2 2 0 0 0 0-4H7.89' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'play': () => createSVG('0 0 24 24', [
             { type: 'polygon', points: '5 3 19 12 5 21 5 3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'repeat': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'm17 2 4 4-4 4' },
-            { type: 'path', d: 'M3 11v-1a4 4 0 0 1 4-4h14' },
-            { type: 'path', d: 'm7 22-4-4 4-4' },
-            { type: 'path', d: 'M21 13v1a4 4 0 0 1-4 4H3' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'scissors': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 6, cy: 6, r: 3 },
-            { type: 'circle', cx: 6, cy: 18, r: 3 },
-            { type: 'line', x1: 20, y1: 4, x2: 8.12, y2: 15.88 },
-            { type: 'line', x1: 14.47, y1: 14.48, x2: 20, y2: 20 },
-            { type: 'line', x1: 8.12, y1: 8.12, x2: 12, y2: 12 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'scroll-text': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4' },
-            { type: 'path', d: 'M19 17V5a2 2 0 0 0-2-2H4' },
-            { type: 'path', d: 'M15 8h-5' },
-            { type: 'path', d: 'M15 12h-5' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'settings-2': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M20 7h-9' },
-            { type: 'path', d: 'M14 17H5' },
-            { type: 'circle', cx: 17, cy: 17, r: 3 },
-            { type: 'circle', cx: 7, cy: 7, r: 3 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'share': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 18, cy: 5, r: 3 },
-            { type: 'circle', cx: 6, cy: 12, r: 3 },
-            { type: 'circle', cx: 18, cy: 19, r: 3 },
-            { type: 'line', x1: 8.59, y1: 13.51, x2: 15.42, y2: 17.49 },
-            { type: 'line', x1: 15.41, y1: 6.51, x2: 8.59, y2: 10.49 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'shield-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M19.7 14a6.9 6.9 0 0 0 .3-2V5l-8-3-3.2 1.2' },
-            { type: 'path', d: 'M4.7 4.7 4 5v7c0 6 8 10 8 10a20.3 20.3 0 0 0 5.62-4.38' },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'shopping-bag': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z' },
-            { type: 'line', x1: 3, y1: 6, x2: 21, y2: 6 },
-            { type: 'path', d: 'M16 10a4 4 0 0 1-8 0' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'smile': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 12, cy: 12, r: 10 },
-            { type: 'path', d: 'M8 14s1.5 2 4 2 4-2 4-2' },
-            { type: 'line', x1: 9, y1: 9, x2: 9.01, y2: 9 },
-            { type: 'line', x1: 15, y1: 9, x2: 15.01, y2: 9 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'smile-plus': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M22 11v1a10 10 0 1 1-9-10' },
-            { type: 'path', d: 'M8 14s1.5 2 4 2 4-2 4-2' },
-            { type: 'line', x1: 9, y1: 9, x2: 9.01, y2: 9 },
-            { type: 'line', x1: 15, y1: 9, x2: 15.01, y2: 9 },
-            { type: 'path', d: 'M16 5h6' },
-            { type: 'path', d: 'M19 2v6' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'sparkles': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'm12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z' },
@@ -15487,108 +5571,38 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             { type: 'path', d: 'M19 17v4' },
             { type: 'path', d: 'M3 5h4' },
             { type: 'path', d: 'M17 19h4' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
         'square-x': () => createSVG('0 0 24 24', [
             { type: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
             { type: 'line', x1: 9, y1: 9, x2: 15, y2: 15 },
             { type: 'line', x1: 15, y1: 9, x2: 9, y2: 15 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S),
 
-        'subtitles': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 4, width: 20, height: 16, rx: 2 },
-            { type: 'line', x1: 6, y1: 12, x2: 9, y2: 12 },
-            { type: 'line', x1: 6, y1: 16, x2: 13, y2: 16 },
-            { type: 'line', x1: 12, y1: 12, x2: 18, y2: 12 },
-            { type: 'line', x1: 16, y1: 16, x2: 18, y2: 16 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'tag-off': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M10.02 2.03 2.03 10.02a2 2 0 0 0 0 2.83l8.12 8.12a2 2 0 0 0 2.83 0l8.01-8.01a2.02 2.02 0 0 0 .38-2.29' },
-            { type: 'path', d: 'M7.5 7.5a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0Z' },
-            { type: 'path', d: 'M21.95 12.05 12.05 21.95' },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        // Keyboard/debug icons
-        'keyboard': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 4, width: 20, height: 16, rx: 2 },
-            { type: 'line', x1: 6, y1: 8, x2: 6, y2: 8 },
-            { type: 'line', x1: 10, y1: 8, x2: 10, y2: 8 },
-            { type: 'line', x1: 14, y1: 8, x2: 14, y2: 8 },
-            { type: 'line', x1: 18, y1: 8, x2: 18, y2: 8 },
-            { type: 'line', x1: 8, y1: 12, x2: 8, y2: 12 },
-            { type: 'line', x1: 12, y1: 12, x2: 12, y2: 12 },
-            { type: 'line', x1: 16, y1: 12, x2: 16, y2: 12 },
-            { type: 'line', x1: 7, y1: 16, x2: 17, y2: 16 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bug': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 8, y: 6, width: 8, height: 14, rx: 4 },
-            { type: 'path', d: 'M19 7l-3 2' },
-            { type: 'path', d: 'M5 7l3 2' },
-            { type: 'path', d: 'M19 19l-3-2' },
-            { type: 'path', d: 'M5 19l3-2' },
-            { type: 'path', d: 'M20 13h-4' },
-            { type: 'path', d: 'M4 13h4' },
-            { type: 'path', d: 'M10 4l1 2' },
-            { type: 'path', d: 'M14 4l-1 2' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'undo': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M3 7v6h6' },
-            { type: 'path', d: 'M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'camera': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M23 19a2 2 0 01-2-2V7a2 2 0 00-2-2h-4l-2-2H9L7 5H3a2 2 0 00-2 2v12a2 2 0 002 2h18z' },
-            { type: 'circle', cx: 12, cy: 12, r: 4 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'film': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 2, y: 2, width: 20, height: 20, rx: 2.18, ry: 2.18 },
-            { type: 'line', x1: 7, y1: 2, x2: 7, y2: 22 },
-            { type: 'line', x1: 17, y1: 2, x2: 17, y2: 22 },
-            { type: 'line', x1: 2, y1: 12, x2: 22, y2: 12 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'volume-2': () => createSVG('0 0 24 24', [
-            { type: 'polygon', points: '11 5 6 9 2 9 2 15 6 15 11 19 11 5' },
-            { type: 'path', d: 'M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'arrow-down-up': () => createSVG('0 0 24 24', [
-            { type: 'path', d: 'M11 17l-4 4-4-4M7 21V3M13 7l4-4 4 4M17 3v18' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
+        'list': () => createSVG('0 0 24 24', [
+            { type: 'line', x1: 8, y1: 6, x2: 21, y2: 6 },
+            { type: 'line', x1: 8, y1: 12, x2: 21, y2: 12 },
+            { type: 'line', x1: 8, y1: 18, x2: 21, y2: 18 },
+            { type: 'line', x1: 3, y1: 6, x2: 3.01, y2: 6 },
+            { type: 'line', x1: 3, y1: 12, x2: 3.01, y2: 12 },
+            { type: 'line', x1: 3, y1: 18, x2: 3.01, y2: 18 }
+        ], _S),
+        'picture-in-picture-2': () => createSVG('0 0 24 24', [
+            { type: 'rect', x: 1, y: 1, width: 22, height: 22, rx: 2 },
+            { type: 'rect', x: 10, y: 10, width: 12, height: 8, rx: 1 }
+        ], _S),
         'gauge': () => createSVG('0 0 24 24', [
             { type: 'path', d: 'M12 15l3.5-5' },
             { type: 'circle', cx: 12, cy: 15, r: 2 },
             { type: 'path', d: 'M2 12a10 10 0 0120 0' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-
-        'bot-off': () => createSVG('0 0 24 24', [
-            { type: 'rect', x: 3, y: 11, width: 18, height: 10, rx: 2 },
-            { type: 'circle', cx: 9, cy: 16, r: 1 },
-            { type: 'circle', cx: 15, cy: 16, r: 1 },
-            { type: 'line', x1: 2, y1: 2, x2: 22, y2: 22 }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
-        'palette': () => createSVG('0 0 24 24', [
-            { type: 'circle', cx: 13.5, cy: 6.5, r: 0.5 },
-            { type: 'circle', cx: 17.5, cy: 10.5, r: 0.5 },
-            { type: 'circle', cx: 8.5, cy: 7.5, r: 0.5 },
-            { type: 'circle', cx: 6.5, cy: 12, r: 0.5 },
-            { type: 'path', d: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.1-.7-.4-1-.3-.3-.4-.7-.4-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-5.5-4.5-10-10-10z' }
-        ], { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' }),
+        ], _S)
     };
 
     const CATEGORY_CONFIG = {
         'Interface': { icon: 'interface', color: '#60a5fa' },
         'Appearance': { icon: 'appearance', color: '#f472b6' },
         'Content': { icon: 'content', color: '#34d399' },
-        'Video Hider': { icon: 'eye-off', color: '#ef4444' },
         'Video Player': { icon: 'player', color: '#a78bfa' },
-        'Playback': { icon: 'playback', color: '#fb923c' },
         'Ad Blocker': { icon: 'shield', color: '#10b981' },
         'SponsorBlock': { icon: 'sponsor', color: '#22d3ee' },
         'Quality': { icon: 'quality', color: '#facc15' },
@@ -15597,9 +5611,6 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
         'Action Buttons': { icon: 'actions', color: '#c084fc' },
         'Player Controls': { icon: 'controls', color: '#38bdf8' },
         'Downloads': { icon: 'downloads', color: '#f97316' },
-        'ChapterForge': { icon: 'player', color: '#7c3aed' },
-        'DeArrow': { icon: 'content', color: '#22d3ee' },
-        'Advanced': { icon: 'advanced', color: '#94a3b8' },
     };
 
     function injectSettingsButton() {
@@ -15652,7 +5663,16 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
     function buildSettingsPanel() {
         if (document.getElementById('ytkit-settings-panel')) return;
 
-        const categoryOrder = ['Interface', 'Appearance', 'Content', 'Video Hider', 'Video Player', 'Playback', 'Ad Blocker', 'SponsorBlock', 'Quality', 'Clutter', 'Live Chat', 'Action Buttons', 'Player Controls', 'Downloads', 'ChapterForge', 'DeArrow', 'Advanced'];
+        const categoryOrder = ['Interface', 'Appearance', 'Content', 'Video Player', 'Ad Blocker', 'SponsorBlock', 'Quality', 'Clutter', 'Live Chat', 'Action Buttons', 'Player Controls', 'Downloads'];
+
+        // Group labels: maps first category of each group → label text
+        const categoryGroupLabels = {
+            'Interface':       'Interface',
+            'Content':         'Content',
+            'Video Player':    'Player',
+            'Ad Blocker':      'Filtering',
+            'Live Chat':       'Controls',
+        };
         const featuresByCategory = categoryOrder.reduce((acc, cat) => ({...acc, [cat]: []}), {});
         features.forEach(f => { if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f); });
 
@@ -15733,6 +5753,15 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
         sidebar.appendChild(divider);
 
         categoryOrder.forEach((cat, index) => {
+            // Insert group label before first category of each group
+            if (categoryGroupLabels[cat]) {
+                const groupLabel = document.createElement('div');
+                groupLabel.className = 'ytkit-nav-group-label';
+                groupLabel.textContent = categoryGroupLabels[cat];
+                if (index > 0) groupLabel.style.marginTop = '10px';
+                sidebar.appendChild(groupLabel);
+            }
+
             // Special handling for Ad Blocker sidebar
             if (cat === 'Ad Blocker') {
                 const config = CATEGORY_CONFIG[cat];
@@ -15771,45 +5800,6 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
                 btn.appendChild(labelSpan);
                 btn.appendChild(countSpan);
                 btn.appendChild(arrowSpan);
-                sidebar.appendChild(btn);
-                return;
-            }
-            // Special handling for Video Hider
-            if (cat === 'Video Hider') {
-                const config = CATEGORY_CONFIG[cat];
-                const catId = cat.replace(/ /g, '-');
-                const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
-                const videoCount = (typeof videoHiderFeature?._getHiddenVideos === 'function' ? videoHiderFeature._getHiddenVideos() : []).length;
-                const channelCount = (typeof videoHiderFeature?._getBlockedChannels === 'function' ? videoHiderFeature._getBlockedChannels() : []).length;
-
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-nav-btn';
-                btn.dataset.tab = catId;
-
-                const iconWrap = document.createElement('span');
-                iconWrap.className = 'ytkit-nav-icon';
-                iconWrap.style.setProperty('--cat-color', config.color);
-                const iconFn = ICONS['eye-off'] || ICONS.settings;
-                iconWrap.appendChild(iconFn());
-
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'ytkit-nav-label';
-                labelSpan.textContent = cat;
-
-                const countSpan = document.createElement('span');
-                countSpan.className = 'ytkit-nav-count';
-                countSpan.textContent = `${videoCount + channelCount}`;
-                countSpan.title = `${videoCount} videos, ${channelCount} channels`;
-
-                const arrowSpan = document.createElement('span');
-                arrowSpan.className = 'ytkit-nav-arrow';
-                arrowSpan.appendChild(ICONS.chevronRight());
-
-                btn.appendChild(iconWrap);
-                btn.appendChild(labelSpan);
-                btn.appendChild(countSpan);
-                btn.appendChild(arrowSpan);
-
                 sidebar.appendChild(btn);
                 return;
             }
@@ -15856,10 +5846,7 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
         const content = document.createElement('div');
         content.className = 'ytkit-content';
 
-        // Special builder for Video Hider pane
-        // ══════════════════════════════════════════════════════════════════
         //  Ad Blocker Custom Pane
-        // ══════════════════════════════════════════════════════════════════
         function buildAdBlockPane(config) {
             const adblockFeature = features.find(f => f.id === 'ytAdBlock');
             const subFeatures = features.filter(f => f.parentId === 'ytAdBlock');
@@ -16198,564 +6185,11 @@ Rules: start in seconds (integers), first at 0, 3-8 chapters, 2-6 POIs. Titles 3
             return pane;
         }
 
-        function buildVideoHiderPane(config) {
-            const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
-
-            const pane = document.createElement('section');
-            pane.id = 'ytkit-pane-Video-Hider';
-            pane.className = 'ytkit-pane ytkit-vh-pane';
-
-            // Pane header
-            const paneHeader = document.createElement('div');
-            paneHeader.className = 'ytkit-pane-header';
-
-            const paneTitle = document.createElement('div');
-            paneTitle.className = 'ytkit-pane-title';
-
-            const paneIcon = document.createElement('span');
-            paneIcon.className = 'ytkit-pane-icon';
-            paneIcon.style.setProperty('--cat-color', config.color);
-            const paneIconFn = ICONS['eye-off'] || ICONS.settings;
-            paneIcon.appendChild(paneIconFn());
-
-            const paneTitleH2 = document.createElement('h2');
-            paneTitleH2.textContent = 'Video Hider';
-
-            paneTitle.appendChild(paneIcon);
-            paneTitle.appendChild(paneTitleH2);
-
-            // Enable toggle for Video Hider
-            const toggleLabel = document.createElement('label');
-            toggleLabel.className = 'ytkit-toggle-all';
-            toggleLabel.style.marginLeft = 'auto';
-
-            const toggleText = document.createElement('span');
-            toggleText.textContent = 'Enabled';
-
-            const toggleSwitch = document.createElement('div');
-            toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
-
-            const toggleInput = document.createElement('input');
-            toggleInput.type = 'checkbox';
-            toggleInput.id = 'ytkit-toggle-hideVideosFromHome';
-            toggleInput.checked = appState.settings.hideVideosFromHome;
-            toggleInput.onchange = async () => {
-                appState.settings.hideVideosFromHome = toggleInput.checked;
-                toggleSwitch.classList.toggle('active', toggleInput.checked);
-                settingsManager.save(appState.settings);
-                if (toggleInput.checked) {
-                    videoHiderFeature?.init?.();
-                } else {
-                    videoHiderFeature?.destroy?.();
-                }
-                updateAllToggleStates();
-            };
-
-            const toggleTrack = document.createElement('span');
-            toggleTrack.className = 'ytkit-switch-track';
-            const toggleThumb = document.createElement('span');
-            toggleThumb.className = 'ytkit-switch-thumb';
-            toggleTrack.appendChild(toggleThumb);
-
-            toggleSwitch.appendChild(toggleInput);
-            toggleSwitch.appendChild(toggleTrack);
-            toggleLabel.appendChild(toggleText);
-            toggleLabel.appendChild(toggleSwitch);
-
-            paneHeader.appendChild(paneTitle);
-            paneHeader.appendChild(toggleLabel);
-            pane.appendChild(paneHeader);
-
-            // Tab navigation
-            const tabNav = document.createElement('div');
-            tabNav.className = 'ytkit-vh-tabs';
-            tabNav.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--ytkit-border);margin-bottom:20px;';
-
-            const tabs = ['Videos', 'Channels', 'Keywords', 'Settings'];
-            tabs.forEach((tabName, i) => {
-                const tab = document.createElement('button');
-                tab.className = 'ytkit-vh-tab' + (i === 0 ? ' active' : '');
-                tab.dataset.tab = tabName.toLowerCase();
-                tab.textContent = tabName;
-                tab.style.cssText = `
-                    flex:1;padding:12px 16px;background:transparent;border:none;
-                    color:var(--ytkit-text-muted);font-size:13px;font-weight:500;
-                    cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent;
-                `;
-                tab.onmouseenter = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-secondary)'; };
-                tab.onmouseleave = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-muted)'; };
-                tab.onclick = () => {
-                    tabNav.querySelectorAll('.ytkit-vh-tab').forEach(t => {
-                        t.classList.remove('active');
-                        t.style.color = 'var(--ytkit-text-muted)';
-                        t.style.borderBottomColor = 'transparent';
-                    });
-                    tab.classList.add('active');
-                    tab.style.color = config.color;
-                    tab.style.borderBottomColor = config.color;
-                    renderTabContent(tabName.toLowerCase());
-                };
-                if (i === 0) {
-                    tab.style.color = config.color;
-                    tab.style.borderBottomColor = config.color;
-                }
-                tabNav.appendChild(tab);
-            });
-            pane.appendChild(tabNav);
-
-            // Tab content container
-            const tabContent = document.createElement('div');
-            tabContent.id = 'ytkit-vh-content';
-            pane.appendChild(tabContent);
-
-            function renderTabContent(tab) {
-                while (tabContent.firstChild) tabContent.removeChild(tabContent.firstChild);
-
-                if (tab === 'videos') {
-                    const videos = videoHiderFeature?._getHiddenVideos() || [];
-                    if (videos.length === 0) {
-                        const empty = document.createElement('div');
-                        empty.style.cssText = 'text-align:center;padding:60px 20px;color:var(--ytkit-text-muted);';
-
-                        const emptyIcon = document.createElement('div');
-                        emptyIcon.style.cssText = 'font-size:48px;margin-bottom:16px;opacity:0.5;';
-                        emptyIcon.textContent = '📺';
-
-                        const emptyTitle = document.createElement('div');
-                        emptyTitle.style.cssText = 'font-size:15px;margin-bottom:8px;';
-                        emptyTitle.textContent = 'No hidden videos yet';
-
-                        const emptyDesc = document.createElement('div');
-                        emptyDesc.style.cssText = 'font-size:13px;opacity:0.7;';
-                        emptyDesc.textContent = 'Click the X button on video thumbnails to hide them';
-
-                        empty.appendChild(emptyIcon);
-                        empty.appendChild(emptyTitle);
-                        empty.appendChild(emptyDesc);
-                        tabContent.appendChild(empty);
-                    } else {
-                        const grid = document.createElement('div');
-                        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;';
-
-                        videos.forEach(vid => {
-                            const item = document.createElement('div');
-                            item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;background:var(--ytkit-bg-surface);border-radius:8px;border:1px solid var(--ytkit-border);';
-
-                            const thumb = document.createElement('img');
-                            thumb.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
-                            thumb.style.cssText = 'width:100px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;';
-                            thumb.onerror = () => { thumb.style.background = 'var(--ytkit-bg-elevated)'; };
-
-                            const info = document.createElement('div');
-                            info.style.cssText = 'flex:1;min-width:0;';
-                            const vidId = document.createElement('div');
-                            vidId.style.cssText = 'font-size:12px;color:var(--ytkit-text-secondary);font-family:monospace;margin-bottom:4px;';
-                            vidId.textContent = vid;
-                            const link = document.createElement('a');
-                            link.href = `https://youtube.com/watch?v=${vid}`;
-                            link.target = '_blank';
-                            link.style.cssText = 'font-size:12px;color:var(--ytkit-accent);text-decoration:none;';
-                            link.textContent = 'View on YouTube →';
-                            info.appendChild(vidId);
-                            info.appendChild(link);
-
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Unhide';
-                            removeBtn.style.cssText = 'padding:6px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;';
-                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#dc2626'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#dc2626'; };
-                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
-                            removeBtn.onclick = () => {
-                                const h = videoHiderFeature._getHiddenVideos();
-                                const idx = h.indexOf(vid);
-                                if (idx > -1) { h.splice(idx, 1); videoHiderFeature._setHiddenVideos(h); }
-                                item.remove();
-                                videoHiderFeature._processAllVideos();
-                                if (videoHiderFeature._getHiddenVideos().length === 0) renderTabContent('videos');
-                            };
-
-                            item.appendChild(thumb);
-                            item.appendChild(info);
-                            item.appendChild(removeBtn);
-                            grid.appendChild(item);
-                        });
-
-                        tabContent.appendChild(grid);
-
-                        // Clear all button
-                        const clearBtn = document.createElement('button');
-                        clearBtn.textContent = `Clear All Hidden Videos (${videos.length})`;
-                        clearBtn.style.cssText = 'margin-top:20px;padding:12px 24px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:background 0.2s;';
-                        clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
-                        clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
-                        clearBtn.onclick = () => {
-                            const backup = [...videoHiderFeature._getHiddenVideos()];
-                            videoHiderFeature._setHiddenVideos([]);
-                            videoHiderFeature._processAllVideos();
-                            renderTabContent('videos');
-                            showToast(`Cleared ${backup.length} hidden videos`, '#dc2626', { duration: 5, action: { text: 'Undo', onClick: () => {
-                                videoHiderFeature._setHiddenVideos(backup);
-                                videoHiderFeature._processAllVideos();
-                                renderTabContent('videos');
-                                showToast('Videos restored', '#22c55e');
-                            }}});
-                        };
-                        tabContent.appendChild(clearBtn);
-                    }
-                } else if (tab === 'channels') {
-                    const channels = videoHiderFeature?._getBlockedChannels() || [];
-                    if (channels.length === 0) {
-                        const empty = document.createElement('div');
-                        empty.style.cssText = 'text-align:center;padding:60px 20px;color:var(--ytkit-text-muted);';
-
-                        const emptyIcon = document.createElement('div');
-                        emptyIcon.style.cssText = 'font-size:48px;margin-bottom:16px;opacity:0.5;';
-                        emptyIcon.textContent = '📢';
-
-                        const emptyTitle = document.createElement('div');
-                        emptyTitle.style.cssText = 'font-size:15px;margin-bottom:8px;';
-                        emptyTitle.textContent = 'No blocked channels yet';
-
-                        const emptyDesc = document.createElement('div');
-                        emptyDesc.style.cssText = 'font-size:13px;opacity:0.7;';
-                        emptyDesc.textContent = 'Right-click the X button on thumbnails to block channels';
-
-                        empty.appendChild(emptyIcon);
-                        empty.appendChild(emptyTitle);
-                        empty.appendChild(emptyDesc);
-                        tabContent.appendChild(empty);
-                    } else {
-                        const list = document.createElement('div');
-                        list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
-
-                        channels.forEach(ch => {
-                            const item = document.createElement('div');
-                            item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:var(--ytkit-bg-surface);border-radius:8px;border:1px solid var(--ytkit-border);';
-
-                            const icon = document.createElement('div');
-                            icon.style.cssText = 'width:40px;height:40px;border-radius:50%;background:var(--ytkit-bg-elevated);display:flex;align-items:center;justify-content:center;font-size:18px;';
-                            icon.textContent = '📺';
-
-                            const info = document.createElement('div');
-                            info.style.cssText = 'flex:1;';
-                            const name = document.createElement('div');
-                            name.style.cssText = 'font-size:14px;color:var(--ytkit-text-primary);font-weight:500;';
-                            name.textContent = ch.name || ch.id;
-                            const handle = document.createElement('div');
-                            handle.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);';
-                            handle.textContent = ch.id;
-                            info.appendChild(name);
-                            info.appendChild(handle);
-
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Unblock';
-                            removeBtn.style.cssText = 'padding:6px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;';
-                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#22c55e'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#22c55e'; };
-                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
-                            removeBtn.onclick = () => {
-                                const c = videoHiderFeature._getBlockedChannels();
-                                const idx = c.findIndex(x => x.id === ch.id);
-                                if (idx > -1) { c.splice(idx, 1); videoHiderFeature._setBlockedChannels(c); }
-                                item.remove();
-                                videoHiderFeature._processAllVideos();
-                                if (videoHiderFeature._getBlockedChannels().length === 0) renderTabContent('channels');
-                            };
-
-                            item.appendChild(icon);
-                            item.appendChild(info);
-                            item.appendChild(removeBtn);
-                            list.appendChild(item);
-                        });
-
-                        tabContent.appendChild(list);
-
-                        // Clear all button
-                        const clearBtn = document.createElement('button');
-                        clearBtn.textContent = `Unblock All Channels (${channels.length})`;
-                        clearBtn.style.cssText = 'margin-top:20px;padding:12px 24px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:background 0.2s;';
-                        clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
-                        clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
-                        clearBtn.onclick = () => {
-                            const backup = [...videoHiderFeature._getBlockedChannels()];
-                            videoHiderFeature._setBlockedChannels([]);
-                            videoHiderFeature._processAllVideos();
-                            renderTabContent('channels');
-                            showToast(`Unblocked ${backup.length} channels`, '#dc2626', { duration: 5, action: { text: 'Undo', onClick: () => {
-                                videoHiderFeature._setBlockedChannels(backup);
-                                videoHiderFeature._processAllVideos();
-                                renderTabContent('channels');
-                                showToast('Channels restored', '#22c55e');
-                            }}});
-                        };
-                        tabContent.appendChild(clearBtn);
-                    }
-                } else if (tab === 'keywords') {
-                    const container = document.createElement('div');
-                    container.style.cssText = 'padding:0;';
-
-                    const desc = document.createElement('div');
-                    desc.style.cssText = 'color:var(--ytkit-text-muted);font-size:13px;margin-bottom:16px;line-height:1.5;';
-                    desc.textContent = 'Videos with titles containing these keywords will be automatically hidden. Separate multiple keywords with commas.';
-                    container.appendChild(desc);
-
-                    const textarea = document.createElement('textarea');
-                    textarea.style.cssText = 'width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:8px;color:var(--ytkit-text-primary);font-size:13px;resize:vertical;font-family:inherit;';
-                    textarea.placeholder = 'e.g., reaction, unboxing, prank, shorts';
-                    textarea.value = appState.settings.hideVideosKeywordFilter || '';
-                    textarea.onchange = async () => {
-                        appState.settings.hideVideosKeywordFilter = textarea.value;
-                        settingsManager.save(appState.settings);
-                        videoHiderFeature?._processAllVideos();
-                    };
-                    container.appendChild(textarea);
-
-                    const hint = document.createElement('div');
-                    hint.style.cssText = 'color:var(--ytkit-text-muted);font-size:11px;margin-top:8px;';
-                    hint.textContent = 'Changes apply immediately. Keywords are case-insensitive.';
-                    container.appendChild(hint);
-
-                    tabContent.appendChild(container);
-                } else if (tab === 'settings') {
-                    const container = document.createElement('div');
-                    container.style.cssText = 'display:flex;flex-direction:column;gap:24px;';
-
-                    // Duration filter
-                    const durSection = document.createElement('div');
-                    durSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-
-                    const durTitle = document.createElement('div');
-                    durTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:8px;';
-                    durTitle.textContent = 'Duration Filter';
-                    durSection.appendChild(durTitle);
-
-                    const durDesc = document.createElement('div');
-                    durDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:12px;';
-                    durDesc.textContent = 'Automatically hide videos shorter than the specified duration.';
-                    durSection.appendChild(durDesc);
-
-                    const durRow = document.createElement('div');
-                    durRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
-
-                    const durInput = document.createElement('input');
-                    durInput.type = 'number';
-                    durInput.min = '0';
-                    durInput.max = '60';
-                    durInput.value = appState.settings.hideVideosDurationFilter || 0;
-                    durInput.style.cssText = 'width:80px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;';
-                    durInput.onchange = async () => {
-                        appState.settings.hideVideosDurationFilter = parseInt(durInput.value) || 0;
-                        settingsManager.save(appState.settings);
-                        videoHiderFeature?._processAllVideos();
-                    };
-
-                    const durLabel = document.createElement('span');
-                    durLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
-                    durLabel.textContent = 'minutes (0 = disabled)';
-
-                    durRow.appendChild(durInput);
-                    durRow.appendChild(durLabel);
-                    durSection.appendChild(durRow);
-                    container.appendChild(durSection);
-
-                    // Min Views Filter
-                    const viewsSection = document.createElement('div');
-                    viewsSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-                    const viewsTitle = document.createElement('div');
-                    viewsTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:4px;';
-                    viewsTitle.textContent = 'Minimum View Count';
-                    viewsSection.appendChild(viewsTitle);
-                    const viewsDesc = document.createElement('div');
-                    viewsDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:12px;';
-                    viewsDesc.textContent = 'Hide videos with fewer views than specified.';
-                    viewsSection.appendChild(viewsDesc);
-                    const viewsRow = document.createElement('div');
-                    viewsRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
-                    const viewsInput = document.createElement('input');
-                    viewsInput.type = 'number';
-                    viewsInput.min = '0';
-                    viewsInput.value = appState.settings.hideVideosMinViewsFilter || 0;
-                    viewsInput.style.cssText = 'width:120px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;';
-                    viewsInput.onchange = async () => {
-                        appState.settings.hideVideosMinViewsFilter = parseInt(viewsInput.value) || 0;
-                        settingsManager.save(appState.settings);
-                        videoHiderFeature?._processAllVideos();
-                    };
-                    const viewsLabel = document.createElement('span');
-                    viewsLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
-                    viewsLabel.textContent = 'views (0 = disabled)';
-                    viewsRow.appendChild(viewsInput);
-                    viewsRow.appendChild(viewsLabel);
-                    viewsSection.appendChild(viewsRow);
-                    container.appendChild(viewsSection);
-
-                    // Max Age Filter
-                    const ageSection = document.createElement('div');
-                    ageSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-                    const ageTitle = document.createElement('div');
-                    ageTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:4px;';
-                    ageTitle.textContent = 'Maximum Video Age';
-                    ageSection.appendChild(ageTitle);
-                    const ageDesc = document.createElement('div');
-                    ageDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:12px;';
-                    ageDesc.textContent = 'Hide videos older than the specified number of days.';
-                    ageSection.appendChild(ageDesc);
-                    const ageRow = document.createElement('div');
-                    ageRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
-                    const ageInput = document.createElement('input');
-                    ageInput.type = 'number';
-                    ageInput.min = '0';
-                    ageInput.value = appState.settings.hideVideosMaxAgeDaysFilter || 0;
-                    ageInput.style.cssText = 'width:120px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;';
-                    ageInput.onchange = async () => {
-                        appState.settings.hideVideosMaxAgeDaysFilter = parseInt(ageInput.value) || 0;
-                        settingsManager.save(appState.settings);
-                        videoHiderFeature?._processAllVideos();
-                    };
-                    const ageLabel = document.createElement('span');
-                    ageLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
-                    ageLabel.textContent = 'days (0 = disabled)';
-                    ageRow.appendChild(ageInput);
-                    ageRow.appendChild(ageLabel);
-                    ageSection.appendChild(ageRow);
-                    container.appendChild(ageSection);
-
-                    // Subscription Load Limiter
-                    const limiterSection = document.createElement('div');
-                    limiterSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-
-                    const limiterTitle = document.createElement('div');
-                    limiterTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:8px;';
-                    limiterTitle.textContent = 'Subscription Page Load Limiter';
-                    limiterSection.appendChild(limiterTitle);
-
-                    const limiterDesc = document.createElement('div');
-                    limiterDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:16px;line-height:1.5;';
-                    limiterDesc.textContent = 'Prevents infinite scrolling when many consecutive videos are hidden. Useful if you\'ve hidden years of subscription videos.';
-                    limiterSection.appendChild(limiterDesc);
-
-                    // Enable toggle
-                    const limiterToggleRow = document.createElement('div');
-                    limiterToggleRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px;background:var(--ytkit-bg-elevated);border-radius:8px;';
-
-                    const limiterToggleLabel = document.createElement('span');
-                    limiterToggleLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
-                    limiterToggleLabel.textContent = 'Enable load limiter';
-
-                    const limiterSwitch = document.createElement('div');
-                    limiterSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosSubsLoadLimit !== false ? ' active' : '');
-                    limiterSwitch.style.cssText = 'cursor:pointer;';
-
-                    const limiterInput = document.createElement('input');
-                    limiterInput.type = 'checkbox';
-                    limiterInput.checked = appState.settings.hideVideosSubsLoadLimit !== false;
-                    limiterInput.onchange = async () => {
-                        appState.settings.hideVideosSubsLoadLimit = limiterInput.checked;
-                        limiterSwitch.classList.toggle('active', limiterInput.checked);
-                        settingsManager.save(appState.settings);
-                    };
-
-                    const limiterTrack = document.createElement('span');
-                    limiterTrack.className = 'ytkit-switch-track';
-
-                    limiterSwitch.appendChild(limiterInput);
-                    limiterSwitch.appendChild(limiterTrack);
-                    limiterToggleRow.appendChild(limiterToggleLabel);
-                    limiterToggleRow.appendChild(limiterSwitch);
-                    limiterSection.appendChild(limiterToggleRow);
-
-                    // Threshold setting
-                    const thresholdRow = document.createElement('div');
-                    thresholdRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
-
-                    const thresholdLabel = document.createElement('span');
-                    thresholdLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;flex:1;';
-                    thresholdLabel.textContent = 'Stop after consecutive hidden batches:';
-
-                    const thresholdInput = document.createElement('input');
-                    thresholdInput.type = 'number';
-                    thresholdInput.min = '1';
-                    thresholdInput.max = '20';
-                    thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold || 3;
-                    thresholdInput.style.cssText = 'width:70px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;text-align:center;';
-                    thresholdInput.onchange = async () => {
-                        appState.settings.hideVideosSubsLoadThreshold = Math.max(1, Math.min(20, parseInt(thresholdInput.value) || 3));
-                        thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold;
-                        settingsManager.save(appState.settings);
-                    };
-
-                    thresholdRow.appendChild(thresholdLabel);
-                    thresholdRow.appendChild(thresholdInput);
-                    limiterSection.appendChild(thresholdRow);
-
-                    const thresholdHint = document.createElement('div');
-                    thresholdHint.style.cssText = 'color:var(--ytkit-text-muted);font-size:11px;margin-top:8px;';
-                    thresholdHint.textContent = 'Lower = stops faster, Higher = loads more before stopping (1-20)';
-                    limiterSection.appendChild(thresholdHint);
-
-                    container.appendChild(limiterSection);
-
-                    // Stats section
-                    const statsSection = document.createElement('div');
-                    statsSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-
-                    const statsTitle = document.createElement('div');
-                    statsTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:12px;';
-                    statsTitle.textContent = 'Statistics';
-                    statsSection.appendChild(statsTitle);
-
-                    const statsGrid = document.createElement('div');
-                    statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
-
-                    const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
-                    const channelCount = videoHiderFeature?._getBlockedChannels()?.length || 0;
-
-                    const videoStat = document.createElement('div');
-                    videoStat.style.cssText = 'background:var(--ytkit-bg-elevated);padding:16px;border-radius:8px;text-align:center;';
-                    const videoStatNum = document.createElement('div');
-                    videoStatNum.style.cssText = `font-size:24px;font-weight:700;color:${config.color};`;
-                    videoStatNum.textContent = videoCount;
-                    const videoStatLabel = document.createElement('div');
-                    videoStatLabel.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-top:4px;';
-                    videoStatLabel.textContent = 'Hidden Videos';
-                    videoStat.appendChild(videoStatNum);
-                    videoStat.appendChild(videoStatLabel);
-
-                    const channelStat = document.createElement('div');
-                    channelStat.style.cssText = 'background:var(--ytkit-bg-elevated);padding:16px;border-radius:8px;text-align:center;';
-                    const channelStatNum = document.createElement('div');
-                    channelStatNum.style.cssText = `font-size:24px;font-weight:700;color:${config.color};`;
-                    channelStatNum.textContent = channelCount;
-                    const channelStatLabel = document.createElement('div');
-                    channelStatLabel.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-top:4px;';
-                    channelStatLabel.textContent = 'Blocked Channels';
-                    channelStat.appendChild(channelStatNum);
-                    channelStat.appendChild(channelStatLabel);
-
-                    statsGrid.appendChild(videoStat);
-                    statsGrid.appendChild(channelStat);
-                    statsSection.appendChild(statsGrid);
-                    container.appendChild(statsSection);
-
-                    tabContent.appendChild(container);
-                }
-            }
-
-            // Initial render
-            renderTabContent('videos');
-
-            return pane;
-        }
-
         categoryOrder.forEach((cat, index) => {
             // Special handling for Ad Blocker
             if (cat === 'Ad Blocker') {
                 const config = CATEGORY_CONFIG[cat];
                 content.appendChild(buildAdBlockPane(config));
-                return;
-            }
-            // Special handling for Video Hider
-            if (cat === 'Video Hider') {
-                const config = CATEGORY_CONFIG[cat];
-                content.appendChild(buildVideoHiderPane(config));
                 return;
             }
 
@@ -16963,7 +6397,7 @@ pause
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v25.9';
+        versionSpan.textContent = 'v25.22';
         versionSpan.style.position = 'relative';
         versionSpan.style.cursor = 'pointer';
         // What's New badge
@@ -16978,7 +6412,7 @@ pause
             versionSpan.onclick = () => {
                 GM_setValue('ytkit_last_seen_version', CURRENT_VER);
                 badge.remove();
-                showToast('v25.9: AI Chat, Flashcards, Mind Map, Blog Export, SEO Chapters, Prompt Library', '#3b82f6', { duration: 6 });
+                showToast('v25.22: Redesigned comments and metadata - card layout with avatars, timestamps, refined thread lines', '#3b82f6', { duration: 6 });
             };
         }
 
@@ -17030,6 +6464,13 @@ pause
         const card = document.createElement('div');
         card.className = 'ytkit-feature-card' + (isSubFeature ? ' ytkit-sub-card' : '') + (f.type === 'textarea' ? ' ytkit-textarea-card' : '') + (f.type === 'select' ? ' ytkit-select-card' : '') + (f.type === 'info' ? ' ytkit-info-card' : '');
         card.dataset.featureId = f.id;
+        if (accentColor) card.style.setProperty('--cat-color', accentColor);
+
+        // Apply enabled accent stripe for boolean features
+        const _cardIsEnabled = f._arrayKey
+            ? (appState.settings[f._arrayKey] || []).includes(f._arrayValue)
+            : (f.type !== 'select' && f.type !== 'color' && f.type !== 'range' && appState.settings[f.id]);
+        if (_cardIsEnabled && !isSubFeature) card.classList.add('ytkit-card-enabled');
 
         // Special styling for info cards
         if (f.type === 'info') {
@@ -17052,42 +6493,7 @@ pause
         card.appendChild(info);
 
         if (f.type === 'info') {
-            // Channel settings export/import buttons
-            if (f.id === 'channelSettingsExportImport') {
-                card.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-radius:var(--ytkit-radius-md);';
-                const btnStyle = 'padding:8px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;';
-                const exportBtn = document.createElement('button');
-                exportBtn.textContent = 'Export Channel Settings';
-                exportBtn.style.cssText = btnStyle + 'background:#1a365d;';
-                exportBtn.onclick = async () => {
-                    const data = ChannelSettingsManager.exportAll();
-                    const blob = new Blob([data], { type: 'application/json' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = 'ytkit_channel_settings.json';
-                    a.click();
-                    URL.revokeObjectURL(a.href);
-                    showToast('Channel settings exported', '#22c55e');
-                };
-                const importBtn = document.createElement('button');
-                importBtn.textContent = 'Import Channel Settings';
-                importBtn.style.cssText = btnStyle + 'background:#1e3a2f;';
-                importBtn.onclick = () => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    input.onchange = async (ev) => {
-                        const file = ev.target.files[0];
-                        if (!file) return;
-                        const text = await file.text();
-                        const ok = ChannelSettingsManager.importAll(text);
-                        showToast(ok ? 'Channel settings imported' : 'Import failed — invalid file', ok ? '#22c55e' : '#ef4444');
-                    };
-                    input.click();
-                };
-                card.appendChild(exportBtn);
-                card.appendChild(importBtn);
-            }
+            // info-type features have no interactive control
         } else if (f.type === 'textarea') {
             const textarea = document.createElement('textarea');
             textarea.className = 'ytkit-input';
@@ -17179,38 +6585,6 @@ pause
             switchDiv.appendChild(input);
             switchDiv.appendChild(track);
             card.appendChild(switchDiv);
-
-            // Add "Manage" button for Video Hider feature
-            if (f.id === 'hideVideosFromHome') {
-                const manageBtn = document.createElement('button');
-                manageBtn.className = 'ytkit-manage-btn';
-                manageBtn.textContent = 'Manage';
-                manageBtn.title = 'Manage hidden videos and blocked channels';
-                manageBtn.style.cssText = `
-                    padding: 6px 12px;
-                    margin-left: 8px;
-                    border-radius: 6px;
-                    border: 1px solid rgba(255,255,255,0.2);
-                    background: rgba(255,255,255,0.1);
-                    color: #fff;
-                    font-size: 12px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                `;
-                manageBtn.onmouseenter = () => { manageBtn.style.background = 'rgba(255,255,255,0.2)'; manageBtn.style.borderColor = 'rgba(255,255,255,0.3)'; };
-                manageBtn.onmouseleave = () => { manageBtn.style.background = 'rgba(255,255,255,0.1)'; manageBtn.style.borderColor = 'rgba(255,255,255,0.2)'; };
-                manageBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Find the hideVideosFromHome feature and call its manager
-                    const videoHiderFeature = features.find(feat => feat.id === 'hideVideosFromHome');
-                    if (videoHiderFeature && videoHiderFeature._showManager) {
-                        videoHiderFeature._showManager();
-                    }
-                };
-                card.appendChild(manageBtn);
-            }
         }
 
         return card;
@@ -17274,6 +6648,11 @@ pause
 
     function attachUIEventListeners() {
         const doc = document;
+
+        // Auto-close panel on SPA navigation — prevents overlay persisting on home/other pages
+        doc.addEventListener('yt-navigate-start', () => {
+            doc.body.classList.remove('ytkit-panel-open');
+        });
 
         // Close panel
         doc.addEventListener('click', (e) => {
@@ -17416,6 +6795,12 @@ pause
                 // Update switch visual
                 const switchEl = e.target.closest('.ytkit-switch');
                 if (switchEl) switchEl.classList.toggle('active', isEnabled);
+
+                // Update card enabled accent stripe
+                const cardEl = e.target.closest('.ytkit-feature-card');
+                if (cardEl && !cardEl.classList.contains('ytkit-sub-card')) {
+                    cardEl.classList.toggle('ytkit-card-enabled', isEnabled);
+                }
 
                 const feature = features.find(f => f.id === featureId);
 
@@ -17576,861 +6961,292 @@ pause
         });
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 5: STYLES
-    // ══════════════════════════════════════════════════════════════════════════
     function injectPanelStyles() {
-        GM_addStyle(`
-/* ═══════════════════════════════════════════════════════════════════════════
-   YTKit Premium UI v6.0 - Professional Settings Panel
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
-:root {
-    --ytkit-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    --ytkit-bg-base: #0a0a0b;
-    --ytkit-bg-elevated: #111113;
-    --ytkit-bg-surface: #18181b;
-    --ytkit-bg-hover: #1f1f23;
-    --ytkit-bg-active: #27272a;
-    --ytkit-border: #27272a;
-    --ytkit-border-subtle: #1f1f23;
-    --ytkit-text-primary: #fafafa;
-    --ytkit-text-secondary: #a1a1aa;
-    --ytkit-text-muted: #71717a;
-    --ytkit-accent: #ff4e45;
-    --ytkit-accent-soft: rgba(255, 78, 69, 0.15);
-    --ytkit-success: #22c55e;
-    --ytkit-error: #ef4444;
-    --ytkit-radius-sm: 6px;
-    --ytkit-radius-md: 10px;
-    --ytkit-radius-lg: 14px;
-    --ytkit-radius-xl: 20px;
-    --ytkit-shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --ytkit-shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-    --ytkit-shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-    --ytkit-shadow-xl: 0 24px 64px rgba(0,0,0,0.6);
-    --ytkit-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* YTKit Download Buttons - Force Visibility */
-.ytkit-vlc-btn,
-.ytkit-local-dl-btn,
-.ytkit-mp3-dl-btn,
-.ytkit-transcript-btn,
-.ytkit-mpv-btn,
-.ytkit-dlplay-btn,
-.ytkit-embed-btn {
-    display: inline-flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 9999 !important;
-    position: relative !important;
-}
-
-/* Fallback button container */
-.ytkit-button-container {
-    display: flex !important;
-    gap: 8px !important;
-    margin: 8px 0 !important;
-    flex-wrap: wrap !important;
-    visibility: visible !important;
-}
-
-/* Trigger Button */
-.ytkit-trigger-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    margin: 0 4px;
-    background: transparent;
-    border: none;
-    border-radius: var(--ytkit-radius-md);
-    cursor: pointer;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-trigger-btn svg {
-    width: 22px;
-    height: 22px;
-    color: var(--yt-spec-icon-inactive, #aaa);
-    transition: all var(--ytkit-transition);
-}
-.ytkit-trigger-btn:hover {
-    background: var(--yt-spec-badge-chip-background, rgba(255,255,255,0.1));
-}
-.ytkit-trigger-btn:hover svg {
-    color: var(--yt-spec-text-primary, #fff);
-    transform: rotate(45deg);
-}
-
-/* Overlay */
-#ytkit-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 99998;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 300ms ease;
-}
-body.ytkit-panel-open #ytkit-overlay {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-/* Panel */
-#ytkit-settings-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.96);
-    z-index: 99999;
-    display: flex;
-    flex-direction: column;
-    width: 95%;
-    max-width: 1100px;
-    height: 85vh;
-    max-height: 800px;
-    background: var(--ytkit-bg-base);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-xl);
-    box-shadow: var(--ytkit-shadow-xl), 0 0 0 1px rgba(255,255,255,0.05) inset;
-    font-family: var(--ytkit-font);
-    color: var(--ytkit-text-primary);
-    opacity: 0;
-    pointer-events: none;
-    transition: all 300ms cubic-bezier(0.32, 0.72, 0, 1);
-    overflow: hidden;
-}
-body.ytkit-panel-open #ytkit-settings-panel {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
-}
-
-/* Header */
-.ytkit-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    background: linear-gradient(180deg, var(--ytkit-bg-elevated) 0%, var(--ytkit-bg-base) 100%);
-    border-bottom: 1px solid var(--ytkit-border);
-    flex-shrink: 0;
-}
-.ytkit-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.ytkit-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
-    border-radius: var(--ytkit-radius-md);
-    box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
-}
-.ytkit-yt-icon {
-    width: 26px;
-    height: auto;
-}
-.ytkit-title {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    margin: 0;
-}
-.ytkit-title-yt {
-    background: linear-gradient(135deg, #ff4e45 0%, #ff0000 50%, #ff4e45 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: ytkit-shimmer 3s linear infinite;
-}
-.ytkit-title-kit {
-    color: var(--ytkit-text-primary);
-}
-@keyframes ytkit-shimmer {
-    0% { background-position: 0% center; }
-    100% { background-position: 200% center; }
-}
-.ytkit-badge {
-    padding: 4px 10px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: #fff;
-    background: linear-gradient(135deg, #ff4e45, #ff0000);
-    border-radius: 100px;
-    box-shadow: 0 2px 8px rgba(255, 78, 69, 0.4);
-}
-.ytkit-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    background: var(--ytkit-bg-surface);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-md);
-    cursor: pointer;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-close svg {
-    width: 18px;
-    height: 18px;
-    color: var(--ytkit-text-secondary);
-    transition: color var(--ytkit-transition);
-}
-.ytkit-close:hover {
-    background: var(--ytkit-error);
-    border-color: var(--ytkit-error);
-}
-.ytkit-close:hover svg {
-    color: #fff;
-}
-
-/* Body */
-.ytkit-body {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-/* Sidebar */
-.ytkit-sidebar {
-    display: flex;
-    flex-direction: column;
-    width: 240px;
-    padding: 16px 12px;
-    background: var(--ytkit-bg-elevated);
-    border-right: 1px solid var(--ytkit-border);
-    overflow-y: auto;
-    flex-shrink: 0;
-}
-
-/* Search Box */
-.ytkit-search-container {
-    position: relative;
-    margin-bottom: 12px;
-}
-.ytkit-search-input {
-    width: 100%;
-    padding: 10px 12px 10px 36px;
-    background: var(--ytkit-bg-surface);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-md);
-    color: var(--ytkit-text-primary);
-    font-size: 13px;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-search-input:focus {
-    outline: none;
-    border-color: var(--ytkit-accent);
-    box-shadow: 0 0 0 3px rgba(255, 78, 69, 0.15);
-}
-.ytkit-search-input::placeholder {
-    color: var(--ytkit-text-muted);
-}
-.ytkit-search-icon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    color: var(--ytkit-text-muted);
-    pointer-events: none;
-}
-
-/* Sidebar Divider */
-.ytkit-sidebar-divider {
-    height: 1px;
-    background: var(--ytkit-border);
-    margin: 8px 0 12px;
-}
-
-/* Search Active State */
-.ytkit-pane.ytkit-search-active {
-    display: block;
-}
-.ytkit-pane.ytkit-search-active .ytkit-pane-header {
-    display: none;
-}
-
-.ytkit-nav-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 12px;
-    margin-bottom: 2px;
-    background: transparent;
-    border: none;
-    border-radius: var(--ytkit-radius-md);
-    cursor: pointer;
-    transition: all var(--ytkit-transition);
-    text-align: left;
-}
-.ytkit-nav-btn:hover {
-    background: var(--ytkit-bg-hover);
-}
-.ytkit-nav-btn.active {
-    background: var(--ytkit-bg-active);
-}
-.ytkit-nav-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: var(--ytkit-bg-surface);
-    border-radius: var(--ytkit-radius-sm);
-    flex-shrink: 0;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-nav-btn.active .ytkit-nav-icon {
-    background: var(--cat-color, var(--ytkit-accent));
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 40%, transparent);
-}
-.ytkit-nav-icon svg {
-    width: 16px;
-    height: 16px;
-    color: var(--ytkit-text-secondary);
-    transition: color var(--ytkit-transition);
-}
-.ytkit-nav-btn.active .ytkit-nav-icon svg {
-    color: #fff;
-}
-.ytkit-nav-label {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--ytkit-text-secondary);
-    transition: color var(--ytkit-transition);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.ytkit-nav-btn.active .ytkit-nav-label {
-    color: var(--ytkit-text-primary);
-}
-.ytkit-nav-count {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--ytkit-text-muted);
-    background: var(--ytkit-bg-surface);
-    padding: 2px 6px;
-    border-radius: 100px;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-nav-btn.active .ytkit-nav-count {
-    background: rgba(255,255,255,0.15);
-    color: var(--ytkit-text-primary);
-}
-.ytkit-nav-arrow {
-    display: flex;
-    opacity: 0;
-    transition: opacity var(--ytkit-transition);
-}
-.ytkit-nav-arrow svg {
-    width: 14px;
-    height: 14px;
-    color: var(--ytkit-text-muted);
-}
-.ytkit-nav-btn.active .ytkit-nav-arrow {
-    opacity: 1;
-}
-
-/* Content */
-.ytkit-content {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
-    background: var(--ytkit-bg-base);
-}
-.ytkit-pane {
-    display: none;
-    animation: ytkit-fade-in 300ms ease;
-}
-.ytkit-pane.active {
-    display: block;
-}
-.ytkit-pane.ytkit-vh-pane.active {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: calc(85vh - 180px);
-}
-#ytkit-vh-content {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 8px;
-}
-@keyframes ytkit-fade-in {
-    from { opacity: 0; transform: translateX(8px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-@keyframes ytkit-badge-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.3); }
-}
-.ytkit-pane-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--ytkit-border);
-}
-.ytkit-pane-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.ytkit-pane-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: var(--cat-color, var(--ytkit-accent));
-    border-radius: var(--ytkit-radius-md);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 30%, transparent);
-}
-.ytkit-pane-icon svg {
-    width: 20px;
-    height: 20px;
-    color: #fff;
-}
-.ytkit-pane-title h2 {
-    font-size: 20px;
-    font-weight: 600;
-    margin: 0;
-    color: var(--ytkit-text-primary);
-}
-.ytkit-toggle-all {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-}
-.ytkit-toggle-all span {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--ytkit-text-secondary);
-}
-
-/* Reset Group Button */
-.ytkit-reset-group-btn {
-    padding: 6px 12px;
-    margin-right: 12px;
-    background: var(--ytkit-bg-surface);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-sm);
-    color: var(--ytkit-text-muted);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-reset-group-btn:hover {
-    background: var(--ytkit-error);
-    border-color: var(--ytkit-error);
-    color: #fff;
-}
-
-/* Features Grid */
-.ytkit-features-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.ytkit-feature-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    background: var(--ytkit-bg-surface);
-    border: 1px solid var(--ytkit-border-subtle);
-    border-radius: var(--ytkit-radius-md);
-    transition: all var(--ytkit-transition);
-}
-.ytkit-feature-card:hover {
-    background: var(--ytkit-bg-hover);
-    border-color: var(--ytkit-border);
-}
-.ytkit-sub-card {
-    margin-left: 24px;
-    background: var(--ytkit-bg-elevated);
-    border-left: 2px solid var(--ytkit-accent-soft);
-}
-.ytkit-sub-features {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.ytkit-feature-info {
-    flex: 1;
-    min-width: 0;
-    padding-right: 16px;
-}
-.ytkit-feature-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--ytkit-text-primary);
-    margin: 0 0 4px 0;
-}
-.ytkit-feature-desc {
-    font-size: 12px;
-    color: var(--ytkit-text-muted);
-    margin: 0;
-    line-height: 1.4;
-}
-.ytkit-textarea-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-}
-.ytkit-textarea-card .ytkit-feature-info {
-    padding-right: 0;
-}
-.ytkit-input {
-    width: 100%;
-    padding: 10px 12px;
-    font-family: var(--ytkit-font);
-    font-size: 13px;
-    color: var(--ytkit-text-primary);
-    background: var(--ytkit-bg-base);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-sm);
-    resize: vertical;
-    min-height: 60px;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-input:focus {
-    outline: none;
-    border-color: var(--ytkit-accent);
-    box-shadow: 0 0 0 3px var(--ytkit-accent-soft);
-}
-.ytkit-input::placeholder {
-    color: var(--ytkit-text-muted);
-}
-
-/* Switch */
-.ytkit-switch {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    flex-shrink: 0;
-}
-.ytkit-switch input {
-    position: absolute;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    z-index: 1;
-    margin: 0;
-}
-.ytkit-switch-track {
-    position: absolute;
-    inset: 0;
-    background: var(--ytkit-bg-active);
-    border-radius: 100px;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-switch.active .ytkit-switch-track {
-    background: var(--switch-color, var(--ytkit-accent));
-    box-shadow: 0 0 12px color-mix(in srgb, var(--switch-color, var(--ytkit-accent)) 50%, transparent);
-}
-.ytkit-switch-thumb {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: var(--ytkit-shadow-sm);
-    transition: all var(--ytkit-transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.ytkit-switch.active .ytkit-switch-thumb {
-    transform: translateX(20px);
-}
-.ytkit-switch-icon {
-    display: flex;
-    opacity: 0;
-    transform: scale(0.5);
-    transition: all var(--ytkit-transition);
-}
-.ytkit-switch-icon svg {
-    width: 12px;
-    height: 12px;
-    color: var(--switch-color, var(--ytkit-accent));
-}
-.ytkit-switch.active .ytkit-switch-icon {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* Footer */
-.ytkit-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 24px;
-    background: var(--ytkit-bg-elevated);
-    border-top: 1px solid var(--ytkit-border);
-    flex-shrink: 0;
-}
-.ytkit-footer-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.ytkit-github {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    color: var(--ytkit-text-muted);
-    background: var(--ytkit-bg-surface);
-    border-radius: var(--ytkit-radius-sm);
-    transition: all var(--ytkit-transition);
-}
-.ytkit-github:hover {
-    color: var(--ytkit-text-primary);
-    background: var(--ytkit-bg-hover);
-}
-.ytkit-github svg {
-    width: 18px;
-    height: 18px;
-}
-.ytkit-version {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ytkit-text-muted);
-    background: var(--ytkit-bg-surface);
-    padding: 4px 10px;
-    border-radius: 100px;
-}
-.ytkit-shortcut {
-    font-size: 11px;
-    color: var(--ytkit-text-muted);
-    background: var(--ytkit-bg-surface);
-    padding: 4px 8px;
-    border-radius: var(--ytkit-radius-sm);
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-}
-.ytkit-footer-right {
-    display: flex;
-    gap: 10px;
-}
-.ytkit-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    font-family: var(--ytkit-font);
-    font-size: 13px;
-    font-weight: 600;
-    border: none;
-    border-radius: var(--ytkit-radius-md);
-    cursor: pointer;
-    transition: all var(--ytkit-transition);
-}
-.ytkit-btn svg {
-    width: 16px;
-    height: 16px;
-}
-.ytkit-btn-secondary {
-    color: var(--ytkit-text-secondary);
-    background: var(--ytkit-bg-surface);
-    border: 1px solid var(--ytkit-border);
-}
-.ytkit-btn-secondary:hover {
-    background: var(--ytkit-bg-hover);
-    color: var(--ytkit-text-primary);
-}
-.ytkit-btn-primary {
-    color: #fff;
-    background: linear-gradient(135deg, #ff4e45, #e6423a);
-    box-shadow: 0 2px 8px rgba(255, 78, 69, 0.3);
-}
-.ytkit-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(255, 78, 69, 0.4);
-}
-
-/* Toast */
-.ytkit-toast {
-    position: fixed;
-    bottom: -80px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
-    font-family: var(--ytkit-font);
-    font-size: 14px;
-    font-weight: 500;
-    color: #fff;
-    background: var(--ytkit-bg-surface);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-lg);
-    box-shadow: var(--ytkit-shadow-lg);
-    z-index: 100000;
-    transition: all 400ms cubic-bezier(0.68, -0.55, 0.27, 1.55);
-}
-.ytkit-toast.show {
-    bottom: 24px;
-}
-.ytkit-toast-success {
-    border-color: var(--ytkit-success);
-    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2);
-}
-.ytkit-toast-error {
-    border-color: var(--ytkit-error);
-    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
-}
-
-/* Watch page logo */
-#yt-suite-watch-logo {
-    display: flex;
-    align-items: center;
-    margin-right: 12px;
-}
-#yt-suite-watch-logo a {
-    display: flex;
-    align-items: center;
-}
-#yt-suite-watch-logo ytd-logo {
-    width: 90px;
-    height: auto;
-}
-
-/* Layout fixes */
-ytd-watch-metadata.watch-active-metadata {
-    margin-top: 180px !important;
-}
-ytd-live-chat-frame {
-    margin-top: -57px !important;
-    width: 402px !important;
-}
-
-/* Scrollbar */
-.ytkit-sidebar::-webkit-scrollbar,
-.ytkit-content::-webkit-scrollbar {
-    width: 6px;
-}
-.ytkit-sidebar::-webkit-scrollbar-track,
-.ytkit-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-.ytkit-sidebar::-webkit-scrollbar-thumb,
-.ytkit-content::-webkit-scrollbar-thumb {
-    background: var(--ytkit-border);
-    border-radius: 100px;
-}
-.ytkit-sidebar::-webkit-scrollbar-thumb:hover,
-.ytkit-content::-webkit-scrollbar-thumb:hover {
-    background: var(--ytkit-text-muted);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Statistics Dashboard Styles
-   ═══════════════════════════════════════════════════════════════════════════ */
-    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-    border: 1px solid var(--ytkit-border-subtle);
-    border-radius: var(--ytkit-radius-md);
-    padding: 16px;
-    text-align: center;
-    transition: all var(--ytkit-transition);
-}
-    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-    border-color: var(--ytkit-border);
-}
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--ytkit-accent);
-    margin-bottom: 4px;
-}
-    font-size: 12px;
-    color: var(--ytkit-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Profiles UI Styles
-   ═══════════════════════════════════════════════════════════════════════════ */
-    background: rgba(255,255,255,0.06) !important;
-}
-    filter: brightness(1.1);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Custom CSS Editor Styles
-   ═══════════════════════════════════════════════════════════════════════════ */
-.ytkit-css-editor {
-    width: 100%;
-    min-height: 150px;
-    padding: 12px;
-    background: var(--ytkit-bg-base);
-    border: 1px solid var(--ytkit-border);
-    border-radius: var(--ytkit-radius-md);
-    color: var(--ytkit-text-primary);
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    resize: vertical;
-}
-.ytkit-css-editor:focus {
-    outline: none;
-    border-color: var(--ytkit-accent);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Bulk Operations Styles
-   ═══════════════════════════════════════════════════════════════════════════ */
-.ytkit-bulk-bar {
-    animation: slideDown 0.2s ease-out;
-}
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-        `);
+        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99998;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:99999;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:100000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);} #yt-suite-watch-logo{display:flex;align-items:center;margin-right:12px;} #yt-suite-watch-logo a{display:flex;align-items:center;} #yt-suite-watch-logo ytd-logo{width:90px;height:auto;} ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);} background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));border:1px solid var(--ytkit-border-subtle);border-radius:var(--ytkit-radius-md);padding:16px;text-align:center;transition:all var(--ytkit-transition);} background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04));border-color:var(--ytkit-border);} font-size:24px;font-weight:700;color:var(--ytkit-accent);margin-bottom:4px;} font-size:12px;color:var(--ytkit-text-muted);text-transform:uppercase;letter-spacing:0.5px;} background:rgba(255,255,255,0.06) !important;} filter:brightness(1.1);} .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }`);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
     //  SECTION 6: BOOTSTRAP
-    // ══════════════════════════════════════════════════════════════════════════
     function main() {
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
 
         injectPanelStyles();
-        buildSettingsPanel();
+
+    //  Page Feature Dock — per-page floating toggle strip
+    //  Page Quick Settings Modal
+    //  A per-page context modal opened by a dedicated button next to the gear.
+
+    // Per-page feature config: id → label override (null = use feature.name)
+    const PAGE_MODAL_CONFIG = {
+        home: [
+            { id: 'videosPerRow',               label: 'Videos Per Row' },
+            { id: 'hideNewsHome',                label: 'Hide News' },
+            { id: 'hidePlaylistsHome',           label: 'Hide Playlists' },
+        ],
+        subs: [
+            { id: 'subscriptionsGrid',           label: 'Dense Grid' },
+            { id: 'fullWidthSubscriptions',      label: 'Full Width' },
+        ],
+        watch: [
+            { id: 'stickyVideo',                 label: 'Theater Split' },
+            { id: 'fitPlayerToWindow',           label: 'Fit to Window' },
+            { id: 'expandVideoWidth',            label: 'Expand Width' },
+            { id: 'skipSponsors',                label: 'SponsorBlock' },
+            { id: 'autoMaxResolution',           label: 'Max Resolution' },
+        ],
+        channel: [
+            { id: 'redirectToVideosTab',         label: 'Auto Videos Tab' },
+        ],
+    };
+
+    const PAGE_LABELS = {
+        home: 'Home',
+        subs: 'Subscriptions',
+        watch: 'Watch',
+        channel: 'Channel',
+    };
+
+    const PAGE_MODAL_PAGE_MAP = {
+        [PageTypes.HOME]: 'home',
+        [PageTypes.SUBSCRIPTIONS]: 'subs',
+        [PageTypes.WATCH]: 'watch',
+        [PageTypes.CHANNEL]: 'channel',
+    };
+
+    let _pageModalOpen = false;
+    let _pageModalEl = null;
+    let _pageModalOverlay = null;
+
+    function closePageModal() {
+        if (!_pageModalOpen) return;
+        _pageModalOpen = false;
+        if (_pageModalEl) {
+            _pageModalEl.classList.remove('ytkit-pm-visible');
+            setTimeout(() => _pageModalEl?.remove(), 220);
+            _pageModalEl = null;
+        }
+        if (_pageModalOverlay) {
+            _pageModalOverlay.classList.remove('ytkit-pm-ov-visible');
+            setTimeout(() => _pageModalOverlay?.remove(), 220);
+            _pageModalOverlay = null;
+        }
+        document.querySelector('#ytkit-page-btn')?.classList.remove('active');
+        document.querySelector('#ytkit-page-btn-watch')?.classList.remove('active');
+    }
+
+    function openPageModal() {
+        if (_pageModalOpen) { closePageModal(); return; }
+
+        const pt = getCurrentPage();
+        const pageKey = PAGE_MODAL_PAGE_MAP[pt];
+        const featureList = pageKey ? (PAGE_MODAL_CONFIG[pageKey] || []) : [];
+        if (!featureList.length) return;
+
+        _pageModalOpen = true;
+        document.querySelector('#ytkit-page-btn')?.classList.add('active');
+        document.querySelector('#ytkit-page-btn-watch')?.classList.add('active');
+
+        // Overlay
+        const ov = document.createElement('div');
+        ov.className = 'ytkit-pm-overlay';
+        ov.addEventListener('click', closePageModal);
+        document.body.appendChild(ov);
+        _pageModalOverlay = ov;
+        requestAnimationFrame(() => ov.classList.add('ytkit-pm-ov-visible'));
+
+        // Modal panel
+        const modal = document.createElement('div');
+        modal.id = 'ytkit-page-modal';
+        modal.className = 'ytkit-pm';
+        modal.addEventListener('click', e => e.stopPropagation());
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'ytkit-pm-header';
+
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'ytkit-pm-title-wrap';
+
+        const pageBadge = document.createElement('span');
+        pageBadge.className = 'ytkit-pm-badge';
+        pageBadge.textContent = PAGE_LABELS[pageKey] || pageKey;
+
+        const titleText = document.createElement('h3');
+        titleText.className = 'ytkit-pm-title';
+        titleText.textContent = 'Quick Settings';
+
+        titleWrap.appendChild(pageBadge);
+        titleWrap.appendChild(titleText);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'ytkit-pm-close';
+        closeBtn.title = 'Close';
+        closeBtn.appendChild(ICONS.close());
+        closeBtn.addEventListener('click', closePageModal);
+
+        header.appendChild(titleWrap);
+        header.appendChild(closeBtn);
+        modal.appendChild(header);
+
+        // Feature grid
+        const grid = document.createElement('div');
+        grid.className = 'ytkit-pm-grid';
+
+        featureList.forEach(({ id: fid, label }) => {
+            const feat = features.find(f => f.id === fid);
+            if (!feat) return;
+
+            const isOn = !!appState.settings[fid];
+            const card = document.createElement('button');
+            card.className = 'ytkit-pm-card' + (isOn ? ' on' : '');
+            card.dataset.fid = fid;
+
+            // Icon area
+            const iconWrap = document.createElement('div');
+            iconWrap.className = 'ytkit-pm-card-icon';
+            const iconFn = ICONS[feat.icon] || ICONS[feat.group?.toLowerCase()] || ICONS.settings;
+            iconWrap.appendChild(iconFn());
+
+            // Text
+            const textWrap = document.createElement('div');
+            textWrap.className = 'ytkit-pm-card-text';
+
+            const cardLabel = document.createElement('span');
+            cardLabel.className = 'ytkit-pm-card-label';
+            cardLabel.textContent = label || feat.name;
+
+            const cardDesc = document.createElement('span');
+            cardDesc.className = 'ytkit-pm-card-desc';
+            // Keep description short
+            const desc = feat.description || '';
+            cardDesc.textContent = desc.length > 72 ? desc.slice(0, 70) + '…' : desc;
+
+            textWrap.appendChild(cardLabel);
+            textWrap.appendChild(cardDesc);
+
+            // Toggle indicator
+            const toggle = document.createElement('div');
+            toggle.className = 'ytkit-pm-card-toggle';
+            const toggleTrack = document.createElement('div');
+            toggleTrack.className = 'ytkit-pm-toggle-track';
+            const toggleThumb = document.createElement('div');
+            toggleThumb.className = 'ytkit-pm-toggle-thumb';
+            toggleTrack.appendChild(toggleThumb);
+            toggle.appendChild(toggleTrack);
+
+            card.appendChild(iconWrap);
+            card.appendChild(textWrap);
+            card.appendChild(toggle);
+
+            card.addEventListener('click', () => {
+                const newVal = !appState.settings[fid];
+                appState.settings[fid] = newVal;
+                settingsManager.save(appState.settings);
+                try { newVal ? feat.init?.() : feat.destroy?.(); } catch(e) {}
+                card.classList.toggle('on', newVal);
+                // Update all matching dock pills if any remain
+                document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', newVal));
+            });
+
+            grid.appendChild(card);
+        });
+
+        modal.appendChild(grid);
+
+        // Footer: link to full settings
+        const footer = document.createElement('div');
+        footer.className = 'ytkit-pm-footer';
+        const fullBtn = document.createElement('button');
+        fullBtn.className = 'ytkit-pm-full-settings';
+        fullBtn.textContent = 'Open Full Settings →';
+        fullBtn.addEventListener('click', () => {
+            closePageModal();
+            document.body.classList.add('ytkit-panel-open');
+        });
+        footer.appendChild(fullBtn);
+        modal.appendChild(footer);
+
+        document.body.appendChild(modal);
+        _pageModalEl = modal;
+        requestAnimationFrame(() => modal.classList.add('ytkit-pm-visible'));
+
+        // Close on navigation
+        document.addEventListener('yt-navigate-start', closePageModal, { once: true });
+    }
+
+    function injectPageModalButton() {
+        const handleDisplay = () => {
+            const isWatch = window.location.pathname.startsWith('/watch');
+
+            // Clean up wrong-context button
+            if (isWatch) {
+                document.getElementById('ytkit-page-btn')?.remove();
+            } else {
+                document.getElementById('ytkit-page-btn-watch')?.remove();
+            }
+
+            const btnId = isWatch ? 'ytkit-page-btn-watch' : 'ytkit-page-btn';
+            if (document.getElementById(btnId)) return;
+
+            const pt = getCurrentPage();
+            const pageKey = PAGE_MODAL_PAGE_MAP[pt];
+            if (!pageKey || !PAGE_MODAL_CONFIG[pageKey]?.length) return;
+
+            const btn = document.createElement('button');
+            btn.id = btnId;
+            btn.className = 'ytkit-trigger-btn ytkit-page-trigger';
+            btn.title = 'YTKit Page Settings';
+            // Sliders icon
+            const svg = createSVG('0 0 24 24', [
+                { type: 'line', x1: 4, y1: 21, x2: 4, y2: 14 },
+                { type: 'line', x1: 4, y1: 10, x2: 4, y2: 3 },
+                { type: 'line', x1: 12, y1: 21, x2: 12, y2: 12 },
+                { type: 'line', x1: 12, y1: 8, x2: 12, y2: 3 },
+                { type: 'line', x1: 20, y1: 21, x2: 20, y2: 16 },
+                { type: 'line', x1: 20, y1: 12, x2: 20, y2: 3 },
+                { type: 'line', x1: 1, y1: 14, x2: 7, y2: 14 },
+                { type: 'line', x1: 9, y1: 8, x2: 15, y2: 8 },
+                { type: 'line', x1: 17, y1: 16, x2: 23, y2: 16 },
+            ], { strokeWidth: '2', strokeLinecap: 'round' });
+            btn.appendChild(svg);
+            btn.addEventListener('click', openPageModal);
+
+            if (isWatch) {
+                waitForElement('#top-row #owner', (ownerDiv) => {
+                    if (document.getElementById(btnId)) return;
+                    // Place right after the gear button
+                    const gear = document.getElementById('ytkit-watch-btn');
+                    if (gear) gear.after(btn);
+                    else ownerDiv.prepend(btn);
+                });
+            } else {
+                waitForElement('ytd-masthead #end', (mastheadEnd) => {
+                    if (document.getElementById(btnId)) return;
+                    // Place right before the gear button
+                    const gear = document.getElementById('ytkit-masthead-btn');
+                    if (gear) mastheadEnd.insertBefore(btn, gear);
+                    else mastheadEnd.prepend(btn);
+                });
+            }
+        };
+
+        addNavigateRule('_pageModalBtnRule', handleDisplay);
+
+        // Close modal on click-away (Escape key)
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && _pageModalOpen) closePageModal(); });
+    }
+
+    GM_addStyle(`.ytkit-pm-overlay{position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,0);transition:background 0.2s ease;pointer-events:none;} .ytkit-pm-ov-visible{background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:auto;} .ytkit-pm{position:fixed;top:60px;right:16px;width:400px;max-height:calc(100vh - 80px);overflow-y:auto;z-index:99991;background:linear-gradient(145deg,rgba(18,18,28,0.98),rgba(12,12,20,0.98));border:1px solid rgba(255,255,255,0.08);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04) inset;font-family:"Roboto",Arial,sans-serif;color:var(--yt-spec-text-primary,#fff);opacity:0;transform:translateY(-8px) scale(0.98);transition:opacity 0.2s ease,transform 0.2s ease;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent;} .ytkit-pm::-webkit-scrollbar{width:4px;} .ytkit-pm::-webkit-scrollbar-track{background:transparent;} .ytkit-pm::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px;} .ytkit-pm-visible{opacity:1;transform:translateY(0) scale(1);} .ytkit-pm-header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06);} .ytkit-pm-title-wrap{display:flex;align-items:center;gap:10px;} .ytkit-pm-badge{font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#3b82f6;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:2px 8px;} .ytkit-pm-title{margin:0;font-size:15px;font-weight:600;color:rgba(255,255,255,0.9);} .ytkit-pm-close{width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;} .ytkit-pm-close:hover{background:rgba(255,255,255,0.12);color:#fff;} .ytkit-pm-close svg{width:14px;height:14px;} .ytkit-pm-grid{display:flex;flex-direction:column;gap:2px;padding:8px;} .ytkit-pm-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:none;background:transparent;cursor:pointer;text-align:left;transition:background 0.15s;width:100%;} .ytkit-pm-card:hover{background:rgba(255,255,255,0.05);} .ytkit-pm-card.on{background:rgba(59,130,246,0.08);} .ytkit-pm-card.on:hover{background:rgba(59,130,246,0.13);} .ytkit-pm-card-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);transition:all 0.15s;} .ytkit-pm-card.on .ytkit-pm-card-icon{background:rgba(59,130,246,0.18);color:#60a5fa;} .ytkit-pm-card-icon svg{width:16px;height:16px;} .ytkit-pm-card-text{flex:1;min-width:0;} .ytkit-pm-card-label{display:block;font-size:13px;font-weight:500;color:rgba(255,255,255,0.8);line-height:1.3;} .ytkit-pm-card.on .ytkit-pm-card-label{color:#e0eaff;} .ytkit-pm-card-desc{display:block;font-size:11px;color:rgba(255,255,255,0.35);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;} .ytkit-pm-card-toggle{flex-shrink:0;} .ytkit-pm-toggle-track{width:34px;height:18px;border-radius:9px;background:rgba(255,255,255,0.1);position:relative;transition:background 0.2s;} .ytkit-pm-card.on .ytkit-pm-toggle-track{background:#2563eb;} .ytkit-pm-toggle-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);transition:transform 0.2s,background 0.2s;} .ytkit-pm-card.on .ytkit-pm-toggle-thumb{transform:translateX(16px);background:#fff;} .ytkit-pm-footer{padding:10px 16px 14px;border-top:1px solid rgba(255,255,255,0.06);} .ytkit-pm-full-settings{width:100%;padding:9px 16px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;letter-spacing:0.2px;} .ytkit-pm-full-settings:hover{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.85);} .ytkit-page-trigger.active svg{color:#3b82f6 !important;transform:none !important;} .ytkit-page-trigger:hover svg{transform:none !important;}`);
+
+    function buildPageDock() {
+        // Dock replaced by page modal — no-op kept for call-site compatibility
+    }
+
+            buildSettingsPanel();
         injectSettingsButton();
+        buildPageDock();
+        injectPageModalButton();
         attachUIEventListeners();
         updateAllToggleStates();
 
@@ -18485,27 +7301,60 @@ ytd-live-chat-frame {
             console.log('%c[YTKit] SAFE MODE — All features disabled. ytkit.unsafe() to exit.', 'color:#f97316;font-weight:bold;font-size:16px;');
             showToast('SAFE MODE — All features disabled. Console: ytkit.unsafe() to exit.', '#f97316', { duration: 10 });
         } else {
-            // Initialize features
-            const initLog = [];
-            features.forEach(f => {
+            // TIER 0: Critical — adblock, cosmetics, CSS-only, Theater Split.
+            //         Must run synchronously before any page content paints.
+            // TIER 1: Normal — all other non-watch-page-specific features.
+            //         Run in rAF to avoid blocking first paint.
+            // TIER 2: Watch-page-only — heavy features that aren't needed until
+            //         the video is playing. Deferred 1500ms via requestIdleCallback.
+            const CRITICAL_IDS = new Set([
+                'ytAdBlock','adblockCosmeticHide','adblockSsapAutoSkip','adblockAntiDetect',
+                'stickyVideo','themeManager','uiStyleManager',
+            ]);
+            const LAZY_IDS = new Set([
+                // Only defer watch-page-only features that are heavy or network-bound
+                'skipSponsors',
+                'autoResumePosition','chapterProgressBar',
+            ]);
+
+            const initFeature = (f) => {
                 if (f._arrayKey) return;
-                const isEnabled = appState.settings[f.id];
-
-                if (isEnabled) {
-                    if (f.pages && !f.pages.includes(appState.currentPage)) return;
-                    if (f.dependsOn && !appState.settings[f.dependsOn]) return;
-                    if (f._initialized) return;
-
-                    try {
-                        f.init?.();
-                        f._initialized = true;
-                        initLog.push(f.id);
-                    } catch (error) {
-                        console.error(`[YTKit] Error initializing "${f.id}":`, error);
-                    }
+                const isEnabled = (f.type === 'select' || f.type === 'color' || f.type === 'range')
+                    ? true : appState.settings[f.id];
+                if (!isEnabled) return;
+                if (f.pages && !f.pages.includes(appState.currentPage)) return;
+                if (f.dependsOn && !appState.settings[f.dependsOn]) return;
+                if (f._initialized) return;
+                try { f.init?.(); f._initialized = true; } catch(err) {
+                    console.error(`[YTKit] Error initializing "${f.id}":`, err);
                 }
+            };
+
+            const critLog = [], normalLog = [], lazyLog = [];
+            const normal = [], lazy = [];
+
+            features.forEach(f => {
+                if (CRITICAL_IDS.has(f.id)) { initFeature(f); critLog.push(f.id); }
+                else if (LAZY_IDS.has(f.id)) lazy.push(f);
+                else normal.push(f);
             });
-            console.log(`[YTKit] ${initLog.length} features loaded:`, initLog.join(', '));
+
+            // Tier 1: after first paint
+            requestAnimationFrame(() => {
+                normal.forEach(f => { initFeature(f); if (f._initialized) normalLog.push(f.id); });
+                console.log(`[YTKit] v25.22 | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
+            });
+
+            // Tier 2: after page is interactive
+            const lazyInit = () => {
+                lazy.forEach(f => { initFeature(f); if (f._initialized) lazyLog.push(f.id); });
+                if (lazyLog.length) DebugManager.log('Init', `Lazy loaded: ${lazyLog.join(', ')}`);
+            };
+            if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(lazyInit, { timeout: 2000 });
+            } else {
+                setTimeout(lazyInit, 1500);
+            }
         }
 
         // Show sub-features for enabled parents
@@ -18535,7 +7384,9 @@ ytd-live-chat-frame {
                 // Re-initialize features that are page-specific
                 features.forEach(f => {
                     if (f._arrayKey) return;
-                    const isEnabled = appState.settings[f.id];
+                    const isEnabled = (f.type === 'select' || f.type === 'color' || f.type === 'range')
+                        ? true
+                        : appState.settings[f.id];
 
                     if (isEnabled && f.pages) {
                         const wasActive = f.pages.includes(oldPage);
@@ -18552,7 +7403,7 @@ ytd-live-chat-frame {
         });
         } // end !isSafeMode
 
-        console.log(`%c[YTKit] v25.9 Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+        console.log(`%c[YTKit] v25.22 Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
