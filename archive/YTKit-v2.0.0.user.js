@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YTKit
-// @version      1.3.1
+// @version      2.0.0
 // @description  Ultimate YouTube customization with ad blocking, VLC streaming, video/channel hiding, playback enhancements, sticky video, and more.
 // @author       Matthew Parker
 // @license      MIT
@@ -66,6 +66,7 @@
             'fullscreenAdRenderer', 'interstitialAdRenderer',
             'sponsoredTextRenderers', 'adBreaks',
             'playerResponse.playerConfig.adConfig',
+            'playerResponse.adBreakHeartbeatParams',
         ];
         const REPLACE_MAP = { adPlacements: 'no_ads', adSlots: 'no_ads', playerAds: 'no_ads', adBreakHeartbeatParams: 'no_ads' };
         const INTERCEPT_URLS = [
@@ -122,7 +123,7 @@
             for (let i = 0; i < INTERCEPT_URLS.length; i++) { if (url.indexOf(INTERCEPT_URLS[i]) !== -1) return true; }
             return false;
         }
-        const _replaceRe = new W.RegExp('"(' + W.Object.keys(REPLACE_MAP).map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('|') + ')"', 'g');
+        const _replaceRe = new W.RegExp('"(' + W.Object.keys(REPLACE_MAP).join('|') + ')"', 'g');
         function replaceAdKeys(text) {
             if (typeof text !== 'string') return text;
             return text.replace(_replaceRe, function(m, k) { return '"' + REPLACE_MAP[k] + '"'; });
@@ -131,8 +132,8 @@
         // ── Deep Recursive Ad Pruner ──
         function deepPruneAds(obj, depth) {
             if (!obj || typeof obj !== 'object' || (depth || 0) > 12) return false;
-            // Skip trivially small objects (0-1 keys can't contain ad renderer pairs)
-            var keys = W.Array.isArray(obj) ? null : W.Object.keys(obj);
+            // Skip small objects that couldn't possibly contain ad data
+            const keys = W.Array.isArray(obj) ? null : W.Object.keys(obj);
             if (keys && keys.length < 2) return false;
             let pruned = false;
             const d = (depth || 0) + 1;
@@ -141,8 +142,8 @@
                     const item = obj[i];
                     if (item && typeof item === 'object') {
                         let isAd = false;
-                        const itemKeys = W.Object.keys(item);
-                        for (let j = 0; j < itemKeys.length; j++) { if (AD_RENDERER_SET[itemKeys[j]]) { isAd = true; break; } }
+                        const keys = W.Object.keys(item);
+                        for (let j = 0; j < keys.length; j++) { if (AD_RENDERER_SET[keys[j]]) { isAd = true; break; } }
                         if (isAd) { obj.splice(i, 1); pruned = true; continue; }
                         const content = item.content || item.renderer;
                         if (content && typeof content === 'object') {
@@ -175,10 +176,10 @@
 
         function pruneObject(obj) {
             if (!obj || typeof obj !== 'object') return false;
-            var pruned = false;
-            for (var i = 0; i < PRUNE_KEYS.length; i++) { if (deleteNested(obj, PRUNE_KEYS[i])) pruned = true; }
+            let pruned = false;
+            for (let i = 0; i < PRUNE_KEYS.length; i++) { if (deleteNested(obj, PRUNE_KEYS[i])) pruned = true; }
             if (obj.entries && W.Array.isArray(obj.entries)) {
-                var before = obj.entries.length;
+                const before = obj.entries.length;
                 obj.entries = obj.entries.filter(function(e) {
                     return !(e && e.command && e.command.reelWatchEndpoint &&
                              e.command.reelWatchEndpoint.adClientParams &&
@@ -186,12 +187,7 @@
                 });
                 if (obj.entries.length < before) pruned = true;
             }
-            // Deep walk only if top-level prune didn't already strip the main ad keys —
-            // avoids expensive recursive traversal on responses that were already cleaned.
-            // Still runs if pruned=false (may have nested ad renderers without top-level keys).
-            if (!pruned || obj.contents || obj.onResponseReceivedActions || obj.richGridRenderer) {
-                pruned = deepPruneAds(obj) || pruned;
-            }
+            pruned = deepPruneAds(obj) || pruned;
             if (pruned) stats.pruned++;
             return pruned;
         }
@@ -199,9 +195,9 @@
         // Pre-check strings: known ad keys that must appear for pruneObject to do any work.
         // Avoids expensive deep traversal on the hundreds of small JSON.parse calls YouTube
         // makes per second for analytics, metrics, and UI state updates.
-        const AD_KEY_HINTS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams', 'auxiliaryUi', 'adSlotRenderer', 'promotedVideoRenderer', 'inFeedAdLayoutRenderer', 'displayAdRenderer', 'compactPromotedVideoRenderer', 'adBreakServiceRenderer'];
+        const AD_KEY_HINTS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams', 'auxiliaryUi', 'adSlotRenderer', 'promotedVideoRenderer'];
         function jsonNeedsPruning(str) {
-            if (typeof str !== 'string' || str.length < 500) return false;
+            if (typeof str !== 'string' || str.length < 200) return false;
             for (let i = 0; i < AD_KEY_HINTS.length; i++) {
                 if (str.indexOf(AD_KEY_HINTS[i]) !== -1) return true;
             }
@@ -291,12 +287,7 @@
                 try {
                     if (node instanceof W.HTMLIFrameElement && node.src === 'about:blank') {
                         const res = W.Reflect.apply(target, thisArg, args);
-                        // Skip sandboxed iframes without allow-scripts (accessing contentWindow throws)
-                        try {
-                            const sb = node.getAttribute('sandbox');
-                            if (sb !== null && sb.indexOf('allow-scripts') === -1) return res;
-                            if (node.contentWindow) { node.contentWindow.fetch = W.fetch; node.contentWindow.JSON.parse = W.JSON.parse; }
-                        } catch(ignored) {}
+                        if (node.contentWindow) { node.contentWindow.fetch = W.fetch; node.contentWindow.JSON.parse = W.JSON.parse; }
                         return res;
                     }
                     if (node instanceof W.HTMLScriptElement) {
@@ -366,8 +357,6 @@
         }
         // Strategy: Click skip buttons only. No playbackRate/mute manipulation.
         // Uses MutationObserver on player + low-frequency poll as fallback.
-        // NOTE: `var` is intentional here — this code runs in the real page context
-        // via unsafeWindow, and `var` hoisting avoids TDZ issues across execution contexts.
         var adNeutTimer = null;
         var adObserver = null;
 
@@ -393,7 +382,7 @@
 
                 // Close overlay ads
                 var overlays = W.document.querySelectorAll(
-                    '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container'
+                    '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container, .ytp-ad-overlay-close-button'
                 );
                 for (var oc = 0; oc < overlays.length; oc++) {
                     try { overlays[oc].click(); } catch(e) {}
@@ -437,17 +426,10 @@
             }
 
             // Fallback poll: set up observer when player appears, click skip if ad detected
-            // Once observer is ready, clear the interval — observer handles the rest.
             if (adNeutTimer) return;
             var observerReady = setupObserver();
-            if (observerReady) return; // Observer already watching, no poll needed
             adNeutTimer = W.setInterval(function() {
                 if (!observerReady) observerReady = setupObserver();
-                if (observerReady) {
-                    // Observer is live — stop polling, it's redundant now
-                    W.clearInterval(adNeutTimer); adNeutTimer = null;
-                    return;
-                }
                 // Light check - only look for skip buttons, no video element manipulation
                 var player = W.document.getElementById('movie_player');
                 if (player && player.classList.contains('ad-showing')) {
@@ -656,94 +638,18 @@
     updateCSS(combined);
 
     // Fix: YouTube's sidebar drawer scrim (.opened) blocks all page interaction
-    // Scoped to tp-yt-app-drawer to avoid nuking any element with class .opened
     const _openedFix = document.createElement('style');
     _openedFix.id = 'ytkit-opened-fix';
-    _openedFix.textContent = 'tp-yt-app-drawer[opened] + .opened, #scrim.opened { display: none !important; pointer-events: none !important; }';
+    _openedFix.textContent = '.opened { display: none !important; }';
     (document.head || document.documentElement).appendChild(_openedFix);
 
-    // Early chat cleanup — runs at document-start in the live_chat iframe
-    // (features init via main() may not reach the chat iframe context)
-    if (window.location.pathname.startsWith('/live_chat')) {
-        const _chatFix = document.createElement('style');
-        _chatFix.id = 'ytkit-chat-early';
-        _chatFix.textContent = [
-            'yt-live-chat-toast-renderer, yt-live-chat-viewer-engagement-message-renderer { display: none !important; }',
-            // Clean up monetization clutter in restricted participation panel
-            'yt-live-chat-restricted-participation-renderer yt-live-chat-product-picker-panel-view-model { display: none !important; }',
-            'yt-live-chat-restricted-participation-renderer yt-reaction-control-panel-overlay-view-model { display: none !important; }',
-            'yt-live-chat-restricted-participation-renderer #picker-buttons { display: none !important; }',
-            // Style the YTKit subscribe button
-            '#ytkit-chat-subscribe { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 6px 14px; background: #c00; color: #fff; border: none; border-radius: 18px; font-size: 12px; font-weight: 600; font-family: "Roboto","Arial",sans-serif; cursor: pointer; transition: background 0.2s, transform 0.15s; text-decoration: none; white-space: nowrap; }',
-            '#ytkit-chat-subscribe:hover { background: #e00; transform: scale(1.03); }',
-            '#ytkit-chat-subscribe svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }',
-            // Restyle the restricted message row to be cleaner
-            'yt-live-chat-restricted-participation-renderer #explanation { display: flex !important; align-items: center !important; flex-wrap: wrap !important; gap: 4px !important; }',
-        ].join('\n');
-        (document.head || document.documentElement).appendChild(_chatFix);
-
-        // Inject subscribe button when "Subscribers-only mode" detected
-        const _injectSubscribeBtn = () => {
-            const renderer = document.querySelector('yt-live-chat-restricted-participation-renderer');
-            if (!renderer || document.getElementById('ytkit-chat-subscribe')) return;
-            const msgEl = renderer.querySelector('#message');
-            if (!msgEl || !msgEl.textContent.includes('Subscribers-only')) return;
-
-            // Extract channel handle from support button tooltip/aria-label
-            let handle = '';
-            const supportBtn = renderer.querySelector('button[aria-label*="@"]');
-            if (supportBtn) {
-                const m = supportBtn.getAttribute('aria-label').match(/@[\w.-]+/);
-                if (m) handle = m[0];
-            }
-            if (!handle) {
-                const tooltip = renderer.querySelector('tp-yt-paper-tooltip');
-                if (tooltip) {
-                    const m = (tooltip.textContent || '').match(/@[\w.-]+/);
-                    if (m) handle = m[0];
-                }
-            }
-
-            const btn = document.createElement('a');
-            btn.id = 'ytkit-chat-subscribe';
-            btn.target = '_blank';
-            btn.rel = 'noopener';
-            btn.href = handle ? `https://www.youtube.com/${handle}?sub_confirmation=1` : '#';
-            btn.title = handle ? 'Subscribe to ' + handle : 'Subscribe to this channel';
-            // Build with DOM API (chat iframe enforces Trusted Types)
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('viewBox', '0 0 24 24');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M10 20h4c0 1.1-.9 2-2 2s-2-.9-2-2zm10-2.65V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C9.63 5.36 8 7.92 8 11v6.35l-2 2V20h16v-.65l-2-2z');
-            svg.appendChild(path);
-            btn.appendChild(svg);
-            btn.appendChild(document.createTextNode(' Subscribe' + (handle ? ' to ' + handle : '')));
-
-            const body = renderer.querySelector('#body') || renderer.querySelector('#explanation');
-            if (body) body.appendChild(btn);
-        };
-
-        const _chatSubObs = new MutationObserver(_injectSubscribeBtn);
-        const _startChatSubObs = () => {
-            _injectSubscribeBtn();
-            _chatSubObs.observe(document.body, { childList: true, subtree: true });
-        };
-        if (document.body) _startChatSubObs();
-        else document.addEventListener('DOMContentLoaded', _startChatSubObs);
-    }
-
-    // Re-inject protection (debounced — head gets many mutations from YT scripts)
-    let _ensureCSSTimer = null;
+    // Re-inject protection
     const _ensureCSS = () => {
-        if (_ensureCSSTimer) return;
-        _ensureCSSTimer = setTimeout(() => {
-            _ensureCSSTimer = null;
-            if (!cosmeticEl || !cosmeticEl.parentNode) {
-                cosmeticEl = null;
-                const c = [GM_getValue('ytab_cached_selectors', ''), GM_getValue('ytab_custom_filters', '')].filter(Boolean).join(',\n');
-                updateCSS(c);
-            }
-        }, 200);
+        if (!cosmeticEl || !cosmeticEl.parentNode) {
+            cosmeticEl = null;
+            const c = [GM_getValue('ytab_cached_selectors', ''), GM_getValue('ytab_custom_filters', '')].filter(Boolean).join(',\n');
+            updateCSS(c);
+        }
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _ensureCSS);
     const _cssObserver = new MutationObserver(_ensureCSS);
@@ -778,8 +684,6 @@
     }
     function scanForAds(root) {
         if (!root || typeof root.querySelectorAll !== 'function') return;
-        // Fast path: check root itself before traversing children
-        if (root.tagName && AD_REMOVAL_TAGS.has(root.tagName)) { nukeAdNode(root); return; }
         for (const tag of AD_REMOVAL_TAGS) { for (const el of root.querySelectorAll(tag.toLowerCase())) nukeAdNode(el); }
         for (const el of root.querySelectorAll('[layout*="display-ad-"]')) nukeAdNode(el);
     }
@@ -798,17 +702,8 @@
             if (_pendingRoots.length && !_rafId) {
                 _rafId = requestAnimationFrame(() => {
                     _rafId = null;
-                    // Process in batches to avoid blocking main thread on heavy DOM mutations
-                    const roots = _pendingRoots.splice(0, 50);
+                    const roots = _pendingRoots.splice(0);
                     for (const root of roots) scanForAds(root);
-                    // If more remain, schedule another frame
-                    if (_pendingRoots.length) {
-                        _rafId = requestAnimationFrame(() => {
-                            _rafId = null;
-                            const more = _pendingRoots.splice(0);
-                            for (const r of more) scanForAds(r);
-                        });
-                    }
                 });
             }
         });
@@ -849,12 +744,6 @@
 
     //  SECTION 0A: CORE UTILITIES & UNIFIED STORAGE
 
-    const YTKIT_VERSION = '1.3.1';
-
-    // Shared selectors
-    const VIDEO_RENDERERS = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer';
-    const BUTTON_CONTAINER = '#top-level-buttons-computed';
-
     // Settings version for migrations
 
     // Page type detection for lazy-loading features
@@ -887,7 +776,10 @@
     // ── Timing Constants ──
     const TIMING = {
         NAV_DEBOUNCE: 50,         // Navigation detection debounce (ms)
+        MUTATION_THROTTLE: 500,   // Mutation observer throttle (ms)
+        BUTTON_DEBOUNCE: 300,     // Button checker mutation debounce (ms)
         SAVE_DEBOUNCE: 500,       // Settings save debounce (ms)
+        NAV_SETTLE: 1000,         // Time for YouTube SPA to settle after nav (ms)
         ELEMENT_TIMEOUT: 3000,    // waitForElement timeout (ms)
         LABEL_MAX_ATTEMPTS: 20,   // SponsorBlock label retry limit
     };
@@ -1359,18 +1251,8 @@
         },
 
         _getInnertubeApiKey() {
-            // Prefer ytcfg (cheap) over innerHTML regex (forces full DOM serialization)
-            if (typeof window.ytcfg !== 'undefined' && window.ytcfg.get) {
-                const key = window.ytcfg.get('INNERTUBE_API_KEY');
-                if (key) return key;
-            }
-            // Fallback: check script tags instead of body.innerHTML (much cheaper)
-            const scripts = document.querySelectorAll('script');
-            for (const s of scripts) {
-                const m = s.textContent.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
-                if (m) return m[1];
-            }
-            return null;
+            const match = document.body?.innerHTML?.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
+            return match ? match[1] : null;
         },
 
         _getClientVersion() {
@@ -1407,12 +1289,10 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
-            a.style.display = 'none';
-            (document.body || document.documentElement).appendChild(a);
+            document.body.appendChild(a);
             a.click();
-            a.remove();
-            // Delay revoke to ensure download starts
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         },
 
         _log(...args) {
@@ -1422,15 +1302,85 @@
         }
     };
 
-    // Debug Mode Manager — gated behind a flag, no-op in production
-    const DebugManager = {
-        _enabled: GM_getValue('ytkit_debug', false),
-        log(category, ...args) {
-            if (!this._enabled) return;
-            console.log(`%c[YTKit:${category}]`, 'color:#60a5fa;font-weight:bold', ...args);
+    // Settings Migration System
+
+    // Undo System for Video Hiding
+    const UndoManager = {
+        _stack: [],
+        _maxItems: 10,
+
+        push(action) {
+            this._stack.push({
+                ...action,
+                timestamp: Date.now()
+            });
+            if (this._stack.length > this._maxItems) {
+                this._stack.shift();
+            }
         },
-        enable()  { this._enabled = true; GM_setValue('ytkit_debug', true); },
-        disable() { this._enabled = false; GM_setValue('ytkit_debug', false); }
+
+        pop() {
+            return this._stack.pop();
+        },
+
+        peek() {
+            return this._stack[this._stack.length - 1];
+        },
+
+        canUndo() {
+            return this._stack.length > 0;
+        },
+
+        clear() {
+            this._stack = [];
+        }
+    };
+
+    // Debug Mode Manager
+    const DebugManager = { log() {} };
+    // Statistics Tracker
+    const StatsTracker = { load() {}, increment() {}, getAll() { return {}; }, formatTime() { return '0s'; }, reset() {} };
+
+    // IntersectionObserver Helper for Performance
+    const VisibilityObserver = {
+        _observer: null,
+        _callbacks: new Map(),
+        _options: {
+            root: null,
+            rootMargin: '200px',
+            threshold: 0
+        },
+
+        init() {
+            if (this._observer) return;
+            this._observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const callback = this._callbacks.get(entry.target);
+                    if (callback) {
+                        callback(entry.isIntersecting, entry);
+                    }
+                });
+            }, this._options);
+        },
+
+        observe(element, callback) {
+            this.init();
+            this._callbacks.set(element, callback);
+            this._observer.observe(element);
+        },
+
+        unobserve(element) {
+            if (!this._observer) return;
+            this._callbacks.delete(element);
+            this._observer.unobserve(element);
+        },
+
+        disconnect() {
+            if (this._observer) {
+                this._observer.disconnect();
+                this._callbacks.clear();
+            }
+        }
     };
 
     //  SECTION 0B: DYNAMIC CONTENT/STYLE ENGINE
@@ -1442,22 +1392,12 @@
     function waitForElement(selector, callback, timeout = TIMING.ELEMENT_TIMEOUT) {
         const el = document.querySelector(selector);
         if (el) { callback(el); return; }
-        let _fired = false;
-        const obs = new MutationObserver((mutations) => {
-            if (_fired) return;
-            // Fast-path: check added nodes directly before full querySelectorAll
-            for (const m of mutations) {
-                for (const node of m.addedNodes) {
-                    if (node.nodeType !== 1) continue;
-                    if (node.matches?.(selector)) { _fired = true; obs.disconnect(); callback(node); return; }
-                }
-            }
-            // Fallback: full query (handles deeply nested insertions)
+        const obs = new MutationObserver(() => {
             const el = document.querySelector(selector);
-            if (el) { _fired = true; obs.disconnect(); callback(el); }
+            if (el) { obs.disconnect(); callback(el); }
         });
         obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
-        setTimeout(() => { if (!_fired) obs.disconnect(); }, timeout);
+        setTimeout(() => obs.disconnect(), timeout);
     }
 
     // waitForPageContent — fires callback when YouTube's page content is actually rendered,
@@ -1509,15 +1449,8 @@
             ghost.dataset.pcId = id;
             ghost.title = 'Restore: ' + label;
             ghost.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px dashed rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.3);font-family:"Roboto",Arial,sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;`;
-            // Build restore icon via DOM API (avoids TrustedHTML issues in non-policy browsers)
-            const _svgNS = 'http://www.w3.org/2000/svg';
-            const _ico = document.createElementNS(_svgNS, 'svg');
-            _ico.setAttribute('viewBox', '0 0 24 24'); _ico.setAttribute('width', '12'); _ico.setAttribute('height', '12');
-            _ico.setAttribute('fill', 'none'); _ico.setAttribute('stroke', 'currentColor'); _ico.setAttribute('stroke-width', '2');
-            const _pl = document.createElementNS(_svgNS, 'polyline'); _pl.setAttribute('points', '1 4 1 10 7 10'); _ico.appendChild(_pl);
-            const _pa = document.createElementNS(_svgNS, 'path'); _pa.setAttribute('d', 'M3.51 15a9 9 0 1 0 .49-3.5'); _ico.appendChild(_pa);
-            ghost.appendChild(_ico);
-            const _lbl = document.createElement('span'); _lbl.textContent = label; ghost.appendChild(_lbl);
+            TrustedHTML.setHTML(ghost, '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg><span></span>');
+            ghost.querySelector('span').textContent = label;
             ghost.onmouseenter = () => { ghost.style.color = 'rgba(255,255,255,0.7)'; ghost.style.borderColor = 'rgba(255,255,255,0.5)'; };
             ghost.onmouseleave = () => { ghost.style.color = 'rgba(255,255,255,0.3)'; ghost.style.borderColor = 'rgba(255,255,255,0.2)'; };
             ghost.addEventListener('click', (e) => {
@@ -1644,12 +1577,6 @@
             document.querySelector(config.checkSelector)?.remove();
         }
         persistentButtons.delete(id);
-        // Clean up observer when no buttons remain
-        if (persistentButtons.size === 0 && buttonObserver) {
-            buttonObserver.disconnect();
-            buttonObserver = null;
-            buttonCheckStarted = false;
-        }
     }
 
     function tryInjectButton(id) {
@@ -1930,6 +1857,8 @@
             homepageGridAlign: true,
             styledFilterChips: true,
             hideSidebar: true,
+            // Consolidated: theme — only 'dark' supported
+            theme: 'dark',
             uiStyle: 'square',
             noAmbientMode: true,
             compactLayout: true,
@@ -1951,21 +1880,14 @@
             hideRelatedVideos: true,
             expandVideoWidth: true,
             floatingLogoOnWatch: true,
+            playerOverlayControls: true, // true = hover overlay on player, false = below video
             hideDescriptionRow: true,
             // Consolidated: replaces hideVideoEndCards, hideVideoEndScreen, hideEndVideoStills
             hideVideoEndContent: true,
-            hideVideosFromHome: true,
-            hideVideosBlockChannels: true,
-            hideVideosKeywordFilter: '',
-            hideVideosDurationFilter: 0,
-            hideVideosBlockedChannels: [],
-            hideVideosSubsLoadLimit: true,
-            hideVideosSubsLoadThreshold: 3,
             stickyVideo: true,
             cleanShareUrls: true,
             videosPerRow: 0,                // 0 = dynamic, 3-8 = fixed columns
             quickLinkMenu: true,
-            quickLinkItems: 'History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /',
             ytAdBlock: false,
             adblockCosmeticHide: true,
             adblockSsapAutoSkip: true,
@@ -1982,7 +1904,6 @@
             hideMerchShelf: true,
             hideAiSummary: true,
             autoResumePosition: true,
-            gpuContextRecovery: true,
             autoResumeThreshold: 15, // seconds from start before saving position
 
             hideDescriptionExtras: true,
@@ -1993,7 +1914,6 @@
             hideCommentTeaser: true,
             hideLiveChatEngagement: true,
             hidePaidPromotionWatch: true,
-            hideChannelJoinButton: true,
             hideFundraiser: true,
             hiddenChatElementsManager: true,
             hiddenChatElements: [
@@ -2023,10 +1943,9 @@
             showMp3DownloadButton: true,
             videoContextMenu: true,
             downloadProvider: 'cobalt',
-            cobaltUrl: 'https://cobalt.meowing.de/#',
             hideCollaborations: true,
+            useIntersectionObserver: true,
             hideInfoPanels: true,
-            colorTheme: 'none',
 
         },
 
@@ -2066,7 +1985,7 @@
                 bookmarks: bookmarks,
                 exportVersion: 3,
                 exportDate: new Date().toISOString(),
-                ytkitVersion: YTKIT_VERSION
+                ytkitVersion: '10.1'
             };
             return JSON.stringify(exportData, null, 2);
         },
@@ -2265,7 +2184,7 @@
                 const css = `ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px;width:99%;} ytd-browse[page-subtype="subscriptions"] ytd-rich-item-renderer.ytd-rich-grid-renderer{width:100% !important;margin:0 !important;margin-left:2px !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         {
             id: 'homepageGridAlign',
@@ -2279,7 +2198,7 @@
                 const css = `ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(310px,1fr)) !important;gap:16px !important;} ytd-browse[page-subtype="home"] ytd-rich-grid-row,ytd-browse[page-subtype="home"] ytd-rich-grid-row > #contents{display:contents !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer{width:100% !important;margin:0 !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer.ytkit-video-hidden{display:none !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #details.ytd-rich-grid-media{min-height:68px !important;max-height:68px !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #video-title.ytd-rich-grid-media{display:-webkit-box !important;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;max-height:4.4rem !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer #metadata-line.ytd-video-meta-block{white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;} ytd-browse[page-subtype="home"] ytd-rich-item-renderer ytd-thumbnail{aspect-ratio:16/9 !important;overflow:hidden !important;} ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-section-renderer,ytd-browse[page-subtype="home"] #contents.ytd-rich-grid-renderer > ytd-rich-shelf-renderer{grid-column:1 / -1 !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         {
             id: 'styledFilterChips',
@@ -2293,7 +2212,7 @@
                 const css = `ytd-feed-filter-chip-bar-renderer #chips-wrapper{background:transparent !important;} ytd-feed-filter-chip-bar-renderer #scroll-container{padding:4px 0 !important;} ytd-feed-filter-chip-bar-renderer #left-arrow,ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to right,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to left,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} yt-chip-cloud-chip-renderer .ytChipShapeChip{min-width:72px !important;height:32px !important;padding:0 14px !important;display:flex !important;align-items:center !important;justify-content:center !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:8px !important;transition:all 0.2s ease !important;backdrop-filter:blur(8px) !important;-webkit-backdrop-filter:blur(8px) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive{background:rgba(255,255,255,0.06) !important;color:rgba(255,255,255,0.7) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive:hover{background:rgba(255,255,255,0.12) !important;border-color:rgba(255,255,255,0.2) !important;color:#fff !important;transform:translateY(-1px) !important;box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;} yt-chip-cloud-chip-renderer .ytChipShapeActive{background:rgba(255,255,255,0.95) !important;color:#0f0f0f !important;border-color:transparent !important;font-weight:600 !important;box-shadow:0 2px 6px rgba(0,0,0,0.25) !important;} yt-chip-cloud-chip-renderer .ytChipShapeTextContent{font-size:13px !important;line-height:1 !important;white-space:nowrap !important;letter-spacing:0.2px !important;} iron-selector#chips yt-chip-cloud-chip-renderer{margin:0 4px !important;} iron-selector#chips yt-chip-cloud-chip-renderer:first-child{margin-left:0 !important;}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         {
             id: 'hideSidebar',
@@ -2305,15 +2224,41 @@
             init() {
                 const css = `
                     #guide, #guide-button, ytd-mini-guide-renderer, tp-yt-app-drawer { display: none !important; }
-                    tp-yt-app-drawer[opened] + .opened, #scrim.opened { display: none !important; pointer-events: none !important; }
+                    .opened { display: none !important; }
                     ytd-page-manager { margin-left: 0 !important; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
 
         // ─── Appearance ───
+        {
+            id: 'themeManager',
+            name: 'Theme',
+            description: 'Dark mode theme',
+            group: 'Appearance',
+            icon: 'moon',
+            _styleElement: null,
+            _ruleId: 'themeManagerRule',
+
+            init() {
+                this._applyTheme();
+                addMutationRule(this._ruleId, () => this._applyTheme());
+            },
+
+            _applyTheme() {
+                // Force dark mode
+                document.documentElement.setAttribute('dark', '');
+            },
+
+            destroy() {
+                document.documentElement.removeAttribute('dark');
+                this._styleElement?.remove();
+                document.getElementById('ytkit-theme-style')?.remove();
+                removeMutationRule(this._ruleId);
+            }
+        },
         {
             id: 'uiStyleManager',
             name: 'UI Style',
@@ -2341,248 +2286,7 @@
                 }
             },
 
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
-        },
-        {
-            id: 'colorThemeManager',
-            name: 'Color Theme',
-            description: 'Apply a color palette across YouTube (dark mode only)',
-            group: 'Appearance',
-            icon: 'palette',
-            type: 'select',
-            options: {
-                'none': 'None (Default)',
-                'catppuccin-mocha': 'Catppuccin Mocha',
-                'styled-dark': 'Styled Dark',
-                'dracula': 'Dracula',
-                'nord': 'Nord',
-                'gruvbox': 'Gruvbox Dark',
-                'tokyo-night': 'Tokyo Night'
-            },
-            settingKey: 'colorTheme',
-            _styleElement: null,
-
-            _themes: {
-                'catppuccin-mocha': {
-                    base: '#1e1e2e', mantle: '#181825', crust: '#11111b',
-                    surface0: '#313244', surface1: '#45475a', surface2: '#585b70',
-                    text: '#cdd6f4', subtext0: '#a6adc8', subtext1: '#bac2de',
-                    overlay0: '#6c7086', overlay1: '#7f849c', overlay2: '#9399b2',
-                    accent: '#cba6f7', red: '#f38ba8', green: '#a6e3a1',
-                    blue: '#89b4fa', sapphire: '#74c7ec', peach: '#fab387',
-                    yellow: '#f9e2af', teal: '#94e2d5', lavender: '#b4befe'
-                },
-                'styled-dark': {
-                    base: '#090909', mantle: '#0c0c0c', crust: '#050505',
-                    surface0: '#121212', surface1: '#151515', surface2: '#202020',
-                    text: '#cccccc', subtext0: '#aaaaaa', subtext1: '#888888',
-                    overlay0: '#353535', overlay1: '#454545', overlay2: '#555555',
-                    accent: '#3ea6ff', red: '#ff0000', green: '#0c8a1d',
-                    blue: '#1563d7', sapphire: '#157ef5', peach: '#ff6600',
-                    yellow: '#d6e22b', teal: '#00bfa5', lavender: '#7f9cf3'
-                },
-                'dracula': {
-                    base: '#282a36', mantle: '#21222c', crust: '#191a21',
-                    surface0: '#343746', surface1: '#3e4154', surface2: '#4a4d62',
-                    text: '#f8f8f2', subtext0: '#bfbfbf', subtext1: '#a0a0a0',
-                    overlay0: '#6272a4', overlay1: '#7283b5', overlay2: '#8294c6',
-                    accent: '#bd93f9', red: '#ff5555', green: '#50fa7b',
-                    blue: '#8be9fd', sapphire: '#6272a4', peach: '#ffb86c',
-                    yellow: '#f1fa8c', teal: '#8be9fd', lavender: '#bd93f9'
-                },
-                'nord': {
-                    base: '#2e3440', mantle: '#272c36', crust: '#242933',
-                    surface0: '#3b4252', surface1: '#434c5e', surface2: '#4c566a',
-                    text: '#eceff4', subtext0: '#d8dee9', subtext1: '#c0c8d8',
-                    overlay0: '#616e88', overlay1: '#6e7d99', overlay2: '#7b8ca6',
-                    accent: '#88c0d0', red: '#bf616a', green: '#a3be8c',
-                    blue: '#81a1c1', sapphire: '#5e81ac', peach: '#d08770',
-                    yellow: '#ebcb8b', teal: '#8fbcbb', lavender: '#b48ead'
-                },
-                'gruvbox': {
-                    base: '#282828', mantle: '#1d2021', crust: '#141617',
-                    surface0: '#3c3836', surface1: '#504945', surface2: '#665c54',
-                    text: '#ebdbb2', subtext0: '#d5c4a1', subtext1: '#bdae93',
-                    overlay0: '#7c6f64', overlay1: '#8c7e73', overlay2: '#a89984',
-                    accent: '#fe8019', red: '#fb4934', green: '#b8bb26',
-                    blue: '#83a598', sapphire: '#458588', peach: '#d65d0e',
-                    yellow: '#fabd2f', teal: '#8ec07c', lavender: '#d3869b'
-                },
-                'tokyo-night': {
-                    base: '#1a1b26', mantle: '#16161e', crust: '#12121a',
-                    surface0: '#24283b', surface1: '#2f3447', surface2: '#3b4261',
-                    text: '#c0caf5', subtext0: '#a9b1d6', subtext1: '#9aa5ce',
-                    overlay0: '#565f89', overlay1: '#626a94', overlay2: '#6e76a0',
-                    accent: '#7aa2f7', red: '#f7768e', green: '#9ece6a',
-                    blue: '#7dcfff', sapphire: '#2ac3de', peach: '#ff9e64',
-                    yellow: '#e0af68', teal: '#73daca', lavender: '#bb9af7'
-                }
-            },
-
-            _buildCSS(t) {
-                return `
-html[dark], [dark], :root[dark],
-html[darker-dark-theme-deprecate], [darker-dark-theme-deprecate] {
-    --yt-spec-base-background: ${t.base} !important;
-    --yt-spec-raised-background: ${t.base} !important;
-    --yt-spec-menu-background: ${t.mantle} !important;
-    --yt-spec-inverted-background: ${t.text} !important;
-    --yt-spec-additive-background: ${t.surface0} !important;
-    --yt-spec-outline: ${t.surface0} !important;
-    --yt-spec-text-primary: ${t.text} !important;
-    --yt-spec-text-secondary: ${t.subtext0} !important;
-    --yt-spec-text-disabled: ${t.subtext1} !important;
-    --yt-spec-text-primary-inverse: ${t.crust} !important;
-    --yt-spec-icon-inactive: ${t.text} !important;
-    --yt-spec-icon-disabled: ${t.overlay1} !important;
-    --yt-spec-call-to-action: ${t.accent} !important;
-    --yt-spec-call-to-action-inverse: ${t.accent} !important;
-    --yt-spec-brand-icon-active: ${t.accent} !important;
-    --yt-spec-brand-button-background: ${t.accent} !important;
-    --yt-spec-brand-link-text: ${t.sapphire} !important;
-    --yt-spec-badge-chip-background: ${t.surface0} !important;
-    --yt-spec-button-chip-background-hover: ${t.surface1} !important;
-    --yt-spec-touch-response: ${t.surface0} !important;
-    --yt-spec-general-background-a: ${t.base} !important;
-    --yt-spec-general-background-b: ${t.base} !important;
-    --yt-spec-general-background-c: ${t.crust} !important;
-    --yt-spec-brand-background-solid: ${t.base} !important;
-    --yt-spec-brand-background-primary: ${t.base} !important;
-    --yt-spec-brand-background-secondary: ${t.mantle} !important;
-    --yt-spec-snackbar-background: ${t.mantle} !important;
-    --yt-spec-10-percent-layer: ${t.surface1} !important;
-    --yt-spec-mono-tonal-hover: ${t.surface1} !important;
-    --yt-spec-mono-filled-hover: ${t.surface1} !important;
-    --yt-spec-static-brand-red: ${t.accent} !important;
-    --yt-spec-static-overlay-background-solid: ${t.crust} !important;
-    --yt-spec-static-overlay-background-heavy: ${t.crust} !important;
-    --yt-spec-static-overlay-text-primary: ${t.text} !important;
-    --yt-spec-error-indicator: ${t.red} !important;
-    --yt-spec-themed-blue: ${t.accent} !important;
-    --yt-spec-themed-green: ${t.green} !important;
-    --yt-spec-verified-badge-background: ${t.overlay0} !important;
-    --yt-spec-wordmark-text: ${t.text} !important;
-    --yt-spec-filled-button-text: ${t.text} !important;
-    --yt-spec-selected-nav-text: ${t.text} !important;
-    --yt-spec-suggested-action: ${t.accent}33 !important;
-    --yt-spec-brand-button-background-hover: ${t.accent} !important;
-    --yt-spec-call-to-action-hover: ${t.accent} !important;
-    --yt-spec-shadow: ${t.crust}bf !important;
-    --yt-spec-white-1: ${t.text} !important;
-    --yt-spec-grey-1: ${t.text} !important;
-    --yt-spec-grey-2: ${t.subtext0} !important;
-    --yt-lightsource-section1-color: ${t.base} !important;
-    --yt-lightsource-section2-color: ${t.surface0} !important;
-    --yt-lightsource-section3-color: ${t.surface1} !important;
-    --yt-lightsource-section4-color: ${t.surface2} !important;
-    --yt-lightsource-primary-title-color: ${t.text} !important;
-    --yt-lightsource-secondary-title-color: ${t.subtext0} !important;
-    --yt-brand-youtube-red: ${t.accent} !important;
-    --yt-brand-medium-red: ${t.accent} !important;
-    --yt-spec-red-indicator: ${t.accent} !important;
-    --yt-spec-red-70: ${t.red} !important;
-    --yt-spec-light-green: ${t.green} !important;
-    --yt-spec-dark-green: ${t.green} !important;
-    --yt-spec-light-blue: ${t.blue} !important;
-    --yt-spec-dark-blue: ${t.sapphire} !important;
-    --yt-spec-yellow: ${t.peach} !important;
-    --yt-endpoint-color: ${t.accent} !important;
-    --yt-endpoint-visited-color: ${t.accent} !important;
-    --yt-endpoint-hover-color: ${t.accent} !important;
-    --paper-dialog-background-color: ${t.mantle} !important;
-    --iron-icon-fill-color: ${t.text} !important;
-    --ytd-searchbox-background: ${t.base} !important;
-    --ytd-searchbox-border-color: ${t.surface0} !important;
-    --ytd-searchbox-legacy-border-color: ${t.surface0} !important;
-    --ytd-searchbox-legacy-button-color: ${t.mantle} !important;
-    --ytd-searchbox-legacy-button-border-color: ${t.surface0} !important;
-    --ytd-searchbox-text-color: ${t.text} !important;
-    --yt-live-chat-background-color: ${t.base} !important;
-    --yt-live-chat-secondary-background-color: ${t.surface1} !important;
-    --yt-live-chat-secondary-text-color: ${t.subtext0} !important;
-    --yt-live-chat-vem-background-color: ${t.mantle} !important;
-    --yt-spec-frosted-glass-desktop: ${t.base} !important;
-    --yt-frosted-glass-desktop: ${t.base} !important;
-    --yt-spec-static-ad-yellow: ${t.peach} !important;
-    --yt-spec-static-grey: ${t.subtext0} !important;
-    --paper-tooltip-background: ${t.overlay0} !important;
-    --paper-tooltip-text-color: ${t.text} !important;
-}
-/* Progress bar keeps red for visibility */
-html[dark] .ytp-play-progress.ytp-swatch-background-color,
-html[dark] .ytp-swatch-background-color { background: ${t.accent} !important; }
-/* Frosted glass header */
-html[dark] #background.ytd-masthead,
-html[dark] #frosted-glass { background: ${t.base} !important; }
-/* Active chips */
-html[dark] .ytChipShapeActive,
-html[dark] yt-chip-cloud-chip-renderer[selected] { background: ${t.accent} !important; color: ${t.crust} !important; }
-html[dark] .ytChipShapeInactive { background: ${t.surface0} !important; color: ${t.text} !important; }
-/* Buttons */
-html[dark] .yt-spec-button-shape-next--mono.yt-spec-button-shape-next--tonal { background-color: ${t.surface0} !important; color: ${t.text} !important; }
-html[dark] .yt-spec-button-shape-next--mono.yt-spec-button-shape-next--filled { background-color: ${t.accent} !important; color: ${t.crust} !important; }
-html[dark] .yt-spec-button-shape-next--mono.yt-spec-button-shape-next--outline { border-color: ${t.surface2} !important; color: ${t.text} !important; }
-/* Sidebar */
-html[dark] #guide-inner-content { background: ${t.mantle} !important; }
-html[dark] ytd-mini-guide-renderer { background: ${t.mantle} !important; }
-/* Thumbnails */
-html[dark] .badge-shape-wiz--thumbnail-default { color: ${t.text} !important; background: ${t.crust}cc !important; }
-/* Expandable metadata chapters */
-html[dark] ytd-expandable-metadata-renderer {
-    --yt-lightsource-section1-color: ${t.base} !important;
-    --yt-lightsource-section2-color: ${t.surface0} !important;
-}
-/* Channel page tabs */
-html[dark] .yt-tab-shape-wiz__tab { color: ${t.subtext1} !important; }
-html[dark] .yt-tab-shape-wiz__tab--tab-selected { color: ${t.text} !important; }
-html[dark] .yt-tab-group-shape-wiz__slider { background-color: ${t.text} !important; }
-/* Category pills / chips */
-html[dark] yt-chip-cloud-chip-renderer[selected] #chip-container { background: initial !important; }
-/* Video player live badge */
-html[dark] .ytp-live-badge[disabled]::before { background: ${t.accent} !important; }
-/* Subscribe button */
-html[dark] .ytp-sb-subscribe,
-html[dark] ytd-subscribe-button-renderer:not([subscribed]) button,
-html[dark] yt-subscribe-button-view-model:not([subscribed]) button { background: ${t.accent}4d !important; color: ${t.text} !important; }
-html[dark] ytd-subscribe-button-renderer[subscribed] button { background: ${t.surface1} !important; color: ${t.text} !important; }
-/* Comment author badge */
-html[dark] ytd-author-comment-badge-renderer:not([style*="transparent"]) {
-    --ytd-author-comment-badge-background-color: ${t.surface0} !important;
-    --ytd-author-comment-badge-icon-color: ${t.text} !important;
-}
-/* Playlist panel */
-html[dark] ytd-playlist-panel-renderer[collapsible][collapsed][use-color-palette] .header.ytd-playlist-panel-renderer { background-color: ${t.base} !important; }
-html[dark] ytd-playlist-panel-video-renderer {
-    --yt-lightsource-section2-color: ${t.surface1} !important;
-    --yt-active-playlist-panel-background-color: ${t.surface0} !important;
-}
-/* Popup dialogs */
-html[dark] .yt-spec-dialog-layout { background-color: ${t.mantle} !important; }
-/* Video player tooltips & panels */
-html[dark] .ytp-popup { background: ${t.surface0}e6 !important; }
-html[dark] .ytp-panel-menu, html[dark] .ytp-menuitem-label,
-html[dark] .ytp-menuitem-content, html[dark] .ytp-panel-header { color: ${t.text} !important; }
-html[dark] .ytp-panel-header { border-bottom-color: ${t.surface2} !important; }
-/* Searchbox focus */
-html[dark] ytd-searchbox[has-focus] #container.ytd-searchbox { border-color: ${t.accent} !important; }
-html[dark] .ytSearchboxComponentInputBoxHasFocusDark { border-color: ${t.accent} !important; }
-html[dark] .ytSearchboxComponentSuggestionsContainerDark { background: ${t.base} !important; border-color: ${t.base} !important; }
-html[dark] .ytSearchboxComponentSearchButtonDark { background: ${t.surface0} !important; border-color: ${t.surface0} !important; }
-/* Vertical ellipsis menu */
-html[dark] .ytListViewModelHost { background-color: ${t.mantle} !important; color: ${t.text} !important; }
-/* Red fill icons -> accent */
-html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] { fill: ${t.accent} !important; }
-`;
-            },
-
-            init() {
-                const theme = appState.settings.colorTheme || 'none';
-                if (theme === 'none' || !this._themes[theme]) return;
-                const css = this._buildCSS(this._themes[theme]);
-                this._styleElement = injectStyle(css, this.id, true);
-            },
-
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         cssFeature('noAmbientMode', 'Disable Ambient Mode', 'Turn off the glowing background effect that matches video colors', 'Appearance', 'sun-dim',
             `#cinematics, #cinematics-container,
@@ -2608,12 +2312,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'layout',
             _styleElement: null,
             init() {
-                // CSS selectors are scoped to ytd-watch-metadata — safe to inject globally
-                // (removing path guard so styles persist across SPA navigations)
-                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing:-0.025em !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(167,139,250,0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius:14px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}button[id^="downloadBtn"]{height:30px !important;min-height:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}button[id^="downloadBtn"]:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}.ytkit-vlc-btn:hover,.ytkit-local-dl-btn:hover,.ytkit-mp3-dl-btn:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn svg,.ytkit-local-dl-btn svg,.ytkit-mp3-dl-btn svg{width:14px !important;height:14px !important}.ytkit-vlc-btn svg path,.ytkit-local-dl-btn svg path,.ytkit-mp3-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}ytd-watch-flexy .ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}ytd-watch-flexy .ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(167,139,250,0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(167,139,250,0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(167,139,250,0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing:-0.01em !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer #comments-panel-button,ytd-comments-header-renderer #leading-section,ytd-comments-header-renderer #title{display:none !important}ytd-comments-header-renderer #additional-section{display:none !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(167,139,250,0.25) !important}ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}h1.style-scope.ytd-watch-metadata{margin-top:20px !important;font-weight:900 !important;font-style:normal !important;text-align:center !important;text-transform:capitalize !important;max-width:100% !important;overflow:hidden !important;text-overflow:ellipsis !important}yt-formatted-string.style-scope.ytd-watch-metadata{margin-bottom:0 !important;word-break:break-word !important;overflow-wrap:break-word !important}#primary.ytd-watch-flexy{max-width:100% !important;overflow:hidden !important}ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}#title.ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}div.yt-spec-touch-feedback-shape__fill{display:none !important}div.yt-spec-touch-feedback-shape__stroke{display:none !important}yt-touch-feedback-shape.yt-spec-touch-feedback-shape.yt-spec-touch-feedback-shape--touch-response{display:none !important}ytd-watch-metadata tp-yt-paper-button.dropdown-trigger.style-scope.yt-dropdown-menu{display:none !important}yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer{display:none !important}yt-formatted-string.style-scope.ytd-video-owner-renderer{display:none !important}ytd-watch-flexy button.ytkit-trigger-btn{display:none !important}ytd-watch-flexy yt-icon.style-scope.ytd-logo{display:none !important}div.item.style-scope.ytd-watch-metadata{display:none !important}ytd-watch-metadata #info-container span.style-scope.yt-formatted-string{display:none !important}#actions.ytd-watch-metadata button.yt-spec-button-shape-next.yt-spec-button-shape-next--tonal.yt-spec-button-shape-next--mono.yt-spec-button-shape-next--size-m.yt-spec-button-shape-next--icon-leading.yt-spec-button-shape-next--segmented-start.yt-spec-button-shape-next--enable-backdrop-filter-experiment{text-align:right !important}ytd-comment-view-model span.style-scope.yt-formatted-string,ytd-comment-renderer span.style-scope.yt-formatted-string,ytd-comment-thread-renderer span.style-scope.yt-formatted-string,ytd-comments-header-renderer span.style-scope.yt-formatted-string,ytd-comment-simplebox-renderer span.style-scope.yt-formatted-string{display:inline !important}ytd-comment-view-model yt-formatted-string,ytd-comment-renderer yt-formatted-string{display:inline !important}ytd-comments#comments{display:block !important;visibility:visible !important}ytd-comments#comments ytd-item-section-renderer{display:block !important}div.thread-hitbox.style-scope.ytd-comment-thread-renderer{display:none !important}`;
+                if (!window.location.pathname.startsWith('/watch')) return;
+                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing:-0.025em !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#yt-suite-watch-logo{display:none !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(167,139,250,0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius:14px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}button[id^="downloadBtn"]{height:30px !important;min-height:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}button[id^="downloadBtn"]:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;backdrop-filter:blur(12px) !important;-webkit-backdrop-filter:blur(12px) !important;transition:all 0.2s ease !important}.ytkit-vlc-btn:hover,.ytkit-local-dl-btn:hover,.ytkit-mp3-dl-btn:hover{background:rgba(167,139,250,0.1) !important;border-color:rgba(167,139,250,0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-vlc-btn svg,.ytkit-local-dl-btn svg,.ytkit-mp3-dl-btn svg{width:14px !important;height:14px !important}.ytkit-vlc-btn svg path,.ytkit-local-dl-btn svg path,.ytkit-mp3-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}.ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}.ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(167,139,250,0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(167,139,250,0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(167,139,250,0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}dislike-button-view-model{display:none !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing:-0.01em !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer #comments-panel-button,ytd-comments-header-renderer #leading-section,ytd-comments-header-renderer #title{display:none !important}ytd-comments-header-renderer #additional-section{display:none !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(167,139,250,0.25) !important}ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}`;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         {
             id: 'chatStyleComments',
@@ -2624,9 +2327,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _observer: null,
             init() {
-                // CSS selectors are scoped to comment elements — safe to inject globally
-                // (removing path guard so styles persist across SPA navigations)
-                const css = `ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:8px 4px 6px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(167,139,250,0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:#a78bfa !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:#c4b5fd !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(167,139,250,0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(167,139,250,0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:#c4b5fd !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar,ytd-comment-renderer ytd-comment-engagement-bar{position:absolute !important;top:6px !important;right:4px !important;margin:0 !important;padding:0 !important;z-index:2 !important;pointer-events:none !important}ytd-comment-view-model:hover ytd-comment-engagement-bar,ytd-comment-renderer:hover ytd-comment-engagement-bar{pointer-events:auto !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:static !important;align-items:center !important;gap:4px !important;margin:0 !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar,ytd-comment-renderer:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(167,139,250,0.6) !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important;overflow:visible !important;border:none !important;outline:none !important;background:transparent !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}#reply-dialog ytd-commentbox:not([hidden]),ytd-comment-engagement-bar ytd-comment-reply-dialog-renderer:not([hidden]){padding:0 !important;margin:0 !important;width:100% !important;border:none !important;outline:none !important;background:transparent !important;box-shadow:none !important;box-sizing:border-box !important;overflow:visible !important}#reply-dialog ytd-commentbox #creation-box,#reply-dialog ytd-commentbox #commentbox-background,#reply-dialog ytd-commentbox #main,#reply-dialog ytd-commentbox #header,#reply-dialog ytd-commentbox #container,#reply-dialog ytd-commentbox #commentbox{width:100% !important;border:none !important;outline:none !important;background:transparent !important;box-shadow:none !important;padding:0 !important;margin:0 !important;box-sizing:border-box !important}#reply-dialog ytd-commentbox,#reply-dialog ytd-comment-reply-dialog-renderer{border:none !important;outline:none !important;background:transparent !important;box-shadow:none !important;overflow:visible !important;width:100% !important;box-sizing:border-box !important}#reply-dialog #contenteditable-textarea,#reply-dialog #contenteditable-root,#reply-dialog yt-formatted-string[contenteditable],#reply-dialog [contenteditable="true"],ytd-comment-engagement-bar ytd-commentbox #contenteditable-textarea,ytd-comment-engagement-bar ytd-commentbox yt-formatted-string[contenteditable],ytd-commentbox yt-formatted-string.ytd-commentbox{font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(167,139,250,0.2) !important;border-radius:8px !important;min-height:60px !important;height:auto !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s !important}#reply-dialog #contenteditable-textarea:focus,#reply-dialog #contenteditable-root:focus,#reply-dialog yt-formatted-string[contenteditable]:focus,#reply-dialog [contenteditable="true"]:focus,ytd-commentbox yt-formatted-string.ytd-commentbox:focus{border-color:rgba(167,139,250,0.45) !important;background:rgba(255,255,255,0.06) !important}#reply-dialog #placeholder-area,#reply-dialog #contenteditable-textarea[aria-label]:empty::before{font-size:13px !important;color:rgba(255,255,255,0.25) !important}#reply-dialog #author-thumbnail,ytd-comment-engagement-bar ytd-commentbox #author-thumbnail{display:none !important}#reply-dialog #emoji-picker-button,#reply-dialog yt-emoji-picker-renderer{display:none !important}#reply-dialog #footer,#reply-dialog ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;justify-content:flex-end !important}#reply-dialog #footer .yt-spec-button-shape-next,#reply-dialog #footer button,#reply-dialog #cancel-button .yt-spec-button-shape-next,#reply-dialog #submit-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 14px !important;min-height:unset !important;border-radius:6px !important}.ytkit-replying ytd-comment-engagement-bar{position:relative !important;top:auto !important;right:auto !important;pointer-events:auto !important;margin:4px 0 0 !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(167,139,250,0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(167,139,250,0.3) !important;background:rgba(167,139,250,0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.12) !important;color:rgba(167,139,250,0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.35) !important;min-height:unset !important;background:rgba(167,139,250,0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}`;
+                if (!window.location.pathname.startsWith('/watch')) return;
+                const css = `ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:10px 4px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(167,139,250,0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:#a78bfa !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:#c4b5fd !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(167,139,250,0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(167,139,250,0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:#c4b5fd !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar{display:block !important;margin:4px 0 0 !important;padding:0 !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:relative !important;align-items:center !important;gap:4px !important;margin-top:4px !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(167,139,250,0.6) !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(167,139,250,0.9) !important;background:rgba(167,139,250,0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}#reply-dialog ytd-commentbox:not([hidden]),ytd-comment-engagement-bar ytd-comment-reply-dialog-renderer:not([hidden]){padding:0 !important;margin:0 !important;width:100% !important}#reply-dialog ytd-commentbox #creation-box,#reply-dialog ytd-commentbox #commentbox-background,#reply-dialog ytd-commentbox #main,#reply-dialog ytd-commentbox #header,#reply-dialog ytd-commentbox #container,#reply-dialog ytd-commentbox #commentbox{width:100% !important}#reply-dialog #contenteditable-textarea,#reply-dialog #contenteditable-root,#reply-dialog yt-formatted-string[contenteditable],#reply-dialog [contenteditable="true"],ytd-comment-engagement-bar ytd-commentbox #contenteditable-textarea,ytd-comment-engagement-bar ytd-commentbox yt-formatted-string[contenteditable]{font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(167,139,250,0.2) !important;border-radius:8px !important;min-height:60px !important;height:auto !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s !important}#reply-dialog #contenteditable-textarea:focus,#reply-dialog #contenteditable-root:focus,#reply-dialog yt-formatted-string[contenteditable]:focus,#reply-dialog [contenteditable="true"]:focus{border-color:rgba(167,139,250,0.45) !important;background:rgba(255,255,255,0.06) !important}#reply-dialog #placeholder-area,#reply-dialog #contenteditable-textarea[aria-label]:empty::before{font-size:13px !important;color:rgba(255,255,255,0.25) !important}#reply-dialog #author-thumbnail,ytd-comment-engagement-bar ytd-commentbox #author-thumbnail{display:none !important}#reply-dialog #emoji-picker-button,#reply-dialog yt-emoji-picker-renderer{display:none !important}#reply-dialog #footer,#reply-dialog ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;justify-content:flex-end !important}#reply-dialog #footer .yt-spec-button-shape-next,#reply-dialog #footer button,#reply-dialog #cancel-button .yt-spec-button-shape-next,#reply-dialog #submit-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 14px !important;min-height:unset !important;border-radius:6px !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(167,139,250,0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(167,139,250,0.3) !important;background:rgba(167,139,250,0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(167,139,250,0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(167,139,250,0.12) !important;color:rgba(167,139,250,0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(167,139,250,0.35) !important;min-height:unset !important;background:rgba(167,139,250,0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}`;
                 this._styleElement = injectStyle(css, this.id, true);
 
                 const thumbSVG = '<svg viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z"/></svg>';
@@ -2678,13 +2380,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
 
                 processAll();
-                let commentRafPending = false;
-                this._observer = new MutationObserver(() => {
-                    if (commentRafPending) return;
-                    commentRafPending = true;
-                    requestAnimationFrame(() => { commentRafPending = false; processAll(); });
-                });
-                const target = document.querySelector('#comments, ytd-comments') || document.querySelector('ytd-app') || document.body;
+                this._observer = new MutationObserver(() => processAll());
+                const target = document.querySelector('ytd-app') || document.body;
                 this._observer.observe(target, { childList: true, subtree: true });
             },
             destroy() {
@@ -3034,600 +2731,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('cleanShareUrlBar');
             }
         },
-        // ─── Video Hider ───
-        {
-            id: 'hideVideosFromHome',
-            name: 'Video Hider',
-            description: 'Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking.',
-            group: 'Video Hider',
-            icon: 'eye-off',
-            isParent: true,
-            _styleElement: null,
-            _observer: null,
-            _toastTimeout: null,
-            _lastHidden: null,
-            _STORAGE_KEY: 'ytkit-hidden-videos',
-            _CHANNELS_KEY: 'ytkit-blocked-channels',
-            _subsLoadState: {
-                consecutiveHiddenBatches: 0,
-                lastBatchSize: 0,
-                lastBatchHidden: 0,
-                loadingBlocked: false,
-                totalVideosLoaded: 0,
-                totalVideosHidden: 0
-            },
-
-            _resetSubsLoadState() {
-                this._subsLoadState = {
-                    consecutiveHiddenBatches: 0,
-                    lastBatchSize: 0,
-                    lastBatchHidden: 0,
-                    loadingBlocked: false,
-                    totalVideosLoaded: 0,
-                    totalVideosHidden: 0
-                };
-                this._removeLoadBlocker();
-            },
-
-            _blockSubsLoading() {
-                if (this._subsLoadState.loadingBlocked) return;
-                this._subsLoadState.loadingBlocked = true;
-                if (this._clearBatchBuffer) this._clearBatchBuffer();
-                const continuations = document.querySelectorAll('ytd-continuation-item-renderer, #continuations, ytd-browse[page-subtype="subscriptions"] ytd-continuation-item-renderer');
-                continuations.forEach(cont => {
-                    if (!(cont instanceof HTMLElement)) return;
-                    cont.style.display = 'none';
-                    cont.dataset.ytkitBlocked = 'true';
-                });
-                this._showLoadBlockedBanner();
-                DebugManager.log('VideoHider', 'Subscription loading blocked - too many consecutive hidden batches');
-            },
-
-            _removeLoadBlocker() {
-                this._subsLoadState.loadingBlocked = false;
-                document.querySelectorAll('[data-ytkit-blocked="true"]').forEach(el => {
-                    if (!(el instanceof HTMLElement)) return;
-                    el.style.display = '';
-                    delete el.dataset.ytkitBlocked;
-                });
-                document.getElementById('ytkit-subs-load-banner')?.remove();
-            },
-
-            _showLoadBlockedBanner() {
-                if (document.getElementById('ytkit-subs-load-banner')) return;
-                const banner = document.createElement('div');
-                banner.id = 'ytkit-subs-load-banner';
-                banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:99999;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:"Roboto",Arial,sans-serif;max-width:600px;';
-
-                const ns = 'http://www.w3.org/2000/svg';
-                const icon = document.createElement('div');
-                const svg = document.createElementNS(ns, 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24');
-                svg.setAttribute('width', '24');
-                svg.setAttribute('height', '24');
-                svg.setAttribute('fill', 'none');
-                svg.setAttribute('stroke', '#f59e0b');
-                svg.setAttribute('stroke-width', '2');
-                svg.setAttribute('stroke-linecap', 'round');
-                svg.setAttribute('stroke-linejoin', 'round');
-                const circle = document.createElementNS(ns, 'circle');
-                circle.setAttribute('cx', '12'); circle.setAttribute('cy', '12'); circle.setAttribute('r', '10');
-                const line1 = document.createElementNS(ns, 'line');
-                line1.setAttribute('x1', '12'); line1.setAttribute('y1', '8'); line1.setAttribute('x2', '12'); line1.setAttribute('y2', '12');
-                const line2 = document.createElementNS(ns, 'line');
-                line2.setAttribute('x1', '12'); line2.setAttribute('y1', '16'); line2.setAttribute('x2', '12.01'); line2.setAttribute('y2', '16');
-                svg.appendChild(circle); svg.appendChild(line1); svg.appendChild(line2);
-                icon.appendChild(svg);
-
-                const textContainer = document.createElement('div');
-                textContainer.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:4px;';
-                const title = document.createElement('div');
-                title.style.cssText = 'color:#f1f5f9;font-size:14px;font-weight:600;';
-                title.textContent = 'Infinite scroll stopped';
-                const subtitle = document.createElement('div');
-                subtitle.style.cssText = 'color:#94a3b8;font-size:12px;';
-                subtitle.textContent = `${this._subsLoadState.totalVideosHidden} of ${this._subsLoadState.totalVideosLoaded} videos were hidden. Stopped loading to prevent performance issues.`;
-                textContainer.appendChild(title);
-                textContainer.appendChild(subtitle);
-
-                const buttonContainer = document.createElement('div');
-                buttonContainer.style.cssText = 'display:flex;gap:8px;';
-
-                const resumeBtn = document.createElement('button');
-                resumeBtn.textContent = 'Load More';
-                resumeBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:#3b82f6;color:white;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.2s;';
-                resumeBtn.onmouseenter = () => { resumeBtn.style.background = '#2563eb'; };
-                resumeBtn.onmouseleave = () => { resumeBtn.style.background = '#3b82f6'; };
-                resumeBtn.onclick = () => {
-                    this._subsLoadState.consecutiveHiddenBatches = 0;
-                    this._removeLoadBlocker();
-                    window.scrollBy(0, 100);
-                    setTimeout(() => window.scrollBy(0, -100), 100);
-                };
-
-                const dismissBtn = document.createElement('button');
-                dismissBtn.textContent = '\u2715';
-                dismissBtn.title = 'Dismiss';
-                dismissBtn.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:14px;cursor:pointer;transition:all 0.2s;';
-                dismissBtn.onmouseenter = () => { dismissBtn.style.background = '#1e293b'; dismissBtn.style.color = '#f1f5f9'; };
-                dismissBtn.onmouseleave = () => { dismissBtn.style.background = 'transparent'; dismissBtn.style.color = '#94a3b8'; };
-                dismissBtn.onclick = () => banner.remove();
-
-                buttonContainer.appendChild(resumeBtn);
-                buttonContainer.appendChild(dismissBtn);
-                banner.appendChild(icon);
-                banner.appendChild(textContainer);
-                banner.appendChild(buttonContainer);
-                document.body.appendChild(banner);
-            },
-
-            _trackSubsLoadBatch(processedVideos) {
-                if (window.location.pathname !== '/feed/subscriptions') return;
-                if (!appState.settings.hideVideosSubsLoadLimit) return;
-                if (this._subsLoadState.loadingBlocked) return;
-
-                const hiddenCount = processedVideos.filter(v => v.hidden).length;
-                const batchSize = processedVideos.length;
-                if (batchSize === 0) return;
-
-                this._subsLoadState.totalVideosLoaded += batchSize;
-                this._subsLoadState.totalVideosHidden += hiddenCount;
-                this._subsLoadState.lastBatchSize = batchSize;
-                this._subsLoadState.lastBatchHidden = hiddenCount;
-
-                const allHidden = hiddenCount === batchSize;
-                const threshold = appState.settings.hideVideosSubsLoadThreshold || 3;
-
-                if (allHidden) {
-                    this._subsLoadState.consecutiveHiddenBatches++;
-                    DebugManager.log('VideoHider', `Subs load: batch ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} all hidden (${hiddenCount}/${batchSize})`);
-                    if (this._subsLoadState.consecutiveHiddenBatches >= threshold) {
-                        this._blockSubsLoading();
-                    }
-                } else {
-                    this._subsLoadState.consecutiveHiddenBatches = 0;
-                }
-            },
-
-            // Cached storage access — avoids GM_getValue deserialization per element
-            _hiddenCache: null,
-            _hiddenSet: null,
-            _blockedCache: null,
-            _filterCache: null,
-
-            _getHiddenVideos() {
-                if (this._hiddenCache) return this._hiddenCache;
-                try { this._hiddenCache = GM_getValue(this._STORAGE_KEY, []); }
-                catch(e) { const s = localStorage.getItem(this._STORAGE_KEY); this._hiddenCache = s ? JSON.parse(s) : []; }
-                this._hiddenSet = new Set(this._hiddenCache);
-                return this._hiddenCache;
-            },
-            _setHiddenVideos(videos) {
-                this._hiddenCache = videos;
-                this._hiddenSet = new Set(videos);
-                try { GM_setValue(this._STORAGE_KEY, videos); }
-                catch(e) { localStorage.setItem(this._STORAGE_KEY, JSON.stringify(videos)); }
-            },
-            _getBlockedChannels() {
-                if (this._blockedCache) return this._blockedCache;
-                try { this._blockedCache = GM_getValue(this._CHANNELS_KEY, []); }
-                catch(e) { const s = localStorage.getItem(this._CHANNELS_KEY); this._blockedCache = s ? JSON.parse(s) : []; }
-                return this._blockedCache;
-            },
-            _setBlockedChannels(channels) {
-                this._blockedCache = channels;
-                try { GM_setValue(this._CHANNELS_KEY, channels); }
-                catch(e) { localStorage.setItem(this._CHANNELS_KEY, JSON.stringify(channels)); }
-            },
-            _invalidateCache() {
-                this._hiddenCache = null;
-                this._hiddenSet = null;
-                this._blockedCache = null;
-                this._filterCache = null;
-            },
-            _getFilterCache() {
-                const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
-                if (this._filterCache && this._filterCache.raw === filterStr) return this._filterCache;
-                const cache = { raw: filterStr, regex: null, positiveKw: [], negativeKw: [], hasFilter: false };
-                if (filterStr) {
-                    cache.hasFilter = true;
-                    if (filterStr.startsWith('/')) {
-                        try {
-                            const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
-                            if (regexMatch) cache.regex = new RegExp(regexMatch[1], regexMatch[2]);
-                        } catch (e) { DebugManager.log('Regex', 'Invalid regex pattern', e.message); }
-                    } else {
-                        const keywords = filterStr.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
-                        cache.positiveKw = keywords.filter(k => !k.startsWith('!'));
-                        cache.negativeKw = keywords.filter(k => k.startsWith('!')).map(k => k.slice(1));
-                    }
-                }
-                this._filterCache = cache;
-                return cache;
-            },
-
-            _extractVideoId(element) {
-                const lockup = element.querySelector('.yt-lockup-view-model[class*="content-id-"]');
-                if (lockup) { const m = lockup.className.match(/content-id-([a-zA-Z0-9_-]+)/); if (m) return m[1]; }
-                const links = element.querySelectorAll('a[href*="/watch?v="], a[href*="/shorts/"]');
-                for (const link of links) {
-                    const watchMatch = link.href.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-                    if (watchMatch) return watchMatch[1];
-                    const shortsMatch = link.href.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
-                    if (shortsMatch) return shortsMatch[1];
-                }
-                const vidEl = element.querySelector('[data-video-id]');
-                return vidEl ? vidEl.getAttribute('data-video-id') : null;
-            },
-
-            _extractChannelInfo(element) {
-                const channelLink = element.querySelector('a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]');
-                if (!channelLink) return null;
-                const href = channelLink.href;
-                let channelId = null;
-                const handleMatch = href.match(/\/@([^/?]+)/);
-                if (handleMatch) channelId = '@' + handleMatch[1];
-                else {
-                    const idMatch = href.match(/\/(channel|c|user)\/([^/?]+)/);
-                    if (idMatch) channelId = idMatch[2];
-                }
-                const channelName = element.querySelector('#channel-name a, .ytd-channel-name a, [id="text"] a')?.textContent?.trim() ||
-                                   element.querySelector('#channel-name, .ytd-channel-name')?.textContent?.trim() || channelId;
-                return channelId ? { id: channelId, name: channelName } : null;
-            },
-
-            _extractDuration(element) {
-                const badge = element.querySelector('ytd-thumbnail-overlay-time-status-renderer, .ytd-thumbnail-overlay-time-status-renderer, [aria-label*=":"]');
-                if (!badge) return 0;
-                const text = badge.textContent?.trim() || badge.getAttribute('aria-label') || '';
-                const match = text.match(/(\d+):(\d+):?(\d+)?/);
-                if (!match) return 0;
-                if (match[3]) return parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]);
-                return parseInt(match[1])*60 + parseInt(match[2]);
-            },
-
-            _extractTitle(element) {
-                return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
-            },
-
-            _findThumbnailContainer(element) {
-                const selectors = ['a.yt-lockup-view-model__content-image', 'yt-thumbnail-view-model', '#thumbnail', 'ytd-thumbnail'];
-                for (const sel of selectors) { const c = element.querySelector(sel); if (c) return c; }
-                return null;
-            },
-
-            _createSVG(pathD) {
-                const svg = createSVG('0 0 24 24', [{ type: 'path', d: pathD, fill: 'currentColor' }], { fill: 'currentColor', stroke: false });
-                svg.setAttribute('width', '14');
-                svg.setAttribute('height', '14');
-                return svg;
-            },
-
-            _createHideButton() {
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-video-hide-btn';
-                btn.title = 'Hide this video (right-click to block channel)';
-                btn.appendChild(this._createSVG('M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'));
-                return btn;
-            },
-
-            _showToast(message, buttons = []) {
-                document.getElementById('ytkit-hide-toast')?.remove();
-                if (this._toastTimeout) clearTimeout(this._toastTimeout);
-                const primaryAction = buttons[0];
-                showToast(message, '#6b7280', {
-                    duration: 5,
-                    action: primaryAction ? { text: primaryAction.text, onClick: primaryAction.onClick } : undefined
-                });
-            },
-
-            _hideVideo(videoId, element) {
-                const hidden = this._getHiddenVideos();
-                if (!hidden.includes(videoId)) { hidden.push(videoId); this._setHiddenVideos(hidden); }
-                element.classList.add('ytkit-video-hidden');
-                this._lastHidden = { type: 'video', id: videoId, element };
-                this._showToast('Video hidden', [
-                    { text: 'Undo', onClick: () => this._undoHide() },
-                    { text: 'Manage', onClick: () => this._showManager() }
-                ]);
-            },
-
-            _blockChannel(channelInfo, element) {
-                if (!channelInfo) return;
-                const channels = this._getBlockedChannels();
-                if (!channels.find(c => c.id === channelInfo.id)) {
-                    channels.push(channelInfo);
-                    this._setBlockedChannels(channels);
-                }
-                this._hideChannelVideos(channelInfo.id);
-                this._lastHidden = { type: 'channel', info: channelInfo };
-                this._showToast(`Blocked: ${channelInfo.name}`, [
-                    { text: 'Undo', onClick: () => this._undoHide() },
-                    { text: 'Manage', onClick: () => this._showManager() }
-                ]);
-            },
-
-            _hideChannelVideos(channelId) {
-                document.querySelectorAll(VIDEO_RENDERERS).forEach(el => {
-                    const info = this._extractChannelInfo(el);
-                    if (info && info.id === channelId) el.classList.add('ytkit-video-hidden');
-                });
-            },
-
-            _undoHide() {
-                if (!this._lastHidden) return;
-                if (this._lastHidden.type === 'video') {
-                    const hidden = this._getHiddenVideos();
-                    const idx = hidden.indexOf(this._lastHidden.id);
-                    if (idx > -1) { hidden.splice(idx, 1); this._setHiddenVideos(hidden); }
-                    this._lastHidden.element?.classList.remove('ytkit-video-hidden');
-                } else if (this._lastHidden.type === 'channel') {
-                    const channels = this._getBlockedChannels();
-                    const idx = channels.findIndex(c => c.id === this._lastHidden.info.id);
-                    if (idx > -1) { channels.splice(idx, 1); this._setBlockedChannels(channels); }
-                    this._processAllVideos();
-                }
-                this._lastHidden = null;
-                document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-            },
-
-            _unhideVideo(videoId) {
-                const hidden = this._getHiddenVideos();
-                const idx = hidden.indexOf(videoId);
-                if (idx > -1) {
-                    hidden.splice(idx, 1);
-                    this._setHiddenVideos(hidden);
-                    document.querySelectorAll(`[data-ytkit-video-id="${videoId}"]`)?.forEach(el => {
-                        el.classList.remove('ytkit-video-hidden');
-                    });
-                    this._processAllVideos();
-                    return true;
-                }
-                return false;
-            },
-
-            _showManager() {
-                document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-                document.body.classList.add('ytkit-panel-open');
-                setTimeout(() => {
-                    const navBtn = document.querySelector('.ytkit-nav-btn[data-tab="Video-Hider"]');
-                    if (navBtn) navBtn.click();
-                }, 100);
-            },
-
-            _shouldHide(element) {
-                const videoId = this._extractVideoId(element);
-                this._getHiddenVideos(); // ensure cache is populated
-                if (videoId && this._hiddenSet.has(videoId)) return true;
-                const channelInfo = this._extractChannelInfo(element);
-                const blocked = this._getBlockedChannels();
-                if (channelInfo && blocked.find(c => c.id === channelInfo.id)) return true;
-
-                const fc = this._getFilterCache();
-                if (fc.hasFilter) {
-                    const title = this._extractTitle(element);
-                    const channelName = channelInfo?.name?.toLowerCase() || '';
-                    if (fc.regex) {
-                        if (fc.regex.test(title) || fc.regex.test(channelName)) return true;
-                    } else {
-                        const searchText = (title + ' ' + channelName).toLowerCase();
-                        if (fc.negativeKw.length && fc.negativeKw.some(k => searchText.includes(k))) return false;
-                        if (fc.positiveKw.length && fc.positiveKw.some(k => searchText.includes(k))) return true;
-                    }
-                }
-
-                const minDuration = (appState.settings.hideVideosDurationFilter || 0) * 60;
-                if (minDuration > 0) {
-                    const duration = this._extractDuration(element);
-                    if (duration > 0 && duration < minDuration) return true;
-                }
-                return false;
-            },
-
-            _processVideoElement(element) {
-                this._processVideoElementWithResult(element);
-            },
-
-            _processVideoElementWithResult(element) {
-                if (element.dataset.ytkitHideProcessed) {
-                    return element.classList.contains('ytkit-video-hidden');
-                }
-                element.dataset.ytkitHideProcessed = 'true';
-                const shouldHide = this._shouldHide(element);
-                if (shouldHide) { element.classList.add('ytkit-video-hidden'); }
-                else { element.classList.remove('ytkit-video-hidden'); }
-                const thumbnail = this._findThumbnailContainer(element);
-                if (thumbnail && !thumbnail.querySelector('.ytkit-video-hide-btn')) {
-                    const btn = this._createHideButton();
-                    const videoId = this._extractVideoId(element);
-                    const channelInfo = this._extractChannelInfo(element);
-                    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (videoId) this._hideVideo(videoId, element); });
-                    btn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); if (channelInfo) this._blockChannel(channelInfo, element); });
-                    thumbnail.appendChild(btn);
-                }
-                return shouldHide;
-            },
-
-            _processAllVideos() {
-                this._invalidateCache();
-                document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
-                document.querySelectorAll(VIDEO_RENDERERS).forEach(el => this._processVideoElement(el));
-            },
-
-            _getVisibleVideos() {
-                const videos = [];
-                document.querySelectorAll(VIDEO_RENDERERS).forEach(item => {
-                    if (item.classList.contains('ytkit-video-hidden')) return;
-                    const videoId = this._extractVideoId(item);
-                    if (videoId) videos.push({ id: videoId, element: item });
-                });
-                return videos;
-            },
-
-            _hideAllVideos() {
-                const videos = this._getVisibleVideos();
-                if (videos.length === 0) { showToast('No visible videos to hide', '#6b7280'); return; }
-                const hidden = this._getHiddenVideos();
-                let newlyHidden = 0;
-                videos.forEach(v => {
-                    if (!hidden.includes(v.id)) { hidden.push(v.id); newlyHidden++; }
-                    v.element.classList.add('ytkit-video-hidden');
-                });
-                this._setHiddenVideos(hidden);
-                this._showToast(`Hidden ${newlyHidden} videos`, [
-                    { text: 'Undo All', onClick: () => this._undoHideAll(videos) },
-                    { text: 'Manage', onClick: () => this._showManager() }
-                ]);
-            },
-
-            _undoHideAll(videos) {
-                const removeSet = new Set(videos.map(v => v.id));
-                const hidden = this._getHiddenVideos().filter(id => !removeSet.has(id));
-                videos.forEach(v => v.element.classList.remove('ytkit-video-hidden'));
-                this._setHiddenVideos(hidden);
-                document.getElementById('ytkit-hide-toast')?.classList.remove('show');
-                showToast('Restored all videos', '#22c55e');
-            },
-
-            _createSubsHideAllButton() {
-                if (document.querySelector('.ytkit-subs-hide-all-btn')) return;
-                if (window.location.pathname !== '/feed/subscriptions') return;
-                const headerButtons = document.querySelector('#masthead #end #buttons');
-                if (!headerButtons) return;
-                const ns = 'http://www.w3.org/2000/svg';
-                const createSvgElement = (tag, attrs) => {
-                    const el = document.createElementNS(ns, tag);
-                    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-                    return el;
-                };
-                const hideAllBtn = document.createElement('button');
-                hideAllBtn.className = 'ytkit-subs-hide-all-btn';
-                hideAllBtn.title = 'Hide all visible videos on this page';
-                const svg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-                svg.appendChild(createSvgElement('path', { d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' }));
-                svg.appendChild(createSvgElement('line', { x1: '1', y1: '1', x2: '23', y2: '23' }));
-                hideAllBtn.appendChild(svg);
-                const text = document.createElement('span');
-                text.textContent = 'Hide All';
-                hideAllBtn.appendChild(text);
-                hideAllBtn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;border:none;background:#dc2626;color:white;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;';
-                hideAllBtn.onmouseenter = () => { hideAllBtn.style.background = '#b91c1c'; };
-                hideAllBtn.onmouseleave = () => { hideAllBtn.style.background = '#dc2626'; };
-                hideAllBtn.addEventListener('click', () => this._hideAllVideos());
-                const vlcBtn = headerButtons.querySelector('.ytkit-subs-vlc-btn');
-                if (vlcBtn) headerButtons.insertBefore(hideAllBtn, vlcBtn);
-                else headerButtons.appendChild(hideAllBtn);
-            },
-
-            _removeSubsHideAllButton() {
-                document.querySelector('.ytkit-subs-hide-all-btn')?.remove();
-            },
-
-            init() {
-                const css = `
-                    a.yt-lockup-view-model__content-image, yt-thumbnail-view-model, #thumbnail, ytd-thumbnail { position:relative; }
-                    .ytkit-video-hide-btn { position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;transition:all 0.15s;padding:0; }
-                    .ytkit-video-hide-btn:hover { background:rgba(200,0,0,0.9);transform:scale(1.1); }
-                    .ytkit-video-hide-btn svg { width:16px;height:16px;fill:#fff;pointer-events:none; }
-                    ytd-rich-item-renderer:hover .ytkit-video-hide-btn, ytd-video-renderer:hover .ytkit-video-hide-btn, ytd-grid-video-renderer:hover .ytkit-video-hide-btn, ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity:1; }
-                    .ytkit-video-hidden { display:none !important; }
-                    #ytkit-hide-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#323232;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:99999;opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3); }
-                    #ytkit-hide-toast.show { transform:translateX(-50%) translateY(0);opacity:1; }
-                    #ytkit-hide-toast button { background:transparent;border:none;color:#3ea6ff;cursor:pointer;font-size:14px;font-weight:500;padding:4px 8px;border-radius:4px; }
-                    #ytkit-hide-toast button:hover { background:rgba(62,166,255,0.1); }
-                `;
-                this._styleElement = injectStyle(css, this.id, true);
-                this._processAllVideos();
-                let batchBuffer = [];
-                let batchTimeout = null;
-                this._clearBatchBuffer = () => {
-                    batchBuffer = [];
-                    if (batchTimeout) { clearTimeout(batchTimeout); batchTimeout = null; }
-                };
-
-                const processBatch = () => {
-                    if (batchBuffer.length > 0 && !this._subsLoadState.loadingBlocked) {
-                        this._trackSubsLoadBatch(batchBuffer);
-                        batchBuffer = [];
-                    }
-                };
-
-                this._observer = new MutationObserver(mutations => {
-                    let needsRecycleCheck = false;
-                    for (const m of mutations) {
-                        for (const node of m.addedNodes) {
-                            if (node.nodeType !== 1) continue;
-                            if (node.matches?.(VIDEO_RENDERERS)) {
-                                const wasHidden = this._processVideoElementWithResult(node);
-                                batchBuffer.push({ element: node, hidden: wasHidden });
-                            }
-                            node.querySelectorAll?.(VIDEO_RENDERERS).forEach(el => {
-                                const wasHidden = this._processVideoElementWithResult(el);
-                                batchBuffer.push({ element: el, hidden: wasHidden });
-                            });
-                            if (!needsRecycleCheck && node.parentElement?.closest?.(VIDEO_RENDERERS)?.dataset.ytkitHideProcessed) {
-                                needsRecycleCheck = true;
-                            }
-                        }
-                    }
-                    if (needsRecycleCheck) {
-                        document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => {
-                            if (!el.querySelector('.ytkit-video-hide-btn')) {
-                                delete el.dataset.ytkitHideProcessed;
-                                const wasHidden = this._processVideoElementWithResult(el);
-                                batchBuffer.push({ element: el, hidden: wasHidden });
-                            }
-                        });
-                    }
-                    if (batchTimeout) clearTimeout(batchTimeout);
-                    batchTimeout = setTimeout(processBatch, 300);
-                });
-                this._observer.observe(document.body, { childList: true, subtree: true });
-
-                let wasOnSubsPage = window.location.pathname === '/feed/subscriptions';
-                const checkSubsPage = () => {
-                    const isOnSubsPage = window.location.pathname === '/feed/subscriptions';
-                    if (isOnSubsPage) {
-                        if (!wasOnSubsPage) this._resetSubsLoadState();
-                        setTimeout(() => this._createSubsHideAllButton(), 1000);
-                    } else {
-                        this._removeSubsHideAllButton();
-                        this._removeLoadBlocker();
-                    }
-                    wasOnSubsPage = isOnSubsPage;
-                };
-
-                addNavigateRule('hideVideosFromHomeNav', () => {
-                    setTimeout(() => this._processAllVideos(), 500);
-                    checkSubsPage();
-                });
-
-                let chipDebounce = null;
-                document.addEventListener('click', (e) => {
-                    if (e.target.closest('yt-chip-cloud-chip-renderer, ytd-feed-filter-chip-bar-renderer, iron-selector#chips')) {
-                        if (chipDebounce) clearTimeout(chipDebounce);
-                        chipDebounce = setTimeout(() => { chipDebounce = null; this._processAllVideos(); }, 1000);
-                    }
-                }, true);
-
-                checkSubsPage();
-                DebugManager.log('VideoHider', 'Initialized:', this._getHiddenVideos().length, 'videos,', this._getBlockedChannels().length, 'channels');
-            },
-
-            destroy() {
-                this._styleElement?.remove();
-                this._observer?.disconnect();
-                removeNavigateRule('hideVideosFromHomeNav');
-                document.querySelectorAll('.ytkit-video-hide-btn').forEach(b => b.remove());
-                document.querySelectorAll('.ytkit-video-hidden').forEach(e => e.classList.remove('ytkit-video-hidden'));
-                document.querySelectorAll('[data-ytkit-hide-processed]').forEach(e => delete e.dataset.ytkitHideProcessed);
-                document.getElementById('ytkit-hide-toast')?.remove();
-                document.getElementById('ytkit-hide-manager')?.remove();
-                document.getElementById('ytkit-hide-manager-overlay')?.remove();
-                this._removeSubsHideAllButton();
-                this._removeLoadBlocker();
-            }
-        },
         // ─── Video Player ───
         {
             id: 'fitPlayerToWindow',
@@ -3638,7 +2741,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _ruleId: 'fitPlayerToWindowRule',
             applyStyles() {
-                if (appState.settings.stickyVideo && document.documentElement.classList.contains('ytkit-split-active')) return;
+                // Theater Split takes full control on watch pages — skip this feature
+                if (appState.settings.stickyVideo && window.location.pathname.startsWith('/watch')) return;
                 const isWatchPage = window.location.pathname.startsWith('/watch');
                 document.documentElement.classList.toggle('yt-suite-fit-to-window', isWatchPage);
                 document.body.classList.toggle('yt-suite-fit-to-window', isWatchPage);
@@ -3652,15 +2756,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._styleElement = document.createElement('style');
                 this._styleElement.id = `yt-suite-style-${this.id}`;
-                this._styleElement.textContent = `
-                    html.yt-suite-fit-to-window, body.yt-suite-fit-to-window { overflow-y: auto !important; height: auto !important; }
-                    body.yt-suite-fit-to-window #movie_player { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100vh !important; z-index: 9999 !important; background-color: #000 !important; }
-                    body.yt-suite-fit-to-window #movie_player .html5-video-container { width: 100% !important; height: 100% !important; }
-                    body.yt-suite-fit-to-window #movie_player video.html5-main-video { width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; object-fit: contain !important; }
-                    html.yt-suite-fit-to-window { padding-top: calc(100vh) !important; }
-                    html.yt-suite-fit-to-window ytd-masthead { display: none !important; }
-                    body.yt-suite-fit-to-window #page-manager { margin-top: 0 !important; }
-                `;
+                this._styleElement.textContent = `html.yt-suite-fit-to-window,body.yt-suite-fit-to-window{overflow-y:auto !important;height:auto !important;} body.yt-suite-fit-to-window #movie_player{position:absolute !important;top:0 !important;left:0 !important;width:100% !important;height:100vh !important;z-index:9999 !important;background-color:#000 !important;} body.yt-suite-fit-to-window #movie_player .html5-video-container{width:100% !important;height:100% !important;} body.yt-suite-fit-to-window #movie_player video.html5-main-video{width:100% !important;height:100% !important;left:0 !important;top:0 !important;object-fit:contain !important;} html.yt-suite-fit-to-window{padding-top:calc(100vh) !important;} html.yt-suite-fit-to-window ytd-masthead{display:none !important;} body.yt-suite-fit-to-window #page-manager{margin-top:0 !important;}`;
                 document.head.appendChild(this._styleElement);
                 addNavigateRule(this._ruleId, () => this.applyStyles());
             },
@@ -3693,33 +2789,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     document.head.appendChild(this._styleElement);
                 }
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         {
             id: 'floatingLogoOnWatch',
-            name: 'YTKit Player Controls',
-            description: 'Replace native player right-controls with YouTube logo (quick links dropdown) and YTKit settings gear',
+            name: 'YTKit Controls on Video',
+            description: 'Show YouTube logo on watch pages. Choose overlay (on player hover) or inline (below video).',
             group: 'Video Player',
             icon: 'youtube',
+            isParent: true,
             _ruleId: 'floatingLogoRule',
             _styleEl: null,
             _cleanup() {
-                document.getElementById('ytkit-player-controls')?.remove();
+                document.getElementById('ytkit-player-overlay')?.remove();
+                document.getElementById('yt-suite-watch-logo')?.remove();
                 this._styleEl?.remove();
                 this._styleEl = null;
             },
             _getLogoHref() {
                 return appState.settings.logoToSubscriptions ? '/feed/subscriptions' : '/';
             },
-            _inject() {
-                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('ytkit-player-controls')?.remove(); return; }
-                const rightControls = document.querySelector('.ytp-right-controls');
-                if (!rightControls || document.getElementById('ytkit-player-controls')) return;
+            _getLogoTitle() {
+                return appState.settings.logoToSubscriptions ? 'Subscriptions' : 'YouTube Home';
+            },
+            _injectOverlay() {
+                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('ytkit-player-overlay')?.remove(); return; }
+                const player = document.querySelector('#movie_player');
+                if (!player || document.getElementById('ytkit-player-overlay')) return;
 
-                const wrap = document.createElement('div');
-                wrap.id = 'ytkit-player-controls';
+                const overlay = document.createElement('div');
+                overlay.id = 'ytkit-player-overlay';
 
-                // YouTube logo with quick links dropdown
+                // ── Minimal transparent YouTube logo with quickLink dropdown ──
                 const logoWrap = document.createElement('div');
                 logoWrap.id = 'ytkit-po-logo-wrap';
 
@@ -3727,42 +2828,97 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 logoLink.href = this._getLogoHref();
                 logoLink.title = 'YouTube — hover for quick links';
                 logoLink.className = 'ytkit-po-btn ytkit-po-logo';
-                TrustedHTML.setHTML(logoLink, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 174" width="28" height="20" aria-label="YouTube" style="opacity:0.9">
+                // Inline SVG: minimal YouTube play-button mark, white @ 22% opacity
+                // Play-button icon mark from the PremiumYTM logo (just the icon, no wordmark)
+                TrustedHTML.setHTML(logoLink, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 174" width="32" height="22" aria-label="YouTube" style="opacity:0.85">
   <path fill="#ff0000" d="M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z"/>
   <path fill="#ffffff" d="M 99.22,124.03 163.67,86.82 99.22,49.61 Z"/>
 </svg>`);
                 logoWrap.appendChild(logoLink);
 
-                // Build quick links dropdown
+                // Dropdown menu (same items as header quickLinkMenu)
                 const qlFeature = features.find(f => f.id === 'quickLinkMenu');
-                if (qlFeature && qlFeature._buildMenu) {
-                    qlFeature._buildMenu(logoWrap, 'ytkit-po-drop');
-                }
-                wrap.appendChild(logoWrap);
+                const menuItems = qlFeature ? qlFeature.menuItems : [
+                    { text: 'History',       url: '/feed/history',       icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
+                    { text: 'Watch Later',   url: '/playlist?list=WL',   icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
+                    { text: 'Subscriptions', url: '/feed/subscriptions', icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
+                    { text: 'Liked Videos',  url: '/playlist?list=LL',   icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
+                ];
+                const drop = document.createElement('div');
+                drop.id = 'ytkit-po-drop';
+                menuItems.forEach(item => {
+                    const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
+                    TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
+                    drop.appendChild(a);
+                });
+                logoWrap.appendChild(drop);
+                overlay.appendChild(logoWrap);
 
-                // Settings gear
+                // Settings gear button
                 const gearBtn = document.createElement('button');
-                gearBtn.className = 'ytp-button ytkit-po-btn ytkit-po-gear';
+                gearBtn.className = 'ytkit-po-btn ytkit-po-gear';
                 gearBtn.title = 'YTKit Settings';
                 TrustedHTML.setHTML(gearBtn, `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`);
                 gearBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.body.classList.toggle('ytkit-panel-open');
                 });
-                wrap.appendChild(gearBtn);
+                overlay.appendChild(gearBtn);
 
-                rightControls.appendChild(wrap);
+                player.appendChild(overlay);
+            },
+            _injectInline() {
+                if (!window.location.pathname.startsWith('/watch')) { document.getElementById('yt-suite-watch-logo')?.remove(); return; }
+                waitForElement('#top-row #owner', (ownerDiv) => {
+                    if (document.getElementById('yt-suite-watch-logo')) return;
+
+                    const container = document.createElement('div');
+                    container.id = 'yt-suite-watch-logo';
+                    container.style.cssText = 'display:flex;align-items:center;gap:12px;margin-right:12px;';
+
+                    const link = document.createElement('a');
+                    link.href = this._getLogoHref();
+                    link.title = this._getLogoTitle();
+                    link.style.cssText = 'display:flex;align-items:center;';
+                    const originalLogo = document.querySelector('ytd-topbar-logo-renderer ytd-logo');
+                    if (originalLogo) link.appendChild(originalLogo.cloneNode(true));
+                    container.appendChild(link);
+
+                    ownerDiv.prepend(container);
+                });
             },
             init() {
-                this._styleEl = GM_addStyle(`/* Hide native right controls, keep our injected elements */ .ytp-right-controls > *:not(#ytkit-player-controls){display:none !important;} #ytkit-player-controls{display:flex;align-items:center;gap:2px;height:100%;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;} .ytkit-po-btn{display:flex;align-items:center;justify-content:center;padding:6px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);} button.ytp-button.ytp-autonav-toggle.delhi-fast-follow-autonav-toggle{display:none !important;}`);
+                // Inject CSS for player overlay
+                this._styleEl = GM_addStyle(`#ytkit-player-overlay{position:absolute;top:0;left:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:transparent;z-index:59;opacity:0;pointer-events:none;transition:opacity 0.2s ease;} #movie_player:hover #ytkit-player-overlay{opacity:1;pointer-events:auto;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;} #ytkit-po-logo-wrap:hover #ytkit-po-drop,#ytkit-po-drop:hover{display:flex;} #ytkit-po-drop{display:none;flex-direction:column;position:absolute;top:calc(100% + 8px);left:0;background:rgba(22,22,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.7);padding:6px 0;z-index:9999;min-width:190px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);} .ytkit-po-btn{display:flex;align-items:center;justify-content:center;padding:4px 6px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);}`);
 
                 const self = this;
-                addNavigateRule(this._ruleId, () => self._inject());
+                const handler = () => {
+                    // Always show inline below video
+                    self._injectInline();
+                    // Show overlay on player if enabled
+                    if (appState.settings.playerOverlayControls) {
+                        self._injectOverlay();
+                    } else {
+                        document.getElementById('ytkit-player-overlay')?.remove();
+                    }
+                };
+                addNavigateRule(this._ruleId, handler);
             },
             destroy() {
                 removeNavigateRule(this._ruleId);
                 this._cleanup();
             }
+        },
+        {
+            id: 'playerOverlayControls',
+            name: 'Overlay on Player',
+            description: 'Also show controls as hover overlay on video player (logo + gear always shown below video)',
+            group: 'Video Player',
+            icon: 'youtube',
+            isSubFeature: true,
+            parentId: 'floatingLogoOnWatch',
+            init() {},
+            destroy() {}
         },
         cssFeature('hideDescriptionRow', 'Hide Description', 'Remove the video description panel below the player', 'Video Player', 'file-minus',
             'ytd-watch-metadata #bottom-row'),
@@ -3898,41 +3054,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
-            // Wait for chat frame via MutationObserver (replaces 10s polling loop)
+            // Poll for chat frame (max 10s) then position it over the right panel
             _waitForChat(rightPct, topOffset, heightStr) {
-                const self = this;
-                let _chatObs = null;
-                const _onFound = (chatEl) => {
-                    if (_chatObs) { _chatObs.disconnect(); _chatObs = null; }
-                    if (!self._isSplit || !self._isActive) return;
-                    self._positionOverRight(chatEl, rightPct, topOffset, heightStr);
-                    chatEl.removeAttribute('collapsed');
-                    chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
-                    chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
-                    chatEl.style.setProperty('border-radius', '0', 'important');
-                    self._forceChatFill(chatEl);
-                    if (!self._scrollTarget) self._scrollTarget = chatEl;
-                    if (self._videoType === 'vod') {
-                        chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
-                        const below = self._getBelow();
-                        if (below && below.style.getPropertyValue('top') === '0') {
-                            below.style.setProperty('top', '45vh', 'important');
-                            below.style.setProperty('height', '55vh', 'important');
+                let attempts = 0;
+                const poll = () => {
+                    if (!this._isSplit || !this._isActive) return;
+                    const chatEl = this._getChatEl();
+                    if (chatEl) {
+                        this._positionOverRight(chatEl, rightPct, topOffset, heightStr);
+                        chatEl.removeAttribute('collapsed');
+                        // Tight layout matching _expandSplit
+                        chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
+                        chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
+                        chatEl.style.setProperty('border-radius', '0', 'important');
+                        this._forceChatFill(chatEl);
+                        if (!this._scrollTarget) this._scrollTarget = chatEl;
+                        if (this._videoType === 'vod') {
+                            chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                            const below = this._getBelow();
+                            if (below && below.style.getPropertyValue('top') === '0') {
+                                below.style.setProperty('top', '45vh', 'important');
+                                below.style.setProperty('height', '55vh', 'important');
+                            }
                         }
+                        DebugManager.log('Theater', 'Late chat frame found and positioned');
+                        return;
                     }
-                    DebugManager.log('Theater', 'Late chat frame found and positioned');
+                    if (++attempts < 20) setTimeout(poll, 500);
                 };
-                // Check immediately
-                const existing = this._getChatEl();
-                if (existing) { _onFound(existing); return; }
-                // Observe for chat frame insertion (faster + less CPU than polling)
-                _chatObs = new MutationObserver(() => {
-                    const chatEl = self._getChatEl();
-                    if (chatEl) _onFound(chatEl);
-                });
-                _chatObs.observe(document.body, { childList: true, subtree: true });
-                // Safety timeout: disconnect after 10s
-                setTimeout(() => { if (_chatObs) { _chatObs.disconnect(); _chatObs = null; } }, 10000);
+                setTimeout(poll, 500);
             },
 
             // ── Build the fixed overlay (video full-width, right panel hidden) ──
@@ -4020,7 +3170,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         });
                         const strip = wrapper.querySelector('#ytkit-split-collapse-strip');
                         if (strip) strip.style.width = `calc(${newRightPct}% - 2px)`;
-                        try { GM_setValue('ytkit_split_ratio', 100 - newRightPct); } catch(err) {}
+                        try { sessionStorage.setItem('ytkit-split-ratio', 100 - newRightPct); } catch(err) {}
                     };
                     const onUp = () => {
                         dragShield.remove();
@@ -4180,21 +3330,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return (this._positionedEls || []).some(el => el.contains(target));
                 };
 
-                // Wheel/touch on wrapper → open/close comments panel, or passthrough scroll
+                // Wheel/touch on wrapper → open/close comments panel
                 this._wheelHandler = (e) => {
                     if (!this._isActive) return;
                     if (!this._isSplit && e.deltaY > 0) { this._expandSplit(); return; }
-                    if (this._isSplit && !isInRightContent(e.target)) {
-                        // Forward scroll to the right panel
-                        const scrollEl = this._scrollTarget;
-                        if (scrollEl) {
-                            // Collapse only when scrolled to top and scrolling up
-                            if (e.deltaY < 0 && scrollEl.scrollTop <= 0) {
-                                this._collapseSplit(false);
-                                return;
-                            }
-                            scrollEl.scrollTop += e.deltaY;
-                        }
+                    if (this._isSplit && e.deltaY < 0 && !isInRightContent(e.target)) {
+                        this._collapseSplit(false);
                     }
                 };
                 this._touchStartY = 0;
@@ -4203,17 +3344,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!this._isActive) return;
                     const t = e.touches[0]; if (!t) return;
                     if (!this._isSplit && this._touchStartY - t.clientY > 30) { this._expandSplit(); return; }
-                    if (this._isSplit && !isInRightContent(e.target)) {
-                        const delta = this._touchStartY - t.clientY;
-                        const scrollEl = this._scrollTarget;
-                        if (scrollEl) {
-                            if (delta < -40 && scrollEl.scrollTop <= 0) {
-                                this._collapseSplit(false);
-                                return;
-                            }
-                            scrollEl.scrollTop += delta * 0.5;
-                        }
-                        this._touchStartY = t.clientY;
+                    if (this._isSplit && t.clientY - this._touchStartY > 40 && !isInRightContent(e.target)) {
+                        this._collapseSplit(false);
                     }
                 };
                 // Use CAPTURE phase — YouTube's player calls stopPropagation() on wheel
@@ -4245,7 +3377,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (closeBtn) closeBtn.style.opacity = '0.3';
 
                 let leftPct = 75;
-                try { leftPct = parseFloat(GM_getValue('ytkit_split_ratio', 75)); } catch(e) {}
+                try { const s = sessionStorage.getItem('ytkit-split-ratio'); if (s) leftPct = parseFloat(s); } catch(e) {}
                 leftPct = Math.max(25, Math.min(85, leftPct));
                 const rightPct = 100 - leftPct;
 
@@ -4313,9 +3445,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (right) right.removeEventListener('transitionend', onTransEnd);
                     this._entering = false;
                     this._triggerPlayerResize();
-                    // For standard/VOD: scroll to top to show video title
+                    // For standard/VOD: scroll to comments to trigger IO
                     if (type !== 'live' && below) {
-                        below.scrollTop = 0;
+                        const commentsEl = below.querySelector('ytd-comments');
+                        if (commentsEl) below.scrollTop = commentsEl.offsetTop;
                     }
                 };
                 const onTransEnd = (e) => {
@@ -4543,7 +3676,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                const css = `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active body{padding-top:0!important;} #ytkit-split-left,#ytkit-split-left #player-container,#ytkit-split-left #player-container-inner,#ytkit-split-left #player-theater-container,#ytkit-split-left ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} #ytkit-split-left #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} #ytkit-split-left .html5-video-container{width:100%!important;height:100%!important;} #ytkit-split-left .ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important;} #ytkit-split-left .ytp-progress-bar-container{width:100%!important;} #ytkit-split-left .ytp-chrome-controls{width:100%!important;} #ytkit-split-left video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} #ytkit-split-left ytd-player > #container,#ytkit-split-left #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below[style*="position:fixed"],html.ytkit-split-active #below[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below[style*="position"] #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;} html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;} html.ytkit-split-active #below[style*="position"] #actions button,html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander,html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below[style*="position"] #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer,html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below[style*="position"] #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below[style*="position"] #author-text{font-size:12px!important;} html.ytkit-split-active #below[style*="position"] #published-time-text{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer,html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below[style*="position"] yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:none;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:24px;z-index:10002;cursor:n-resize;background:transparent;transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:24px;height:2px;background:rgba(255,255,255,0.12);border-radius:1px;margin:8px auto 0;opacity:0;transition:opacity 0.2s;} #ytkit-split-collapse-strip:hover::after{opacity:1;}  `;
+                const css = `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active body{padding-top:0!important;} #ytkit-split-left,#ytkit-split-left #player-container,#ytkit-split-left #player-container-inner,#ytkit-split-left #player-theater-container,#ytkit-split-left ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} #ytkit-split-left #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} #ytkit-split-left .html5-video-container{width:100%!important;height:100%!important;} #ytkit-split-left .ytp-chrome-bottom{width:calc(100% - 24px)!important;left:12px!important;} #ytkit-split-left .ytp-progress-bar-container{width:100%!important;} #ytkit-split-left .ytp-chrome-controls{width:100%!important;} #ytkit-split-left video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} #ytkit-split-left ytd-player > #container,#ytkit-split-left #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below[style*="position:fixed"],html.ytkit-split-active #below[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below[style*="position"] #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;} html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;} html.ytkit-split-active #below[style*="position"] #actions button,html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander,html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below[style*="position"] #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer,html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below[style*="position"] #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below[style*="position"] #author-text{font-size:12px!important;} html.ytkit-split-active #below[style*="position"] #published-time-text{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer,html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below[style*="position"] yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:24px;z-index:10002;cursor:n-resize;background:transparent;transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:24px;height:2px;background:rgba(255,255,255,0.12);border-radius:1px;margin:8px auto 0;opacity:0;transition:opacity 0.2s;} #ytkit-split-collapse-strip:hover::after{opacity:1;}  `;
                 this._styleEl = injectStyle(css, this.id, true);
                 addNavigateRule(this._navRuleId, () => this._activate());
                 DebugManager.log('Theater', 'Theater Split initialized');
@@ -5056,11 +4189,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('hideCommentTeaser', 'Hide Comment Teaser', 'Remove the "Scroll for comments" prompt on watch pages', 'Clutter', 'message-square-off',
             'ytd-comments-entry-point-header-renderer, ytd-comments-entry-point-teaser-renderer'),
         cssFeature('hideLiveChatEngagement', 'Hide Chat Engagement', 'Remove engagement prompts in live chat', 'Clutter', 'message-circle-off',
-            'yt-live-chat-viewer-engagement-message-renderer,yt-live-chat-toast-renderer'),
+            'yt-live-chat-viewer-engagement-message-renderer'),
         cssFeature('hidePaidPromotionWatch', 'Hide Paid Promotion', 'Remove "paid promotion" labels on watch pages', 'Clutter', 'dollar-sign',
             '.ytp-paid-content-overlay'),
-        cssFeature('hideChannelJoinButton', 'Hide Channel Join Button', 'Remove the Join/membership button on channel pages', 'Clutter', 'dollar-sign',
-            '.ytFlexibleActionsViewModelAction:has(button[aria-label="Join this channel"])'),
         {
             id: 'hideVideoEndContent',
             name: 'Hide Video End Content',
@@ -5076,7 +4207,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
         cssFeature('hideFundraiser', 'Hide Fundraisers', 'Remove fundraiser and donation badges', 'Clutter', 'heart-off',
             `ytd-donation-shelf-renderer,
@@ -5167,7 +4298,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._styleElement = injectStyle(selectors, this.id);
                 }
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
                 // Auto-generated Action Buttons sub-features
         ...([['like','Like Button','Hide like button below videos'],['dislike','Dislike Button','Hide dislike button below videos'],['share','Share Button','Hide share button below videos'],['ask','Ask/AI Button','Hide Ask or AI button below videos'],['clip','Clip Button','Hide clip button below videos'],['thanks','Thanks Button','Hide thanks button below videos'],['save','Save Button','Hide save button below videos'],['sponsor','Join/Sponsor Button','Hide join/sponsor button below videos'],['moreActions','More Actions (...)','Hide more actions button below videos']].map(([v,n,d])=>({id:'abHide_'+v,name:n,description:d,group:'Action Buttons',icon:'eye-off',isSubFeature:true,parentId:'hiddenActionButtonsManager',_arrayKey:'hiddenActionButtons',_arrayValue:v,init(){},destroy(){}}))),
@@ -5250,7 +4381,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._styleElement = injectStyle(selectors, this.id);
                 }
             },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            destroy() { this._styleElement?.remove(); }
         },
                 // Auto-generated Player Controls sub-features
         ...([['sponsorBlock','SponsorBlock Button','Hide SponsorBlock button from player'],['next','Next Video Button','Hide next video button from player'],['autoplay','Autoplay Toggle','Hide autoplay toggle from player'],['subtitles','Subtitles Button','Hide subtitles button from player'],['captions','Captions Display','Hide captions overlay on video'],['miniplayer','Miniplayer Button','Hide miniplayer button from player'],['pip','Picture-in-Picture','Hide PiP button from player'],['theater','Theater Mode Button','Hide theater mode button from player'],['fullscreen','Fullscreen Button','Hide fullscreen button from player']].map(([v,n,d])=>({id:'pcHide_'+v,name:n,description:d,group:'Player Controls',icon:'eye-off',isSubFeature:true,parentId:'hiddenPlayerControlsManager',_arrayKey:'hiddenPlayerControls',_arrayValue:v,init(){},destroy(){}}))),
@@ -5265,34 +4396,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'download-cloud',
             type: 'select',
             options: {
-                'cobalt': 'Cobalt (configurable)',
+                'cobalt': 'Cobalt (cobalt.meowing.de)',
                 'y2mate': 'Y2Mate',
                 'savefrom': 'SaveFrom.net',
                 'ssyoutube': 'SSYouTube'
             },
             _providers: {
-                get cobalt() { return GM_getValue('ytkit_cobalt_url', 'https://cobalt.meowing.de/#'); },
+                'cobalt': 'https://cobalt.meowing.de/#',
                 'y2mate': 'https://www.y2mate.com/youtube/',
                 'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
                 'ssyoutube': 'https://ssyoutube.com/watch?v='
             },
             init() {
                 // This is a config-only feature, the download button uses this setting
-            },
-            destroy() {}
-        },
-        {
-            id: 'cobaltUrl',
-            name: 'Cobalt Instance URL',
-            description: 'Custom Cobalt API instance URL (Cobalt instances change frequently)',
-            group: 'Downloads',
-            icon: 'link',
-            type: 'textarea',
-            placeholder: 'https://cobalt.meowing.de/#',
-            init() {
-                // Sync textarea value to GM storage for the download provider getter
-                const val = appState.settings.cobaltUrl;
-                if (val) GM_setValue('ytkit_cobalt_url', val);
             },
             destroy() {}
         },
@@ -5399,41 +4515,121 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this.id);
             }
         },
-        // Download button factory — eliminates triplicated button creation
-        ...[
-            { id: 'showVlcButton', name: 'VLC Player Button', description: 'Add button to stream video directly in VLC media player', icon: 'play-circle', isParent: true,
-              btnClass: 'ytkit-vlc-btn', regKey: 'vlcButton', regLabel: 'VLC', label: ' VLC', title: 'Stream in VLC Player (requires YTYT-Downloader)',
-              svgPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z',
-              color: '#f97316', hoverColor: '#ea580c', toast: '🎬 Sending to VLC...', urlBuilder: () => 'ytvlc://' + encodeURIComponent(window.location.href) },
-            { id: 'showLocalDownloadButton', name: 'Local Download Button', description: 'Add button to download video locally via yt-dlp', icon: 'hard-drive-download',
-              btnClass: 'ytkit-local-dl-btn', regKey: 'localDownloadButton', regLabel: 'Download', label: ' DL', title: 'Download to PC (requires YTYT-Downloader)',
-              svgPath: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
-              color: '#22c55e', hoverColor: '#16a34a', toast: '⬇️ Starting download...', urlBuilder: () => 'ytdl://' + encodeURIComponent(window.location.href) },
-            { id: 'showMp3DownloadButton', name: 'MP3 Download Button', description: 'Add button to download audio as MP3 via yt-dlp', icon: 'music',
-              btnClass: 'ytkit-mp3-dl-btn', regKey: 'mp3DownloadButton', regLabel: 'MP3', label: ' MP3', title: 'Download MP3 (requires YTYT-Downloader)',
-              svgPath: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
-              color: '#8b5cf6', hoverColor: '#7c3aed', toast: '🎵 Starting MP3 download...', urlBuilder: () => 'ytdl://' + encodeURIComponent(window.location.href) + '?ytyt_audio_only=1' },
-        ].map(cfg => ({
-            id: cfg.id, name: cfg.name, description: cfg.description, group: 'Downloads', icon: cfg.icon, ...(cfg.isParent ? { isParent: true } : {}),
+        {
+            id: 'showVlcButton',
+            name: 'VLC Player Button',
+            description: 'Add button to stream video directly in VLC media player',
+            group: 'Downloads',
+            icon: 'play-circle',
+            isParent: true,
             _createButton(parent) {
                 const btn = document.createElement('button');
-                btn.className = cfg.btnClass;
-                btn.title = cfg.title;
+                btn.className = 'ytkit-vlc-btn';
+                btn.title = 'Stream in VLC Player (requires YTYT-Downloader)';
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '20'); svg.setAttribute('height', '20');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '20');
+                svg.setAttribute('height', '20');
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', cfg.svgPath); path.setAttribute('fill', 'white');
-                svg.appendChild(path); btn.appendChild(svg);
-                btn.appendChild(document.createTextNode(cfg.label));
-                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:${cfg.color};color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
-                btn.onmouseenter = () => { btn.style.background = cfg.hoverColor; };
-                btn.onmouseleave = () => { btn.style.background = cfg.color; };
-                btn.addEventListener('click', () => { showToast(cfg.toast, cfg.color); window.location.href = cfg.urlBuilder(); });
+                path.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z');
+                path.setAttribute('fill', 'white');
+                svg.appendChild(path);
+                btn.appendChild(svg);
+                btn.appendChild(document.createTextNode(' VLC'));
+                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#f97316;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
+                btn.onmouseenter = () => { btn.style.background = '#ea580c'; };
+                btn.onmouseleave = () => { btn.style.background = '#f97316'; };
+                btn.addEventListener('click', () => {
+                    showToast('🎬 Sending to VLC...', '#f97316');
+                    window.location.href = 'ytvlc://' + encodeURIComponent(window.location.href);
+                });
                 parent.appendChild(btn);
             },
-            init() { registerPersistentButton(cfg.regKey, BUTTON_CONTAINER, '.' + cfg.btnClass, this._createButton.bind(this), cfg.regLabel); startButtonChecker(); },
-            destroy() { unregisterPersistentButton(cfg.regKey); document.querySelector('.' + cfg.btnClass)?.remove(); }
-        })),
+            init() {
+                registerPersistentButton('vlcButton', '#top-level-buttons-computed', '.ytkit-vlc-btn', this._createButton.bind(this), 'VLC');
+                startButtonChecker();
+            },
+            destroy() {
+                unregisterPersistentButton('vlcButton');
+                document.querySelector('.ytkit-vlc-btn')?.remove();
+            }
+        },
+        {
+            id: 'showLocalDownloadButton',
+            name: 'Local Download Button',
+            description: 'Add button to download video locally via yt-dlp',
+            group: 'Downloads',
+            icon: 'hard-drive-download',
+            _createButton(parent) {
+                const btn = document.createElement('button');
+                btn.className = 'ytkit-local-dl-btn';
+                btn.title = 'Download to PC (requires YTYT-Downloader)';
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '20');
+                svg.setAttribute('height', '20');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z');
+                path.setAttribute('fill', 'white');
+                svg.appendChild(path);
+                btn.appendChild(svg);
+                btn.appendChild(document.createTextNode(' DL'));
+                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#22c55e;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
+                btn.onmouseenter = () => { btn.style.background = '#16a34a'; };
+                btn.onmouseleave = () => { btn.style.background = '#22c55e'; };
+                btn.addEventListener('click', () => {
+                    showToast('⬇️ Starting download...', '#22c55e');
+                    window.location.href = 'ytdl://' + encodeURIComponent(window.location.href);
+                });
+                parent.appendChild(btn);
+            },
+            init() {
+                registerPersistentButton('localDownloadButton', '#top-level-buttons-computed', '.ytkit-local-dl-btn', this._createButton.bind(this), 'Download');
+                startButtonChecker();
+            },
+            destroy() {
+                unregisterPersistentButton('localDownloadButton');
+                document.querySelector('.ytkit-local-dl-btn')?.remove();
+            }
+        },
+        {
+            id: 'showMp3DownloadButton',
+            name: 'MP3 Download Button',
+            description: 'Add button to download audio as MP3 via yt-dlp',
+            group: 'Downloads',
+            icon: 'music',
+            _createButton(parent) {
+                const btn = document.createElement('button');
+                btn.className = 'ytkit-mp3-dl-btn';
+                btn.title = 'Download MP3 (requires YTYT-Downloader)';
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('width', '20');
+                svg.setAttribute('height', '20');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+                path.setAttribute('fill', 'white');
+                svg.appendChild(path);
+                btn.appendChild(svg);
+                btn.appendChild(document.createTextNode(' MP3'));
+                btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#8b5cf6;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
+                btn.onmouseenter = () => { btn.style.background = '#7c3aed'; };
+                btn.onmouseleave = () => { btn.style.background = '#8b5cf6'; };
+                btn.addEventListener('click', () => {
+                    showToast('🎵 Starting MP3 download...', '#8b5cf6');
+                    window.location.href = 'ytdl://' + encodeURIComponent(window.location.href) + '?ytyt_audio_only=1';
+                });
+                parent.appendChild(btn);
+            },
+            init() {
+                registerPersistentButton('mp3DownloadButton', '#top-level-buttons-computed', '.ytkit-mp3-dl-btn', this._createButton.bind(this), 'MP3');
+                startButtonChecker();
+            },
+            destroy() {
+                unregisterPersistentButton('mp3DownloadButton');
+                document.querySelector('.ytkit-mp3-dl-btn')?.remove();
+            }
+        },
         {
             id: 'videoContextMenu',
             name: 'Video Context Menu',
@@ -5858,232 +5054,80 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {},
             destroy() {}
         },
-        // ─── GPU Context Recovery (monitor switch fix) ───
+        // ─── Comment Navigator ───
+
+        // ─── Statistics Dashboard ───
+        // ─── Regex Keyword Filter ───
+
+        // ─── Custom CSS Injection ───
+        // ─── IntersectionObserver Performance Mode ───
         {
-            id: 'gpuContextRecovery',
-            name: 'Monitor Switch Fix',
-            description: 'Automatically recovers video when moving browser between monitors (fixes black screen with audio)',
-            group: 'Video Player',
-            icon: 'monitor',
-            _healthPoll: null,
-            _recovering: false,
-            _canvas: null,
-            _ctx: null,
-            _lastTime: 0,
-            _blackCount: 0,
-            _stage: 0,
-
-            _isBlackFrame(video) {
-                if (!this._canvas) {
-                    this._canvas = document.createElement('canvas');
-                    this._canvas.width = 16;
-                    this._canvas.height = 16;
-                    this._ctx = this._canvas.getContext('2d', { willReadFrequently: true });
-                }
-                try {
-                    this._ctx.drawImage(video, 0, 0, 16, 16);
-                    const data = this._ctx.getImageData(0, 0, 16, 16).data;
-                    let totalBrightness = 0;
-                    for (let i = 0; i < data.length; i += 4) {
-                        totalBrightness += data[i] + data[i + 1] + data[i + 2];
-                    }
-                    return (totalBrightness / (16 * 16)) < 15;
-                } catch (e) {
-                    return false;
-                }
-            },
-
-            _recover() {
-                if (this._recovering) return;
-                this._recovering = true;
-                this._stage++;
-                const video = document.querySelector('video.html5-main-video');
-                const player = document.querySelector('#movie_player');
-                if (!video || !player) { this._recovering = false; return; }
-
-                const currentTime = video.currentTime;
-                DebugManager.log('GPU', `Black frame detected — recovery stage ${this._stage}`);
-
-                if (this._stage <= 1) {
-                    // Stage 1: Pause → seekTo (forces keyframe decode) → play
-                    try {
-                        player.pauseVideo();
-                        setTimeout(() => {
-                            player.seekTo(currentTime, true);
-                            setTimeout(() => {
-                                player.playVideo();
-                                this._recovering = false;
-                            }, 200);
-                        }, 100);
-                    } catch(e) { this._recovering = false; }
-
-                } else if (this._stage <= 2) {
-                    // Stage 2: Remove video src, force reload via loadVideoById
-                    try {
-                        const videoId = new URLSearchParams(window.location.search).get('v');
-                        if (videoId && typeof player.loadVideoById === 'function') {
-                            player.loadVideoById({ videoId, startSeconds: currentTime });
-                            // loadVideoById auto-plays, give it time to reinit
-                            setTimeout(() => {
-                                this._recovering = false;
-                            }, 1000);
-                        } else {
-                            // Fallback: nuke the video element's rendering
-                            video.srcObject = video.srcObject;
-                            this._recovering = false;
-                        }
-                    } catch(e) { this._recovering = false; }
-
-                } else if (this._stage <= 3) {
-                    // Stage 3: Toggle hardware acceleration by forcing software rendering path
-                    try {
-                        // Remove will-change and transform hints to force software fallback
-                        video.style.willChange = 'auto';
-                        video.style.transform = 'none';
-                        video.style.backfaceVisibility = 'hidden';
-                        // Force layout
-                        void video.offsetHeight;
-                        // Re-seek to force new frame
-                        player.seekTo(currentTime + 0.1, true);
-                        setTimeout(() => {
-                            // Restore
-                            video.style.willChange = '';
-                            video.style.transform = '';
-                            video.style.backfaceVisibility = '';
-                            this._recovering = false;
-                        }, 500);
-                    } catch(e) { this._recovering = false; }
-
-                } else {
-                    // Stage 4: Full page-level reload as absolute last resort
-                    DebugManager.log('GPU', 'All recovery stages failed — reloading player');
-                    try {
-                        // Use YouTube's navigation to "reload" without full page refresh
-                        const url = window.location.href;
-                        if (typeof player.loadVideoByUrl === 'function') {
-                            player.loadVideoByUrl({ mediaContentUrl: `https://www.youtube.com/v/${new URLSearchParams(window.location.search).get('v')}`, startSeconds: currentTime });
-                        } else {
-                            window.location.replace(url);
-                        }
-                    } catch(e) {}
-                    this._recovering = false;
-                    this._stage = 0;
-                    this._blackCount = 0;
-                }
-            },
-
+            id: 'useIntersectionObserver',
+            name: 'Performance Mode',
+            description: 'Use IntersectionObserver to only process visible videos (improves performance on long feeds)',
+            group: 'Advanced',
+            icon: 'gauge',
             init() {
-                this._healthPoll = setInterval(() => {
-                    if (this._recovering) return;
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video || video.paused || video.ended || video.readyState < 3) {
-                        this._blackCount = 0;
-                        return;
-                    }
-                    const ct = video.currentTime;
-                    if (ct === this._lastTime) return;
-                    this._lastTime = ct;
+                VisibilityObserver.init();
 
-                    if (this._isBlackFrame(video)) {
-                        this._blackCount++;
-                        if (this._blackCount >= 2) {
-                            this._recover();
-                        }
-                    } else {
-                        // Video is rendering — reset stages
-                        this._blackCount = 0;
-                        this._stage = 0;
+                // Add CSS containment for better rendering performance
+                const style = document.createElement('style');
+                style.id = 'ytkit-performance-css';
+                style.textContent = `
+                    ytd-rich-item-renderer,
+                    ytd-video-renderer,
+                    ytd-grid-video-renderer,
+                    ytd-compact-video-renderer {
+                        contain: content;
                     }
-                }, 1500);
+
+                    ytd-thumbnail {
+                        contain: content;
+                    }
+                `;
+                document.head.appendChild(style);
+                this._styleElement = style;
             },
             destroy() {
-                clearInterval(this._healthPoll);
-                this._healthPoll = null;
-                this._canvas = null;
-                this._ctx = null;
-                this._blackCount = 0;
-                this._recovering = false;
-                this._stage = 0;
+                VisibilityObserver.disconnect();
+                this._styleElement?.remove();
             }
         },
-
 
         // userscript-inspired FEATURES
         {
             id: 'quickLinkMenu',
             name: 'Logo Quick Links',
-            description: 'Hover over the YouTube logo to reveal a customizable dropdown menu',
+            description: 'Hover over the YouTube logo to reveal a dropdown with History, Watch Later, Playlists, and Liked Videos',
             group: 'Interface',
             icon: 'menu',
             _wrapper: null,
             _styleEl: null,
-            _iconMap: {
-                '/feed/history':       'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
-                '/playlist?list=WL':   'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z',
-                '/feed/library':       'M22,7H2v1h20V7z M13,12H2v-1h11V12z M13,16H2v-1h11V16z M15,19v-8l7,4L15,19z',
-                '/playlist?list=LL':   'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z',
-                '/feed/subscriptions': 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z',
-                '/':                   'M12 2L3.5 9.25V22h6.25V15.5h4.5V22h6.25V9.25L12 2zm0 2.5l6.5 5.5V20h-2.25v-6.5h-8.5V20H5.5V10L12 4.5z',
-                '/feed/trending':      'M17.53 11.2c-.23-.3-.5-.56-.76-.82-.65-.6-1.4-1.03-2.03-1.66C13.3 7.26 13 5.64 13.41 4c-1.59.5-2.8 1.5-3.7 2.82-2.06 3.05-1.53 7.03 1.21 9.43.17.15.31.34.36.56.07.29-.03.58-.27.8-.24.22-.56.34-.88.27-.29-.06-.54-.27-.68-.53-.85-1.32-.95-2.88-.46-4.35a7.932 7.932 0 00-1.59 4.27c-.07.81.07 1.62.33 2.39.3.95.81 1.81 1.49 2.54 1.48 1.52 3.58 2.36 5.71 2.28 2.27-.09 4.33-1.25 5.53-3.09 1.33-2.04 1.6-4.77.37-6.92z',
-                '/feed/channels':      'M4 20h14v1H3V6h1v14zM6 3v14h15V3H6zm13 2v10H8V5h11z',
-                '_default':            'M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19V6.413L11.2071 14.2071L9.79289 12.7929L17.585 5H13V3H21Z',
-            },
-            _parseItems() {
-                const raw = appState.settings.quickLinkItems || '';
-                return raw.split('\n').map(line => {
-                    const sep = line.indexOf('|');
-                    if (sep === -1) return null;
-                    const text = line.substring(0, sep).trim();
-                    const url = line.substring(sep + 1).trim();
-                    if (!text || !url) return null;
-                    const icon = this._iconMap[url] || this._iconMap['_default'];
-                    return { text, url, icon };
-                }).filter(Boolean);
-            },
+            menuItems: [
+                { text: 'History',       url: '/feed/history',          icon: 'M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z' },
+                { text: 'Watch Later',   url: '/playlist?list=WL',      icon: 'M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z' },
+                { text: 'Playlists',     url: '/feed/library',          icon: 'M22,7H2v1h20V7z M13,12H2v-1h11V12z M13,16H2v-1h11V16z M15,19v-8l7,4L15,19z' },
+                { text: 'Liked Videos',  url: '/playlist?list=LL',      icon: 'M18.77,11h-4.23l1.52-4.94C16.38,5.03,15.54,4,14.38,4c-0.58,0-1.13,0.24-1.53,0.65L7,11H3v10h4h1h9.43 c1.06,0,1.98-0.67,2.26-1.68l1.29-4.73C21.35,13.41,20.41,11,18.77,11z M7,20H4v-8h3V20z M19.98,14.37l-1.29,4.73 C18.59,19.64,18.02,20,17.43,20H8v-8.61l5.83-5.97c0.15-0.15,0.35-0.23,0.55-0.23c0.41,0,0.72,0.37,0.6,0.77L13.46,11h1.08h4.23 c0.54,0,0.85,0.79,0.65,1.29L19.98,14.37z' },
+                { text: 'Subscriptions', url: '/feed/subscriptions',    icon: 'M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 20V10h18v10H3z' },
+            ],
             _buildMenu(parentEl, dropId) {
-                const existing = parentEl.querySelector('#' + dropId);
-                if (existing) existing.remove();
                 const menu = document.createElement('div');
                 menu.id = dropId;
-                menu.className = 'ytkit-ql-drop';
-                this._parseItems().forEach(item => {
+                this.menuItems.forEach(item => {
                     const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
                     TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
                     menu.appendChild(a);
                 });
-                // Settings link — compact
-                const divider = document.createElement('div');
-                divider.style.cssText = 'height:1px;background:rgba(255,255,255,0.06);margin:3px 0;';
-                menu.appendChild(divider);
-                const gear = document.createElement('a');
-                gear.href = '#';
-                gear.className = 'ytkit-ql-item ytkit-ql-settings';
-                gear.onclick = (e) => { e.preventDefault(); document.body.classList.toggle('ytkit-panel-open'); };
-                TrustedHTML.setHTML(gear, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span>`);
-                menu.appendChild(gear);
                 parentEl.appendChild(menu);
-
-                // JS hover with delayed hide
-                let hideTimer = null;
-                const show = () => { clearTimeout(hideTimer); menu.classList.add('ytkit-ql-visible'); };
-                const scheduleHide = () => { hideTimer = setTimeout(() => menu.classList.remove('ytkit-ql-visible'), 1500); };
-                parentEl.addEventListener('mouseenter', show);
-                parentEl.addEventListener('mouseleave', scheduleHide);
-                menu.addEventListener('mouseenter', show);
-                menu.addEventListener('mouseleave', scheduleHide);
-
                 return menu;
-            },
-            rebuildMenus() {
-                if (this._wrapper) this._buildMenu(this._wrapper, 'ytkit-ql-menu');
-                // Also rebuild watch page dropdown if present
-                const poLogoWrap = document.getElementById('ytkit-po-logo-wrap');
-                if (poLogoWrap) this._buildMenu(poLogoWrap, 'ytkit-po-drop');
             },
             init() {
                 const self = this;
-                self._styleEl = GM_addStyle(`#ytkit-ql-wrap{position:relative;display:inline-block} .ytkit-ql-drop{position:absolute;flex-direction:column;background:rgba(22,22,22,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.7);padding:4px 0;z-index:9999;min-width:180px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(4px);transition:opacity 0.25s ease,visibility 0.25s ease,transform 0.25s ease;display:flex} .ytkit-ql-drop.ytkit-ql-visible{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)} #ytkit-ql-menu{top:38px;left:0} #ytkit-po-drop{bottom:calc(100% + 6px);right:0} .ytkit-ql-item{display:flex;align-items:center;padding:7px 14px;color:#fff;text-decoration:none;font-size:13px;font-family:"Roboto","Arial",sans-serif;transition:background .15s;gap:10px} .ytkit-ql-item:hover{background:rgba(255,255,255,.08)} .ytkit-ql-icon{fill:#fff;width:18px;height:18px;flex-shrink:0} .ytkit-ql-settings{padding:5px 14px;opacity:0.4;font-size:11px} .ytkit-ql-settings .ytkit-ql-icon{width:14px;height:14px} .ytkit-ql-settings:hover{opacity:0.8}`);
+                // Inject CSS once — not per-navigation
+                self._styleEl = GM_addStyle(`#ytkit-ql-wrap{position:relative;display:inline-block} #ytkit-ql-menu{position:absolute;top:40px;left:0;background:var(--yt-spec-menu-background,#282828);border:1px solid rgba(255,255,255,.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;flex-direction:column;padding:8px 0;z-index:9999;min-width:200px} #ytkit-ql-wrap:hover #ytkit-ql-menu{display:flex} .ytkit-ql-item{display:flex;align-items:center;padding:10px 16px;color:var(--yt-spec-text-primary,#fff);text-decoration:none;font-size:14px;font-family:"Roboto","Arial",sans-serif;transition:background .2s} .ytkit-ql-item:hover{background:rgba(255,255,255,.1)} .ytkit-ql-icon{margin-right:14px;fill:var(--yt-spec-text-primary,#fff);width:22px;height:22px;flex-shrink:0}`);
 
+                // ytd-topbar-logo-renderer is part of the persistent masthead shell —
+                // inject once as soon as the element exists, never needs to re-run per navigation.
                 waitForElement('ytd-topbar-logo-renderer', (logo) => {
                     if (document.getElementById('ytkit-ql-wrap')) return;
                     const wrapper = document.createElement('div'); wrapper.id = 'ytkit-ql-wrap';
@@ -6101,28 +5145,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._styleEl?.remove(); this._styleEl = null;
             }
-        },
-        {
-            id: 'quickLinkEditor',
-            name: 'Edit Quick Links',
-            description: 'Customize the logo dropdown menu. One link per line: Label | URL',
-            group: 'Interface',
-            icon: 'menu',
-            isSubFeature: true,
-            parentId: 'quickLinkMenu',
-            type: 'textarea',
-            placeholder: 'History | /feed/history\nWatch Later | /playlist?list=WL',
-            settingKey: 'quickLinkItems',
-            init() {
-                // Listen for setting changes to rebuild menus
-                document.addEventListener('ytkit-settings-changed', (e) => {
-                    if (e.detail?.key === 'quickLinkItems') {
-                        const ql = features.find(f => f.id === 'quickLinkMenu');
-                        if (ql && ql.rebuildMenus) ql.rebuildMenus();
-                    }
-                });
-            },
-            destroy() {}
         },
     ];
 
@@ -6580,7 +5602,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         'Interface': { icon: 'interface', color: '#60a5fa' },
         'Appearance': { icon: 'appearance', color: '#f472b6' },
         'Content': { icon: 'content', color: '#34d399' },
-        'Video Hider': { icon: 'eye-off', color: '#ef4444' },
         'Video Player': { icon: 'player', color: '#a78bfa' },
         'Ad Blocker': { icon: 'shield', color: '#10b981' },
         'SponsorBlock': { icon: 'sponsor', color: '#22d3ee' },
@@ -6616,7 +5637,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 waitForElement('#top-row #owner', (ownerDiv) => {
                     if (document.getElementById('ytkit-watch-btn')) return;
                     const btn = createButton('ytkit-watch-btn');
-                    ownerDiv.prepend(btn);
+                    const logo = document.getElementById('yt-suite-watch-logo');
+                    if (logo && logo.parentElement === ownerDiv) {
+                        ownerDiv.insertBefore(btn, logo.nextSibling);
+                    } else {
+                        ownerDiv.prepend(btn);
+                    }
                 });
             } else {
                 // Remove watch button if we're not on watch page
@@ -6637,7 +5663,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     function buildSettingsPanel() {
         if (document.getElementById('ytkit-settings-panel')) return;
 
-        const categoryOrder = ['Interface', 'Appearance', 'Content', 'Video Hider', 'Video Player', 'Ad Blocker', 'SponsorBlock', 'Quality', 'Clutter', 'Live Chat', 'Action Buttons', 'Player Controls', 'Downloads'];
+        const categoryOrder = ['Interface', 'Appearance', 'Content', 'Video Player', 'Ad Blocker', 'SponsorBlock', 'Quality', 'Clutter', 'Live Chat', 'Action Buttons', 'Player Controls', 'Downloads'];
 
         // Group labels: maps first category of each group → label text
         const categoryGroupLabels = {
@@ -6774,46 +5800,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.appendChild(labelSpan);
                 btn.appendChild(countSpan);
                 btn.appendChild(arrowSpan);
-                sidebar.appendChild(btn);
-                return;
-            }
-
-            // Special handling for Video Hider
-            if (cat === 'Video Hider') {
-                const config = CATEGORY_CONFIG[cat];
-                const catId = cat.replace(/ /g, '-');
-                const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
-                const videoCount = (typeof videoHiderFeature?._getHiddenVideos === 'function' ? videoHiderFeature._getHiddenVideos() : []).length;
-                const channelCount = (typeof videoHiderFeature?._getBlockedChannels === 'function' ? videoHiderFeature._getBlockedChannels() : []).length;
-
-                const btn = document.createElement('button');
-                btn.className = 'ytkit-nav-btn';
-                btn.dataset.tab = catId;
-
-                const iconWrap = document.createElement('span');
-                iconWrap.className = 'ytkit-nav-icon';
-                iconWrap.style.setProperty('--cat-color', config.color);
-                const iconFn = ICONS['eye-off'] || ICONS.settings;
-                iconWrap.appendChild(iconFn());
-
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'ytkit-nav-label';
-                labelSpan.textContent = cat;
-
-                const countSpan = document.createElement('span');
-                countSpan.className = 'ytkit-nav-count';
-                countSpan.textContent = `${videoCount + channelCount}`;
-                countSpan.title = `${videoCount} videos, ${channelCount} channels`;
-
-                const arrowSpan = document.createElement('span');
-                arrowSpan.className = 'ytkit-nav-arrow';
-                arrowSpan.appendChild(ICONS.chevronRight());
-
-                btn.appendChild(iconWrap);
-                btn.appendChild(labelSpan);
-                btn.appendChild(countSpan);
-                btn.appendChild(arrowSpan);
-
                 sidebar.appendChild(btn);
                 return;
             }
@@ -7097,42 +6083,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             statusRow.appendChild(statusText);
             filterSection.appendChild(statusRow);
 
-            // ── Live Ad-Block Stats ──
-            if (isActive) {
-                const statsRow = document.createElement('div');
-                statsRow.style.cssText = 'display:flex;gap:12px;margin-top:8px;padding:8px 10px;background:var(--ytkit-bg-card);border-radius:6px;';
-                const abStats = _rw.__ytab?.stats || { blocked: 0, pruned: 0, ssapSkipped: 0 };
-                const statItems = [
-                    { label: 'Blocked', value: abStats.blocked, color: '#22c55e' },
-                    { label: 'Pruned', value: abStats.pruned, color: '#3b82f6' },
-                    { label: 'Skipped', value: abStats.ssapSkipped, color: '#f59e0b' }
-                ];
-                statItems.forEach(s => {
-                    const item = document.createElement('div');
-                    item.style.cssText = 'display:flex;align-items:center;gap:4px;';
-                    const dot = document.createElement('span');
-                    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:' + s.color + ';flex-shrink:0;';
-                    const lbl = document.createElement('span');
-                    lbl.style.cssText = 'font-size:11px;color:var(--ytkit-text-muted);';
-                    lbl.textContent = s.label + ': ' + s.value;
-                    item.appendChild(dot);
-                    item.appendChild(lbl);
-                    statsRow.appendChild(item);
-                });
-                filterSection.appendChild(statsRow);
-                // Auto-refresh stats every 5s while panel is open
-                const statsInterval = setInterval(() => {
-                    if (!document.body.classList.contains('ytkit-panel-open')) {
-                        clearInterval(statsInterval); return;
-                    }
-                    const live = _rw.__ytab?.stats || {};
-                    const labels = statsRow.querySelectorAll('span:last-child');
-                    if (labels[0]) labels[0].textContent = 'Blocked: ' + (live.blocked || 0);
-                    if (labels[1]) labels[1].textContent = 'Pruned: ' + (live.pruned || 0);
-                    if (labels[2]) labels[2].textContent = 'Skipped: ' + (live.ssapSkipped || 0);
-                }, 5000);
-            }
-
             pane.appendChild(filterSection);
 
             // ── Custom Filters Section ──
@@ -7235,464 +6185,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             return pane;
         }
 
-        function buildVideoHiderPane(config) {
-            const videoHiderFeature = features.find(f => f.id === 'hideVideosFromHome');
-
-            const pane = document.createElement('section');
-            pane.id = 'ytkit-pane-Video-Hider';
-            pane.className = 'ytkit-pane ytkit-vh-pane';
-
-            // Pane header
-            const paneHeader = document.createElement('div');
-            paneHeader.className = 'ytkit-pane-header';
-
-            const paneTitle = document.createElement('div');
-            paneTitle.className = 'ytkit-pane-title';
-
-            const paneIcon = document.createElement('span');
-            paneIcon.className = 'ytkit-pane-icon';
-            paneIcon.style.setProperty('--cat-color', config.color);
-            const paneIconFn = ICONS['eye-off'] || ICONS.settings;
-            paneIcon.appendChild(paneIconFn());
-
-            const paneTitleH2 = document.createElement('h2');
-            paneTitleH2.textContent = 'Video Hider';
-
-            paneTitle.appendChild(paneIcon);
-            paneTitle.appendChild(paneTitleH2);
-
-            // Enable toggle
-            const toggleLabel = document.createElement('label');
-            toggleLabel.className = 'ytkit-toggle-all';
-            toggleLabel.style.marginLeft = 'auto';
-
-            const toggleText = document.createElement('span');
-            toggleText.textContent = 'Enabled';
-
-            const toggleSwitch = document.createElement('div');
-            toggleSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosFromHome ? ' active' : '');
-
-            const toggleInput = document.createElement('input');
-            toggleInput.type = 'checkbox';
-            toggleInput.id = 'ytkit-toggle-hideVideosFromHome';
-            toggleInput.checked = appState.settings.hideVideosFromHome;
-            toggleInput.onchange = async () => {
-                appState.settings.hideVideosFromHome = toggleInput.checked;
-                toggleSwitch.classList.toggle('active', toggleInput.checked);
-                settingsManager.save(appState.settings);
-                if (toggleInput.checked) videoHiderFeature?.init?.();
-                else videoHiderFeature?.destroy?.();
-                updateAllToggleStates();
-            };
-
-            const toggleTrack = document.createElement('span');
-            toggleTrack.className = 'ytkit-switch-track';
-            const toggleThumb = document.createElement('span');
-            toggleThumb.className = 'ytkit-switch-thumb';
-            toggleTrack.appendChild(toggleThumb);
-
-            toggleSwitch.appendChild(toggleInput);
-            toggleSwitch.appendChild(toggleTrack);
-            toggleLabel.appendChild(toggleText);
-            toggleLabel.appendChild(toggleSwitch);
-
-            paneHeader.appendChild(paneTitle);
-            paneHeader.appendChild(toggleLabel);
-            pane.appendChild(paneHeader);
-
-            // Tab navigation
-            const tabNav = document.createElement('div');
-            tabNav.className = 'ytkit-vh-tabs';
-            tabNav.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--ytkit-border);margin-bottom:20px;';
-
-            const tabs = ['Videos', 'Channels', 'Keywords', 'Settings'];
-            tabs.forEach((tabName, i) => {
-                const tab = document.createElement('button');
-                tab.className = 'ytkit-vh-tab' + (i === 0 ? ' active' : '');
-                tab.dataset.tab = tabName.toLowerCase();
-                tab.textContent = tabName;
-                tab.style.cssText = 'flex:1;padding:12px 16px;background:transparent;border:none;color:var(--ytkit-text-muted);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent;';
-                tab.onmouseenter = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-secondary)'; };
-                tab.onmouseleave = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-muted)'; };
-                tab.onclick = () => {
-                    tabNav.querySelectorAll('.ytkit-vh-tab').forEach(t => {
-                        t.classList.remove('active');
-                        t.style.color = 'var(--ytkit-text-muted)';
-                        t.style.borderBottomColor = 'transparent';
-                    });
-                    tab.classList.add('active');
-                    tab.style.color = config.color;
-                    tab.style.borderBottomColor = config.color;
-                    renderTabContent(tabName.toLowerCase());
-                };
-                if (i === 0) {
-                    tab.style.color = config.color;
-                    tab.style.borderBottomColor = config.color;
-                }
-                tabNav.appendChild(tab);
-            });
-            pane.appendChild(tabNav);
-
-            const tabContent = document.createElement('div');
-            tabContent.id = 'ytkit-vh-content';
-            pane.appendChild(tabContent);
-
-            function buildEmptyState(title, description) {
-                const empty = document.createElement('div');
-                empty.style.cssText = 'text-align:center;padding:60px 20px;color:var(--ytkit-text-muted);';
-                const emptyTitle = document.createElement('div');
-                emptyTitle.style.cssText = 'font-size:15px;margin-bottom:8px;';
-                emptyTitle.textContent = title;
-                const emptyDesc = document.createElement('div');
-                emptyDesc.style.cssText = 'font-size:13px;opacity:0.7;';
-                emptyDesc.textContent = description;
-                empty.appendChild(emptyTitle);
-                empty.appendChild(emptyDesc);
-                return empty;
-            }
-
-            function buildClearAllButton(label, onClear) {
-                const clearBtn = document.createElement('button');
-                clearBtn.textContent = label;
-                clearBtn.style.cssText = 'margin-top:20px;padding:12px 24px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:background 0.2s;';
-                clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
-                clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
-                clearBtn.onclick = onClear;
-                return clearBtn;
-            }
-
-            function renderTabContent(tab) {
-                while (tabContent.firstChild) tabContent.removeChild(tabContent.firstChild);
-
-                if (tab === 'videos') {
-                    const videos = videoHiderFeature?._getHiddenVideos() || [];
-                    if (videos.length === 0) {
-                        tabContent.appendChild(buildEmptyState('No hidden videos yet', 'Click the X button on video thumbnails to hide them'));
-                    } else {
-                        const grid = document.createElement('div');
-                        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;';
-
-                        videos.forEach(vid => {
-                            const item = document.createElement('div');
-                            item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px;background:var(--ytkit-bg-surface);border-radius:8px;border:1px solid var(--ytkit-border);';
-
-                            const thumb = document.createElement('img');
-                            thumb.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
-                            thumb.style.cssText = 'width:100px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0;';
-                            thumb.onerror = () => { thumb.style.background = 'var(--ytkit-bg-elevated)'; };
-
-                            const info = document.createElement('div');
-                            info.style.cssText = 'flex:1;min-width:0;';
-                            const vidId = document.createElement('div');
-                            vidId.style.cssText = 'font-size:12px;color:var(--ytkit-text-secondary);font-family:monospace;margin-bottom:4px;';
-                            vidId.textContent = vid;
-                            const link = document.createElement('a');
-                            link.href = `https://youtube.com/watch?v=${vid}`;
-                            link.target = '_blank';
-                            link.style.cssText = 'font-size:12px;color:var(--ytkit-accent);text-decoration:none;';
-                            link.textContent = 'View on YouTube \u2192';
-                            info.appendChild(vidId);
-                            info.appendChild(link);
-
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Unhide';
-                            removeBtn.style.cssText = 'padding:6px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;';
-                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#dc2626'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#dc2626'; };
-                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
-                            removeBtn.onclick = () => {
-                                const h = videoHiderFeature._getHiddenVideos();
-                                const idx = h.indexOf(vid);
-                                if (idx > -1) { h.splice(idx, 1); videoHiderFeature._setHiddenVideos(h); }
-                                item.remove();
-                                videoHiderFeature._processAllVideos();
-                                if (videoHiderFeature._getHiddenVideos().length === 0) renderTabContent('videos');
-                            };
-
-                            item.appendChild(thumb);
-                            item.appendChild(info);
-                            item.appendChild(removeBtn);
-                            grid.appendChild(item);
-                        });
-
-                        tabContent.appendChild(grid);
-
-                        tabContent.appendChild(buildClearAllButton(`Clear All Hidden Videos (${videos.length})`, () => {
-                            const backup = [...videoHiderFeature._getHiddenVideos()];
-                            videoHiderFeature._setHiddenVideos([]);
-                            videoHiderFeature._processAllVideos();
-                            renderTabContent('videos');
-                            showToast(`Cleared ${backup.length} hidden videos`, '#dc2626', { duration: 5, action: { text: 'Undo', onClick: () => {
-                                videoHiderFeature._setHiddenVideos(backup);
-                                videoHiderFeature._processAllVideos();
-                                renderTabContent('videos');
-                                showToast('Videos restored', '#22c55e');
-                            }}});
-                        }));
-                    }
-                } else if (tab === 'channels') {
-                    const channels = videoHiderFeature?._getBlockedChannels() || [];
-                    if (channels.length === 0) {
-                        tabContent.appendChild(buildEmptyState('No blocked channels yet', 'Right-click the X button on thumbnails to block channels'));
-                    } else {
-                        const list = document.createElement('div');
-                        list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
-
-                        channels.forEach(ch => {
-                            const item = document.createElement('div');
-                            item.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px;background:var(--ytkit-bg-surface);border-radius:8px;border:1px solid var(--ytkit-border);';
-
-                            const icon = document.createElement('div');
-                            icon.style.cssText = 'width:40px;height:40px;border-radius:50%;background:var(--ytkit-bg-elevated);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ytkit-text-muted);';
-                            icon.appendChild((ICONS['eye-off'] || ICONS.settings)());
-
-                            const info = document.createElement('div');
-                            info.style.cssText = 'flex:1;';
-                            const name = document.createElement('div');
-                            name.style.cssText = 'font-size:14px;color:var(--ytkit-text-primary);font-weight:500;';
-                            name.textContent = ch.name || ch.id;
-                            const handle = document.createElement('div');
-                            handle.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);';
-                            handle.textContent = ch.id;
-                            info.appendChild(name);
-                            info.appendChild(handle);
-
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Unblock';
-                            removeBtn.style.cssText = 'padding:6px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s;';
-                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#22c55e'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#22c55e'; };
-                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
-                            removeBtn.onclick = () => {
-                                const c = videoHiderFeature._getBlockedChannels();
-                                const idx = c.findIndex(x => x.id === ch.id);
-                                if (idx > -1) { c.splice(idx, 1); videoHiderFeature._setBlockedChannels(c); }
-                                item.remove();
-                                videoHiderFeature._processAllVideos();
-                                if (videoHiderFeature._getBlockedChannels().length === 0) renderTabContent('channels');
-                            };
-
-                            item.appendChild(icon);
-                            item.appendChild(info);
-                            item.appendChild(removeBtn);
-                            list.appendChild(item);
-                        });
-
-                        tabContent.appendChild(list);
-
-                        tabContent.appendChild(buildClearAllButton(`Unblock All Channels (${channels.length})`, () => {
-                            const backup = [...videoHiderFeature._getBlockedChannels()];
-                            videoHiderFeature._setBlockedChannels([]);
-                            videoHiderFeature._processAllVideos();
-                            renderTabContent('channels');
-                            showToast(`Unblocked ${backup.length} channels`, '#dc2626', { duration: 5, action: { text: 'Undo', onClick: () => {
-                                videoHiderFeature._setBlockedChannels(backup);
-                                videoHiderFeature._processAllVideos();
-                                renderTabContent('channels');
-                                showToast('Channels restored', '#22c55e');
-                            }}});
-                        }));
-                    }
-                } else if (tab === 'keywords') {
-                    const container = document.createElement('div');
-                    container.style.cssText = 'padding:0;';
-
-                    const desc = document.createElement('div');
-                    desc.style.cssText = 'color:var(--ytkit-text-muted);font-size:13px;margin-bottom:16px;line-height:1.5;';
-                    desc.textContent = 'Videos with titles containing these keywords will be automatically hidden. Separate multiple keywords with commas. Prefix with / for regex (e.g. /\\[.*\\]/i). Prefix with ! to whitelist.';
-                    container.appendChild(desc);
-
-                    const textarea = document.createElement('textarea');
-                    textarea.style.cssText = 'width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:8px;color:var(--ytkit-text-primary);font-size:13px;resize:vertical;font-family:inherit;';
-                    textarea.placeholder = 'e.g., reaction, unboxing, prank, shorts';
-                    textarea.value = appState.settings.hideVideosKeywordFilter || '';
-                    textarea.onchange = async () => {
-                        appState.settings.hideVideosKeywordFilter = textarea.value;
-                        settingsManager.save(appState.settings);
-                        videoHiderFeature?._processAllVideos();
-                    };
-                    container.appendChild(textarea);
-
-                    const hint = document.createElement('div');
-                    hint.style.cssText = 'color:var(--ytkit-text-muted);font-size:11px;margin-top:8px;';
-                    hint.textContent = 'Changes apply immediately. Keywords are case-insensitive.';
-                    container.appendChild(hint);
-
-                    tabContent.appendChild(container);
-                } else if (tab === 'settings') {
-                    const container = document.createElement('div');
-                    container.style.cssText = 'display:flex;flex-direction:column;gap:24px;';
-
-                    // Duration filter
-                    const durSection = document.createElement('div');
-                    durSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-
-                    const durTitle = document.createElement('div');
-                    durTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:8px;';
-                    durTitle.textContent = 'Duration Filter';
-                    durSection.appendChild(durTitle);
-
-                    const durDesc = document.createElement('div');
-                    durDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:12px;';
-                    durDesc.textContent = 'Automatically hide videos shorter than the specified duration.';
-                    durSection.appendChild(durDesc);
-
-                    const durRow = document.createElement('div');
-                    durRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
-
-                    const durInput = document.createElement('input');
-                    durInput.type = 'number';
-                    durInput.min = '0';
-                    durInput.max = '60';
-                    durInput.value = appState.settings.hideVideosDurationFilter || 0;
-                    durInput.style.cssText = 'width:80px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;';
-                    durInput.onchange = async () => {
-                        appState.settings.hideVideosDurationFilter = parseInt(durInput.value) || 0;
-                        settingsManager.save(appState.settings);
-                        videoHiderFeature?._processAllVideos();
-                    };
-
-                    const durLabel = document.createElement('span');
-                    durLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
-                    durLabel.textContent = 'minutes (0 = disabled)';
-
-                    durRow.appendChild(durInput);
-                    durRow.appendChild(durLabel);
-                    durSection.appendChild(durRow);
-                    container.appendChild(durSection);
-
-                    // Subscription Load Limiter
-                    const limiterSection = document.createElement('div');
-                    limiterSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-
-                    const limiterTitle = document.createElement('div');
-                    limiterTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:8px;';
-                    limiterTitle.textContent = 'Subscription Page Load Limiter';
-                    limiterSection.appendChild(limiterTitle);
-
-                    const limiterDesc = document.createElement('div');
-                    limiterDesc.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-bottom:16px;line-height:1.5;';
-                    limiterDesc.textContent = "Prevents infinite scrolling when many consecutive videos are hidden. Useful if you've hidden years of subscription videos.";
-                    limiterSection.appendChild(limiterDesc);
-
-                    const limiterToggleRow = document.createElement('div');
-                    limiterToggleRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px;background:var(--ytkit-bg-elevated);border-radius:8px;';
-
-                    const limiterToggleLabel = document.createElement('span');
-                    limiterToggleLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;';
-                    limiterToggleLabel.textContent = 'Enable load limiter';
-
-                    const limiterSwitch = document.createElement('div');
-                    limiterSwitch.className = 'ytkit-switch' + (appState.settings.hideVideosSubsLoadLimit !== false ? ' active' : '');
-                    limiterSwitch.style.cssText = 'cursor:pointer;';
-
-                    const limiterInput = document.createElement('input');
-                    limiterInput.type = 'checkbox';
-                    limiterInput.checked = appState.settings.hideVideosSubsLoadLimit !== false;
-                    limiterInput.onchange = async () => {
-                        appState.settings.hideVideosSubsLoadLimit = limiterInput.checked;
-                        limiterSwitch.classList.toggle('active', limiterInput.checked);
-                        settingsManager.save(appState.settings);
-                    };
-
-                    const limiterTrack = document.createElement('span');
-                    limiterTrack.className = 'ytkit-switch-track';
-
-                    limiterSwitch.appendChild(limiterInput);
-                    limiterSwitch.appendChild(limiterTrack);
-                    limiterToggleRow.appendChild(limiterToggleLabel);
-                    limiterToggleRow.appendChild(limiterSwitch);
-                    limiterSection.appendChild(limiterToggleRow);
-
-                    const thresholdRow = document.createElement('div');
-                    thresholdRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
-
-                    const thresholdLabel = document.createElement('span');
-                    thresholdLabel.style.cssText = 'color:var(--ytkit-text-secondary);font-size:13px;flex:1;';
-                    thresholdLabel.textContent = 'Stop after consecutive hidden batches:';
-
-                    const thresholdInput = document.createElement('input');
-                    thresholdInput.type = 'number';
-                    thresholdInput.min = '1';
-                    thresholdInput.max = '20';
-                    thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold || 3;
-                    thresholdInput.style.cssText = 'width:70px;padding:8px 12px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);border-radius:6px;color:var(--ytkit-text-primary);font-size:14px;text-align:center;';
-                    thresholdInput.onchange = async () => {
-                        appState.settings.hideVideosSubsLoadThreshold = Math.max(1, Math.min(20, parseInt(thresholdInput.value) || 3));
-                        thresholdInput.value = appState.settings.hideVideosSubsLoadThreshold;
-                        settingsManager.save(appState.settings);
-                    };
-
-                    thresholdRow.appendChild(thresholdLabel);
-                    thresholdRow.appendChild(thresholdInput);
-                    limiterSection.appendChild(thresholdRow);
-
-                    const thresholdHint = document.createElement('div');
-                    thresholdHint.style.cssText = 'color:var(--ytkit-text-muted);font-size:11px;margin-top:8px;';
-                    thresholdHint.textContent = 'Lower = stops faster, Higher = loads more before stopping (1-20)';
-                    limiterSection.appendChild(thresholdHint);
-
-                    container.appendChild(limiterSection);
-
-                    // Stats
-                    const statsSection = document.createElement('div');
-                    statsSection.style.cssText = 'background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:12px;padding:20px;';
-
-                    const statsTitle = document.createElement('div');
-                    statsTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin-bottom:12px;';
-                    statsTitle.textContent = 'Statistics';
-                    statsSection.appendChild(statsTitle);
-
-                    const statsGrid = document.createElement('div');
-                    statsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
-
-                    const videoCount = videoHiderFeature?._getHiddenVideos()?.length || 0;
-                    const channelCount = videoHiderFeature?._getBlockedChannels()?.length || 0;
-
-                    const videoStat = document.createElement('div');
-                    videoStat.style.cssText = 'background:var(--ytkit-bg-elevated);padding:16px;border-radius:8px;text-align:center;';
-                    const videoStatNum = document.createElement('div');
-                    videoStatNum.style.cssText = `font-size:24px;font-weight:700;color:${config.color};`;
-                    videoStatNum.textContent = videoCount;
-                    const videoStatLabel = document.createElement('div');
-                    videoStatLabel.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-top:4px;';
-                    videoStatLabel.textContent = 'Hidden Videos';
-                    videoStat.appendChild(videoStatNum);
-                    videoStat.appendChild(videoStatLabel);
-
-                    const channelStat = document.createElement('div');
-                    channelStat.style.cssText = 'background:var(--ytkit-bg-elevated);padding:16px;border-radius:8px;text-align:center;';
-                    const channelStatNum = document.createElement('div');
-                    channelStatNum.style.cssText = `font-size:24px;font-weight:700;color:${config.color};`;
-                    channelStatNum.textContent = channelCount;
-                    const channelStatLabel = document.createElement('div');
-                    channelStatLabel.style.cssText = 'font-size:12px;color:var(--ytkit-text-muted);margin-top:4px;';
-                    channelStatLabel.textContent = 'Blocked Channels';
-                    channelStat.appendChild(channelStatNum);
-                    channelStat.appendChild(channelStatLabel);
-
-                    statsGrid.appendChild(videoStat);
-                    statsGrid.appendChild(channelStat);
-                    statsSection.appendChild(statsGrid);
-                    container.appendChild(statsSection);
-
-                    tabContent.appendChild(container);
-                }
-            }
-
-            renderTabContent('videos');
-            return pane;
-        }
-
         categoryOrder.forEach((cat, index) => {
             // Special handling for Ad Blocker
             if (cat === 'Ad Blocker') {
                 const config = CATEGORY_CONFIG[cat];
                 content.appendChild(buildAdBlockPane(config));
-                return;
-            }
-            // Special handling for Video Hider
-            if (cat === 'Video Hider') {
-                const config = CATEGORY_CONFIG[cat];
-                content.appendChild(buildVideoHiderPane(config));
                 return;
             }
 
@@ -7896,24 +6393,26 @@ pause
             URL.revokeObjectURL(url);
             showToast('📦 Installer downloaded! Double-click the .bat file to run.', '#22c55e');
         });
+        const ytToolsLink = ytToolsBtn; // Alias for existing appendChild call
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'ytkit-version';
-        versionSpan.textContent = 'v' + YTKIT_VERSION;
+        versionSpan.textContent = 'v25.22';
         versionSpan.style.position = 'relative';
         versionSpan.style.cursor = 'pointer';
         // What's New badge
+        const CURRENT_VER = '19';
         const lastSeenVer = GM_getValue('ytkit_last_seen_version', '');
-        if (lastSeenVer !== YTKIT_VERSION) {
+        if (lastSeenVer !== CURRENT_VER) {
             const badge = document.createElement('span');
             badge.id = 'ytkit-whats-new-badge';
             badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
             versionSpan.appendChild(badge);
-            versionSpan.title = 'New in v' + YTKIT_VERSION + ': Video Hider, watch page restyle, download buttons, performance optimizations';
+            versionSpan.title = 'New in v19: Auto-Resume, Speed OSD, Watch Time Tracker, Comment Navigator, Speed Badge, Theater Auto-Scroll, Screenshot Format, Search Highlighting';
             versionSpan.onclick = () => {
-                GM_setValue('ytkit_last_seen_version', YTKIT_VERSION);
+                GM_setValue('ytkit_last_seen_version', CURRENT_VER);
                 badge.remove();
-                showToast('v' + YTKIT_VERSION + ': Video/channel hiding, watch page glassmorphism, VLC/download/MP3 buttons, 40+ improvements', '#3b82f6', { duration: 6 });
+                showToast('v25.22: Redesigned comments and metadata - card layout with avatars, timestamps, refined thread lines', '#3b82f6', { duration: 6 });
             };
         }
 
@@ -7922,7 +6421,7 @@ pause
         shortcutSpan.textContent = 'Ctrl+Alt+Y';
 
         footerLeft.appendChild(githubLink);
-        footerLeft.appendChild(ytToolsBtn);
+        footerLeft.appendChild(ytToolsLink);
         footerLeft.appendChild(versionSpan);
         footerLeft.appendChild(shortcutSpan);
 
@@ -8000,17 +6499,7 @@ pause
             textarea.className = 'ytkit-input';
             textarea.id = `ytkit-input-${f.id}`;
             textarea.placeholder = f.placeholder || 'word1, word2, phrase';
-            textarea.value = appState.settings[f.settingKey || f.id] || appState.settings[f.id] || '';
-            // Auto-save on blur for textarea features
-            textarea.addEventListener('blur', () => {
-                const key = f.settingKey || f.id;
-                appState.settings[key] = textarea.value;
-                settingsManager.save(appState.settings);
-                document.dispatchEvent(new CustomEvent('ytkit-settings-changed', { detail: { key } }));
-                if (f.id === 'cobaltUrl' && textarea.value) {
-                    GM_setValue('ytkit_cobalt_url', textarea.value);
-                }
-            });
+            textarea.value = appState.settings[f.id] || '';
             card.appendChild(textarea);
         } else if (f.type === 'select') {
             const select = document.createElement('select');
@@ -8474,14 +6963,11 @@ pause
 
     //  SECTION 5: STYLES
     function injectPanelStyles() {
-        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99998;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:99999;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:100000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);}ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);}  .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }`);
+        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99998;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:99999;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:100000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);} #yt-suite-watch-logo{display:flex;align-items:center;margin-right:12px;} #yt-suite-watch-logo a{display:flex;align-items:center;} #yt-suite-watch-logo ytd-logo{width:90px;height:auto;} ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);} background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));border:1px solid var(--ytkit-border-subtle);border-radius:var(--ytkit-radius-md);padding:16px;text-align:center;transition:all var(--ytkit-transition);} background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04));border-color:var(--ytkit-border);} font-size:24px;font-weight:700;color:var(--ytkit-accent);margin-bottom:4px;} font-size:12px;color:var(--ytkit-text-muted);text-transform:uppercase;letter-spacing:0.5px;} background:rgba(255,255,255,0.06) !important;} filter:brightness(1.1);} .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }`);
     }
 
     //  SECTION 6: BOOTSTRAP
-    let _mainRan = false;
     function main() {
-        if (_mainRan) return; // Guard against double-init (YouTube SPA can re-trigger)
-        _mainRan = true;
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
 
@@ -8753,8 +7239,13 @@ pause
 
     GM_addStyle(`.ytkit-pm-overlay{position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,0);transition:background 0.2s ease;pointer-events:none;} .ytkit-pm-ov-visible{background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:auto;} .ytkit-pm{position:fixed;top:60px;right:16px;width:400px;max-height:calc(100vh - 80px);overflow-y:auto;z-index:99991;background:linear-gradient(145deg,rgba(18,18,28,0.98),rgba(12,12,20,0.98));border:1px solid rgba(255,255,255,0.08);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04) inset;font-family:"Roboto",Arial,sans-serif;color:var(--yt-spec-text-primary,#fff);opacity:0;transform:translateY(-8px) scale(0.98);transition:opacity 0.2s ease,transform 0.2s ease;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent;} .ytkit-pm::-webkit-scrollbar{width:4px;} .ytkit-pm::-webkit-scrollbar-track{background:transparent;} .ytkit-pm::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px;} .ytkit-pm-visible{opacity:1;transform:translateY(0) scale(1);} .ytkit-pm-header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06);} .ytkit-pm-title-wrap{display:flex;align-items:center;gap:10px;} .ytkit-pm-badge{font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#3b82f6;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:2px 8px;} .ytkit-pm-title{margin:0;font-size:15px;font-weight:600;color:rgba(255,255,255,0.9);} .ytkit-pm-close{width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;} .ytkit-pm-close:hover{background:rgba(255,255,255,0.12);color:#fff;} .ytkit-pm-close svg{width:14px;height:14px;} .ytkit-pm-grid{display:flex;flex-direction:column;gap:2px;padding:8px;} .ytkit-pm-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:none;background:transparent;cursor:pointer;text-align:left;transition:background 0.15s;width:100%;} .ytkit-pm-card:hover{background:rgba(255,255,255,0.05);} .ytkit-pm-card.on{background:rgba(59,130,246,0.08);} .ytkit-pm-card.on:hover{background:rgba(59,130,246,0.13);} .ytkit-pm-card-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);transition:all 0.15s;} .ytkit-pm-card.on .ytkit-pm-card-icon{background:rgba(59,130,246,0.18);color:#60a5fa;} .ytkit-pm-card-icon svg{width:16px;height:16px;} .ytkit-pm-card-text{flex:1;min-width:0;} .ytkit-pm-card-label{display:block;font-size:13px;font-weight:500;color:rgba(255,255,255,0.8);line-height:1.3;} .ytkit-pm-card.on .ytkit-pm-card-label{color:#e0eaff;} .ytkit-pm-card-desc{display:block;font-size:11px;color:rgba(255,255,255,0.35);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;} .ytkit-pm-card-toggle{flex-shrink:0;} .ytkit-pm-toggle-track{width:34px;height:18px;border-radius:9px;background:rgba(255,255,255,0.1);position:relative;transition:background 0.2s;} .ytkit-pm-card.on .ytkit-pm-toggle-track{background:#2563eb;} .ytkit-pm-toggle-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);transition:transform 0.2s,background 0.2s;} .ytkit-pm-card.on .ytkit-pm-toggle-thumb{transform:translateX(16px);background:#fff;} .ytkit-pm-footer{padding:10px 16px 14px;border-top:1px solid rgba(255,255,255,0.06);} .ytkit-pm-full-settings{width:100%;padding:9px 16px;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;letter-spacing:0.2px;} .ytkit-pm-full-settings:hover{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.85);} .ytkit-page-trigger.active svg{color:#3b82f6 !important;transform:none !important;} .ytkit-page-trigger:hover svg{transform:none !important;}`);
 
+    function buildPageDock() {
+        // Dock replaced by page modal — no-op kept for call-site compatibility
+    }
+
             buildSettingsPanel();
         injectSettingsButton();
+        buildPageDock();
         injectPageModalButton();
         attachUIEventListeners();
         updateAllToggleStates();
@@ -8766,16 +7257,6 @@ pause
         window.ytkit = {
             safe() { GM_setValue('ytkit_safe_mode', true); location.reload(); },
             unsafe() { GM_setValue('ytkit_safe_mode', false); location.reload(); },
-            debug(on) {
-                if (on === undefined) return DebugManager._enabled;
-                on ? DebugManager.enable() : DebugManager.disable();
-                console.log('[YTKit] Debug ' + (on ? 'enabled' : 'disabled'));
-            },
-            stats() {
-                const ab = _rw.__ytab?.stats || {};
-                console.table({ 'Ads Blocked': ab.blocked || 0, 'Responses Pruned': ab.pruned || 0, 'SSAP Skipped': ab.ssapSkipped || 0 });
-                return ab;
-            },
             diagCSS() {
                 document.getElementById('ytab-cosmetic')?.remove();
                 document.getElementById('ytkit-opened-fix')?.remove();
@@ -8814,7 +7295,6 @@ pause
             },
             settings: appState.settings,
             features,
-            version: YTKIT_VERSION,
         };
 
         if (isSafeMode) {
@@ -8829,7 +7309,7 @@ pause
             //         the video is playing. Deferred 1500ms via requestIdleCallback.
             const CRITICAL_IDS = new Set([
                 'ytAdBlock','adblockCosmeticHide','adblockSsapAutoSkip','adblockAntiDetect',
-                'stickyVideo','uiStyleManager',
+                'stickyVideo','themeManager','uiStyleManager',
             ]);
             const LAZY_IDS = new Set([
                 // Only defer watch-page-only features that are heavy or network-bound
@@ -8862,7 +7342,7 @@ pause
             // Tier 1: after first paint
             requestAnimationFrame(() => {
                 normal.forEach(f => { initFeature(f); if (f._initialized) normalLog.push(f.id); });
-                console.log(`[YTKit] v${YTKIT_VERSION} | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
+                console.log(`[YTKit] v25.22 | critical:${critLog.length} normal:${normalLog.length} (lazy pending)`);
             });
 
             // Tier 2: after page is interactive
@@ -8887,7 +7367,10 @@ pause
 
         // Button injection is handled by startButtonChecker() called from each button feature's init()
 
-        settingsManager.setFirstRunStatus(true);
+        const hasRun = settingsManager.getFirstRunStatus();
+        if (!hasRun) {
+            settingsManager.setFirstRunStatus(true);
+        }
 
         // Track page changes for lazy loading (skip in safe mode)
         if (!isSafeMode) {
@@ -8920,12 +7403,12 @@ pause
         });
         } // end !isSafeMode
 
-        console.log(`%c[YTKit] v${YTKIT_VERSION} Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+        console.log(`%c[YTKit] v25.22 Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         main();
     } else {
-        window.addEventListener('DOMContentLoaded', main, { once: true });
+        window.addEventListener('DOMContentLoaded', main);
     }
 })();
