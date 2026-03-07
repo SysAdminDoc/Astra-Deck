@@ -4,6 +4,25 @@ All notable changes to YTKit are documented here. Versions are listed newest-fir
 
 ---
 
+## [2.5.0] - Quality & Infrastructure
+
+### Removed
+- **Mousewheel Volume Control** — Removed entirely; intercepting scroll events on the player prevented normal page scrolling to reach comments
+
+### Changed
+- **Conflict enforcement** — CONFLICT_MAP now auto-disables conflicting features when you enable one (instead of just showing a warning toast)
+- **Settings search debounce** — Search input is now debounced (150ms) for smoother filtering on large feature lists
+- **API key caching** — `_getInnertubeApiKey` result is cached to avoid repeated script tag scanning
+- **Navigation listener guard** — `yt-navigate-finish` listener is now guarded against duplicate registration
+
+### Added
+- `.github/ISSUE_TEMPLATE/bug_report.md` — Structured bug report template
+- `.github/ISSUE_TEMPLATE/feature_request.md` — Feature request template
+- `.github/pull_request_template.md` — PR template with testing checklist
+- `CONTRIBUTING.md` — Contributor guide with architecture overview and code style guidelines
+
+---
+
 ## [2.4.0] - Competitive Feature Parity
 
 New features inspired by research across Enhancer for YouTube, ImprovedTube, Return YouTube Dislike, Unhook, BlockTube, YouTube NonStop, Nova YouTube, and DeArrow:
