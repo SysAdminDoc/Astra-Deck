@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit: YouTube Customization Suite
 // @namespace    https://github.com/SysAdminDoc/YouTube-Kit
-// @version      2.2.0
+// @version      2.3.0
 // @description  Ultimate YouTube customization with ad blocking, VLC streaming, video/channel hiding, playback enhancements, sticky video, and more.
 // @author       Matthew Parker
 // @license      MIT
@@ -65,6 +65,13 @@
             'fullscreenAdRenderer', 'interstitialAdRenderer',
             'sponsoredTextRenderers', 'adBreaks',
             'playerResponse.playerConfig.adConfig',
+            // 2025+ ad keys
+            'playerResponse.overlay.playerOverlayRenderer.autonavToggle',
+            'playerResponse.adInfoRenderer', 'playerResponse.endscreen.endscreenRenderer.adElements',
+            'adLayoutLoggingData', 'playerResponse.adLayoutLoggingData',
+            'playerResponse.playerConfig.webPlayerConfig.useSuperPrefetchAd',
+            'instreamAdPlayerOverlayRenderer', 'linearAdSequenceRenderer',
+            'playerResponse.linearAdSequenceRenderer',
         ];
         const REPLACE_MAP = { adPlacements: 'no_ads', adSlots: 'no_ads', playerAds: 'no_ads', adBreakHeartbeatParams: 'no_ads' };
         const INTERCEPT_URLS = [
@@ -92,6 +99,11 @@
             'compactMovieRenderer', 'gridMovieRenderer',
             'movieRenderer', 'clarificationRenderer',
             'externalVideoRenderer', 'sponsoredItemsPreRenderer',
+            // 2025+ renderers
+            'linearAdSequenceRenderer', 'instreamAdPlayerOverlayRenderer',
+            'adInfoRenderer', 'reelPlayerAdRenderer',
+            'shoppingOverlayRenderer', 'adHoverTextButtonRenderer',
+            'playerOverlayAutoplayEndpointRenderer',
         ];
         const AD_RENDERER_SET = {};
         for (let i = 0; i < AD_RENDERER_KEYS_ARR.length; i++) AD_RENDERER_SET[AD_RENDERER_KEYS_ARR[i]] = true;
@@ -929,7 +941,20 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '2.2.0';
+    const YTKIT_VERSION = '2.3.0';
+
+    // ── Z-Index Hierarchy ──
+    const Z = {
+        HIDE_BTN: 1000,          // Video hide button overlay
+        BUTTONS: 9999,           // Download/action buttons
+        EMBED_WRAPPER: 9999,     // Embed player wrapper
+        BANNER: 50000,           // Floating banners
+        CONTEXT_MENU: 60000,     // Right-click context menu
+        TOAST: 70000,            // Toast notifications
+        SETTINGS_OVERLAY: 80000, // Settings backdrop
+        SETTINGS_PANEL: 80001,   // Settings panel
+        PANEL_TOAST: 90000,      // Settings panel toasts
+    };
 
     // ── Timing Constants ──
     const TIMING = {
@@ -1638,7 +1663,7 @@
 
         const toast = document.createElement('div');
         toast.className = 'ytkit-global-toast';
-        toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:12px 24px;border-radius:8px;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;animation:ytkit-toast-fade ${options.duration || 2.5}s ease-out forwards;`;
+        toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:12px 24px;border-radius:8px;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;z-index:${Z.TOAST};box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;animation:ytkit-toast-fade ${options.duration || 2.5}s ease-out forwards;`;
 
         const textSpan = document.createElement('span');
         textSpan.textContent = message;
@@ -2180,40 +2205,52 @@
                 // Handle different export versions
                 let settings, hiddenVideos, blockedChannels, bookmarks;
                 if (importedData.exportVersion >= 3) {
-                    // Version 3 format with bookmarks
                     settings = importedData.settings || {};
                     hiddenVideos = importedData.hiddenVideos || [];
                     blockedChannels = importedData.blockedChannels || [];
                     bookmarks = importedData.bookmarks || {};
                 } else if (importedData.exportVersion >= 2) {
-                    // Version 2 format with hidden videos
                     settings = importedData.settings || {};
                     hiddenVideos = importedData.hiddenVideos || [];
                     blockedChannels = importedData.blockedChannels || [];
                     bookmarks = null;
                 } else {
-                    // Version 1 format - just settings object
                     settings = importedData;
                     hiddenVideos = null;
                     blockedChannels = null;
                     bookmarks = null;
                 }
 
-                const newSettings = { ...this.defaults, ...settings };
-                this.save(newSettings);
+                // Validate: settings must be a plain object with at least one known key
+                if (typeof settings !== 'object' || Array.isArray(settings)) return false;
+                const knownKeys = Object.keys(this.defaults);
+                const hasValidKey = Object.keys(settings).some(k => knownKeys.includes(k));
+                if (Object.keys(settings).length > 0 && !hasValidKey) return false;
 
-                // Import hidden videos, blocked channels, and bookmarks if present
-                if (hiddenVideos !== null) {
-                    StorageManager.set('ytkit-hidden-videos', hiddenVideos);
-                }
-                if (blockedChannels !== null) {
-                    StorageManager.set('ytkit-blocked-channels', blockedChannels);
-                }
-                if (bookmarks !== null) {
-                    StorageManager.set('ytkit-bookmarks', bookmarks);
-                }
+                // Backup current state before applying
+                const backup = {
+                    settings: { ...appState.settings },
+                    hiddenVideos: StorageManager.get('ytkit-hidden-videos', []),
+                    blockedChannels: StorageManager.get('ytkit-blocked-channels', []),
+                    bookmarks: StorageManager.get('ytkit-bookmarks', {}),
+                };
 
-                return true;
+                try {
+                    const newSettings = { ...this.defaults, ...settings };
+                    this.save(newSettings);
+                    if (hiddenVideos !== null) StorageManager.set('ytkit-hidden-videos', hiddenVideos);
+                    if (blockedChannels !== null) StorageManager.set('ytkit-blocked-channels', blockedChannels);
+                    if (bookmarks !== null) StorageManager.set('ytkit-bookmarks', bookmarks);
+                    return true;
+                } catch (applyErr) {
+                    // Rollback on failure
+                    console.error('[YTKit] Import apply failed, rolling back:', applyErr);
+                    this.save(backup.settings);
+                    StorageManager.set('ytkit-hidden-videos', backup.hiddenVideos);
+                    StorageManager.set('ytkit-blocked-channels', backup.blockedChannels);
+                    StorageManager.set('ytkit-bookmarks', backup.bookmarks);
+                    return false;
+                }
             } catch (e) {
                 console.error("[YTKit] Failed to import settings:", e);
                 return false;
@@ -4511,30 +4548,41 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async _fetchSegments(videoID) {
                 try {
-                    const hashPrefix = await this._getHashPrefix(videoID);
+                    const hash = await this._sha256(videoID);
                     const params = new URLSearchParams({
                         categories: JSON.stringify(this._categories),
                         actionTypes: JSON.stringify(["skip", "full"])
                     });
-                    return new Promise((resolve) => {
-                        GM.xmlHttpRequest({
-                            method: "GET",
-                            url: `https://sponsor.ajay.app/api/skipSegments/${hashPrefix}?${params}`,
-                            headers: { Accept: "application/json" },
-                            onload: (response) => {
-                                if (response.status === 200) {
-                                    try {
-                                        const data = JSON.parse(response.responseText);
-                                        const videoData = data.find(v => v.videoID === videoID);
-                                        const segs = videoData?.segments || [];
-                                        segs.sort((a, b) => a.segment[0] - b.segment[0]);
-                                        resolve(segs);
-                                    } catch { resolve([]); }
-                                } else { resolve([]); }
-                            },
-                            onerror: () => resolve([])
+                    // Try with 4-char prefix first, fallback to 6-char on 404
+                    const prefixes = [hash.slice(0, 4), hash.slice(0, 6)];
+                    for (const prefix of prefixes) {
+                        const result = await new Promise((resolve) => {
+                            GM.xmlHttpRequest({
+                                method: "GET",
+                                url: `https://sponsor.ajay.app/api/skipSegments/${prefix}?${params}`,
+                                headers: { Accept: "application/json" },
+                                onload: (response) => {
+                                    if (response.status === 200) {
+                                        try {
+                                            const data = JSON.parse(response.responseText);
+                                            const videoData = data.find(v => v.videoID === videoID);
+                                            const segs = videoData?.segments || [];
+                                            segs.sort((a, b) => a.segment[0] - b.segment[0]);
+                                            resolve({ found: true, segments: segs });
+                                        } catch { resolve({ found: false, retry: false }); }
+                                    } else if (response.status === 404) {
+                                        resolve({ found: false, retry: true });
+                                    } else {
+                                        resolve({ found: false, retry: false });
+                                    }
+                                },
+                                onerror: () => resolve({ found: false, retry: false })
+                            });
                         });
-                    });
+                        if (result.found) return result.segments;
+                        if (!result.retry) return [];
+                    }
+                    return [];
                 } catch { return []; }
             },
 
@@ -4658,6 +4706,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._state.segments = await this._fetchSegments(this._state.videoID);
                     if (this._state.segments.length > 0) {
                         DebugManager.log('SponsorBlock', `Found ${this._state.segments.length} segments`);
+                        const skipCount = this._state.segments.filter(s => s.actionType !== 'full').length;
+                        if (skipCount > 0) {
+                            showToast(`SponsorBlock: ${skipCount} segment${skipCount !== 1 ? 's' : ''} found`, '#00d400', { duration: 2 });
+                        }
                     }
                     this._computeSkippableSegments();
                     this._updatePreviewBar();
@@ -4755,7 +4807,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         cssFeature('hideSponsorBlockLabels', 'Hide SponsorBlock Labels', 'Hide the category labels added by SponsorBlock', 'SponsorBlock', 'tag-off',
             '[id^="ytkit-sb-label-"]', { isSubFeature: true, parentId: 'skipSponsors' }),
                 // Auto-generated SponsorBlock sub-features
-        ...([['sponsor','Skip: Sponsor','Auto-skip sponsor segments'],['selfpromo','Skip: Self Promotion','Auto-skip self-promotion segments'],['interaction','Skip: Interaction Reminder','Auto-skip subscribe/like reminders'],['intro','Skip: Intro','Auto-skip intro animations'],['outro','Skip: Outro','Auto-skip outro/credits'],['music_offtopic','Skip: Off-Topic Music','Auto-skip non-music in music videos'],['preview','Skip: Preview/Recap','Auto-skip preview or recap sections'],['filler','Skip: Filler','Auto-skip filler/tangent sections']].map(([v,n,d])=>({id:'sbCat_'+v,name:n,description:d,group:'SponsorBlock',icon:'list',isSubFeature:true,parentId:'skipSponsors',_arrayKey:'sponsorBlockCategories',_arrayValue:v,init(){},destroy(){}}))),
+        ...([['sponsor','Skip: Sponsor','Paid promotion, paid referrals, direct advertisements'],['selfpromo','Skip: Self Promotion','Unpaid self-promotion: merch, channel plugs, social media links'],['interaction','Skip: Interaction Reminder','Subscribe, like, comment reminders and engagement prompts'],['intro','Skip: Intro','Intro animation, title card, or cold open with no content'],['outro','Skip: Outro','End cards, credits, outros with no new content'],['music_offtopic','Skip: Off-Topic Music','Non-music sections in music videos (e.g. talking, behind-the-scenes)'],['preview','Skip: Preview/Recap','Preview of upcoming content or recap of previous episodes'],['filler','Skip: Filler','Tangential scenes, off-topic jokes, or filler with no value']].map(([v,n,d])=>({id:'sbCat_'+v,name:n,description:d,group:'SponsorBlock',icon:'list',isSubFeature:true,parentId:'skipSponsors',_arrayKey:'sponsorBlockCategories',_arrayValue:v,init(){},destroy(){}}))),
 
         // ─── Quality ───
         {
@@ -5213,6 +5265,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 'savefrom': 'https://en.savefrom.net/1-youtube-video-downloader-',
                 'ssyoutube': 'https://ssyoutube.com/watch?v='
             },
+            _cobaltFallbacks: [
+                'https://cobalt.meowing.de/#',
+                'https://cobalt.tools/#',
+                'https://co.wuk.sh/#',
+            ],
             _getDownloadUrl(videoUrl) {
                 const provider = appState.settings.downloadProvider || 'cobalt';
                 const baseUrl = this._providers[provider] || this._providers['cobalt'];
@@ -5233,6 +5290,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 return baseUrl + encodeURIComponent(videoUrl);
             },
+            _checkCobaltHealth() {
+                const provider = appState.settings.downloadProvider || 'cobalt';
+                if (provider !== 'cobalt') return;
+                const cobaltUrl = GM_getValue('ytkit_cobalt_url', 'https://cobalt.meowing.de/#');
+                try {
+                    const origin = new URL(cobaltUrl).origin;
+                    GM.xmlHttpRequest({
+                        method: 'HEAD',
+                        url: origin,
+                        timeout: 5000,
+                        onload: (r) => {
+                            if (r.status >= 400) this._tryCobaltFallback(cobaltUrl);
+                        },
+                        onerror: () => this._tryCobaltFallback(cobaltUrl),
+                        ontimeout: () => this._tryCobaltFallback(cobaltUrl),
+                    });
+                } catch(e) { /* invalid URL, ignore */ }
+            },
+            _tryCobaltFallback(failedUrl) {
+                const fallback = this._cobaltFallbacks.find(u => u !== failedUrl);
+                if (fallback) {
+                    GM_setValue('ytkit_cobalt_url', fallback);
+                    showToast('Cobalt instance unreachable, switched to fallback: ' + fallback, '#f59e0b', { duration: 5 });
+                    DebugManager.log('Cobalt', `Switched from ${failedUrl} to ${fallback}`);
+                }
+            },
             _isWatchPage() { return window.location.pathname.startsWith('/watch'); },
             _injectButton() {
                 if (!this._isWatchPage()) return;
@@ -5243,9 +5326,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     btn.id = id;
                     btn.textContent = 'Download';
                     btn.setAttribute('aria-label', 'Download video');
-                    btn.style.cssText = `font-size:14px;padding:6px 12px;margin-left:8px;border-radius:20px;border:2px solid #ff5722;background:transparent;color:#ff5722;cursor:pointer;transition:background .2s,color .2s;`;
-                    btn.onmouseenter = () => { btn.style.background = '#ff5722'; btn.style.color = '#fff'; };
-                    btn.onmouseleave = () => { btn.style.background = 'transparent'; btn.style.color = '#ff5722'; };
+                    btn.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:#ff5722;color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;`;
+                    btn.onmouseenter = () => { btn.style.background = '#e64a19'; };
+                    btn.onmouseleave = () => { btn.style.background = '#ff5722'; };
                     btn.addEventListener('click', () => {
                         const videoUrl = window.location.href;
                         const downloadUrl = this._getDownloadUrl(videoUrl);
@@ -5257,6 +5340,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._styleElement = injectStyle('ytd-download-button-renderer', 'hideNativeDownload');
                 addNavigateRule('downloadButton', this._injectButton.bind(this));
+                this._checkCobaltHealth();
             },
             destroy() {
                 removeNavigateRule('downloadButton');
@@ -5518,7 +5602,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (document.getElementById('ytkit-subs-load-banner')) return;
                 const banner = document.createElement('div');
                 banner.id = 'ytkit-subs-load-banner';
-                banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:99999;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:"Roboto",Arial,sans-serif;max-width:600px;';
+                banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:' + Z.BANNER + ';box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:"Roboto",Arial,sans-serif;max-width:600px;';
 
                 const icon = document.createElement('div');
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -5924,12 +6008,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 const css = `
-                    .ytkit-video-hide-btn { position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;transition:all 0.15s;padding:0;color:#fff; }
+                    .ytkit-video-hide-btn { position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:${Z.HIDE_BTN};opacity:0;transition:all 0.15s;padding:0;color:#fff; }
                     .ytkit-video-hide-btn:hover { background:rgba(200,0,0,0.9);transform:scale(1.1); }
                     .ytkit-video-hide-btn svg { width:16px;height:16px;fill:#fff;pointer-events:none; }
                     ytd-rich-item-renderer:hover .ytkit-video-hide-btn, ytd-video-renderer:hover .ytkit-video-hide-btn, ytd-grid-video-renderer:hover .ytkit-video-hide-btn, ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity:1; }
                     .ytkit-video-hidden { display:none !important; }
-                    #ytkit-hide-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#323232;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:99999;opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3); }
+                    #ytkit-hide-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#323232;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:${Z.TOAST};opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3); }
                     #ytkit-hide-toast.show { transform:translateX(-50%) translateY(0);opacity:1; }
                     #ytkit-hide-toast button { background:transparent;border:none;color:#3ea6ff;cursor:pointer;font-size:14px;font-weight:500;padding:4px 8px;border-radius:4px; }
                     #ytkit-hide-toast button:hover { background:rgba(62,166,255,0.1); }
@@ -6032,7 +6116,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.onmouseleave = () => { btn.style.background = '#f97316'; };
                 btn.addEventListener('click', () => {
                     showToast('🎬 Sending to VLC...', '#f97316');
-                    window.location.href = 'ytvlc://' + encodeURIComponent(window.location.href);
+                    try {
+                        window.location.href = 'ytvlc://' + encodeURIComponent(window.location.href);
+                    } catch(e) {
+                        showToast('VLC protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                    }
                 });
                 parent.appendChild(btn);
             },
@@ -6070,7 +6158,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.onmouseleave = () => { btn.style.background = '#22c55e'; };
                 btn.addEventListener('click', () => {
                     showToast('⬇️ Starting download...', '#22c55e');
-                    window.location.href = 'ytdl://' + encodeURIComponent(window.location.href);
+                    try {
+                        window.location.href = 'ytdl://' + encodeURIComponent(window.location.href);
+                    } catch(e) {
+                        showToast('yt-dlp protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                    }
                 });
                 parent.appendChild(btn);
             },
@@ -6108,7 +6200,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.onmouseleave = () => { btn.style.background = '#8b5cf6'; };
                 btn.addEventListener('click', () => {
                     showToast('🎵 Starting MP3 download...', '#8b5cf6');
-                    window.location.href = 'ytdl://' + encodeURIComponent(window.location.href) + '?ytyt_audio_only=1';
+                    try {
+                        window.location.href = 'ytdl://' + encodeURIComponent(window.location.href) + '?ytyt_audio_only=1';
+                    } catch(e) {
+                        showToast('yt-dlp protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                    }
                 });
                 parent.appendChild(btn);
             },
@@ -6138,7 +6234,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 this._styleElement = document.createElement('style');
                 this._styleElement.id = 'ytkit-context-menu-styles';
-                this._styleElement.textContent = `.ytkit-context-menu{position:fixed;z-index:999999;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:6px 0;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.5);font-family:"Roboto",Arial,sans-serif;font-size:14px;animation:ytkit-menu-fade 0.15s ease-out;} @keyframes ytkit-menu-fade{from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} } .ytkit-context-menu-header{padding:8px 14px;color:#888;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #333;margin-bottom:4px;} .ytkit-context-menu-item{display:flex;align-items:center;gap:12px;padding:10px 14px;color:#e0e0e0;cursor:pointer;transition:background 0.1s;} .ytkit-context-menu-item:hover{background:#2d2d44;} .ytkit-context-menu-item svg{width:18px;height:18px;flex-shrink:0;} .ytkit-context-menu-item.ytkit-item-video svg{color:#22c55e;} .ytkit-context-menu-item.ytkit-item-audio svg{color:#8b5cf6;} .ytkit-context-menu-item.ytkit-item-transcript svg{color:#3b82f6;} .ytkit-context-menu-item.ytkit-item-vlc svg{color:#f97316;} .ytkit-context-menu-item.ytkit-item-mpv svg{color:#ec4899;} .ytkit-context-menu-item.ytkit-item-embed svg{color:#06b6d4;} .ytkit-context-menu-item.ytkit-item-copy svg{color:#fbbf24;} .ytkit-context-menu-divider{height:1px;background:#333;margin:6px 0;} .ytkit-context-menu-item .ytkit-shortcut{margin-left:auto;color:#666;font-size:12px;}`;
+                this._styleElement.textContent = `.ytkit-context-menu{position:fixed;z-index:${Z.CONTEXT_MENU};background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:6px 0;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,0.5);font-family:"Roboto",Arial,sans-serif;font-size:14px;animation:ytkit-menu-fade 0.15s ease-out;} @keyframes ytkit-menu-fade{from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} } .ytkit-context-menu-header{padding:8px 14px;color:#888;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #333;margin-bottom:4px;} .ytkit-context-menu-item{display:flex;align-items:center;gap:12px;padding:10px 14px;color:#e0e0e0;cursor:pointer;transition:background 0.1s;} .ytkit-context-menu-item:hover{background:#2d2d44;} .ytkit-context-menu-item svg{width:18px;height:18px;flex-shrink:0;} .ytkit-context-menu-item.ytkit-item-video svg{color:#22c55e;} .ytkit-context-menu-item.ytkit-item-audio svg{color:#8b5cf6;} .ytkit-context-menu-item.ytkit-item-transcript svg{color:#3b82f6;} .ytkit-context-menu-item.ytkit-item-vlc svg{color:#f97316;} .ytkit-context-menu-item.ytkit-item-mpv svg{color:#ec4899;} .ytkit-context-menu-item.ytkit-item-embed svg{color:#06b6d4;} .ytkit-context-menu-item.ytkit-item-copy svg{color:#fbbf24;} .ytkit-context-menu-divider{height:1px;background:#333;margin:6px 0;} .ytkit-context-menu-item .ytkit-shortcut{margin-left:auto;color:#666;font-size:12px;}`;
                 document.head.appendChild(this._styleElement);
             },
 
@@ -6163,6 +6259,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     { id: 'embed-player', icon: 'tv', label: 'Use Embed Player', class: 'ytkit-item-embed', action: () => this._activateEmbed() },
                     { divider: true },
                     { id: 'copy-url', icon: 'link', label: 'Copy Video URL', class: 'ytkit-item-copy', action: () => this._copyURL() },
+                    { id: 'copy-url-time', icon: 'link', label: 'Copy URL at Timestamp', class: 'ytkit-item-copy', action: () => this._copyURLAtTime() },
                     { id: 'copy-id', icon: 'hash', label: 'Copy Video ID', class: 'ytkit-item-copy', action: () => this._copyID() },
                 ];
 
@@ -6341,14 +6438,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _downloadVideo() {
                 const url = window.location.href;
                 showToast('⬇️ Starting video download...', '#22c55e');
-                window.location.href = 'ytdl://' + encodeURIComponent(url);
+                try {
+                    window.location.href = 'ytdl://' + encodeURIComponent(url);
+                } catch(e) {
+                    showToast('yt-dlp protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                }
             },
 
             _downloadAudio() {
                 const url = window.location.href;
                 showToast('🎵 Starting audio download...', '#a855f7');
-                // Use ytdl with audio-only flag (assuming handler supports it)
-                window.location.href = 'ytdl://' + encodeURIComponent(url + '&ytkit_audio_only=1');
+                try {
+                    window.location.href = 'ytdl://' + encodeURIComponent(url + '&ytkit_audio_only=1');
+                } catch(e) {
+                    showToast('yt-dlp protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                }
             },
 
             async _downloadTranscript() {
@@ -6358,19 +6462,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _streamVLC() {
                 const url = window.location.href;
                 showToast('Sending to VLC...', '#f97316');
-                window.location.href = 'ytvlc://' + encodeURIComponent(url);
+                try {
+                    window.location.href = 'ytvlc://' + encodeURIComponent(url);
+                } catch(e) {
+                    showToast('VLC protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                }
             },
 
             _streamMPV() {
                 const url = window.location.href;
                 showToast('🎬 Sending to MPV...', '#8b5cf6');
-                window.location.href = 'ytmpv://' + encodeURIComponent(url);
+                try {
+                    window.location.href = 'ytmpv://' + encodeURIComponent(url);
+                } catch(e) {
+                    showToast('MPV protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                }
             },
 
             _addToVLCQueue() {
                 const url = window.location.href;
                 showToast('📋 Adding to VLC queue...', '#f97316');
-                window.location.href = 'ytvlcq://' + encodeURIComponent(url);
+                try {
+                    window.location.href = 'ytvlcq://' + encodeURIComponent(url);
+                } catch(e) {
+                    showToast('VLC Queue protocol handler not found. Install YTYT-Downloader.', '#ef4444', { duration: 5 });
+                }
             },
 
             async _activateEmbed() {
@@ -6382,21 +6498,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _copyURL() {
                 navigator.clipboard.writeText(window.location.href).then(() => {
-                    this._showToast('URL copied to clipboard');
+                    showToast('URL copied to clipboard', '#22c55e');
                 });
+            },
+
+            _copyURLAtTime() {
+                const video = document.querySelector('video');
+                if (video) {
+                    const t = Math.floor(video.currentTime);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('t', t + 's');
+                    navigator.clipboard.writeText(url.toString()).then(() => {
+                        showToast(`URL copied at ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`, '#22c55e');
+                    });
+                } else {
+                    this._copyURL();
+                }
             },
 
             _copyID() {
                 const videoId = getVideoId();
                 if (videoId) {
                     navigator.clipboard.writeText(videoId).then(() => {
-                        this._showToast('Video ID copied: ' + videoId);
+                        showToast('Video ID copied: ' + videoId, '#22c55e');
                     });
                 }
-            },
-
-            _showToast(message) {
-                showToast(message, '#22c55e');
             },
 
             init() {
@@ -9223,6 +9349,8 @@ pause
 
                     if (feature) {
                         if (isEnabled) {
+                            // Reset crash counter on manual toggle-on
+                            _featureCrashCounts[featureId] = 0;
                             try { feature.init?.(); feature._initialized = true; } catch(err) {
                                 console.error(`[YTKit] Error initializing "${featureId}":`, err);
                                 DebugManager.log('Toggle', `Init failed for "${featureId}": ${err.message}`);
@@ -9379,7 +9507,7 @@ pause
 
     //  SECTION 5: STYLES
     function injectPanelStyles() {
-        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99998;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:99999;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:100000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);}ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);}  .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+        GM_addStyle(`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');:root{--ytkit-font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--ytkit-bg-base:#0a0a0b;--ytkit-bg-elevated:#111113;--ytkit-bg-surface:#18181b;--ytkit-bg-hover:#1f1f23;--ytkit-bg-active:#27272a;--ytkit-border:#27272a;--ytkit-border-subtle:#1f1f23;--ytkit-text-primary:#fafafa;--ytkit-text-secondary:#a1a1aa;--ytkit-text-muted:#71717a;--ytkit-accent:#ff4e45;--ytkit-accent-soft:rgba(255,78,69,0.15);--ytkit-success:#22c55e;--ytkit-error:#ef4444;--ytkit-radius-sm:6px;--ytkit-radius-md:10px;--ytkit-radius-lg:14px;--ytkit-radius-xl:20px;--ytkit-shadow-sm:0 1px 2px rgba(0,0,0,0.3);--ytkit-shadow-md:0 4px 12px rgba(0,0,0,0.4);--ytkit-shadow-lg:0 8px 32px rgba(0,0,0,0.5);--ytkit-shadow-xl:0 24px 64px rgba(0,0,0,0.6);--ytkit-transition:200ms cubic-bezier(0.4,0,0.2,1);} .ytkit-vlc-btn,.ytkit-local-dl-btn,.ytkit-mp3-dl-btn,.ytkit-transcript-btn,.ytkit-mpv-btn,.ytkit-dlplay-btn,.ytkit-embed-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;z-index:9999 !important;position:relative !important;} /* z-index for action buttons kept at 9999 to ensure visibility within YT layout */ .ytkit-button-container{display:flex !important;gap:8px !important;margin:8px 0 !important;flex-wrap:wrap !important;visibility:visible !important;} .ytkit-trigger-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;margin:0 4px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-trigger-btn svg{width:22px;height:22px;color:var(--yt-spec-icon-inactive,#aaa);transition:all var(--ytkit-transition);} .ytkit-trigger-btn:hover{background:var(--yt-spec-badge-chip-background,rgba(255,255,255,0.1));} .ytkit-trigger-btn:hover svg{color:var(--yt-spec-text-primary,#fff);transform:rotate(45deg);} #ytkit-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:80000;opacity:0;pointer-events:none;transition:opacity 300ms ease;} body.ytkit-panel-open #ytkit-overlay{opacity:1;pointer-events:auto;} #ytkit-settings-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.96);z-index:80001;display:flex;flex-direction:column;width:95%;max-width:1100px;height:85vh;max-height:800px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-xl);box-shadow:var(--ytkit-shadow-xl),0 0 0 1px rgba(255,255,255,0.05) inset;font-family:var(--ytkit-font);color:var(--ytkit-text-primary);opacity:0;pointer-events:none;transition:all 300ms cubic-bezier(0.32,0.72,0,1);overflow:hidden;} body.ytkit-panel-open #ytkit-settings-panel{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);} .ytkit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:linear-gradient(180deg,var(--ytkit-bg-elevated) 0%,var(--ytkit-bg-base) 100%);border-bottom:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-brand{display:flex;align-items:center;gap:12px;} .ytkit-logo{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,#ff0000 0%,#cc0000 100%);border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px rgba(255,0,0,0.3);} .ytkit-yt-icon{width:26px;height:auto;} .ytkit-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0;} .ytkit-title-yt{background:linear-gradient(135deg,#ff4e45 0%,#ff0000 50%,#ff4e45 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ytkit-shimmer 3s linear infinite;} .ytkit-title-kit{color:var(--ytkit-text-primary);} @keyframes ytkit-shimmer{0%{background-position:0% center;} 100%{background-position:200% center;} } .ytkit-badge{padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff4e45,#ff0000);border-radius:100px;box-shadow:0 2px 8px rgba(255,78,69,0.4);} .ytkit-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-close svg{width:18px;height:18px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-close:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);} .ytkit-close:hover svg{color:#fff;} .ytkit-body{display:flex;flex:1;overflow:hidden;} .ytkit-sidebar{display:flex;flex-direction:column;width:240px;padding:16px 12px;background:var(--ytkit-bg-elevated);border-right:1px solid var(--ytkit-border);overflow-y:auto;flex-shrink:0;} .ytkit-search-container{position:relative;margin-bottom:12px;} .ytkit-search-input{width:100%;padding:10px 12px 10px 36px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-size:13px;transition:all var(--ytkit-transition);} .ytkit-search-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px rgba(255,78,69,0.15);} .ytkit-search-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ytkit-text-muted);pointer-events:none;} .ytkit-sidebar-divider{height:1px;background:var(--ytkit-border);margin:8px 0 12px;} .ytkit-pane.ytkit-search-active{display:block;} .ytkit-pane.ytkit-search-active .ytkit-pane-header{display:none;} .ytkit-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-bottom:2px;background:transparent;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);text-align:left;} .ytkit-nav-btn:hover{background:var(--ytkit-bg-hover);} .ytkit-nav-btn.active{background:var(--ytkit-bg-active);} .ytkit-nav-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);flex-shrink:0;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon{background:var(--cat-color,var(--ytkit-accent));box-shadow:0 2px 8px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 40%,transparent);} .ytkit-nav-icon svg{width:16px;height:16px;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-icon svg{color:#fff;} .ytkit-nav-label{flex:1;font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);transition:color var(--ytkit-transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .ytkit-nav-btn.active .ytkit-nav-label{color:var(--ytkit-text-primary);} .ytkit-nav-count{font-size:11px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:2px 6px;border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-nav-btn.active .ytkit-nav-count{background:rgba(255,255,255,0.15);color:var(--ytkit-text-primary);} .ytkit-nav-arrow{display:flex;opacity:0;transition:opacity var(--ytkit-transition);} .ytkit-nav-arrow svg{width:14px;height:14px;color:var(--ytkit-text-muted);} .ytkit-nav-btn.active .ytkit-nav-arrow{opacity:1;} .ytkit-nav-group-label{padding:4px 12px 2px;font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ytkit-text-muted);user-select:none;pointer-events:none;} .ytkit-content{flex:1;padding:24px;overflow-y:auto;background:var(--ytkit-bg-base);} .ytkit-pane{display:none;animation:ytkit-fade-in 300ms ease;} .ytkit-pane.active{display:block;} .ytkit-pane.ytkit-vh-pane.active{display:flex;flex-direction:column;height:100%;max-height:calc(85vh - 180px);} #ytkit-vh-content{flex:1;overflow-y:auto;padding-right:8px;} @keyframes ytkit-fade-in{from{opacity:0;transform:translateX(8px);} to{opacity:1;transform:translateX(0);} } @keyframes ytkit-badge-pulse{0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} } .ytkit-pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ytkit-border);} .ytkit-pane-title{display:flex;align-items:center;gap:12px;} .ytkit-pane-icon{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--cat-color,var(--ytkit-accent));border-radius:var(--ytkit-radius-md);box-shadow:0 4px 12px color-mix(in srgb,var(--cat-color,var(--ytkit-accent)) 30%,transparent);} .ytkit-pane-icon svg{width:20px;height:20px;color:#fff;} .ytkit-pane-title h2{font-size:20px;font-weight:600;margin:0;color:var(--ytkit-text-primary);} .ytkit-toggle-all{display:flex;align-items:center;gap:10px;cursor:pointer;} .ytkit-toggle-all span{font-size:13px;font-weight:500;color:var(--ytkit-text-secondary);} .ytkit-reset-group-btn{padding:6px 12px;margin-right:12px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-reset-group-btn:hover{background:var(--ytkit-error);border-color:var(--ytkit-error);color:#fff;} .ytkit-features-grid{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border-subtle);border-left:3px solid transparent;border-radius:var(--ytkit-radius-md);transition:all var(--ytkit-transition);} .ytkit-feature-card:hover{background:var(--ytkit-bg-hover);border-color:var(--ytkit-border);border-left-color:transparent;} .ytkit-feature-card.ytkit-card-enabled{border-left-color:var(--cat-color,var(--ytkit-accent));} .ytkit-sub-card{margin-left:24px;background:var(--ytkit-bg-elevated);border-left:2px solid var(--ytkit-accent-soft);} .ytkit-sub-features{display:flex;flex-direction:column;gap:8px;} .ytkit-feature-info{flex:1;min-width:0;padding-right:16px;} .ytkit-feature-name{font-size:14px;font-weight:600;color:var(--ytkit-text-primary);margin:0 0 4px 0;} .ytkit-feature-desc{font-size:12px;color:var(--ytkit-text-muted);margin:0;line-height:1.4;} .ytkit-textarea-card{flex-direction:column;align-items:stretch;gap:12px;} .ytkit-textarea-card .ytkit-feature-info{padding-right:0;} .ytkit-input{width:100%;padding:10px 12px;font-family:var(--ytkit-font);font-size:13px;color:var(--ytkit-text-primary);background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-sm);resize:vertical;min-height:60px;transition:all var(--ytkit-transition);} .ytkit-input:focus{outline:none;border-color:var(--ytkit-accent);box-shadow:0 0 0 3px var(--ytkit-accent-soft);} .ytkit-input::placeholder{color:var(--ytkit-text-muted);} .ytkit-switch{position:relative;width:44px;height:24px;flex-shrink:0;} .ytkit-switch input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;z-index:1;margin:0;} .ytkit-switch-track{position:absolute;inset:0;background:var(--ytkit-bg-active);border-radius:100px;transition:all var(--ytkit-transition);} .ytkit-switch.active .ytkit-switch-track{background:var(--switch-color,var(--ytkit-accent));box-shadow:0 0 12px color-mix(in srgb,var(--switch-color,var(--ytkit-accent)) 50%,transparent);} .ytkit-switch-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:var(--ytkit-shadow-sm);transition:all var(--ytkit-transition);display:flex;align-items:center;justify-content:center;} .ytkit-switch.active .ytkit-switch-thumb{transform:translateX(20px);} .ytkit-switch-icon{display:flex;opacity:0;transform:scale(0.5);transition:all var(--ytkit-transition);} .ytkit-switch-icon svg{width:12px;height:12px;color:var(--switch-color,var(--ytkit-accent));} .ytkit-switch.active .ytkit-switch-icon{opacity:1;transform:scale(1);} .ytkit-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--ytkit-bg-elevated);border-top:1px solid var(--ytkit-border);flex-shrink:0;} .ytkit-footer-left{display:flex;align-items:center;gap:16px;} .ytkit-github{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);border-radius:var(--ytkit-radius-sm);transition:all var(--ytkit-transition);} .ytkit-github:hover{color:var(--ytkit-text-primary);background:var(--ytkit-bg-hover);} .ytkit-github svg{width:18px;height:18px;} .ytkit-version{font-size:12px;font-weight:600;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 10px;border-radius:100px;} .ytkit-shortcut{font-size:11px;color:var(--ytkit-text-muted);background:var(--ytkit-bg-surface);padding:4px 8px;border-radius:var(--ytkit-radius-sm);font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,monospace;} .ytkit-footer-right{display:flex;gap:10px;} .ytkit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;font-family:var(--ytkit-font);font-size:13px;font-weight:600;border:none;border-radius:var(--ytkit-radius-md);cursor:pointer;transition:all var(--ytkit-transition);} .ytkit-btn svg{width:16px;height:16px;} .ytkit-btn-secondary{color:var(--ytkit-text-secondary);background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);} .ytkit-btn-secondary:hover{background:var(--ytkit-bg-hover);color:var(--ytkit-text-primary);} .ytkit-btn-primary{color:#fff;background:linear-gradient(135deg,#ff4e45,#e6423a);box-shadow:0 2px 8px rgba(255,78,69,0.3);} .ytkit-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,78,69,0.4);} .ytkit-toast{position:fixed;bottom:-80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:14px 20px;font-family:var(--ytkit-font);font-size:14px;font-weight:500;color:#fff;background:var(--ytkit-bg-surface);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-lg);box-shadow:var(--ytkit-shadow-lg);z-index:90000;transition:all 400ms cubic-bezier(0.68,-0.55,0.27,1.55);} .ytkit-toast.show{bottom:24px;} .ytkit-toast-success{border-color:var(--ytkit-success);box-shadow:0 4px 20px rgba(34,197,94,0.2);} .ytkit-toast-error{border-color:var(--ytkit-error);box-shadow:0 4px 20px rgba(239,68,68,0.2);}ytd-watch-metadata.watch-active-metadata{margin-top:180px !important;} ytd-live-chat-frame:not([style*="position"]){margin-top:-57px !important;width:402px !important;} .ytkit-sidebar::-webkit-scrollbar,.ytkit-content::-webkit-scrollbar{width:6px;} .ytkit-sidebar::-webkit-scrollbar-track,.ytkit-content::-webkit-scrollbar-track{background:transparent;} .ytkit-sidebar::-webkit-scrollbar-thumb,.ytkit-content::-webkit-scrollbar-thumb{background:var(--ytkit-border);border-radius:100px;} .ytkit-sidebar::-webkit-scrollbar-thumb:hover,.ytkit-content::-webkit-scrollbar-thumb:hover{background:var(--ytkit-text-muted);}  .ytkit-css-editor{width:100%;min-height:150px;padding:12px;background:var(--ytkit-bg-base);border:1px solid var(--ytkit-border);border-radius:var(--ytkit-radius-md);color:var(--ytkit-text-primary);font-family:'Monaco','Menlo','Ubuntu Mono',monospace;font-size:13px;line-height:1.5;resize:vertical;} .ytkit-css-editor:focus{outline:none;border-color:var(--ytkit-accent);} .ytkit-bulk-bar{animation:slideDown 0.2s ease-out;} @keyframes slideDown{from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
 
 /* ─── Drag-reorder sidebar ─── */
 .ytkit-nav-btn{cursor:grab;user-select:none;}
