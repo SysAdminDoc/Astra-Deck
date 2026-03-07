@@ -4,6 +4,22 @@ All notable changes to YTKit are documented here. Versions are listed newest-fir
 
 ---
 
+## [2.3.0] - Robustness & Polish
+
+- Protocol handler error handling: try/catch with informative toast for ytdl://, ytvlc://, ytmpv://, ytvlcq:// failures
+- SponsorBlock hash prefix fallback: retries with 6-char prefix on 404 (improves segment detection)
+- Updated ad blocker PRUNE_KEYS with 2025+ YouTube ad payload keys
+- Updated AD_RENDERER_KEYS_ARR with newer ad renderer types
+- Cobalt instance health check: HEAD request on init, auto-switches to fallback if unreachable
+- Established z-index hierarchy constants (Z.TOAST, Z.CONTEXT_MENU, Z.SETTINGS_PANEL, etc.) to prevent layer collisions
+- Settings import rollback protection: validates import data and restores backup on failure
+- Crash counter resets on manual feature toggle (previously stayed stuck after SPA navigation crashes)
+- Merged duplicate _showToast wrappers into direct showToast calls
+- SponsorBlock category descriptions now show detailed explanations in settings
+- Added "Copy URL at Timestamp" to video context menu
+- SponsorBlock segment count toast shown when segments are found
+- Standardized web download button styling to match VLC/DL/MP3 pill buttons
+
 ## [2.2.0] - Architecture Hardening
 
 - Centralized error boundaries for all feature init/destroy/toggle paths with DebugManager logging
