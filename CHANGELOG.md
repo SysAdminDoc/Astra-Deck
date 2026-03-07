@@ -4,6 +4,21 @@ All notable changes to YTKit are documented here. Versions are listed newest-fir
 
 ---
 
+## [2.2.0] - Architecture Hardening
+
+- Centralized error boundaries for all feature init/destroy/toggle paths with DebugManager logging
+- Settings migration versioning system (auto-migrates stored settings across version upgrades)
+- Topological sort for feature initialization (parents always init before children)
+- Fixed 37+ silent catch blocks with structured error logging
+- Fixed empty destroy() methods: quickLinkEditor event listener leak, cobaltUrl GM storage cleanup
+- Fixed playerContextMenu moviePlayer listener leak (stored reference + cleanup in destroy)
+- Fixed Video Hider batch buffer not cleared on destroy
+- Migrated chatStyleComments from standalone MutationObserver to central dispatcher
+- Added DOM element cache (`cachedQuery`) with SPA navigation invalidation
+- Debounced Video Hider `_processAllVideos()` to prevent rapid reprocessing on navigation
+- Consistent `_initialized` state tracking across all toggle, reset, and navigation paths
+- Fixed stale version strings (was showing 1.3.6 in console/exports)
+
 ## [2.1.0] - Refined Core
 
 - Re-added auto-resume video position with configurable threshold
