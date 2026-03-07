@@ -942,7 +942,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '2.4.0';
+    const YTKIT_VERSION = '2.5.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -1451,17 +1451,17 @@
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         },
 
+        _cachedApiKey: null,
         _getInnertubeApiKey() {
-            // Prefer ytcfg (cheap) over innerHTML regex (forces full DOM serialization)
+            if (this._cachedApiKey) return this._cachedApiKey;
             if (typeof window.ytcfg !== 'undefined' && window.ytcfg.get) {
                 const key = window.ytcfg.get('INNERTUBE_API_KEY');
-                if (key) return key;
+                if (key) { this._cachedApiKey = key; return key; }
             }
-            // Fallback: check script tags instead of body.innerHTML (much cheaper)
             const scripts = document.querySelectorAll('script');
             for (const s of scripts) {
                 const m = s.textContent.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
-                if (m) return m[1];
+                if (m) { this._cachedApiKey = m[1]; return m[1]; }
             }
             return null;
         },
@@ -2127,7 +2127,7 @@
 
             // v2.4.0 features
             mousewheelSpeed: true,
-            mousewheelVolume: true,
+            // mousewheelVolume removed in v2.5.0 (interfered with page scrolling)
             videoScreenshot: true,
             returnYoutubeDislike: true,
             cinemaMode: false,
@@ -7095,55 +7095,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         {
-            id: 'mousewheelVolume',
-            name: 'Mousewheel Volume Control',
-            description: 'Scroll on the video player to adjust volume (without Shift held)',
-            group: 'Playback',
-            icon: 'volume-2',
-            _handler: null,
-            _overlay: null,
-            _overlayTimer: null,
-            _showOverlay(text) {
-                if (!this._overlay) {
-                    this._overlay = document.createElement('div');
-                    this._overlay.className = 'ytkit-volume-overlay';
-                    this._overlay.style.cssText = 'position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.8);color:#fff;padding:6px 16px;border-radius:6px;font-size:16px;font-weight:600;font-family:"Roboto",sans-serif;z-index:100;pointer-events:none;opacity:0;transition:opacity 0.15s;display:flex;align-items:center;gap:8px;';
-                }
-                const player = document.querySelector('#movie_player');
-                if (player && !player.contains(this._overlay)) player.appendChild(this._overlay);
-                this._overlay.textContent = text;
-                this._overlay.style.opacity = '1';
-                clearTimeout(this._overlayTimer);
-                this._overlayTimer = setTimeout(() => { if (this._overlay) this._overlay.style.opacity = '0'; }, 800);
-            },
-            init() {
-                this._handler = (e) => {
-                    if (e.shiftKey) return; // Shift+scroll = speed control
-                    const player = document.querySelector('#movie_player');
-                    if (!player || !player.contains(e.target)) return;
-                    // Don't capture if scrolling on progress bar or controls
-                    if (e.target.closest('.ytp-chrome-bottom, .ytp-progress-bar')) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const video = document.querySelector('video.html5-main-video');
-                    if (!video) return;
-                    const step = 5;
-                    const delta = e.deltaY < 0 ? step : -step;
-                    const newVol = Math.min(100, Math.max(0, Math.round(video.volume * 100 + delta)));
-                    video.volume = newVol / 100;
-                    video.muted = newVol === 0;
-                    this._showOverlay('Vol: ' + newVol + '%');
-                };
-                document.addEventListener('wheel', this._handler, { passive: false, capture: true });
-            },
-            destroy() {
-                if (this._handler) document.removeEventListener('wheel', this._handler, true);
-                this._overlay?.remove();
-                this._overlay = null;
-                clearTimeout(this._overlayTimer);
-            }
-        },
-        {
             id: 'videoScreenshot',
             name: 'Video Screenshot',
             description: 'Press S while watching to capture the current video frame as PNG (copies to clipboard + downloads)',
@@ -9801,88 +9752,94 @@ pause
             }
         });
 
-        // Search functionality
+        // Search functionality (debounced)
+        let _searchDebounce = null;
         doc.addEventListener('input', (e) => {
             if (e.target.matches('#ytkit-search')) {
-                const query = e.target.value.toLowerCase().trim();
-                const allCards = doc.querySelectorAll('.ytkit-feature-card');
-                const allPanes = doc.querySelectorAll('.ytkit-pane');
-                const allNavBtns = doc.querySelectorAll('.ytkit-nav-btn');
-
-                // Clear all previous highlights
-                doc.querySelectorAll('.ytkit-feature-name, .ytkit-feature-desc').forEach(el => {
-                    if (el._originalText !== undefined) el.textContent = el._originalText;
-                });
-
-                if (!query) {
-                    // Reset to normal view
-                    allCards.forEach(card => card.style.display = '');
-                    allPanes.forEach(pane => pane.classList.remove('ytkit-search-active'));
-                    doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
-                        const parentId = sub.dataset.parentId;
-                        const enabled = appState.settings[parentId];
-                        sub.style.opacity = enabled ? '' : '0.35';
-                        sub.style.pointerEvents = enabled ? '' : 'none';
-                    });
-                    // Restore normal tab behavior
-                    if (!doc.querySelector('.ytkit-pane.active')) {
-                        allPanes[0]?.classList.add('active');
-                        allNavBtns[0]?.classList.add('active');
-                    }
-                    return;
-                }
-
-                // Show all panes for searching
-                allPanes.forEach(pane => pane.classList.add('ytkit-search-active'));
-                doc.querySelectorAll('.ytkit-sub-features').forEach(sub => { sub.style.opacity = ''; sub.style.pointerEvents = ''; });
-
-                // Helper to highlight text matches
-                const highlightText = (el, query) => {
-                    if (!el) return;
-                    if (el._originalText === undefined) el._originalText = el.textContent;
-                    const text = el._originalText;
-                    const idx = text.toLowerCase().indexOf(query);
-                    if (idx === -1) { el.textContent = text; return; }
-                    el.innerHTML = '';
-                    el.appendChild(document.createTextNode(text.substring(0, idx)));
-                    const mark = document.createElement('mark');
-                    mark.style.cssText = 'background:#fbbf24;color:#000;border-radius:2px;padding:0 1px;';
-                    mark.textContent = text.substring(idx, idx + query.length);
-                    el.appendChild(mark);
-                    el.appendChild(document.createTextNode(text.substring(idx + query.length)));
-                };
-
-                // Filter cards and highlight
-                let matchCount = 0;
-                allCards.forEach(card => {
-                    const nameEl = card.querySelector('.ytkit-feature-name');
-                    const descEl = card.querySelector('.ytkit-feature-desc');
-                    const name = nameEl?.textContent.toLowerCase() || '';
-                    const desc = descEl?.textContent.toLowerCase() || '';
-                    const matches = name.includes(query) || desc.includes(query);
-                    card.style.display = matches ? '' : 'none';
-                    if (matches) {
-                        matchCount++;
-                        highlightText(nameEl, query);
-                        highlightText(descEl, query);
-                    }
-                });
-
-                // Update nav buttons with match counts
-                allNavBtns.forEach(btn => {
-                    const catId = btn.dataset.tab;
-                    const pane = doc.getElementById(`ytkit-pane-${catId}`);
-                    if (pane) {
-                        const visibleCards = pane.querySelectorAll('.ytkit-feature-card:not([style*="display: none"])').length;
-                        const countEl = btn.querySelector('.ytkit-nav-count');
-                        if (countEl && query) {
-                            countEl.textContent = visibleCards > 0 ? `${visibleCards} match${visibleCards !== 1 ? 'es' : ''}` : '0';
-                            countEl.style.color = visibleCards > 0 ? '#22c55e' : '#666';
-                        }
-                    }
-                });
+                clearTimeout(_searchDebounce);
+                _searchDebounce = setTimeout(() => { _handleSearch(e.target.value); }, 150);
+                return;
             }
         });
+        function _handleSearch(rawQuery) {
+            const query = rawQuery.toLowerCase().trim();
+            const allCards = doc.querySelectorAll('.ytkit-feature-card');
+            const allPanes = doc.querySelectorAll('.ytkit-pane');
+            const allNavBtns = doc.querySelectorAll('.ytkit-nav-btn');
+
+            // Clear all previous highlights
+            doc.querySelectorAll('.ytkit-feature-name, .ytkit-feature-desc').forEach(el => {
+                if (el._originalText !== undefined) el.textContent = el._originalText;
+            });
+
+            if (!query) {
+                // Reset to normal view
+                allCards.forEach(card => card.style.display = '');
+                allPanes.forEach(pane => pane.classList.remove('ytkit-search-active'));
+                doc.querySelectorAll('.ytkit-sub-features').forEach(sub => {
+                    const parentId = sub.dataset.parentId;
+                    const enabled = appState.settings[parentId];
+                    sub.style.opacity = enabled ? '' : '0.35';
+                    sub.style.pointerEvents = enabled ? '' : 'none';
+                });
+                // Restore normal tab behavior
+                if (!doc.querySelector('.ytkit-pane.active')) {
+                    allPanes[0]?.classList.add('active');
+                    allNavBtns[0]?.classList.add('active');
+                }
+                return;
+            }
+
+            // Show all panes for searching
+            allPanes.forEach(pane => pane.classList.add('ytkit-search-active'));
+            doc.querySelectorAll('.ytkit-sub-features').forEach(sub => { sub.style.opacity = ''; sub.style.pointerEvents = ''; });
+
+            // Helper to highlight text matches
+            const highlightText = (el, q) => {
+                if (!el) return;
+                if (el._originalText === undefined) el._originalText = el.textContent;
+                const text = el._originalText;
+                const idx = text.toLowerCase().indexOf(q);
+                if (idx === -1) { el.textContent = text; return; }
+                el.innerHTML = '';
+                el.appendChild(document.createTextNode(text.substring(0, idx)));
+                const mark = document.createElement('mark');
+                mark.style.cssText = 'background:#fbbf24;color:#000;border-radius:2px;padding:0 1px;';
+                mark.textContent = text.substring(idx, idx + q.length);
+                el.appendChild(mark);
+                el.appendChild(document.createTextNode(text.substring(idx + q.length)));
+            };
+
+            // Filter cards and highlight
+            let matchCount = 0;
+            allCards.forEach(card => {
+                const nameEl = card.querySelector('.ytkit-feature-name');
+                const descEl = card.querySelector('.ytkit-feature-desc');
+                const name = nameEl?.textContent.toLowerCase() || '';
+                const desc = descEl?.textContent.toLowerCase() || '';
+                const matches = name.includes(query) || desc.includes(query);
+                card.style.display = matches ? '' : 'none';
+                if (matches) {
+                    matchCount++;
+                    highlightText(nameEl, query);
+                    highlightText(descEl, query);
+                }
+            });
+
+            // Update nav buttons with match counts
+            allNavBtns.forEach(btn => {
+                const catId = btn.dataset.tab;
+                const pane = doc.getElementById(`ytkit-pane-${catId}`);
+                if (pane) {
+                    const visibleCards = pane.querySelectorAll('.ytkit-feature-card:not([style*="display: none"])').length;
+                    const countEl = btn.querySelector('.ytkit-nav-count');
+                    if (countEl && query) {
+                        countEl.textContent = visibleCards > 0 ? `${visibleCards} match${visibleCards !== 1 ? 'es' : ''}` : '0';
+                        countEl.style.color = visibleCards > 0 ? '#22c55e' : '#666';
+                    }
+                }
+            });
+        }
 
         // Clear search on tab click
         doc.addEventListener('click', (e) => {
@@ -9941,16 +9898,29 @@ pause
                     appState.settings[featureId] = isEnabled;
                     settingsManager.save(appState.settings);
 
-                    // Conflict detection
+                    // Conflict enforcement — auto-disable conflicting features
                     if (isEnabled && CONFLICT_MAP[featureId]) {
                         const conflicts = CONFLICT_MAP[featureId].conflicts || [];
                         const activeConflicts = conflicts.filter(cid => appState.settings[cid]);
                         if (activeConflicts.length > 0) {
+                            activeConflicts.forEach(cid => {
+                                const cf = features.find(ff => ff.id === cid);
+                                appState.settings[cid] = false;
+                                settingsManager.save(appState.settings);
+                                if (cf?._initialized) {
+                                    try { cf.destroy?.(); cf._initialized = false; } catch(err) {
+                                        DebugManager.log('Conflict', `Destroy failed for "${cid}": ${err.message}`);
+                                    }
+                                }
+                                // Update toggle UI in settings panel
+                                const toggle = document.querySelector(`[data-feature-id="${cid}"] input[type="checkbox"]`);
+                                if (toggle) toggle.checked = false;
+                            });
                             const conflictNames = activeConflicts.map(cid => {
                                 const cf = features.find(ff => ff.id === cid);
                                 return cf?.name || cid;
                             }).join(', ');
-                            showToast('Conflict: ' + (feature?.name || featureId) + ' may clash with ' + conflictNames + ' — ' + (CONFLICT_MAP[featureId].reason || 'both modify similar elements'), '#f59e0b', { duration: 6 });
+                            showToast('Auto-disabled ' + conflictNames + ' — ' + (CONFLICT_MAP[featureId].reason || 'conflicts with ' + (feature?.name || featureId)), '#f59e0b', { duration: 5 });
                         }
                     }
 
@@ -10640,7 +10610,8 @@ pause
         }
 
         // Track page changes for lazy loading (skip in safe mode)
-        if (!isSafeMode) {
+        if (!isSafeMode && !window._ytkitNavListenerAdded) {
+            window._ytkitNavListenerAdded = true;
             document.addEventListener('yt-navigate-finish', () => {
             const newPage = getCurrentPage();
             if (newPage !== appState.currentPage) {
