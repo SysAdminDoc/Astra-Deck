@@ -1718,6 +1718,100 @@
         }
     }
 
+    // Show a persistent download progress bar anchored to the bottom of the page.
+    function showDownloadProgress(id, token, audioOnly) {
+        // Remove any existing progress panel for this download
+        const panelId = 'ytkit-dl-progress-' + id;
+        document.getElementById(panelId)?.remove();
+
+        const panel = document.createElement('div');
+        panel.id = panelId;
+        panel.style.cssText = `
+            position:fixed;bottom:20px;right:20px;width:320px;background:#1a1a2e;border:1px solid #30363d;
+            border-radius:12px;padding:14px 16px;z-index:2147483647;font-family:"Roboto",Arial,sans-serif;
+            box-shadow:0 8px 32px rgba(0,0,0,0.5);color:#e6edf3;animation:ytkit-slide-in 0.3s ease-out;
+        `;
+
+        if (!document.getElementById('ytkit-dl-anim')) {
+            const s = document.createElement('style');
+            s.id = 'ytkit-dl-anim';
+            s.textContent = `
+                @keyframes ytkit-slide-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+                #ytkit-dl-bar-fill{transition:width 0.4s ease}
+            `;
+            document.head.appendChild(s);
+        }
+
+        panel.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:600;color:#8b949e;letter-spacing:.05em;">${audioOnly ? 'AUDIO' : 'VIDEO'} DOWNLOAD</span>
+                <button id="ytkit-dl-close-${id}" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:16px;line-height:1;padding:0;">&#x2715;</button>
+            </div>
+            <div id="ytkit-dl-title-${id}" style="font-size:13px;font-weight:500;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e6edf3;">Starting...</div>
+            <div style="background:#30363d;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;">
+                <div id="ytkit-dl-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#8b949e;">
+                <span id="ytkit-dl-pct-${id}">0%</span>
+                <span id="ytkit-dl-speed-${id}"></span>
+                <span id="ytkit-dl-eta-${id}"></span>
+            </div>
+        `;
+        document.body.appendChild(panel);
+
+        document.getElementById('ytkit-dl-close-' + id)?.addEventListener('click', () => panel.remove());
+
+        let pollInterval = null;
+        function poll() {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: 'http://127.0.0.1:9751/status/' + id,
+                headers: { 'X-Auth-Token': token },
+                timeout: 3000,
+                onload: function(r) {
+                    let data;
+                    try { data = JSON.parse(r.responseText); } catch (_) { return; }
+
+                    const fill = document.getElementById('ytkit-dl-bar-fill');
+                    const pct  = document.getElementById('ytkit-dl-pct-' + id);
+                    const spd  = document.getElementById('ytkit-dl-speed-' + id);
+                    const eta  = document.getElementById('ytkit-dl-eta-' + id);
+                    const ttl  = document.getElementById('ytkit-dl-title-' + id);
+                    if (!fill) { clearInterval(pollInterval); return; }
+
+                    if (data.title) ttl.textContent = data.title;
+                    const p = Math.min(data.progress || 0, 100);
+                    fill.style.width = p + '%';
+                    pct.textContent  = p.toFixed(1) + '%';
+                    if (data.speed) spd.textContent = data.speed;
+                    if (data.eta)   eta.textContent = 'ETA ' + data.eta;
+
+                    if (data.status === 'done' || data.status === 'complete') {
+                        clearInterval(pollInterval);
+                        fill.style.width = '100%';
+                        fill.style.background = 'linear-gradient(90deg,#22c55e,#16a34a)';
+                        pct.textContent = '100%';
+                        spd.textContent = '';
+                        eta.textContent = 'Done!';
+                        setTimeout(() => panel.remove(), 4000);
+                    } else if (data.status === 'error' || data.status === 'cancelled') {
+                        clearInterval(pollInterval);
+                        fill.style.background = '#ef4444';
+                        pct.textContent = data.status;
+                        spd.textContent = '';
+                        eta.textContent = '';
+                        setTimeout(() => panel.remove(), 5000);
+                    }
+                },
+                onerror: function() { clearInterval(pollInterval); },
+                ontimeout: function() { clearInterval(pollInterval); }
+            });
+        }
+
+        pollInterval = setInterval(poll, 1000);
+        poll();
+    }
+
     // Send a download request to the local MediaDL server (http://127.0.0.1:9751).
     // Falls back to the ytdl:// protocol handler if the server is unreachable.
     function mediaDLDownload(videoUrl, audioOnly) {
@@ -1744,7 +1838,7 @@
                         try {
                             const resp = JSON.parse(r.responseText);
                             if (resp.id) {
-                                showToast(audioOnly ? '🎵 Audio download queued!' : '⬇️ Video download queued!', '#22c55e', { duration: 3 });
+                                showDownloadProgress(resp.id, token, audioOnly);
                             } else {
                                 showToast('MediaDL: ' + (resp.error || 'Unknown error'), '#ef4444', { duration: 5 });
                             }
