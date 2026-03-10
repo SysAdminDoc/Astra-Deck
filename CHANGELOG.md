@@ -4,6 +4,22 @@ All notable changes to YTKit are documented here. Versions are listed newest-fir
 
 ---
 
+## [2.8.0] - Maintenance & Ad Blocker Tuning
+
+### Changed
+
+- **Ad blocker cosmetic filters updated** — Refreshed CSS selector list to cover YouTube's current ad container patterns, including updated masthead, player overlay, and feed ad slot selectors
+- **PRUNE_KEYS updated** — Added newer ad payload keys seen in current YouTube API responses (`auxiliaryUi`, `adBreakServiceRenderer`, `watchNextAdsRenderer`)
+- **SponsorBlock category list** — Updated to include `selfpromo` and `preview` categories introduced in recent SponsorBlock API versions
+- **Theater Split** — Improved detection of YouTube's responsive layout breakpoints to prevent Theater Split from activating on narrower viewports where it degrades layout
+
+### Fixed
+
+- **VLC/yt-dlp buttons not appearing on initial load** — Added retry loop for button injection when YouTube's player controls render late during SPA navigation
+- **Video Hider keyword filter false positives** — Regex compilation no longer throws unhandled exceptions on invalid patterns; invalid regexes are silently skipped with a console warning
+
+---
+
 ## [2.7.5] - Feature Cleanup
 
 ### Removed
@@ -240,7 +256,7 @@ New features inspired by research across Enhancer for YouTube, ImprovedTube, Ret
 
 **Breaking:** Removed ChapterForge AI chapters and DeArrow clickbait removal to produce a lighter, focused core script.
 
-- Removed ChapterForge (AI chapter generation, LLM providers, batch processing)
+- Removed ChapterForge (AI chapter generation, LLM providers, batch processing) → see [Chapterizer](https://github.com/SysAdminDoc/Chapterizer) for this functionality
 - Removed DeArrow (crowdsourced title/thumbnail replacement)
 - Removed external theme `@resource` dependencies (themes now inline)
 - Enhanced ad blocker: extended prune keys, new ad renderer interception, regex-optimized `replaceAdKeys`, `jsonNeedsPruning` pre-check for performance
