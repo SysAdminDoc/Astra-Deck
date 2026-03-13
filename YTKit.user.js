@@ -1794,7 +1794,7 @@
                         spd.textContent = '';
                         eta.textContent = 'Done!';
                         setTimeout(() => panel.remove(), 4000);
-                    } else if (data.status === 'error' || data.status === 'cancelled') {
+                    } else if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                         clearInterval(pollInterval);
                         fill.style.background = '#ef4444';
                         pct.textContent = data.status;
@@ -1906,13 +1906,59 @@
     // Extract streaming URLs from YouTube's player response for direct download.
     // This bypasses cookie/auth issues entirely - the URLs contain embedded auth signatures.
     // Works in ANY browser since it reads data the page already has.
-    function _extractStreamingData(audioOnly) {
+    // Extract streaming URLs from YouTube's player response for direct download.
+    // This bypasses cookie/auth issues entirely - the URLs contain embedded auth signatures.
+    // Uses multi-method approach: window variable (fast) -> Innertube API (SPA-safe).
+    async function _extractStreamingData(audioOnly) {
+        // Method 1: Direct window variable (userscript has MAIN world access via unsafeWindow)
+        let pr = null;
         try {
-            const pr = _rw.ytInitialPlayerResponse;
-            if (!pr?.streamingData) {
-                DebugManager.log('MediaDL', 'No streamingData in ytInitialPlayerResponse');
+            pr = _rw.ytInitialPlayerResponse;
+            if (pr?.streamingData) {
+                DebugManager.log('MediaDL', 'Got streamingData from window variable');
+            } else {
+                pr = null;
+            }
+        } catch (e) {
+            DebugManager.log('MediaDL', `Window variable access failed: ${e.message}`);
+        }
+
+        // Method 2: Innertube API fallback
+        if (!pr) {
+            try {
+                const videoId = new URLSearchParams(window.location.search).get('v');
+                if (!videoId) {
+                    DebugManager.log('MediaDL', 'No video ID in URL for Innertube fallback');
+                    return null;
+                }
+                DebugManager.log('MediaDL', `Trying Innertube API for ${videoId}`);
+                const resp = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        context: { client: { clientName: 'WEB', clientVersion: '2.20250310.00.00' } },
+                        videoId: videoId
+                    })
+                });
+                if (resp.ok) {
+                    pr = await resp.json();
+                    if (pr?.streamingData) {
+                        DebugManager.log('MediaDL', 'Got streamingData from Innertube API');
+                    } else {
+                        DebugManager.log('MediaDL', 'Innertube API returned no streamingData');
+                        return null;
+                    }
+                } else {
+                    DebugManager.log('MediaDL', `Innertube API returned ${resp.status}`);
+                    return null;
+                }
+            } catch (e) {
+                DebugManager.log('MediaDL', `Innertube API error: ${e.message}`);
                 return null;
             }
+        }
+
+        try {
             const sd = pr.streamingData;
             const title = pr.videoDetails?.title || '';
             const videoId = pr.videoDetails?.videoId || '';
@@ -1968,9 +2014,9 @@
         }
     }
 
-    function _mediaDLSendDownload(videoUrl, audioOnly, token) {
+    async function _mediaDLSendDownload(videoUrl, audioOnly, token) {
         DebugManager.log('MediaDL', `Sending download: ${videoUrl} (audio=${audioOnly})`);
-        const streams = _extractStreamingData(audioOnly);
+        const streams = await _extractStreamingData(audioOnly);
         if (streams) {
             DebugManager.log('MediaDL', `Extracted streams for "${streams.title}" (${streams.videoId})`);
         } else {
