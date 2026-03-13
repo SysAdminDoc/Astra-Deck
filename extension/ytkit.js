@@ -8095,7 +8095,7 @@ echo ========================================
 echo.
 echo Downloading and running installer...
 echo.
-powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $r=Invoke-RestMethod -Uri 'https://api.github.com/repos/SysAdminDoc/YouTube-Kit/contents/Install-YTYT.ps1' -Headers @{'Accept'='application/vnd.github.raw'}; Set-Content -Path '%TEMP%\\Install-YTYT.ps1' -Value $r -Encoding UTF8"
+powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/Install-YTYT.ps1' -OutFile '%TEMP%\\Install-YTYT.ps1'"
 powershell -ExecutionPolicy Bypass -File "%TEMP%\\Install-YTYT.ps1"
 echo.
 echo If the window closes immediately, right-click and Run as Administrator.
