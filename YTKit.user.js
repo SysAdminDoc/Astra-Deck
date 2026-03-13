@@ -1812,9 +1812,17 @@
         poll();
     }
 
+    // Web download fallback: opens cobalt when local download methods all fail
+    function _webDownloadFallback(videoUrl) {
+        const cobaltUrl = GM_getValue('ytkit_cobalt_url', 'https://cobalt.meowing.de/#');
+        const downloadUrl = cobaltUrl + encodeURIComponent(videoUrl);
+        showToast('YTYT-Downloader not installed. Opening web downloader...', '#3b82f6', { duration: 4 });
+        window.open(downloadUrl, '_blank');
+    }
+
     // Send a download request to the local MediaDL server (http://127.0.0.1:9751).
     // If the server is not running, auto-starts it via mediadl:// protocol and retries.
-    // Falls back to the ytdl:// protocol handler if the server remains unreachable.
+    // Falls back to cobalt web download if the server remains unreachable.
     function mediaDLDownload(videoUrl, audioOnly) {
         DebugManager.log('MediaDL', `Download requested: ${videoUrl} (audio=${audioOnly})`);
         _mediaDLHealthCheck(videoUrl, audioOnly, false);
@@ -1832,8 +1840,7 @@
                 let token = null;
                 try { token = JSON.parse(res.responseText).token; } catch (_) {}
                 if (!token) {
-                    showToast('MediaDL server error. Trying protocol handler...', '#f59e0b', { duration: 3 });
-                    openProtocol('ytdl://' + encodeURIComponent(videoUrl), 'yt-dlp not found. Install YTYT-Downloader.');
+                    _webDownloadFallback(videoUrl);
                     return;
                 }
                 _mediaDLSendDownload(videoUrl, audioOnly, token);
@@ -1843,8 +1850,7 @@
                 if (!isRetry) {
                     _mediaDLAutoStart(videoUrl, audioOnly);
                 } else {
-                    showToast('MediaDL server not running. Trying protocol handler...', '#f59e0b', { duration: 3 });
-                    openProtocol('ytdl://' + encodeURIComponent(videoUrl), 'yt-dlp not found. Install YTYT-Downloader.');
+                    _webDownloadFallback(videoUrl);
                 }
             },
             ontimeout: function() {
@@ -1852,8 +1858,7 @@
                 if (!isRetry) {
                     _mediaDLAutoStart(videoUrl, audioOnly);
                 } else {
-                    showToast('MediaDL server not responding. Trying protocol handler...', '#f59e0b', { duration: 3 });
-                    openProtocol('ytdl://' + encodeURIComponent(videoUrl), 'yt-dlp not found. Install YTYT-Downloader.');
+                    _webDownloadFallback(videoUrl);
                 }
             }
         });
@@ -1882,23 +1887,16 @@
                     } else if (retries < maxRetries) {
                         setTimeout(tryConnect, retryDelay);
                     } else {
-                        showToast('MediaDL server failed to start. Trying protocol handler...', '#f59e0b', { duration: 3 });
-                        openProtocol('ytdl://' + encodeURIComponent(videoUrl), 'yt-dlp not found. Install YTYT-Downloader.');
+                        _webDownloadFallback(videoUrl);
                     }
                 },
                 onerror: function() {
                     if (retries < maxRetries) setTimeout(tryConnect, retryDelay);
-                    else {
-                        showToast('MediaDL server failed to start. Trying protocol handler...', '#f59e0b', { duration: 3 });
-                        openProtocol('ytdl://' + encodeURIComponent(videoUrl), 'yt-dlp not found. Install YTYT-Downloader.');
-                    }
+                    else _webDownloadFallback(videoUrl);
                 },
                 ontimeout: function() {
                     if (retries < maxRetries) setTimeout(tryConnect, retryDelay);
-                    else {
-                        showToast('MediaDL server failed to start. Trying protocol handler...', '#f59e0b', { duration: 3 });
-                        openProtocol('ytdl://' + encodeURIComponent(videoUrl), 'yt-dlp not found. Install YTYT-Downloader.');
-                    }
+                    else _webDownloadFallback(videoUrl);
                 }
             });
         };
