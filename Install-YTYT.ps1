@@ -38,8 +38,7 @@ $script:InstallPath = "$env:LOCALAPPDATA\YTYT-Downloader"
 $script:YtDlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 $script:DefaultDownloadPath = "$env:USERPROFILE\Videos\YouTube"
 $script:GitHubRepo = "https://github.com/SysAdminDoc/YouTube-Kit"
-$script:UserscriptUrl = "https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTYT_downloader.user.js"
-$script:YTKitUrl = "https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js"
+$script:YTKitUrl = "https://github.com/SysAdminDoc/ScriptVault"
 
 # Ollama Configuration
 $script:OllamaInstallerUrl = "https://ollama.com/download/OllamaSetup.exe"
@@ -53,36 +52,8 @@ $script:LogoUrl = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader
 $script:IconPngUrl = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/icons/ytyticn-128x128.png"
 
 # Browser icon URLs
-$script:BrowserIcons = @{
-    Chrome  = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/browsers/chrome.png"
-    Firefox = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/browsers/firefox.png"
-    Edge    = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/browsers/edge.png"
-    Safari  = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/browsers/safari.png"
-    Opera   = "https://raw.githubusercontent.com/SysAdminDoc/YTYT-Downloader/refs/heads/main/images/browsers/opera.png"
-}
-
-# Userscript manager links by browser
-$script:UserscriptManagers = @{
-    Chrome = @{
-        Tampermonkey = "https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo"
-        Violentmonkey = "https://chrome.google.com/webstore/detail/violent-monkey/jinjaccalgkegednnccohejagnlnfdag"
-    }
-    Firefox = @{
-        Tampermonkey = "https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/"
-        Greasemonkey = "https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/"
-        Violentmonkey = "https://addons.mozilla.org/firefox/addon/violentmonkey/"
-    }
-    Edge = @{
-        Tampermonkey = "https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd"
-        Violentmonkey = "https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao"
-    }
-    Safari = @{
-        Tampermonkey = "https://apps.apple.com/us/app/tampermonkey/id6738342400"
-    }
-    Opera = @{
-        Tampermonkey = "https://addons.opera.com/en/extensions/details/tampermonkey-beta/"
-    }
-}
+# ScriptVault (userscript manager extension)
+$script:ScriptVaultUrl = "https://github.com/SysAdminDoc/ScriptVault"
 
 # ============================================
 # ASSEMBLIES
@@ -173,7 +144,7 @@ function Uninstall-Previous {
     Start-Sleep -Milliseconds 500
     
     # Remove protocol handlers
-    @("ytvlc", "ytvlcq", "ytdl", "ytmpv", "ytdlplay") | ForEach-Object {
+    @("ytvlc", "ytvlcq", "ytdl", "ytmpv", "ytdlplay", "mediadl") | ForEach-Object {
         Remove-Item -Path "HKCU:\Software\Classes\$_" -Recurse -Force -ErrorAction SilentlyContinue
     }
     
@@ -762,7 +733,7 @@ if ($script:OllamaFound) {
                 </ScrollViewer>
             </TabItem>
             
-            <!-- Step 2: Install Userscript Manager -->
+            <!-- Step 2: Install ScriptVault -->
             <TabItem x:Name="tabStep2">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="32,24">
@@ -777,48 +748,36 @@ if ($script:OllamaFound) {
                             <Ellipse Width="32" Height="32" Fill="{StaticResource BgCard}" Stroke="{StaticResource Border}" StrokeThickness="2"/>
                             <TextBlock Text="3" Foreground="{StaticResource TextMuted}" FontWeight="Bold" FontSize="14" Margin="-22,7,0,0"/>
                         </StackPanel>
-                        
-                        <TextBlock Text="Step 2: Install a Userscript Manager" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
-                        <TextBlock Text="Select your browser to see compatible userscript manager extensions." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24" TextWrapping="Wrap"/>
-                        
-                        <!-- Browser Selection -->
-                        <TextBlock Text="Select Your Browser" FontSize="13" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,16"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
-                            <Button x:Name="btnChrome" Style="{StaticResource BrowserButton}" ToolTip="Chrome / Chromium" Margin="8">
-                                <Image x:Name="imgChrome" Width="40" Height="40" Stretch="Uniform"/>
-                            </Button>
-                            <Button x:Name="btnFirefox" Style="{StaticResource BrowserButton}" ToolTip="Firefox" Margin="8">
-                                <Image x:Name="imgFirefox" Width="40" Height="40" Stretch="Uniform"/>
-                            </Button>
-                            <Button x:Name="btnEdge" Style="{StaticResource BrowserButton}" ToolTip="Microsoft Edge" Margin="8">
-                                <Image x:Name="imgEdge" Width="40" Height="40" Stretch="Uniform"/>
-                            </Button>
-                            <Button x:Name="btnSafari" Style="{StaticResource BrowserButton}" ToolTip="Safari" Margin="8">
-                                <Image x:Name="imgSafari" Width="40" Height="40" Stretch="Uniform"/>
-                            </Button>
-                            <Button x:Name="btnOpera" Style="{StaticResource BrowserButton}" ToolTip="Opera" Margin="8">
-                                <Image x:Name="imgOpera" Width="40" Height="40" Stretch="Uniform"/>
-                            </Button>
-                        </StackPanel>
-                        
-                        <!-- Selected Browser Info -->
-                        <Border x:Name="pnlBrowserLinks" Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Padding="24" Visibility="Collapsed">
-                            <StackPanel>
-                                <TextBlock x:Name="txtSelectedBrowser" Text="Chrome / Chromium" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,16"/>
-                                <TextBlock Text="Compatible Userscript Managers:" FontSize="13" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,12"/>
-                                <StackPanel x:Name="pnlManagerLinks">
-                                    <!-- Dynamically populated -->
-                                </StackPanel>
+
+                        <TextBlock Text="Step 2: Install ScriptVault" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <TextBlock Text="ScriptVault is a Chrome MV3 userscript manager that runs YTKit with full cookie and download support." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24" TextWrapping="Wrap"/>
+
+                        <!-- ScriptVault Card -->
+                        <Border Background="{StaticResource BgCard}" BorderBrush="#8b5cf6" BorderThickness="2" CornerRadius="16" Padding="24" HorizontalAlignment="Center">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Border CornerRadius="40" Width="64" Height="64" Margin="0,0,0,16">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#8b5cf6" Offset="0"/>
+                                            <GradientStop Color="#3b82f6" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Text="SV" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="ScriptVault" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                <TextBlock Text="Chrome MV3 Userscript Manager" FontSize="12" Foreground="#a78bfa" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <TextBlock Text="Full GM_cookie, GM_xmlhttpRequest, GM_download support. Required for YTKit authenticated downloads." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" MaxWidth="320"/>
+                                <Button x:Name="btnInstallScriptVault" Content="Get ScriptVault on GitHub" Style="{StaticResource BaseButton}" Padding="24,12" FontSize="14"/>
                             </StackPanel>
                         </Border>
-                        
+
                         <!-- Instructions -->
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource AccentOrange}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,24,0,0">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="!" FontSize="20" Foreground="{StaticResource AccentOrange}" FontWeight="Bold" Margin="0,0,16,0" VerticalAlignment="Top"/>
                                 <StackPanel>
                                     <TextBlock Text="Important" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Install a userscript manager extension in your browser before proceeding to the next step. Tampermonkey is recommended for most users." FontSize="13" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Install ScriptVault in Chrome/Edge before proceeding. Enable the optional 'cookies' permission for authenticated YouTube downloads." FontSize="13" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -842,49 +801,27 @@ if ($script:OllamaFound) {
                             <TextBlock Text="3" Foreground="#0a0a0a" FontWeight="Bold" FontSize="14" Margin="-22,7,0,0"/>
                         </StackPanel>
                         
-                        <TextBlock Text="Step 3: Install a Userscript" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
-                        <TextBlock Text="Choose a userscript to install. Both options use the same protocol handlers configured during installation." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24" TextWrapping="Wrap"/>
-                        
-                        <!-- Two Userscript Options Side by Side -->
-                        <Grid HorizontalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="280"/>
-                                <ColumnDefinition Width="24"/>
-                                <ColumnDefinition Width="280"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <!-- YTYT-Downloader (Minimal) -->
-                            <Border Grid.Column="0" Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="16" Padding="24">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <Border Background="#22c55e" CornerRadius="40" Width="64" Height="64" Margin="0,0,0,16">
-                                        <TextBlock Text="DL" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <TextBlock Text="YTYT-Downloader" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Download Buttons Only" FontSize="12" Foreground="{StaticResource AccentGreen}" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                                    <TextBlock Text="Minimal userscript that adds Video, MP3, Transcript download buttons and VLC streaming to YouTube." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" Height="54"/>
-                                    <Button x:Name="btnInstallUserscript" Content="Install YTYT" Style="{StaticResource BaseButton}" Padding="24,12" FontSize="14"/>
-                                </StackPanel>
-                            </Border>
-                            
-                            <!-- YTKit (Full Featured) -->
-                            <Border Grid.Column="2" Background="{StaticResource BgCard}" BorderBrush="#8b5cf6" BorderThickness="2" CornerRadius="16" Padding="24">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <Border CornerRadius="40" Width="64" Height="64" Margin="0,0,0,16">
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#8b5cf6" Offset="0"/>
-                                                <GradientStop Color="#ec4899" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                        <TextBlock Text="YT" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <TextBlock Text="YTKit" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Full Featured Suite" FontSize="12" Foreground="#a78bfa" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                                    <TextBlock Text="Complete YouTube customization: downloads, themes, AI-powered chapters, pause removal, filler detection, speech analysis, auto-model selection, transcript export, AI translation, and more." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" Height="54"/>
-                                    <Button x:Name="btnInstallYTKit" Content="Install YTKit" Style="{StaticResource SecondaryButton}" Padding="24,12" FontSize="14"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
+                        <TextBlock Text="Step 3: Install YTKit" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <TextBlock Text="Install the YTKit userscript in ScriptVault to add downloads, themes, AI chapters, and more to YouTube." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24" TextWrapping="Wrap"/>
+
+                        <!-- YTKit -->
+                        <Border Background="{StaticResource BgCard}" BorderBrush="#8b5cf6" BorderThickness="2" CornerRadius="16" Padding="24" HorizontalAlignment="Center">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Border CornerRadius="40" Width="64" Height="64" Margin="0,0,0,16">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#8b5cf6" Offset="0"/>
+                                            <GradientStop Color="#ec4899" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Text="YT" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="YTKit" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                <TextBlock Text="Full Featured YouTube Suite" FontSize="12" Foreground="#a78bfa" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <TextBlock Text="Downloads, themes, AI-powered chapters, pause removal, filler detection, speech analysis, transcript export, AI translation, and more." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" MaxWidth="320"/>
+                                <Button x:Name="btnInstallYTKit" Content="Install YTKit in ScriptVault" Style="{StaticResource SecondaryButton}" Padding="24,12" FontSize="14"/>
+                            </StackPanel>
+                        </Border>
                         
                         <!-- Success Message -->
                         <Border Background="#14532d" BorderBrush="{StaticResource AccentGreen}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,24,0,0">
@@ -892,19 +829,8 @@ if ($script:OllamaFound) {
                                 <TextBlock Text="OK" FontSize="16" Foreground="{StaticResource AccentGreen}" FontWeight="Bold" Margin="0,0,16,0" VerticalAlignment="Top"/>
                                 <StackPanel>
                                     <TextBlock Text="Setup Complete!" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource AccentGreen}" Margin="0,0,0,4"/>
-                                    <TextBlock Text="After installing either userscript, visit any YouTube video. You'll see download buttons next to the like/share buttons. With Ollama installed, YTKit auto-generates AI chapters using video captions." FontSize="13" Foreground="#86efac" TextWrapping="Wrap"/>
+                                    <TextBlock Text="After installing YTKit in ScriptVault, visit any YouTube video. You'll see download buttons next to the like/share buttons. With Ollama installed, YTKit auto-generates AI chapters using video captions." FontSize="13" Foreground="#86efac" TextWrapping="Wrap"/>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                        
-                        <!-- Alternate Install -->
-                        <TextBlock Text="Alternative: Manual Installation" FontSize="13" Foreground="{StaticResource TextSecondary}" Margin="0,24,0,8"/>
-                        <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Padding="16">
-                            <StackPanel>
-                                <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSecondary}">
-                                    <Run>If the automatic install doesn't work, you can drag the userscript file into your userscript manager:</Run>
-                                </TextBlock>
-                                <Button x:Name="btnOpenFolder" Content="Open Install Folder" Style="{StaticResource SecondaryButton}" Margin="0,12,0,0" Padding="16,10" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -1002,24 +928,10 @@ $statusScroll = $window.FindName("statusScroll")
 $progressFill = $window.FindName("progressFill")
 
 # Step 2 controls
-$btnChrome = $window.FindName("btnChrome")
-$btnFirefox = $window.FindName("btnFirefox")
-$btnEdge = $window.FindName("btnEdge")
-$btnSafari = $window.FindName("btnSafari")
-$btnOpera = $window.FindName("btnOpera")
-$imgChrome = $window.FindName("imgChrome")
-$imgFirefox = $window.FindName("imgFirefox")
-$imgEdge = $window.FindName("imgEdge")
-$imgSafari = $window.FindName("imgSafari")
-$imgOpera = $window.FindName("imgOpera")
-$pnlBrowserLinks = $window.FindName("pnlBrowserLinks")
-$txtSelectedBrowser = $window.FindName("txtSelectedBrowser")
-$pnlManagerLinks = $window.FindName("pnlManagerLinks")
+$btnInstallScriptVault = $window.FindName("btnInstallScriptVault")
 
 # Step 3 controls
-$btnInstallUserscript = $window.FindName("btnInstallUserscript")
 $btnInstallYTKit = $window.FindName("btnInstallYTKit")
-$btnOpenFolder = $window.FindName("btnOpenFolder")
 
 # Uninstall controls
 $imgUninstallIcon = $window.FindName("imgUninstallIcon")
@@ -1049,13 +961,6 @@ $iconImage = Get-BitmapImageFromUrl -Url $script:IconPngUrl
 if ($iconImage) { 
     $imgUninstallIcon.Source = $iconImage
 }
-
-# Load browser icons
-$imgChrome.Source = Get-BitmapImageFromUrl -Url $script:BrowserIcons.Chrome
-$imgFirefox.Source = Get-BitmapImageFromUrl -Url $script:BrowserIcons.Firefox
-$imgEdge.Source = Get-BitmapImageFromUrl -Url $script:BrowserIcons.Edge
-$imgSafari.Source = Get-BitmapImageFromUrl -Url $script:BrowserIcons.Safari
-$imgOpera.Source = Get-BitmapImageFromUrl -Url $script:BrowserIcons.Opera
 
 # ============================================
 # SET DEFAULTS
@@ -1177,22 +1082,37 @@ function Invoke-ProcessWithUI {
     }
 }
 
-# Non-blocking web download — pumps WPF dispatcher during download
+# Non-blocking BITS download with real progress reporting in the GUI.
+# Uses Start-BitsTransfer -Asynchronous while pumping the WPF dispatcher.
 function Invoke-DownloadWithUI {
     param(
         [string]$Uri,
         [string]$OutFile
     )
-    $job = Start-Job -ScriptBlock {
-        param($u, $o)
-        Invoke-WebRequest -Uri $u -OutFile $o -UseBasicParsing
-    } -ArgumentList $Uri, $OutFile
-    while ($job.State -eq 'Running') {
+    Import-Module BitsTransfer -ErrorAction Stop
+    $fileName = [System.IO.Path]::GetFileName($OutFile)
+    $bitsJob = Start-BitsTransfer -Source $Uri -Destination $OutFile -Asynchronous -DisplayName $fileName
+    $lastPct = -1
+    while ($bitsJob.JobState -eq 'Transferring' -or $bitsJob.JobState -eq 'Connecting' -or $bitsJob.JobState -eq 'TransientError') {
         $window.Dispatcher.Invoke([action]{}, [System.Windows.Threading.DispatcherPriority]::Background)
-        Start-Sleep -Milliseconds 100
+        if ($bitsJob.BytesTotal -gt 0) {
+            $pct = [int](($bitsJob.BytesTransferred / $bitsJob.BytesTotal) * 100)
+            if ($pct -ne $lastPct -and $pct -gt 0) {
+                $lastPct = $pct
+                $recvMB = [math]::Round($bitsJob.BytesTransferred / 1MB, 1)
+                $totalMB = [math]::Round($bitsJob.BytesTotal / 1MB, 1)
+                Update-Status "  [$fileName] ${recvMB}MB / ${totalMB}MB ($pct%)"
+            }
+        }
+        Start-Sleep -Milliseconds 250
     }
-    Receive-Job $job -ErrorAction Stop
-    Remove-Job $job
+    if ($bitsJob.JobState -eq 'Transferred') {
+        Complete-BitsTransfer -BitsJob $bitsJob
+    } else {
+        $errMsg = $bitsJob.JobState
+        Remove-BitsTransfer -BitsJob $bitsJob -ErrorAction SilentlyContinue
+        throw "BITS download failed: $errMsg"
+    }
 }
 
 function Update-WizardButtons {
@@ -1200,14 +1120,14 @@ function Update-WizardButtons {
         1 {
             $btnBack.Visibility = "Collapsed"
             if ($script:BaseToolsInstalled) {
-                $btnNext.Content = "Next: Userscript Manager"
+                $btnNext.Content = "Next: ScriptVault"
             } else {
                 $btnNext.Content = "Install Base Tools"
             }
         }
         2 {
             $btnBack.Visibility = "Visible"
-            $btnNext.Content = "Next: Install Userscript"
+            $btnNext.Content = "Next: Install YTKit"
         }
         3 {
             $btnBack.Visibility = "Visible"
@@ -1220,46 +1140,6 @@ function Update-WizardButtons {
     }
 }
 
-function Show-BrowserLinks {
-    param([string]$Browser)
-    
-    $pnlBrowserLinks.Visibility = "Visible"
-    $txtSelectedBrowser.Text = $Browser
-    $pnlManagerLinks.Children.Clear()
-    
-    $managers = $script:UserscriptManagers[$Browser]
-    foreach ($manager in $managers.GetEnumerator()) {
-        $linkPanel = New-Object System.Windows.Controls.StackPanel
-        $linkPanel.Orientation = "Horizontal"
-        $linkPanel.Margin = "0,8,0,0"
-        
-        $bullet = New-Object System.Windows.Controls.TextBlock
-        $bullet.Text = ">"
-        $bullet.Foreground = [System.Windows.Media.Brushes]::LimeGreen
-        $bullet.FontFamily = New-Object System.Windows.Media.FontFamily("Cascadia Code, Consolas")
-        $bullet.Margin = "0,0,8,0"
-        $bullet.VerticalAlignment = "Center"
-        
-        $link = New-Object System.Windows.Controls.TextBlock
-        $link.Cursor = [System.Windows.Input.Cursors]::Hand
-        $link.VerticalAlignment = "Center"
-        
-        $hyperlink = New-Object System.Windows.Documents.Hyperlink
-        $hyperlink.Inlines.Add($manager.Key)
-        $hyperlink.Foreground = [System.Windows.Media.Brushes]::DodgerBlue
-        $hyperlink.TextDecorations = $null
-        $url = $manager.Value
-        $hyperlink.Add_Click({ Start-Process $url }.GetNewClosure())
-        $hyperlink.Add_MouseEnter({ $this.TextDecorations = [System.Windows.TextDecorations]::Underline })
-        $hyperlink.Add_MouseLeave({ $this.TextDecorations = $null })
-        
-        $link.Inlines.Add($hyperlink)
-        
-        $linkPanel.Children.Add($bullet)
-        $linkPanel.Children.Add($link)
-        $pnlManagerLinks.Children.Add($linkPanel)
-    }
-}
 
 # ============================================
 # EVENT HANDLERS
@@ -1301,8 +1181,8 @@ $btnInstallVlc.Add_Click({
     }
 })
 
-# Browser buttons
-$btnChrome.Add_Click({ Show-BrowserLinks -Browser "Chrome" })
+# ScriptVault button
+$btnInstallScriptVault.Add_Click({ Start-Process $script:ScriptVaultUrl })
 
 # Install Ollama manually
 $btnInstallOllama.Add_Click({
@@ -1343,34 +1223,12 @@ $btnInstallOllama.Add_Click({
         Start-Process "https://ollama.com/download"
     }
 })
-$btnFirefox.Add_Click({ Show-BrowserLinks -Browser "Firefox" })
-$btnEdge.Add_Click({ Show-BrowserLinks -Browser "Edge" })
-$btnSafari.Add_Click({ Show-BrowserLinks -Browser "Safari" })
-$btnOpera.Add_Click({ Show-BrowserLinks -Browser "Opera" })
 
-# Install Userscript button (YTYT-Downloader minimal)
-$btnInstallUserscript.Add_Click({
-    Start-Process $script:UserscriptUrl
-})
-
-# Install YTKit button (Full featured)
+# Install YTKit button - opens GitHub page
 $btnInstallYTKit.Add_Click({
     Start-Process $script:YTKitUrl
 })
 
-# Open folder button
-$btnOpenFolder.Add_Click({
-    if (Test-Path $script:InstallPath) {
-        $userscriptPath = Join-Path $script:InstallPath "YTYT-Downloader.user.js"
-        if (Test-Path $userscriptPath) {
-            Start-Process explorer.exe -ArgumentList "/select,`"$userscriptPath`""
-        } else {
-            Start-Process explorer.exe -ArgumentList $script:InstallPath
-        }
-    } else {
-        [System.Windows.MessageBox]::Show("Install folder not found. Please complete Step 1 first.", "YTYT-Downloader", "OK", "Warning")
-    }
-})
 
 # Back button
 $btnBack.Add_Click({
@@ -1432,6 +1290,7 @@ $btnConfirmUninstall.Add_Click({
             Remove-Item -Path "HKCU:\Software\Classes\ytdl" -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "HKCU:\Software\Classes\ytmpv" -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -Path "HKCU:\Software\Classes\ytdlplay" -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path "HKCU:\Software\Classes\mediadl" -Recurse -Force -ErrorAction SilentlyContinue
             
             # Remove install directory
             if (Test-Path $script:InstallPath) {
@@ -1456,7 +1315,7 @@ $btnConfirmUninstall.Add_Click({
             }
             
             [System.Windows.MessageBox]::Show(
-                "YTYT-Downloader has been uninstalled successfully.`n`nRemember to also remove the userscript from your browser's userscript manager.",
+                "YTYT-Downloader has been uninstalled successfully.`n`nRemember to also remove YTKit from ScriptVault.",
                 "Uninstall Complete",
                 "OK",
                 "Information"
@@ -2406,8 +2265,10 @@ if ($config.Notifications) {
                     # Embed MediaDL HTTP Server
                     Update-Status "  Writing MediaDL server..."
                     $serverScript = @'
-# ytdl-server.ps1 - Hidden HTTP API server for MediaDL
-# Runs on 127.0.0.1:9751, manages yt-dlp downloads with progress tracking
+# ytdl-server.ps1 - Hidden HTTP API server for MediaDL v3.0
+# Runs on 127.0.0.1:9751, manages downloads with progress tracking
+# Primary: direct stream download from browser-extracted URLs (universal, no cookies needed)
+# Fallback: yt-dlp for non-YouTube sites or when streams unavailable
 
 param([switch]$Debug)
 
@@ -2415,8 +2276,12 @@ $ErrorActionPreference = 'Continue'
 $PORT = 9751
 $MAX_CONCURRENT = 3
 $CLEANUP_MINUTES = 5
+$ZOMBIE_MINUTES = 10
+$SERVER_VERSION = "3.2"
 
 $logFile = Join-Path $PSScriptRoot "server.log"
+$ytdlpConf = Join-Path $PSScriptRoot "yt-dlp.conf"
+
 function Write-Log {
     param([string]$msg)
     $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $msg"
@@ -2429,7 +2294,7 @@ if ((Test-Path $logFile) -and (Get-Item $logFile).Length -gt 1MB) {
     $lines | Set-Content $logFile -Encoding utf8
 }
 
-Write-Log "=== Server starting on port $PORT ==="
+Write-Log "=== Server v$SERVER_VERSION starting on port $PORT ==="
 
 $configPath = Join-Path $PSScriptRoot "config.json"
 if (!(Test-Path $configPath)) { Write-Log "FATAL: config.json not found"; exit 1 }
@@ -2442,18 +2307,70 @@ if (-not $authToken) {
     $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
 }
 
-if (!(Test-Path $config.YtDlpPath)) { Write-Log "FATAL: yt-dlp not found at $($config.YtDlpPath)"; exit 1 }
+if (!(Test-Path $config.YtDlpPath)) { Write-Log "WARN: yt-dlp not found at $($config.YtDlpPath) (direct downloads still work)" }
+
+# Ensure yt-dlp.conf exists (no runtime restriction - let yt-dlp use built-in quickjs)
+if (!(Test-Path $ytdlpConf)) {
+    "" | Set-Content $ytdlpConf -Encoding UTF8
+    Write-Log "Created yt-dlp.conf"
+} else {
+    # Fix legacy configs that restricted JS runtimes to deno,node (breaks when neither is installed)
+    $confContent = Get-Content $ytdlpConf -Raw -ErrorAction SilentlyContinue
+    if ($confContent -match '--js-runtimes\s+deno,node') {
+        $confContent = $confContent -replace '--js-runtimes\s+deno,node', ''
+        $confContent.Trim() | Set-Content $ytdlpConf -Encoding UTF8
+        Write-Log "Fixed yt-dlp.conf: removed JS runtime restriction"
+    }
+}
+
+# Ensure download directory exists
+if ($config.DownloadPath -and !(Test-Path $config.DownloadPath)) {
+    New-Item -ItemType Directory -Path $config.DownloadPath -Force | Out-Null
+}
 
 $downloads = @{}
 $nextId = 0
 
+# --- Duplicate & Existing File Detection ---
+function Find-ExistingFile {
+    param([string]$url, [string]$videoId, [bool]$audioOnly)
+    if (-not $config.DownloadPath -or !(Test-Path $config.DownloadPath)) { return $null }
+    if (-not $videoId) {
+        if ($url -match '[?&]v=([a-zA-Z0-9_-]{11})') { $videoId = $Matches[1] }
+        elseif ($url -match 'youtu\.be/([a-zA-Z0-9_-]{11})') { $videoId = $Matches[1] }
+    }
+    if (-not $videoId) { return $null }
+
+    $ext = if ($audioOnly) { "*.mp3" } else { "*.mp4" }
+    $files = Get-ChildItem -Path $config.DownloadPath -Filter $ext -File -ErrorAction SilentlyContinue
+    foreach ($f in $files) {
+        if ($f.Name -match "\[$videoId\]" -or $f.Name -match $videoId) {
+            return $f.FullName
+        }
+    }
+    return $null
+}
+
+function Test-AlreadyDownloading {
+    param([string]$url)
+    foreach ($dl in $downloads.Values) {
+        if ($dl.url -eq $url -and ($dl.status -eq 'downloading' -or $dl.status -eq 'merging' -or $dl.status -eq 'extracting')) {
+            return $true
+        }
+    }
+    return $false
+}
+
+# --- Response Helpers ---
 function New-JsonResponse {
     param($context, $data, [int]$status = 200)
     $json = $data | ConvertTo-Json -Depth 5 -Compress
     $buffer = [System.Text.Encoding]::UTF8.GetBytes($json)
     $context.Response.StatusCode = $status
     $context.Response.ContentType = "application/json; charset=utf-8"
-    $context.Response.Headers.Add("Access-Control-Allow-Origin", "null")
+    $origin = $context.Request.Headers["Origin"]
+    $allowedOrigin = if ($origin -match '^chrome-extension://') { $origin } else { "null" }
+    $context.Response.Headers.Add("Access-Control-Allow-Origin", $allowedOrigin)
     $context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
     $context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, X-Auth-Token, X-MDL-Client")
     $context.Response.ContentLength64 = $buffer.Length
@@ -2473,6 +2390,36 @@ function Read-RequestBody {
     } catch { return $null }
 }
 
+# --- Safe Filename ---
+function Get-SafeFilename {
+    param([string]$title, [string]$videoId)
+    $safe = $title -replace '[<>:"/\\|?*]', '_' -replace '_+', '_'
+    $safe = $safe.Trim('_. ')
+    if ($safe.Length -gt 120) { $safe = $safe.Substring(0, 120).TrimEnd('_. ') }
+    if ($videoId) { $safe = "$safe [$videoId]" }
+    return $safe
+}
+
+# --- Cookie Writer (Netscape format for yt-dlp) ---
+function Write-CookieFile {
+    param($cookies)
+    if (-not $cookies -or $cookies.Count -eq 0) { return $null }
+    $cookieFile = Join-Path $env:TEMP "mdl_cookies_$([guid]::NewGuid().ToString('N').Substring(0,8)).txt"
+    $lines = @("# Netscape HTTP Cookie File", "# Generated by MediaDL server from GM_cookie data", "")
+    foreach ($c in $cookies) {
+        $domain = $c.domain
+        $inclSub = if ($domain -and $domain.StartsWith('.')) { "TRUE" } else { "FALSE" }
+        $path = if ($c.path) { $c.path } else { "/" }
+        $secure = if ($c.secure) { "TRUE" } else { "FALSE" }
+        $expires = if ($c.expirationDate) { [int]$c.expirationDate } else { 0 }
+        $lines += "$domain`t$inclSub`t$path`t$secure`t$expires`t$($c.name)`t$($c.value)"
+    }
+    $lines -join "`n" | Set-Content $cookieFile -Encoding UTF8 -NoNewline
+    Write-Log "Wrote $($cookies.Count) cookies to $cookieFile"
+    return $cookieFile
+}
+
+# --- Download Start ---
 function Start-Download {
     param([hashtable]$params)
 
@@ -2485,78 +2432,258 @@ function Start-Download {
     $title = $params.title
     $audioOnly = $params.audioOnly -eq $true
     $referer = $params.referer
+    $streams = $params.streams
+    $cookies = $params.cookies
     $isDirect = $url -match "fbcdn\.net|\.mp4\?|\.webm\?"
 
+    # Write cookie file for yt-dlp fallback (from GM_cookie data sent by userscript)
+    $cookieFile = Write-CookieFile $cookies
+
     $ffLoc = Split-Path $config.FfmpegPath -Parent
-    if ($isDirect -and $title) {
-        $safeName = $title -replace '[<>:"/\\|?*]', '_' -replace '_+', '_'
-        $safeName = $safeName.Trim('_. ')
-        if ($safeName.Length -gt 120) { $safeName = $safeName.Substring(0, 120).TrimEnd('_. ') }
-        $ext = if ($audioOnly) { "mp3" } else { "%(ext)s" }
-        $outTpl = Join-Path $config.DownloadPath "$safeName.$ext"
-    } else {
-        $ext = if ($audioOnly) { "mp3" } else { "%(ext)s" }
-        $outTpl = Join-Path $config.DownloadPath "%(title)s.$ext"
-    }
+    $ffmpegExe = $config.FfmpegPath
 
-    Write-Log "[$id] Starting: url=$($url.Substring(0, [Math]::Min(80, $url.Length)))... audio=$audioOnly direct=$isDirect"
+    # --- DIRECT STREAM DOWNLOAD (primary path for YouTube) ---
+    # The userscript extracts pre-authenticated stream URLs from the page.
+    # These URLs have auth signatures embedded - no cookies/login needed on the server.
+    # Works universally across all browser types.
+    # Uses WebClient for YouTube CDN URLs (BITS struggles with long auth URLs).
+    # Falls back to BITS if WebClient fails.
+    if ($streams) {
+        $safeName = Get-SafeFilename -title $streams.title -videoId $streams.videoId
+        Write-Log "[$id] Direct stream: '$($streams.title)' audio=$audioOnly"
 
-    if ($audioOnly -and $isDirect) {
-        $tempVideo = Join-Path $config.DownloadPath "mdl_temp_$([guid]::NewGuid().ToString('N')).mp4"
-        $job = Start-Job -ScriptBlock {
-            param($ytdlp, $ffmpeg, $vUrl, $tempVideo, $outMp3, $outFile, $ref)
-            $dlArgs = @('--newline', '--progress', '-o', $tempVideo)
-            if ($ref) { $dlArgs += '--referer'; $dlArgs += $ref }
-            $dlArgs += $vUrl
-            & $ytdlp @dlArgs 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
-            if (Test-Path $tempVideo) {
-                "[extract] Extracting audio..." | Out-File $outFile -Append -Encoding utf8
-                & $ffmpeg -i $tempVideo -vn -acodec libmp3lame -q:a 0 -y $outMp3 2>&1 | Out-Null
-                if (Test-Path $outMp3) {
-                    Remove-Item $tempVideo -Force -ErrorAction SilentlyContinue
-                    "[download] 100% audio extraction complete" | Out-File $outFile -Append -Encoding utf8
+        if ($audioOnly -and $streams.audioUrl) {
+            $outFile = Join-Path $config.DownloadPath "$safeName.mp3"
+            $job = Start-Job -ScriptBlock {
+                param($audioUrl, $outFile, $ffmpeg, $progressFile, $title)
+                function Invoke-StreamDownload {
+                    param([string]$Url, [string]$Dest, [string]$ProgFile, [string]$Label)
+                    # WebClient first (reliable for YouTube CDN URLs), BITS fallback for non-CDN
+                    try {
+                        "[$Label] Downloading..." | Out-File $ProgFile -Append -Encoding utf8
+                        $wc = New-Object System.Net.WebClient
+                        $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                        $wc.Headers.Add("Referer", "https://www.youtube.com/")
+                        $wc.DownloadFile($Url, $Dest)
+                        return $true
+                    } catch {
+                        "[$Label] WebClient failed ($($_.Exception.Message)), trying BITS..." | Out-File $ProgFile -Append -Encoding utf8
+                        try {
+                            Import-Module BitsTransfer -ErrorAction Stop
+                            $bitsHeaders = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36`r`nReferer: https://www.youtube.com/"
+                            Start-BitsTransfer -Source $Url -Destination $Dest -CustomHeaders $bitsHeaders -Priority Foreground -ErrorAction Stop
+                            return $true
+                        } catch {
+                            "ERROR: Download failed: $($_.Exception.Message)" | Out-File $ProgFile -Append -Encoding utf8
+                            return $false
+                        }
+                    }
                 }
-            }
-        } -ArgumentList $config.YtDlpPath, $config.FfmpegPath, $url, $tempVideo, $outTpl, $progressFile, $referer
+                try {
+                    "[$title] Downloading audio stream..." | Out-File $progressFile -Encoding utf8
+                    $tempAudio = "$outFile.tmp_audio"
+                    if (Invoke-StreamDownload -Url $audioUrl -Dest $tempAudio -ProgFile $progressFile -Label $title) {
+                        "[download] 100% audio downloaded" | Out-File $progressFile -Append -Encoding utf8
+                        "[extract] Converting to MP3..." | Out-File $progressFile -Append -Encoding utf8
+                        & $ffmpeg -y -i $tempAudio -vn -acodec libmp3lame -q:a 0 $outFile 2>&1 | Out-Null
+                        if (Test-Path $outFile) {
+                            Remove-Item $tempAudio -Force -ErrorAction SilentlyContinue
+                            "[download] 100% audio extraction complete" | Out-File $progressFile -Append -Encoding utf8
+                        } else {
+                            "ERROR: ffmpeg conversion failed" | Out-File $progressFile -Append -Encoding utf8
+                        }
+                    }
+                } catch {
+                    "ERROR: $($_.Exception.Message)" | Out-File $progressFile -Append -Encoding utf8
+                }
+            } -ArgumentList $streams.audioUrl, $outFile, $ffmpegExe, $progressFile, $safeName
+        }
+        elseif ($streams.combined) {
+            $outFile = Join-Path $config.DownloadPath "$safeName.mp4"
+            $job = Start-Job -ScriptBlock {
+                param($videoUrl, $outFile, $progressFile, $title)
+                function Invoke-StreamDownload {
+                    param([string]$Url, [string]$Dest, [string]$ProgFile, [string]$Label)
+                    # WebClient first (reliable for YouTube CDN URLs), BITS fallback for non-CDN
+                    try {
+                        "[$Label] Downloading..." | Out-File $ProgFile -Append -Encoding utf8
+                        $wc = New-Object System.Net.WebClient
+                        $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                        $wc.Headers.Add("Referer", "https://www.youtube.com/")
+                        $wc.DownloadFile($Url, $Dest)
+                        return $true
+                    } catch {
+                        "[$Label] WebClient failed ($($_.Exception.Message)), trying BITS..." | Out-File $ProgFile -Append -Encoding utf8
+                        try {
+                            Import-Module BitsTransfer -ErrorAction Stop
+                            $bitsHeaders = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36`r`nReferer: https://www.youtube.com/"
+                            Start-BitsTransfer -Source $Url -Destination $Dest -CustomHeaders $bitsHeaders -Priority Foreground -ErrorAction Stop
+                            return $true
+                        } catch {
+                            "ERROR: Download failed: $($_.Exception.Message)" | Out-File $ProgFile -Append -Encoding utf8
+                            return $false
+                        }
+                    }
+                }
+                try {
+                    "[$title] Downloading combined stream..." | Out-File $progressFile -Encoding utf8
+                    if (Invoke-StreamDownload -Url $videoUrl -Dest $outFile -ProgFile $progressFile -Label $title) {
+                        "[download] 100% of combined stream" | Out-File $progressFile -Append -Encoding utf8
+                    }
+                } catch {
+                    "ERROR: $($_.Exception.Message)" | Out-File $progressFile -Append -Encoding utf8
+                }
+            } -ArgumentList $streams.videoUrl, $outFile, $progressFile, $safeName
+        }
+        elseif ($streams.videoUrl -and $streams.audioUrl) {
+            $outFile = Join-Path $config.DownloadPath "$safeName.mp4"
+            $job = Start-Job -ScriptBlock {
+                param($videoUrl, $audioUrl, $outFile, $ffmpeg, $progressFile, $title)
+                function Invoke-StreamDownload {
+                    param([string]$Url, [string]$Dest, [string]$ProgFile, [string]$Label)
+                    # WebClient first (reliable for YouTube CDN URLs), BITS fallback for non-CDN
+                    try {
+                        "[$Label] Downloading..." | Out-File $ProgFile -Append -Encoding utf8
+                        $wc = New-Object System.Net.WebClient
+                        $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                        $wc.Headers.Add("Referer", "https://www.youtube.com/")
+                        $wc.DownloadFile($Url, $Dest)
+                        return $true
+                    } catch {
+                        "[$Label] WebClient failed ($($_.Exception.Message)), trying BITS..." | Out-File $ProgFile -Append -Encoding utf8
+                        try {
+                            Import-Module BitsTransfer -ErrorAction Stop
+                            $bitsHeaders = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36`r`nReferer: https://www.youtube.com/"
+                            Start-BitsTransfer -Source $Url -Destination $Dest -CustomHeaders $bitsHeaders -Priority Foreground -ErrorAction Stop
+                            return $true
+                        } catch {
+                            "ERROR: Download failed: $($_.Exception.Message)" | Out-File $ProgFile -Append -Encoding utf8
+                            return $false
+                        }
+                    }
+                }
+                try {
+                    $tempVideo = "$outFile.tmp_video"
+                    $tempAudio = "$outFile.tmp_audio"
+
+                    "[$title] Downloading video stream..." | Out-File $progressFile -Encoding utf8
+                    $vidOk = Invoke-StreamDownload -Url $videoUrl -Dest $tempVideo -ProgFile $progressFile -Label $title
+                    if ($vidOk) {
+                        "[download] 50% - video complete" | Out-File $progressFile -Append -Encoding utf8
+                    } else { return }
+
+                    "[$title] Downloading audio stream..." | Out-File $progressFile -Append -Encoding utf8
+                    $audOk = Invoke-StreamDownload -Url $audioUrl -Dest $tempAudio -ProgFile $progressFile -Label $title
+                    if ($audOk) {
+                        "[download] 80% - audio complete" | Out-File $progressFile -Append -Encoding utf8
+                    } else { return }
+
+                    "[Merger] Merging formats into `"$outFile`"" | Out-File $progressFile -Append -Encoding utf8
+                    & $ffmpeg -y -i $tempVideo -i $tempAudio -c:v copy -c:a aac -movflags +faststart $outFile 2>&1 | Out-Null
+                    Start-Sleep -Milliseconds 500
+
+                    if (Test-Path $outFile) {
+                        "[download] 100% merge complete" | Out-File $progressFile -Append -Encoding utf8
+                        Start-Sleep -Milliseconds 200
+                        Remove-Item $tempVideo -Force -ErrorAction SilentlyContinue
+                        Remove-Item $tempAudio -Force -ErrorAction SilentlyContinue
+                    } else {
+                        "ERROR: ffmpeg merge failed" | Out-File $progressFile -Append -Encoding utf8
+                    }
+                } catch {
+                    "ERROR: $($_.Exception.Message)" | Out-File $progressFile -Append -Encoding utf8
+                }
+            } -ArgumentList $streams.videoUrl, $streams.audioUrl, $outFile, $ffmpegExe, $progressFile, $safeName
+        }
+        else {
+            Write-Log "[$id] Streams object incomplete, falling back to yt-dlp"
+            $streams = $null
+        }
     }
-    elseif ($audioOnly) {
-        $job = Start-Job -ScriptBlock {
-            param($ytdlp, $ffLoc, $outTpl, $vUrl, $outFile, $ref)
-            $a = @('-f', 'bestaudio', '--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0',
-                   '--newline', '--progress', '--ffmpeg-location', $ffLoc, '-o', $outTpl)
-            if ($ref) { $a += '--referer'; $a += $ref }
-            $a += $vUrl
-            & $ytdlp @a 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
-        } -ArgumentList $config.YtDlpPath, $ffLoc, $outTpl, $url, $progressFile, $referer
+
+    # --- YT-DLP FALLBACK (non-YouTube sites, or when streams unavailable) ---
+    if (-not $streams) {
+        if ($isDirect -and $title) {
+            $safeName = $title -replace '[<>:"/\\|?*]', '_' -replace '_+', '_'
+            $safeName = $safeName.Trim('_. ')
+            if ($safeName.Length -gt 120) { $safeName = $safeName.Substring(0, 120).TrimEnd('_. ') }
+            $ext = if ($audioOnly) { "mp3" } else { "%(ext)s" }
+            $outTpl = Join-Path $config.DownloadPath "$safeName.$ext"
+        } else {
+            $ext = if ($audioOnly) { "mp3" } else { "%(ext)s" }
+            $outTpl = Join-Path $config.DownloadPath "%(title)s.$ext"
+        }
+
+        Write-Log "[$id] yt-dlp fallback: url=$($url.Substring(0, [Math]::Min(80, $url.Length)))... audio=$audioOnly"
+
+        if ($audioOnly -and $isDirect) {
+            $tempVideo = Join-Path $config.DownloadPath "mdl_temp_$([guid]::NewGuid().ToString('N')).mp4"
+            $job = Start-Job -ScriptBlock {
+                param($ytdlp, $ffmpeg, $vUrl, $tempVideo, $outMp3, $outFile, $ref, $ckFile)
+                $dlArgs = @('--newline', '--progress', '-o', $tempVideo)
+                if ($ref) { $dlArgs += '--referer'; $dlArgs += $ref }
+                if ($ckFile -and (Test-Path $ckFile)) { $dlArgs += '--cookies'; $dlArgs += $ckFile }
+                $dlArgs += $vUrl
+                & $ytdlp @dlArgs 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
+                if (Test-Path $tempVideo) {
+                    "[extract] Extracting audio..." | Out-File $outFile -Append -Encoding utf8
+                    & $ffmpeg -i $tempVideo -vn -acodec libmp3lame -q:a 0 -y $outMp3 2>&1 | Out-Null
+                    if (Test-Path $outMp3) {
+                        Remove-Item $tempVideo -Force -ErrorAction SilentlyContinue
+                        "[download] 100% audio extraction complete" | Out-File $outFile -Append -Encoding utf8
+                    }
+                }
+                if ($ckFile -and (Test-Path $ckFile)) { Remove-Item $ckFile -Force -ErrorAction SilentlyContinue }
+            } -ArgumentList $config.YtDlpPath, $config.FfmpegPath, $url, $tempVideo, $outTpl, $progressFile, $referer, $cookieFile
+        }
+        elseif ($audioOnly) {
+            $job = Start-Job -ScriptBlock {
+                param($ytdlp, $ffLoc, $outTpl, $vUrl, $outFile, $ref, $ckFile)
+                $a = @('-f', 'bestaudio', '--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0',
+                       '--newline', '--progress', '--ffmpeg-location', $ffLoc, '-o', $outTpl)
+                if ($ref) { $a += '--referer'; $a += $ref }
+                if ($ckFile -and (Test-Path $ckFile)) { $a += '--cookies'; $a += $ckFile }
+                $a += $vUrl
+                & $ytdlp @a 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
+                if ($ckFile -and (Test-Path $ckFile)) { Remove-Item $ckFile -Force -ErrorAction SilentlyContinue }
+            } -ArgumentList $config.YtDlpPath, $ffLoc, $outTpl, $url, $progressFile, $referer, $cookieFile
+        }
+        elseif ($isDirect) {
+            $job = Start-Job -ScriptBlock {
+                param($ytdlp, $ffLoc, $outTpl, $vUrl, $outFile, $ref, $ckFile)
+                $a = @('--newline', '--progress', '--ffmpeg-location', $ffLoc, '-o', $outTpl)
+                if ($ref) { $a += '--referer'; $a += $ref }
+                if ($ckFile -and (Test-Path $ckFile)) { $a += '--cookies'; $a += $ckFile }
+                $a += $vUrl
+                & $ytdlp @a 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
+                if ($ckFile -and (Test-Path $ckFile)) { Remove-Item $ckFile -Force -ErrorAction SilentlyContinue }
+            } -ArgumentList $config.YtDlpPath, $ffLoc, $outTpl, $url, $progressFile, $referer, $cookieFile
+        }
+        else {
+            $job = Start-Job -ScriptBlock {
+                param($ytdlp, $ffLoc, $outTpl, $vUrl, $outFile, $ref, $ckFile)
+                $a = @('-f', 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
+                       '--merge-output-format', 'mp4', '--newline', '--progress',
+                       '--ffmpeg-location', $ffLoc, '-o', $outTpl)
+                if ($ref) { $a += '--referer'; $a += $ref }
+                if ($ckFile -and (Test-Path $ckFile)) { $a += '--cookies'; $a += $ckFile }
+                $a += $vUrl
+                & $ytdlp @a 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
+                if ($ckFile -and (Test-Path $ckFile)) { Remove-Item $ckFile -Force -ErrorAction SilentlyContinue }
+            } -ArgumentList $config.YtDlpPath, $ffLoc, $outTpl, $url, $progressFile, $referer, $cookieFile
+        }
     }
-    elseif ($isDirect) {
-        $job = Start-Job -ScriptBlock {
-            param($ytdlp, $ffLoc, $outTpl, $vUrl, $outFile, $ref)
-            $a = @('--newline', '--progress', '--ffmpeg-location', $ffLoc, '-o', $outTpl)
-            if ($ref) { $a += '--referer'; $a += $ref }
-            $a += $vUrl
-            & $ytdlp @a 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
-        } -ArgumentList $config.YtDlpPath, $ffLoc, $outTpl, $url, $progressFile, $referer
-    }
-    else {
-        $job = Start-Job -ScriptBlock {
-            param($ytdlp, $ffLoc, $outTpl, $vUrl, $outFile, $ref)
-            $a = @('-f', 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
-                   '--merge-output-format', 'mp4', '--newline', '--progress',
-                   '--ffmpeg-location', $ffLoc, '-o', $outTpl)
-            if ($ref) { $a += '--referer'; $a += $ref }
-            $a += $vUrl
-            & $ytdlp @a 2>&1 | ForEach-Object { $_ | Out-File $outFile -Append -Encoding utf8 }
-        } -ArgumentList $config.YtDlpPath, $ffLoc, $outTpl, $url, $progressFile, $referer
-    }
+
+    $dlTitle = if ($streams) { $streams.title } elseif ($title) { $title } else { "Unknown" }
 
     $downloads[$id] = @{
-        id = $id; url = $url; title = if ($title) { $title } else { "Unknown" }
+        id = $id; url = $url; title = $dlTitle
         audioOnly = $audioOnly; status = "downloading"; progress = 0
         speed = ""; eta = ""; job = $job; progressFile = $progressFile
-        startTime = (Get-Date); filename = ""
+        startTime = (Get-Date); filename = ""; mode = if ($streams) { "direct" } else { "ytdlp" }
     }
 
+    Write-Log "[$id] Started (mode=$($downloads[$id].mode))"
     return $id
 }
 
@@ -2577,8 +2704,8 @@ function Update-Downloads {
                     if ($content -match '(?s).*of\s+~?(\d+\.?\d*\w+)\s+at\s+(\S+)\s+ETA\s+(\S+)') {
                         $dl.speed = $matches[2]; $dl.eta = $matches[3]
                     }
-                    if ($content -match '\[Merger\]|Merging formats') { $dl.status = "merging" }
-                    elseif ($content -match '\[ExtractAudio\]|\[extract\]') { $dl.status = "extracting" }
+                    if ($content -match '\[Merger\]|Merging formats|merge complete') { $dl.status = "merging" }
+                    elseif ($content -match '\[ExtractAudio\]|\[extract\]|Converting to MP3') { $dl.status = "extracting" }
                     elseif ($content -match 'already been downloaded') { $dl.progress = 100; $dl.status = "complete" }
                     if ($content -match '\[download\] Destination: (.+)') { $dl.filename = $matches[1] }
                     elseif ($content -match '\[Merger\] Merging formats into "(.+)"') { $dl.filename = $matches[1] }
@@ -2594,12 +2721,13 @@ function Update-Downloads {
                 try { $allOutput += Get-Content $dl.progressFile -Raw -ErrorAction SilentlyContinue } catch {}
             }
 
-            if ($allOutput -match "100%|has already been downloaded|Merging formats into|DelayedMuxer|audio extraction complete") {
+            if ($allOutput -match "100%|has already been downloaded|Merging formats into|DelayedMuxer|audio extraction complete|merge complete") {
                 $dl.status = "complete"; $dl.progress = 100
-                Write-Log "[$id] Complete"
+                Write-Log "[$id] Complete (mode=$($dl.mode))"
             } else {
                 $dl.status = "failed"
-                Write-Log "[$id] Failed: $($allOutput.Substring(0, [Math]::Min(200, $allOutput.Length)))"
+                $snippet = if ($allOutput.Length -gt 300) { $allOutput.Substring(0, 300) } else { $allOutput }
+                Write-Log "[$id] Failed: $snippet"
             }
 
             try { Remove-Job -Job $dl.job -Force -ErrorAction SilentlyContinue } catch {}
@@ -2608,16 +2736,35 @@ function Update-Downloads {
     }
 }
 
+function Reap-Zombies {
+    $cutoff = (Get-Date).AddMinutes(-$ZOMBIE_MINUTES)
+    foreach ($id in @($downloads.Keys)) {
+        $dl = $downloads[$id]
+        if ($dl.status -ne 'downloading' -and $dl.status -ne 'merging' -and $dl.status -ne 'extracting') { continue }
+        if ($dl.startTime -lt $cutoff) {
+            if ($dl.job -and $dl.job.State -ne "Running") {
+                Write-Log "[$id] Zombie reaped (job dead, started $($dl.startTime.ToString('HH:mm:ss')))"
+                $dl.status = "failed"
+                try { Remove-Job -Job $dl.job -Force -ErrorAction SilentlyContinue } catch {}
+                if ($dl.progressFile -and (Test-Path $dl.progressFile)) {
+                    Remove-Item $dl.progressFile -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+}
+
 function Clean-OldDownloads {
     $cutoff = (Get-Date).AddMinutes(-$CLEANUP_MINUTES)
     foreach ($id in @($downloads.Keys)) {
         $dl = $downloads[$id]
-        if (($dl.status -eq 'complete' -or $dl.status -eq 'failed') -and $dl.startTime -lt $cutoff) {
+        if (($dl.status -eq 'complete' -or $dl.status -eq 'failed' -or $dl.status -eq 'cancelled') -and $dl.startTime -lt $cutoff) {
             $downloads.Remove($id)
         }
     }
 }
 
+# --- HTTP Listener ---
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://127.0.0.1:$PORT/")
 
@@ -2633,6 +2780,7 @@ while ($listener.IsListening) {
         $result = $listener.BeginGetContext($null, $null)
         while (-not $result.AsyncWaitHandle.WaitOne(2000)) {
             Update-Downloads
+            Reap-Zombies
             if ((Get-Date) -gt $lastCleanup.AddMinutes(1)) {
                 Clean-OldDownloads
                 $lastCleanup = Get-Date
@@ -2663,7 +2811,7 @@ while ($listener.IsListening) {
             '^/health$' {
                 $active = ($downloads.Values | Where-Object { $_.status -eq 'downloading' -or $_.status -eq 'merging' -or $_.status -eq 'extracting' }).Count
                 $resp = @{
-                    status = "ok"; version = "1.0"; port = $PORT
+                    status = "ok"; version = $SERVER_VERSION; port = $PORT
                     downloads = $active; token_required = $true
                 }
                 $clientId = $req.Headers["X-MDL-Client"]
@@ -2682,15 +2830,49 @@ while ($listener.IsListening) {
                 try { $params = $body | ConvertFrom-Json } catch { New-JsonResponse $context @{ error = "Invalid JSON" } 400; break }
                 if (-not $params.url) { New-JsonResponse $context @{ error = "Missing url" } 400; break }
 
+                # Check for duplicate in-progress download
+                if (Test-AlreadyDownloading $params.url) {
+                    New-JsonResponse $context @{ status = "downloading"; message = "Already downloading" }
+                    break
+                }
+
+                # Check for existing file
+                $vid = if ($params.streams) { $params.streams.videoId } else { $null }
+                $existing = Find-ExistingFile -url $params.url -videoId $vid -audioOnly ($params.audioOnly -eq $true)
+                if ($existing) {
+                    Write-Log "File already exists: $existing"
+                    New-JsonResponse $context @{ status = "complete"; message = "Already downloaded"; filename = $existing }
+                    break
+                }
+
                 $active = ($downloads.Values | Where-Object { $_.status -eq 'downloading' -or $_.status -eq 'merging' -or $_.status -eq 'extracting' }).Count
                 if ($active -ge $MAX_CONCURRENT) {
                     New-JsonResponse $context @{ error = "Too many concurrent downloads"; active = $active } 429
                     break
                 }
 
+                # Convert streams from PSCustomObject to hashtable for Start-Job
+                $streamsHt = $null
+                if ($params.streams) {
+                    $streamsHt = @{}
+                    $params.streams.PSObject.Properties | ForEach-Object { $streamsHt[$_.Name] = $_.Value }
+                }
+
+                # Convert cookies array for cookie file writer
+                $cookiesArr = $null
+                if ($params.cookies) {
+                    $cookiesArr = @()
+                    foreach ($c in $params.cookies) {
+                        $cht = @{}
+                        $c.PSObject.Properties | ForEach-Object { $cht[$_.Name] = $_.Value }
+                        $cookiesArr += $cht
+                    }
+                }
+
                 $ht = @{
                     url = $params.url; title = $params.title
                     audioOnly = $params.audioOnly; referer = $params.referer
+                    streams = $streamsHt; cookies = $cookiesArr
                 }
                 $id = Start-Download $ht
                 New-JsonResponse $context @{ id = $id; status = "downloading" }
@@ -2710,7 +2892,7 @@ while ($listener.IsListening) {
                 foreach ($dl in $downloads.Values) {
                     $list += @{
                         id = $dl.id; status = $dl.status; progress = [math]::Round($dl.progress, 1)
-                        title = $dl.title; speed = $dl.speed; eta = $dl.eta
+                        title = $dl.title; speed = $dl.speed; eta = $dl.eta; mode = $dl.mode
                     }
                 }
                 New-JsonResponse $context @{ downloads = $list; count = $list.Count }
@@ -2789,17 +2971,18 @@ objShell.Run strCmd, 0, False
                     
                     # Register server as startup task (runs hidden on login)
                     $taskName = "MediaDL-Server"
+                    $taskRegistered = $false
                     try {
-                        # Remove existing task if present
                         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
-                        
                         $action = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$serverLauncher`""
                         $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
                         $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Days 365)
-                        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "MediaDL background server for browser downloads" -Force | Out-Null
+                        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "MediaDL background server for browser downloads" -Force -ErrorAction Stop | Out-Null
                         Update-Status "  [OK] Server registered as startup task"
-                    } catch {
-                        # Fallback: add to startup folder
+                        $taskRegistered = $true
+                    } catch {}
+                    if (-not $taskRegistered) {
+                        # Scheduled task needs admin - use startup folder instead
                         $startupFolder = [Environment]::GetFolderPath('Startup')
                         $shortcutPath = Join-Path $startupFolder "MediaDL-Server.lnk"
                         $ws = New-Object -ComObject WScript.Shell
@@ -2859,130 +3042,19 @@ objShell.Run strCmd, 0, False
                     New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
                     Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytdl-launcher.vbs')`" `"%1`""
                     
-                    $registeredProtocols = "ytdl://"
-                    if ($chkInstallVlc.IsChecked) { $registeredProtocols = "ytvlc://, ytvlcq://, ytdl://" }
+                    # mediadl:// (server auto-start protocol — fires the VBS launcher)
+                    $protocolRoot = "HKCU:\Software\Classes\mediadl"
+                    New-Item -Path $protocolRoot -Force | Out-Null
+                    Set-ItemProperty -Path $protocolRoot -Name "(Default)" -Value "URL:MediaDL Protocol"
+                    Set-ItemProperty -Path $protocolRoot -Name "URL Protocol" -Value ""
+                    New-Item -Path "$protocolRoot\shell\open\command" -Force | Out-Null
+                    Set-ItemProperty -Path "$protocolRoot\shell\open\command" -Name "(Default)" -Value "wscript.exe `"$(Join-Path $script:InstallPath 'ytdl-server-launcher.vbs')`""
+
+                    $registeredProtocols = "ytdl://, mediadl://"
+                    if ($chkInstallVlc.IsChecked) { $registeredProtocols = "ytvlc://, ytvlcq://, ytdl://, mediadl://" }
                     Update-Status "  [OK] Registered: $registeredProtocols"
                     Set-Progress 80
                     
-                    # Step 8: Create userscript
-                    Update-Status "Creating userscript..."
-                    $userscript = @'
-// ==UserScript==
-// @name         YTYT-Downloader
-// @namespace    https://github.com/SysAdminDoc/ytyt-downloader
-// @version      2.0.0
-// @description  Stream YouTube to VLC or download video/audio/transcript with yt-dlp
-// @author       SysAdminDoc
-// @match        https://www.youtube.com/*
-// @match        https://youtube.com/*
-// @grant        GM_getValue
-// @grant        GM_setValue
-// @run-at       document-start
-// @homepageURL  https://github.com/SysAdminDoc/ytyt-downloader
-// @supportURL   https://github.com/SysAdminDoc/ytyt-downloader/issues
-// ==/UserScript==
-
-(function() {
-    'use strict';
-    const DEFAULT_SETTINGS = { showVLC: false, showVideo: true, showAudio: true, showTranscript: true };
-    function getSettings() { try { const s = GM_getValue('ytyt_settings', null); if (s) return { ...DEFAULT_SETTINGS, ...JSON.parse(s) }; } catch (e) {} return { ...DEFAULT_SETTINGS }; }
-    function saveSettings(s) { try { GM_setValue('ytyt_settings', JSON.stringify(s)); } catch (e) {} }
-    let settings = getSettings();
-
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = '.ytyt-container{position:relative!important;display:inline-flex!important;align-items:center!important}.ytyt-settings-panel{position:absolute!important;top:100%!important;right:0!important;margin-top:8px!important;background:#1f2937!important;border:1px solid #374151!important;border-radius:12px!important;padding:16px!important;min-width:200px!important;z-index:9999!important;box-shadow:0 10px 25px rgba(0,0,0,0.5)!important}.ytyt-settings-title{margin:0 0 12px 0!important;color:#f3f4f6!important;font-size:14px!important;font-weight:600!important}.ytyt-settings-item{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:8px 0!important;color:#d1d5db!important;font-size:13px!important}.ytyt-toggle{position:relative!important;width:40px!important;height:22px!important;background:#374151!important;border-radius:11px!important;cursor:pointer!important;transition:background 0.2s!important}.ytyt-toggle.active{background:#22c55e!important}.ytyt-toggle::after{content:""!important;position:absolute!important;top:2px!important;left:2px!important;width:18px!important;height:18px!important;background:white!important;border-radius:50%!important;transition:left 0.2s!important}.ytyt-toggle.active::after{left:20px!important}';
-    (document.head || document.documentElement).appendChild(styleSheet);
-
-    function createSvg(d, f='white') { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('width', '20'); s.setAttribute('height', '20'); const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d); p.setAttribute('fill', f); s.appendChild(p); return s; }
-    function getCurrentVideoId() { const u = new URLSearchParams(window.location.search).get('v'); if (u) return u; const m = window.location.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/); return m ? m[1] : null; }
-    function getCurrentVideoUrl() { const id = getCurrentVideoId(); return id ? 'https://www.youtube.com/watch?v=' + id : null; }
-    function openInVLC() { const u = getCurrentVideoUrl(); if (u) window.location.href = 'ytvlc://' + encodeURIComponent(u); }
-    function downloadVideo() { const u = getCurrentVideoUrl(); if (u) window.location.href = 'ytdl://' + encodeURIComponent(u); }
-    function downloadAudio() { const u = getCurrentVideoUrl(); if (u) window.location.href = 'ytdl://' + encodeURIComponent(u) + '?ytyt_audio_only=1'; }
-
-    async function downloadTranscript() {
-        const videoId = getCurrentVideoId(); if (!videoId) return;
-        try {
-            const response = await fetch(window.location.href); const html = await response.text();
-            const tracksMatch = html.match(/"captionTracks":\s*(\[.*?\])/s); let captionTracks = [];
-            if (tracksMatch) { try { let j = tracksMatch[1], d = 0, e = 0; for (let i = 0; i < j.length; i++) { if (j[i] === '[') d++; if (j[i] === ']') d--; if (d === 0) { e = i + 1; break; } } captionTracks = JSON.parse(j.substring(0, e)); } catch (e) {} }
-            if (captionTracks.length === 0) { alert('No transcript available.'); return; }
-            let track = captionTracks.find(t => t.languageCode === 'en' || t.languageCode?.startsWith('en')) || captionTracks[0];
-            if (!track?.baseUrl) { alert('Could not find transcript URL.'); return; }
-            const transcriptXml = await (await fetch(track.baseUrl)).text();
-            const xmlDoc = new DOMParser().parseFromString(transcriptXml, 'text/xml');
-            const textElements = xmlDoc.querySelectorAll('text'); if (textElements.length === 0) { alert('Transcript is empty.'); return; }
-            let title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || document.title.replace(' - YouTube', '') || 'transcript';
-            title = title.replace(/[<>:"/\\|?*]/g, '').trim();
-            let txt = 'Transcript: ' + title + '\nVideo: ' + getCurrentVideoUrl() + '\n' + '='.repeat(50) + '\n\n';
-            textElements.forEach(el => { const s = parseFloat(el.getAttribute('start') || 0); const t = el.textContent.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/\n/g, ' ').trim(); if (t) { const m = Math.floor(s / 60), sec = Math.floor(s % 60); txt += '[' + m.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0') + '] ' + t + '\n'; } });
-            const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = title + '_transcript.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-        } catch (error) { alert('Failed to download transcript.'); }
-    }
-
-    function buttonsExist() { return document.querySelector('.ytyt-container') !== null; }
-    function removeButtons() { document.querySelectorAll('.ytyt-container').forEach(el => el.remove()); }
-
-    function createSettingsPanel() {
-        const panel = document.createElement('div'); panel.className = 'ytyt-settings-panel';
-        const title = document.createElement('div'); title.className = 'ytyt-settings-title'; title.textContent = 'YTYT Settings'; panel.appendChild(title);
-        [{ key: 'showVLC', label: 'VLC Button' }, { key: 'showVideo', label: 'Video Download' }, { key: 'showAudio', label: 'Audio Download' }, { key: 'showTranscript', label: 'Transcript' }].forEach(({ key, label }) => {
-            const item = document.createElement('div'); item.className = 'ytyt-settings-item';
-            const labelSpan = document.createElement('span'); labelSpan.textContent = label; item.appendChild(labelSpan);
-            const toggle = document.createElement('div'); toggle.className = 'ytyt-toggle' + (settings[key] ? ' active' : ''); toggle.dataset.setting = key;
-            toggle.addEventListener('click', (e) => { e.stopPropagation(); settings[key] = !settings[key]; toggle.classList.toggle('active'); saveSettings(settings); removeButtons(); setTimeout(createButtons, 100); });
-            item.appendChild(toggle); panel.appendChild(item);
-        });
-        return panel;
-    }
-
-    function createButton(cls, ttl, bg, hv, icon, lbl, onClick) {
-        const btn = document.createElement('button'); btn.className = cls; btn.title = ttl;
-        btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:36px;margin-left:8px;border-radius:18px;border:none;background:'+bg+';color:white;font-family:"Roboto","Arial",sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;';
-        btn.onmouseenter = () => { btn.style.background = hv; }; btn.onmouseleave = () => { btn.style.background = bg; };
-        btn.appendChild(createSvg(icon)); btn.appendChild(document.createTextNode(' ' + lbl));
-        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onClick(); });
-        return btn;
-    }
-
-    function createButtons() {
-        if (!getCurrentVideoId() || buttonsExist()) return buttonsExist();
-        const selectors = ['#top-level-buttons-computed', 'ytd-menu-renderer.ytd-watch-metadata #top-level-buttons-computed', '#actions ytd-menu-renderer #top-level-buttons-computed'];
-        let actionBar = null; for (const sel of selectors) { actionBar = document.querySelector(sel); if (actionBar && actionBar.offsetParent !== null) break; }
-        if (!actionBar) return false;
-
-        const container = document.createElement('div'); container.className = 'ytyt-container';
-        if (settings.showVLC) container.appendChild(createButton('ytyt-vlc-btn', 'Stream in VLC', '#f97316', '#ea580c', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z', 'VLC', openInVLC));
-        if (settings.showVideo) container.appendChild(createButton('ytyt-video-btn', 'Download Video', '#22c55e', '#16a34a', 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z', 'Video', downloadVideo));
-        if (settings.showAudio) container.appendChild(createButton('ytyt-audio-btn', 'Download MP3', '#8b5cf6', '#7c3aed', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z', 'MP3', downloadAudio));
-        if (settings.showTranscript) container.appendChild(createButton('ytyt-transcript-btn', 'Download Transcript', '#3b82f6', '#2563eb', 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', 'TXT', downloadTranscript));
-
-        const settingsBtn = document.createElement('button'); settingsBtn.className = 'ytyt-settings-btn'; settingsBtn.title = 'YTYT Settings';
-        settingsBtn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-left:8px;border-radius:50%;border:none;background:#374151;cursor:pointer;transition:background 0.2s;';
-        settingsBtn.onmouseenter = () => { settingsBtn.style.background = '#4b5563'; }; settingsBtn.onmouseleave = () => { settingsBtn.style.background = '#374151'; };
-        settingsBtn.appendChild(createSvg('M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z', '#9ca3af'));
-        let panelVisible = false, settingsPanel = null;
-        settingsBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation();
-            if (panelVisible && settingsPanel) { settingsPanel.remove(); settingsPanel = null; panelVisible = false; }
-            else { settingsPanel = createSettingsPanel(); container.appendChild(settingsPanel); panelVisible = true;
-                const closePanel = (evt) => { if (settingsPanel && !settingsPanel.contains(evt.target) && evt.target !== settingsBtn) { settingsPanel.remove(); settingsPanel = null; panelVisible = false; document.removeEventListener('click', closePanel); } };
-                setTimeout(() => document.addEventListener('click', closePanel), 10); }
-        });
-        container.appendChild(settingsBtn); actionBar.appendChild(container); return true;
-    }
-
-    let retryCount = 0;
-    function tryCreateButtons() { if (createButtons()) { retryCount = 0; return; } if (retryCount < 15) { retryCount++; setTimeout(tryCreateButtons, Math.min(500 * Math.pow(1.5, retryCount - 1), 3000)); } else retryCount = 0; }
-    let currentVideoId = null;
-    function handleNavigation() { const newId = getCurrentVideoId(); if (newId !== currentVideoId) { currentVideoId = newId; removeButtons(); retryCount = 0; if (newId) setTimeout(tryCreateButtons, 500); } else if (newId && !buttonsExist()) tryCreateButtons(); }
-    function init() { handleNavigation(); new MutationObserver(() => { if (getCurrentVideoId() && !buttonsExist()) { clearTimeout(window.ytytDebounce); window.ytytDebounce = setTimeout(handleNavigation, 300); } }).observe(document.body || document.documentElement, { childList: true, subtree: true }); window.addEventListener('yt-navigate-finish', () => setTimeout(handleNavigation, 500)); window.addEventListener('yt-navigate-start', removeButtons); window.addEventListener('popstate', () => setTimeout(handleNavigation, 500)); }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-    window.addEventListener('load', () => setTimeout(handleNavigation, 1000));
-})();
-'@
-                    $userscript | Set-Content (Join-Path $script:InstallPath "YTYT-Downloader.user.js") -Encoding UTF8
-                    Update-Status "  [OK] Userscript created"
                     Set-Progress 85
                     
                     # Step 9: Ollama + AI Models (optional)
@@ -3195,12 +3267,11 @@ objShell.Run strCmd, 0, False
                         Update-Status "      YTKit ChapterForge auto-detects at localhost:11434"
                     }
                     Update-Status ""
-                    Update-Status "  MediaDL userscript auto-connects to the server."
-                    Update-Status "  Install in Tampermonkey: MediaDL v4.0.0"
+                    Update-Status "  Install YTKit in ScriptVault to connect to the server."
                     Update-Status "========================================"
                     
                     $script:BaseToolsInstalled = $true
-                    $btnNext.Content = "Next: Userscript Manager"
+                    $btnNext.Content = "Next: ScriptVault"
                     
                 } catch {
                     Update-Status ""
