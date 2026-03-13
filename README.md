@@ -5,38 +5,48 @@
 <h1 align="center">YTKit: YouTube Customization Suite</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.8.0-ff4e45?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.0.0-ff4e45?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-blue?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Chrome%20Extension%20%7C%20Tampermonkey%20%7C%20Violentmonkey-blue?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/YouTube-Desktop-ff0000?style=flat-square&logo=youtube&logoColor=white" alt="YouTube">
 </p>
 
 <p align="center">
-  A single userscript that transforms YouTube into a clean, ad-free, distraction-free experience with a premium dark interface — no extensions to manage, no bloat, just one file.
+  A Chrome extension and userscript that transforms YouTube into a clean, ad-free, distraction-free experience with a premium dark interface — zero configuration required.
 </p>
 
 <p align="center">
-  <a href="https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js"><strong>⬇ Install YTKit</strong></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.min.user.js"><strong>⬇ Install YTKit (Minified)</strong></a>
+  <a href="https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js"><strong>⬇ Install Userscript</strong></a>
 </p>
 
 ---
 
 ## Installation
 
+### Chrome Extension (Recommended)
+
+1. Download or clone the `extension/` folder from this repo
+2. Open `chrome://extensions/` in Chrome, Edge, or Brave
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked** and select the `extension/` folder
+5. Open YouTube — everything works immediately
+
+The extension runs as a Manifest V3 Chrome extension with full cookie access, cross-origin fetch support, and no userscript manager required.
+
+### Userscript
+
 1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/)
 2. **[Click here to install YTKit](https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js)**
 3. Confirm installation when prompted
-4. Open YouTube — everything works immediately with zero configuration
+4. Open YouTube — everything works immediately
 
-YTKit auto-updates through your userscript manager. Every feature is enabled by default and fully configurable through the built-in settings panel.
+The userscript auto-updates through your userscript manager. Every feature is enabled by default and fully configurable through the built-in settings panel.
 
 ---
 
 ## What It Does
 
-YTKit replaces the need for multiple browser extensions by combining ad blocking, SponsorBlock, UI customization, download integration, and playback enhancements into a single userscript. Every feature runs at `document-start` for instant ad prevention, and the entire settings panel is built in — no external dashboards or config files.
+YTKit replaces the need for multiple browser extensions by combining ad blocking, SponsorBlock, UI customization, download integration, and playback enhancements into one package. Available as both a Chrome MV3 extension and a Tampermonkey/Violentmonkey userscript. Every feature runs at `document-start` for instant ad prevention, and the entire settings panel is built in — no external dashboards or config files.
 
 ---
 
@@ -191,7 +201,7 @@ Access the settings panel by clicking the gear icon in the YouTube masthead or i
 - **Quick access bar** at the bottom of the panel for frequently used toggles
 - **Export/Import/Reset** for backing up and restoring your configuration
 
-All settings persist across sessions via the userscript manager's storage (`GM_setValue`/`GM_getValue`).
+All settings persist across sessions via `chrome.storage.local` (extension) or `GM_setValue`/`GM_getValue` (userscript).
 
 ---
 
@@ -226,7 +236,8 @@ All settings persist across sessions via the userscript manager's storage (`GM_s
 
 Key architectural decisions:
 
-- **Split-context ad blocking** — The proxy engine runs in the real page context (not the userscript sandbox) so YouTube's player sees the modified responses. This avoids Trusted Types CSP issues entirely.
+- **Split-context ad blocking** — The proxy engine runs in the real page context (`MAIN` world) so YouTube's player sees the modified responses. In the extension, this is a separate `adblock-main.js` content script; in the userscript, it's injected via `unsafeWindow`. The sandbox-side (`ISOLATED` world) handles CSS cosmetic filters and DOM mutation observers.
+- **GM_* compatibility layer** — The Chrome extension includes `gm-compat.js` which bridges userscript APIs (`GM_getValue`, `GM_setValue`, `GM_xmlhttpRequest`, `GM_cookie`) to Chrome extension APIs (`chrome.storage.local`, `chrome.runtime.sendMessage`, `chrome.cookies`). This lets the main `ytkit.js` code run identically in both environments.
 - **SPA navigation handling** — YouTube is a single-page app. YTKit hooks into `yt-navigate-finish` events and uses a centralized navigate/mutation rule system so features re-apply on every page transition.
 - **Lazy feature loading** — Critical features (ad blocking, Theater Split) load immediately. Network-bound features (SponsorBlock) are deferred via `requestIdleCallback`.
 - **Trusted Types compliance** — All innerHTML operations use a `TrustedHTML` wrapper that creates a Trusted Types policy, preventing CSP violations on YouTube's strict pages.
@@ -235,8 +246,9 @@ Key architectural decisions:
 
 ## Compatibility
 
-| Browser | Userscript Manager | Status |
-|---------|-------------------|--------|
+| Browser | Method | Status |
+|---------|--------|--------|
+| Chrome / Edge / Brave | Chrome Extension (MV3) | ✅ Fully supported (recommended) |
 | Chrome / Edge / Brave | Tampermonkey | ✅ Fully supported |
 | Firefox | Tampermonkey / Violentmonkey | ✅ Fully supported |
 | Opera | Tampermonkey | ✅ Fully supported |
@@ -286,8 +298,8 @@ A: It was removed from YTKit in v2.0 to reduce script size. It lives on as a ded
 Issues and PRs welcome. If you find a YouTube layout change that breaks a feature, open an issue with the affected page URL and a screenshot.
 
 When submitting a PR:
-- Test on both Chrome + Tampermonkey and Firefox + Violentmonkey
-- Maintain the existing code style (single-file, no build tools, no external dependencies beyond CDN)
+- Test the Chrome extension (load unpacked) and userscript (Tampermonkey/Violentmonkey) on Chrome and Firefox
+- Maintain the existing code style (no external dependencies beyond CDN)
 - Scope CSS selectors to avoid global side effects
 
 ---
