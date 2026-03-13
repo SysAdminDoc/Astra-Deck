@@ -1,900 +1,54 @@
-// ==UserScript==
-// @name         YTKit: YouTube Customization Suite
-// @namespace    https://github.com/SysAdminDoc/YouTube-Kit
-// @version      2.10.0
-// @description  Ultimate YouTube customization with ad blocking, VLC streaming, video/channel hiding, playback enhancements, sticky video, and more.
-// @author       Matthew Parker
-// @license      MIT
-// @match        https://*.youtube.com/*
-// @match        https://*.youtube-nocookie.com/*
-// @match        https://youtu.be/*
-// @exclude      https://m.youtube.com/*
-// @exclude      https://studio.youtube.com/*
-// @icon         https://github.com/SysAdminDoc/YouTube-Kit/blob/main/assets/ytlogo.png?raw=true
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM.xmlHttpRequest
-// @grant        GM_xmlhttpRequest
-// @grant        GM_addStyle
-// @grant        GM_cookie
-// @connect      sponsor.ajay.app
-// @connect      raw.githubusercontent.com
-// @connect      cobalt.meowing.de
-// @connect      meowing.de
-// @connect      localhost
-// @connect      127.0.0.1
-// @updateURL    https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js
-// @downloadURL  https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js
-// @run-at       document-start
-// ==/UserScript==
+// YTKit v3.0.0 - Chrome Extension Main Content Script
+// Converted from userscript with GM_* compatibility shim
+// Runs in world: "ISOLATED" at document_idle
 
-//  AD BLOCKER BOOTSTRAP - Split Architecture
-//  PHASE 1: Proxy engine injected into REAL page context via <script>
-//           (bypasses Tampermonkey sandbox so YouTube sees the proxies)
-//  PHASE 2: CSS / DOM observer / SSAP stay in sandbox (shared DOM access)
-(function ytAdBlockBootstrap() {
+(async function() {
     'use strict';
 
-    const enabled = GM_getValue('ytab_enabled', true);
-    const antiDetect = GM_getValue('ytab_antidetect', true);
+    // Load GM_* compatibility shim
+    const gm = window._gmCompat;
+    await gm.preload();
 
-    if (!enabled) {
-        const rw = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
-        rw.__ytab = { active: false, stats: { blocked: 0, pruned: 0, ssapSkipped: 0 } };
-        return;
-    }
+    // GM_* API aliases (synchronous via pre-loaded cache)
+    const GM_getValue = gm.GM_getValue.bind(gm);
+    const GM_setValue = gm.GM_setValue.bind(gm);
+    const GM_addStyle = gm.GM_addStyle;
+    const GM_xmlhttpRequest = gm.GM_xmlhttpRequest;
+    const GM_cookie = gm.GM_cookie;
+    const GM = gm.GM;
 
-    //  PHASE 1: Page-context proxy engine
-    //  This function is serialized and injected via <script> element
-    //  so it runs on the REAL window, not Tampermonkey's sandbox.
-    function pageContextEngine(cfg, W) {
-        // W = the real page window (unsafeWindow). ALL globals must use W.*
-        // because this function's scope chain is still the Tampermonkey sandbox.
-        if (W.__ytab_injected) return;
-        W.__ytab_injected = true;
-
-        const stats = { blocked: 0, pruned: 0, ssapSkipped: 0 };
-
-        const PRUNE_KEYS = [
-            'adPlacements', 'adSlots', 'playerAds',
-            'playerResponse.adPlacements', 'playerResponse.adSlots', 'playerResponse.playerAds',
-            'auxiliaryUi.messageRenderers.upsellDialogRenderer',
-            'adBreakHeartbeatParams', 'playerResponse.adBreakHeartbeatParams',
-            'responseContext.adSignalsInfo',
-            // Extended ad keys for newer YT player versions
-            'playerResponse.adBreakParams', 'playerResponse.adParams',
-            'playerConfig.adConfig', 'playerResponse.underlay',
-            'topbarAdRenderer', 'companionAdRenderer',
-            'fullscreenAdRenderer', 'interstitialAdRenderer',
-            'sponsoredTextRenderers', 'adBreaks',
-            'playerResponse.playerConfig.adConfig',
-            // 2025+ ad keys
-            'playerResponse.overlay.playerOverlayRenderer.autonavToggle',
-            'playerResponse.adInfoRenderer', 'playerResponse.endscreen.endscreenRenderer.adElements',
-            'adLayoutLoggingData', 'playerResponse.adLayoutLoggingData',
-            'playerResponse.playerConfig.webPlayerConfig.useSuperPrefetchAd',
-            'instreamAdPlayerOverlayRenderer', 'linearAdSequenceRenderer',
-            'playerResponse.linearAdSequenceRenderer',
-        ];
-        const REPLACE_MAP = { adPlacements: 'no_ads', adSlots: 'no_ads', playerAds: 'no_ads', adBreakHeartbeatParams: 'no_ads' };
-        const INTERCEPT_URLS = [
-            '/youtubei/v1/player', '/youtubei/v1/get_watch',
-            '/youtubei/v1/browse', '/youtubei/v1/search', '/youtubei/v1/next',
-            '/watch?', '/playlist?list=', '/reel_watch_sequence',
-            // Ad-specific endpoints to intercept aggressively
-            '/youtubei/v1/log_event', '/youtubei/v1/ad_break',
-            '/pagead/', '/doubleclick.net/', '/googleadservices.com/',
-        ];
-        const AD_RENDERER_KEYS_ARR = [
-            'adSlotRenderer', 'displayAdRenderer', 'promotedVideoRenderer',
-            'compactPromotedVideoRenderer', 'promotedSparklesWebRenderer',
-            'promotedSparklesTextSearchRenderer', 'searchPyvRenderer',
-            'bannerPromoRenderer', 'statementBannerRenderer',
-            'brandVideoSingletonRenderer', 'brandVideoShelfRenderer',
-            'actionCompanionAdRenderer', 'inFeedAdLayoutRenderer',
-            'adSlotAndLayoutRenderer', 'videoMastheadAdV3Renderer',
-            'privetimePromoRenderer', 'movieOfferModuleRenderer',
-            'mealbarPromoRenderer', 'backgroundPromoRenderer',
-            'enforcementMessageViewModel',
-            // Additional ad renderers
-            'instreamVideoAdRenderer', 'adBreakServiceRenderer',
-            'playerLegacyDesktopYpcOfferRenderer', 'ypcTrailerRenderer',
-            'compactMovieRenderer', 'gridMovieRenderer',
-            'movieRenderer', 'clarificationRenderer',
-            'externalVideoRenderer', 'sponsoredItemsPreRenderer',
-            // 2025+ renderers
-            'linearAdSequenceRenderer', 'instreamAdPlayerOverlayRenderer',
-            'adInfoRenderer', 'reelPlayerAdRenderer',
-            'shoppingOverlayRenderer', 'adHoverTextButtonRenderer',
-            'playerOverlayAutoplayEndpointRenderer',
-        ];
-        const AD_RENDERER_SET = {};
-        for (let i = 0; i < AD_RENDERER_KEYS_ARR.length; i++) AD_RENDERER_SET[AD_RENDERER_KEYS_ARR[i]] = true;
-
-        // ── Utilities ──
-        function safeOverride(obj, prop, val) {
-            try { obj[prop] = val; if (obj[prop] === val) return true; } catch(e) {}
-            try { W.Object.defineProperty(obj, prop, { value: val, writable: true, configurable: true, enumerable: true }); return true; } catch(e) {}
-            try { delete obj[prop]; W.Object.defineProperty(obj, prop, { value: val, writable: true, configurable: true, enumerable: true }); return true; } catch(e) {}
-            return false;
-        }
-        function deleteNested(obj, path) {
-            const keys = path.split('.');
-            let cur = obj;
-            for (let i = 0; i < keys.length - 1; i++) {
-                if (cur == null || typeof cur !== 'object') return false;
-                cur = cur[keys[i]];
-            }
-            if (cur != null && typeof cur === 'object') {
-                const last = keys[keys.length - 1];
-                if (last in cur) { delete cur[last]; return true; }
-            }
-            return false;
-        }
-        const _interceptRe = new W.RegExp(INTERCEPT_URLS.map(function(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('|'));
-        function matchesIntercept(url) {
-            if (!url) return false;
-            return _interceptRe.test(url);
-        }
-        const _replaceRe = new W.RegExp('"(' + W.Object.keys(REPLACE_MAP).map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('|') + ')"', 'g');
-        function replaceAdKeys(text) {
-            if (typeof text !== 'string') return text;
-            return text.replace(_replaceRe, function(m, k) { return '"' + REPLACE_MAP[k] + '"'; });
-        }
-
-        // ── Deep Recursive Ad Pruner ──
-        var _pruneVisited = new W.WeakSet();
-        function deepPruneAds(obj, depth) {
-            if (!obj || typeof obj !== 'object' || (depth || 0) > 12) return false;
-            if (_pruneVisited.has(obj)) return false;
-            _pruneVisited.add(obj);
-            // Skip trivially small objects (0-1 keys can't contain ad renderer pairs)
-            var keys = W.Array.isArray(obj) ? null : W.Object.keys(obj);
-            if (keys && keys.length < 2) return false;
-            let pruned = false;
-            const d = (depth || 0) + 1;
-            if (W.Array.isArray(obj)) {
-                for (let i = obj.length - 1; i >= 0; i--) {
-                    const item = obj[i];
-                    if (item && typeof item === 'object') {
-                        let isAd = false;
-                        const itemKeys = W.Object.keys(item);
-                        for (let j = 0; j < itemKeys.length; j++) { if (AD_RENDERER_SET[itemKeys[j]]) { isAd = true; break; } }
-                        if (isAd) { obj.splice(i, 1); pruned = true; continue; }
-                        const content = item.content || item.renderer;
-                        if (content && typeof content === 'object') {
-                            const cKeys = W.Object.keys(content);
-                            for (let k = 0; k < cKeys.length; k++) { if (AD_RENDERER_SET[cKeys[k]]) { isAd = true; break; } }
-                            if (isAd) { obj.splice(i, 1); pruned = true; continue; }
-                        }
-                        if (item.richItemRenderer && item.richItemRenderer.content) {
-                            const rc = item.richItemRenderer.content;
-                            if (typeof rc === 'object') {
-                                const rKeys = W.Object.keys(rc);
-                                for (let r = 0; r < rKeys.length; r++) { if (AD_RENDERER_SET[rKeys[r]]) { isAd = true; break; } }
-                                if (isAd) { obj.splice(i, 1); pruned = true; continue; }
-                            }
-                        }
-                        pruned = deepPruneAds(item, d) || pruned;
-                    }
-                }
-            } else {
-                const oKeys = W.Object.keys(obj);
-                for (let m = 0; m < oKeys.length; m++) {
-                    const key = oKeys[m];
-                    if (AD_RENDERER_SET[key]) { delete obj[key]; pruned = true; continue; }
-                    const val = obj[key];
-                    if (val && typeof val === 'object') { pruned = deepPruneAds(val, d) || pruned; }
-                }
-            }
-            return pruned;
-        }
-
-        function pruneObject(obj) {
-            _pruneVisited = new W.WeakSet();
-            if (!obj || typeof obj !== 'object') return false;
-            var pruned = false;
-            for (var i = 0; i < PRUNE_KEYS.length; i++) { if (deleteNested(obj, PRUNE_KEYS[i])) pruned = true; }
-            if (obj.entries && W.Array.isArray(obj.entries)) {
-                var before = obj.entries.length;
-                obj.entries = obj.entries.filter(function(e) {
-                    return !(e && e.command && e.command.reelWatchEndpoint &&
-                             e.command.reelWatchEndpoint.adClientParams &&
-                             e.command.reelWatchEndpoint.adClientParams.isAd);
-                });
-                if (obj.entries.length < before) pruned = true;
-            }
-            // Deep walk only if top-level prune didn't already strip the main ad keys —
-            // avoids expensive recursive traversal on responses that were already cleaned.
-            // Still runs if pruned=false (may have nested ad renderers without top-level keys).
-            if (!pruned || obj.contents || obj.onResponseReceivedActions || obj.richGridRenderer) {
-                pruned = deepPruneAds(obj) || pruned;
-            }
-            if (pruned) stats.pruned++;
-            return pruned;
-        }
-        const origParse = W.JSON.parse;
-        // Pre-check strings: known ad keys that must appear for pruneObject to do any work.
-        // Avoids expensive deep traversal on the hundreds of small JSON.parse calls YouTube
-        // makes per second for analytics, metrics, and UI state updates.
-        const AD_KEY_HINTS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams', 'auxiliaryUi', 'adSlotRenderer', 'promotedVideoRenderer', 'inFeedAdLayoutRenderer', 'displayAdRenderer', 'compactPromotedVideoRenderer', 'adBreakServiceRenderer'];
-        function jsonNeedsPruning(str) {
-            if (typeof str !== 'string' || str.length < 500) return false;
-            for (let i = 0; i < AD_KEY_HINTS.length; i++) {
-                if (str.indexOf(AD_KEY_HINTS[i]) !== -1) return true;
-            }
-            return false;
-        }
-        safeOverride(W.JSON, 'parse', new W.Proxy(origParse, {
-            apply: function(target, thisArg, args) {
-                const result = W.Reflect.apply(target, thisArg, args);
+    // Bridge to page context: _rw.ytInitialPlayerResponse + _rw.__ytab
+    // In the extension, ISOLATED world can't access MAIN world JS variables directly.
+    // ytInitialPlayerResponse: parsed from inline <script> in DOM
+    // __ytab: proxied through _ytabSandbox (exposed by adblock-sandbox.js)
+    const _rw = {
+        get ytInitialPlayerResponse() {
+            // Parse from page's inline script tags
+            if (!this._prCache || this._prCacheHref !== location.href) {
+                this._prCacheHref = location.href;
+                this._prCache = null;
                 try {
-                    if (result && typeof result === 'object' && jsonNeedsPruning(args[0])) {
-                        if (pruneObject(result)) stats.blocked++;
-                    }
-                } catch(e) {}
-                return result;
-            }
-        }));
-        const origFetch = W.fetch;
-        safeOverride(W, 'fetch', new W.Proxy(origFetch, {
-            apply: function(target, thisArg, args) {
-                const req = args[0];
-                const url = typeof req === 'string' ? req : (req instanceof W.Request ? req.url : '');
-                if (!matchesIntercept(url)) return W.Reflect.apply(target, thisArg, args);
-                return W.Reflect.apply(target, thisArg, args).then(function(resp) {
-                    if (!resp || !resp.ok) return resp;
-                    const ct = resp.headers?.get('content-type') || '';
-                    if (ct && !ct.includes('json') && !ct.includes('text')) return resp;
-                    return resp.clone().text().then(function(text) {
-                        try {
-                            const mod = replaceAdKeys(text);
-                            const obj = origParse(mod);
-                            pruneObject(obj);
-                            stats.blocked++;
-                            return new W.Response(W.JSON.stringify(obj), { status: resp.status, statusText: resp.statusText, headers: resp.headers });
-                        } catch(e) { return resp; }
-                    })['catch'](function() { return resp; });
-                });
-            }
-        }));
-        const origXHROpen = W.XMLHttpRequest.prototype.open;
-        const origXHRSend = W.XMLHttpRequest.prototype.send;
-        safeOverride(W.XMLHttpRequest.prototype, 'open', function() {
-            this._ytab_url = arguments[1];
-            return origXHROpen.apply(this, arguments);
-        });
-        safeOverride(W.XMLHttpRequest.prototype, 'send', function(body) {
-            if (!matchesIntercept(this._ytab_url)) return origXHRSend.call(this, body);
-            const xhr = this;
-            if (xhr._ytab_hooked) return origXHRSend.call(this, body);
-            xhr._ytab_hooked = true;
-            xhr.addEventListener('readystatechange', function() {
-                if (xhr.readyState !== 4) return;
-                try {
-                    // Skip non-text response types (arraybuffer, blob, document)
-                    const rType = xhr.responseType;
-                    if (rType === 'arraybuffer' || rType === 'blob' || rType === 'document') return;
-                    const text = xhr.responseText;
-                    if (!text) return;
-                    const obj = origParse(replaceAdKeys(text));
-                    pruneObject(obj);
-                    const newText = W.JSON.stringify(obj);
-                    W.Object.defineProperty(xhr, 'responseText', { value: newText, configurable: true });
-                    // For responseType 'json', set response to parsed object; otherwise string
-                    if (rType === 'json') {
-                        W.Object.defineProperty(xhr, 'response', { value: obj, configurable: true });
-                    } else {
-                        W.Object.defineProperty(xhr, 'response', { value: newText, configurable: true });
-                    }
-                    stats.blocked++;
-                } catch(e) {}
-            });
-            return origXHRSend.call(this, body);
-        });
-        const origAppendChild = W.Node.prototype.appendChild;
-        safeOverride(W.Node.prototype, 'appendChild', new W.Proxy(origAppendChild, {
-            apply: function(target, thisArg, args) {
-                const node = args[0];
-                try {
-                    if (node instanceof W.HTMLIFrameElement && node.src === 'about:blank') {
-                        const res = W.Reflect.apply(target, thisArg, args);
-                        // Skip sandboxed iframes without allow-scripts (accessing contentWindow throws)
-                        try {
-                            const sb = node.getAttribute('sandbox');
-                            if (sb !== null && sb.indexOf('allow-scripts') === -1) return res;
-                            if (node.contentWindow) { node.contentWindow.fetch = W.fetch; node.contentWindow.JSON.parse = W.JSON.parse; }
-                        } catch(ignored) {}
-                        return res;
-                    }
-                    if (node instanceof W.HTMLScriptElement) {
-                        const t = (node.textContent || node.text || '');
-                        if (t.indexOf('window,"fetch"') !== -1 || t.indexOf("window,'fetch'") !== -1) {
-                            // Block by removing src/content and making it a no-op (avoids Trusted Types)
-                            node.type = 'application/json';
-                        }
-                    }
-                } catch(e) {}
-                return W.Reflect.apply(target, thisArg, args);
-            }
-        }));
-        const origSetTimeout = W.setTimeout;
-        safeOverride(W, 'setTimeout', new W.Proxy(origSetTimeout, {
-            apply: function(target, thisArg, args) {
-                const fn = args[0], delay = args[1];
-                // Only intercept timers in the ad-detection delay range (16-18s)
-                // Additional guards: must be a function (not string), and short source
-                // suggests it's a YT-generated callback, not user/extension code
-                if (typeof fn === 'function' && delay >= 16000 && delay <= 18000) {
-                    try {
-                        const src = fn.toString();
-                        if (src.length > 5 && src.length < 500 && src.indexOf('[native code]') === -1) {
-                            args[1] = 1;
-                        }
-                    } catch(e) {}
-                }
-                return W.Reflect.apply(target, thisArg, args);
-            }
-        }));
-        if (cfg.antiDetect) {
-            const origThen = W.Promise.prototype.then;
-            safeOverride(W.Promise.prototype, 'then', new W.Proxy(origThen, {
-                apply: function(target, thisArg, args) {
-                    if (typeof args[0] === 'function') {
-                        try {
-                            // Only inspect non-native functions with enough code to contain detection logic.
-                            // Avoids expensive toString() on short lambdas and native builtins.
-                            const fn = args[0];
-                            if (fn.length <= 3 && typeof fn.name === 'string' && fn.name.length < 30) {
-                                const src = fn.toString();
-                                // Only check medium-length functions (detection callbacks are ~200-2000 chars)
-                                if (src.length > 100 && src.length < 5000 && src.indexOf('onAbnormalityDetected') !== -1) {
-                                    args[0] = function(){};
-                                    stats.blocked++;
-                                }
-                            }
-                        } catch(e) {}
-                    }
-                    return W.Reflect.apply(target, thisArg, args);
-                }
-            }));
-        }
-        const SET_UNDEFINED = [
-            'ytInitialPlayerResponse.playerAds', 'ytInitialPlayerResponse.adPlacements',
-            'ytInitialPlayerResponse.adSlots', 'ytInitialPlayerResponse.adBreakHeartbeatParams',
-            'ytInitialPlayerResponse.auxiliaryUi.messageRenderers.upsellDialogRenderer',
-            'playerResponse.adPlacements'
-        ];
-        for (let si = 0; si < SET_UNDEFINED.length; si++) {
-            (function(path) {
-                try {
-                    const parts = path.split('.');
-                    const rootName = parts[0];
-                    let _val = W[rootName];
-                    W.Object.defineProperty(W, rootName, {
-                        get: function() { return _val; },
-                        set: function(newVal) {
-                            if (newVal && typeof newVal === 'object') {
-                                const sub = parts.slice(1);
-                                let t = newVal;
-                                for (let j = 0; j < sub.length - 1; j++) {
-                                    if (t && typeof t === 'object' && sub[j] in t) t = t[sub[j]]; else { t = null; break; }
-                                }
-                                if (t && typeof t === 'object') {
-                                    const last = sub[sub.length - 1];
-                                    if (last in t) { delete t[last]; stats.pruned++; }
-                                }
-                            }
-                            _val = newVal;
-                        },
-                        configurable: true, enumerable: true
-                    });
-                } catch(e) {}
-            })(SET_UNDEFINED[si]);
-        }
-        // Strategy: Click skip buttons only. No playbackRate/mute manipulation.
-        // Uses MutationObserver on player + low-frequency poll as fallback.
-        // NOTE: `var` is intentional here — this code runs in the real page context
-        // via unsafeWindow, and `var` hoisting avoids TDZ issues across execution contexts.
-        var adNeutTimer = null;
-        var adObserver = null;
-
-        function trySkipAd() {
-            try {
-                // Click skip buttons
-                var skipSelectors = [
-                    '.ytp-ad-skip-button',
-                    '.ytp-ad-skip-button-modern',
-                    '.ytp-skip-ad-button',
-                    'button.ytp-ad-skip-button',
-                    '.ytp-ad-skip-button-slot button',
-                    '[id^="skip-button"]',
-                    '.ytp-ad-skip-button-container button',
-                    'yt-button-shape.ytp-ad-skip-button-modern button',
-                ];
-                for (var s = 0; s < skipSelectors.length; s++) {
-                    var btns = W.document.querySelectorAll(skipSelectors[s]);
-                    for (var b = 0; b < btns.length; b++) {
-                        try { btns[b].click(); stats.blocked++; } catch(e) {}
-                    }
-                }
-
-                // Close overlay ads
-                var overlays = W.document.querySelectorAll(
-                    '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container'
-                );
-                for (var oc = 0; oc < overlays.length; oc++) {
-                    try { overlays[oc].click(); } catch(e) {}
-                }
-
-                // Try player API skip methods
-                var player = W.document.getElementById('movie_player');
-                if (player) {
-                    if (player.skipAd) try { player.skipAd(); } catch(e) {}
-                    if (player.cancelPlayback) try { player.cancelPlayback(); } catch(e) {}
-                }
-            } catch(e) {}
-        }
-
-        function startVideoAdNeutralizer() {
-            // MutationObserver: watch for .ad-showing class on player
-            function setupObserver() {
-                var player = W.document.getElementById('movie_player');
-                if (!player) return false;
-                if (adObserver) adObserver.disconnect();
-                adObserver = new W.MutationObserver(function(mutations) {
-                    for (var i = 0; i < mutations.length; i++) {
-                        if (mutations[i].attributeName === 'class') {
-                            var el = mutations[i].target;
-                            if (el.classList.contains('ad-showing')) {
-                                stats.ssapSkipped++;
-                                // Immediate skip attempt + retries
-                                trySkipAd();
-                                W.setTimeout(trySkipAd, 500);
-                                W.setTimeout(trySkipAd, 1500);
-                                W.setTimeout(trySkipAd, 3000);
-                                W.setTimeout(trySkipAd, 5500);
+                    for (const script of document.querySelectorAll('script')) {
+                        const text = script.textContent;
+                        if (text && text.includes('ytInitialPlayerResponse')) {
+                            const match = text.match(/var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var\s|<\/script)/s);
+                            if (match) {
+                                this._prCache = JSON.parse(match[1]);
+                                break;
                             }
                         }
                     }
-                });
-                adObserver.observe(player, { attributes: true, attributeFilter: ['class'] });
-                // If already showing an ad right now
-                if (player.classList.contains('ad-showing')) trySkipAd();
-                return true;
+                } catch(e) {}
             }
-
-            // Fallback poll: set up observer when player appears, click skip if ad detected
-            // Once observer is ready, clear the interval — observer handles the rest.
-            if (adNeutTimer) return;
-            var observerReady = setupObserver();
-            if (observerReady) return; // Observer already watching, no poll needed
-            adNeutTimer = W.setInterval(function() {
-                if (!observerReady) observerReady = setupObserver();
-                if (observerReady) {
-                    // Observer is live — stop polling, it's redundant now
-                    W.clearInterval(adNeutTimer); adNeutTimer = null;
-                    return;
-                }
-                // Light check - only look for skip buttons, no video element manipulation
-                var player = W.document.getElementById('movie_player');
-                if (player && player.classList.contains('ad-showing')) {
-                    trySkipAd();
-                }
-            }, 1000);
-        }
-        function stopVideoAdNeutralizer() {
-            if (adNeutTimer) { W.clearInterval(adNeutTimer); adNeutTimer = null; }
-            if (adObserver) { adObserver.disconnect(); adObserver = null; }
-        }
-
-        // Start when DOM is ready
-        if (W.document.readyState === 'loading') {
-            W.document.addEventListener('DOMContentLoaded', startVideoAdNeutralizer);
-        } else {
-            startVideoAdNeutralizer();
-        }
-        W.__ytab = {
-            active: true, stats: stats,
-            startVideoAdNeutralizer: startVideoAdNeutralizer,
-            stopVideoAdNeutralizer: stopVideoAdNeutralizer,
-            parseFilterList: function(text) {
-                const selectors = [];
-                const lines = text.split('\n');
-                for (let i = 0; i < lines.length; i++) {
-                    const t = lines[i].trim();
-                    if (!t || t.charAt(0) === '!' || t.indexOf('@@') === 0 || t.indexOf('#@#') !== -1 || t.indexOf('||') === 0) continue;
-                    const m = t.match(/^(?:[a-z][a-z0-9.*,-]*)?##([^+^].+)$/);
-                    if (m && m[1].indexOf(':style(') === -1 && m[1].indexOf(':remove-attr(') === -1) selectors.push(m[1]);
-                }
-                const unique = [], seen = {};
-                for (let j = 0; j < selectors.length; j++) { if (!seen[selectors[j]]) { seen[selectors[j]] = true; unique.push(selectors[j]); } }
-                return unique;
-            }
-        };
-    }
-
-    // Install proxy engine on the REAL page window.
-    // unsafeWindow is Tampermonkey's bridge to the actual page context.
-    // This avoids Trusted Types CSP issues entirely (no script injection needed).
-    const pageWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
-    pageContextEngine.call(pageWindow, { antiDetect: antiDetect }, pageWindow);
-
-    //  PHASE 2: CSS / DOM Observer / SSAP — stays in sandbox
-    //  (operates on shared DOM, needs GM_* for settings)
-    const realWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
-
-    // ── Cosmetic CSS Injection ──
-    const COSMETIC_SELECTORS = [
-        '#player-ads',
-        '#merch-shelf',
-        '#panels > ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
-        '[target-id="engagement-panel-ads"]',
-        '.video-ads',
-        '.ytp-ad-module',
-        '.ytp-ad-overlay-slot',
-        '.ytp-ad-overlay-container',
-        '.ytp-ad-overlay-image',
-        '.ytp-ad-text-overlay',
-        '.ytp-ad-progress',
-        '.ytp-ad-progress-list',
-        '.ytp-ad-player-overlay',
-        '.ytp-ad-player-overlay-layout',
-        '.ytp-ad-image-overlay',
-        '.ytp-ad-action-interstitial',
-        '.ytp-ad-skip-button-container',
-        '.ytp-ad-skip-button',
-        '.ytp-ad-skip-button-slot',
-        '.ytp-ad-preview-container',
-        '.ytp-ad-message-container',
-        '.ytp-ad-persistent-progress-bar-container',
-        '.ytp-suggested-action',
-        '.ytp-suggested-action-badge',
-        '.ytp-visit-advertiser-link',
-        '.masthead-ad-control',
-        '.ad-div',
-        '.pyv-afc-ads-container',
-        '.ad-container',
-        '.ad-showing > .ad-interrupting',
-        '.ytd-ad-slot-renderer',
-        '.ytd-in-feed-ad-layout-renderer',
-        '.ytd-promoted-video-renderer',
-        '.ytd-search-pyv-renderer',
-        '.ytd-compact-promoted-video-renderer',
-        'div.ytd-ad-slot-renderer',
-        'div.ytd-in-feed-ad-layout-renderer',
-        'ytd-ad-slot-renderer',
-        'ytd-in-feed-ad-layout-renderer',
-        'ytd-display-ad-renderer',
-        'ytd-promoted-video-renderer',
-        'ytd-compact-promoted-video-renderer',
-        'ytd-promoted-sparkles-web-renderer',
-        'ytd-promoted-sparkles-text-search-renderer',
-        'ytd-video-masthead-ad-advertiser-info-renderer',
-        'ytd-video-masthead-ad-v3-renderer',
-        'ytd-primetime-promo-renderer',
-        'ytd-search-pyv-renderer',
-        'ytd-banner-promo-renderer',
-        'ytd-banner-promo-renderer-background',
-        'ytd-action-companion-ad-renderer',
-        'ytd-companion-slot-renderer',
-        'ytd-player-legacy-desktop-watch-ads-renderer',
-        'ytd-brand-video-singleton-renderer',
-        'ytd-brand-video-shelf-renderer',
-        'ytd-statement-banner-renderer',
-        'ytd-mealbar-promo-renderer',
-        'ytd-background-promo-renderer',
-        'ytd-movie-offer-module-renderer',
-        'ytm-promoted-sparkles-web-renderer',
-        'ytm-companion-ad-renderer',
-        'ad-slot-renderer',
-        '[layout*="display-ad-"]',
-        '[layout="display-ad-layout-top-landscape-image"]',
-        '[layout="display-ad-layout-top-portrait-image"]',
-        '[layout="display-ad-layout-bottom-landscape-image"]',
-        'ytd-rich-item-renderer:has(> #content > ytd-ad-slot-renderer)',
-        'ytd-rich-item-renderer:has(ytd-ad-slot-renderer)',
-        'ytd-rich-item-renderer:has(ytd-in-feed-ad-layout-renderer)',
-        'ytd-rich-item-renderer:has(ytd-display-ad-renderer)',
-        'ytd-rich-item-renderer:has(ytd-promoted-video-renderer)',
-        'ytd-rich-item-renderer:has([layout*="display-ad-"])',
-        'ytd-rich-item-renderer:has(> .ytd-rich-item-renderer > ytd-ad-slot-renderer)',
-        'ytd-rich-section-renderer:has(ytd-ad-slot-renderer)',
-        'ytd-rich-section-renderer:has(ytd-statement-banner-renderer)',
-        'ytd-rich-section-renderer:has(ytd-brand-video-shelf-renderer)',
-        '.grid.ytd-browse > #primary > .style-scope > .ytd-rich-grid-renderer > .ytd-rich-grid-renderer > .ytd-ad-slot-renderer',
-        '.ytd-rich-item-renderer.style-scope > .ytd-rich-item-renderer > .ytd-ad-slot-renderer.style-scope',
-        'ytd-item-section-renderer > .ytd-item-section-renderer > ytd-ad-slot-renderer.style-scope',
-        '.ytd-section-list-renderer > .ytd-item-section-renderer > ytd-search-pyv-renderer.ytd-item-section-renderer',
-        'ytd-search-pyv-renderer.ytd-item-section-renderer',
-        '.ytd-watch-flexy > .ytd-watch-next-secondary-results-renderer > ytd-ad-slot-renderer',
-        '.ytd-watch-flexy > .ytd-watch-next-secondary-results-renderer > ytd-ad-slot-renderer.ytd-watch-next-secondary-results-renderer',
-        'ytd-merch-shelf-renderer',
-        '#description-inner > ytd-merch-shelf-renderer',
-        '#description-inner > ytd-merch-shelf-renderer > #main.ytd-merch-shelf-renderer',
-        '.ytd-watch-flexy > ytd-merch-shelf-renderer',
-        '.ytd-watch-flexy > ytd-merch-shelf-renderer > #main.ytd-merch-shelf-renderer',
-        '#shorts-inner-container > .ytd-shorts:has(> .ytd-reel-video-renderer > ytd-ad-slot-renderer)',
-        '.ytReelMetapanelViewModelHost > .ytReelMetapanelViewModelMetapanelItem > .ytShortsSuggestedActionViewModelStaticHost',
-        'lazy-list > ad-slot-renderer',
-        'ytm-rich-item-renderer > ad-slot-renderer',
-        'ytm-companion-slot[data-content-type] > ytm-companion-ad-renderer',
-        'ytd-popup-container > .ytd-popup-container > #contentWrapper > .ytd-popup-container[position-type="OPEN_POPUP_POSITION_BOTTOMLEFT"]',
-        '#mealbar\\:3 > ytm-mealbar.mealbar-promo-renderer',
-        'yt-mealbar-promo-renderer',
-        'ytmusic-mealbar-promo-renderer',
-        'ytd-enforcement-message-view-model',
-        'tp-yt-paper-dialog:has(> ytd-popup-container)',
-        '#feed-pyv-container',
-        '#feedmodule-PRO',
-        '#homepage-chrome-side-promo',
-        '#watch-channel-brand-div',
-        '#watch-buy-urls',
-        '#watch-branded-actions',
-        'ytd-movie-renderer',
-        '.sparkles-light-cta',
-        '.badge-style-type-ad',
-        '.GoogleActiveViewElement',
-        '.ad-showing .ytp-ad-player-overlay-layout',
-        '.ad-showing .video-ads',
-        '.ad-showing .ytp-ad-module',
-        '.ad-showing .ytp-ad-image-overlay',
-        '.ad-showing .ytp-ad-text-overlay',
-        '.ad-showing .ytp-ad-overlay-slot',
-        '.ad-showing .ytp-ad-skip-button-container',
-        '.ad-showing .ytp-ad-preview-container',
-        '.ad-showing .ytp-ad-message-container',
-        '.ad-showing .ytp-ad-player-overlay-instream-info',
-        '.ad-showing .ytp-ad-persistent-progress-bar-container',
-        'yt-slimline-survey-view-model',
-        'lockup-attachments-view-model:has(yt-slimline-survey-view-model)',
-        '.ytSlimlineSurveyViewModelHost',
-        'ytd-inline-survey-renderer',
-        'ytd-single-option-survey-renderer',
-        '.ytwTopLandscapeImageLayoutViewModelHost',
-        '.ytwFeedAdMetadataViewModelHost',
-        '.ytwAdButtonViewModelHost',
-        '.ytwTopBannerImageTextIconButtonedLayoutViewModelHostMetadata',
-        '.ytwAdImageViewModelHostImageContainer',
-        'ytd-rich-item-renderer[rendered-from-rich-grid]:has(.yt-badge-shape--ad)',
-        'ytd-rich-item-renderer[rendered-from-rich-grid]:has([href*="googleadservices.com"])',
-        'ytd-rich-item-renderer:has([href*="doubleclick.net"])',
-    ];
-
-    const HARDCODED_CSS = COSMETIC_SELECTORS.join(',\n');
-
-    // ── CSS Selector Sanitization ──
-    // Prevents injection of dangerous CSS properties via external filter lists.
-    // Blocks url(), @import, expression(), javascript:, -moz-binding, content:,
-    // behavior:, and other CSS injection vectors.
-    // NOTE: Validates per-line (filter lists are line-delimited), NOT per-comma,
-    // because CSS selectors like :has(a, b) contain legitimate commas.
-    const _CSS_DANGEROUS_PATTERNS = /(?:url\s*\(|@import|expression\s*\(|javascript\s*:|\\00|\\u00|-moz-binding|behavior\s*:|var\s*\(\s*--[^)]*url|image\s*\(|image-set\s*\(|paint\s*\(|env\s*\(|cross-fade\s*\()/i;
-    const _CSS_BLOCK_INJECTION = /[{}`]/;
-
-    function sanitizeCSSSelectors(selectorStr) {
-        if (!selectorStr || typeof selectorStr !== 'string') return '';
-        // Split on newlines (filter list format), not commas (breaks :has/:is selectors).
-        // Cached selectors are stored as "sel1,\nsel2,\n..." so strip trailing commas.
-        return selectorStr.split('\n')
-            .map(line => line.trim().replace(/^,+|,+$/g, '').trim())
-            .filter(line => {
-                if (!line) return false;
-                // Block dangerous CSS injection patterns
-                if (_CSS_DANGEROUS_PATTERNS.test(line)) return false;
-                // Block curly braces and backticks (property block injection)
-                if (_CSS_BLOCK_INJECTION.test(line)) return false;
-                return true;
-            })
-            .join(',\n');
-    }
-
-    let cosmeticEl = null;
-    function updateCSS(extraSelectors) {
-        const sanitizedExtra = sanitizeCSSSelectors(extraSelectors);
-        const allCSS = HARDCODED_CSS + (sanitizedExtra ? ',\n' + sanitizedExtra : '');
-        const css = allCSS + ' { display: none !important; visibility: hidden !important; height: 0 !important; max-height: 0 !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; }';
-        if (cosmeticEl && cosmeticEl.parentNode) {
-            cosmeticEl.textContent = css;
-        } else {
-            cosmeticEl = document.createElement('style');
-            cosmeticEl.id = 'ytab-cosmetic';
-            cosmeticEl.textContent = css;
-            (document.head || document.documentElement).appendChild(cosmeticEl);
-        }
-    }
-    const cachedSelectors = GM_getValue('ytab_cached_selectors', '');
-    const customFilters = GM_getValue('ytab_custom_filters', '');
-    const combined = [cachedSelectors, customFilters].filter(Boolean).join(',\n');
-    updateCSS(combined);
-
-    // Fix: YouTube's sidebar drawer scrim (.opened) blocks all page interaction
-    // Scoped to tp-yt-app-drawer to avoid nuking any element with class .opened
-    const _openedFix = document.createElement('style');
-    _openedFix.id = 'ytkit-opened-fix';
-    _openedFix.textContent = 'tp-yt-app-drawer[opened] + .opened, #scrim.opened { display: none !important; pointer-events: none !important; }';
-    (document.head || document.documentElement).appendChild(_openedFix);
-
-    // Early chat cleanup — runs at document-start in the live_chat iframe
-    // (features init via main() may not reach the chat iframe context)
-    if (window.location.pathname.startsWith('/live_chat')) {
-        const _chatFix = document.createElement('style');
-        _chatFix.id = 'ytkit-chat-early';
-        _chatFix.textContent = [
-            'yt-live-chat-toast-renderer, yt-live-chat-viewer-engagement-message-renderer { display: none !important; }',
-            // Clean up monetization clutter in restricted participation panel
-            'yt-live-chat-restricted-participation-renderer yt-live-chat-product-picker-panel-view-model { display: none !important; }',
-            'yt-live-chat-restricted-participation-renderer yt-reaction-control-panel-overlay-view-model { display: none !important; }',
-            'yt-live-chat-restricted-participation-renderer #picker-buttons { display: none !important; }',
-            // Style the YTKit subscribe button
-            '#ytkit-chat-subscribe { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 6px 14px; background: #c00; color: #fff; border: none; border-radius: 18px; font-size: 12px; font-weight: 600; font-family: "Roboto","Arial",sans-serif; cursor: pointer; transition: background 0.2s, transform 0.15s; text-decoration: none; white-space: nowrap; }',
-            '#ytkit-chat-subscribe:hover { background: #e00; transform: scale(1.03); }',
-            '#ytkit-chat-subscribe svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }',
-            // Restyle the restricted message row to be cleaner
-            'yt-live-chat-restricted-participation-renderer #explanation { display: flex !important; align-items: center !important; flex-wrap: wrap !important; gap: 4px !important; }',
-        ].join('\n');
-        (document.head || document.documentElement).appendChild(_chatFix);
-
-        // Inject subscribe button when "Subscribers-only mode" detected
-        const _injectSubscribeBtn = () => {
-            const renderer = document.querySelector('yt-live-chat-restricted-participation-renderer');
-            if (!renderer || document.getElementById('ytkit-chat-subscribe')) return;
-            const msgEl = renderer.querySelector('#message');
-            if (!msgEl || !msgEl.textContent.includes('Subscribers-only')) return;
-
-            // Extract channel handle from support button tooltip/aria-label
-            let handle = '';
-            const supportBtn = renderer.querySelector('button[aria-label*="@"]');
-            if (supportBtn) {
-                const m = supportBtn.getAttribute('aria-label').match(/@[\w.-]+/);
-                if (m) handle = m[0];
-            }
-            if (!handle) {
-                const tooltip = renderer.querySelector('tp-yt-paper-tooltip');
-                if (tooltip) {
-                    const m = (tooltip.textContent || '').match(/@[\w.-]+/);
-                    if (m) handle = m[0];
-                }
-            }
-
-            const btn = document.createElement('a');
-            btn.id = 'ytkit-chat-subscribe';
-            btn.target = '_blank';
-            btn.rel = 'noopener';
-            btn.href = handle ? `https://www.youtube.com/${handle}?sub_confirmation=1` : '#';
-            btn.title = handle ? 'Subscribe to ' + handle : 'Subscribe to this channel';
-            // Build with DOM API (chat iframe enforces Trusted Types)
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('viewBox', '0 0 24 24');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M10 20h4c0 1.1-.9 2-2 2s-2-.9-2-2zm10-2.65V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C9.63 5.36 8 7.92 8 11v6.35l-2 2V20h16v-.65l-2-2z');
-            svg.appendChild(path);
-            btn.appendChild(svg);
-            btn.appendChild(document.createTextNode(' Subscribe' + (handle ? ' to ' + handle : '')));
-
-            const body = renderer.querySelector('#body') || renderer.querySelector('#explanation');
-            if (body) body.appendChild(btn);
-        };
-
-        const _chatSubObs = new MutationObserver(_injectSubscribeBtn);
-        const _startChatSubObs = () => {
-            _injectSubscribeBtn();
-            _chatSubObs.observe(document.body, { childList: true, subtree: true });
-        };
-        if (document.body) _startChatSubObs();
-        else document.addEventListener('DOMContentLoaded', _startChatSubObs);
-    }
-
-    // Re-inject protection (debounced — head gets many mutations from YT scripts)
-    let _ensureCSSTimer = null;
-    const _ensureCSS = () => {
-        if (_ensureCSSTimer) return;
-        _ensureCSSTimer = setTimeout(() => {
-            _ensureCSSTimer = null;
-            if (!cosmeticEl || !cosmeticEl.parentNode) {
-                cosmeticEl = null;
-                const c = [GM_getValue('ytab_cached_selectors', ''), GM_getValue('ytab_custom_filters', '')].filter(Boolean).join(',\n');
-                updateCSS(c);
-            }
-        }, 200);
+            return this._prCache;
+        },
+        get __ytab() {
+            return window._ytabSandbox || { active: false, stats: { blocked: 0, pruned: 0, ssapSkipped: 0 } };
+        },
+        _prCache: null,
+        _prCacheHref: ''
     };
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _ensureCSS);
-    const _cssObserver = new MutationObserver(_ensureCSS);
-    const _startCssObs = () => { if (document.head) _cssObserver.observe(document.head, { childList: true }); };
-    if (document.head) _startCssObs(); else document.addEventListener('DOMContentLoaded', _startCssObs);
 
-    // ── DOM Mutation Observer — Active Ad Element Removal ──
-    const AD_REMOVAL_TAGS = new Set([
-        'YTD-AD-SLOT-RENDERER', 'YTD-IN-FEED-AD-LAYOUT-RENDERER', 'YTD-DISPLAY-AD-RENDERER',
-        'YTD-PROMOTED-VIDEO-RENDERER', 'YTD-COMPACT-PROMOTED-VIDEO-RENDERER',
-        'YTD-PROMOTED-SPARKLES-WEB-RENDERER', 'YTD-PROMOTED-SPARKLES-TEXT-SEARCH-RENDERER',
-        'YTD-BANNER-PROMO-RENDERER', 'YTD-STATEMENT-BANNER-RENDERER',
-        'YTD-VIDEO-MASTHEAD-AD-V3-RENDERER', 'YTD-VIDEO-MASTHEAD-AD-ADVERTISER-INFO-RENDERER',
-        'YTD-PRIMETIME-PROMO-RENDERER', 'YTD-BRAND-VIDEO-SINGLETON-RENDERER',
-        'YTD-BRAND-VIDEO-SHELF-RENDERER', 'YTD-ACTION-COMPANION-AD-RENDERER',
-        'YTD-PLAYER-LEGACY-DESKTOP-WATCH-ADS-RENDERER', 'YTD-SEARCH-PYV-RENDERER',
-        'YTD-MEALBAR-PROMO-RENDERER', 'YTD-MOVIE-OFFER-MODULE-RENDERER',
-        'YTD-ENFORCEMENT-MESSAGE-VIEW-MODEL', 'AD-SLOT-RENDERER',
-        'YTM-PROMOTED-SPARKLES-WEB-RENDERER', 'YTM-COMPANION-AD-RENDERER',
-    ]);
-    const AD_PARENT_CHECK = new Set([
-        'YTD-AD-SLOT-RENDERER', 'YTD-IN-FEED-AD-LAYOUT-RENDERER',
-        'YTD-DISPLAY-AD-RENDERER', 'YTD-PROMOTED-VIDEO-RENDERER',
-    ]);
-
-    function nukeAdNode(node) {
-        if (!node || !node.parentElement) return;
-        const parent = node.closest('ytd-rich-item-renderer, ytd-rich-section-renderer');
-        const st = realWindow.__ytab && realWindow.__ytab.stats;
-        if (parent && AD_PARENT_CHECK.has(node.tagName)) { parent.remove(); if (st) st.blocked++; }
-        else { node.remove(); if (st) st.blocked++; }
-    }
-    function scanForAds(root) {
-        if (!root || typeof root.querySelectorAll !== 'function') return;
-        // Fast path: check root itself before traversing children
-        if (root.tagName && AD_REMOVAL_TAGS.has(root.tagName)) { nukeAdNode(root); return; }
-        for (const tag of AD_REMOVAL_TAGS) { for (const el of root.querySelectorAll(tag.toLowerCase())) nukeAdNode(el); }
-        for (const el of root.querySelectorAll('[layout*="display-ad-"]')) nukeAdNode(el);
-    }
-    function startDOMCleaner() {
-        scanForAds(document);
-        // Scan only added nodes, not the full document on every frame — avoids forced reflow.
-        // addMutationRule lives in the main IIFE and isn't available at document-start.
-        let _rafId = null;
-        let _pendingRoots = [];
-        const processBatch = () => {
-            _rafId = null;
-            const roots = _pendingRoots.splice(0, 50);
-            for (const root of roots) scanForAds(root);
-            // If more remain (or new ones arrived during processing), schedule another frame
-            if (_pendingRoots.length) {
-                _rafId = requestAnimationFrame(processBatch);
-            }
-        };
-        const obs = new MutationObserver((mutations) => {
-            for (const m of mutations) {
-                for (const node of m.addedNodes) {
-                    if (node.nodeType === 1) _pendingRoots.push(node);
-                }
-            }
-            if (_pendingRoots.length && !_rafId) {
-                _rafId = requestAnimationFrame(processBatch);
-            }
-        });
-        obs.observe(document.documentElement, { childList: true, subtree: true });
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startDOMCleaner);
-    else startDOMCleaner();
-
-    // ── SSAP / Video Ad Control (delegates to page-context engine) ──
-    function startSSAP() {
-        const api = realWindow.__ytab;
-        if (api && api.startVideoAdNeutralizer) api.startVideoAdNeutralizer();
-    }
-    function stopSSAP() {
-        const api = realWindow.__ytab;
-        if (api && api.stopVideoAdNeutralizer) api.stopVideoAdNeutralizer();
-    }
-
-    // ── Extend real window's __ytab with sandbox-side functions ──
-    const _patchAPI = () => {
-        const api = realWindow.__ytab;
-        if (!api) return;
-        api.updateCSS = updateCSS;
-        api.startSSAP = startSSAP;
-        api.stopSSAP = stopSSAP;
-    };
-    try { _patchAPI(); } catch(e) {}
-    setTimeout(() => { try { _patchAPI(); } catch(e) {} }, 0);
-})();
-
-//  MAIN YTKIT (deferred to DOMContentLoaded via bootstrap at bottom)
-
-(function() {
-    'use strict';
-
-    // Bridge to real page window (needed because __ytab lives in page context, not sandbox)
-    const _rw = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
 
     //  SECTION 0A: CORE UTILITIES & UNIFIED STORAGE
 
@@ -928,7 +82,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '2.8.0';
+    const YTKIT_VERSION = '3.0.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -7265,7 +6419,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     //  SECTION 3: HELPERS
 
     function applyBotFilter() {
-        if (!window.location.pathname.startsWith('/watch')) return;
+        const path = window.location.pathname;
+        if (!path.startsWith('/watch') && !path.startsWith('/live_chat')) return;
         const messages = document.querySelectorAll('yt-live-chat-text-message-renderer:not([data-ytkit-bot-checked])');
         messages.forEach(msg => {
             msg.dataset.ytkitBotChecked = '1';
@@ -7279,7 +6434,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     let _lastKeywordHash = '';
     function applyKeywordFilter() {
-        if (!window.location.pathname.startsWith('/watch')) return;
+        const path = window.location.pathname;
+        if (!path.startsWith('/watch') && !path.startsWith('/live_chat')) return;
         const keywordsRaw = appState.settings.chatKeywordFilter;
         const currentHash = keywordsRaw || '';
 
@@ -9677,6 +8833,26 @@ pause
         _mainRan = true;
         appState.settings = settingsManager.load();
         appState.currentPage = getCurrentPage();
+
+        // Live chat iframe: only initialize chat-related features, skip full UI
+        if (window.location.pathname.startsWith('/live_chat')) {
+            const CHAT_FEATURE_IDS = new Set([
+                'hideLiveChatEngagement', 'hiddenChatElementsManager', 'chatKeywordFilter'
+            ]);
+            const chatFeatures = features.filter(f =>
+                CHAT_FEATURE_IDS.has(f.id) || CHAT_FEATURE_IDS.has(f.parentId)
+            );
+            chatFeatures.forEach(f => {
+                if (f._arrayKey) return;
+                const isEnabled = appState.settings[f.id];
+                if (!isEnabled) return;
+                try { f.init?.(); f._initialized = true; } catch(e) {
+                    console.warn('[YTKit Chat] Feature init error:', f.id, e);
+                }
+            });
+            console.log('[YTKit] Chat iframe mode - initialized chat features only');
+            return;
+        }
 
         // Inject base accent CSS variables (default purple, overridden by colorThemeManager)
         injectStyle(`:root, html[dark] { --ytkit-accent: #a78bfa; --ytkit-accent-rgb: 167,139,250; --ytkit-accent-light: #c4b5fd; }`, 'ytkit-accent-vars', true);
