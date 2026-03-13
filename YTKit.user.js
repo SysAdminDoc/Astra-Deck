@@ -8930,6 +8930,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         ytToolsBtn.addEventListener('click', () => {
             // Generate a .bat file that runs the PowerShell installer
+            const cacheBust = Date.now();
             const batContent = `@echo off
 title YTYT-Downloader Installer
 echo ========================================
@@ -8939,8 +8940,8 @@ echo ========================================
 echo.
 echo Downloading and running installer...
 echo.
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/refs/heads/main/Install-YTYT.ps1' -OutFile '%TEMP%\Install-YTYT.ps1' -UseBasicParsing"
-powershell -ExecutionPolicy Bypass -File "%TEMP%\Install-YTYT.ps1"
+powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/Install-YTYT.ps1?t=${cacheBust}' -OutFile '%TEMP%\\Install-YTYT.ps1' -UseBasicParsing"
+powershell -ExecutionPolicy Bypass -File "%TEMP%\\Install-YTYT.ps1"
 echo.
 echo If the window closes immediately, right-click and Run as Administrator.
 pause
