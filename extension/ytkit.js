@@ -948,7 +948,7 @@
                         spd.textContent = '';
                         eta.textContent = 'Done!';
                         setTimeout(() => panel.remove(), 4000);
-                    } else if (data.status === 'error' || data.status === 'cancelled') {
+                    } else if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                         clearInterval(pollInterval);
                         fill.style.background = '#ef4444';
                         pct.textContent = data.status;
@@ -997,7 +997,11 @@
                     _webDownloadFallback(videoUrl);
                     return;
                 }
-                _mediaDLSendDownload(videoUrl, audioOnly, token);
+                _mediaDLSendDownload(videoUrl, audioOnly, token).catch(e => {
+                    console.error('[YTKit] Download error:', e);
+                    DebugManager.log('MediaDL', `Send download error: ${e.message}`);
+                    showToast('Download failed: ' + e.message, '#ef4444', { duration: 5 });
+                });
             },
             onerror: function(err) {
                 DebugManager.log('MediaDL', `Health check error: ${JSON.stringify(err)}`);
@@ -1037,7 +1041,10 @@
                     try { token = JSON.parse(res.responseText).token; } catch (_) {}
                     if (token) {
                         showToast('MediaDL server started!', '#22c55e', { duration: 2 });
-                        _mediaDLSendDownload(videoUrl, audioOnly, token);
+                        _mediaDLSendDownload(videoUrl, audioOnly, token).catch(e => {
+                            console.error('[YTKit] Download error:', e);
+                            showToast('Download failed: ' + e.message, '#ef4444', { duration: 5 });
+                        });
                     } else if (retries < maxRetries) {
                         setTimeout(tryConnect, retryDelay);
                     } else {
@@ -1059,14 +1066,74 @@
 
     // Extract streaming URLs from YouTube's player response for direct download.
     // This bypasses cookie/auth issues entirely - the URLs contain embedded auth signatures.
-    // Works in ANY browser since it reads data the page already has.
-    function _extractStreamingData(audioOnly) {
+    // Uses multi-method approach: inline script parsing (fast) -> Innertube API (SPA-safe).
+    async function _extractStreamingData(audioOnly) {
+        // Method 1: Parse from inline <script> tags (works on fresh page loads)
+        let pr = null;
         try {
-            const pr = _rw.ytInitialPlayerResponse;
-            if (!pr?.streamingData) {
-                DebugManager.log('MediaDL', 'No streamingData in ytInitialPlayerResponse');
+            pr = _rw.ytInitialPlayerResponse;
+            if (pr?.streamingData) {
+                DebugManager.log('MediaDL', 'Got streamingData from inline script');
+            } else {
+                pr = null;
+            }
+        } catch (e) {
+            DebugManager.log('MediaDL', `Inline script parse failed: ${e.message}`);
+        }
+
+        // Method 2: Innertube API via GM_xmlhttpRequest (works on SPA navigations)
+        // Uses GM_xmlhttpRequest because ISOLATED world fetch may not include page cookies
+        if (!pr) {
+            const videoId = new URLSearchParams(window.location.search).get('v');
+            if (!videoId) {
+                DebugManager.log('MediaDL', 'No video ID in URL for Innertube fallback');
                 return null;
             }
+            DebugManager.log('MediaDL', `Trying Innertube API for ${videoId}`);
+            try {
+                pr = await new Promise((resolve, reject) => {
+                    GM_xmlhttpRequest({
+                        method: 'POST',
+                        url: 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false',
+                        headers: { 'Content-Type': 'application/json' },
+                        data: JSON.stringify({
+                            context: { client: { clientName: 'WEB', clientVersion: '2.20250310.00.00' } },
+                            videoId: videoId
+                        }),
+                        timeout: 8000,
+                        onload: function(r) {
+                            try {
+                                const data = JSON.parse(r.responseText);
+                                if (data?.streamingData) {
+                                    DebugManager.log('MediaDL', 'Got streamingData from Innertube API');
+                                    resolve(data);
+                                } else {
+                                    DebugManager.log('MediaDL', 'Innertube API returned no streamingData');
+                                    resolve(null);
+                                }
+                            } catch (e) {
+                                DebugManager.log('MediaDL', `Innertube API parse error: ${e.message}`);
+                                resolve(null);
+                            }
+                        },
+                        onerror: function(err) {
+                            DebugManager.log('MediaDL', `Innertube API request error: ${JSON.stringify(err)}`);
+                            resolve(null);
+                        },
+                        ontimeout: function() {
+                            DebugManager.log('MediaDL', 'Innertube API request timed out');
+                            resolve(null);
+                        }
+                    });
+                });
+                if (!pr) return null;
+            } catch (e) {
+                DebugManager.log('MediaDL', `Innertube API error: ${e.message}`);
+                return null;
+            }
+        }
+
+        try {
             const sd = pr.streamingData;
             const title = pr.videoDetails?.title || '';
             const videoId = pr.videoDetails?.videoId || '';
@@ -1122,9 +1189,9 @@
         }
     }
 
-    function _mediaDLSendDownload(videoUrl, audioOnly, token) {
+    async function _mediaDLSendDownload(videoUrl, audioOnly, token) {
         DebugManager.log('MediaDL', `Sending download: ${videoUrl} (audio=${audioOnly})`);
-        const streams = _extractStreamingData(audioOnly);
+        const streams = await _extractStreamingData(audioOnly);
         if (streams) {
             DebugManager.log('MediaDL', `Extracted streams for "${streams.title}" (${streams.videoId})`);
         } else {

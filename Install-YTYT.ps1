@@ -2395,7 +2395,7 @@ function Write-CookieFile {
         $expires = if ($c.expirationDate) { [int]$c.expirationDate } else { 0 }
         $lines += "$domain`t$inclSub`t$path`t$secure`t$expires`t$($c.name)`t$($c.value)"
     }
-    $lines -join "`n" | Set-Content $cookieFile -Encoding UTF8 -NoNewline
+    [System.IO.File]::WriteAllText($cookieFile, ($lines -join "`n"), [System.Text.UTF8Encoding]::new($false))
     Write-Log "Wrote $($cookies.Count) cookies to $cookieFile"
     return $cookieFile
 }
@@ -2722,14 +2722,28 @@ function Reap-Zombies {
     foreach ($id in @($downloads.Keys)) {
         $dl = $downloads[$id]
         if ($dl.status -ne 'downloading' -and $dl.status -ne 'merging' -and $dl.status -ne 'extracting') { continue }
+
+        # Reap immediately if job is dead but status wasn't updated
+        if ($dl.job -and $dl.job.State -ne "Running") {
+            Write-Log "[$id] Zombie reaped (job dead, started $($dl.startTime.ToString('HH:mm:ss')))"
+            $dl.status = "failed"
+            try { Remove-Job -Job $dl.job -Force -ErrorAction SilentlyContinue } catch {}
+            if ($dl.progressFile -and (Test-Path $dl.progressFile)) {
+                Remove-Item $dl.progressFile -Force -ErrorAction SilentlyContinue
+            }
+            continue
+        }
+
+        # Force-kill jobs stuck past the timeout
         if ($dl.startTime -lt $cutoff) {
-            if ($dl.job -and $dl.job.State -ne "Running") {
-                Write-Log "[$id] Zombie reaped (job dead, started $($dl.startTime.ToString('HH:mm:ss')))"
-                $dl.status = "failed"
+            Write-Log "[$id] Zombie reaped (timeout, started $($dl.startTime.ToString('HH:mm:ss')))"
+            $dl.status = "failed"
+            if ($dl.job) {
+                try { Stop-Job -Job $dl.job -ErrorAction SilentlyContinue } catch {}
                 try { Remove-Job -Job $dl.job -Force -ErrorAction SilentlyContinue } catch {}
-                if ($dl.progressFile -and (Test-Path $dl.progressFile)) {
-                    Remove-Item $dl.progressFile -Force -ErrorAction SilentlyContinue
-                }
+            }
+            if ($dl.progressFile -and (Test-Path $dl.progressFile)) {
+                Remove-Item $dl.progressFile -Force -ErrorAction SilentlyContinue
             }
         }
     }
