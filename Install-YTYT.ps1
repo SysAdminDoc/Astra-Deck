@@ -7,8 +7,8 @@
     - ffmpeg (auto-download)
     - VLC protocol handler (ytvlc://)
     - Download protocol handler (ytdl://)
-    - Ollama local LLM for AI-powered chapters (optional)
-    - Userscript for YouTube integration
+    - Ollama local LLM (optional, for use with Chapterizer)
+    - Userscript/extension for YouTube integration
 .NOTES
     Author: SysAdminDoc
     Version: 2.5.0
@@ -704,7 +704,7 @@ if ($script:OllamaFound) {
                                     <CheckBox x:Name="chkInstallOllama" Content="Install Ollama + AI models for chapters" IsChecked="False" Margin="0,0,0,6"/>
                                     <TextBlock Text="Models to install (select one or more)" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,0,0,4"/>
                                     <StackPanel x:Name="pnlOllamaModels" Margin="8,0,0,0"/>
-                                    <TextBlock x:Name="txtOllamaModelInfo" Text="Powers YTKit ChapterForge: AI chapters, summaries, POIs, filler detection, pause removal, speech pace analysis, auto-model selection, and multi-language translation" FontSize="10" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                    <TextBlock x:Name="txtOllamaModelInfo" Text="Local AI model for use with Chapterizer (AI chapters, summaries, filler detection, and more)" FontSize="10" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </Border>
                             
@@ -802,7 +802,7 @@ if ($script:OllamaFound) {
                         </StackPanel>
                         
                         <TextBlock Text="Step 3: Install YTKit" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
-                        <TextBlock Text="Install the YTKit userscript in ScriptVault to add downloads, themes, AI chapters, and more to YouTube." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24" TextWrapping="Wrap"/>
+                        <TextBlock Text="Install the YTKit userscript in ScriptVault to add downloads, themes, and more to YouTube." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24" TextWrapping="Wrap"/>
 
                         <!-- YTKit -->
                         <Border Background="{StaticResource BgCard}" BorderBrush="#8b5cf6" BorderThickness="2" CornerRadius="16" Padding="24" HorizontalAlignment="Center">
@@ -818,7 +818,7 @@ if ($script:OllamaFound) {
                                 </Border>
                                 <TextBlock Text="YTKit" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
                                 <TextBlock Text="Full Featured YouTube Suite" FontSize="12" Foreground="#a78bfa" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                                <TextBlock Text="Downloads, themes, AI-powered chapters, pause removal, filler detection, speech analysis, transcript export, AI translation, and more." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" MaxWidth="320"/>
+                                <TextBlock Text="Downloads, themes, SponsorBlock, ad blocking, video/channel hiding, playback enhancements, and more." FontSize="12" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,16" MaxWidth="320"/>
                                 <Button x:Name="btnInstallYTKit" Content="Install YTKit in ScriptVault" Style="{StaticResource SecondaryButton}" Padding="24,12" FontSize="14"/>
                             </StackPanel>
                         </Border>
@@ -829,7 +829,7 @@ if ($script:OllamaFound) {
                                 <TextBlock Text="OK" FontSize="16" Foreground="{StaticResource AccentGreen}" FontWeight="Bold" Margin="0,0,16,0" VerticalAlignment="Top"/>
                                 <StackPanel>
                                     <TextBlock Text="Setup Complete!" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource AccentGreen}" Margin="0,0,0,4"/>
-                                    <TextBlock Text="After installing YTKit in ScriptVault, visit any YouTube video. You'll see download buttons next to the like/share buttons. With Ollama installed, YTKit auto-generates AI chapters using video captions." FontSize="13" Foreground="#86efac" TextWrapping="Wrap"/>
+                                    <TextBlock Text="After installing YTKit in ScriptVault, visit any YouTube video. You'll see download buttons next to the like/share buttons." FontSize="13" Foreground="#86efac" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -3264,7 +3264,7 @@ objShell.Run strCmd, 0, False
                     }
                     if ($chkInstallOllama.IsChecked) {
                         Update-Status "  AI: Ollama + $($selectedModels -join ', ')"
-                        Update-Status "      YTKit ChapterForge auto-detects at localhost:11434"
+                        Update-Status "      Ollama ready at localhost:11434 (for use with Chapterizer)"
                     }
                     Update-Status ""
                     Update-Status "  Install YTKit in ScriptVault to connect to the server."
