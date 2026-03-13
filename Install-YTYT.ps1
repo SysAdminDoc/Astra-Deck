@@ -38,7 +38,7 @@ $script:InstallPath = "$env:LOCALAPPDATA\YTYT-Downloader"
 $script:YtDlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 $script:DefaultDownloadPath = "$env:USERPROFILE\Videos\YouTube"
 $script:GitHubRepo = "https://github.com/SysAdminDoc/YouTube-Kit"
-$script:YTKitUrl = "https://github.com/SysAdminDoc/ScriptVault"
+$script:YTKitUrl = "https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js"
 
 # Ollama Configuration
 $script:OllamaInstallerUrl = "https://ollama.com/download/OllamaSetup.exe"
@@ -159,9 +159,9 @@ function Uninstall-Previous {
         Remove-Item $shortcutPath -Force -ErrorAction SilentlyContinue
     }
     
-    # Remove startup shortcuts
+    # Remove startup shortcuts (including Ollama)
     $startupPath = [Environment]::GetFolderPath('Startup')
-    @("YTYT-Server.lnk", "MediaDL-Server.lnk") | ForEach-Object {
+    @("YTYT-Server.lnk", "MediaDL-Server.lnk", "Ollama.lnk") | ForEach-Object {
         $s = Join-Path $startupPath $_
         if (Test-Path $s) { Remove-Item $s -Force -ErrorAction SilentlyContinue }
     }
@@ -585,7 +585,7 @@ if ($script:OllamaFound) {
                     <TextBlock x:Name="txtSubtitle" Text="Stream to VLC and download with yt-dlp" FontSize="14" Foreground="{StaticResource TextSecondary}" FontFamily="Segoe UI" Margin="0,4,0,0"/>
                 </StackPanel>
                 
-                <TextBlock Grid.Column="2" Text="v2.4.0" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Top" FontFamily="Segoe UI Semibold"/>
+                <TextBlock Grid.Column="2" Text="v2.5.0" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Top" FontFamily="Segoe UI Semibold"/>
             </Grid>
         </Border>
         
@@ -1257,73 +1257,54 @@ $btnCancelUninstall.Add_Click({
     Update-WizardButtons
 })
 
-# Confirm uninstall
+# Confirm uninstall - immediate action, no confirmation dialog
 $btnConfirmUninstall.Add_Click({
-    $result = [System.Windows.MessageBox]::Show(
-        "Are you sure you want to uninstall YTYT-Downloader?`n`nThis will remove all components and cannot be undone.",
-        "Confirm Uninstall",
-        "YesNo",
-        "Warning"
-    )
-    
-    if ($result -eq "Yes") {
-        try {
-            # Force kill yt-dlp and ffmpeg processes
-            Get-Process -Name "yt-dlp" -ErrorAction SilentlyContinue | Stop-Process -Force
-            Get-Process -Name "ffmpeg" -ErrorAction SilentlyContinue | Stop-Process -Force
-            
-            # Kill MediaDL server (PowerShell listening on port 9751)
-            try {
-                $serverProcs = Get-NetTCPConnection -LocalPort 9751 -State Listen -ErrorAction SilentlyContinue |
-                    ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue }
-                $serverProcs | Stop-Process -Force -ErrorAction SilentlyContinue
-            } catch {}
-            
-            # Remove MediaDL-Server scheduled task
-            try { Unregister-ScheduledTask -TaskName "MediaDL-Server" -Confirm:$false -ErrorAction SilentlyContinue } catch {}
-            
-            Start-Sleep -Milliseconds 500
-            
-            # Remove protocol handlers
-            Remove-Item -Path "HKCU:\Software\Classes\ytvlc" -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -Path "HKCU:\Software\Classes\ytvlcq" -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -Path "HKCU:\Software\Classes\ytdl" -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -Path "HKCU:\Software\Classes\ytmpv" -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -Path "HKCU:\Software\Classes\ytdlplay" -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -Path "HKCU:\Software\Classes\mediadl" -Recurse -Force -ErrorAction SilentlyContinue
-            
-            # Remove install directory
-            if (Test-Path $script:InstallPath) {
-                Remove-Item -Path $script:InstallPath -Recurse -Force
-            }
-            
-            # Remove desktop shortcut
-            $shortcutPath = "$env:USERPROFILE\Desktop\YouTube Download.lnk"
-            if (Test-Path $shortcutPath) {
-                Remove-Item $shortcutPath -Force
-            }
-            
-            # Remove startup shortcuts
-            $startupPath = [Environment]::GetFolderPath('Startup')
-            @("YTYT-Server.lnk", "MediaDL-Server.lnk") | ForEach-Object {
-                $s = Join-Path $startupPath $_
-                if (Test-Path $s) { Remove-Item $s -Force -ErrorAction SilentlyContinue }
-            }
-            $ollamaShortcut = Join-Path $startupPath "Ollama.lnk"
-            if (Test-Path $ollamaShortcut) {
-                Remove-Item $ollamaShortcut -Force
-            }
-            
-            [System.Windows.MessageBox]::Show(
-                "YTYT-Downloader has been uninstalled successfully.`n`nRemember to also remove YTKit from ScriptVault.",
-                "Uninstall Complete",
-                "OK",
-                "Information"
-            )
-            $window.Close()
-        } catch {
-            [System.Windows.MessageBox]::Show("Error during uninstall: $($_.Exception.Message)", "Error", "OK", "Error")
+    try {
+        # Force kill related processes
+        @("yt-dlp", "ffmpeg", "ffprobe", "vlc") | ForEach-Object {
+            Get-Process -Name $_ -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
         }
+
+        # Kill MediaDL server (PowerShell listening on port 9751)
+        try {
+            $serverProcs = Get-NetTCPConnection -LocalPort 9751 -State Listen -ErrorAction SilentlyContinue |
+                ForEach-Object { Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue }
+            $serverProcs | Stop-Process -Force -ErrorAction SilentlyContinue
+        } catch {}
+
+        # Remove MediaDL-Server scheduled task
+        try { Unregister-ScheduledTask -TaskName "MediaDL-Server" -Confirm:$false -ErrorAction SilentlyContinue } catch {}
+
+        Start-Sleep -Milliseconds 500
+
+        # Remove protocol handlers
+        @("ytvlc", "ytvlcq", "ytdl", "ytmpv", "ytdlplay", "mediadl") | ForEach-Object {
+            Remove-Item -Path "HKCU:\Software\Classes\$_" -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        # Remove install directory
+        if (Test-Path $script:InstallPath) {
+            Remove-Item -Path $script:InstallPath -Recurse -Force
+        }
+
+        # Remove desktop shortcut
+        $shortcutPath = "$env:USERPROFILE\Desktop\YouTube Download.lnk"
+        if (Test-Path $shortcutPath) {
+            Remove-Item $shortcutPath -Force
+        }
+
+        # Remove startup shortcuts (including Ollama)
+        $startupPath = [Environment]::GetFolderPath('Startup')
+        @("YTYT-Server.lnk", "MediaDL-Server.lnk", "Ollama.lnk") | ForEach-Object {
+            $s = Join-Path $startupPath $_
+            if (Test-Path $s) { Remove-Item $s -Force -ErrorAction SilentlyContinue }
+        }
+
+        Update-Status "YTYT-Downloader uninstalled successfully."
+        Update-Status "Remember to also remove YTKit from ScriptVault."
+        $window.Close()
+    } catch {
+        Update-Status "Error during uninstall: $($_.Exception.Message)"
     }
 })
 
@@ -2265,7 +2246,7 @@ if ($config.Notifications) {
                     # Embed MediaDL HTTP Server
                     Update-Status "  Writing MediaDL server..."
                     $serverScript = @'
-# ytdl-server.ps1 - Hidden HTTP API server for MediaDL v3.0
+# ytdl-server.ps1 - Hidden HTTP API server for MediaDL v3.2
 # Runs on 127.0.0.1:9751, manages downloads with progress tracking
 # Primary: direct stream download from browser-extracted URLs (universal, no cookies needed)
 # Fallback: yt-dlp for non-YouTube sites or when streams unavailable
@@ -2980,7 +2961,9 @@ objShell.Run strCmd, 0, False
                         Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Description "MediaDL background server for browser downloads" -Force -ErrorAction Stop | Out-Null
                         Update-Status "  [OK] Server registered as startup task"
                         $taskRegistered = $true
-                    } catch {}
+                    } catch {
+                        Update-Status "  [INFO] Scheduled task requires admin - using startup folder instead"
+                    }
                     if (-not $taskRegistered) {
                         # Scheduled task needs admin - use startup folder instead
                         $startupFolder = [Environment]::GetFolderPath('Startup')
