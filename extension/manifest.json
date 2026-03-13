@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "YTKit: YouTube Customization Suite",
+  "version": "3.0.0",
+  "description": "Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and more.",
+  "author": "Matthew Parker",
+  "homepage_url": "https://github.com/SysAdminDoc/YouTube-Kit",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://*.youtube.com/*",
+    "https://*.youtube-nocookie.com/*",
+    "https://youtu.be/*",
+    "https://sponsor.ajay.app/*",
+    "https://raw.githubusercontent.com/*",
+    "https://cobalt.meowing.de/*",
+    "https://*.meowing.de/*",
+    "http://127.0.0.1:9751/*",
+    "http://localhost:9751/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.youtube.com/*", "https://*.youtube-nocookie.com/*", "https://youtu.be/*"],
+      "exclude_matches": ["https://m.youtube.com/*", "https://studio.youtube.com/*"],
+      "js": ["gm-compat.js", "adblock-sandbox.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    },
+    {
+      "matches": ["https://*.youtube.com/*", "https://*.youtube-nocookie.com/*", "https://youtu.be/*"],
+      "exclude_matches": ["https://m.youtube.com/*", "https://studio.youtube.com/*"],
+      "js": ["adblock-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://*.youtube.com/*", "https://*.youtube-nocookie.com/*", "https://youtu.be/*"],
+      "exclude_matches": ["https://m.youtube.com/*", "https://studio.youtube.com/*"],
+      "js": ["gm-compat.js", "ytkit.js"],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["https://*.youtube.com/*"]
+    }
+  ]
+}
