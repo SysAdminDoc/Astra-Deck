@@ -246,10 +246,10 @@
             const node = args[0];
             try {
                 if (node instanceof HTMLIFrameElement && node.src === 'about:blank') {
+                    const sb = node.getAttribute('sandbox');
+                    if (sb !== null && sb.indexOf('allow-scripts') === -1) return Reflect.apply(target, thisArg, args);
                     const res = Reflect.apply(target, thisArg, args);
                     try {
-                        const sb = node.getAttribute('sandbox');
-                        if (sb !== null && sb.indexOf('allow-scripts') === -1) return res;
                         if (node.contentWindow) { node.contentWindow.fetch = window.fetch; node.contentWindow.JSON.parse = JSON.parse; }
                     } catch(ignored) {}
                     return res;

@@ -82,7 +82,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.0.0';
+    const YTKIT_VERSION = '3.1.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -96,6 +96,9 @@
         SETTINGS_PANEL: 80001,   // Settings panel
         PANEL_TOAST: 90000,      // Settings panel toasts
     };
+
+    // ── Settings Panel Cleanup Registry ──
+    let _panelCleanups = [];
 
     // ── Timing Constants ──
     const TIMING = {
@@ -213,6 +216,35 @@
         }
     };
     StorageManager._initUnloadFlush();
+
+    // ── Persistent Ad Block Stats Accumulator ──
+    const _lifetimeStats = {
+        _key: 'ytkit-adblock-lifetime-stats',
+        _lastSession: { blocked: 0, pruned: 0, ssapSkipped: 0 },
+        _saved: null,
+        load() {
+            if (!this._saved) this._saved = StorageManager.get(this._key, { blocked: 0, pruned: 0, ssapSkipped: 0 });
+            return this._saved;
+        },
+        accumulate(sessionStats) {
+            if (!sessionStats) return;
+            const delta = {
+                blocked: Math.max(0, (sessionStats.blocked || 0) - this._lastSession.blocked),
+                pruned: Math.max(0, (sessionStats.pruned || 0) - this._lastSession.pruned),
+                ssapSkipped: Math.max(0, (sessionStats.ssapSkipped || 0) - this._lastSession.ssapSkipped),
+            };
+            if (delta.blocked === 0 && delta.pruned === 0 && delta.ssapSkipped === 0) return;
+            this._lastSession = { blocked: sessionStats.blocked || 0, pruned: sessionStats.pruned || 0, ssapSkipped: sessionStats.ssapSkipped || 0 };
+            const lifetime = this.load();
+            lifetime.blocked += delta.blocked;
+            lifetime.pruned += delta.pruned;
+            lifetime.ssapSkipped += delta.ssapSkipped;
+            this._saved = lifetime;
+            StorageManager.set(this._key, lifetime);
+        },
+        get() { return this.load(); },
+        reset() { this._saved = { blocked: 0, pruned: 0, ssapSkipped: 0 }; StorageManager.setSync(this._key, this._saved); }
+    };
 
     //  TRANSCRIPT SERVICE - Multi-Method Extraction with Failover
     const TranscriptService = {
@@ -2217,8 +2249,7 @@ ytd-miniplayer.ytdMiniplayerComponentHost.ytdMiniplayerComponentVisible { displa
 /* Transparent player controls */
 div.ytp-right-controls { background-color: transparent; }
 button.ytp-button.ytkit-po-btn.ytkit-po-gear {
-    padding: 0; margin: 0; height: 35px; width: 40px;
-    text-align: center; background-color: transparent;
+    background-color: transparent;
 }
 div.ytp-time-wrapper.ytp-time-wrapper-delhi { background-color: transparent; }
 button.ytp-volume-icon.ytp-button { background-color: transparent; }
@@ -2444,7 +2475,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 // CSS selectors are scoped to comment elements — safe to inject globally
                 // (removing path guard so styles persist across SPA navigations)
-                const css = `ytd-comments#comments{background:rgba(var(--ytkit-accent-rgb),0.03) !important;background-image:linear-gradient(180deg,rgba(var(--ytkit-accent-rgb),0.05) 0%,rgba(var(--ytkit-accent-rgb),0.01) 100%) !important;border-radius:12px !important;padding:4px 8px !important}ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:8px 4px 6px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(var(--ytkit-accent-rgb),0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:var(--ytkit-accent) !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:var(--ytkit-accent-light) !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(var(--ytkit-accent-rgb),0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:var(--ytkit-accent-light) !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar,ytd-comment-renderer ytd-comment-engagement-bar{position:absolute !important;top:6px !important;right:4px !important;margin:0 !important;padding:0 !important;z-index:2 !important;pointer-events:none !important}ytd-comment-view-model:hover ytd-comment-engagement-bar,ytd-comment-renderer:hover ytd-comment-engagement-bar{pointer-events:auto !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:static !important;align-items:center !important;gap:4px !important;margin:0 !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar,ytd-comment-renderer:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important;overflow:visible !important;border:none !important;outline:none !important;background:transparent !important}ytd-comment-engagement-bar #reply-dialog #unopened-dialog{display:none !important}ytd-comment-engagement-bar #reply-dialog:not(:has(ytd-commentbox:not([hidden]))){display:none !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}.ytkit-replying ytd-comment-engagement-bar{position:relative !important;top:auto !important;right:auto !important;pointer-events:auto !important;margin:4px 0 0 !important;width:100% !important;display:block !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(var(--ytkit-accent-rgb),0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(var(--ytkit-accent-rgb),0.3) !important;background:rgba(var(--ytkit-accent-rgb),0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(var(--ytkit-accent-rgb),0.12) !important;color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.35) !important;min-height:unset !important;background:rgba(var(--ytkit-accent-rgb),0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}`;
+                const css = `ytd-comments#comments{background:rgba(var(--ytkit-accent-rgb),0.03) !important;background-image:linear-gradient(180deg,rgba(var(--ytkit-accent-rgb),0.05) 0%,rgba(var(--ytkit-accent-rgb),0.01) 100%) !important;border-radius:12px !important;padding:4px 8px !important}ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:8px 4px 6px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(var(--ytkit-accent-rgb),0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:var(--ytkit-accent) !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:var(--ytkit-accent-light) !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(var(--ytkit-accent-rgb),0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:var(--ytkit-accent-light) !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar,ytd-comment-renderer ytd-comment-engagement-bar{position:absolute !important;top:6px !important;right:4px !important;margin:0 !important;padding:0 !important;z-index:2 !important;pointer-events:none !important}ytd-comment-view-model:hover ytd-comment-engagement-bar,ytd-comment-renderer:hover ytd-comment-engagement-bar{pointer-events:auto !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:static !important;align-items:center !important;gap:4px !important;margin:0 !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar,ytd-comment-renderer:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important;overflow:visible !important;border:none !important;outline:none !important;background:transparent !important}ytd-comment-engagement-bar #reply-dialog #unopened-dialog{display:none !important}ytd-comment-engagement-bar #reply-dialog:not(:has(ytd-commentbox:not([hidden]))){display:none !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}.ytkit-replying ytd-comment-engagement-bar{position:relative !important;top:auto !important;right:auto !important;pointer-events:auto !important;margin:4px 0 0 !important;width:100% !important;display:block !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(var(--ytkit-accent-rgb),0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(var(--ytkit-accent-rgb),0.3) !important;background:rgba(var(--ytkit-accent-rgb),0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(var(--ytkit-accent-rgb),0.12) !important;color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.35) !important;min-height:unset !important;background:rgba(var(--ytkit-accent-rgb),0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}ytd-commentbox #divider-line{display:none !important}ytd-commentbox #thumbnail-input-row{display:flex !important;align-items:flex-start !important;gap:10px !important;background:transparent !important;border:none !important;padding:0 !important;margin:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox #creation-box,ytd-commentbox #main{background:transparent !important;border:none !important;padding:0 !important;margin:0 !important;flex:1 !important;min-width:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox .underline,ytd-commentbox .unfocused-line,ytd-commentbox .focused-line{display:none !important}ytd-commentbox #contenteditable-textarea{display:block !important;font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(var(--ytkit-accent-rgb),0.15) !important;border-radius:8px !important;min-height:44px !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s,box-shadow 0.2s !important}ytd-commentbox #creation-box:not(.not-focused) #contenteditable-textarea,ytd-commentbox #contenteditable-textarea:focus-within{border-color:rgba(var(--ytkit-accent-rgb),0.4) !important;background:rgba(255,255,255,0.06) !important;box-shadow:0 0 0 2px rgba(var(--ytkit-accent-rgb),0.08) !important}ytd-commentbox #contenteditable-root{font-size:13px !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;border:none !important;background:transparent !important;padding:0 !important}ytd-commentbox #input-container,ytd-commentbox tp-yt-paper-input-container{background:transparent !important;border:none !important;padding:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox .input-wrapper{width:100% !important;box-sizing:border-box !important}ytd-commentbox #labelAndInputContainer{width:100% !important;box-sizing:border-box !important}ytd-commentbox .paper-input-input{width:100% !important;box-sizing:border-box !important}ytd-commentbox .floated-label-placeholder{display:none !important}ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;align-items:center !important}ytd-commentbox #footer #buttons{display:flex !important;align-items:center !important;gap:6px !important}ytd-commentbox #footer #buttons .yt-spec-button-shape-next{height:30px !important;font-size:12px !important;padding:0 16px !important;min-height:unset !important;border-radius:6px !important;transition:all 0.15s !important}ytd-commentbox #submit-button .yt-spec-button-shape-next--filled:not([disabled]){background:var(--ytkit-accent) !important;color:#000 !important}ytd-commentbox #submit-button .yt-spec-button-shape-next--filled:not([disabled]):hover{filter:brightness(1.15) !important}ytd-commentbox #cancel-button .yt-spec-button-shape-next{color:rgba(255,255,255,0.5) !important}ytd-commentbox #cancel-button .yt-spec-button-shape-next:hover{color:rgba(255,255,255,0.75) !important}ytd-commentbox #emoji-button .yt-spec-button-shape-next{color:rgba(255,255,255,0.3) !important;transition:color 0.15s !important}ytd-commentbox #emoji-button .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.7) !important}ytd-commentbox #author-thumbnail{flex-shrink:0 !important;width:28px !important;height:28px !important;margin:0 !important;padding:0 !important}ytd-commentbox #author-thumbnail img,ytd-commentbox #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}`;
                 this._styleElement = injectStyle(css, this.id, true);
 
                 const thumbSVG = '<svg viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z"/></svg>';
@@ -3036,7 +3067,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 rightControls.appendChild(wrap);
             },
             init() {
-                this._styleEl = GM_addStyle(`/* Hide native right controls, keep our injected elements */ .ytp-right-controls > *:not(#ytkit-player-controls){display:none !important;} #ytkit-player-controls{display:flex;align-items:center;gap:2px;height:100%;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;} .ytkit-po-btn{display:flex;align-items:center;justify-content:center;padding:6px;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-dl:hover{background:rgba(34,197,94,0.2)!important;} .ytkit-po-mp3:hover{background:rgba(139,92,246,0.2)!important;} .ytkit-po-vlc:hover{background:rgba(249,115,22,0.2)!important;} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);} button.ytp-button.ytp-autonav-toggle.delhi-fast-follow-autonav-toggle{display:none !important;}`);
+                this._styleEl = GM_addStyle(`/* Hide native right controls, keep our injected elements */ .ytp-right-controls > *:not(#ytkit-player-controls){display:none !important;} .ytp-right-controls{display:flex !important;align-items:center !important;height:100% !important;} #ytkit-player-controls{display:flex;align-items:center;gap:4px;height:100%;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;height:100%;} .ytkit-po-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:none;background:transparent;cursor:pointer;border-radius:6px;transition:background 0.15s;text-decoration:none;color:#fff;flex-shrink:0;} .ytkit-po-btn svg{display:block;} .ytkit-po-btn:hover{background:rgba(255,255,255,0.12);} .ytkit-po-dl:hover{background:rgba(34,197,94,0.2)!important;} .ytkit-po-mp3:hover{background:rgba(139,92,246,0.2)!important;} .ytkit-po-vlc:hover{background:rgba(249,115,22,0.2)!important;} .ytkit-po-gear svg{transition:transform 0.3s ease;} .ytkit-po-gear:hover svg{transform:rotate(45deg);} button.ytp-button.ytp-autonav-toggle.delhi-fast-follow-autonav-toggle{display:none !important;}`);
 
                 const self = this;
                 addNavigateRule(this._ruleId, () => self._inject());
@@ -6946,6 +6977,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     function buildSettingsPanel() {
         if (document.getElementById('ytkit-settings-panel')) return;
 
+        // Centralized cleanup when panel closes
+        _panelCleanups.length = 0;
+        let _wasPanelOpen = false;
+        new MutationObserver(() => {
+            const isOpen = document.body.classList.contains('ytkit-panel-open');
+            if (_wasPanelOpen && !isOpen) {
+                _panelCleanups.forEach(fn => { try { fn(); } catch(e) {} });
+                _panelCleanups.length = 0;
+            }
+            _wasPanelOpen = isOpen;
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
         const categoryOrder = ['Watch Page', 'Home / Subscriptions', 'Theme', 'Ad Blocker', 'Live Chat', 'Downloads'];
 
         // Group labels: maps first category of each group → label text
@@ -7103,10 +7146,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const st = _rw.__ytab?.stats;
                 const { btn, countSpan } = makeNavBtn(cat, config, (ICONS.shield || ICONS.settings)(), st ? `${st.blocked}` : '0', 'Ads blocked this session', index === 0 ? ' active' : '');
                 const _adCountInterval = setInterval(() => {
-                    if (!countSpan.isConnected) { clearInterval(_adCountInterval); return; }
                     const s = _rw.__ytab?.stats;
                     if (s) countSpan.textContent = `${s.blocked}`;
                 }, 3000);
+                _panelCleanups.push(() => clearInterval(_adCountInterval));
                 sidebar.appendChild(btn);
                 return;
             }
@@ -7224,21 +7267,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const statsSection = document.createElement('div');
             statsSection.style.cssText = sectionStyle;
 
-            const statsLabel = document.createElement('div');
-            statsLabel.style.cssText = labelStyle;
-            statsLabel.textContent = 'Session Stats';
-            statsSection.appendChild(statsLabel);
-
-            const statsGrid = document.createElement('div');
-            statsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
-
-            function makeStat(label, valueGetter, color) {
+            function makeStat(label, valueGetter, color, scope) {
                 const box = document.createElement('div');
                 box.style.cssText = 'background:var(--ytkit-bg-card);padding:8px;border-radius:6px;text-align:center;';
                 const num = document.createElement('div');
                 num.style.cssText = `font-size:18px;font-weight:700;color:${color};font-variant-numeric:tabular-nums;`;
                 num.textContent = valueGetter();
                 num.dataset.statKey = label;
+                num.dataset.statScope = scope || 'session';
                 const lbl = document.createElement('div');
                 lbl.style.cssText = 'font-size:10px;color:var(--ytkit-text-muted);margin-top:2px;';
                 lbl.textContent = label;
@@ -7247,32 +7283,60 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return box;
             }
 
+            // Session stats
+            const sessionLabel = document.createElement('div');
+            sessionLabel.style.cssText = labelStyle;
+            sessionLabel.textContent = 'Session';
+            statsSection.appendChild(sessionLabel);
+
+            const statsGrid = document.createElement('div');
+            statsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
             const s = _rw.__ytab?.stats || { blocked: 0, pruned: 0, ssapSkipped: 0 };
-            statsGrid.appendChild(makeStat('Ads Blocked', () => s.blocked, config.color));
-            statsGrid.appendChild(makeStat('JSON Pruned', () => s.pruned, '#a78bfa'));
-            statsGrid.appendChild(makeStat('SSAP Skipped', () => s.ssapSkipped, '#f59e0b'));
+            statsGrid.appendChild(makeStat('Ads Blocked', () => s.blocked, config.color, 'session'));
+            statsGrid.appendChild(makeStat('JSON Pruned', () => s.pruned, '#a78bfa', 'session'));
+            statsGrid.appendChild(makeStat('SSAP Skipped', () => s.ssapSkipped, '#f59e0b', 'session'));
             statsSection.appendChild(statsGrid);
+
+            // Lifetime stats
+            const lifetimeLabel = document.createElement('div');
+            lifetimeLabel.style.cssText = labelStyle + 'margin-top:8px;';
+            lifetimeLabel.textContent = 'Lifetime';
+            statsSection.appendChild(lifetimeLabel);
+
+            const lifetimeGrid = document.createElement('div');
+            lifetimeGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
+            const lt = _lifetimeStats.get();
+            lifetimeGrid.appendChild(makeStat('Ads Blocked', () => lt.blocked, config.color, 'lifetime'));
+            lifetimeGrid.appendChild(makeStat('JSON Pruned', () => lt.pruned, '#a78bfa', 'lifetime'));
+            lifetimeGrid.appendChild(makeStat('SSAP Skipped', () => lt.ssapSkipped, '#f59e0b', 'lifetime'));
+            statsSection.appendChild(lifetimeGrid);
 
             // Auto-refresh stats
             let statsInterval = null;
             const refreshStats = () => {
                 const st = _rw.__ytab?.stats || { blocked: 0, pruned: 0, ssapSkipped: 0 };
-                statsGrid.querySelectorAll('[data-stat-key]').forEach(el => {
+                _lifetimeStats.accumulate(st);
+                const ltNow = _lifetimeStats.get();
+                statsSection.querySelectorAll('[data-stat-key]').forEach(el => {
                     const key = el.dataset.statKey;
-                    if (key === 'Ads Blocked') el.textContent = st.blocked;
-                    else if (key === 'JSON Pruned') el.textContent = st.pruned;
-                    else if (key === 'SSAP Skipped') el.textContent = st.ssapSkipped;
+                    const scope = el.dataset.statScope;
+                    const src = scope === 'lifetime' ? ltNow : st;
+                    if (key === 'Ads Blocked') el.textContent = src.blocked;
+                    else if (key === 'JSON Pruned') el.textContent = src.pruned;
+                    else if (key === 'SSAP Skipped') el.textContent = src.ssapSkipped;
                 });
             };
             // Start/stop interval when pane is visible
-            new MutationObserver(() => {
+            const _statsPaneObserver = new MutationObserver(() => {
                 if (pane.classList.contains('active')) {
                     refreshStats();
                     if (!statsInterval) statsInterval = setInterval(refreshStats, 2000);
                 } else {
                     if (statsInterval) { clearInterval(statsInterval); statsInterval = null; }
                 }
-            }).observe(pane, { attributes: true, attributeFilter: ['class'] });
+            });
+            _statsPaneObserver.observe(pane, { attributes: true, attributeFilter: ['class'] });
+            _panelCleanups.push(() => { _statsPaneObserver.disconnect(); if (statsInterval) { clearInterval(statsInterval); statsInterval = null; } });
 
             pane.appendChild(statsSection);
 
@@ -7404,16 +7468,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 filterSection.appendChild(statsRow);
                 // Auto-refresh stats every 5s while panel is open
-                const statsInterval = setInterval(() => {
-                    if (!document.body.classList.contains('ytkit-panel-open')) {
-                        clearInterval(statsInterval); return;
-                    }
+                const filterStatsInterval = setInterval(() => {
                     const live = _rw.__ytab?.stats || {};
                     const labels = statsRow.querySelectorAll('span:last-child');
                     if (labels[0]) labels[0].textContent = 'Blocked: ' + (live.blocked || 0);
                     if (labels[1]) labels[1].textContent = 'Pruned: ' + (live.pruned || 0);
                     if (labels[2]) labels[2].textContent = 'Skipped: ' + (live.ssapSkipped || 0);
                 }, 5000);
+                _panelCleanups.push(() => clearInterval(filterStatsInterval));
             }
 
             pane.appendChild(filterSection);
@@ -9154,6 +9216,10 @@ pause
         injectPageModalButton();
         attachUIEventListeners();
         updateAllToggleStates();
+
+        // ── Lifetime Ad Block Stats Flush ──
+        setInterval(() => { const s = _rw.__ytab?.stats; if (s) _lifetimeStats.accumulate(s); }, 30000);
+        window.addEventListener('beforeunload', () => { const s = _rw.__ytab?.stats; if (s) _lifetimeStats.accumulate(s); });
 
         // ── Safe Mode + Diagnostics ──
         const isSafeMode = new URLSearchParams(window.location.search).get('ytkit') === 'safe' ||
