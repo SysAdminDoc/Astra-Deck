@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// build-extension.js -- Packages extension/ into a ZIP for Chrome Web Store
+// build-extension.js -- Packages extension/ into Chrome + Firefox ZIPs
 // Usage: node build-extension.js [--bump patch|minor|major]
 
 const fs = require('fs');
@@ -10,6 +10,7 @@ const EXT_DIR = path.join(__dirname, 'extension');
 const BUILD_DIR = path.join(__dirname, 'build');
 const MANIFEST = path.join(EXT_DIR, 'manifest.json');
 const YTKIT_JS = path.join(EXT_DIR, 'ytkit.js');
+const USERSCRIPT = path.join(__dirname, 'ytkit.user.js');
 
 // Parse args
 const args = process.argv.slice(2);
@@ -38,6 +39,17 @@ if (bumpType) {
         fs.writeFileSync(YTKIT_JS, updated, 'utf8');
         console.log('Updated YTKIT_VERSION in ytkit.js');
     }
+
+    // Update userscript version header
+    if (fs.existsSync(USERSCRIPT)) {
+        let usSrc = fs.readFileSync(USERSCRIPT, 'utf8');
+        usSrc = usSrc.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m, '$1YTKit v' + version);
+        usSrc = usSrc.replace(/^(\/\/ @version\s+)[\d.]+/m, '$1' + version);
+        usSrc = usSrc.replace(/const YTKIT_VERSION = '[^']+';/, "const YTKIT_VERSION = '" + version + "';");
+        fs.writeFileSync(USERSCRIPT, usSrc, 'utf8');
+        console.log('Updated userscript version');
+    }
+
     console.log('Bumped version to ' + version);
 }
 
@@ -60,25 +72,79 @@ function copyDir(src, dest) {
     }
 }
 
-const stageDir = path.join(BUILD_DIR, 'extension');
-copyDir(EXT_DIR, stageDir);
-
-// Create ZIP
-const zipName = 'ytkit-v' + version + '.zip';
-const zipPath = path.join(BUILD_DIR, zipName);
-
-try {
+function createZip(sourceDir, zipPath) {
     if (process.platform === 'win32') {
         execSync(
-            'powershell -NoProfile -Command "Compress-Archive -Path \'' + stageDir + '\\*\' -DestinationPath \'' + zipPath + '\' -Force"',
+            'powershell -NoProfile -Command "Compress-Archive -Path \'' + sourceDir + '\\*\' -DestinationPath \'' + zipPath + '\' -Force"',
             { stdio: 'inherit' }
         );
     } else {
-        execSync('cd "' + stageDir + '" && zip -r "' + zipPath + '" .', { stdio: 'inherit' });
+        execSync('cd "' + sourceDir + '" && zip -r "' + zipPath + '" .', { stdio: 'inherit' });
     }
     const size = fs.statSync(zipPath).size;
-    console.log('Created: build/' + zipName + ' (' + (size / 1024).toFixed(1) + ' KB)');
+    return (size / 1024).toFixed(1);
+}
+
+// ── Chrome Build ──
+const chromeStageDir = path.join(BUILD_DIR, 'chrome-stage');
+copyDir(EXT_DIR, chromeStageDir);
+
+const chromeZipName = 'ytkit-chrome-v' + version + '.zip';
+const chromeZipPath = path.join(BUILD_DIR, chromeZipName);
+
+try {
+    const size = createZip(chromeStageDir, chromeZipPath);
+    console.log('Chrome:  build/' + chromeZipName + ' (' + size + ' KB)');
 } catch (e) {
-    console.error('ZIP creation failed:', e.message);
+    console.error('Chrome ZIP failed:', e.message);
     process.exit(1);
 }
+
+// ── Firefox Build ──
+const firefoxStageDir = path.join(BUILD_DIR, 'firefox-stage');
+copyDir(EXT_DIR, firefoxStageDir);
+
+// Modify manifest for Firefox
+const ffManifestPath = path.join(firefoxStageDir, 'manifest.json');
+const ffManifest = JSON.parse(fs.readFileSync(ffManifestPath, 'utf8'));
+
+// Add Firefox-specific settings
+ffManifest.browser_specific_settings = {
+    gecko: {
+        id: 'ytkit@sysadmindoc.github.io',
+        strict_min_version: '128.0'
+    }
+};
+
+// Firefox MV3: use background.scripts instead of service_worker for compat
+if (ffManifest.background && ffManifest.background.service_worker) {
+    const worker = ffManifest.background.service_worker;
+    ffManifest.background = { scripts: [worker] };
+}
+
+fs.writeFileSync(ffManifestPath, JSON.stringify(ffManifest, null, 2) + '\n', 'utf8');
+
+const firefoxZipName = 'ytkit-firefox-v' + version + '.zip';
+const firefoxZipPath = path.join(BUILD_DIR, firefoxZipName);
+
+try {
+    const size = createZip(firefoxStageDir, firefoxZipPath);
+    console.log('Firefox: build/' + firefoxZipName + ' (' + size + ' KB)');
+} catch (e) {
+    console.error('Firefox ZIP failed:', e.message);
+    process.exit(1);
+}
+
+// ── Userscript Copy ──
+if (fs.existsSync(USERSCRIPT)) {
+    const usDestName = 'ytkit-v' + version + '.user.js';
+    fs.copyFileSync(USERSCRIPT, path.join(BUILD_DIR, usDestName));
+    const usSize = (fs.statSync(USERSCRIPT).size / 1024).toFixed(1);
+    console.log('Script:  build/' + usDestName + ' (' + usSize + ' KB)');
+}
+
+// Cleanup staging dirs
+fs.rmSync(chromeStageDir, { recursive: true });
+fs.rmSync(firefoxStageDir, { recursive: true });
+
+console.log('\nAll artifacts built for v' + version);
