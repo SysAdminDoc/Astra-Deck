@@ -5,14 +5,14 @@
 <h1 align="center">YTKit: YouTube Customization Suite</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.0.1-ff4e45?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.2.0-ff4e45?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/platform-Chrome%20Extension%20%7C%20Tampermonkey%20%7C%20Violentmonkey-blue?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox%20%7C%20Tampermonkey%20%7C%20Violentmonkey-blue?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/YouTube-Desktop-ff0000?style=flat-square&logo=youtube&logoColor=white" alt="YouTube">
 </p>
 
 <p align="center">
-  A Chrome extension and userscript that transforms YouTube into a clean, ad-free, distraction-free experience with a premium dark interface — zero configuration required.
+  A Chrome/Firefox extension and userscript with 115+ features that transforms YouTube into a clean, ad-free, distraction-free experience with a premium dark interface — zero configuration required.
 </p>
 
 <p align="center">
@@ -33,6 +33,16 @@
 
 The extension runs as a Manifest V3 Chrome extension with full cookie access, cross-origin fetch support, and no userscript manager required.
 
+### Firefox Extension
+
+1. Download the `.xpi` file from the [latest release](https://github.com/SysAdminDoc/YouTube-Kit/releases)
+2. Open `about:addons` in Firefox
+3. Click the gear icon and select **Install Add-on From File**
+4. Select the `.xpi` file
+5. Open YouTube — everything works immediately
+
+Requires Firefox 128+. The Firefox build auto-patches the manifest for Gecko compatibility.
+
 ### Userscript
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/)
@@ -46,7 +56,7 @@ The userscript auto-updates through your userscript manager. Every feature is en
 
 ## What It Does
 
-YTKit replaces the need for multiple browser extensions by combining ad blocking, SponsorBlock, UI customization, download integration, and playback enhancements into one package. Available as both a Chrome MV3 extension and a Tampermonkey/Violentmonkey userscript. Every feature runs at `document-start` for instant ad prevention, and the entire settings panel is built in — no external dashboards or config files.
+YTKit replaces the need for multiple browser extensions by combining ad blocking, SponsorBlock, UI customization, download integration, and 79+ playback/enhancement features into one package. Available as a Chrome MV3 extension, Firefox extension, and Tampermonkey/Violentmonkey userscript. Every feature runs at `document-start` for instant ad prevention, and the entire settings panel is built in — no external dashboards or config files. New features added in v3.2.0 are all **off by default** to preserve a clean baseline.
 
 ---
 
@@ -188,6 +198,203 @@ These features provide granular toggle controls through the settings panel:
 
 > **Note:** Local downloads use the built-in MediaDL server (installed via the YTKit settings panel) which bundles `yt-dlp` and `ffmpeg` — no manual setup required. The server runs locally and downloads videos in the background with real-time progress tracking. VLC/MPV streaming requires a URI protocol handler. The web download button uses [Cobalt](https://github.com/imputnet/cobalt) and works without any local tools.
 
+### Playback Enhancement (v3.2.0)
+
+All off by default.
+
+| Feature | Description |
+|---------|-------------|
+| Auto-Dismiss "Still Watching?" | Automatically dismiss the idle popup |
+| Remaining Time Display | Show time remaining next to current time |
+| Show Playlist Duration | Display total duration of playlists |
+| Show Time in Tab Title | Prepend video timestamp to the browser tab title |
+| Custom Progress Bar Color | Color picker for the player progress bar |
+| Reverse Playlist | Reverse playlist playback order |
+| Precise View Counts | Show exact view counts instead of abbreviated |
+| Video Screenshot | Capture the current video frame as PNG |
+| Fine Speed Control | Granular 0.05x speed adjustment buttons |
+| A-B Loop | Set loop start/end points on the video |
+| Persistent Speed | Remember playback speed across videos |
+| Per-Channel Speed | Set different playback speeds per channel |
+| Codec Selector | Force H.264, VP9, or AV1 codec |
+| Force H.264 | Force H.264 codec (conflicts with Codec Selector) |
+| Force Standard FPS | Block 60fps streams |
+| Speed Indicator Overlay | Show current speed when above 1x |
+| Custom Speed Buttons | Preset speed buttons (0.5x-3x) below video |
+| Disable Autoplay Next | Turn off auto-advance to next video |
+
+### Audio Enhancement (v3.2.0)
+
+All off by default. Audio features share a single Web Audio pipeline via SharedAudio manager.
+
+| Feature | Description |
+|---------|-------------|
+| Volume Boost | Amplify volume up to 600% |
+| Skip Silence | Auto-skip silent segments (adjustable threshold) |
+| Audio Normalization | Even out volume differences |
+| Audio Equalizer | 10-band EQ with 9 presets (Flat, Bass Boost, Treble, etc.) |
+| Volume Scroll Wheel | Scroll on player to adjust volume (Ctrl+scroll reserved for zoom) |
+| Remember Volume | Persist volume level across sessions |
+| Mute Ad Audio | Auto-mute during ad segments |
+
+### UI Enhancement (v3.2.0)
+
+All off by default.
+
+| Feature | Description |
+|---------|-------------|
+| Compact Unfixed Header | Reduce header height and remove sticky position |
+| Return YouTube Dislike | Show dislike counts via RYD API |
+| RSS Feed Link | Show RSS feed link on channel pages |
+| Show Channel Video Count | Display total video count on channel pages |
+| Redirect Home to Subs | YouTube logo goes to subscriptions feed |
+| Not Interested Button | Quick "Not Interested" button on thumbnails |
+| Blue Light Filter | Warm screen overlay (adjustable intensity 10-80%) |
+| Disable Infinite Scroll | Stop infinite scroll, show "Load More" button |
+| Always Show Progress Bar | Keep progress bar visible even when controls hide |
+| Sort Comments Newest | Default comments to newest-first |
+| Chapter Nav Buttons | Previous/next chapter buttons in player controls |
+| Video Loop Button | One-click loop toggle in player controls |
+| Sticky Chat | Keep live chat pinned when scrolling |
+| Auto-Expand Description | Automatically expand video descriptions |
+| Scroll to Player | Auto-scroll to player on page load |
+| Hide End Cards | Hide end-screen cards (sub-feature of Hide Video End Content) |
+| Hide Info Cards | Hide info card tooltips during playback |
+| Key Moments | Highlight chapters in the progress bar |
+
+### Power User (v3.2.0)
+
+All off by default.
+
+| Feature | Description |
+|---------|-------------|
+| Auto Theater Mode | Open videos in theater mode by default |
+| Resume Playback | Save and restore playback positions (500-entry cap) |
+| Mini Player Bar | Floating mini-bar with progress/play/pause when scrolled past video |
+| Playback Stats Overlay | Show codec, resolution, dropped frames, bandwidth |
+| Hide Notification Badge | Remove the red notification count badge |
+| Auto-Pause on Tab Switch | Pause video when switching tabs, resume on return |
+| Pause Other Tabs | Pause other YTKit tabs when playing in current tab |
+| Creator Comment Highlight | Highlight channel owner's comments |
+| Copy Video Title | Button to copy the video title |
+| Channel Age Display | Show when a channel was created |
+| Hide Autoplay Toggle | Remove the autoplay toggle switch |
+| Fullscreen on Double-Click | Double-click video to toggle fullscreen |
+
+### Media & Interaction (v3.2.0)
+
+All off by default.
+
+| Feature | Description |
+|---------|-------------|
+| PiP Button | One-click Picture-in-Picture in player controls |
+| Pop-Out Player | Pop video into a floating Document PiP window |
+| Auto Subtitles | Auto-enable closed captions |
+| Focused Mode | Hide everything except video and comments |
+| Thumbnail Quality Upgrade | Replace thumbnails with maxresdefault quality |
+| Watch Later Quick Add | Clock overlay on thumbnails for quick Watch Later add |
+| Playlist Enhancer | Shuffle and copy-all-URLs for playlists |
+| Comment Search | Filter bar above comments section |
+| Video Zoom | Ctrl+scroll to zoom video, drag to pan (up to 5x) |
+| Force Dark Everywhere | Apply dark theme to all YouTube pages |
+
+### Customization & Utilities (v3.2.0)
+
+All off by default.
+
+| Feature | Description |
+|---------|-------------|
+| Custom CSS Injection | Textarea for user-defined CSS rules |
+| Share Menu Cleaner | Hide social share buttons in share dialog |
+| Auto-Close Popups | Dismiss cookie/survey/premium popups automatically |
+| Video Resolution Badge | Show 4K/HD badges on thumbnails |
+| Like:View Ratio | Display like-to-view percentage badge |
+| Download Thumbnail | Download maxres thumbnail button |
+| Grayscale Thumbnails | Thumbnails are grayscale until hovered |
+| Channel Sub Count | Prominent subscriber count badge on channel pages |
+| Open in New Tab | Video links open in new tabs |
+| Cinema Ambient Glow | Ambient glow effect around video matching content colors |
+| Transcript Viewer | Sidebar with clickable timestamps from video captions |
+| Search Filter Defaults | Set default search sort order |
+| Timestamp Bookmarks | Save timestamped bookmarks with inline notes |
+| Watch Time Tracker | Track total watch time (90-day retention) |
+| Auto-Skip Chapters | Skip chapters matching keyword patterns |
+| Age Restriction Bypass | Attempt to bypass age restrictions |
+| Auto-Like Subscribed | Auto-like videos from subscribed channels |
+
+### Restored Archive Features (v3.2.0 Wave 8)
+
+All off by default. Features restored from archived userscript versions.
+
+| Feature | Description |
+|---------|-------------|
+| Prevent Autoplay | Stop videos from auto-playing on page load |
+| Auto-Open Chapters | Automatically expand chapter panel on watch pages |
+| Auto-Open Transcript | Automatically open transcript panel on watch pages |
+| Chronological Notifications | Sort notification bell dropdown newest-first |
+| Adaptive Live Layout | Dynamic chat/video sizing for live streams |
+| Comment Navigator | J/K keyboard navigation between comments |
+| Shorts as Regular Video | Redirect /shorts/ URLs to /watch for full player |
+| Theme Accent Color | Custom accent color picker for YouTube UI |
+| Theater Auto-Scroll | Scroll to player automatically when entering theater mode |
+| Scroll Wheel Speed | Shift+scroll to adjust playback speed (yields to volumeScrollWheel/videoZoom) |
+| Playback Speed OSD | On-screen display when speed changes |
+| CPU Tamer | Throttle background tab timers via requestAnimationFrame |
+| Handle Revealer | Resolve and display @handles in comment sections |
+| Nyan Cat Progress Bar | Rainbow animated video progress bar |
+
+#### External Player Integration
+
+| Feature | Description |
+|---------|-------------|
+| VLC Queue Button | Send video to VLC via `ytvlcq://` protocol |
+| MPV Player Button | Send video to mpv via `ytmpv://` protocol |
+| Download & Play Button | Download and play via `ytdlplay://` protocol |
+| Auto-Download on Visit | Automatically trigger download when visiting a video |
+| Subscriptions VLC Playlist | Export subscriptions feed as VLC playlist |
+| Embed Player | Custom HTML5 embed player replacing YouTube's default |
+
+#### DeArrow Integration
+
+| Feature | Description |
+|---------|-------------|
+| DeArrow | Replace clickbait titles and thumbnails via DeArrow API |
+| — Replace Titles | Use community-submitted titles (sub-setting) |
+| — Replace Thumbnails | Use community-submitted thumbnails (sub-setting) |
+| — Title Format | Sentence case or title case formatting |
+| — Show Original on Hover | Reveal original title/thumbnail on hover |
+| — Cache TTL | API response cache duration (hours) |
+
+#### SponsorBlock Per-Category Controls
+
+| Feature | Description |
+|---------|-------------|
+| Sponsor Segments | Toggle skipping of sponsor segments |
+| Self-Promotion | Toggle skipping of self-promotion segments |
+| Interaction Reminders | Toggle skipping of interaction reminders |
+| Intros | Toggle skipping of intro segments |
+| Outros | Toggle skipping of outro/endcard segments |
+| Preview/Recap | Toggle skipping of preview/recap segments |
+| Filler/Tangent | Toggle skipping of filler content |
+| Non-Music in Music | Toggle skipping of non-music in music videos |
+
+#### Additional UI & Layout
+
+| Feature | Description |
+|---------|-------------|
+| Square Search Bar | Remove rounded corners from the search bar |
+| Square Avatars | Make all channel avatars square instead of round |
+| Fit Player to Window | Video player fills the entire browser viewport |
+| Disable SPA Navigation | Force full page loads instead of smooth transitions |
+
+#### Advanced
+
+| Feature | Description |
+|---------|-------------|
+| Statistics Dashboard | Detailed extension stats panel (blocked ads, features active, etc.) |
+| Settings Profiles | Save, load, and manage settings presets |
+| Debug Mode | Verbose console logging for troubleshooting |
+
 ---
 
 ## Settings Panel
@@ -249,6 +456,7 @@ Key architectural decisions:
 | Browser | Method | Status |
 |---------|--------|--------|
 | Chrome / Edge / Brave | Chrome Extension (MV3) | ✅ Fully supported (recommended) |
+| Firefox 128+ | Firefox Extension (MV3) | ✅ Fully supported |
 | Chrome / Edge / Brave | Tampermonkey | ✅ Fully supported |
 | Firefox | Tampermonkey / Violentmonkey | ✅ Fully supported |
 | Opera | Tampermonkey | ✅ Fully supported |
