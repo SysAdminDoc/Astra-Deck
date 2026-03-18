@@ -4,6 +4,73 @@ All notable changes to YTKit are documented here. Versions are listed newest-fir
 
 ---
 
+## [3.2.0] - 115+ Features Mega Update
+
+### Added
+
+- **115+ new features** across 8 feature waves, all off by default
+- **Firefox extension support** — build system produces `.xpi` with auto-patched manifest (Gecko `browser_specific_settings`, `background.scripts` array)
+- **SharedAudio manager** — volumeBoost, skipSilence, audioNormalization, audioEqualizer share one MediaElementSource via `SharedAudio.register()`/`unregister()`, preventing Web Audio API conflicts
+- **StorageManager** — unified persistent storage for resumePlayback (500-entry cap), per-channel speed, timestamp bookmarks, watch time tracking
+- **CONFLICT_MAP** — automatic mutual-exclusion for conflicting features (persistentSpeed vs perChannelSpeed, removeAllShorts vs redirectShorts, etc.)
+
+#### Wave 1 — Quick Wins
+autoDismissStillWatching, remainingTimeDisplay, showPlaylistDuration, showTimeInTabTitle, customProgressBarColor, reversePlaylist, rssFeedLink, preciseViewCounts, videoScreenshot, compactUnfixedHeader, returnYoutubeDislike, volumeBoost, perChannelSpeed, hideWatchedVideos, antiTranslate, pauseOtherTabs
+
+#### Wave 2 — Complex & Differentiating
+skipSilence, abLoop, fineSpeedControl, showChannelVideoCount, redirectHomeToSubs, notInterestedButton, timestampBookmarks, blueLightFilter, disableInfiniteScroll, audioNormalization, popOutPlayer (Document PiP API + fallback)
+
+#### Wave 3 — Audio & Automation
+audioEqualizer (10-band EQ, 9 presets), watchTimeTracker, alwaysShowProgressBar, sortCommentsNewest, autoSkipChapters, chapterNavButtons, videoLoopButton, persistentSpeed, codecSelector (H.264/VP9/AV1), ageRestrictionBypass, autoLikeSubscribed, thumbnailPreviewSize
+
+#### Wave 4 — Polish & Deep Enhancement
+cinemaAmbientGlow, transcriptViewer, searchFilterDefaults, forceStandardFps, stickyChat, autoExpandDescription, scrollToPlayer, hideEndCards, hideInfoCards, keyMoments
+
+#### Wave 5 — Power User & QoL
+autoTheaterMode, resumePlayback, miniPlayerBar, playbackStatsOverlay, hideNotificationBadge, autoPauseOnSwitch, creatorCommentHighlight, copyVideoTitle, channelAgeDisplay, speedIndicatorOverlay, hideAutoplayToggle, fullscreenOnDoubleClick
+
+#### Wave 6 — Interaction & Media Control
+volumeScrollWheel, rememberVolume, pipButton, autoSubtitles, focusedMode, thumbnailQualityUpgrade, watchLaterQuickAdd, playlistEnhancer, commentSearch, videoZoom, forceDarkEverywhere
+
+#### Wave 7 — Customization & Utilities
+customCssInjection, shareMenuCleaner, autoClosePopups, videoResolutionBadge, likeViewRatio, downloadThumbnail, grayscaleThumbnails, disableAutoplayNext, channelSubCount, customSpeedButtons, openInNewTab, muteAdAudio
+
+#### Wave 8 — Restored Archive Features
+**SponsorBlock per-category controls:** sbCat_sponsor, sbCat_selfpromo, sbCat_interaction, sbCat_intro, sbCat_outro, sbCat_preview, sbCat_filler, sbCat_music_offtopic
+**Playback & navigation:** preventAutoplay, scrollWheelSpeed (Shift+scroll, yields to volumeScrollWheel/videoZoom), playbackSpeedOSD, persistentSpeed step config (speedStep)
+**Comments & interaction:** preloadComments, commentNavigator (J/K navigation), enableHandleRevealer (resolves @handles in comments)
+**Chapters & transcript:** autoOpenChapters, autoOpenTranscript
+**Notifications:** chronologicalNotifications (sorts newest-first)
+**Live streams:** adaptiveLiveLayout (dynamic chat/video sizing)
+**Shorts:** shortsAsRegularVideo (redirects /shorts/ to /watch)
+**Theme & styling:** themeAccentColor (custom accent color picker), nyanCatProgressBar (rainbow animated progress bar), noFrostedGlass (removes backdrop-filter blur)
+**Player behavior:** theaterAutoScroll (scroll to player on theater mode), enableCPU_Tamer (requestAnimationFrame timer throttling)
+**Downloads & external players:** showVlcQueueButton, showMpvButton, showDownloadPlayButton, autoDownloadOnVisit, downloadQuality selector, preferredMediaPlayer selector, subsVlcPlaylist (export subscriptions feed to VLC)
+**Advanced:** enableEmbedPlayer (custom HTML5 embed player), deArrow (DeArrow API — clickbait title/thumbnail replacement with 6 sub-settings), showStatisticsDashboard (detailed extension stats panel), settingsProfiles (save/load settings presets), debugMode (verbose console logging)
+**CSS-only:** hideNotificationButton, hideLatestPosts, disableMiniPlayer
+
+#### Wave 9 — Final Archive Restoration
+squareSearchBar (square search bar corners), squareAvatars (square channel avatars), fitPlayerToWindow (player fills entire browser viewport), disableSpaNavigation (force full page loads instead of SPA transitions)
+
+### Fixed
+
+- **Feature conflicts resolved through code cooperation** rather than mutual exclusion:
+  - forceH264 + codecSelector share a single canPlayType patch reading settings at call-time
+  - focusedMode hides only related videos, not `#secondary` — cooperates with transcriptViewer, timestampBookmarks, stickyVideo
+  - popOutPlayer sets `__ytkit_videoPopped` flag — pipButton and fullscreenOnDoubleClick check before acting
+  - autoPauseOnSwitch + pauseOtherTabs tag pause reasons on the video element to avoid resume conflicts
+  - volumeScrollWheel yields Ctrl+scroll to videoZoom via ctrlKey guard
+  - hideEndCards merged into hideVideoEndContent as sub-feature (eliminates CSS overlap)
+  - hideInfoCards corrected to target info card selectors, not end card selectors
+
+### Changed
+
+- **Build system** — `node build-extension.js` now outputs Chrome ZIP+CRX3 and Firefox ZIP+XPI
+- **Settings panel** — feature groups reorganized for 79+ features with search
+- **Userscript** synced to extension source with native GM_* APIs
+
+---
+
 ## [2.8.0] - Maintenance & Ad Blocker Tuning
 
 ### Changed

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YTKit: YouTube Customization Suite",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and more.",
   "author": "Matthew Parker",
   "homepage_url": "https://github.com/SysAdminDoc/YouTube-Kit",
@@ -20,6 +20,7 @@
     "https://youtu.be/*",
     "https://sponsor.ajay.app/*",
     "https://raw.githubusercontent.com/*",
+    "https://returnyoutubedislikeapi.com/*",
     "https://cobalt.meowing.de/*",
     "https://*.meowing.de/*",
     "http://127.0.0.1:9751/*",
