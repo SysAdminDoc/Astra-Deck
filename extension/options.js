@@ -383,6 +383,9 @@
         if (!file) return;
 
         try {
+            if (file.size > 10 * 1024 * 1024) {
+                throw new Error('Import file exceeds 10 MB limit');
+            }
             const text = await file.text();
             const data = JSON.parse(text);
             if (!data || typeof data !== 'object') {
@@ -559,7 +562,7 @@
             counts.set('all', (counts.get('all') || 0) + 1);
         });
 
-        elements.settingsGroups.innerHTML = '';
+        elements.settingsGroups.textContent = '';
         GROUPS.forEach((group) => {
             if (group.id !== 'all' && (counts.get(group.id) || 0) === 0) return;
 
@@ -793,7 +796,7 @@
 
     function renderSettingsList() {
         const visibleKeys = getVisibleKeys();
-        elements.settingsList.innerHTML = '';
+        elements.settingsList.textContent = '';
         elements.settingsEmpty.hidden = visibleKeys.length > 0;
         elements.settingsList.hidden = visibleKeys.length === 0;
 
@@ -889,9 +892,11 @@
             requestCloseSettingsModal();
         }
     });
+    let _searchDebounce = null;
     elements.settingsSearch.addEventListener('input', () => {
         state.search = elements.settingsSearch.value.trim().toLowerCase();
-        renderSettingsWorkspace();
+        clearTimeout(_searchDebounce);
+        _searchDebounce = setTimeout(() => renderSettingsWorkspace(), 200);
     });
     elements.settingsSaveButton.addEventListener('click', saveSettingsDraft);
     elements.settingsDiscardButton.addEventListener('click', discardDraft);
