@@ -1240,8 +1240,8 @@ return response;
             const ghost = document.createElement('button');
             ghost.className = 'ytkit-pc-ghost';
             ghost.dataset.pcId = id;
+            ghost.type = 'button';
             ghost.title = 'Restore: ' + label;
-            ghost.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:1px dashed rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.3);font-family:"Roboto",Arial,sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;`;
             // Build restore icon via DOM API (avoids TrustedHTML issues in non-policy browsers)
             const _svgNS = 'http://www.w3.org/2000/svg';
             const _ico = document.createElementNS(_svgNS, 'svg');
@@ -1251,8 +1251,6 @@ return response;
             const _pa = document.createElementNS(_svgNS, 'path'); _pa.setAttribute('d', 'M3.51 15a9 9 0 1 0 .49-3.5'); _ico.appendChild(_pa);
             ghost.appendChild(_ico);
             const _lbl = document.createElement('span'); _lbl.textContent = label; ghost.appendChild(_lbl);
-            ghost.onmouseenter = () => { ghost.style.color = 'rgba(255,255,255,0.7)'; ghost.style.borderColor = 'rgba(255,255,255,0.5)'; };
-            ghost.onmouseleave = () => { ghost.style.color = 'rgba(255,255,255,0.3)'; ghost.style.borderColor = 'rgba(255,255,255,0.2)'; };
             ghost.addEventListener('click', (e) => {
                 e.stopPropagation();
                 setPageControlDismissed(id, false);
@@ -1265,18 +1263,16 @@ return response;
         // Wrap the element
         const wrap = document.createElement('span');
         wrap.className = 'ytkit-pc-wrap';
-        wrap.style.cssText = 'position:relative;display:inline-flex;align-items:center;';
         el.parentNode.insertBefore(wrap, el);
         wrap.appendChild(el);
 
         // Dismiss X button
         const xBtn = document.createElement('button');
         xBtn.className = 'ytkit-pc-x';
+        xBtn.type = 'button';
         xBtn.title = 'Dismiss ' + label;
-        xBtn.style.cssText = `position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;border:none;background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.6);font-size:10px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0;transition:opacity 0.15s;z-index:10;`;
+        xBtn.setAttribute('aria-label', 'Dismiss ' + label);
         xBtn.textContent = '×';
-        wrap.addEventListener('mouseenter', () => { xBtn.style.opacity = '1'; });
-        wrap.addEventListener('mouseleave', () => { xBtn.style.opacity = '0'; });
         xBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             setPageControlDismissed(id, true);
@@ -1294,7 +1290,129 @@ return response;
 
     // Inject global PageControl CSS once
     appendStyleSheet(`
+        .ytkit-pc-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .ytkit-pc-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px dashed rgba(255,255,255,0.18);
+            background: rgba(8,11,16,0.28);
+            color: rgba(255,255,255,0.38);
+            font-family: var(--ytkit-font, "Segoe UI", "SF Pro Text", "Helvetica Neue", Arial, sans-serif);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-pc-ghost:hover {
+            color: rgba(255,255,255,0.82);
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .ytkit-pc-ghost:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(255,255,255,0.14);
+        }
+
+        .ytkit-pc-x {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(8,11,16,0.88);
+            color: rgba(255,255,255,0.72);
+            font-size: 10px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 150ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+            z-index: 10;
+            outline: none;
+        }
+
+        .ytkit-pc-x:hover {
+            background: rgba(239,68,68,0.18);
+            border-color: rgba(239,68,68,0.28);
+            color: #fff;
+        }
+
+        .ytkit-pc-x:focus-visible {
+            opacity: 1;
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(239,68,68,0.22);
+        }
+
         .ytkit-pc-wrap:hover .ytkit-pc-x { opacity: 1 !important; }
+
+        .ytkit-global-toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 44px;
+            max-width: min(560px, calc(100vw - 24px));
+            padding: 10px 16px;
+            border-radius: 14px;
+            background: var(--ytkit-toast-color, #22c55e);
+            color: #fff;
+            font-family: var(--ytkit-font, "Segoe UI", "SF Pro Text", "Helvetica Neue", Arial, sans-serif);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            z-index: var(--ytkit-toast-z, 2147483646);
+            box-shadow: 0 22px 48px rgba(0,0,0,0.34);
+            animation: ytkit-toast-fade var(--ytkit-toast-duration, 2.5s) ease-out forwards;
+        }
+
+        .ytkit-toast-action {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 30px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.22);
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-toast-action:hover {
+            background: rgba(255,255,255,0.22);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .ytkit-toast-action:active {
+            transform: scale(0.985);
+        }
+
+        .ytkit-toast-action:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.22), 0 0 0 4px rgba(255,255,255,0.22);
+        }
     `);
 
     // Global toast notification function with optional action button
@@ -1304,7 +1422,9 @@ return response;
 
         const toast = document.createElement('div');
         toast.className = 'ytkit-global-toast';
-        toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:12px 24px;border-radius:8px;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;z-index:${Z.TOAST};box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;animation:ytkit-toast-fade ${options.duration || 2.5}s ease-out forwards;`;
+        toast.style.setProperty('--ytkit-toast-color', color);
+        toast.style.setProperty('--ytkit-toast-z', String(Z.TOAST));
+        toast.style.setProperty('--ytkit-toast-duration', `${options.duration || 2.5}s`);
 
         const textSpan = document.createElement('span');
         textSpan.textContent = message;
@@ -1313,20 +1433,9 @@ return response;
         // Add action button if provided (e.g., for Undo)
         if (options.action) {
             const actionBtn = document.createElement('button');
+            actionBtn.className = 'ytkit-toast-action';
+            actionBtn.type = 'button';
             actionBtn.textContent = options.action.text || 'Undo';
-            actionBtn.style.cssText = `
-                background: rgba(255,255,255,0.2);
-                border: 1px solid rgba(255,255,255,0.3);
-                color: white;
-                padding: 4px 12px;
-                border-radius: 4px;
-                font-size: 12px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: background 0.2s;
-            `;
-            actionBtn.onmouseenter = () => { actionBtn.style.background = 'rgba(255,255,255,0.3)'; };
-            actionBtn.onmouseleave = () => { actionBtn.style.background = 'rgba(255,255,255,0.2)'; };
             actionBtn.onclick = (e) => {
                 e.stopPropagation();
                 toast.remove();
@@ -1380,11 +1489,7 @@ return response;
 
         const panel = document.createElement('div');
         panel.id = panelId;
-        panel.style.cssText = `
-            position:fixed;bottom:20px;right:20px;width:320px;background:#1a1a2e;border:1px solid #30363d;
-            border-radius:12px;padding:14px 16px;z-index:2147483647;font-family:"Roboto",Arial,sans-serif;
-            box-shadow:0 8px 32px rgba(0,0,0,0.5);color:#e6edf3;animation:ytkit-slide-in 0.3s ease-out;
-        `;
+        panel.className = 'ytkit-dl-progress';
 
         if (!document.getElementById('ytkit-dl-anim')) {
             const s = document.createElement('style');
@@ -1396,24 +1501,49 @@ return response;
             document.head.appendChild(s);
         }
 
-        TrustedHTML.setHTML(panel, `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-size:12px;font-weight:600;color:#8b949e;letter-spacing:.05em;">${audioOnly ? 'AUDIO' : 'VIDEO'} DOWNLOAD</span>
-                <button id="ytkit-dl-close-${id}" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:16px;line-height:1;padding:0;">&#x2715;</button>
-            </div>
-            <div id="ytkit-dl-title-${id}" style="font-size:13px;font-weight:500;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e6edf3;">Starting...</div>
-            <div style="background:#30363d;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;">
-                <div id="ytkit-dl-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:#8b949e;">
-                <span id="ytkit-dl-pct-${id}">0%</span>
-                <span id="ytkit-dl-speed-${id}"></span>
-                <span id="ytkit-dl-eta-${id}"></span>
-            </div>
-        `);
+        const header = document.createElement('div');
+        header.className = 'ytkit-dl-progress__header';
+        const badge = document.createElement('span');
+        badge.className = 'ytkit-dl-progress__badge';
+        badge.textContent = `${audioOnly ? 'Audio' : 'Video'} Download`;
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'ytkit-dl-progress__close';
+        closeBtn.setAttribute('aria-label', 'Close download progress');
+        closeBtn.textContent = '\u2715';
+        header.appendChild(badge);
+        header.appendChild(closeBtn);
+
+        const title = document.createElement('div');
+        title.className = 'ytkit-dl-progress__title';
+        title.textContent = 'Starting...';
+
+        const bar = document.createElement('div');
+        bar.className = 'ytkit-dl-progress__bar';
+        const fill = document.createElement('div');
+        fill.className = 'ytkit-dl-progress__fill';
+        bar.appendChild(fill);
+
+        const meta = document.createElement('div');
+        meta.className = 'ytkit-dl-progress__meta';
+        const pct = document.createElement('span');
+        pct.className = 'ytkit-dl-progress__stat';
+        pct.textContent = '0%';
+        const spd = document.createElement('span');
+        spd.className = 'ytkit-dl-progress__stat';
+        const eta = document.createElement('span');
+        eta.className = 'ytkit-dl-progress__stat';
+        meta.appendChild(pct);
+        meta.appendChild(spd);
+        meta.appendChild(eta);
+
+        panel.appendChild(header);
+        panel.appendChild(title);
+        panel.appendChild(bar);
+        panel.appendChild(meta);
         document.body.appendChild(panel);
 
-        document.getElementById('ytkit-dl-close-' + id)?.addEventListener('click', () => panel.remove());
+        closeBtn.addEventListener('click', () => panel.remove());
 
         let pollInterval = null;
         async function poll() {
@@ -1424,25 +1554,20 @@ return response;
                     headers: { 'X-Auth-Token': token },
                     timeout: 3000
                 });
+                if (!fill.isConnected) { clearInterval(pollInterval); return; }
 
-                const fill = document.getElementById('ytkit-dl-bar-fill');
-                const pct  = document.getElementById('ytkit-dl-pct-' + id);
-                const spd  = document.getElementById('ytkit-dl-speed-' + id);
-                const eta  = document.getElementById('ytkit-dl-eta-' + id);
-                const ttl  = document.getElementById('ytkit-dl-title-' + id);
-                if (!fill) { clearInterval(pollInterval); return; }
-
-                if (data.title) ttl.textContent = data.title;
+                if (data.title) title.textContent = data.title;
                 const p = Math.min(data.progress || 0, 100);
                 fill.style.width = p + '%';
-                pct.textContent  = p.toFixed(1) + '%';
+                pct.textContent = p.toFixed(1) + '%';
                 if (data.speed) spd.textContent = data.speed;
                 if (data.eta)   eta.textContent = 'ETA ' + data.eta;
 
                 if (data.status === 'done' || data.status === 'complete') {
                     clearInterval(pollInterval);
                     fill.style.width = '100%';
-                    fill.style.background = 'linear-gradient(90deg,#22c55e,#16a34a)';
+                    fill.classList.remove('is-error');
+                    fill.classList.add('is-success');
                     pct.textContent = '100%';
                     spd.textContent = '';
                     eta.textContent = 'Done!';
@@ -1450,8 +1575,9 @@ return response;
                 } else if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                     clearInterval(pollInterval);
                     const failureReason = data.error || 'Local downloader failed';
-                    fill.style.background = '#ef4444';
-                    ttl.textContent = failureReason;
+                    fill.classList.remove('is-success');
+                    fill.classList.add('is-error');
+                    title.textContent = failureReason;
                     pct.textContent = 'Failed';
                     spd.textContent = '';
                     eta.textContent = '';
@@ -1593,21 +1719,18 @@ return response;
 
             const prompt = document.createElement('div');
             prompt.id = 'ytkit-mediadl-install-prompt';
-            prompt.style.cssText = `
-                position:fixed;bottom:80px;right:20px;width:380px;background:#1a1a2e;
-                border:1px solid #30363d;border-radius:12px;padding:18px;z-index:2147483647;
-                font-family:"Roboto",Arial,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.5);
-                color:#e6edf3;animation:ytkit-slide-in 0.3s ease-out;
-            `;
+            prompt.className = 'ytkit-install-prompt';
 
             // ── Header ──
             const header = document.createElement('div');
-            header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
+            header.className = 'ytkit-install-prompt__header';
             const titleEl = document.createElement('span');
-            titleEl.style.cssText = 'font-size:14px;font-weight:600;color:#22c55e;';
+            titleEl.className = 'ytkit-install-prompt__title';
             titleEl.textContent = isRetryMode ? 'Local Downloader Not Responding' : 'Install Local Downloader';
             const closeBtn = document.createElement('button');
-            closeBtn.style.cssText = 'background:none;border:none;color:#8b949e;cursor:pointer;font-size:16px;padding:0;line-height:1;';
+            closeBtn.className = 'ytkit-install-prompt__close';
+            closeBtn.type = 'button';
+            closeBtn.setAttribute('aria-label', 'Close local downloader prompt');
             closeBtn.textContent = '\u2715';
             closeBtn.onclick = () => prompt.remove();
             header.appendChild(titleEl);
@@ -1615,20 +1738,30 @@ return response;
 
             // ── Description ──
             const desc = document.createElement('p');
-            desc.style.cssText = 'font-size:13px;color:#8b949e;margin:0 0 14px;line-height:1.5;';
+            desc.className = 'ytkit-install-prompt__desc';
             desc.textContent = isRetryMode
                 ? 'The local downloader needs a repair. Download the Astra Deck setup again, run it with PowerShell, then retry your download.'
                 : 'Download the Astra Deck setup, then in Downloads right-click the file and choose Run with PowerShell. It installs everything automatically.';
 
             // ── Buttons ──
             const btnCol = document.createElement('div');
-            btnCol.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+            btnCol.className = 'ytkit-install-prompt__actions';
 
             // Button helper
-            const makeBtn = (text, bg, border, onClick) => {
+            const setPromptButtonState = (button, label, tone = '') => {
+                const labelEl = button.querySelector('.ytkit-install-prompt__btn-label');
+                if (labelEl) labelEl.textContent = label;
+                button.classList.remove('is-success', 'is-danger');
+                if (tone === 'success') button.classList.add('is-success');
+                if (tone === 'danger') button.classList.add('is-danger');
+            };
+
+            const makeBtn = (text, variant, onClick) => {
                 const b = document.createElement('button');
-                b.style.cssText = `width:100%;padding:9px 14px;border-radius:8px;border:${border || 'none'};background:${bg};color:${bg === 'transparent' ? '#8b949e' : 'white'};font-size:13px;font-weight:500;cursor:pointer;transition:background 0.2s;text-align:left;display:flex;align-items:center;gap:10px;`;
+                b.type = 'button';
+                b.className = `ytkit-install-prompt__btn ytkit-install-prompt__btn--${variant}`;
                 const label = document.createElement('span');
+                label.className = 'ytkit-install-prompt__btn-label';
                 label.textContent = text;
                 b.appendChild(label);
                 b.onclick = onClick;
@@ -1637,45 +1770,39 @@ return response;
 
             // 1. Retry / Start Server
             if (isRetryMode) {
-                const retryBtn = makeBtn('Try Starting Server Again', '#3b82f6', 'none', async () => {
-                    retryBtn.querySelector('span').textContent = 'Starting...';
-                    retryBtn.style.opacity = '0.7';
-                    retryBtn.style.pointerEvents = 'none';
+                const retryBtn = makeBtn('Try Starting Server Again', 'primary', async () => {
+                    setPromptButtonState(retryBtn, 'Starting...');
+                    retryBtn.disabled = true;
                     this.resetAutoStart();
                     const result = await this.tryAutoStart(5);
                     if (result.ok) {
                         showToast('MediaDL server is running!', '#22c55e', { duration: 3 });
                         prompt.remove();
                     } else {
-                        retryBtn.querySelector('span').textContent = 'Still not responding — try installing below';
-                        retryBtn.style.opacity = '1';
-                        retryBtn.style.pointerEvents = 'auto';
-                        retryBtn.style.background = '#ef4444';
+                        setPromptButtonState(retryBtn, 'Still not responding — try installing below', 'danger');
+                        retryBtn.disabled = false;
                     }
                 });
                 btnCol.appendChild(retryBtn);
             }
 
             // 2. Copy Install Command
-            const copyBtn = makeBtn('Download Setup', '#22c55e', 'none', async () => {
-                copyBtn.querySelector('span').textContent = 'Downloading setup...';
-                copyBtn.style.opacity = '0.8';
-                copyBtn.style.pointerEvents = 'none';
+            const copyBtn = makeBtn('Download Setup', 'accent', async () => {
+                setPromptButtonState(copyBtn, 'Downloading setup...');
+                copyBtn.disabled = true;
                 const result = await this.runInstallAssist();
-                copyBtn.querySelector('span').textContent = result.downloaded ? 'Setup file ready' : 'Open setup file';
-                copyBtn.style.background = result.downloaded ? '#16a34a' : '#2563eb';
-                copyBtn.style.opacity = '1';
-                copyBtn.style.pointerEvents = 'auto';
+                setPromptButtonState(copyBtn, result.downloaded ? 'Setup file ready' : 'Open setup file', result.downloaded ? 'success' : '');
+                copyBtn.disabled = false;
             });
             btnCol.appendChild(copyBtn);
 
             // 3. Copy PowerShell command
-            const dlBtn = makeBtn('Copy Fallback Command', 'transparent', '1px solid #30363d', async () => {
+            const dlBtn = makeBtn('Copy Fallback Command', 'ghost', async () => {
                 const copied = await this.copyInstallCommand();
                 if (copied) {
-                    dlBtn.querySelector('span').textContent = 'Copied! Paste into PowerShell';
+                    setPromptButtonState(dlBtn, 'Copied! Paste into PowerShell', 'success');
                     showToast('Fallback install command copied. Use it only if you cannot run the downloaded setup file.', '#3b82f6', { duration: 6 });
-                    setTimeout(() => { dlBtn.querySelector('span').textContent = 'Copy Fallback Command'; }, 3500);
+                    setTimeout(() => { setPromptButtonState(dlBtn, 'Copy Fallback Command'); }, 3500);
                 } else {
                     void openExternalUrl(this.INSTALLER_URL).catch(() => {});
                 }
@@ -1683,27 +1810,28 @@ return response;
             btnCol.appendChild(dlBtn);
 
             // 4. "I just installed it" — re-check
-            const recheckBtn = makeBtn('Check Again', 'transparent', '1px solid #30363d', async () => {
-                recheckBtn.querySelector('span').textContent = 'Checking...';
+            const recheckBtn = makeBtn('Check Again', 'ghost', async () => {
+                setPromptButtonState(recheckBtn, 'Checking...');
+                recheckBtn.disabled = true;
                 this.resetAutoStart();
                 const result = await this.tryAutoStart(5);
                 if (result.ok) {
                     showToast('Local downloader is ready.', '#22c55e', { duration: 4 });
                     prompt.remove();
                 } else {
-                    recheckBtn.querySelector('span').textContent = 'Not detected — make sure the installer completed';
-                    setTimeout(() => { recheckBtn.querySelector('span').textContent = 'Check Again'; }, 4000);
+                    setPromptButtonState(recheckBtn, 'Not detected — make sure the installer completed', 'danger');
+                    recheckBtn.disabled = false;
+                    setTimeout(() => { setPromptButtonState(recheckBtn, 'Check Again'); }, 4000);
                 }
             });
             btnCol.appendChild(recheckBtn);
 
             // 5. Dismiss
             if (!isRetryMode) {
-                const dismissBtn = makeBtn('Not now', 'transparent', 'none', () => {
+                const dismissBtn = makeBtn('Not now', 'quiet', () => {
                     prompt.remove();
                     storageWrite('ytkit_mediadl_prompt_dismissed', true);
                 });
-                dismissBtn.style.cssText += 'padding:6px 14px;font-size:12px;color:#6b7280;justify-content:center;';
                 btnCol.appendChild(dismissBtn);
             }
 
@@ -1992,11 +2120,12 @@ return response;
 
         // Initial checks
         checkAllButtons();
-        setTimeout(checkAllButtons, 500);
-        setTimeout(checkAllButtons, 1500);
+        let spaTimers = [
+            setTimeout(checkAllButtons, 500),
+            setTimeout(checkAllButtons, 1500)
+        ];
 
         // SPA navigation — use navigate rule system instead of separate listener
-        let spaTimers = [];
         addNavigateRule('_buttonChecker', () => {
             spaTimers.forEach(t => clearTimeout(t));
             spaTimers = [];
@@ -2975,13 +3104,77 @@ return response;
         {
             id: 'styledFilterChips',
             name: 'Styled Filter Chips',
-            description: 'Uniform, polished filter chips on the homepage with glassmorphism and smooth hover effects',
+            description: 'Compact, native-feeling filter chips on home and subscriptions',
             group: 'Theme',
             icon: 'sliders-horizontal',
-            pages: [PageTypes.HOME],
+            pages: [PageTypes.HOME, PageTypes.SUBSCRIPTIONS],
             _styleElement: null,
             init() {
-                const css = `ytd-feed-filter-chip-bar-renderer #chips-wrapper{background:transparent !important;} ytd-feed-filter-chip-bar-renderer #scroll-container{padding:4px 0 !important;} ytd-feed-filter-chip-bar-renderer #left-arrow,ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to right,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} ytd-feed-filter-chip-bar-renderer #right-arrow{background:linear-gradient(to left,var(--yt-spec-base-background,#0f0f0f) 70%,transparent) !important;} yt-chip-cloud-chip-renderer .ytChipShapeChip{min-width:72px !important;height:32px !important;padding:0 14px !important;display:flex !important;align-items:center !important;justify-content:center !important;border:1px solid rgba(255,255,255,0.1) !important;border-radius:8px !important;transition:all 0.2s ease !important;backdrop-filter:blur(8px) !important;-webkit-backdrop-filter:blur(8px) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive{background:rgba(255,255,255,0.06) !important;color:rgba(255,255,255,0.7) !important;} yt-chip-cloud-chip-renderer .ytChipShapeInactive:hover{background:rgba(255,255,255,0.12) !important;border-color:rgba(255,255,255,0.2) !important;color:#fff !important;transform:translateY(-1px) !important;box-shadow:0 2px 8px rgba(0,0,0,0.3) !important;} yt-chip-cloud-chip-renderer .ytChipShapeActive{background:rgba(255,255,255,0.95) !important;color:#0f0f0f !important;border-color:transparent !important;font-weight:600 !important;box-shadow:0 2px 6px rgba(0,0,0,0.25) !important;} yt-chip-cloud-chip-renderer .ytChipShapeTextContent{font-size:13px !important;line-height:1 !important;white-space:nowrap !important;letter-spacing:0.2px !important;} iron-selector#chips yt-chip-cloud-chip-renderer{margin:0 4px !important;} iron-selector#chips yt-chip-cloud-chip-renderer:first-child{margin-left:0 !important;}`;
+                const css = `
+                    ytd-feed-filter-chip-bar-renderer #chips-wrapper {
+                        background: transparent !important;
+                    }
+
+                    ytd-feed-filter-chip-bar-renderer #scroll-container {
+                        padding: 2px 0 !important;
+                    }
+
+                    ytd-feed-filter-chip-bar-renderer #left-arrow,
+                    ytd-feed-filter-chip-bar-renderer #right-arrow {
+                        background: linear-gradient(to right, var(--yt-spec-base-background, #0f0f0f) 76%, transparent) !important;
+                    }
+
+                    ytd-feed-filter-chip-bar-renderer #right-arrow {
+                        background: linear-gradient(to left, var(--yt-spec-base-background, #0f0f0f) 76%, transparent) !important;
+                    }
+
+                    yt-chip-cloud-chip-renderer .ytChipShapeChip {
+                        min-width: 64px !important;
+                        height: 30px !important;
+                        padding: 0 12px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        border: 1px solid rgba(255,255,255,0.08) !important;
+                        border-radius: 999px !important;
+                        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+                        box-shadow: none !important;
+                    }
+
+                    yt-chip-cloud-chip-renderer .ytChipShapeInactive {
+                        background: rgba(255,255,255,0.05) !important;
+                        color: rgba(255,255,255,0.72) !important;
+                    }
+
+                    yt-chip-cloud-chip-renderer .ytChipShapeInactive:hover {
+                        background: rgba(255,255,255,0.08) !important;
+                        border-color: rgba(255,255,255,0.14) !important;
+                        color: rgba(255,255,255,0.96) !important;
+                    }
+
+                    yt-chip-cloud-chip-renderer .ytChipShapeActive {
+                        background: rgba(255,255,255,0.94) !important;
+                        color: #0f0f0f !important;
+                        border-color: rgba(255,255,255,0.02) !important;
+                        font-weight: 600 !important;
+                        box-shadow: none !important;
+                    }
+
+                    yt-chip-cloud-chip-renderer .ytChipShapeTextContent {
+                        font-size: 12px !important;
+                        line-height: 1 !important;
+                        white-space: nowrap !important;
+                        letter-spacing: 0 !important;
+                    }
+
+                    iron-selector#chips yt-chip-cloud-chip-renderer {
+                        margin: 0 3px !important;
+                    }
+
+                    iron-selector#chips yt-chip-cloud-chip-renderer:first-child {
+                        margin-left: 0 !important;
+                    }
+                `;
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); this._styleElement = null; }
@@ -3553,6 +3746,179 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: inline-flex !important;
                     }
 
+                    ytd-watch-metadata #top-row {
+                        display: grid !important;
+                        grid-template-columns: minmax(0, 1fr) !important;
+                        row-gap: 10px !important;
+                        align-items: start !important;
+                        padding: 8px 0 6px !important;
+                    }
+
+                    #owner.ytd-watch-metadata {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: flex-start !important;
+                        flex-wrap: wrap !important;
+                        gap: 8px 10px !important;
+                        margin: 0 !important;
+                    }
+
+                    #owner.ytd-watch-metadata ytd-video-owner-renderer {
+                        flex: 1 1 auto !important;
+                        min-width: 0 !important;
+                    }
+
+                    ytd-watch-metadata #actions.ytd-watch-metadata,
+                    #actions.item.style-scope.ytd-watch-metadata {
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    ytd-watch-metadata #actions-inner,
+                    #top-level-buttons-computed.style-scope.ytd-menu-renderer {
+                        display: flex !important;
+                        flex-wrap: wrap !important;
+                        align-items: center !important;
+                        justify-content: flex-start !important;
+                        gap: 6px !important;
+                    }
+
+                    ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next,
+                    .ytkit-local-dl-btn {
+                        min-height: 28px !important;
+                        height: 28px !important;
+                        padding: 0 10px !important;
+                        border-radius: 999px !important;
+                        font-size: 11px !important;
+                    }
+
+                    ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon {
+                        margin-right: 4px !important;
+                    }
+
+                    #comments ytd-comments-header-renderer {
+                        display: grid !important;
+                        grid-template-columns: minmax(0, max-content) minmax(280px, 1fr) !important;
+                        align-items: center !important;
+                        column-gap: 14px !important;
+                        row-gap: 10px !important;
+                        margin: 10px 0 4px !important;
+                        padding: 6px 0 0 !important;
+                    }
+
+                    #comments ytd-comments-header-renderer #title {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: flex-start !important;
+                        gap: 10px !important;
+                        flex-wrap: wrap !important;
+                        min-width: 0 !important;
+                        margin: 0 !important;
+                    }
+
+                    #comments ytd-comments-header-renderer #leading-section,
+                    #comments ytd-comments-header-renderer #additional-section {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        min-width: 0 !important;
+                        margin: 0 !important;
+                    }
+
+                    #comments #count.ytd-comments-header-renderer,
+                    #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        display: inline-block !important;
+                        margin: 0 !important;
+                        font-size: 13.5px !important;
+                        font-weight: 700 !important;
+                        letter-spacing: 0 !important;
+                        line-height: 1.15 !important;
+                        white-space: nowrap !important;
+                        color: rgba(255,255,255,0.76) !important;
+                    }
+
+                    #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        display: inline-flex !important;
+                        align-items: baseline !important;
+                        gap: 0.26em !important;
+                    }
+
+                    #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer > span {
+                        display: inline-block !important;
+                    }
+
+                    #comments ytd-comments-header-renderer #sort-menu,
+                    #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer {
+                        margin: 0 !important;
+                        opacity: 1 !important;
+                    }
+
+                    #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
+                    #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
+                    #comments ytd-comments-header-renderer #sort-menu button {
+                        min-height: 30px !important;
+                        height: 30px !important;
+                        padding: 0 10px !important;
+                        border-radius: 999px !important;
+                        background: rgba(255,255,255,0.045) !important;
+                        border: 1px solid rgba(255,255,255,0.08) !important;
+                    }
+
+                    #comments ytd-comments-header-renderer ytd-comment-simplebox-renderer {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        align-self: center !important;
+                    }
+
+                    #comments ytd-comments-header-renderer #simple-box {
+                        justify-self: end !important;
+                        width: min(100%, 420px) !important;
+                        min-width: min(280px, 100%) !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
+                        display: grid !important;
+                        grid-template-columns: 24px minmax(0, 1fr) !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        width: 100% !important;
+                    }
+
+                    #comments ytd-comment-simplebox-renderer #author-thumbnail,
+                    #comments ytd-comment-simplebox-renderer #author-thumbnail img,
+                    #comments ytd-comment-simplebox-renderer #author-thumbnail yt-img-shadow {
+                        width: 24px !important;
+                        height: 24px !important;
+                    }
+
+                    #comments ytd-comment-simplebox-renderer,
+                    #comments ytd-comment-simplebox-renderer #comment-dialog,
+                    #comments ytd-comment-simplebox-renderer #main,
+                    #comments ytd-comment-simplebox-renderer #creation-box,
+                    #comments ytd-comment-simplebox-renderer #input-container,
+                    #comments ytd-comment-simplebox-renderer tp-yt-paper-input-container,
+                    #comments ytd-comment-simplebox-renderer #placeholder-area {
+                        width: 100% !important;
+                        min-width: 0 !important;
+                        justify-self: stretch !important;
+                    }
+
+                    @media (max-width: 1040px) {
+                        #comments ytd-comments-header-renderer {
+                            grid-template-columns: minmax(0, 1fr) !important;
+                        }
+
+                        #comments ytd-comments-header-renderer #simple-box {
+                            justify-self: stretch !important;
+                            width: 100% !important;
+                            min-width: 0 !important;
+                        }
+                    }
+
                     html.ytkit-split-open #below[style*="position"] h1.style-scope.ytd-watch-metadata,
                     html.ytkit-split-open #below[style*="position"] ytd-watch-metadata h1.ytd-watch-metadata {
                         margin-top: 0 !important;
@@ -3599,15 +3965,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ytd-comments#comments {
                         display: block !important;
                         visibility: visible !important;
-                        margin-top: 16px !important;
-                        padding: 18px 18px 14px !important;
-                        border-radius: 26px !important;
-                        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+                        margin-top: 10px !important;
+                        padding: 8px 10px 6px !important;
+                        border-radius: 14px !important;
+                        border: 1px solid rgba(255, 255, 255, 0.045) !important;
                         background:
-                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.14), transparent 30%),
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
-                            rgba(5, 8, 13, 0.86) !important;
-                        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.22) !important;
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.004)),
+                            rgba(8, 11, 17, 0.6) !important;
+                        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
                         overflow: hidden !important;
                     }
 
@@ -3618,9 +3983,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     #comments ytd-comments-header-renderer {
-                        margin: 0 0 18px !important;
-                        padding: 0 4px 18px !important;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        margin: 0 0 10px !important;
+                        padding: 0 0 8px !important;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
                     }
 
                     #comments ytd-comments-header-renderer #title,
@@ -3628,38 +3993,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comments-header-renderer #additional-section {
                         display: flex !important;
                         align-items: center !important;
-                        gap: 10px !important;
+                        gap: 6px !important;
                         flex-wrap: wrap !important;
                     }
 
                     #comments ytd-comments-header-renderer #title {
-                        justify-content: space-between !important;
+                        justify-content: flex-start !important;
                         margin: 0 !important;
                     }
 
                     #comments ytd-comments-header-renderer #count,
                     #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
-                        display: inline-flex !important;
-                        align-items: center !important;
+                        display: inline-block !important;
                         margin: 0 !important;
-                        font-size: 13px !important;
-                        font-weight: 800 !important;
-                        letter-spacing: -0.02em !important;
+                        font-size: 13.5px !important;
+                        font-weight: 700 !important;
+                        letter-spacing: 0 !important;
                         color: rgba(255, 255, 255, 0.88) !important;
                     }
 
+                    #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        display: inline-flex !important;
+                        align-items: baseline !important;
+                        gap: 0.26em !important;
+                    }
+
                     #comments ytd-comments-header-renderer #count::before {
-                        content: 'Conversation';
-                        margin-right: 10px;
-                        padding: 6px 10px;
-                        border-radius: 999px;
-                        background: rgba(var(--ytkit-accent-rgb), 0.14);
-                        border: 1px solid rgba(var(--ytkit-accent-rgb), 0.22);
-                        color: rgba(255, 255, 255, 0.95);
-                        font-size: 10px;
-                        font-weight: 800;
-                        letter-spacing: 0.1em;
-                        text-transform: uppercase;
+                        content: none !important;
+                        display: none !important;
                     }
 
                     #comments ytd-comments-header-renderer #sort-menu,
@@ -3671,19 +4032,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
                     #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
                     #comments ytd-comments-header-renderer #sort-menu button {
-                        min-height: 34px !important;
-                        padding: 0 14px !important;
+                        min-height: 28px !important;
+                        padding: 0 11px !important;
                         border-radius: 999px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.04) !important;
                         color: rgba(255, 255, 255, 0.76) !important;
-                        font-size: 12px !important;
+                        font-size: 10.5px !important;
                         font-weight: 700 !important;
                         text-transform: none !important;
                     }
 
                     #comments ytd-comment-thread-renderer {
-                        margin: 0 0 14px !important;
+                        margin: 0 0 8px !important;
                         padding: 0 !important;
                         border: none !important;
                         background: transparent !important;
@@ -3692,20 +4053,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model,
                     #comments ytd-comment-renderer {
                         margin: 0 !important;
-                        padding: 16px 18px 14px !important;
-                        border-radius: 22px !important;
-                        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        padding: 10px 12px 9px !important;
+                        border-radius: 14px !important;
+                        border: 1px solid rgba(255, 255, 255, 0.05) !important;
                         background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
-                            rgba(9, 13, 19, 0.88) !important;
-                        box-shadow: 0 24px 50px rgba(0, 0, 0, 0.24) !important;
-                        transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease !important;
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.005)),
+                            rgba(9, 13, 19, 0.62) !important;
+                        box-shadow: none !important;
+                        transition: border-color 180ms ease, background 180ms ease !important;
                     }
 
                     #comments ytd-comment-view-model:hover,
                     #comments ytd-comment-renderer:hover {
-                        transform: translateY(-1px) !important;
-                        border-color: rgba(var(--ytkit-accent-rgb), 0.22) !important;
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.12) !important;
+                        background:
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.007)),
+                            rgba(10, 13, 20, 0.68) !important;
                     }
 
                     #comments ytd-comment-view-model #pinned-comment-badge,
@@ -3726,7 +4089,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const premiumInteractionCss = `
                     #comments ytd-comment-view-model > #body,
                     #comments ytd-comment-renderer > #body {
-                        gap: 14px !important;
+                        gap: 12px !important;
                         align-items: flex-start !important;
                     }
 
@@ -3736,15 +4099,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-renderer #author-thumbnail img,
                     #comments ytd-comment-view-model #author-thumbnail yt-img-shadow,
                     #comments ytd-comment-renderer #author-thumbnail yt-img-shadow {
-                        width: 36px !important;
-                        height: 36px !important;
+                        width: 32px !important;
+                        height: 32px !important;
                         border-radius: 50% !important;
                     }
 
                     #comments ytd-comment-view-model > #body > #main,
                     #comments ytd-comment-renderer > #body > #main {
                         min-width: 0 !important;
-                        padding-right: 40px !important;
+                        padding-right: 32px !important;
                     }
 
                     #comments ytd-comment-view-model #header-author,
@@ -3756,8 +4119,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model #author-text,
                     #comments ytd-comment-renderer #author-text {
                         color: rgba(255, 255, 255, 0.95) !important;
-                        font-size: 13px !important;
-                        font-weight: 800 !important;
+                        font-size: 12.5px !important;
+                        font-weight: 750 !important;
                         letter-spacing: -0.01em !important;
                     }
 
@@ -3776,8 +4139,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model #content-text,
                     #comments ytd-comment-renderer #content-text {
                         color: rgba(255, 255, 255, 0.88) !important;
-                        font-size: 14px !important;
-                        line-height: 1.68 !important;
+                        font-size: 13.5px !important;
+                        line-height: 1.62 !important;
                     }
 
                     #comments ytd-comment-view-model #content-text a,
@@ -3794,8 +4157,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model #inline-action-menu,
                     #comments ytd-comment-renderer #inline-action-menu {
                         position: absolute !important;
-                        top: 14px !important;
-                        right: 14px !important;
+                        top: 12px !important;
+                        right: 12px !important;
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
@@ -3829,10 +4192,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-renderer #action-menu tp-yt-paper-icon-button,
                     #comments ytd-comment-view-model #inline-action-menu tp-yt-paper-icon-button,
                     #comments ytd-comment-renderer #inline-action-menu tp-yt-paper-icon-button {
-                        width: 32px !important;
-                        height: 32px !important;
-                        min-width: 32px !important;
-                        min-height: 32px !important;
+                        width: 30px !important;
+                        height: 30px !important;
+                        min-width: 30px !important;
+                        min-height: 30px !important;
                         padding: 0 !important;
                         border-radius: 999px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -3879,7 +4242,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         top: auto !important;
                         right: auto !important;
                         width: auto !important;
-                        margin: 12px 0 0 50px !important;
+                        margin: 8px 0 0 0 !important;
                         padding: 0 !important;
                         pointer-events: auto !important;
                         display: block !important;
@@ -3888,7 +4251,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-engagement-bar #toolbar {
                         display: flex !important;
                         align-items: center !important;
-                        gap: 6px !important;
+                        gap: 5px !important;
                         flex-wrap: wrap !important;
                         margin: 0 !important;
                     }
@@ -3904,14 +4267,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     #comments ytd-comment-engagement-bar #toolbar button,
                     #comments ytd-comment-engagement-bar #toolbar .yt-spec-button-shape-next {
-                        min-height: 30px !important;
-                        height: 30px !important;
-                        padding: 0 12px !important;
+                        min-height: 28px !important;
+                        height: 28px !important;
+                        padding: 0 10px !important;
                         border-radius: 999px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.04) !important;
                         color: rgba(255, 255, 255, 0.72) !important;
                         box-shadow: none !important;
+                        font-size: 10.5px !important;
                     }
 
                     #comments ytd-comment-view-model[data-ytkitPinned="1"],
@@ -3925,7 +4289,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     #comments ytd-comment-view-model[data-ytkitHeart="1"],
                     #comments ytd-comment-renderer[data-ytkitHeart="1"] {
-                        box-shadow: 0 24px 56px rgba(120, 23, 33, 0.22) !important;
+                        box-shadow: 0 0 0 1px rgba(255, 112, 122, 0.16) !important;
                     }
 
                     #comments ytd-comment-view-model[data-ytkitLinked="1"],
@@ -4013,41 +4377,41 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     #comments ytd-comment-replies-renderer {
                         position: relative !important;
-                        margin: 12px 0 0 52px !important;
-                        padding: 10px 0 0 16px !important;
+                        margin: 8px 0 0 20px !important;
+                        padding: 8px 0 0 10px !important;
                         border-left: none !important;
                     }
 
                     #comments ytd-comment-replies-renderer::before {
                         content: '' !important;
                         position: absolute !important;
-                        top: 4px !important;
-                        bottom: 10px !important;
+                        top: 2px !important;
+                        bottom: 8px !important;
                         left: 0 !important;
                         width: 1px !important;
-                        background: linear-gradient(180deg, rgba(125, 211, 252, 0.24), rgba(255, 255, 255, 0.05)) !important;
+                        background: linear-gradient(180deg, rgba(125, 211, 252, 0.16), rgba(255, 255, 255, 0.04)) !important;
                     }
 
                     #comments ytd-comment-replies-renderer::after {
                         content: '' !important;
                         position: absolute !important;
                         top: -1px !important;
-                        left: -4px !important;
-                        width: 9px !important;
-                        height: 9px !important;
+                        left: -3px !important;
+                        width: 7px !important;
+                        height: 7px !important;
                         border-radius: 50% !important;
-                        background: rgba(125, 211, 252, 0.18) !important;
-                        box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.04) !important;
+                        background: rgba(125, 211, 252, 0.16) !important;
+                        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.03) !important;
                     }
 
                     #comments ytd-comment-replies-renderer ytd-comment-view-model,
                     #comments ytd-comment-replies-renderer ytd-comment-renderer {
-                        padding: 13px 15px 11px !important;
-                        border-radius: 20px !important;
+                        padding: 9px 11px 8px !important;
+                        border-radius: 14px !important;
                         border: 1px solid rgba(255, 255, 255, 0.055) !important;
                         background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0.01)),
-                            rgba(8, 11, 17, 0.8) !important;
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.005)),
+                            rgba(8, 11, 17, 0.6) !important;
                         box-shadow: none !important;
                     }
 
@@ -4118,7 +4482,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     #comments .ytkit-comment-search {
-                        margin: 14px 0 18px !important;
+                        margin: 10px 0 14px !important;
                     }
 
                     #comments .ytkit-comment-search-field {
@@ -4126,9 +4490,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         grid-template-columns: auto minmax(0, 1fr) auto !important;
                         align-items: center !important;
                         gap: 10px !important;
-                        min-height: 48px !important;
-                        padding: 0 14px !important;
-                        border-radius: 18px !important;
+                        min-height: 42px !important;
+                        padding: 0 12px !important;
+                        border-radius: 14px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.03) !important;
                     }
@@ -4171,34 +4535,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        min-width: 58px !important;
-                        padding: 6px 10px !important;
+                        min-width: 52px !important;
+                        padding: 5px 9px !important;
                         border-radius: 999px !important;
                         background: rgba(255, 255, 255, 0.05) !important;
                         border: 1px solid rgba(255, 255, 255, 0.06) !important;
                         color: rgba(255, 255, 255, 0.72) !important;
-                        font-size: 10px !important;
+                        font-size: 9px !important;
                         font-weight: 800 !important;
                         letter-spacing: 0.08em !important;
                         text-transform: uppercase !important;
                     }
 
                     #comments ytd-comment-simplebox-renderer {
-                        margin: 0 0 18px !important;
-                        padding: 0 2px !important;
+                        margin: 0 0 14px !important;
+                        padding: 0 !important;
                     }
 
                     #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
-                        gap: 14px !important;
+                        gap: 8px !important;
                     }
 
                     #comments ytd-comment-simplebox-renderer #placeholder-area {
-                        min-height: 54px !important;
-                        border-radius: 18px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        width: 100% !important;
+                        min-height: 40px !important;
+                        padding: 0 12px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background:
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
-                            rgba(9, 13, 19, 0.78) !important;
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.008)),
+                            rgba(9, 13, 19, 0.56) !important;
                         color: rgba(255, 255, 255, 0.58) !important;
                     }
 
@@ -4211,8 +4579,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer {
+                        grid-template-columns: minmax(0, 1fr) !important;
                         margin-bottom: 12px !important;
                         padding: 0 0 12px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #simple-box {
+                        justify-self: stretch !important;
+                        width: 100% !important;
+                        min-width: 0 !important;
                     }
 
                     html.ytkit-split-open #below[style*="position"] #comments ytd-comment-view-model,
@@ -4239,12 +4614,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     html.ytkit-split-open #below[style*="position"] #comments ytd-comment-engagement-bar,
                     html.ytkit-split-open #below[style*="position"] #comments .ytkit-replying ytd-comment-engagement-bar {
-                        margin: 10px 0 0 40px !important;
+                        margin: 8px 0 0 0 !important;
                     }
 
                     html.ytkit-split-open #below[style*="position"] #comments ytd-comment-replies-renderer {
-                        margin: 10px 0 0 38px !important;
-                        padding: 10px 0 0 12px !important;
+                        margin: 8px 0 0 16px !important;
+                        padding: 8px 0 0 10px !important;
                     }
 
                     html.ytkit-split-open #below[style*="position"] #comments .ytkit-comment-search {
@@ -4805,7 +5180,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (qlFeature && qlFeature._buildMenu) {
                     qlFeature._buildMenu(logoWrap, 'ytkit-po-drop');
                 }
-                wrap.appendChild(logoWrap);
 
                 // Download buttons
                 if (appState.settings.showLocalDownloadButton) {
@@ -4814,10 +5188,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     dlBtn.className = 'ytp-button ytkit-player-btn ytkit-po-dl';
                     dlBtn.title = 'Download Video';
                     dlBtn.setAttribute('aria-label', 'Download video');
-                    TrustedHTML.setHTML(dlBtn, '<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>');
+                    const dlIcon = ICONS.download();
+                    dlIcon.setAttribute('aria-hidden', 'true');
+                    dlBtn.appendChild(dlIcon);
                     dlBtn.addEventListener('click', (e) => { e.stopPropagation(); ytKitDownload(window.location.href, false); });
                     wrap.appendChild(dlBtn);
                 }
+
                 // Settings gear
                 const gearBtn = document.createElement('button');
                 gearBtn.type = 'button';
@@ -4825,17 +5202,234 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 gearBtn.title = `${BRAND.name} Settings`;
                 gearBtn.setAttribute('aria-label', `Open ${BRAND.name} settings`);
                 gearBtn.setAttribute('aria-haspopup', 'dialog');
-                TrustedHTML.setHTML(gearBtn, '<svg viewBox="0 0 24 24" data-stroke><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>');
+                const gearIcon = ICONS.settings();
+                gearIcon.setAttribute('aria-hidden', 'true');
+                gearBtn.appendChild(gearIcon);
                 gearBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     toggleSettingsPanel();
                 });
                 wrap.appendChild(gearBtn);
+                wrap.appendChild(logoWrap);
 
                 rightControls.appendChild(wrap);
             },
             init() {
-                this._styleEl = appendStyleSheet(`/* Hide native right controls, keep our injected elements */ .ytp-right-controls > *:not(#ytkit-player-controls){display:none !important;} .ytp-right-controls{display:flex !important;align-items:center !important;height:100% !important;} #ytkit-player-controls{display:flex;align-items:center;height:100%;margin:0;padding:0;gap:2px;} #ytkit-po-logo-wrap{position:relative;display:inline-flex;align-items:center;height:100%;margin-right:2px;} #ytkit-po-logo-wrap .ytkit-ql-launcher--player{display:inline-flex !important;align-items:center !important;justify-content:center !important;gap:0 !important;width:32px !important;min-width:32px !important;height:32px !important;min-height:32px !important;margin:0 !important;padding:0 !important;border-radius:10px !important;text-decoration:none !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.08) !important;box-shadow:none !important;color:rgba(255,255,255,0.84) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;transform:none !important;flex-shrink:0 !important;} #ytkit-po-logo-wrap .ytkit-ql-launcher--player:hover{background:rgba(255,255,255,0.1) !important;border-color:rgba(255,255,255,0.14) !important;box-shadow:none !important;color:#fff !important;transform:none !important;} #ytkit-po-logo-wrap .ytkit-ql-launcher--player .ytkit-ql-launcher-glyph{width:16px !important;height:16px !important;} #ytkit-po-logo-wrap .ytkit-ql-launcher--player .ytkit-ql-launcher-glyph svg{width:16px !important;height:16px !important;} .ytkit-po-dl:hover{background:rgba(34,197,94,0.15)!important;border-radius:10px !important;} .ytkit-po-gear svg{transition:none !important;} .ytkit-po-gear:hover svg{transform:none !important;} button.ytp-button.ytp-autonav-toggle.delhi-fast-follow-autonav-toggle{display:none !important;}`);
+                this._styleEl = appendStyleSheet(`
+                    /* Hide native right controls, keep our injected elements */
+                    .ytp-right-controls > *:not(#ytkit-player-controls) {
+                        display: none !important;
+                    }
+
+                    .ytp-right-controls {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: flex-end !important;
+                        height: 100% !important;
+                        overflow: visible !important;
+                    }
+
+                    .ytp-right-controls > #ytkit-player-controls {
+                        order: 999 !important;
+                    }
+
+                    #ytkit-player-controls {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: flex-end !important;
+                        height: auto !important;
+                        min-height: 32px !important;
+                        margin: 0 0 0 6px !important;
+                        padding: 0 !important;
+                        gap: 6px !important;
+                        overflow: visible !important;
+                        flex-shrink: 0 !important;
+                    }
+
+                    #ytkit-player-controls > * {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        flex-shrink: 0 !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-player-btn {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        position: relative !important;
+                        top: 0 !important;
+                        visibility: visible !important;
+                        width: 32px !important;
+                        min-width: 32px !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
+                    }
+
+                    #ytkit-po-logo-wrap {
+                        position: relative;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: auto;
+                        margin: 0 0 0 2px;
+                    }
+
+                    #ytkit-po-logo-wrap .ytkit-ql-launcher--player {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 0 !important;
+                        width: 32px !important;
+                        min-width: 32px !important;
+                        height: 32px !important;
+                        min-height: 32px !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border-radius: 10px !important;
+                        text-decoration: none !important;
+                        background: rgba(255,255,255,0.05) !important;
+                        border: 1px solid rgba(255,255,255,0.08) !important;
+                        box-shadow: none !important;
+                        color: rgba(255,255,255,0.84) !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                        transform: none !important;
+                        flex-shrink: 0 !important;
+                    }
+
+                    #ytkit-po-logo-wrap .ytkit-ql-launcher--player:hover {
+                        background: rgba(255,255,255,0.1) !important;
+                        border-color: rgba(255,255,255,0.14) !important;
+                        box-shadow: none !important;
+                        color: #fff !important;
+                        transform: none !important;
+                    }
+
+                    #ytkit-po-logo-wrap .ytkit-ql-launcher--player .ytkit-ql-launcher-glyph {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+
+                    #ytkit-po-logo-wrap .ytkit-ql-launcher--player .ytkit-ql-launcher-glyph svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-dl,
+                    #ytkit-player-controls .ytkit-po-gear {
+                        background: rgba(255,255,255,0.05) !important;
+                        border: 1px solid rgba(255,255,255,0.08) !important;
+                        border-radius: 10px !important;
+                        color: rgba(255,255,255,0.9) !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-dl {
+                        color: rgba(226,255,236,0.92) !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-dl:hover {
+                        background: rgba(34,197,94,0.15) !important;
+                        border-color: rgba(34,197,94,0.26) !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-dl svg,
+                    #ytkit-player-controls .ytkit-po-gear svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                        display: block !important;
+                        overflow: visible !important;
+                    }
+
+                    #ytkit-player-controls .ytkit-po-dl svg,
+                    #ytkit-player-controls .ytkit-po-dl svg *,
+                    #ytkit-player-controls .ytkit-po-gear svg,
+                    #ytkit-player-controls .ytkit-po-gear svg * {
+                        fill: none !important;
+                        stroke: currentColor !important;
+                        stroke-width: 1.9 !important;
+                        stroke-linecap: round !important;
+                        stroke-linejoin: round !important;
+                        vector-effect: non-scaling-stroke !important;
+                    }
+
+                    #ytkit-po-drop {
+                        bottom: calc(100% + 6px) !important;
+                        right: 0 !important;
+                        min-width: 154px !important;
+                        padding: 2px !important;
+                        border-radius: 12px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-row {
+                        display: block !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-item {
+                        gap: 6px !important;
+                        padding: 3px 5px !important;
+                        min-height: 24px !important;
+                        border-radius: 8px !important;
+                        font-size: 10px !important;
+                        line-height: 1 !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-icon {
+                        width: 11px !important;
+                        height: 11px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-item span {
+                        font-size: 10px !important;
+                        line-height: 1 !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-divider {
+                        margin: 2px 1px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-bottom {
+                        gap: 2px !important;
+                        padding: 2px 0 0 !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-bottom-btn {
+                        min-height: 24px !important;
+                        border-radius: 8px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-add-form {
+                        gap: 4px !important;
+                        padding: 2px 1px 1px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-input {
+                        width: 64px !important;
+                        height: 24px !important;
+                        padding: 0 6px !important;
+                        border-radius: 7px !important;
+                        font-size: 9px !important;
+                    }
+
+                    #ytkit-po-drop .ytkit-ql-add-btn {
+                        min-height: 24px !important;
+                        padding: 0 7px !important;
+                        border-radius: 7px !important;
+                        font-size: 9px !important;
+                    }
+
+                    .ytkit-po-gear svg {
+                        transition: none !important;
+                    }
+
+                    .ytkit-po-gear:hover svg {
+                        transform: none !important;
+                    }
+
+                    button.ytp-button.ytp-autonav-toggle.delhi-fast-follow-autonav-toggle {
+                        display: none !important;
+                    }
+                `);
 
                 const self = this;
                 addNavigateRule(this._ruleId, () => self._inject());
@@ -4857,6 +5451,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             // ── state ──
             _styleEl: null,
+            _splitMetaStyleEl: null,
             _isSplit: false,          // right panel is open
             _isActive: false,         // overlay is mounted
             _entering: false,
@@ -4885,7 +5480,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _getPlayer()  { return document.querySelector('#player-container'); },
-            _getBelow()   { return document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement; },
+            _belowCache: null,
+            _belowCacheHref: '',
+            _getBelow() {
+                if (this._belowCache?.isConnected && this._belowCacheHref === location.href) return this._belowCache;
+                this._belowCacheHref = location.href;
+                this._belowCache = document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement;
+                return this._belowCache;
+            },
             _getChatEl()  { return VideoTypeDetector.getChatEl(); },
 
             // Nudge YouTube's player to recalculate control bar layout.
@@ -5057,9 +5659,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!this._isSplit) return;
                     e.preventDefault();
                     const wrapper = this._splitWrapper;
+                    // Cache layout reads once at drag start to avoid per-move reflows
                     const totalW = wrapper.getBoundingClientRect().width;
                     const startX = e.clientX;
                     const startLeftPct = left.getBoundingClientRect().width / totalW * 100;
+                    const player = this._getPlayer();
+                    const strip = wrapper.querySelector('#ytkit-split-collapse-strip');
+                    const positioned = this._positionedEls || [];
                     document.body.style.cursor = 'col-resize';
                     document.body.style.userSelect = 'none';
 
@@ -5068,24 +5674,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     dragShield.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;cursor:col-resize;';
                     document.body.appendChild(dragShield);
 
+                    let _dragRaf = null;
                     const onMove = (me) => {
-                        const dx = me.clientX - startX;
-                        const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
-                        const newRightPct = 100 - newLeftPct;
-                        right.style.flexBasis = newRightPct + '%';
-                        right.style.width     = newRightPct + '%';
-                        divider.style.flexBasis = '6px';
-                        document.documentElement.style.setProperty('--ytkit-split-right-width', `calc(${newRightPct}vw - 6px)`);
-                        const player = this._getPlayer();
-                        if (player) player.style.setProperty('width', newLeftPct + '%', 'important');
-                        (this._positionedEls || []).forEach(el => {
-                            el.style.setProperty('width', `calc(${newRightPct}% - 2px)`, 'important');
+                        if (_dragRaf) cancelAnimationFrame(_dragRaf);
+                        _dragRaf = requestAnimationFrame(() => {
+                            const dx = me.clientX - startX;
+                            const newLeftPct = Math.max(25, Math.min(85, startLeftPct + (dx / totalW * 100)));
+                            const newRightPct = 100 - newLeftPct;
+                            right.style.flexBasis = newRightPct + '%';
+                            right.style.width     = newRightPct + '%';
+                            divider.style.flexBasis = '6px';
+                            document.documentElement.style.setProperty('--ytkit-split-right-width', `calc(${newRightPct}vw - 6px)`);
+                            if (player) player.style.setProperty('width', newLeftPct + '%', 'important');
+                            positioned.forEach(el => {
+                                el.style.setProperty('width', `calc(${newRightPct}% - 2px)`, 'important');
+                            });
+                            if (strip) strip.style.width = `calc(${newRightPct}% - 2px)`;
+                            storageWrite('ytkit_split_ratio', 100 - newRightPct);
                         });
-                        const strip = wrapper.querySelector('#ytkit-split-collapse-strip');
-                        if (strip) strip.style.width = `calc(${newRightPct}% - 2px)`;
-                        storageWrite('ytkit_split_ratio', 100 - newRightPct);
                     };
                     const onUp = () => {
+                        if (_dragRaf) cancelAnimationFrame(_dragRaf);
                         dragShield.remove();
                         document.body.style.cursor = '';
                         document.body.style.userSelect = '';
@@ -5172,7 +5781,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._playerResizeObs.observe(left);
 
                 // Delayed resize trigger — wait for layout to settle before telling YT to recalculate
-                setTimeout(() => this._triggerPlayerResize(), 600);
+                this._initResizeTimer = setTimeout(() => this._triggerPlayerResize(), 600);
 
                 // #below stays in original DOM — overlay at z-index:9999 hides it visually.
                 // DO NOT set visibility:hidden — it can prevent IntersectionObserver from firing.
@@ -5479,6 +6088,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _unmount(keepClass) {
                 if (!this._isActive) return;
                 clearTimeout(this._resizeTimer);
+                clearTimeout(this._initResizeTimer);
 
                 // Remove scroll handlers from scroll target
                 const scrollEl = this._scrollTarget;
@@ -5602,6 +6212,489 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 const css = `html.ytkit-split-active ytd-watch-flexy{display:block!important;overflow:visible!important;} html.ytkit-split-active ytd-watch-flexy #columns{max-width:100%!important;} html.ytkit-split-active ytd-masthead,html.ytkit-split-active #masthead-container{display:none!important;} html.ytkit-split-active #page-manager{margin-top:0!important;} html.ytkit-split-active ytd-app{--ytd-masthead-height:0px;} html.ytkit-split-active,html.ytkit-split-active body{overflow:hidden!important;} html.ytkit-split-active body{padding-top:0!important;} html.ytkit-split-active #player-container,html.ytkit-split-active #player-container-inner,html.ytkit-split-active #player-theater-container,html.ytkit-split-active ytd-player{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;} html.ytkit-split-active #movie_player{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;position:relative!important;left:auto!important;top:auto!important;} html.ytkit-split-active .html5-video-container{width:100%!important;height:100%!important;} html.ytkit-split-active video.html5-main-video{width:100%!important;height:100%!important;object-fit:contain!important;left:0!important;top:0!important;} html.ytkit-split-active ytd-player > #container,html.ytkit-split-active #player-container-inner #player{width:100%!important;height:100%!important;padding-bottom:0!important;} html.ytkit-split-active ytd-watch-flexy[flexy-header-flipper_] #player-container,html.ytkit-split-active ytd-watch-flexy[theater] #player-container,html.ytkit-split-active ytd-watch-flexy #player-container{width:100%!important;max-width:none!important;} #ytkit-split-right::-webkit-scrollbar{width:5px;} #ytkit-split-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14);border-radius:3px;} #ytkit-split-right::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);} .ytkit-divider-pip{opacity:0;transition:opacity 0.2s ease;} #ytkit-split-divider:hover .ytkit-divider-pip{opacity:1;} html.ytkit-split-active #below[style*="position:fixed"],html.ytkit-split-active #below[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.12) transparent!important;font-size:13px!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata{margin:-12px 0 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata .item{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title{font-size:15px!important;line-height:1.3!important;margin-bottom:2px!important;} html.ytkit-split-active #below[style*="position"] #owner{margin:2px 0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #actions{flex-wrap:wrap!important;max-width:100%!important;margin:0!important;padding:2px 0!important;gap:4px!important;overflow:visible!important;} html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed{flex-wrap:wrap!important;gap:2px!important;overflow:visible!important;} html.ytkit-split-active #below[style*="position"] #actions button,html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer{transform:scale(0.88)!important;transform-origin:center!important;} html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander,html.ytkit-split-active #below[style*="position"] ytd-text-inline-expander > div{padding:0!important;margin:0!important;max-width:100%!important;word-break:break-word!important;font-size:12px!important;line-height:1.4!important;} html.ytkit-split-active #below[style*="position"] #description-inline-expander{margin:4px 0!important;padding:6px 8px!important;background:rgba(255,255,255,0.04)!important;border-radius:6px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments{margin:0!important;padding:0 0 40px!important;} html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer,html.ytkit-split-active #below[style*="position"] ytd-comments-header-renderer > div{padding:0!important;margin:0!important;} html.ytkit-split-active #below[style*="position"] #count.ytd-comments-header-renderer{font-size:13px!important;margin:6px 0 2px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-simplebox-renderer{padding:0!important;margin:0 0 4px!important;transform:scale(0.92)!important;transform-origin:top left!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer{margin:0!important;padding:6px 4px!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-thread-renderer:last-child{border-bottom:none!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer{margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail{width:24px!important;height:24px!important;margin-right:8px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail img,html.ytkit-split-active #below[style*="position"] ytd-comment-renderer #author-thumbnail yt-img-shadow{width:24px!important;height:24px!important;border-radius:50%!important;} html.ytkit-split-active #below[style*="position"] #header-author{margin-bottom:1px!important;} html.ytkit-split-active #below[style*="position"] #author-text{font-size:12px!important;} html.ytkit-split-active #below[style*="position"] #published-time-text{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] #content-text{font-size:13px!important;line-height:1.35!important;margin:0!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] #action-buttons{margin-top:2px!important;} html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end{transform:scale(0.85)!important;transform-origin:left center!important;} html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle{font-size:11px!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer{margin-left:28px!important;padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-comment-replies-renderer #expander-contents{padding:0!important;} html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer,html.ytkit-split-active #below[style*="position"] ytd-item-section-renderer > #contents{padding:0!important;margin:0!important;max-width:100%!important;box-sizing:border-box!important;} html.ytkit-split-active #below[style*="position"] yt-formatted-string{max-width:100%!important;word-break:break-word!important;} html.ytkit-split-active #ytkit-split-right{border:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active ytd-live-chat-frame[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"],html.ytkit-split-active #chat[style*="position:fixed"]{scrollbar-width:thin!important;scrollbar-color:rgba(255,255,255,0.15) transparent!important;margin:0!important;max-width:none!important;border-radius:0!important;padding:0 6px 0 0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] iframe,html.ytkit-split-active #chat[style*="position"] iframe{width:100%!important;height:100%!important;min-height:0!important;border:none!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #container,html.ytkit-split-active #chat[style*="position"] #container{width:100%!important;height:100%!important;max-height:none!important;min-height:0!important;border-radius:0!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"] #show-hide-button,html.ytkit-split-active #chat[style*="position"] #show-hide-button{display:none!important;} html.ytkit-split-active ytd-live-chat-frame[style*="position"],html.ytkit-split-active #chat[style*="position"]{min-height:0!important;max-height:none!important;} #ytkit-split-close{position:absolute;bottom:16px;right:16px;z-index:25;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.55);display:none;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s,background 0.15s;pointer-events:auto;} #ytkit-split-close:hover{background:rgba(220,38,38,0.75);color:#fff;opacity:1!important;} #ytkit-split-collapse-strip{position:fixed;top:0;right:0;height:24px;z-index:10002;cursor:n-resize;background:transparent;transition:background 0.2s;pointer-events:auto;} #ytkit-split-collapse-strip:hover{background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 100%);} #ytkit-split-collapse-strip::after{content:'';display:block;width:24px;height:2px;background:rgba(255,255,255,0.12);border-radius:1px;margin:8px auto 0;opacity:0;transition:opacity 0.2s;} #ytkit-split-collapse-strip:hover::after{opacity:1;} html.ytkit-split-active #secondary,html.ytkit-split-active #below,html.ytkit-split-active #player-full-bleed-container,html.ytkit-split-active #columns,html.ytkit-split-active ytd-watch-flexy{view-transition-name:none!important;} html.ytkit-split-active ytd-live-chat-frame#chat,html.ytkit-split-active ytd-live-chat-frame{display:flex!important;flex-direction:column!important;max-height:none!important;min-height:0!important;visibility:visible!important;} html.ytkit-split-active #chat-container{display:block!important;height:auto!important;max-height:none!important;overflow:visible!important;visibility:visible!important;} html.ytkit-split-active ytd-live-chat-frame#chat>iframe,html.ytkit-split-active ytd-live-chat-frame>iframe{flex:1!important;height:100%!important;min-height:0!important;max-height:none!important;} html.ytkit-split-active ytd-watch-flexy.loading ytd-live-chat-frame#chat,html.ytkit-split-active ytd-watch-flexy:not([ghost-cards-enabled]).loading #chat{visibility:visible!important;}  `;
                 this._styleEl = injectStyle(css, this.id, true);
+                this._splitMetaStyleEl?.remove();
+                this._splitMetaStyleEl = injectStyle(`
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        display: grid !important;
+                        grid-template-columns: minmax(0, 1fr) !important;
+                        row-gap: 8px !important;
+                        align-content: start !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #top-row {
+                        display: grid !important;
+                        grid-template-columns: minmax(0, 1fr) !important;
+                        align-items: start !important;
+                        row-gap: 8px !important;
+                        margin: 0 0 6px !important;
+                        padding: 0 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata h1.style-scope.ytd-watch-metadata,
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata h1.ytd-watch-metadata {
+                        margin: 0 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title {
+                        font-size: clamp(1.02rem, 1.45vw, 1.16rem) !important;
+                        line-height: 1.34 !important;
+                        letter-spacing: -0.015em !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner.ytd-watch-metadata,
+                    html.ytkit-split-active #below[style*="position"] #owner {
+                        display: flex !important;
+                        align-items: flex-start !important;
+                        justify-content: flex-start !important;
+                        flex-wrap: wrap !important;
+                        gap: 8px 10px !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner ytd-video-owner-renderer {
+                        flex: 1 1 100% !important;
+                        min-width: 0 !important;
+                        margin-right: 0 !important;
+                        order: 1 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner #channel-name,
+                    html.ytkit-split-active #below[style*="position"] #owner #channel-name yt-formatted-string,
+                    html.ytkit-split-active #below[style*="position"] #owner #owner-sub-count,
+                    html.ytkit-split-active #below[style*="position"] #owner #owner-sub-count yt-formatted-string {
+                        display: block !important;
+                        min-width: 0 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner #owner-sub-count,
+                    html.ytkit-split-active #below[style*="position"] #owner #owner-sub-count yt-formatted-string {
+                        margin-top: 2px !important;
+                        font-size: 11px !important;
+                        line-height: 1.25 !important;
+                        color: rgba(255, 255, 255, 0.58) !important;
+                        white-space: normal !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner #subscribe-button,
+                    html.ytkit-split-active #below[style*="position"] #owner #notification-preference-button,
+                    html.ytkit-split-active #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next,
+                    html.ytkit-split-active #below[style*="position"] #owner > #ytkit-watch-btn,
+                    html.ytkit-split-active #below[style*="position"] #owner > #ytkit-page-btn-watch {
+                        flex: 0 0 auto !important;
+                        order: 2 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner > #ytkit-watch-btn,
+                    html.ytkit-split-active #below[style*="position"] #owner > #ytkit-page-btn-watch {
+                        order: 3 !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner > #ytkit-watch-btn {
+                        display: none !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner #subscribe-button .yt-spec-button-shape-next,
+                    html.ytkit-split-active #below[style*="position"] #owner #notification-preference-button .yt-spec-button-shape-next,
+                    html.ytkit-split-active #below[style*="position"] #owner yt-subscribe-button-view-model .yt-spec-button-shape-next {
+                        min-height: 30px !important;
+                        height: 30px !important;
+                        padding-inline: 10px !important;
+                        border-radius: 999px !important;
+                        font-size: 11px !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #owner #notification-preference-button .yt-spec-button-shape-next {
+                        min-width: 30px !important;
+                        padding-inline: 7px !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #actions,
+                    html.ytkit-split-active #below[style*="position"] #actions.ytd-watch-metadata {
+                        display: block !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        overflow: visible !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #actions-inner,
+                    html.ytkit-split-active #below[style*="position"] #actions ytd-menu-renderer,
+                    html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed {
+                        display: flex !important;
+                        flex-wrap: wrap !important;
+                        align-items: center !important;
+                        justify-content: flex-start !important;
+                        gap: 6px !important;
+                        overflow: visible !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #top-level-buttons-computed > * {
+                        flex: 0 0 auto !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #actions button,
+                    html.ytkit-split-active #below[style*="position"] #actions ytd-button-renderer,
+                    html.ytkit-split-active #below[style*="position"] #actions ytd-toggle-button-renderer,
+                    html.ytkit-split-active #below[style*="position"] #action-buttons ytd-toggle-button-renderer,
+                    html.ytkit-split-active #below[style*="position"] #action-buttons #reply-button-end {
+                        transform: none !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #action-buttons {
+                        margin-top: 4px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        flex-wrap: wrap !important;
+                        gap: 8px !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #actions .yt-spec-button-shape-next--segmented-start,
+                    html.ytkit-split-active #below[style*="position"] #actions .yt-spec-button-shape-next--segmented-end {
+                        text-align: center !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #actions #segmented-like-button button,
+                    html.ytkit-split-active #below[style*="position"] #actions #segmented-dislike-button button,
+                    html.ytkit-split-active #below[style*="position"] #actions like-button-view-model button,
+                    html.ytkit-split-active #below[style*="position"] #actions dislike-button-view-model button,
+                    html.ytkit-split-active #below[style*="position"] ytd-segmented-like-dislike-button-renderer,
+                    html.ytkit-split-active #below[style*="position"] segmented-like-dislike-button-view-model,
+                    html.ytkit-split-active #below[style*="position"] .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        overflow: visible !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #actions #segmented-like-button button,
+                    html.ytkit-split-active #below[style*="position"] #actions #segmented-dislike-button button,
+                    html.ytkit-split-active #below[style*="position"] #actions like-button-view-model button,
+                    html.ytkit-split-active #below[style*="position"] #actions dislike-button-view-model button {
+                        min-height: 32px !important;
+                        gap: 6px !important;
+                        padding-inline: 10px !important;
+                    }
+
+                    html.ytkit-split-active #below[style*="position"] #action-buttons #vote-count-middle,
+                    html.ytkit-split-active #below[style*="position"] #action-buttons .yt-spec-button-shape-next__button-text-content,
+                    html.ytkit-split-active #below[style*="position"] #actions #vote-count-middle,
+                    html.ytkit-split-active #below[style*="position"] #actions .yt-spec-button-shape-next__button-text-content {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        line-height: 1 !important;
+                        white-space: nowrap !important;
+                        margin: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer {
+                        display: grid !important;
+                        grid-template-columns: minmax(0, 1fr) minmax(170px, 230px) !important;
+                        align-items: center !important;
+                        column-gap: 12px !important;
+                        row-gap: 8px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #title {
+                        display: flex !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        flex-wrap: wrap !important;
+                        min-width: 0 !important;
+                        margin: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #leading-section,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #additional-section {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        margin: 0 !important;
+                        min-width: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments #count.ytd-comments-header-renderer,
+                    html.ytkit-split-open #below[style*="position"] #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        display: inline-block !important;
+                        align-items: baseline !important;
+                        flex: 0 1 auto !important;
+                        min-width: 0 !important;
+                        font-size: 13px !important;
+                        line-height: 1.15 !important;
+                        white-space: nowrap !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        display: inline-flex !important;
+                        gap: 0.26em !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer > span {
+                        display: inline-block !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments #count.ytd-comments-header-renderer::before {
+                        content: none !important;
+                        display: none !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer {
+                        margin-left: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #sort-menu button {
+                        min-height: 28px !important;
+                        height: 28px !important;
+                        padding: 0 11px !important;
+                        border-radius: 999px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #placeholder-area {
+                        min-height: 40px !important;
+                        padding: 0 12px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
+                        display: grid !important;
+                        grid-template-columns: 24px minmax(0, 1fr) !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        width: 100% !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail img,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #author-thumbnail yt-img-shadow,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar img,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #avatar yt-img-shadow {
+                        width: 24px !important;
+                        height: 24px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #simple-box {
+                        justify-self: end !important;
+                        width: min(100%, 230px) !important;
+                        min-width: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #main,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #creation-box,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #input-container,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer tp-yt-paper-input-container,
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #placeholder-area {
+                        width: 100% !important;
+                        min-width: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] ytd-watch-metadata #top-row {
+                        row-gap: 10px !important;
+                        margin: 0 0 10px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #owner,
+                    html.ytkit-split-open #below[style*="position"] #owner.ytd-watch-metadata {
+                        display: grid !important;
+                        grid-template-columns: minmax(0, 1fr) auto auto auto !important;
+                        align-items: center !important;
+                        column-gap: 8px !important;
+                        row-gap: 8px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #owner ytd-video-owner-renderer {
+                        grid-column: 1 / 2 !important;
+                        align-self: center !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #owner #subscribe-button,
+                    html.ytkit-split-open #below[style*="position"] #owner #notification-preference-button,
+                    html.ytkit-split-open #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next,
+                    html.ytkit-split-open #below[style*="position"] #owner > #ytkit-page-btn-watch {
+                        justify-self: end !important;
+                        align-self: center !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #actions,
+                    html.ytkit-split-open #below[style*="position"] #actions.ytd-watch-metadata {
+                        margin: 0 0 12px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #actions-inner,
+                    html.ytkit-split-open #below[style*="position"] #top-level-buttons-computed,
+                    html.ytkit-split-open #below[style*="position"] #actions ytd-menu-renderer {
+                        gap: 8px !important;
+                        row-gap: 8px !important;
+                        align-items: center !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #actions yt-button-shape,
+                    html.ytkit-split-open #below[style*="position"] #actions yt-button-view-model,
+                    html.ytkit-split-open #below[style*="position"] #actions ytd-button-renderer,
+                    html.ytkit-split-open #below[style*="position"] #actions ytd-toggle-button-renderer {
+                        transform: none !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #actions .ytkit-local-dl-btn {
+                        margin: 0 !important;
+                        align-self: center !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments {
+                        margin-top: 0 !important;
+                        padding-top: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer {
+                        grid-template-columns: minmax(0, 1fr) minmax(170px, 230px) !important;
+                        grid-auto-rows: minmax(0, auto) !important;
+                        align-items: center !important;
+                        column-gap: 12px !important;
+                        row-gap: 8px !important;
+                        margin: 0 !important;
+                        padding: 0 0 12px !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer #title,
+                    html.ytkit-split-open #below[style*="position"] #comments #count.ytd-comments-header-renderer,
+                    html.ytkit-split-open #below[style*="position"] #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        margin: 0 !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comments-header-renderer ytd-comment-simplebox-renderer {
+                        grid-column: 2 / 3 !important;
+                        justify-self: end !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: min(100%, 230px) !important;
+                    }
+
+                    html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #placeholder-area {
+                        width: 100% !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments#comments,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below ytd-comments#comments {
+                        margin-top: 10px !important;
+                        padding: 10px 12px 52px !important;
+                        border-radius: 18px !important;
+                        box-shadow: none !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: flex-start !important;
+                        flex-wrap: wrap !important;
+                        gap: 10px !important;
+                        margin: 0 0 12px !important;
+                        padding: 0 0 12px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #title,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #leading-section,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #additional-section {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        min-width: 0 !important;
+                        margin: 0 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments #count.ytd-comments-header-renderer,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer {
+                        display: inline-flex !important;
+                        align-items: baseline !important;
+                        gap: 0.26em !important;
+                        margin: 0 !important;
+                        font-size: 13px !important;
+                        line-height: 1.15 !important;
+                        white-space: nowrap !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer > span {
+                        display: inline-block !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #sort-menu,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        margin: 0 !important;
+                        flex: 0 0 auto !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #sort-menu tp-yt-paper-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer yt-sort-filter-sub-menu-renderer tp-yt-paper-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #sort-menu button {
+                        min-height: 28px !important;
+                        height: 28px !important;
+                        padding: 0 11px !important;
+                        border-radius: 999px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer ytd-comment-simplebox-renderer,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer #simple-box {
+                        margin-left: auto !important;
+                        width: min(100%, 230px) !important;
+                        min-width: min(230px, 100%) !important;
+                        flex: 0 1 230px !important;
+                        justify-self: auto !important;
+                        align-self: center !important;
+                        padding: 0 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #thumbnail-input-row {
+                        display: grid !important;
+                        grid-template-columns: 24px minmax(0, 1fr) !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        width: 100% !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #author-thumbnail,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #author-thumbnail img,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #author-thumbnail yt-img-shadow,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #avatar,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #avatar img,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #avatar yt-img-shadow {
+                        width: 24px !important;
+                        height: 24px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #main,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #creation-box,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #input-container,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer tp-yt-paper-input-container,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #placeholder-area {
+                        width: 100% !important;
+                        min-width: 0 !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #placeholder-area {
+                        min-height: 40px !important;
+                        padding: 0 12px !important;
+                        border-radius: 12px !important;
+                    }
+                `, this.id + '-meta-layout', true);
                 addNavigateRule(this._navRuleId, () => this._activate());
                 DebugManager.log('Theater', 'Theater Split initialized');
             },
@@ -5609,6 +6702,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._unmount();
                 this._styleEl?.remove();
+                this._splitMetaStyleEl?.remove();
+                this._splitMetaStyleEl = null;
                 removeNavigateRule(this._navRuleId);
             }
         },
@@ -6452,9 +7547,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 // Re-run on navigation
+                this._navTimer = null;
                 addNavigateRule(this.id, () => {
                     if (window.location.pathname === '/feed/subscriptions') {
-                        setTimeout(() => {
+                        clearTimeout(this._navTimer);
+                        this._navTimer = setTimeout(() => {
                             document.querySelectorAll('ytd-item-section-renderer').forEach(card => this._validateFeedCard(card));
                         }, 1000);
                     }
@@ -6534,9 +7631,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (document.getElementById('ytkit-subs-load-banner')) return;
                 const banner = document.createElement('div');
                 banner.id = 'ytkit-subs-load-banner';
-                banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:' + Z.BANNER + ';box-shadow:0 8px 32px rgba(0,0,0,0.4);font-family:"Roboto",Arial,sans-serif;max-width:600px;';
+                banner.className = 'ytkit-subs-load-banner';
+                banner.style.setProperty('--ytkit-banner-z', String(Z.BANNER));
 
                 const icon = document.createElement('div');
+                icon.className = 'ytkit-subs-load-banner__icon';
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '24'); svg.setAttribute('height', '24');
                 svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', '#f59e0b'); svg.setAttribute('stroke-width', '2');
@@ -6551,22 +7650,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 icon.appendChild(svg);
 
                 const textContainer = document.createElement('div');
-                textContainer.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:4px;';
+                textContainer.className = 'ytkit-subs-load-banner__copy';
                 const title = document.createElement('div');
-                title.style.cssText = 'color:#f1f5f9;font-size:14px;font-weight:600;';
+                title.className = 'ytkit-subs-load-banner__title';
                 title.textContent = 'Infinite scroll stopped';
                 const subtitle = document.createElement('div');
-                subtitle.style.cssText = 'color:#94a3b8;font-size:12px;';
+                subtitle.className = 'ytkit-subs-load-banner__subtitle';
                 subtitle.textContent = `${this._subsLoadState.totalVideosHidden} of ${this._subsLoadState.totalVideosLoaded} videos were hidden. Stopped loading to prevent performance issues.`;
                 textContainer.appendChild(title); textContainer.appendChild(subtitle);
 
                 const buttonContainer = document.createElement('div');
-                buttonContainer.style.cssText = 'display:flex;gap:8px;';
+                buttonContainer.className = 'ytkit-subs-load-banner__actions';
                 const resumeBtn = document.createElement('button');
+                resumeBtn.type = 'button';
+                resumeBtn.className = 'ytkit-subs-load-banner__btn ytkit-subs-load-banner__btn--primary';
                 resumeBtn.textContent = 'Load More';
-                resumeBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:#3b82f6;color:white;font-size:13px;font-weight:500;cursor:pointer;transition:background 0.2s;';
-                resumeBtn.onmouseenter = () => { resumeBtn.style.background = '#2563eb'; };
-                resumeBtn.onmouseleave = () => { resumeBtn.style.background = '#3b82f6'; };
                 resumeBtn.onclick = () => {
                     this._subsLoadState.consecutiveHiddenBatches = 0;
                     this._removeLoadBlocker();
@@ -6574,11 +7672,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     setTimeout(() => window.scrollBy(0, -100), 100);
                 };
                 const dismissBtn = document.createElement('button');
+                dismissBtn.type = 'button';
+                dismissBtn.className = 'ytkit-subs-load-banner__btn ytkit-subs-load-banner__btn--ghost';
                 dismissBtn.textContent = '\u2715';
                 dismissBtn.title = 'Dismiss';
-                dismissBtn.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:14px;cursor:pointer;transition:all 0.2s;';
-                dismissBtn.onmouseenter = () => { dismissBtn.style.background = '#1e293b'; dismissBtn.style.color = '#f1f5f9'; };
-                dismissBtn.onmouseleave = () => { dismissBtn.style.background = 'transparent'; dismissBtn.style.color = '#94a3b8'; };
+                dismissBtn.setAttribute('aria-label', 'Dismiss subscription load banner');
                 dismissBtn.onclick = () => banner.remove();
                 buttonContainer.appendChild(resumeBtn); buttonContainer.appendChild(dismissBtn);
                 banner.appendChild(icon); banner.appendChild(textContainer); banner.appendChild(buttonContainer);
@@ -6933,18 +8031,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return el;
                 };
                 const hideAllBtn = document.createElement('button');
-                hideAllBtn.className = className;
+                hideAllBtn.type = 'button';
+                hideAllBtn.className = `${className} ytkit-watch-action-btn ytkit-hide-all-btn`;
                 hideAllBtn.title = 'Hide all visible videos on this page';
                 const svg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
                 svg.appendChild(createSvgElement('path', { d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' }));
                 svg.appendChild(createSvgElement('line', { x1: '1', y1: '1', x2: '23', y2: '23' }));
-                hideAllBtn.appendChild(svg);
+                const iconWrap = document.createElement('span');
+                iconWrap.className = 'ytkit-watch-action-btn__icon';
+                iconWrap.appendChild(svg);
+                hideAllBtn.appendChild(iconWrap);
                 const text = document.createElement('span');
+                text.className = 'ytkit-watch-action-btn__label';
                 text.textContent = 'Hide All';
                 hideAllBtn.appendChild(text);
-                hideAllBtn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;border:none;background:#dc2626;color:white;font-family:"Roboto",Arial,sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.2s;';
-                hideAllBtn.onmouseenter = () => { hideAllBtn.style.background = '#b91c1c'; };
-                hideAllBtn.onmouseleave = () => { hideAllBtn.style.background = '#dc2626'; };
                 hideAllBtn.addEventListener('click', () => this._hideAllVideos());
                 return hideAllBtn;
             },
@@ -6982,10 +8082,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-video-hide-btn svg { width:16px;height:16px;fill:#fff;pointer-events:none; }
                     ytd-rich-item-renderer:hover .ytkit-video-hide-btn, ytd-video-renderer:hover .ytkit-video-hide-btn, ytd-grid-video-renderer:hover .ytkit-video-hide-btn, ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity:1; }
                     .ytkit-video-hidden { display:none !important; }
-                    #ytkit-hide-toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#323232;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:${Z.TOAST};opacity:0;transition:all 0.3s;display:flex;align-items:center;gap:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3); }
+                    #ytkit-hide-toast { position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(100px);max-width:min(420px,calc(100vw - 20px));min-height:38px;background:linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015)),rgba(14,18,24,0.96);color:rgba(255,255,255,0.9);padding:8px 10px 8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);font-size:12px;z-index:${Z.TOAST};opacity:0;transition:opacity 0.18s ease,transform 0.18s ease;display:flex;align-items:center;gap:8px;box-shadow:0 14px 30px rgba(0,0,0,0.22); }
                     #ytkit-hide-toast.show { transform:translateX(-50%) translateY(0);opacity:1; }
-                    #ytkit-hide-toast button { background:transparent;border:none;color:#3ea6ff;cursor:pointer;font-size:14px;font-weight:500;padding:4px 8px;border-radius:4px; }
-                    #ytkit-hide-toast button:hover { background:rgba(62,166,255,0.1); }
+                    #ytkit-hide-toast button { min-height:28px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.84);cursor:pointer;font-size:11px;font-weight:600;padding:0 10px;border-radius:999px;transition:background 0.15s ease,border-color 0.15s ease,color 0.15s ease; }
+                    #ytkit-hide-toast button:hover { background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.14);color:#fff; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
                 this._processAllVideos();
@@ -7032,13 +8132,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const isOnHomePage = path === '/';
                     if (isOnSubsPage) {
                         if (!wasOnSubsPage) this._resetSubsLoadState();
-                        setTimeout(() => this._createSubsHideAllButton(), 1000);
+                        clearTimeout(this._subsButtonTimer);
+                        this._subsButtonTimer = setTimeout(() => this._createSubsHideAllButton(), 1000);
                     } else {
                         this._removeSubsHideAllButton();
                         this._removeLoadBlocker();
                     }
                     if (isOnHomePage) {
-                        setTimeout(() => this._createHomeHideAllButton(), 1000);
+                        clearTimeout(this._homeButtonTimer);
+                        this._homeButtonTimer = setTimeout(() => this._createHomeHideAllButton(), 1000);
                     } else {
                         this._removeHomeHideAllButton();
                     }
@@ -7707,23 +8809,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     .ytkit-ql-bottom {
-                        display: flex;
-                        gap: 4px;
-                        padding: 2px 0 0;
+                        display: grid;
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        gap: 6px;
+                        padding: 4px 0 0;
+                        align-items: stretch;
                     }
 
                     .ytkit-ql-bottom-btn {
+                        display: inline-flex;
+                        align-items: center;
                         justify-content: center;
-                        flex: 1;
                         min-width: 0;
+                        min-height: 34px;
                         opacity: 0.72;
-                        padding: 7px;
+                        padding: 0;
                         font-size: 0;
+                        line-height: 1;
                     }
 
                     .ytkit-ql-bottom-btn .ytkit-ql-icon {
                         width: 14px;
                         height: 14px;
+                        margin: 0;
+                        display: block;
                     }
 
                     .ytkit-ql-bottom-btn span {
@@ -7991,15 +9100,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!entry) return;
                     const bar = document.createElement('div');
                     bar.className = 'ytkit-progress-bar';
-                    const color = entry.p >= 90 ? '#22c55e' : '#3ea6ff';
-                    bar.style.cssText = `position:absolute;bottom:0;left:0;height:3px;background:${color};z-index:10;border-radius:0 1px 0 0;transition:width 0.3s;width:${entry.p}%;`;
+                    bar.style.setProperty('--ytkit-progress-width', `${entry.p}%`);
+                    if (entry.p >= 90) bar.classList.add('is-complete');
                     thumb.style.position = thumb.style.position || 'relative';
                     thumb.appendChild(bar);
                 });
             },
 
             init() {
-                this._styleElement = injectStyle('.ytkit-progress-bar { pointer-events: none; }', this.id, true);
+                this._styleElement = injectStyle(`
+                    .ytkit-progress-bar {
+                        position: absolute;
+                        left: 0;
+                        right: auto;
+                        bottom: 0;
+                        height: 4px;
+                        width: var(--ytkit-progress-width, 0%);
+                        border-radius: 0 999px 0 0;
+                        background: linear-gradient(90deg, #69c0ff, #3ea6ff);
+                        box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+                        z-index: 10;
+                        pointer-events: none;
+                        transition: width 0.3s ease, background 0.2s ease;
+                    }
+                    .ytkit-progress-bar.is-complete {
+                        background: linear-gradient(90deg, #34d399, #22c55e);
+                    }
+                `, this.id, true);
                 this._addProgressBars();
                 addMutationRule(this.id, () => this._addProgressBars());
                 addNavigateRule('watchProgress', () => {
@@ -8038,13 +9165,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
+            _debounceTimer: null,
             init() {
-                this._observer = new MutationObserver(() => this._dismiss());
+                this._observer = new MutationObserver(() => {
+                    clearTimeout(this._debounceTimer);
+                    this._debounceTimer = setTimeout(() => this._dismiss(), 200);
+                });
                 const target = document.querySelector('ytd-popup-container') || document.body;
                 this._observer.observe(target, { childList: true, subtree: true });
                 addNavigateRule('stillWatching', () => this._dismiss());
             },
             destroy() {
+                clearTimeout(this._debounceTimer);
                 this._observer?.disconnect(); this._observer = null;
                 removeNavigateRule('stillWatching');
             }
@@ -8079,7 +9211,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!timeDisplay) return;
                     this._el = document.createElement('span');
                     this._el.className = 'ytkit-remaining-time';
-                    this._el.style.cssText = 'margin-left:8px;color:rgba(255,255,255,0.7);font-size:inherit;';
                     timeDisplay.appendChild(this._el);
                 }
                 this._el.textContent = `(-${this._formatTime(remaining)})`;
@@ -8131,7 +9262,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 let text = this._formatDuration(totalSecs);
                 if (speed !== 1) text += ` (${this._formatDuration(Math.round(totalSecs / speed))} at ${speed}x)`;
                 badge.textContent = text;
-                badge.style.cssText = 'display:inline-block;margin-left:8px;padding:2px 8px;background:rgba(255,255,255,0.1);border-radius:4px;font-size:12px;color:rgba(255,255,255,0.7);vertical-align:middle;';
                 target.appendChild(badge);
             },
 
@@ -8235,12 +9365,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const menu = document.querySelector('ytd-playlist-panel-renderer #playlist-action-menu, ytd-playlist-panel-renderer .header-action-menu');
                 if (!menu || menu.querySelector('.ytkit-reverse-btn')) return;
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = 'ytkit-reverse-btn';
                 btn.textContent = 'Reverse';
                 btn.title = 'Play oldest first';
-                btn.style.cssText = 'padding:4px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:#fff;font-size:12px;cursor:pointer;transition:background 0.2s;margin-left:8px;';
-                btn.onmouseenter = () => { btn.style.background = 'rgba(255,255,255,0.15)'; };
-                btn.onmouseleave = () => { btn.style.background = 'rgba(255,255,255,0.08)'; };
                 btn.onclick = () => {
                     const container = document.querySelector('ytd-playlist-panel-renderer #items');
                     if (!container) return;
@@ -8286,9 +9414,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.target = '_blank';
                 btn.title = 'RSS Feed';
                 btn.textContent = 'RSS';
-                btn.style.cssText = 'display:inline-flex;align-items:center;padding:6px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:18px;background:rgba(255,255,255,0.08);color:#f97316;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;margin-left:8px;transition:background 0.2s;';
-                btn.onmouseenter = () => { btn.style.background = 'rgba(249,115,22,0.15)'; };
-                btn.onmouseleave = () => { btn.style.background = 'rgba(255,255,255,0.08)'; };
                 container.appendChild(btn);
             },
 
@@ -8389,7 +9514,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const countEl = document.createElement('span');
                 countEl.className = 'ytkit-dislike-count';
                 countEl.textContent = this._formatCount(data.dislikes);
-                countEl.style.cssText = 'margin-left:4px;font-size:12px;color:rgba(255,255,255,0.7);';
                 dislikeBtn.parentElement.style.position = dislikeBtn.parentElement.style.position || 'relative';
                 dislikeBtn.parentElement.appendChild(countEl);
                 // Add ratio bar below like/dislike buttons
@@ -8399,9 +9523,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const likePercent = total > 0 ? ((data.likes / total) * 100).toFixed(1) : 100;
                     const bar = document.createElement('div');
                     bar.className = 'ytkit-ratio-bar';
-                    bar.style.cssText = `width:100%;height:2px;margin-top:4px;border-radius:1px;background:rgba(255,255,255,0.15);overflow:hidden;`;
                     const fill = document.createElement('div');
-                    fill.style.cssText = `width:${likePercent}%;height:100%;background:#3ea6ff;border-radius:1px;`;
+                    fill.className = 'ytkit-ratio-bar__fill';
+                    fill.style.width = `${likePercent}%`;
                     bar.appendChild(fill);
                     segmented.style.position = segmented.style.position || 'relative';
                     segmented.appendChild(bar);
@@ -8409,7 +9533,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                this._styleEl = injectStyle('.ytkit-ratio-bar { pointer-events: none; }', this.id, true);
+                this._styleEl = injectStyle(`
+                    .ytkit-dislike-count {
+                        display: inline-flex;
+                        align-items: center;
+                        margin-left: 6px;
+                        color: rgba(255,255,255,0.76);
+                        font-size: 11px;
+                        font-weight: 700;
+                        font-variant-numeric: tabular-nums;
+                    }
+                    .ytkit-ratio-bar {
+                        width: 100%;
+                        height: 3px;
+                        margin-top: 5px;
+                        border-radius: 999px;
+                        background: rgba(255,255,255,0.12);
+                        overflow: hidden;
+                        pointer-events: none;
+                    }
+                    .ytkit-ratio-bar__fill {
+                        height: 100%;
+                        border-radius: inherit;
+                        background: linear-gradient(90deg, #69c0ff, #3ea6ff);
+                    }
+                `, this.id, true);
                 setTimeout(() => this._apply(), 2000);
                 addNavigateRule('ryd', () => setTimeout(() => this._apply(), 2500));
             },
@@ -8512,9 +9660,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!video || video.playbackRate === 1) return;
                 const speeds = this._getSpeeds();
                 speeds[channelId] = video.playbackRate;
-                // Prune to 500 channels max
+                // Prune to 500 channels max (delete oldest 50 when over limit)
                 const keys = Object.keys(speeds);
-                if (keys.length > 500) delete speeds[keys[0]];
+                if (keys.length > 500) {
+                    keys.slice(0, keys.length - 450).forEach(k => delete speeds[k]);
+                }
                 StorageManager.set(this._storageKey, speeds);
             },
 
@@ -8806,7 +9956,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!player || player.querySelector('.ytkit-speed-badge')) return;
                 this._badge = document.createElement('div');
                 this._badge.className = 'ytkit-speed-badge';
-                this._badge.style.cssText = 'position:absolute;bottom:68px;right:12px;padding:4px 10px;background:rgba(0,0,0,0.75);color:#fff;font-size:13px;font-weight:600;border-radius:6px;cursor:ns-resize;z-index:100;user-select:none;transition:background 0.15s;';
                 this._badge.title = 'Scroll to adjust speed (0.1x-16x)';
                 this._updateBadge();
                 this._wheelHandler = (e) => {
@@ -8834,7 +9983,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!video) return;
                 const rate = video.playbackRate;
                 this._badge.textContent = `${rate.toFixed(2)}x`;
-                this._badge.style.color = rate === 1 ? '#fff' : '#fbbf24';
+                this._badge.classList.toggle('is-modified', Math.abs(rate - 1) > 0.01);
             },
 
             init() {
@@ -8876,7 +10025,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const badge = document.createElement('span');
                         badge.className = 'ytkit-channel-vid-count';
                         badge.textContent = ` · ${match[1]}`;
-                        badge.style.cssText = 'color:rgba(255,255,255,0.5);font-size:12px;';
                         ownerEl.parentElement.setAttribute('ytkit-vid-count', '1');
                         ownerEl.after(badge);
                     }
@@ -8930,11 +10078,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const thumbnail = item.querySelector('ytd-thumbnail, a#thumbnail');
                     if (!thumbnail) return;
                     const btn = document.createElement('button');
+                    btn.type = 'button';
                     btn.className = 'ytkit-not-interested-btn';
+                    btn.setAttribute('aria-label', 'Not interested');
                     btn.title = 'Not interested';
                     btn.textContent = '\u00D7';
-                    btn.style.cssText = `position:absolute;top:4px;left:4px;width:24px;height:24px;border:none;border-radius:50%;background:rgba(0,0,0,0.7);color:#fff;font-size:16px;line-height:24px;text-align:center;cursor:pointer;z-index:${Z.HIDE_BTN};opacity:0;transition:opacity 0.2s;padding:0;`;
                     thumbnail.style.position = thumbnail.style.position || 'relative';
+                    btn.style.zIndex = String(Z.HIDE_BTN);
                     thumbnail.appendChild(btn);
 
                     btn.onclick = (e) => {
@@ -8968,7 +10118,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                const css = `ytd-rich-item-renderer:hover .ytkit-not-interested-btn, ytd-video-renderer:hover .ytkit-not-interested-btn { opacity: 1 !important; } .ytkit-not-interested-btn:hover { background: rgba(239,68,68,0.9) !important; transform: scale(1.1); }`;
+                const css = `
+                    .ytkit-not-interested-btn {
+                        position: absolute !important;
+                        top: 4px !important;
+                        left: 4px !important;
+                        font-size: 16px !important;
+                        line-height: 1 !important;
+                    }
+                    ytd-rich-item-renderer:hover .ytkit-not-interested-btn,
+                    ytd-video-renderer:hover .ytkit-not-interested-btn {
+                        opacity: 1 !important;
+                    }
+                `;
                 this._styleEl = injectStyle(css, this.id, true);
                 this._process();
                 addMutationRule(this.id, () => this._process());
@@ -9037,32 +10199,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel.textContent = '';
                 if (list.length === 0) {
                     const empty = document.createElement('div');
+                    empty.className = 'ytkit-bookmarks-empty';
                     empty.textContent = 'No bookmarks for this video';
-                    empty.style.cssText = 'color:rgba(255,255,255,0.4);font-size:12px;text-align:center;padding:12px;';
                     this._panel.appendChild(empty);
                     return;
                 }
                 list.forEach((bm, idx) => {
                     const row = document.createElement('div');
-                    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:4px;cursor:pointer;transition:background 0.15s;';
-                    row.onmouseenter = () => { row.style.background = 'rgba(255,255,255,0.08)'; };
-                    row.onmouseleave = () => { row.style.background = ''; };
+                    row.className = 'ytkit-bookmark-row';
                     const ts = document.createElement('span');
+                    ts.className = 'ytkit-bookmark-ts';
                     ts.textContent = this._formatTime(bm.t);
-                    ts.style.cssText = 'color:#3ea6ff;font-size:12px;font-weight:600;min-width:48px;';
                     const note = document.createElement('input');
                     note.type = 'text';
+                    note.className = 'ytkit-bookmark-note';
                     note.value = bm.n || '';
                     note.placeholder = 'Add note...';
-                    note.style.cssText = 'flex:1;background:transparent;border:none;color:#fff;font-size:12px;outline:none;padding:2px 4px;';
                     note.onclick = (e) => e.stopPropagation();
                     note.onchange = () => {
                         const bks = this._getBookmarks();
                         if (bks[videoId]?.[idx]) { bks[videoId][idx].n = note.value; StorageManager.set(this._storageKey, bks); }
                     };
                     const del = document.createElement('button');
+                    del.type = 'button';
+                    del.className = 'ytkit-bookmark-delete';
                     del.textContent = '\u00D7';
-                    del.style.cssText = 'background:none;border:none;color:rgba(255,255,255,0.4);font-size:16px;cursor:pointer;padding:0 4px;';
                     del.onclick = (e) => { e.stopPropagation(); this._deleteBookmark(videoId, idx); };
                     row.onclick = () => {
                         const video = document.querySelector('video.html5-main-video');
@@ -9081,24 +10242,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const container = document.createElement('div');
                 container.className = 'ytkit-bookmarks-container';
-                container.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;margin-bottom:12px;overflow:hidden;';
 
                 const header = document.createElement('div');
-                header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.08);';
+                header.className = 'ytkit-bookmarks-header';
                 const title = document.createElement('span');
+                title.className = 'ytkit-bookmarks-title';
                 title.textContent = 'Bookmarks';
-                title.style.cssText = 'color:rgba(255,255,255,0.7);font-size:13px;font-weight:600;';
                 const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'ytkit-bookmarks-add';
                 addBtn.textContent = '+ Add';
-                addBtn.style.cssText = 'background:rgba(62,166,255,0.15);color:#3ea6ff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:background 0.15s;';
-                addBtn.onmouseenter = () => { addBtn.style.background = 'rgba(62,166,255,0.25)'; };
-                addBtn.onmouseleave = () => { addBtn.style.background = 'rgba(62,166,255,0.15)'; };
                 addBtn.onclick = () => this._addBookmark();
                 header.appendChild(title);
                 header.appendChild(addBtn);
 
                 this._panel = document.createElement('div');
-                this._panel.style.cssText = 'max-height:200px;overflow-y:auto;padding:4px 0;';
+                this._panel.className = 'ytkit-bookmarks-body';
 
                 container.appendChild(header);
                 container.appendChild(this._panel);
@@ -9182,11 +10341,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     wrapper.className = 'ytkit-load-more-wrapper';
                     wrapper.style.cssText = 'display:flex;justify-content:center;padding:20px;';
                     const btn = document.createElement('button');
+                    btn.type = 'button';
                     btn.className = 'ytkit-load-more-btn';
                     btn.textContent = 'Load More';
-                    btn.style.cssText = 'padding:10px 32px;border:1px solid rgba(255,255,255,0.2);border-radius:20px;background:rgba(255,255,255,0.06);color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;';
-                    btn.onmouseenter = () => { btn.style.background = 'rgba(255,255,255,0.12)'; btn.style.borderColor = 'rgba(255,255,255,0.3)'; };
-                    btn.onmouseleave = () => { btn.style.background = 'rgba(255,255,255,0.06)'; btn.style.borderColor = 'rgba(255,255,255,0.2)'; };
                     btn.onclick = () => {
                         // Restore the continuation element so YouTube loads the next page
                         cont.style.visibility = '';
@@ -9957,16 +11114,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const secs = Math.floor(startSec % 60);
 
                         const line = document.createElement('div');
-                        line.style.cssText = 'display:flex;gap:8px;padding:4px 8px;cursor:pointer;border-radius:4px;';
-                        line.addEventListener('mouseenter', () => line.style.background = 'rgba(255,255,255,0.1)');
-                        line.addEventListener('mouseleave', () => line.style.background = 'transparent');
+                        line.className = 'ytkit-transcript-line';
 
                         const ts = document.createElement('span');
-                        ts.style.cssText = 'color:#3ea6ff;font-size:12px;min-width:42px;flex-shrink:0;font-family:monospace;';
+                        ts.className = 'ytkit-transcript-line__ts';
                         ts.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
 
                         const txt = document.createElement('span');
-                        txt.style.cssText = 'color:#eee;font-size:13px;line-height:1.4;';
+                        txt.className = 'ytkit-transcript-line__text';
                         txt.textContent = text;
 
                         line.appendChild(ts);
@@ -9989,23 +11144,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const panel = document.createElement('div');
                 panel.id = 'ytkit-transcript-panel';
-                panel.style.cssText = 'background:rgba(30,30,30,0.95);border-radius:12px;padding:12px;margin-bottom:16px;max-height:500px;display:flex;flex-direction:column;';
+                panel.className = 'ytkit-transcript-panel';
 
                 const header = document.createElement('div');
-                header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
+                header.className = 'ytkit-transcript-header';
                 const title = document.createElement('span');
-                title.style.cssText = 'color:#fff;font-weight:600;font-size:14px;';
+                title.className = 'ytkit-transcript-title';
                 title.textContent = 'Transcript';
-                const closeBtn = document.createElement('span');
-                closeBtn.style.cssText = 'color:#aaa;cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;';
-                closeBtn.textContent = '\u00D7';
-                closeBtn.addEventListener('click', () => { panel.style.display = panel.style.display === 'none' ? 'flex' : 'none'; });
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'ytkit-transcript-toggle';
+                closeBtn.textContent = 'Hide';
+                closeBtn.setAttribute('aria-expanded', 'true');
+                closeBtn.setAttribute('aria-label', 'Collapse transcript');
                 header.appendChild(title);
                 header.appendChild(closeBtn);
 
                 const body = document.createElement('div');
                 body.className = 'ytkit-transcript-body';
-                body.style.cssText = 'overflow-y:auto;flex:1;color:#aaa;font-size:13px;';
+                closeBtn.addEventListener('click', () => {
+                    const collapsed = panel.classList.toggle('is-collapsed');
+                    body.hidden = collapsed;
+                    closeBtn.textContent = collapsed ? 'Show' : 'Hide';
+                    closeBtn.setAttribute('aria-expanded', String(!collapsed));
+                    closeBtn.setAttribute('aria-label', collapsed ? 'Expand transcript' : 'Collapse transcript');
+                });
 
                 panel.appendChild(header);
                 panel.appendChild(body);
@@ -10341,45 +11504,57 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const bar = document.createElement('div');
                 bar.id = 'ytkit-mini-player-bar';
-                bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:64px;background:rgba(15,15,15,0.97);z-index:99999;display:none;align-items:center;padding:0 16px;gap:12px;border-top:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(8px);transition:transform 0.3s ease;';
+                bar.className = 'ytkit-mini-player-bar';
+                bar.setAttribute('role', 'complementary');
 
                 // Thumbnail
                 const thumb = document.createElement('div');
-                thumb.style.cssText = 'width:100px;height:56px;background:#222;border-radius:4px;overflow:hidden;flex-shrink:0;cursor:pointer;';
+                thumb.className = 'ytkit-mini-player-thumb';
                 const img = document.createElement('img');
                 const videoId = new URL(location.href).searchParams.get('v');
                 if (videoId) img.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
-                img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                img.className = 'ytkit-mini-player-thumb-image';
                 thumb.appendChild(img);
                 thumb.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
                 // Title
                 const title = document.createElement('div');
-                title.style.cssText = 'flex:1;color:#fff;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                title.className = 'ytkit-mini-player-title';
                 const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, h1.title yt-formatted-string');
                 title.textContent = titleEl?.textContent || 'Now Playing';
 
                 // Play/Pause button
                 const playBtn = document.createElement('button');
-                playBtn.style.cssText = 'background:none;border:none;color:#fff;cursor:pointer;font-size:22px;padding:8px;';
+                playBtn.type = 'button';
+                playBtn.className = 'ytkit-mini-player-btn ytkit-mini-player-btn--primary';
+                playBtn.setAttribute('aria-label', 'Pause video');
                 playBtn.textContent = '\u23F8'; // pause symbol
                 playBtn.addEventListener('click', () => {
                     const v = document.querySelector('video');
                     if (!v) return;
-                    if (v.paused) { v.play(); playBtn.textContent = '\u23F8'; }
-                    else { v.pause(); playBtn.textContent = '\u25B6'; }
+                    if (v.paused) {
+                        v.play();
+                        playBtn.textContent = '\u23F8';
+                        playBtn.setAttribute('aria-label', 'Pause video');
+                    } else {
+                        v.pause();
+                        playBtn.textContent = '\u25B6';
+                        playBtn.setAttribute('aria-label', 'Play video');
+                    }
                 });
 
                 // Progress
                 const progress = document.createElement('div');
-                progress.style.cssText = 'position:absolute;top:-2px;left:0;right:0;height:3px;background:rgba(255,255,255,0.1);';
+                progress.className = 'ytkit-mini-player-progress';
                 const progressFill = document.createElement('div');
-                progressFill.style.cssText = 'height:100%;background:#f00;width:0%;transition:width 0.5s linear;';
+                progressFill.className = 'ytkit-mini-player-progress-fill';
                 progress.appendChild(progressFill);
 
                 // Close button
                 const closeBtn = document.createElement('button');
-                closeBtn.style.cssText = 'background:none;border:none;color:#aaa;cursor:pointer;font-size:18px;padding:8px;';
+                closeBtn.type = 'button';
+                closeBtn.className = 'ytkit-mini-player-btn';
+                closeBtn.setAttribute('aria-label', 'Dismiss mini player bar');
                 closeBtn.textContent = '\u00D7';
                 closeBtn.addEventListener('click', () => { bar.style.display = 'none'; this._dismissed = true; });
 
@@ -10619,19 +11794,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const btn = document.createElement('button');
                 btn.className = 'ytkit-copy-title-btn';
+                btn.type = 'button';
                 btn.title = 'Copy title';
-                btn.style.cssText = 'background:none;border:none;cursor:pointer;color:#aaa;font-size:16px;padding:2px 6px;margin-left:8px;vertical-align:middle;opacity:0.6;transition:opacity 0.2s;';
-                btn.textContent = '\uD83D\uDCCB'; // clipboard emoji
-                btn.addEventListener('mouseenter', () => btn.style.opacity = '1');
-                btn.addEventListener('mouseleave', () => btn.style.opacity = '0.6');
+                btn.setAttribute('aria-label', 'Copy video title');
+                const renderIcon = (copied) => {
+                    btn.textContent = '';
+                    const icon = copied
+                        ? ICONS.check()
+                        : createSVG('0 0 24 24', [
+                            { type: 'rect', x: 9, y: 9, width: 11, height: 11, rx: 2 },
+                            { type: 'path', d: 'M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1' }
+                        ], { strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' });
+                    icon.setAttribute('aria-hidden', 'true');
+                    btn.appendChild(icon);
+                    btn.classList.toggle('is-copied', !!copied);
+                };
+                renderIcon(false);
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, h1 yt-formatted-string')?.textContent?.trim();
                     if (title) {
                         try {
                             await navigator.clipboard.writeText(title);
-                            btn.textContent = '\u2705';
-                            setTimeout(() => btn.textContent = '\uD83D\uDCCB', 1500);
+                            renderIcon(true);
+                            setTimeout(() => renderIcon(false), 1500);
                         } catch(e) { /* clipboard API failed */ }
                     }
                 });
@@ -10699,7 +11885,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelector('.ytkit-age-badge')?.remove();
                 const badge = document.createElement('span');
                 badge.className = 'ytkit-age-badge';
-                badge.style.cssText = 'color:#aaa;font-size:12px;margin-left:8px;background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:12px;';
                 badge.textContent = ageStr;
                 dateEl.parentElement?.appendChild(badge);
                 this._el = badge;
@@ -10734,7 +11919,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const overlay = document.createElement('div');
                 overlay.id = 'ytkit-speed-indicator';
-                overlay.style.cssText = 'position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.7);color:#fff;font-size:13px;font-weight:600;padding:4px 10px;border-radius:6px;z-index:100;pointer-events:none;display:none;font-family:monospace;';
+                overlay.className = 'ytkit-speed-indicator';
                 player.appendChild(overlay);
                 this._overlay = overlay;
 
@@ -11089,12 +12274,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const container = document.createElement('div');
                 container.className = 'ytkit-playlist-enhance';
-                container.style.cssText = 'display:flex;gap:8px;padding:4px 8px;';
 
                 // Shuffle button
                 const shuffleBtn = document.createElement('button');
-                shuffleBtn.style.cssText = 'background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;padding:4px 10px;border-radius:16px;font-size:12px;';
-                shuffleBtn.textContent = '\uD83D\uDD00 Shuffle';
+                shuffleBtn.type = 'button';
+                shuffleBtn.className = 'ytkit-playlist-action';
+                shuffleBtn.textContent = 'Shuffle';
                 shuffleBtn.addEventListener('click', () => {
                     const items = document.querySelectorAll('ytd-playlist-panel-video-renderer');
                     if (items.length < 2) return;
@@ -11106,16 +12291,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 // Copy playlist URLs
                 const copyBtn = document.createElement('button');
-                copyBtn.style.cssText = 'background:rgba(255,255,255,0.1);border:none;color:#fff;cursor:pointer;padding:4px 10px;border-radius:16px;font-size:12px;';
-                copyBtn.textContent = '\uD83D\uDCCB Copy All URLs';
+                copyBtn.type = 'button';
+                copyBtn.className = 'ytkit-playlist-action';
+                copyBtn.textContent = 'Copy All URLs';
                 copyBtn.addEventListener('click', async () => {
                     const items = document.querySelectorAll('ytd-playlist-panel-video-renderer a#wc-endpoint');
                     const urls = Array.from(items).map(a => a.href).filter(Boolean);
                     if (urls.length > 0) {
                         try {
                             await navigator.clipboard.writeText(urls.join('\n'));
-                            copyBtn.textContent = '\u2705 Copied!';
-                            setTimeout(() => copyBtn.textContent = '\uD83D\uDCCB Copy All URLs', 2000);
+                            copyBtn.textContent = 'Copied';
+                            setTimeout(() => copyBtn.textContent = 'Copy All URLs', 2000);
                         } catch(e) {}
                     }
                 });
@@ -12003,11 +13189,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     items.forEach(item => parent.appendChild(item));
                     parent.dataset.sorted = 'true';
                 };
-                this._observer = new MutationObserver(sortNotifications);
+                this._sortTimer = null;
+                this._observer = new MutationObserver(() => {
+                    clearTimeout(this._sortTimer);
+                    this._sortTimer = setTimeout(sortNotifications, 300);
+                });
                 const popup = document.querySelector('ytd-popup-container');
                 if (popup) this._observer.observe(popup, { childList: true, subtree: true });
             },
-            destroy() { this._observer?.disconnect(); this._observer = null; }
+            destroy() { clearTimeout(this._sortTimer); this._observer?.disconnect(); this._observer = null; }
         },
 
         // ── Preload Comments ──
@@ -12190,13 +13380,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._currentIndex = visibleThreads.indexOf(thread);
             },
             _getViewportIndex(threads) {
-                const focusIndex = threads.findIndex(thread => {
-                    const rect = thread.getBoundingClientRect();
-                    return rect.top <= window.innerHeight * 0.48 && rect.bottom >= window.innerHeight * 0.28;
-                });
-                if (focusIndex !== -1) return focusIndex;
-
-                return threads.findIndex(thread => thread.getBoundingClientRect().top >= 180);
+                const vh = window.innerHeight;
+                const topThreshold = vh * 0.48;
+                const bottomThreshold = vh * 0.28;
+                let fallbackIndex = -1;
+                for (let i = 0; i < threads.length; i++) {
+                    const rect = threads[i].getBoundingClientRect();
+                    if (rect.top <= topThreshold && rect.bottom >= bottomThreshold) return i;
+                    if (fallbackIndex === -1 && rect.top >= 180) fallbackIndex = i;
+                }
+                return fallbackIndex;
             },
             _updateState() {
                 if (!this._container || !this._countEl || !this._statusEl) return;
@@ -12233,19 +13426,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const css = `
                     #ytkit-comment-nav {
                         position: fixed;
-                        right: 22px;
-                        bottom: 26px;
-                        width: min(284px, calc(100vw - 28px));
-                        padding: 14px;
-                        border-radius: 22px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        right: 18px;
+                        bottom: 20px;
+                        width: min(248px, calc(100vw - 24px));
+                        padding: 10px;
+                        border-radius: 16px;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
                         background:
-                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.2), transparent 42%),
-                            linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-                            rgba(8, 11, 18, 0.9);
-                        box-shadow: 0 28px 60px rgba(0, 0, 0, 0.32);
-                        backdrop-filter: blur(18px);
-                        -webkit-backdrop-filter: blur(18px);
+                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.12), transparent 40%),
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+                            rgba(8, 11, 18, 0.94);
+                        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
                         z-index: 10020;
                     }
 
@@ -12253,7 +13444,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
-                        gap: 14px;
+                        gap: 10px;
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-meta {
@@ -12263,55 +13454,54 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-label {
-                        font-size: 10px;
-                        font-weight: 800;
-                        letter-spacing: 0.16em;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 0.12em;
                         text-transform: uppercase;
                         color: rgba(255, 255, 255, 0.46);
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-count {
                         color: rgba(255, 255, 255, 0.96);
-                        font-size: 28px;
+                        font-size: 22px;
                         line-height: 1;
-                        letter-spacing: -0.05em;
+                        letter-spacing: -0.04em;
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-status {
                         color: rgba(255, 255, 255, 0.62);
-                        font-size: 12px;
+                        font-size: 11px;
                         font-weight: 600;
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-controls {
                         display: flex;
                         align-items: center;
-                        gap: 8px;
+                        gap: 6px;
                         flex-shrink: 0;
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-btn {
-                        min-width: 86px;
-                        min-height: 40px;
-                        padding: 0 14px;
+                        min-width: 72px;
+                        min-height: 34px;
+                        padding: 0 12px;
                         border-radius: 999px;
                         border: 1px solid rgba(255, 255, 255, 0.08);
-                        background: rgba(255, 255, 255, 0.05);
+                        background: rgba(255, 255, 255, 0.045);
                         color: rgba(255, 255, 255, 0.84);
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 8px;
-                        font-size: 12px;
+                        gap: 6px;
+                        font-size: 11px;
                         font-weight: 700;
                         cursor: pointer;
-                        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+                        transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-btn:hover:not(:disabled) {
-                        transform: translateY(-1px);
-                        border-color: rgba(var(--ytkit-accent-rgb), 0.24);
-                        background: rgba(var(--ytkit-accent-rgb), 0.16);
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.18);
+                        background: rgba(var(--ytkit-accent-rgb), 0.12);
                         color: rgba(255, 255, 255, 0.96);
                     }
 
@@ -12326,14 +13516,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     #ytkit-comment-nav .ytkit-comment-nav-arrow {
-                        font-size: 14px;
-                        opacity: 0.9;
+                        font-size: 13px;
+                        opacity: 0.86;
                     }
 
                     #comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-view-model,
                     #comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-renderer {
                         border-color: rgba(var(--ytkit-accent-rgb), 0.28) !important;
-                        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(var(--ytkit-accent-rgb), 0.16) !important;
+                        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(var(--ytkit-accent-rgb), 0.14) !important;
                     }
 
                     html.ytkit-split-active:not(.ytkit-split-open) #ytkit-comment-nav {
@@ -12347,20 +13537,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         right: 12px;
                         bottom: 12px;
                         left: auto;
-                        width: clamp(184px, calc(var(--ytkit-split-right-width, 320px) - 20px), 284px);
-                        padding: 12px;
-                        border-radius: 18px;
-                        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+                        width: clamp(170px, calc(var(--ytkit-split-right-width, 320px) - 18px), 248px);
+                        padding: 9px;
+                        border-radius: 14px;
+                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
                     }
 
                     html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-head {
                         flex-direction: column;
                         align-items: stretch;
-                        gap: 10px;
+                        gap: 8px;
                     }
 
                     html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-count {
-                        font-size: 22px;
+                        font-size: 19px;
                     }
 
                     html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-status {
@@ -12374,13 +13564,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html.ytkit-split-open #ytkit-comment-nav .ytkit-comment-nav-btn {
                         flex: 1 1 0;
                         min-width: 0;
-                        min-height: 36px;
-                        padding: 0 12px;
+                        min-height: 32px;
+                        padding: 0 10px;
                     }
 
                     html.ytkit-split-open #comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-view-model,
                     html.ytkit-split-open #comments ytd-comment-thread-renderer[data-ytkit-comment-current="1"] ytd-comment-renderer {
-                        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(var(--ytkit-accent-rgb), 0.14) !important;
+                        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(var(--ytkit-accent-rgb), 0.12) !important;
                     }
 
                     @media (max-width: 1100px) {
@@ -12916,6 +14106,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     data._ts = Date.now();
                     this._cache[videoId] = data;
                     this._cacheMeta[videoId] = data._ts;
+                    // Evict oldest entries if in-memory cache exceeds 2000
+                    const cacheKeys = Object.keys(this._cache);
+                    if (cacheKeys.length > 2000) {
+                        cacheKeys.sort((a, b) => (this._cacheMeta[a] || 0) - (this._cacheMeta[b] || 0))
+                            .slice(0, cacheKeys.length - 1500)
+                            .forEach(k => { delete this._cache[k]; delete this._cacheMeta[k]; });
+                    }
                     this._schedulePersist();
                     return data;
                 } catch (_) {
@@ -13782,14 +14979,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // Centralized cleanup when panel closes
         _panelCleanups.length = 0;
         let _wasPanelOpen = false;
-        new MutationObserver(() => {
+        if (buildSettingsPanel._panelObs) buildSettingsPanel._panelObs.disconnect();
+        buildSettingsPanel._panelObs = new MutationObserver(() => {
             const isOpen = document.body.classList.contains('ytkit-panel-open');
             if (_wasPanelOpen && !isOpen) {
                 _panelCleanups.forEach(fn => { try { fn(); } catch(e) {} });
                 _panelCleanups.length = 0;
             }
             _wasPanelOpen = isOpen;
-        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        });
+        buildSettingsPanel._panelObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
         const categoryOrder = ['Video Player', 'Playback', 'Comments', 'Watch Page', 'Content', 'Home / Subscriptions', 'Theme', 'Live Chat', 'Downloads', 'Advanced'];
 
@@ -14049,28 +15248,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Tab navigation
             const tabNav = document.createElement('div');
             tabNav.className = 'ytkit-vh-tabs';
-            tabNav.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--ytkit-border);margin-bottom:12px;';
+            tabNav.style.setProperty('--ytkit-vh-accent', config.color);
             const tabs = ['Videos', 'Channels', 'Keywords', 'Settings'];
             tabs.forEach((tabName, i) => {
                 const tab = document.createElement('button');
+                tab.type = 'button';
                 tab.className = 'ytkit-vh-tab' + (i === 0 ? ' active' : '');
                 tab.dataset.tab = tabName.toLowerCase();
                 tab.textContent = tabName;
-                tab.style.cssText = 'flex:1;padding:8px 12px;background:transparent;border:none;color:var(--ytkit-text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent;';
-                tab.onmouseenter = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-secondary)'; };
-                tab.onmouseleave = () => { if (!tab.classList.contains('active')) tab.style.color = 'var(--ytkit-text-muted)'; };
                 tab.onclick = () => {
                     tabNav.querySelectorAll('.ytkit-vh-tab').forEach(t => {
                         t.classList.remove('active');
-                        t.style.color = 'var(--ytkit-text-muted)';
-                        t.style.borderBottomColor = 'transparent';
                     });
                     tab.classList.add('active');
-                    tab.style.color = config.color;
-                    tab.style.borderBottomColor = config.color;
                     renderTabContent(tabName.toLowerCase());
                 };
-                if (i === 0) { tab.style.color = config.color; tab.style.borderBottomColor = config.color; }
                 tabNav.appendChild(tab);
             });
             pane.appendChild(tabNav);
@@ -14119,10 +15311,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             info.appendChild(vidId);
                             info.appendChild(link);
                             const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'ytkit-vh-list-btn ytkit-vh-list-btn--danger';
                             removeBtn.textContent = 'Unhide';
-                            removeBtn.style.cssText = 'padding:4px 10px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:5px;cursor:pointer;font-size:11px;transition:all 0.2s;';
-                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#dc2626'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#dc2626'; };
-                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
                             removeBtn.onclick = () => {
                                 const h = videoHiderFeature._getHiddenVideos();
                                 const idx = h.indexOf(vid);
@@ -14138,10 +15329,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         });
                         tabContent.appendChild(grid);
                         const clearBtn = document.createElement('button');
+                        clearBtn.type = 'button';
+                        clearBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
                         clearBtn.textContent = `Clear All Hidden Videos (${videos.length})`;
-                        clearBtn.style.cssText = 'margin-top:12px;padding:8px 20px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:background 0.2s;';
-                        clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
-                        clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getHiddenVideos()];
                             videoHiderFeature._setHiddenVideos([]);
@@ -14190,10 +15380,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             info.appendChild(name);
                             info.appendChild(handle);
                             const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'ytkit-vh-list-btn ytkit-vh-list-btn--success';
                             removeBtn.textContent = 'Unblock';
-                            removeBtn.style.cssText = 'padding:4px 10px;background:var(--ytkit-bg-elevated);border:1px solid var(--ytkit-border);color:var(--ytkit-text-secondary);border-radius:5px;cursor:pointer;font-size:11px;transition:all 0.2s;';
-                            removeBtn.onmouseenter = () => { removeBtn.style.background = '#22c55e'; removeBtn.style.color = '#fff'; removeBtn.style.borderColor = '#22c55e'; };
-                            removeBtn.onmouseleave = () => { removeBtn.style.background = 'var(--ytkit-bg-elevated)'; removeBtn.style.color = 'var(--ytkit-text-secondary)'; removeBtn.style.borderColor = 'var(--ytkit-border)'; };
                             removeBtn.onclick = () => {
                                 const c = videoHiderFeature._getBlockedChannels();
                                 const idx = c.findIndex(x => x.id === ch.id);
@@ -14209,10 +15398,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         });
                         tabContent.appendChild(list);
                         const clearBtn = document.createElement('button');
+                        clearBtn.type = 'button';
+                        clearBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
                         clearBtn.textContent = `Unblock All Channels (${channels.length})`;
-                        clearBtn.style.cssText = 'margin-top:12px;padding:8px 20px;width:100%;background:#dc2626;border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:background 0.2s;';
-                        clearBtn.onmouseenter = () => { clearBtn.style.background = '#b91c1c'; };
-                        clearBtn.onmouseleave = () => { clearBtn.style.background = '#dc2626'; };
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getBlockedChannels()];
                             videoHiderFeature._setBlockedChannels([]);
@@ -14414,7 +15602,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             toggleAllLabel.className = 'ytkit-toggle-all';
 
             const toggleAllText = document.createElement('span');
-            toggleAllText.textContent = 'Enable All';
+            toggleAllText.textContent = 'All';
 
             const toggleAllSwitch = document.createElement('div');
             toggleAllSwitch.className = 'ytkit-switch';
@@ -14790,8 +15978,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
     function buildFeatureCard(f, accentColor, isSubFeature = false) {
         const card = document.createElement('div');
-        card.className = 'ytkit-feature-card' + (isSubFeature ? ' ytkit-sub-card' : '') + (f.type === 'textarea' ? ' ytkit-textarea-card' : '') + (f.type === 'select' ? ' ytkit-select-card' : '') + (f.type === 'info' ? ' ytkit-info-card' : '');
+        const featureType = f.type || 'toggle';
+        card.className = 'ytkit-feature-card'
+            + ` ytkit-feature-card--${featureType}`
+            + (isSubFeature ? ' ytkit-sub-card' : '')
+            + (f.type === 'textarea' ? ' ytkit-textarea-card' : '')
+            + (f.type === 'select' ? ' ytkit-select-card' : '')
+            + (f.type === 'info' ? ' ytkit-info-card' : '')
+            + (f.type === 'range' ? ' ytkit-range-card' : '')
+            + (f.type === 'color' ? ' ytkit-color-card' : '');
         card.dataset.featureId = f.id;
+        card.dataset.featureType = featureType;
         card.setAttribute('role', 'group');
         card.setAttribute('aria-label', f.name);
         if (accentColor) card.style.setProperty('--cat-color', accentColor);
@@ -16820,7 +18017,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         addNavigateRule('_pageModalBtnRule', handleDisplay);
 
         // Close modal on click-away (Escape key)
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && _pageModalOpen) closePageModal(); });
+        const _pageModalEscHandler = (e) => { if (e.key === 'Escape' && _pageModalOpen) closePageModal(); };
+        document.addEventListener('keydown', _pageModalEscHandler);
     }
 
     appendStyleSheet(`
@@ -16929,17 +18127,17 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-pm-grid {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            padding: 8px;
+            gap: 3px;
+            padding: 6px;
         }
 
         .ytkit-pm-card {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
-            padding: 9px 10px;
-            border-radius: 12px;
+            padding: 8px 9px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.04);
             background: rgba(255,255,255,0.02);
             cursor: pointer;
@@ -16963,9 +18161,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-pm-card-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 10px;
+            width: 28px;
+            height: 28px;
+            border-radius: 9px;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -16981,8 +18179,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-pm-card-icon svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
         }
 
         .ytkit-pm-card-text {
@@ -17751,8 +18949,25 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-ql-bottom {
-            gap: 4px;
-            padding: 2px 0 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            padding: 4px 0 0;
+            align-items: stretch;
+        }
+
+        .ytkit-ql-bottom-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .ytkit-ql-bottom-btn .ytkit-ql-icon {
+            margin: 0;
+            display: block;
         }
 
         .ytkit-ql-input {
@@ -17772,10 +18987,10 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-speed-presets {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 5px;
             align-items: center;
-            padding: 4px 0 10px;
-            margin: 0 0 8px;
+            padding: 2px 0 8px;
+            margin: 0 0 6px;
             border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
@@ -17783,14 +18998,14 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 28px;
-            padding: 0 10px;
+            min-height: 26px;
+            padding: 0 8px;
             border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.74);
             font-family: var(--ytkit-font);
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             letter-spacing: 0;
             text-transform: none;
@@ -17815,17 +19030,17 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex !important;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            height: 30px !important;
-            min-height: 30px !important;
-            padding: 0 11px !important;
+            gap: 5px;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 10px !important;
             margin-left: 0 !important;
             border-radius: 999px !important;
             border: 1px solid rgba(255,255,255,0.08) !important;
             background: rgba(255,255,255,0.045) !important;
             color: rgba(255,255,255,0.82) !important;
             font-family: var(--ytkit-font) !important;
-            font-size: 11px !important;
+            font-size: 10px !important;
             font-weight: 600 !important;
             letter-spacing: 0 !important;
             text-transform: none !important;
@@ -17841,8 +19056,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-watch-action-btn__icon {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             display: grid;
             place-items: center;
             border-radius: 0;
@@ -17851,8 +19066,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-watch-action-btn__icon svg {
-            width: 12px !important;
-            height: 12px !important;
+            width: 11px !important;
+            height: 11px !important;
         }
 
         .ytkit-watch-action-btn__label {
@@ -17866,13 +19081,13 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-pm {
-            width: min(344px, calc(100vw - 20px));
-            border-radius: 16px;
+            width: min(300px, calc(100vw - 12px));
+            border-radius: 12px;
         }
 
         .ytkit-pm-header {
-            padding: 11px 12px 9px;
-            gap: 10px;
+            padding: 8px 9px 7px;
+            gap: 7px;
         }
 
         .ytkit-pm-title-wrap {
@@ -17885,46 +19100,46 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-pm-close {
-            width: 28px;
-            height: 28px;
-            border-radius: 9px;
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
         }
 
         .ytkit-pm-grid {
-            gap: 4px;
-            padding: 6px;
+            gap: 3px;
+            padding: 4px;
         }
 
         .ytkit-pm-card {
-            gap: 8px;
-            padding: 8px 9px;
-            border-radius: 12px;
+            gap: 7px;
+            padding: 7px 8px;
+            border-radius: 10px;
         }
 
         .ytkit-pm-card-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 9px;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
         }
 
         .ytkit-pm-card-label {
-            font-size: 11px;
+            font-size: 10.5px;
         }
 
         .ytkit-pm-card-desc {
             margin-top: 0;
-            font-size: 9px;
+            font-size: 8.5px;
         }
 
         .ytkit-pm-footer {
-            padding: 8px 12px 12px;
+            padding: 6px 10px 10px;
         }
 
         .ytkit-pm-full-settings {
-            min-height: 31px;
-            padding: 0 12px;
-            border-radius: 10px;
-            font-size: 10px;
+            min-height: 28px;
+            padding: 0 9px;
+            border-radius: 9px;
+            font-size: 9.5px;
             font-weight: 600;
         }
 
@@ -18004,8 +19219,10 @@ body.ytkit-panel-open #ytkit-settings-panel {
             position: sticky;
             top: 0;
             z-index: 2;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            gap: 8px;
+            gap: 8px 14px;
             padding: 0 0 8px;
             margin-bottom: 8px;
             background: linear-gradient(180deg, rgba(8,11,16,0.98), rgba(8,11,16,0.88) 72%, rgba(8,11,16,0));
@@ -18018,6 +19235,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-pane-title {
             gap: 2px;
+            min-width: 0;
         }
 
         .ytkit-pane-title h2 {
@@ -18026,7 +19244,12 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-pane-actions {
-            gap: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: nowrap;
+            min-width: max-content;
         }
 
         .ytkit-reset-group-btn {
@@ -18043,32 +19266,38 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-toggle-all span {
-            font-size: 8px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            color: rgba(255,255,255,0.72);
         }
 
         .ytkit-features-grid {
-            grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
-            gap: 7px;
+            grid-template-columns: repeat(auto-fit, minmax(min(264px, 100%), 1fr));
+            gap: 10px;
             align-items: start;
         }
 
         .ytkit-feature-card {
-            gap: 8px;
-            padding: 9px 10px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            padding: 10px 11px;
             border-radius: 12px;
-            align-items: center;
+            align-items: start;
+            min-height: 74px;
         }
 
         .ytkit-feature-main {
-            gap: 7px;
+            gap: 8px;
+            align-items: flex-start;
+            min-width: 0;
         }
 
         .ytkit-feature-glyph {
-            width: 26px;
-            height: 26px;
-            border-radius: 9px;
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
         }
 
         .ytkit-feature-glyph svg {
@@ -18076,26 +19305,57 @@ body.ytkit-panel-open #ytkit-settings-panel {
             height: 13px;
         }
 
+        .ytkit-feature-info {
+            display: grid;
+            gap: 2px;
+            min-width: 0;
+        }
+
         .ytkit-feature-name {
-            margin: 0 0 1px;
+            margin: 0;
             font-size: 12px;
-            line-height: 1.25;
+            line-height: 1.22;
         }
 
         .ytkit-feature-desc {
             font-size: 10px;
-            line-height: 1.3;
-            -webkit-line-clamp: 1;
+            line-height: 1.32;
+            min-height: calc(1.32em * 2);
+            -webkit-line-clamp: 2;
         }
 
         .ytkit-pane.ytkit-search-active .ytkit-feature-desc {
             -webkit-line-clamp: 2;
         }
 
+        .ytkit-feature-card--toggle .ytkit-switch {
+            align-self: center;
+            justify-self: end;
+            margin-top: 0;
+        }
+
+        .ytkit-feature-card--select,
+        .ytkit-feature-card--range,
+        .ytkit-feature-card--color,
+        .ytkit-feature-card--textarea,
+        .ytkit-feature-card--info {
+            grid-template-columns: minmax(0, 1fr);
+            align-items: stretch;
+            min-height: 0;
+        }
+
+        .ytkit-feature-card--select .ytkit-feature-main,
+        .ytkit-feature-card--range .ytkit-feature-main,
+        .ytkit-feature-card--color .ytkit-feature-main,
+        .ytkit-feature-card--textarea .ytkit-feature-main,
+        .ytkit-feature-card--info .ytkit-feature-main {
+            gap: 9px;
+        }
+
         .ytkit-sub-features {
             grid-column: 1 / -1;
-            grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
-            gap: 6px;
+            grid-template-columns: repeat(auto-fit, minmax(min(244px, 100%), 1fr));
+            gap: 8px;
             margin-left: 0;
             padding: 6px 0 0;
             border-left: none;
@@ -18113,11 +19373,13 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 100%;
             min-width: 0;
             max-width: 100%;
-            align-self: center;
+            align-self: stretch;
+            grid-column: 1 / -1;
         }
 
         .ytkit-select-shell {
             min-width: 0;
+            margin-top: 2px;
         }
 
         .ytkit-select,
@@ -18127,8 +19389,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-select {
-            min-height: 34px;
-            padding: 8px 10px;
+            min-height: 36px;
+            padding: 8px 11px;
             font-size: 11px;
         }
 
@@ -18139,13 +19401,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-range-shell {
-            gap: 8px;
+            gap: 10px;
             grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            margin-top: 2px;
         }
 
         .ytkit-range-value {
-            min-width: 32px;
-            padding: 5px 6px;
+            min-width: 40px;
+            padding: 5px 7px;
             font-size: 8px;
         }
 
@@ -18383,6 +19647,998 @@ body.ytkit-panel-open #ytkit-settings-panel {
             margin-left: 8px !important;
         }
 
+        #ytkit-mediadl-install-prompt {
+            position: fixed;
+            right: 18px;
+            bottom: 78px;
+            width: min(372px, calc(100vw - 20px));
+            padding: 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb),0.14), transparent 42%),
+                linear-gradient(180deg, rgba(20,25,34,0.98), rgba(9,12,18,0.98));
+            color: rgba(255,255,255,0.94);
+            box-shadow: 0 28px 60px rgba(0,0,0,0.42);
+            z-index: 2147483647;
+            animation: ytkit-slide-in 0.28s ease-out;
+        }
+
+        .ytkit-install-prompt__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .ytkit-install-prompt__title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: rgba(226,255,236,0.96);
+        }
+
+        .ytkit-install-prompt__close {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.62);
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            outline: none;
+        }
+
+        .ytkit-install-prompt__close:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-install-prompt__close:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.24);
+        }
+
+        .ytkit-install-prompt__desc {
+            margin: 0 0 14px;
+            color: rgba(255,255,255,0.62);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .ytkit-install-prompt__actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .ytkit-install-prompt__btn {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            min-height: 38px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.9);
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: left;
+            font-family: var(--ytkit-font);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-install-prompt__btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+        }
+
+        .ytkit-install-prompt__btn:active:not(:disabled) {
+            transform: scale(0.985);
+        }
+
+        .ytkit-install-prompt__btn:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.24);
+        }
+
+        .ytkit-install-prompt__btn:disabled {
+            opacity: 0.52;
+            cursor: wait;
+        }
+
+        .ytkit-install-prompt__btn--primary {
+            background: rgba(59,130,246,0.18);
+            border-color: rgba(59,130,246,0.3);
+            color: #fff;
+        }
+
+        .ytkit-install-prompt__btn--primary:hover {
+            background: rgba(59,130,246,0.24);
+            border-color: rgba(59,130,246,0.38);
+        }
+
+        .ytkit-install-prompt__btn--accent {
+            background: rgba(34,197,94,0.16);
+            border-color: rgba(34,197,94,0.28);
+            color: #f4fff7;
+        }
+
+        .ytkit-install-prompt__btn--accent:hover {
+            background: rgba(34,197,94,0.22);
+            border-color: rgba(34,197,94,0.34);
+        }
+
+        .ytkit-install-prompt__btn--ghost {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .ytkit-install-prompt__btn--quiet {
+            justify-content: center;
+            min-height: 34px;
+            color: rgba(255,255,255,0.46);
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .ytkit-install-prompt__btn--quiet:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.72);
+        }
+
+        .ytkit-install-prompt__btn.is-success {
+            background: rgba(22,163,74,0.18);
+            border-color: rgba(34,197,94,0.3);
+            color: #f4fff7;
+        }
+
+        .ytkit-install-prompt__btn.is-danger {
+            background: rgba(239,68,68,0.16);
+            border-color: rgba(239,68,68,0.28);
+            color: #fff;
+        }
+
+        .ytkit-dl-progress {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            width: min(336px, calc(100vw - 20px));
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                radial-gradient(circle at top right, rgba(34,197,94,0.12), transparent 38%),
+                linear-gradient(180deg, rgba(18,24,34,0.98), rgba(9,12,18,0.98));
+            color: rgba(255,255,255,0.94);
+            box-shadow: 0 28px 56px rgba(0,0,0,0.38);
+            z-index: 2147483647;
+            animation: ytkit-slide-in 0.28s ease-out;
+        }
+
+        .ytkit-dl-progress__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .ytkit-dl-progress__badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 0 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.68);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .ytkit-dl-progress__close {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.56);
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            outline: none;
+        }
+
+        .ytkit-dl-progress__close:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-dl-progress__close:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(34,197,94,0.2);
+        }
+
+        .ytkit-dl-progress__title {
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.94);
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ytkit-dl-progress__bar {
+            height: 7px;
+            margin-bottom: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+
+        .ytkit-dl-progress__fill {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            transition: width 0.4s ease, background-color 0.2s ease;
+        }
+
+        .ytkit-dl-progress__fill.is-success {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+
+        .ytkit-dl-progress__fill.is-error {
+            background: #ef4444;
+        }
+
+        .ytkit-dl-progress__meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .ytkit-dl-progress__stat {
+            color: rgba(255,255,255,0.56);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        #ytkit-subs-load-banner {
+            position: fixed;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            width: min(640px, calc(100vw - 24px));
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 34%),
+                linear-gradient(180deg, rgba(19,26,36,0.98), rgba(10,14,21,0.98));
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: var(--ytkit-banner-z, 2147483644);
+            box-shadow: 0 26px 52px rgba(0,0,0,0.36);
+        }
+
+        .ytkit-subs-load-banner__icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            border: 1px solid rgba(245,158,11,0.14);
+            background: rgba(245,158,11,0.08);
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .ytkit-subs-load-banner__copy {
+            flex: 1;
+            min-width: 0;
+            display: grid;
+            gap: 3px;
+        }
+
+        .ytkit-subs-load-banner__title {
+            color: rgba(255,255,255,0.96);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .ytkit-subs-load-banner__subtitle {
+            color: rgba(255,255,255,0.58);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .ytkit-subs-load-banner__actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .ytkit-subs-load-banner__btn {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 36px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.82);
+            font-family: var(--ytkit-font);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-subs-load-banner__btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-subs-load-banner__btn:active {
+            transform: scale(0.985);
+        }
+
+        .ytkit-subs-load-banner__btn:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(59,130,246,0.2);
+        }
+
+        .ytkit-subs-load-banner__btn--primary {
+            background: rgba(59,130,246,0.18);
+            border-color: rgba(59,130,246,0.28);
+            color: #fff;
+        }
+
+        .ytkit-subs-load-banner__btn--primary:hover {
+            background: rgba(59,130,246,0.24);
+            border-color: rgba(59,130,246,0.36);
+        }
+
+        .ytkit-vh-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            margin-bottom: 12px;
+            border: 1px solid var(--ytkit-border);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+        }
+
+        .ytkit-vh-tab {
+            flex: 1;
+            min-height: 32px;
+            padding: 0 10px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--ytkit-text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+        }
+
+        .ytkit-vh-tab:hover {
+            color: var(--ytkit-text-secondary);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .ytkit-vh-tab.active {
+            color: var(--ytkit-vh-accent, var(--ytkit-accent));
+            border-color: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .ytkit-vh-list-btn,
+        .ytkit-vh-clear-btn,
+        .ytkit-bookmarks-add,
+        .ytkit-load-more-btn,
+        .ytkit-reverse-btn,
+        .ytkit-rss-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 32px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.84);
+            font-family: var(--ytkit-font);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-vh-list-btn:hover,
+        .ytkit-vh-clear-btn:hover,
+        .ytkit-bookmarks-add:hover,
+        .ytkit-load-more-btn:hover,
+        .ytkit-reverse-btn:hover,
+        .ytkit-rss-btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-vh-list-btn:active,
+        .ytkit-vh-clear-btn:active,
+        .ytkit-bookmarks-add:active,
+        .ytkit-load-more-btn:active,
+        .ytkit-reverse-btn:active {
+            transform: scale(0.985);
+        }
+
+        .ytkit-vh-list-btn:focus-visible,
+        .ytkit-vh-clear-btn:focus-visible,
+        .ytkit-bookmarks-add:focus-visible,
+        .ytkit-load-more-btn:focus-visible,
+        .ytkit-reverse-btn:focus-visible,
+        .ytkit-rss-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.2);
+        }
+
+        .ytkit-vh-list-btn--danger:hover,
+        .ytkit-vh-clear-btn--danger:hover,
+        .ytkit-hide-all-btn:hover {
+            background: rgba(239,68,68,0.18) !important;
+            border-color: rgba(239,68,68,0.3) !important;
+            color: #fff !important;
+        }
+
+        .ytkit-vh-list-btn--success:hover {
+            background: rgba(34,197,94,0.18);
+            border-color: rgba(34,197,94,0.3);
+            color: #fff;
+        }
+
+        .ytkit-vh-clear-btn {
+            width: 100%;
+            margin-top: 12px;
+            min-height: 36px;
+        }
+
+        .ytkit-hide-all-btn {
+            background: rgba(239,68,68,0.14) !important;
+            border-color: rgba(239,68,68,0.22) !important;
+            color: #fff !important;
+        }
+
+        .ytkit-reverse-btn,
+        .ytkit-rss-btn {
+            margin-left: 8px;
+        }
+
+        .ytkit-rss-btn {
+            color: #fdba74;
+            border-color: rgba(249,115,22,0.22);
+            background: rgba(249,115,22,0.1);
+        }
+
+        .ytkit-rss-btn:hover {
+            background: rgba(249,115,22,0.16);
+            border-color: rgba(249,115,22,0.32);
+        }
+
+        .ytkit-bookmark-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 160ms ease;
+        }
+
+        .ytkit-bookmark-row:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .ytkit-bookmarks-container {
+            margin-bottom: 12px;
+            overflow: hidden;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.028));
+            box-shadow: 0 16px 32px rgba(0,0,0,0.18);
+        }
+
+        .ytkit-bookmarks-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .ytkit-bookmarks-title {
+            color: rgba(255,255,255,0.78);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .ytkit-bookmarks-body {
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .ytkit-bookmarks-empty {
+            padding: 14px 12px;
+            color: rgba(255,255,255,0.42);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .ytkit-bookmark-ts {
+            color: #8ccfff;
+            font-size: 12px;
+            font-weight: 700;
+            min-width: 48px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ytkit-bookmark-note {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.9);
+            font-size: 12px;
+            outline: none;
+            padding: 2px 4px;
+        }
+
+        .ytkit-bookmark-note::placeholder {
+            color: rgba(255,255,255,0.34);
+        }
+
+        .ytkit-bookmarks-add {
+            min-height: 28px;
+            padding: 0 10px;
+            color: #9bd3ff;
+            border-color: rgba(62,166,255,0.18);
+            background: rgba(62,166,255,0.1);
+        }
+
+        .ytkit-bookmarks-add:hover {
+            background: rgba(62,166,255,0.16);
+            border-color: rgba(62,166,255,0.28);
+        }
+
+        .ytkit-bookmark-delete {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.42);
+            font-size: 15px;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            outline: none;
+        }
+
+        .ytkit-bookmark-delete:hover {
+            background: rgba(239,68,68,0.12);
+            border-color: rgba(239,68,68,0.2);
+            color: #fff;
+        }
+
+        .ytkit-bookmark-delete:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(239,68,68,0.18);
+        }
+
+        .ytkit-transcript-panel {
+            margin-bottom: 16px;
+            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(180deg, rgba(22,27,36,0.96), rgba(10,13,19,0.98));
+            display: flex;
+            flex-direction: column;
+            max-height: 500px;
+            box-shadow: 0 18px 38px rgba(0,0,0,0.2);
+        }
+
+        .ytkit-transcript-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .ytkit-transcript-title {
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .ytkit-transcript-toggle {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.72);
+            font-family: var(--ytkit-font);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            outline: none;
+        }
+
+        .ytkit-transcript-toggle:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-transcript-toggle:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.2);
+        }
+
+        .ytkit-transcript-panel.is-collapsed {
+            max-height: none;
+        }
+
+        .ytkit-transcript-panel.is-collapsed .ytkit-transcript-header {
+            border-bottom-color: transparent;
+        }
+
+        .ytkit-transcript-body {
+            flex: 1;
+            overflow-y: auto;
+            color: rgba(255,255,255,0.64);
+            font-size: 13px;
+            padding: 8px 8px 10px;
+        }
+
+        .ytkit-transcript-line {
+            display: flex;
+            gap: 10px;
+            padding: 7px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 160ms ease;
+        }
+
+        .ytkit-transcript-line:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .ytkit-transcript-line__ts {
+            min-width: 44px;
+            flex-shrink: 0;
+            color: #8ccfff;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ytkit-transcript-line__text {
+            color: rgba(255,255,255,0.88);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .ytkit-mini-player-bar {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            left: 12px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            min-height: 68px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb),0.12), transparent 42%),
+                linear-gradient(180deg, rgba(16,20,28,0.98), rgba(8,11,16,0.98));
+            box-shadow: 0 24px 56px rgba(0,0,0,0.36);
+            z-index: 99999;
+        }
+
+        .ytkit-mini-player-thumb {
+            width: 104px;
+            height: 58px;
+            overflow: hidden;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.06);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .ytkit-mini-player-thumb-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ytkit-mini-player-title {
+            flex: 1;
+            min-width: 0;
+            color: rgba(255,255,255,0.92);
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.35;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ytkit-mini-player-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.82);
+            font-size: 18px;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-mini-player-btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-mini-player-btn:active {
+            transform: scale(0.985);
+        }
+
+        .ytkit-mini-player-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.18);
+        }
+
+        .ytkit-mini-player-btn--primary {
+            background: rgba(var(--ytkit-accent-rgb),0.16);
+            border-color: rgba(var(--ytkit-accent-rgb),0.26);
+            color: #fff;
+        }
+
+        .ytkit-mini-player-btn--primary:hover {
+            background: rgba(var(--ytkit-accent-rgb),0.22);
+            border-color: rgba(var(--ytkit-accent-rgb),0.34);
+        }
+
+        .ytkit-mini-player-progress {
+            position: absolute;
+            top: 0;
+            left: 14px;
+            right: 14px;
+            height: 3px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+
+        .ytkit-mini-player-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff6b4a, #ff8b5e);
+            transition: width 0.5s linear;
+        }
+
+        .ytkit-playlist-enhance {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 6px 0 2px;
+        }
+
+        .ytkit-playlist-action {
+            appearance: none;
+            -webkit-appearance: none;
+            min-height: 30px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.82);
+            font-family: var(--ytkit-font);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-playlist-action:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-playlist-action:active {
+            transform: scale(0.985);
+        }
+
+        .ytkit-playlist-action:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.18);
+        }
+
+        .ytkit-remaining-time,
+        .ytkit-playlist-duration,
+        .ytkit-channel-vid-count,
+        .ytkit-age-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 22px;
+            margin-left: 8px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.66);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .ytkit-remaining-time {
+            margin-left: 10px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.62);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ytkit-channel-vid-count {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .ytkit-age-badge {
+            color: rgba(255,255,255,0.76);
+        }
+
+        .ytkit-speed-badge,
+        .ytkit-speed-indicator {
+            position: absolute;
+            z-index: 100;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(8,11,16,0.78);
+            color: rgba(255,255,255,0.88);
+            font-size: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            box-shadow: 0 16px 30px rgba(0,0,0,0.22);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            user-select: none;
+        }
+
+        .ytkit-speed-badge {
+            right: 12px;
+            bottom: 68px;
+            cursor: ns-resize;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+        }
+
+        .ytkit-speed-badge:hover {
+            background: rgba(18,24,34,0.9);
+            border-color: rgba(255,255,255,0.14);
+        }
+
+        .ytkit-speed-badge.is-modified,
+        .ytkit-speed-indicator {
+            color: #ffd166;
+            border-color: rgba(255,209,102,0.18);
+            background: rgba(34,26,12,0.84);
+        }
+
+        .ytkit-speed-indicator {
+            top: 12px;
+            left: 12px;
+            display: none;
+            pointer-events: none;
+        }
+
+        .ytkit-copy-title-btn {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            margin-left: 8px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.72);
+            cursor: pointer;
+            vertical-align: middle;
+            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            outline: none;
+        }
+
+        .ytkit-copy-title-btn:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .ytkit-copy-title-btn:active {
+            transform: scale(0.985);
+        }
+
+        .ytkit-copy-title-btn:focus-visible {
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.18);
+        }
+
+        .ytkit-copy-title-btn.is-copied {
+            color: #d8ffe3;
+            border-color: rgba(34,197,94,0.26);
+            background: rgba(22,163,74,0.16);
+        }
+
+        .ytkit-copy-title-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+
         .ytkit-po-gear:hover svg {
             transform: none !important;
         }
@@ -18445,7 +20701,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             }
 
             .ytkit-features-grid {
-                grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
             }
 
             .ytkit-pane-header {
@@ -18454,11 +20710,47 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
             .ytkit-pane-actions {
                 width: 100%;
-                justify-content: space-between;
+                justify-content: flex-start;
+                flex-wrap: wrap;
             }
         }
 
         @media (max-width: 680px) {
+            #ytkit-mediadl-install-prompt {
+                right: 10px;
+                bottom: 70px;
+                width: calc(100vw - 20px);
+            }
+
+            .ytkit-dl-progress {
+                right: 10px;
+                bottom: 10px;
+                width: calc(100vw - 20px);
+            }
+
+            #ytkit-subs-load-banner {
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .ytkit-subs-load-banner__actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .ytkit-mini-player-bar {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                gap: 10px;
+                padding: 10px 12px;
+            }
+
+            .ytkit-mini-player-thumb {
+                width: 88px;
+                height: 50px;
+            }
+
             .ytkit-header,
             .ytkit-content,
             .ytkit-footer {
