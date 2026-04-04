@@ -414,7 +414,7 @@ return response;
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.2.0';
+    const YTKIT_VERSION = '3.2.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Astra Deck",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "Premium watch-page customization, comment tooling, layouts, and local downloads for YouTube.",
   "author": "Matthew Parker",
   "homepage_url": "https://github.com/SysAdminDoc/YouTube-Kit",
@@ -37,15 +37,33 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.youtube.com/*", "https://*.youtube-nocookie.com/*", "https://youtu.be/*"],
-      "exclude_matches": ["https://m.youtube.com/*", "https://studio.youtube.com/*"],
-      "css": ["early.css"],
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.youtube-nocookie.com/*",
+        "https://youtu.be/*"
+      ],
+      "exclude_matches": [
+        "https://m.youtube.com/*",
+        "https://studio.youtube.com/*"
+      ],
+      "css": [
+        "early.css"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://*.youtube.com/*", "https://*.youtube-nocookie.com/*", "https://youtu.be/*"],
-      "exclude_matches": ["https://m.youtube.com/*", "https://studio.youtube.com/*"],
-      "js": ["ytkit.js"],
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.youtube-nocookie.com/*",
+        "https://youtu.be/*"
+      ],
+      "exclude_matches": [
+        "https://m.youtube.com/*",
+        "https://studio.youtube.com/*"
+      ],
+      "js": [
+        "ytkit.js"
+      ],
       "all_frames": true,
       "run_at": "document_idle",
       "world": "ISOLATED"
@@ -53,7 +71,9 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": [
+        "icons/*"
+      ],
       "matches": [
         "https://*.youtube.com/*",
         "https://*.youtube-nocookie.com/*",
