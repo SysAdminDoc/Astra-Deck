@@ -883,7 +883,7 @@ return response;
             });
 
             scored.sort((a, b) => b.score - a.score);
-            return scored[0].track;
+            return scored.length > 0 ? scored[0].track : tracks[0];
         },
 
         // Fetch and parse transcript content from baseUrl
@@ -2627,11 +2627,18 @@ return response;
     // CSS-only feature factory — eliminates boilerplate for features that just inject/remove a style
     function cssFeature(id, name, description, group, icon, css, extra) {
         const isRaw = css.includes('{');
+        const bodyClass = `ytkit-${id}`;
         const f = {
             id, name, description, group, icon,
             _styleElement: null,
-            init() { this._styleElement = injectStyle(css, this.id, isRaw); },
-            destroy() { this._styleElement?.remove(); this._styleElement = null; }
+            init() {
+                this._styleElement = injectStyle(css, this.id, isRaw);
+                document.body.classList.add(bodyClass);
+            },
+            destroy() {
+                this._styleElement?.remove(); this._styleElement = null;
+                document.body.classList.remove(bodyClass);
+            }
         };
         if (extra) Object.assign(f, extra);
         return f;
@@ -8174,6 +8181,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._clearBatchBuffer?.();
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                 if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
+                clearTimeout(this._subsButtonTimer); this._subsButtonTimer = null;
+                clearTimeout(this._homeButtonTimer); this._homeButtonTimer = null;
                 removeNavigateRule('hideVideosFromHomeNav');
                 document.querySelectorAll('.ytkit-video-hide-btn').forEach(b => b.remove());
                 document.querySelectorAll('.ytkit-video-hidden').forEach(e => e.classList.remove('ytkit-video-hidden'));
@@ -10412,7 +10421,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const playBtn = this._pipWindow.document.createElement('button');
                         playBtn.textContent = '\u23F8';
                         playBtn.onclick = () => {
-                            if (video.paused) { video.play(); playBtn.textContent = '\u23F8'; }
+                            if (video.paused) { video.play().catch(() => {}); playBtn.textContent = '\u23F8'; }
                             else { video.pause(); playBtn.textContent = '\u25B6'; }
                         };
                         const timeEl = this._pipWindow.document.createElement('span');
@@ -11102,6 +11111,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
                     const resp = await fetch(track.baseUrl + '&fmt=json3');
+                    if (!resp.ok) { body.textContent = 'Failed to load transcript.'; return; }
                     const data = await resp.json();
                     body.textContent = '';
 
@@ -11362,6 +11372,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
 
             init() {
+                document.body.classList.add('ytkit-keyMoments');
                 const css = `
                     .ytp-chapter-hover-container { background: rgba(62, 166, 255, 0.3) !important; }
                     .ytp-progress-bar-container .ytp-chapter-hover-container:hover { background: rgba(62, 166, 255, 0.5) !important; }
@@ -11369,7 +11380,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleEl?.remove(); this._styleEl = null; }
+            destroy() { this._styleEl?.remove(); this._styleEl = null; document.body.classList.remove('ytkit-keyMoments'); }
         },
 
         // ═══════════════════════════════════════════════════════════════
@@ -11533,7 +11544,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const v = document.querySelector('video');
                     if (!v) return;
                     if (v.paused) {
-                        v.play();
+                        v.play().catch(() => {});
                         playBtn.textContent = '\u23F8';
                         playBtn.setAttribute('aria-label', 'Pause video');
                     } else {
@@ -11750,6 +11761,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
 
             init() {
+                document.body.classList.add('ytkit-creatorCommentHighlight');
                 const css = `
                     ytd-comment-view-model.ytd-comment-thread-renderer:has(#author-comment-badge),
                     ytd-comment-renderer:has(#author-comment-badge) {
@@ -11774,7 +11786,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
             },
-            destroy() { this._styleEl?.remove(); this._styleEl = null; }
+            destroy() { this._styleEl?.remove(); this._styleEl = null; document.body.classList.remove('ytkit-creatorCommentHighlight'); }
         },
         {
             id: 'copyVideoTitle',
