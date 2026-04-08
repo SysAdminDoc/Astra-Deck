@@ -8,6 +8,7 @@ $InstallRoot = Join-Path $env:LOCALAPPDATA $AppName
 $DownloadRoot = Join-Path ([Environment]::GetFolderPath('MyVideos')) 'YouTube'
 $ServerPort = 9751
 $ServerVersion = '4.1.0'
+$InstallerUserAgent = "AstraDeckInstaller/$ServerVersion"
 $YtDlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
 $FfmpegZipUrl = 'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip'
 $DenoZipUrl = 'https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip'
@@ -117,10 +118,10 @@ function Invoke-FileDownload {
     }
 
     try {
-        Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $OutFile -Headers @{ 'User-Agent' = 'AstraDeckInstaller/4.0' }
+        Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $OutFile -Headers @{ 'User-Agent' = $InstallerUserAgent }
     } catch {
         $wc = New-Object System.Net.WebClient
-        $wc.Headers['User-Agent'] = 'AstraDeckInstaller/4.0'
+        $wc.Headers['User-Agent'] = $InstallerUserAgent
         try {
             $wc.DownloadFile($Uri, $OutFile)
         } finally {
@@ -130,6 +131,33 @@ function Invoke-FileDownload {
 
     if (-not (Test-Path -LiteralPath $OutFile) -or (Get-Item -LiteralPath $OutFile).Length -le 0) {
         throw "Download failed for $Uri"
+    }
+}
+
+function Test-ExecutableReady {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string[]]$Arguments
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "$Name is missing after setup."
+    }
+
+    $output = @()
+    try {
+        $output = & $Path @Arguments 2>&1
+    } catch {
+        throw "$Name could not be started after setup. $($_.Exception.Message)"
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        $firstLine = ($output | Select-Object -First 1)
+        if ($firstLine) {
+            throw "$Name validation failed. $firstLine"
+        }
+        throw "$Name validation failed with exit code $LASTEXITCODE."
     }
 }
 
@@ -217,7 +245,7 @@ function Ensure-Ffmpeg {
     $ffmpegTarget = Join-Path $InstallRoot 'ffmpeg.exe'
     $ffprobeTarget = Join-Path $InstallRoot 'ffprobe.exe'
     if ((Test-Path -LiteralPath $ffmpegTarget) -and (Test-Path -LiteralPath $ffprobeTarget)) {
-        return
+        return $ffmpegTarget
     }
 
     $existingFfmpeg = Get-Command ffmpeg -ErrorAction SilentlyContinue
@@ -228,7 +256,7 @@ function Ensure-Ffmpeg {
         (Test-Path -LiteralPath $existingFfprobe.Source)) {
         Copy-Item -LiteralPath $existingFfmpeg.Source -Destination $ffmpegTarget -Force
         Copy-Item -LiteralPath $existingFfprobe.Source -Destination $ffprobeTarget -Force
-        return
+        return $ffmpegTarget
     }
 
     Write-Step 'Installing video tools...'
@@ -252,18 +280,19 @@ function Ensure-Ffmpeg {
         $zip.Dispose()
         Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
     }
+    return $ffmpegTarget
 }
 
 function Ensure-Deno {
     $denoTarget = Join-Path $InstallRoot 'deno.exe'
     if (Test-Path -LiteralPath $denoTarget) {
-        return
+        return $denoTarget
     }
 
     $existing = Get-Command deno -ErrorAction SilentlyContinue
     if ($existing -and $existing.Source -and (Test-Path -LiteralPath $existing.Source)) {
         Copy-Item -LiteralPath $existing.Source -Destination $denoTarget -Force
-        return
+        return $denoTarget
     }
 
     Write-Step 'Installing YouTube support runtime...'
@@ -284,6 +313,7 @@ function Ensure-Deno {
         $zip.Dispose()
         Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
     }
+    return $denoTarget
 }
 
 function Write-Config {
@@ -875,9 +905,14 @@ try {
     Remove-LegacyIntegration
     Stop-ExistingServer
 
-    Ensure-YtDlp | Out-Null
-    Ensure-Ffmpeg
-    Ensure-Deno
+    $ytDlpPath = Ensure-YtDlp
+    $ffmpegPath = Ensure-Ffmpeg
+    $denoPath = Ensure-Deno
+    Write-Note 'Verifying downloaded tools...'
+    Test-ExecutableReady -Path $ytDlpPath -Name 'yt-dlp' -Arguments @('--version')
+    Test-ExecutableReady -Path $ffmpegPath -Name 'ffmpeg' -Arguments @('-version')
+    Test-ExecutableReady -Path (Join-Path $InstallRoot 'ffprobe.exe') -Name 'ffprobe' -Arguments @('-version')
+    Test-ExecutableReady -Path $denoPath -Name 'Deno' -Arguments @('--version')
 
     Write-Step 'Finishing Astra Deck setup...'
     Write-Note 'Creating the local server, startup shortcut, and download folder shortcut.'
