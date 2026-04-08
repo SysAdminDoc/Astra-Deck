@@ -1,4 +1,4 @@
-// Astra Deck v3.2.0 - Background Service Worker
+// Astra Deck - Background Service Worker
 // Handles extension fetch proxying, cookie access, downloads,
 // and control-center commands from the toolbar and keyboard.
 
@@ -22,14 +22,6 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://sponsor.ajay.app',
     'http://127.0.0.1:9751',
     'http://localhost:9751',
-    'https://cobalt.tools',
-    'https://api.cobalt.tools',
-    'https://co.wuk.sh',
-    'https://meowing.de',
-    'https://canine.tools',
-    'https://imput.net',
-    'https://3kh0.net',
-    'https://stuff.solutions',
 ];
 
 // Headers that must not be forwarded from content script requests

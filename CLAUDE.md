@@ -131,4 +131,4 @@ The extension uses a **MediaDL-only** download path (no Cobalt/direct-stream fal
 - **`chrome.downloads` cookies**: `chrome.downloads.download()` uses the browser's own cookie jar for the URL's domain — unlike `fetch()` in the background script which runs in the extension's context.
 - **MediaDL auto-start protocol**: `mediadl://start` is silently ignored if the protocol handler isn't registered (no error dialog). The `_autoStartAttempted` flag prevents repeated protocol launches on the same page load, but `resetAutoStart()` clears it for explicit retry actions.
 
-## Current Version: v3.2.0
+## Current Version: v3.3.0
