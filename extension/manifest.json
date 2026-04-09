@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Astra Deck",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Premium watch-page customization, comment tooling, layouts, and local downloads for YouTube.",
   "author": "Matthew Parker",
   "homepage_url": "https://github.com/SysAdminDoc/YouTube-Kit",
@@ -51,6 +51,23 @@
         "early.css"
       ],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.youtube-nocookie.com/*",
+        "https://youtu.be/*"
+      ],
+      "exclude_matches": [
+        "https://m.youtube.com/*",
+        "https://studio.youtube.com/*",
+        "https://*.youtube.com/live_chat*"
+      ],
+      "js": [
+        "ytkit-main.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
     },
     {
       "matches": [
