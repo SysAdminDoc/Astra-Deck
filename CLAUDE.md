@@ -4,9 +4,9 @@
 Chrome + Firefox MV3 extension and Tampermonkey userscript for comprehensive YouTube enhancement. Theater mode, ChapterForge AI chapters, DeArrow, filler skip, transcript extraction, video/channel hiding.
 
 ## Architecture
-- Single ISOLATED world content script (`ytkit.js`) at `document_idle` — all DOM manipulation and feature logic
+- ISOLATED world content script (`ytkit.js`) at `document_idle` — all DOM manipulation and feature logic
+- MAIN world bridge script (`ytkit-main.js`) at `document_start` — handles `canPlayType` patching for codec/format filtering via data attribute bridge (`data-ytkit-codec`)
 - Early CSS injection (`early.css`) at `document_start` for anti-FOUC (hide end cards, info cards, autoplay toggle, etc.)
-- No MAIN world script in extension build — ad blocking operates via DOM manipulation only (ISOLATED world)
 - GM_* compatibility shim for userscript mode
 - YTYT-Downloader consolidated into this repo (separate repo was deleted)
 - Settings panel cleanup registry (`_panelCleanups`) prevents memory leaks from intervals/observers
@@ -121,6 +121,8 @@ The extension uses a **MediaDL-only** download path (no Cobalt/direct-stream fal
 
 ## Gotchas
 - ISOLATED world cannot access page JS globals (`window.ytcfg`, `ytInitialPlayerResponse`) — uses regex + brace-counting fallback parsing from `<script>` tags, with Innertube API as second method
+- ISOLATED world prototype overrides (e.g. `HTMLVideoElement.prototype.canPlayType`) do NOT affect MAIN world — codec filtering MUST go through the MAIN world bridge (`ytkit-main.js`)
+- YouTube deprecated `setPlaybackQuality()` and `setPlaybackQualityRange()` — they are no-ops. Quality forcing uses DOM click simulation through the settings menu (`.ytp-settings-button` -> Quality submenu -> target resolution)
 - `trustedTypes.createPolicy()` required for all innerHTML on YouTube
 - `el.innerHTML = ''` still violates trustedTypes CSP — use `el.textContent = ''` to clear
 - YouTube filter chips (e.g. "Recently uploaded") replace grid content via Polymer recycling without firing `yt-navigate-finish` — need capture-phase click listener on `yt-chip-cloud-chip-renderer` to trigger reprocessing
@@ -131,4 +133,4 @@ The extension uses a **MediaDL-only** download path (no Cobalt/direct-stream fal
 - **`chrome.downloads` cookies**: `chrome.downloads.download()` uses the browser's own cookie jar for the URL's domain — unlike `fetch()` in the background script which runs in the extension's context.
 - **MediaDL auto-start protocol**: `mediadl://start` is silently ignored if the protocol handler isn't registered (no error dialog). The `_autoStartAttempted` flag prevents repeated protocol launches on the same page load, but `resetAutoStart()` clears it for explicit retry actions.
 
-## Current Version: v3.3.0
+## Current Version: v3.4.0
