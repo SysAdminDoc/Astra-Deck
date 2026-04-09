@@ -435,7 +435,7 @@ return response;
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.4.1';
+    const YTKIT_VERSION = '3.5.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -16571,14 +16571,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         name.className = 'ytkit-feature-name';
         name.textContent = f.name;
 
-        const desc = document.createElement('p');
-        desc.className = 'ytkit-feature-desc';
-        desc.textContent = f.description;
-        desc.title = f.description;
+        card.title = f.description;
 
         if (hasMeta) info.appendChild(meta);
         info.appendChild(name);
-        info.appendChild(desc);
         featureMain.appendChild(glyph);
         featureMain.appendChild(info);
 
@@ -17244,18 +17240,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         appendStyleSheet(`
 :root {
     --ytkit-font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Avenir Next', 'Trebuchet MS', sans-serif;
-    --ytkit-bg-base: #08090c;
-    --ytkit-bg-elevated: #10151d;
-    --ytkit-bg-surface: #151b24;
-    --ytkit-bg-hover: #1e2633;
-    --ytkit-bg-active: #263144;
-    --ytkit-border: rgba(255,255,255,0.08);
-    --ytkit-border-subtle: rgba(255,255,255,0.05);
-    --ytkit-text-primary: #f4f6fb;
-    --ytkit-text-secondary: #c8d2e1;
-    --ytkit-text-muted: #8894a8;
+    --ytkit-bg-base: #0a0c10;
+    --ytkit-bg-elevated: #12161e;
+    --ytkit-bg-surface: #181d27;
+    --ytkit-bg-hover: #1f2634;
+    --ytkit-bg-active: #283042;
+    --ytkit-border: rgba(255,255,255,0.07);
+    --ytkit-border-subtle: rgba(255,255,255,0.04);
+    --ytkit-text-primary: #e8ecf4;
+    --ytkit-text-secondary: #a0acbf;
+    --ytkit-text-muted: #6b7a90;
     --ytkit-accent: #ff6b4a;
-    --ytkit-accent-soft: rgba(255,107,74,0.14);
+    --ytkit-accent-soft: rgba(255,107,74,0.12);
 }
 
 body.ytkit-panel-open {
@@ -17311,12 +17307,10 @@ body.ytkit-panel-open {
     height: min(90vh, 920px);
     max-height: 920px;
     background:
-        radial-gradient(circle at top left, rgba(255,107,74,0.08), transparent 28%),
-        radial-gradient(circle at top right, rgba(87,146,255,0.08), transparent 24%),
-        linear-gradient(180deg, rgba(255,255,255,0.03), transparent 16%),
+        radial-gradient(ellipse at top left, rgba(255,107,74,0.05), transparent 40%),
         var(--ytkit-bg-base);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 32px 90px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid var(--ytkit-border);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
     color-scheme: dark;
     font-family: var(--ytkit-font);
     color: var(--ytkit-text-primary);
@@ -17376,11 +17370,11 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    padding: 18px 22px 16px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0));
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ytkit-border);
     flex-shrink: 0;
 }
 
@@ -17621,19 +17615,18 @@ body.ytkit-panel-open #ytkit-settings-panel {
 .ytkit-nav-btn {
     display: grid;
     grid-template-columns: auto minmax(0,1fr) auto auto;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    padding: 9px 10px;
+    padding: 6px 8px;
     background: transparent;
     text-align: left;
     border: 1px solid transparent;
-    border-radius: 14px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+    transition: background-color 120ms ease, border-color 120ms ease;
 }
 
 .ytkit-nav-btn:hover {
-    transform: translateX(2px);
     border-color: rgba(255,255,255,0.08);
 }
 
@@ -17643,12 +17636,12 @@ body.ytkit-panel-open #ytkit-settings-panel {
 }
 
 .ytkit-nav-icon {
-    width: 34px;
-    height: 34px;
+    width: 26px;
+    height: 26px;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.04);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 10%, transparent);
     flex-shrink: 0;
 }
 
@@ -17701,7 +17694,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 .ytkit-content {
     flex: 1;
     min-width: 0;
-    padding: 20px 22px 22px;
+    padding: 14px 16px 16px;
     overflow-y: auto;
 }
 
@@ -17732,11 +17725,11 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-pane-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    padding-bottom: 14px;
-    margin-bottom: 14px;
+    gap: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -17757,8 +17750,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
 }
 
 .ytkit-pane-title h2 {
-    font-size: clamp(21px, 1.8vw, 26px);
-    font-weight: 800;
+    font-size: clamp(16px, 1.5vw, 20px);
+    font-weight: 700;
     letter-spacing: -0.04em;
 }
 
@@ -17820,81 +17813,80 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-features-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 3px;
 }
 
 .ytkit-feature-card {
-    display: grid;
-    grid-template-columns: minmax(0,1fr);
-    align-items: start;
-    gap: 14px;
-    padding: 14px;
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)), var(--ytkit-bg-surface);
-    border: 1px solid rgba(255,255,255,0.07);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-    transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background-color 100ms ease, border-color 100ms ease;
+    position: relative;
 }
 
 .ytkit-feature-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255,255,255,0.14);
+    background: var(--ytkit-bg-hover);
+    border-color: var(--ytkit-border);
 }
 
 .ytkit-feature-card.ytkit-card-enabled {
-    border-color: color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 26%, rgba(255,255,255,0.08));
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)), color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 7%, var(--ytkit-bg-surface));
+    background: color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 6%, transparent);
+}
+
+/* Full-width cards for textareas, selects, info, color, range */
+.ytkit-feature-card--textarea,
+.ytkit-feature-card--select,
+.ytkit-feature-card--info,
+.ytkit-feature-card--color,
+.ytkit-feature-card--range {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    background: var(--ytkit-bg-surface);
+    border: 1px solid var(--ytkit-border-subtle);
+    border-radius: 8px;
 }
 
 .ytkit-feature-main {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: center;
+    gap: 7px;
     min-width: 0;
+    flex: 1;
 }
 
 .ytkit-feature-glyph {
-    width: 38px;
-    height: 38px;
+    width: 22px;
+    height: 22px;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--feature-color, var(--ytkit-accent)) 14%, rgba(255,255,255,0.03));
-    border: 1px solid color-mix(in srgb, var(--feature-color, var(--ytkit-accent)) 22%, rgba(255,255,255,0.06));
-    color: #fff;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--feature-color, var(--ytkit-accent)) 12%, transparent);
+    color: color-mix(in srgb, var(--feature-color, var(--ytkit-accent)) 80%, #fff);
     flex-shrink: 0;
 }
 
 .ytkit-feature-glyph svg {
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
 }
 
 .ytkit-feature-info {
     min-width: 0;
-    padding-right: 0;
+    flex: 1;
 }
 
 .ytkit-feature-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 6px;
+    display: none;
 }
 
 .ytkit-feature-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 7px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.06);
-    color: var(--ytkit-text-secondary);
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    display: none;
 }
 
 .ytkit-feature-badge-muted {
@@ -17902,29 +17894,54 @@ body.ytkit-panel-open #ytkit-settings-panel {
 }
 
 .ytkit-feature-name {
-    margin: 0 0 4px;
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 550;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--ytkit-text-primary);
 }
 
 .ytkit-feature-desc {
-    font-size: 11px;
-    line-height: 1.5;
+    display: none;
 }
 
 .ytkit-sub-features {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-left: 18px;
-    padding-left: 16px;
-    border-left: 1px dashed rgba(255,255,255,0.12);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2px;
+    margin-left: 14px;
+    padding: 4px 0 4px 10px;
+    border-left: 2px solid color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 20%, transparent);
+    grid-column: 1 / -1;
 }
 
 .ytkit-sub-card {
-    margin-left: 0;
-    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), rgba(255,255,255,0.015);
+    background: transparent;
+    border: none;
+    padding: 3px 6px;
+    border-radius: 4px;
+}
+
+.ytkit-sub-card:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.ytkit-sub-card .ytkit-feature-glyph {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+}
+
+.ytkit-sub-card .ytkit-feature-glyph svg {
+    width: 10px;
+    height: 10px;
+}
+
+.ytkit-sub-card .ytkit-feature-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ytkit-text-secondary);
 }
 
 .ytkit-textarea-card,
@@ -17941,29 +17958,29 @@ body.ytkit-panel-open #ytkit-settings-panel {
     width: 100%;
     background: rgba(7,10,15,0.76);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
+    border-radius: 6px;
     color: var(--ytkit-text-primary);
     font-family: var(--ytkit-font);
 }
 
 .ytkit-input {
-    min-height: 96px;
-    padding: 10px 12px;
-    font-size: 12px;
-    line-height: 1.5;
+    min-height: 64px;
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1.4;
     resize: vertical;
 }
 
 .ytkit-select {
-    min-width: 180px;
-    padding: 10px 12px;
-    font-size: 12px;
+    min-width: 140px;
+    padding: 5px 8px;
+    font-size: 11px;
 }
 
 .ytkit-switch {
     position: relative;
-    width: 48px;
-    height: 28px;
+    width: 36px;
+    height: 20px;
     flex-shrink: 0;
 }
 
@@ -17994,13 +18011,13 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-switch-thumb {
     position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 20px;
-    height: 20px;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
     background: #fff;
     border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.24);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.24);
     transition: all 180ms ease;
     display: flex;
     align-items: center;
@@ -18008,7 +18025,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 }
 
 .ytkit-switch.active .ytkit-switch-thumb {
-    transform: translateX(20px);
+    transform: translateX(16px);
 }
 
 .ytkit-switch-icon {
@@ -18019,8 +18036,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
 }
 
 .ytkit-switch-icon svg {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     color: var(--switch-color, var(--ytkit-accent));
 }
 
@@ -18128,10 +18145,6 @@ body.ytkit-panel-open #ytkit-settings-panel {
 @media (max-width: 1120px) {
     .ytkit-sidebar {
         width: 228px;
-    }
-
-    .ytkit-features-grid {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -19009,8 +19022,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-features-grid {
-            grid-template-columns: 1fr;
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 3px;
         }
 
         .ytkit-feature-card {
@@ -19071,10 +19084,10 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-sub-features {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             margin-left: 10px;
             padding-left: 10px;
-            gap: 6px;
+            gap: 2px;
         }
 
         .ytkit-sub-card {
@@ -19705,7 +19718,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-body {
             display: grid;
-            grid-template-columns: minmax(188px, 216px) minmax(0, 1fr);
+            grid-template-columns: minmax(226px, 258px) minmax(0, 1fr);
             min-height: 0;
         }
 
@@ -19714,7 +19727,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             grid-template-rows: auto minmax(0, 1fr);
             width: auto;
             min-width: 0;
-            padding: 8px 8px 10px 10px;
+            padding: 8px 10px 10px 10px;
             gap: 6px;
             overflow: hidden;
         }
@@ -19753,7 +19766,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-nav-count {
-            min-width: 34px;
+            min-width: 38px;
         }
 
         .ytkit-content {
@@ -19767,10 +19780,11 @@ body.ytkit-panel-open #ytkit-settings-panel {
             z-index: 2;
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
-            align-items: center;
+            align-items: start;
             gap: 8px 14px;
-            padding: 0 0 8px;
-            margin-bottom: 8px;
+            padding: 0 0 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             background: linear-gradient(180deg, rgba(8,11,16,0.98), rgba(8,11,16,0.88) 72%, rgba(8,11,16,0));
         }
 
@@ -19793,26 +19807,26 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 8px;
-            flex-wrap: nowrap;
+            gap: 6px;
+            flex-wrap: wrap;
             min-width: max-content;
         }
 
         .ytkit-reset-group-btn {
             min-height: 30px;
-            padding: 0 10px;
-            border-radius: 10px;
-            font-size: 10px;
+            padding: 0 11px;
+            border-radius: 9px;
+            font-size: 11px;
         }
 
         .ytkit-toggle-all {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
         }
 
         .ytkit-toggle-all span {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             letter-spacing: 0;
             text-transform: none;
@@ -19821,21 +19835,29 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-features-grid {
             grid-template-columns: 1fr;
-            gap: 8px;
+            gap: 7px;
             align-items: start;
         }
 
         .ytkit-feature-card {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 8px;
-            padding: 9px 11px;
-            border-radius: 12px;
-            align-items: start;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            align-items: center;
             min-height: 0;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.012)),
+                rgba(10,13,18,0.9);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
         }
 
         .ytkit-feature-main {
-            gap: 8px;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 10px;
             align-items: flex-start;
             min-width: 0;
         }
@@ -19853,41 +19875,67 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-feature-info {
             display: grid;
-            gap: 2px;
+            gap: 3px;
             min-width: 0;
         }
 
         .ytkit-feature-name {
             margin: 0;
             font-size: 12px;
-            line-height: 1.22;
+            font-weight: 600;
+            line-height: 1.25;
         }
 
         .ytkit-feature-desc {
-            font-size: 10px;
-            line-height: 1.32;
-            min-height: calc(1.32em * 2);
+            display: -webkit-box;
+            overflow: hidden;
+            font-size: 11px;
+            line-height: 1.38;
+            color: rgba(255,255,255,0.6);
+            min-height: 0;
             -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .ytkit-pane.ytkit-search-active .ytkit-feature-desc {
             -webkit-line-clamp: 2;
         }
 
+        .ytkit-feature-card.ytkit-card-enabled {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.038), rgba(255,255,255,0.016)),
+                color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 7%, rgba(10,13,18,0.92));
+            border-color: color-mix(in srgb, var(--cat-color, var(--ytkit-accent)) 20%, rgba(255,255,255,0.08));
+        }
+
         .ytkit-feature-card--toggle .ytkit-switch {
-            align-self: flex-start;
-            justify-self: start;
-            margin-top: 1px;
+            grid-column: 2;
+            justify-self: end;
+            align-self: center;
+            margin-top: 0;
         }
 
         .ytkit-feature-card--select,
         .ytkit-feature-card--range,
         .ytkit-feature-card--color,
+        .ytkit-feature-card--toggle,
         .ytkit-feature-card--textarea,
         .ytkit-feature-card--info {
             grid-template-columns: minmax(0, 1fr);
             align-items: stretch;
             min-height: 0;
+        }
+
+        .ytkit-feature-card--toggle {
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+        }
+
+        .ytkit-feature-card--select,
+        .ytkit-feature-card--range,
+        .ytkit-feature-card--color {
+            grid-template-columns: minmax(0, 1fr) minmax(220px, 340px);
+            align-items: center;
         }
 
         .ytkit-feature-card--select .ytkit-feature-main,
@@ -19900,16 +19948,18 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-sub-features {
             grid-column: 1 / -1;
+            display: grid;
             grid-template-columns: 1fr;
             gap: 6px;
-            margin-left: 0;
-            padding: 8px 0 0;
-            border-left: none;
-            border-top: 1px dashed rgba(255,255,255,0.1);
+            margin-left: 14px;
+            padding: 6px 0 0 12px;
+            border-left: 1px solid rgba(255,255,255,0.08);
+            border-top: none;
         }
 
         .ytkit-sub-card {
-            background: rgba(255,255,255,0.018);
+            background: rgba(255,255,255,0.014);
+            border-radius: 9px;
         }
 
         .ytkit-field-shell,
@@ -19921,6 +19971,14 @@ body.ytkit-panel-open #ytkit-settings-panel {
             max-width: 100%;
             align-self: stretch;
             grid-column: 1 / -1;
+        }
+
+        .ytkit-feature-card--select .ytkit-select-shell,
+        .ytkit-feature-card--range .ytkit-range-shell,
+        .ytkit-feature-card--color .ytkit-color-shell {
+            grid-column: 2;
+            justify-self: end;
+            width: min(100%, 340px);
         }
 
         .ytkit-select-shell {
@@ -19948,22 +20006,24 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-range-shell {
             gap: 6px;
-            grid-template-columns: minmax(0, 1fr);
-            align-items: stretch;
-            margin-top: 2px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            margin-top: 0;
         }
 
         .ytkit-range-value {
-            min-width: 40px;
+            min-width: 46px;
             padding: 5px 7px;
-            font-size: 8px;
-            justify-self: start;
+            font-size: 9px;
+            justify-self: end;
         }
 
         .ytkit-color-shell {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
         }
 
         .ytkit-switch {
@@ -19980,6 +20040,33 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-switch.active .ytkit-switch-thumb {
             transform: translateX(18px);
+        }
+
+        @media (max-width: 1240px) {
+            .ytkit-feature-card--toggle,
+            .ytkit-feature-card--select,
+            .ytkit-feature-card--range,
+            .ytkit-feature-card--color {
+                grid-template-columns: minmax(0, 1fr);
+                align-items: stretch;
+            }
+
+            .ytkit-feature-card--toggle .ytkit-switch,
+            .ytkit-feature-card--select .ytkit-select-shell,
+            .ytkit-feature-card--range .ytkit-range-shell,
+            .ytkit-feature-card--color .ytkit-color-shell {
+                grid-column: 1;
+                justify-self: stretch;
+                width: 100%;
+            }
+
+            .ytkit-feature-card--toggle .ytkit-switch {
+                justify-self: start;
+            }
+
+            .ytkit-color-shell {
+                justify-content: flex-start;
+            }
         }
 
         .ytkit-footer {
@@ -21326,10 +21413,6 @@ body.ytkit-panel-open #ytkit-settings-panel {
             }
 
             .ytkit-features-grid,
-            .ytkit-sub-features {
-                grid-template-columns: 1fr;
-            }
-
             .ytkit-footer-left,
             .ytkit-footer-right {
                 width: 100%;
