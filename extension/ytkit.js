@@ -435,7 +435,7 @@ return response;
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.3.0';
+    const YTKIT_VERSION = '3.4.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1100,6 +1100,17 @@ return response;
         enable()  { this._enabled = true; storageWrite('ytkit_debug', true); },
         disable() { this._enabled = false; storageWrite('ytkit_debug', false); }
     };
+
+    // Sync effective codec preference to MAIN world via data attribute bridge.
+    // Called by forceH264 and codecSelector features when they init/destroy.
+    // The MAIN world script (ytkit-main.js) watches this attribute and patches
+    // HTMLVideoElement.prototype.canPlayType accordingly.
+    function _syncMainWorldCodec() {
+        const forceH264 = appState?.settings?.forceH264;
+        const codec = appState?.settings?.codecSelector || 'auto';
+        const effective = forceH264 ? 'h264' : codec;
+        document.documentElement.setAttribute('data-ytkit-codec', effective);
+    }
 
 
     // ── Shared Player Button Styles ──
@@ -3051,7 +3062,7 @@ return response;
         persistentSpeed: { conflicts: ['perChannelSpeed'], reason: 'Global speed overrides per-channel speed' },
         perChannelSpeed: { conflicts: ['persistentSpeed'], reason: 'Per-channel speed overrides global speed' },
         // focusedMode now hides only related videos, not all of #secondary — cooperates with transcriptViewer/timestampBookmarks/stickyVideo
-        // forceH264 and codecSelector now share a single canPlayType patch — cooperate cleanly
+        // forceH264 and codecSelector share MAIN world canPlayType bridge via _syncMainWorldCodec()
         // autoPauseOnSwitch and pauseOtherTabs now tag pause reasons — cooperate cleanly
         // popOutPlayer sets __ytkit_videoPopped flag — pipButton/fullscreenOnDoubleClick check it
         fitPlayerToWindow: { conflicts: ['stickyVideo'], reason: 'Both control player positioning on watch pages' },
@@ -6940,6 +6951,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _watchdogInterval: null,
             _watchdogStopTimer: null,
             _popupHideTimer: null,
+            _domClickPending: false,
             _navRuleId: 'autoMaxResolutionNav',
             _qualityMap: { '4320': 'highres', '2160': 'hd2160', '1440': 'hd1440', '1080': 'hd1080', '720': 'hd720', '480': 'large' },
             _qualityOrder: ['highres', 'hd2880', 'hd2160', 'hd1440', 'hd1080', 'hd720', 'large', 'medium', 'small', 'tiny'],
@@ -7012,22 +7024,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._watchdogStopTimer = null;
             },
             _syncPopupHider() {
-                this._styleElement?.remove();
-                this._styleElement = null;
-                if (appState.settings.hideQualityPopup) {
+                // Always inject popup hider style — needed for DOM click quality setting
+                if (!this._styleElement) {
                     this._styleElement = injectStyle('html.ytkit-hide-quality-popup .ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'hide-quality-popup', true);
-                } else {
-                    document.documentElement.classList.remove('ytkit-hide-quality-popup');
                 }
             },
             _temporarilyHideQualityPopup() {
-                if (!appState.settings.hideQualityPopup) return;
                 document.documentElement.classList.add('ytkit-hide-quality-popup');
                 if (this._popupHideTimer) clearTimeout(this._popupHideTimer);
                 this._popupHideTimer = setTimeout(() => {
                     document.documentElement.classList.remove('ytkit-hide-quality-popup');
                     this._popupHideTimer = null;
-                }, 1400);
+                }, 2500);
             },
             _getPlayer() {
                 return document.getElementById('movie_player') || document.querySelector('#movie_player');
@@ -7058,7 +7066,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _scheduleQualityAttempts() {
                 this._clearRetryTimers();
-                const delays = [0, 250, 1000, 2500, 5000, 8000, 12000];
+                const delays = [500, 1500, 3000, 6000, 10000];
                 delays.forEach((delay) => {
                     const timer = setTimeout(() => {
                         this.setQuality(this._getPlayer(), { force: true });
@@ -7074,45 +7082,98 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, 1500);
                 this._watchdogStopTimer = setTimeout(() => this._clearWatchdog(), durationMs);
             },
-            setQuality(player, options = {}) {
+            async setQuality(player, options = {}) {
                 const currentVideoId = getVideoId();
                 if (!player || !currentVideoId) return false;
                 if (!options.force && currentVideoId === this._lastProcessedVideoId) return false;
-                if (typeof player.getAvailableQualityLevels !== 'function') return false;
-                let levels = [];
-                try {
-                    levels = player.getAvailableQualityLevels() || [];
-                } catch (_) {
-                    return false;
-                }
-                const target = this._resolveTarget(levels);
-                if (!target) return false;
+                if (this._domClickPending) return false;
 
-                try {
-                    const currentQuality = player.getPlaybackQuality?.();
-                    if (!options.force && currentQuality === target && this._lastAppliedTarget === target) {
-                        this._lastProcessedVideoId = currentVideoId;
-                        return true;
-                    }
-                } catch (_) { /* ignore */ }
-
+                this._domClickPending = true;
                 this._lastProcessedVideoId = currentVideoId;
-                this._lastAppliedTarget = target;
+
+                try {
+                    const success = await this._setQualityViaDOM(player);
+                    if (success) {
+                        this._lastAppliedTarget = appState.settings.preferredQuality || 'max';
+                        this._clearRetryTimers();
+                        this._clearWatchdog();
+                    }
+                    return success;
+                } catch (e) {
+                    DebugManager.log('Quality', 'DOM click failed: ' + e.message);
+                    return false;
+                } finally {
+                    this._domClickPending = false;
+                }
+            },
+            async _setQualityViaDOM(player) {
+                if (!player) return false;
                 this._temporarilyHideQualityPopup();
 
-                try {
-                    if (typeof player.setPlaybackQualityRange === 'function') {
-                        player.setPlaybackQualityRange(target, target);
-                    }
-                } catch (_) { /* ignore */ }
+                const settingsBtn = player.querySelector('.ytp-settings-button');
+                if (!settingsBtn) return false;
 
-                try {
-                    if (typeof player.setPlaybackQuality === 'function') {
-                        player.setPlaybackQuality(target);
-                    }
-                } catch (_) { /* ignore */ }
+                // Open settings menu
+                settingsBtn.click();
+                await new Promise(r => setTimeout(r, 250));
 
-                return true;
+                // Find Quality menu item
+                let items = Array.from(player.querySelectorAll('.ytp-settings-menu .ytp-menuitem'));
+                if (!items.length) { settingsBtn.click(); return false; }
+
+                let qItem = items.find(i => /quality/i.test(i.querySelector('.ytp-menuitem-label')?.textContent || ''));
+                if (!qItem) qItem = items[items.length - 1]; // Quality is typically last
+
+                // Open quality submenu
+                qItem.click();
+                await new Promise(r => setTimeout(r, 250));
+
+                // Get quality options from submenu
+                items = Array.from(player.querySelectorAll('.ytp-settings-menu .ytp-menuitem'));
+                if (!items.length) { settingsBtn.click(); return false; }
+
+                const pref = appState.settings.preferredQuality || 'max';
+                let target = null;
+
+                if (pref === 'max') {
+                    // First item with a resolution label (highest quality, skip Auto)
+                    target = items.find(i => /^\d+p/.test(i.querySelector('.ytp-menuitem-label')?.textContent?.trim() || ''));
+                    if (!target) target = items[0];
+                } else {
+                    const targetNum = parseInt(pref);
+                    // Exact match
+                    target = items.find(i => {
+                        const label = i.querySelector('.ytp-menuitem-label')?.textContent?.trim() || '';
+                        return label.startsWith(pref + 'p');
+                    });
+                    // Closest at or below target
+                    if (!target) {
+                        let best = null, bestRes = 0;
+                        for (const item of items) {
+                            const label = item.querySelector('.ytp-menuitem-label')?.textContent?.trim() || '';
+                            const m = label.match(/^(\d+)p/);
+                            if (m) {
+                                const res = parseInt(m[1]);
+                                if (res <= targetNum && res > bestRes) { bestRes = res; best = item; }
+                            }
+                        }
+                        target = best;
+                    }
+                    // Fallback: highest available
+                    if (!target) {
+                        target = items.find(i => /^\d+p/.test(i.querySelector('.ytp-menuitem-label')?.textContent?.trim() || ''));
+                    }
+                }
+
+                if (target) {
+                    const label = target.querySelector('.ytp-menuitem-label')?.textContent?.trim();
+                    target.click();
+                    DebugManager.log('Quality', `Set via DOM click: ${label}`);
+                    return true;
+                }
+
+                settingsBtn.click(); // Close menu on failure
+                return false;
             }
         },
         {
@@ -9300,45 +9361,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'forceH264',
             name: 'Force H.264 Codec',
-            description: 'Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses the same codec engine as Codec Selector.',
+            description: 'Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge.',
             group: 'Video Player',
             icon: 'cpu',
 
             init() {
-                // Delegate to the shared codec patching via codecSelector's engine
-                // This avoids double-patching canPlayType when both are active
-                if (!HTMLVideoElement.prototype.__ytkit_codecPatched) {
-                    const videoProto = HTMLVideoElement.prototype;
-                    videoProto.__ytkit_origCanPlayType = videoProto.canPlayType;
-                    videoProto.__ytkit_codecPatched = true;
-                    videoProto.canPlayType = function(type) {
-                        const codec = appState.settings.codecSelector || 'auto';
-                        const forceH264 = appState.settings.forceH264;
-                        // forceH264 forces h264 regardless of codecSelector
-                        const effective = forceH264 ? 'h264' : codec;
-                        if (effective === 'auto') return videoProto.__ytkit_origCanPlayType.call(this, type);
-                        if (effective === 'h264' && /vp0?9|av01/i.test(type)) return '';
-                        if (effective === 'vp9') {
-                            if (/av01/i.test(type)) return '';
-                            if (/avc1/i.test(type) && !/vp0?9/i.test(type)) return '';
-                        }
-                        if (effective === 'av1') {
-                            if (/vp0?9|avc1/i.test(type) && !/av01/i.test(type)) return '';
-                        }
-                        return videoProto.__ytkit_origCanPlayType.call(this, type);
-                    };
-                }
-                DebugManager.log('Codec', 'Forcing H.264 — VP9/AV1 blocked');
+                // Delegate codec patching to MAIN world via data attribute bridge
+                _syncMainWorldCodec();
+                DebugManager.log('Codec', 'Forcing H.264 via MAIN world bridge');
             },
             destroy() {
-                // Only restore if codecSelector is not also active
-                if (!appState.settings.codecSelector || appState.settings.codecSelector === 'auto') {
-                    if (HTMLVideoElement.prototype.__ytkit_origCanPlayType) {
-                        HTMLVideoElement.prototype.canPlayType = HTMLVideoElement.prototype.__ytkit_origCanPlayType;
-                        delete HTMLVideoElement.prototype.__ytkit_origCanPlayType;
-                        delete HTMLVideoElement.prototype.__ytkit_codecPatched;
-                    }
-                }
+                _syncMainWorldCodec();
             }
         },
         {
@@ -11182,33 +11215,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingKey: 'codecSelector',
 
             init() {
+                // Delegate codec patching to MAIN world via data attribute bridge
+                _syncMainWorldCodec();
                 const codec = appState.settings.codecSelector || 'auto';
-                if (codec === 'auto' && !appState.settings.forceH264) return;
-                // Use shared codec patch — same engine as forceH264
-                if (!HTMLVideoElement.prototype.__ytkit_codecPatched) {
-                    const videoProto = HTMLVideoElement.prototype;
-                    videoProto.__ytkit_origCanPlayType = videoProto.canPlayType;
-                    videoProto.__ytkit_codecPatched = true;
-                    videoProto.canPlayType = function(type) {
-                        const currentCodec = appState.settings.codecSelector || 'auto';
-                        const forceH264 = appState.settings.forceH264;
-                        const effective = forceH264 ? 'h264' : currentCodec;
-                        if (effective === 'auto') return videoProto.__ytkit_origCanPlayType.call(this, type);
-                        if (effective === 'h264' && /vp0?9|av01/i.test(type)) return '';
-                        if (effective === 'vp9') {
-                            if (/av01/i.test(type)) return '';
-                            if (/avc1/i.test(type) && !/vp0?9/i.test(type)) return '';
-                        }
-                        if (effective === 'av1') {
-                            if (/vp0?9|avc1/i.test(type) && !/av01/i.test(type)) return '';
-                        }
-                        return videoProto.__ytkit_origCanPlayType.call(this, type);
-                    };
-                }
-                DebugManager.log('Codec', `Codec selector: ${codec}`);
+                DebugManager.log('Codec', `Codec selector: ${codec} (MAIN world bridge)`);
             },
             destroy() {
-                // Only restore if forceH264 is not also active
+                _syncMainWorldCodec();
+                // Clean up legacy ISOLATED world patch if present
                 if (!appState.settings.forceH264) {
                     if (HTMLVideoElement.prototype.__ytkit_origCanPlayType) {
                         HTMLVideoElement.prototype.canPlayType = HTMLVideoElement.prototype.__ytkit_origCanPlayType;
@@ -11576,41 +11590,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'forceStandardFps',
             name: 'Force Standard Frame Rate',
-            description: 'Block 60fps streams to reduce CPU/GPU load — plays 30fps versions instead',
+            description: 'Dims HFR entries in the quality menu. For reliable 30fps, enable Force H.264 which caps at 1080p30.',
             group: 'Video Player',
             icon: 'film',
 
-            _observer: null,
-
-            _apply() {
-                const player = document.querySelector('#movie_player');
-                if (!player || !player.getAvailableQualityData) return;
-                try {
-                    const video = document.querySelector('video');
-                    if (!video) return;
-                    // YouTube exposes setPlaybackQualityRange on the player API
-                    if (player.setPlaybackQualityRange) {
-                        // Get current quality and force non-HFR version
-                        const current = player.getPlaybackQuality?.() || 'auto';
-                        if (current !== 'auto') {
-                            player.setPlaybackQualityRange(current, current);
-                        }
-                    }
-                } catch(e) { /* player API may not be ready */ }
-            },
-
             init() {
-                // Inject CSS to signal preference, plus player API approach
+                // CSS dims HFR quality entries in the settings menu.
+                // YouTube deprecated setPlaybackQualityRange (no-op since ~2023).
+                // True FPS filtering requires MAIN world format interception — fragile.
+                // For reliable FPS reduction, use Force H.264 which caps at 1080p30.
                 const css = `
-                    /* Force standard framerate label */
                     .ytp-quality-menu .ytp-menuitem[data-quality*="hfr"] { opacity: 0.5; }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
-                addNavigateRule('forceStandardFps', () => setTimeout(() => this._apply(), 3000));
-                setTimeout(() => this._apply(), 3000);
             },
             destroy() {
-                removeNavigateRule('forceStandardFps');
                 this._styleEl?.remove(); this._styleEl = null;
             }
         },
@@ -16266,11 +16260,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             badge.id = 'ytkit-whats-new-badge';
             badge.style.cssText = 'position:absolute;top:-3px;right:-8px;width:8px;height:8px;background:#ef4444;border-radius:50%;animation:ytkit-badge-pulse 2s infinite;';
             versionSpan.appendChild(badge);
-            versionSpan.title = `New in v${YTKIT_VERSION}: Leaner settings panel — denser categories, less copy, faster scanning`;
+            versionSpan.title = `New in v${YTKIT_VERSION}: Fixed resolution selector, codec selector, MAIN world bridge`;
             versionSpan.onclick = () => {
                 storageWrite('ytkit_last_seen_version', CURRENT_VER);
                 badge.remove();
-                showToast(`v${YTKIT_VERSION}: Leaner settings — denser categories, less copy, faster scanning`, '#3b82f6', { duration: 6 });
+                showToast(`v${YTKIT_VERSION}: Fixed quality/codec selection — DOM click quality, MAIN world codec bridge`, '#3b82f6', { duration: 6 });
             };
         }
 
