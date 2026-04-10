@@ -288,14 +288,6 @@ function buildUserscriptSource(extensionSource, targetVersion) {
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @connect      sponsor.ajay.app
-// @connect      returnyoutubedislikeapi.com
-// @connect      cobalt.tools
-// @connect      *.cobalt.tools
-// @connect      *.imput.net
-// @connect      *.meowing.de
-// @connect      *.canine.tools
-// @connect      capi.3kh0.net
-// @connect      downloadapi.stuff.solutions
 // @connect      raw.githubusercontent.com
 // @connect      localhost
 // @connect      127.0.0.1

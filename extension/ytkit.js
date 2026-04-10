@@ -13,12 +13,19 @@
         configureNavigationRuntime,
         flushPendingStorageWrites,
         getCurrentPage,
+        getMainVideoElement,
+        getMoviePlayerElement,
+        getPlayerProgressBar,
+        getUrlParam,
+        getUrlSearchParams,
+        getVideoId,
         hasExtensionContext,
         injectStyle,
         installStorageChangeListener,
         installStorageFlushGuards,
         isLiveChatFrame,
         isLiveChatPath,
+        isWatchPagePath,
         isTopLevelFrame,
         PageTypes,
         preloadExtensionState,
@@ -42,11 +49,18 @@
         !cleanupRetiredCommentUi ||
         !configureNavigationRuntime ||
         !getCurrentPage ||
+        !getMainVideoElement ||
+        !getMoviePlayerElement ||
+        !getPlayerProgressBar ||
+        !getUrlParam ||
+        !getUrlSearchParams ||
+        !getVideoId ||
         !hasExtensionContext ||
         !injectStyle ||
         !installStorageChangeListener ||
         !installStorageFlushGuards ||
         !isLiveChatPath ||
+        !isWatchPagePath ||
         !preloadExtensionState ||
         !PageTypes ||
         !removeMutationRule ||
@@ -2733,26 +2747,6 @@ return response;
         }
     }
 
-    // ── Fast URL query helpers (avoid reparsing on every call) ──
-    let _cachedVid = null, _cachedHref = '', _cachedSearchHref = '', _cachedSearchParams = null;
-    function getUrlSearchParams() {
-        const h = window.location.href;
-        if (h !== _cachedSearchHref) {
-            _cachedSearchHref = h;
-            _cachedSearchParams = new URLSearchParams(window.location.search);
-        }
-        return _cachedSearchParams;
-    }
-    function getUrlParam(name) {
-        return getUrlSearchParams().get(name);
-    }
-    function getVideoId() {
-        const h = window.location.href;
-        if (h === _cachedHref) return _cachedVid;
-        _cachedHref = h;
-        _cachedVid = getUrlParam('v');
-        return _cachedVid;
-    }
     // Centralized detection: 'live' | 'vod' | 'standard' | 'premiere'
     // Used by Theater Split to decide what goes in the right panel,
     // and by other features to skip irrelevant operations.
@@ -2776,7 +2770,7 @@ return response;
 
         // Fallback: DOM signals
         _fromDOM() {
-            const video = cachedQuery('video.html5-main-video');
+            const video = getMainVideoElement();
             const liveBadge = cachedQuery('.ytp-live-badge');
             const liveBadgeActive = liveBadge && !liveBadge.classList.contains('ytp-live-badge-disabled')
                 && window.getComputedStyle(liveBadge).display !== 'none';
@@ -9384,8 +9378,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _saveCurrentProgress() {
-                if (!window.location.pathname.startsWith('/watch')) return;
-                const video = document.querySelector('video.html5-main-video');
+                if (!isWatchPagePath()) return;
+                const video = getMainVideoElement();
                 const videoId = getVideoId();
                 if (!video || !videoId || !video.duration || video.duration < 30) return;
                 const percent = Math.round((video.currentTime / video.duration) * 100);
@@ -9473,7 +9467,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _dismiss() {
                 const btn = document.querySelector('.ytp-unmute-confirm-button, button.ytp-play-button[data-title-no-tooltip="Play"], .yt-confirm-dialog-renderer #confirm-button, [aria-label="Yes, keep playing"], .ytd-popup-container tp-yt-paper-button#button');
                 if (btn) { btn.click(); DebugManager.log('StillWatching', 'Auto-dismissed prompt'); }
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (video && video.paused && !video.ended && document.querySelector('.ytp-pause-overlay, .ytp-error-content-wrap-reason')) {
                     video.play().catch(() => {});
                 }
@@ -9517,7 +9511,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _update() {
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video || !video.duration) { if (this._el) this._el.textContent = ''; return; }
                 const remaining = (video.duration - video.currentTime) / (video.playbackRate || 1);
                 if (!this._el) {
@@ -9571,7 +9565,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!target || target.querySelector('.ytkit-playlist-duration')) return;
                 const badge = document.createElement('span');
                 badge.className = 'ytkit-playlist-duration';
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 const speed = video?.playbackRate || 1;
                 let text = this._formatDuration(totalSecs);
                 if (speed !== 1) text += ` (${this._formatDuration(Math.round(totalSecs / speed))} at ${speed}x)`;
@@ -9603,7 +9597,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _origTitle: null,
 
             _update() {
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video || !video.duration || video.paused) {
                     if (this._origTitle && document.title.startsWith('[')) document.title = this._origTitle;
                     return;
@@ -9854,7 +9848,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const speeds = this._getSpeeds();
                 const savedSpeed = speeds[channelId];
                 if (!savedSpeed) return;
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video) return;
                 video.playbackRate = savedSpeed;
                 this._applied = true;
@@ -9864,7 +9858,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _saveCurrentSpeed() {
                 const channelId = this._getChannelId();
                 if (!channelId) return;
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video || video.playbackRate === 1) return;
                 const speeds = this._getSpeeds();
                 speeds[channelId] = video.playbackRate;
@@ -9995,7 +9989,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._channel = new BroadcastChannel('ytkit-pause-sync');
                 this._channel.onmessage = (e) => {
                     if (e.data === 'pause') {
-                        const video = document.querySelector('video.html5-main-video');
+                        const video = getMainVideoElement();
                         if (video && !video.paused) {
                             video.__ytkit_pausedByBroadcast = true;
                             video.pause();
@@ -10004,7 +9998,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
                 this._playHandler = () => {
                     // Clear broadcast-paused flag since user is playing in this tab now
-                    const video = document.querySelector('video.html5-main-video');
+                    const video = getMainVideoElement();
                     if (video) delete video.__ytkit_pausedByBroadcast;
                     this._channel.postMessage('pause');
                 };
@@ -10040,7 +10034,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _setPoint(which) {
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video) return;
                 if (which === 'A') {
                     this._pointA = video.currentTime;
@@ -10059,7 +10053,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _startLoop() {
                 this._stopLoop();
                 this._active = true;
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video) return;
                 this._interval = setInterval(() => {
                     if (!this._active || video.paused) return;
@@ -10092,8 +10086,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _updateMarkers() {
                 this._removeMarkers();
-                const video = document.querySelector('video.html5-main-video');
-                const progressBar = document.querySelector('.ytp-progress-bar');
+                const video = getMainVideoElement();
+                const progressBar = getPlayerProgressBar();
                 if (!video || !progressBar || !video.duration) return;
                 this._markers = document.createElement('div');
                 this._markers.className = 'ytkit-ab-markers';
@@ -10255,7 +10249,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically redirect the YouTube homepage to your subscriptions feed',
             group: 'Home / Subscriptions',
             icon: 'arrow-right',
-            _navHandler: null,
+            _navRuleId: 'redirectHomeToSubsNav',
 
             _check() {
                 if (window.location.pathname === '/' || window.location.pathname === '/feed/trending') {
@@ -10265,11 +10259,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._check();
-                this._navHandler = () => setTimeout(() => this._check(), 100);
-                document.addEventListener('yt-navigate-finish', this._navHandler);
+                addNavigateRule(this._navRuleId, () => setTimeout(() => this._check(), 100));
             },
             destroy() {
-                document.removeEventListener('yt-navigate-finish', this._navHandler);
+                removeNavigateRule(this._navRuleId);
             }
         },
         {
@@ -13271,27 +13264,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Stop videos from automatically playing on page load',
             group: 'Playback',
             icon: 'pause-circle',
-            _navHandler: null,
+            _navRuleId: 'preventAutoplayNav',
             init() {
                 const pauseRule = () => {
-                    if (!window.location.pathname.startsWith('/watch')) return;
-                    const video = document.querySelector('video.html5-main-video');
-                    const player = document.getElementById('movie_player');
+                    if (!isWatchPagePath()) return;
+                    const video = getMainVideoElement();
+                    const player = getMoviePlayerElement();
                     if (video && player && !video.paused) {
                         video.pause();
                         player.classList.remove('playing-mode');
                         player.classList.add('paused-mode');
                     }
                 };
-                this._navHandler = () => setTimeout(pauseRule, 500);
-                window.addEventListener('yt-navigate-finish', this._navHandler);
-                setTimeout(pauseRule, 500);
+                addNavigateRule(this._navRuleId, () => setTimeout(pauseRule, 500));
             },
             destroy() {
-                if (this._navHandler) {
-                    window.removeEventListener('yt-navigate-finish', this._navHandler);
-                    this._navHandler = null;
-                }
+                removeNavigateRule(this._navRuleId);
             }
         },
 
@@ -14217,7 +14205,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _segments: [],
             _videoId: null,
             _skipHandler: null,
-            _navHandler: null,
+            _navRuleId: 'sponsorBlockNav',
             _styleEl: null,
             _barSegments: [],
             _barObserver: null,
@@ -14284,7 +14272,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _checkSkip() {
                 if (!this._segments.length) return;
-                const video = document.querySelector('video.html5-main-video');
+                const video = getMainVideoElement();
                 if (!video || video.paused) return;
                 const currentTime = video.currentTime;
                 const enabledCats = this._getEnabledCategories();
@@ -14305,8 +14293,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _renderBarSegments() {
                 this._clearBarSegments();
-                const video = document.querySelector('video.html5-main-video');
-                const progressBar = document.querySelector('.ytp-progress-bar');
+                const video = getMainVideoElement();
+                const progressBar = getPlayerProgressBar();
                 if (!video || !progressBar || !video.duration) return;
                 const duration = video.duration;
                 for (const seg of this._segments) {
@@ -14331,28 +14319,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const self = this;
                 this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
                 this._skipHandler = setInterval(() => self._checkSkip(), 500);
-                this._navHandler = () => {
+                const reloadSegments = () => {
                     self._videoId = null;
                     self._segments = [];
                     self._clearBarSegments();
-                    setTimeout(() => self._loadForVideo(), 1000);
+                    setTimeout(() => self._loadForVideo(), 800);
                 };
-                window.addEventListener('yt-navigate-finish', this._navHandler);
+                addNavigateRule(this._navRuleId, reloadSegments);
                 // Also watch for video duration becoming available (for bar rendering)
                 this._barObserver = new MutationObserver(() => {
-                    const video = document.querySelector('video.html5-main-video');
+                    const video = getMainVideoElement();
                     if (video?.duration && this._segments.length && !this._barSegments.length) {
                         this._renderBarSegments();
                     }
                 });
-                const player = document.getElementById('movie_player');
+                const player = getMoviePlayerElement();
                 if (player) this._barObserver.observe(player, { childList: true, subtree: true });
-                setTimeout(() => self._loadForVideo(), 500);
             },
 
             destroy() {
                 if (this._skipHandler) clearInterval(this._skipHandler);
-                if (this._navHandler) window.removeEventListener('yt-navigate-finish', this._navHandler);
+                removeNavigateRule(this._navRuleId);
                 this._barObserver?.disconnect();
                 this._clearBarSegments();
                 this._styleEl?.remove();
@@ -14383,7 +14370,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cache: {},
             _cacheMeta: {},
             _observer: null,
-            _navHandler: null,
+            _navRuleId: 'deArrowNav',
             _generation: 0,
             _processTimer: null,
             _TITLE_SELECTORS: '#video-title, #video-title-link, h3.ytd-rich-grid-media a#video-title-link',
@@ -14409,7 +14396,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .daCustomTitle + [id="video-title"], .daCustomTitle + a#video-title-link { display: none !important; }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
-                this._navHandler = () => {
+                const resetAndProcess = () => {
                     self._generation++;
                     clearTimeout(self._processTimer);
                     document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());
@@ -14421,16 +14408,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (el.dataset.daOrigSrc) { el.src = el.dataset.daOrigSrc; delete el.dataset.daOrigSrc; }
                         el.classList.remove('da-replaced-thumb');
                     });
-                    if (!window.location.pathname.startsWith('/watch')) {
+                    if (!isWatchPagePath()) {
                         setTimeout(() => self._processPage(), 1000);
                     }
                 };
-                window.addEventListener('yt-navigate-finish', this._navHandler);
-                if (!window.location.pathname.startsWith('/watch')) {
-                    setTimeout(() => self._processPage(), 800);
-                }
+                addNavigateRule(this._navRuleId, resetAndProcess);
                 this._observer = new MutationObserver(() => {
-                    if (window.location.pathname.startsWith('/watch')) return;
+                    if (isWatchPagePath()) return;
                     clearTimeout(self._processTimer);
                     self._processTimer = setTimeout(() => self._processPage(), 300);
                 });
@@ -14544,7 +14528,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._generation++;
                 clearTimeout(this._processTimer);
                 clearTimeout(this._persistTimer);
-                if (this._navHandler) window.removeEventListener('yt-navigate-finish', this._navHandler);
+                removeNavigateRule(this._navRuleId);
                 this._observer?.disconnect();
                 this._styleEl?.remove();
                 document.querySelectorAll('.daCustomTitle').forEach(c => c.remove());

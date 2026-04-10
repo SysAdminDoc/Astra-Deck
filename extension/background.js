@@ -130,7 +130,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     if (msg.type === 'EXT_FETCH') {
-        const { method, url, headers, data, timeout } = msg.details;
+        const details = msg?.details;
+        if (!details || typeof details !== 'object') {
+            sendResponse({ error: 'Missing fetch details.' });
+            return false;
+        }
+
+        const { method, url, headers, data, timeout } = details;
+        if (typeof url !== 'string' || !url) {
+            sendResponse({ error: 'Invalid fetch URL.' });
+            return false;
+        }
 
         if (!isUrlAllowed(url)) {
             sendResponse({ error: `URL not in allowlist: ${url}` });
@@ -138,7 +148,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
 
         const validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
-        const safeMethod = validMethods.includes(method) ? method : 'GET';
+        const normalizedMethod = String(method || 'GET').toUpperCase();
+        const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
 
         const controller = new AbortController();
         const clampedTimeout = Math.min(Math.max(timeout || 0, 0), MAX_FETCH_TIMEOUT_MS);
