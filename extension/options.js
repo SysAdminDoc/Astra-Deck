@@ -27,6 +27,8 @@
         'hidePinnedComments'
     ]);
 
+    const INTERNAL_SETTING_KEY_PREFIX = '_';
+
     const GROUPS = [
         { id: 'all', label: 'All Settings' },
         { id: 'interface', label: 'Interface' },
@@ -143,6 +145,10 @@
         return sanitized;
     }
 
+    function isUserFacingSettingKey(key) {
+        return !RETIRED_SETTING_KEYS.has(key) && !String(key).startsWith(INTERNAL_SETTING_KEY_PREFIX);
+    }
+
     function applySettingsVersion(settings) {
         if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return {};
         const next = sanitizeSettingsObject(settings);
@@ -235,7 +241,7 @@
         ]);
 
         return Array.from(keySet)
-            .filter((key) => !RETIRED_SETTING_KEYS.has(key))
+            .filter((key) => isUserFacingSettingKey(key))
             .sort((left, right) => humanizeKey(left).localeCompare(humanizeKey(right)));
     }
 
@@ -644,6 +650,10 @@
             counts.set(groupId, (counts.get(groupId) || 0) + 1);
             counts.set('all', (counts.get('all') || 0) + 1);
         });
+
+        if (state.activeGroup !== 'all' && (counts.get(state.activeGroup) || 0) === 0) {
+            state.activeGroup = 'all';
+        }
 
         elements.settingsGroups.textContent = '';
         GROUPS.forEach((group) => {

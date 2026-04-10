@@ -83,8 +83,10 @@
         "core/env.js",
         "core/storage.js",
         "core/styles.js",
+        "core/url.js",
         "core/page.js",
         "core/navigation.js",
+        "core/player.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -102,8 +104,10 @@
         "core/env.js",
         "core/storage.js",
         "core/styles.js",
+        "core/url.js",
         "core/page.js",
         "core/navigation.js",
+        "core/player.js",
         "ytkit.js"
       ],
       "all_frames": true,
