@@ -99,6 +99,13 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    // Guard: reject malformed messages up front so a missing/non-object `msg`
+    // cannot throw before any handler runs.
+    if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') {
+        try { sendResponse({ error: 'Invalid message.' }); } catch (_) {}
+        return false;
+    }
+
     if (msg.type === 'OPEN_URL') {
         let targetUrl;
         try {
@@ -152,18 +159,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
 
         const controller = new AbortController();
-        const clampedTimeout = Math.min(Math.max(timeout || 0, 0), MAX_FETCH_TIMEOUT_MS);
+        // Default to 30 s when the caller does not pass a timeout so unauthenticated
+        // or hung upstream fetches cannot stall the service worker indefinitely.
+        const DEFAULT_FETCH_TIMEOUT_MS = 30000;
+        const requestedTimeout = Number.isFinite(timeout) && timeout > 0
+            ? timeout
+            : DEFAULT_FETCH_TIMEOUT_MS;
+        const clampedTimeout = Math.min(requestedTimeout, MAX_FETCH_TIMEOUT_MS);
         let timer = null;
         let responded = false;
 
-        if (clampedTimeout > 0) {
-            timer = setTimeout(() => {
-                if (responded) return;
-                responded = true;
-                controller.abort();
-                sendResponse({ timeout: true });
-            }, clampedTimeout);
-        }
+        timer = setTimeout(() => {
+            if (responded) return;
+            responded = true;
+            controller.abort();
+            sendResponse({ timeout: true });
+        }, clampedTimeout);
 
         const fetchOpts = {
             method: safeMethod,
@@ -183,17 +194,53 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (timer) clearTimeout(timer);
             if (responded) return;
 
-            const contentLength = parseInt(resp.headers.get('content-length') || '0', 10);
-            if (contentLength > MAX_RESPONSE_BYTES) {
-                responded = true;
-                sendResponse({ error: `Response too large (${contentLength} bytes)` });
-                return;
+            const contentLengthHeader = resp.headers.get('content-length');
+            if (contentLengthHeader !== null) {
+                const contentLength = parseInt(contentLengthHeader, 10);
+                if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
+                    responded = true;
+                    sendResponse({ error: `Response too large (${contentLength} bytes)` });
+                    try { controller.abort(); } catch (_) {}
+                    return;
+                }
             }
 
-            const text = await resp.text();
-            if (text.length > MAX_RESPONSE_BYTES) {
+            // Stream-bounded read so a chunked / unknown-length response cannot
+            // OOM the service worker before we reach the size check below.
+            let text;
+            try {
+                const reader = resp.body?.getReader();
+                if (reader) {
+                    const chunks = [];
+                    let received = 0;
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        received += value.byteLength;
+                        if (received > MAX_RESPONSE_BYTES) {
+                            try { reader.cancel(); } catch (_) {}
+                            responded = true;
+                            sendResponse({ error: `Response body too large (${received} bytes)` });
+                            return;
+                        }
+                        chunks.push(value);
+                    }
+                    const merged = new Uint8Array(received);
+                    let offset = 0;
+                    for (const c of chunks) { merged.set(c, offset); offset += c.byteLength; }
+                    text = new TextDecoder('utf-8').decode(merged);
+                } else {
+                    text = await resp.text();
+                    if (text.length > MAX_RESPONSE_BYTES) {
+                        responded = true;
+                        sendResponse({ error: `Response body too large (${text.length} chars)` });
+                        return;
+                    }
+                }
+            } catch (readErr) {
+                if (responded) return;
                 responded = true;
-                sendResponse({ error: `Response body too large (${text.length} chars)` });
+                sendResponse({ error: readErr.message || 'Failed to read response body' });
                 return;
             }
 
