@@ -330,7 +330,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.6.4';
+    const YTKIT_VERSION = '3.6.5';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -16812,6 +16812,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Close panel
         doc.addEventListener('click', (e) => {
+            if (!isSettingsPanelOpen()) return;
             if (e.target.closest('.ytkit-close') || e.target.matches('#ytkit-overlay')) {
                 setSettingsPanelOpen(false);
             }
@@ -16819,6 +16820,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Tab navigation
         doc.addEventListener('click', (e) => {
+            if (!isSettingsPanelOpen()) return;
             const navBtn = e.target.closest('.ytkit-nav-btn');
             if (navBtn) {
                 doc.querySelectorAll('.ytkit-nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -16838,6 +16840,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // Search functionality (debounced)
         let _searchDebounce = null;
         doc.addEventListener('input', (e) => {
+            if (!isSettingsPanelOpen()) return;
             if (e.target.matches('#ytkit-search')) {
                 clearTimeout(_searchDebounce);
                 _searchDebounce = setTimeout(() => { _handleSearch(e.target.value); }, 150);
@@ -16933,6 +16936,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Clear search on tab click
         doc.addEventListener('click', (e) => {
+            if (!isSettingsPanelOpen()) return;
             if (e.target.closest('.ytkit-nav-btn')) {
                 const searchInput = doc.getElementById('ytkit-search');
                 if (searchInput && searchInput.value) {
@@ -16944,6 +16948,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Feature toggles
         doc.addEventListener('change', (e) => {
+            if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-feature-cb')) {
                 const card = e.target.closest('[data-feature-id]');
                 if (!card) return;
@@ -17080,6 +17085,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         // Textarea input
         doc.addEventListener('input', (e) => {
+            if (!isSettingsPanelOpen()) return;
             if (e.target.matches('.ytkit-input')) {
                 const card = e.target.closest('[data-feature-id]');
                 if (!card) return;
@@ -17158,6 +17164,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         });
         doc.addEventListener('click', (e) => {
+            if (!isSettingsPanelOpen()) return;
             if (e.target.closest('#ytkit-export')) {
                 const configString = settingsManager.exportAllSettings();
                 handleFileExport('astra_deck_settings.json', configString);

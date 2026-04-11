@@ -4,6 +4,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.6.5] - Settings Panel Handler Performance
+
+### Fixed
+
+- **Settings panel event listeners ran on every YouTube interaction.** `attachUIEventListeners()` registers seven document-level event listeners (four `click`, two `input`, one `change`) that power the in-page settings panel — search box, feature toggles, nav tabs, export/import buttons, textareas, selects, ranges, color pickers. These listeners are registered once per session (guarded by `_panelUIListenersAttached`) and then fire on **every** click / input / change anywhere on the page for the rest of the session, not just while the panel is open. Each handler did `e.target.matches(...)` or `closest(...)` on a panel-scoped selector and silently fell through when the target wasn't in the panel. On a session full of YouTube comment typing, thumbnail clicks, and scroll/click interactions, that's hundreds of wasted DOM walks per minute. Each handler now short-circuits with `if (!isSettingsPanelOpen()) return;` as its first line — the selectors it's looking for only exist inside the panel DOM, so guarding on panel-open state is semantically equivalent but cuts the work to zero when the panel is closed (which is 99% of the time).
+
+### Notes
+
+Fifth audit pass. Focused on the `buildSettingsPanel` / `attachUIEventListeners` surface which hadn't been inspected in earlier passes. Purely a performance fix — no user-visible behavior change.
+
+---
+
 ## [3.6.4] - Theater Split Audit Pass
 
 ### Fixed
