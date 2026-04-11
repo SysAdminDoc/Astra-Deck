@@ -330,7 +330,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.6.2';
+    const YTKIT_VERSION = '3.6.3';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -10744,15 +10744,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         controls.appendChild(playBtn);
                         controls.appendChild(timeEl);
                         this._pipWindow.document.body.appendChild(controls);
-                        // Return video on close
+                        window.__ytkit_videoPopped = true;
+                        // Single pagehide handler merges the three things that
+                        // need to happen when the PiP window closes:
+                        //   1. Stop the time-display interval that was polling
+                        //      currentTime on a reparented element (leak fix).
+                        //   2. Restore the video back to its original parent.
+                        //   3. Clear the global videoPopped flag and null the
+                        //      window reference.
+                        // Previously this was two separate listeners plus an
+                        // orphan _timeInterval that only got cleared by destroy().
                         this._pipWindow.addEventListener('pagehide', () => {
+                            if (this._timeInterval) {
+                                clearInterval(this._timeInterval);
+                                this._timeInterval = null;
+                            }
                             if (origNext) origParent.insertBefore(video, origNext);
                             else origParent.appendChild(video);
+                            window.__ytkit_videoPopped = false;
                             this._pipWindow = null;
                         });
-                        window.__ytkit_videoPopped = true;
-                        // Clear flag when video returns
-                        this._pipWindow.addEventListener('pagehide', () => { window.__ytkit_videoPopped = false; });
                         showToast('Video popped out', '#22c55e');
                         return;
                     } catch(e) { DebugManager.log('PopOut', 'Document PiP failed: ' + e.message); }
@@ -10823,10 +10834,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!stats.days[key]) stats.days[key] = 0;
                     stats.days[key] += elapsed;
                     stats.total = (stats.total || 0) + elapsed;
-                    // Prune days older than 90 days
+                    // Prune days older than 90 days.
+                    // Retention window is the last 90 days inclusive of today, so the
+                    // oldest kept day is (today - 89). Using `<=` on the cutoff below
+                    // drops that exact day and above, which previously left 91 days
+                    // in the store.
                     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 90);
                     const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
-                    for (const dk in stats.days) { if (dk < cutoffKey) delete stats.days[dk]; }
+                    for (const dk in stats.days) { if (dk <= cutoffKey) delete stats.days[dk]; }
                     StorageManager.set(this._storageKey, stats);
                 }
                 this._lastTick = now;
