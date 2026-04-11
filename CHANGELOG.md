@@ -4,6 +4,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.6.3] - Third QA Audit Pass
+
+### Fixed
+
+- **Pop-Out Player — Document PiP window leak + duplicate listeners.** Two separate `pagehide` listeners were attached to the PiP window (one to restore the video, one to clear the `__ytkit_videoPopped` flag), and the internal `_timeInterval` that polled `currentTime` every 500 ms for the time display was only cleared in `destroy()` — not when the PiP window itself closed. Closing the PiP window therefore left the interval running forever, continuing to read `currentTime` from the reparented video and write to a detached DOM node. The three cleanup steps are now merged into a single `pagehide` handler that stops the interval, reparents the video, clears the flag, and nulls the window reference
+- **Watch Time Tracker — 90-day retention off-by-one.** The pruning loop used `if (dk < cutoffKey) delete stats.days[dk]`, which kept the day exactly 90 days ago in addition to the 90 days since, resulting in 91 days of history instead of the labeled 90. Changed to `<=` so the retention window matches the label exactly
+
+### Notes
+
+Third consecutive defensive-hardening pass. Every finding in this release was verified in-situ (not just pattern-matched) — several audit-agent claims were rejected as false positives during verification (e.g. `removeEventListener({capture:true})` vs `true` being "mismatched"; `pauseOtherTabs` BroadcastChannel leak; `contextMenuPlayer` player-element tracking).
+
+---
+
 ## [3.6.2] - Second QA Audit Pass
 
 ### Fixed
