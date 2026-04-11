@@ -1,6 +1,25 @@
 # Changelog
 
-All notable changes to YTKit are documented here. Versions are listed newest-first.
+All notable changes to Astra Deck are documented here. Versions are listed newest-first.
+
+---
+
+## [3.6.1] - QA Audit Hardening
+
+### Fixed
+
+- **Innertube client version parsing (ISOLATED world)** — `_getClientVersion()` previously read `window.ytcfg`, which is invisible to content scripts running in the ISOLATED world, so the value was always `null` and the Innertube API fallback used a hardcoded stale version. It now parses `INNERTUBE_CLIENT_VERSION` out of page `<script>` tags (same pattern as `_getInnertubeApiKey()`), with a recent default. This fixes silent failures of the caption-extraction Method 2 path weeks after each YouTube client rotation
+- **`ytInitialPlayerResponse` brace-counting parser** — the fallback JSON extractor tracked `{` / `}` depth without respecting string literals, so any JSON value containing `}` inside a string (e.g. comment text, video titles, descriptions) caused the extracted substring to be truncated early and `JSON.parse()` to throw. Parser now properly tracks string state and `\` escapes
+- **TrustedHTML fallback innerHTML sink** — the non-policy branch of `TrustedHTML.setHTML()` did `element.innerHTML = ''` to clear before appending parsed nodes; replaced with `element.replaceChildren()` so no innerHTML assignment happens on the fallback path
+- **Settings panel modal Escape handler** — guarded the `keydown` listener installation with `injectPageModalButton._escInstalled` so future refactors that call the injector twice cannot stack duplicate listeners
+- **`setInterval` double-init guards** — `resumePlayback._saveInterval`, `watchProgress._saveInterval`, and `SponsorBlock._skipHandler` now clear any existing interval before creating a new one. Fixes a stacking leak when `init()` runs twice before `destroy()` (rapid disable/enable toggles or async load overlap)
+- **`background.js` message guard** — the top-level `onMessage` listener now rejects malformed payloads (`!msg || typeof msg !== 'object' || typeof msg.type !== 'string'`) before reading `msg.type`, eliminating a potential uncaught throw on corrupt messages
+- **`EXT_FETCH` default timeout** — callers that omit `timeout` previously got an unbounded fetch; the proxy now defaults to a 30 s timeout (still clamped to `MAX_FETCH_TIMEOUT_MS`) so a hung upstream cannot pin the service worker
+- **`EXT_FETCH` body size enforcement** — the response reader now streams chunks through a bounded loop and aborts as soon as the cumulative byte count exceeds `MAX_RESPONSE_BYTES`, so a chunked response without a `Content-Length` header cannot allocate past the limit before the size check runs
+
+### Notes
+
+No user-visible feature changes. All fixes are defensive hardening driven by a dedicated QA audit pass across `ytkit.js`, `background.js`, and the runtime cores.
 
 ---
 

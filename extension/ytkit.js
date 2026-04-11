@@ -284,17 +284,28 @@ return response;
                             }
                             if (this._prCache) break;
 
-                            // Fallback: find JSON object after the assignment using brace counting
+                            // Fallback: find JSON object after the assignment using
+                            // brace counting that correctly skips over string literals
+                            // and their escape sequences so that `}` or `{` inside a
+                            // JSON string value does not confuse the depth counter.
                             const idx = text.indexOf('ytInitialPlayerResponse');
                             if (idx !== -1) {
                                 const eqIdx = text.indexOf('=', idx);
                                 if (eqIdx !== -1) {
                                     const jsonStart = text.indexOf('{', eqIdx);
                                     if (jsonStart !== -1) {
-                                        let depth = 0, end = jsonStart;
+                                        let depth = 0, end = jsonStart, inString = false, escaped = false;
                                         for (; end < text.length; end++) {
-                                            if (text[end] === '{') depth++;
-                                            else if (text[end] === '}') { depth--; if (depth === 0) { end++; break; } }
+                                            const ch = text[end];
+                                            if (inString) {
+                                                if (escaped) { escaped = false; continue; }
+                                                if (ch === '\\') { escaped = true; continue; }
+                                                if (ch === '"') inString = false;
+                                                continue;
+                                            }
+                                            if (ch === '"') { inString = true; continue; }
+                                            if (ch === '{') depth++;
+                                            else if (ch === '}') { depth--; if (depth === 0) { end++; break; } }
                                         }
                                         try {
                                             this._prCache = JSON.parse(text.substring(jsonStart, end));
@@ -319,7 +330,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.6.0';
+    const YTKIT_VERSION = '3.6.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -420,11 +431,14 @@ return response;
                 if (policy) {
                     element.innerHTML = policy.createHTML(html);
                 } else {
-                    // Fallback: DOMParser (covers non-TrustedTypes browsers)
+                    // Fallback: DOMParser (covers non-TrustedTypes browsers).
+                    // Use replaceChildren() instead of `innerHTML = ''` — the latter
+                    // still counts as a TrustedHTML sink in strict CSP contexts and
+                    // can throw on YouTube pages that policy to no-innerHTML.
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(`<template>${html}</template>`, 'text/html');
                     const template = doc.querySelector('template');
-                    element.innerHTML = '';
+                    element.replaceChildren();
                     if (template && template.content) {
                         element.appendChild(template.content.cloneNode(true));
                     }
@@ -636,7 +650,10 @@ return response;
         // Method 2: Innertube API (most reliable for SPA navigation)
         async _method2_InnertubeAPI(videoId) {
             const apiKey = this._getInnertubeApiKey() || 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
-            const clientVersion = this._getClientVersion() || '2.20250120.00.00';
+            // Fallback version is only used if script-tag parsing fails. Kept as a
+            // recent-enough string so the Innertube API will accept it on most pages.
+            // YouTube rotates client versions roughly weekly.
+            const clientVersion = this._getClientVersion() || '2.20260401.00.00';
 
             const response = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {
                 method: 'POST',
@@ -930,10 +947,19 @@ return response;
             return null;
         },
 
+        _cachedClientVersion: null,
         _getClientVersion() {
-            if (typeof window.ytcfg !== 'undefined' && window.ytcfg.get) {
-                return window.ytcfg.get('INNERTUBE_CLIENT_VERSION');
-            }
+            if (this._cachedClientVersion) return this._cachedClientVersion;
+            // ISOLATED world: window.ytcfg is not accessible; parse from <script> tags.
+            try {
+                const scripts = document.querySelectorAll('script');
+                for (const s of scripts) {
+                    const text = s.textContent;
+                    if (!text || !text.includes('INNERTUBE_CLIENT_VERSION')) continue;
+                    const m = text.match(/"INNERTUBE_CLIENT_VERSION"\s*:\s*"(\d{1,2}\.\d{6,10}\.\d{1,2}\.\d{1,2})"/);
+                    if (m) { this._cachedClientVersion = m[1]; return m[1]; }
+                }
+            } catch (_) {}
             return null;
         },
 
@@ -9441,7 +9467,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._saveCurrentProgress();
                     setTimeout(() => this._addProgressBars(), 1500);
                 });
-                // Periodically save progress while watching
+                // Periodically save progress while watching.
+                // Clear any previous interval first to guard against rapid
+                // disable/enable toggles stacking multiple save loops.
+                if (this._saveInterval) clearInterval(this._saveInterval);
                 this._saveInterval = setInterval(() => this._saveCurrentProgress(), 15000);
             },
             destroy() {
@@ -11643,7 +11672,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._savePosition();
                     setTimeout(() => this._restore(), 2000);
                 });
-                // Save position every 15 seconds
+                // Save position every 15 seconds.
+                // Clear any existing interval so a rapid re-init (e.g. async load
+                // overlap during a disable/enable toggle) cannot stack loops.
+                if (this._saveInterval) clearInterval(this._saveInterval);
                 this._saveInterval = setInterval(() => this._savePosition(), 15000);
                 setTimeout(() => this._restore(), 2000);
             },
@@ -14318,6 +14350,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 const self = this;
                 this._styleEl = injectStyle('.ytkit-sb-segment { border-radius: 1px; }', this.id, true);
+                // Guard against stacking if init() runs twice before destroy()
+                if (this._skipHandler) clearInterval(this._skipHandler);
                 this._skipHandler = setInterval(() => self._checkSkip(), 500);
                 const reloadSegments = () => {
                     self._videoId = null;
@@ -18383,9 +18417,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         addNavigateRule('_pageModalBtnRule', handleDisplay);
 
-        // Close modal on click-away (Escape key)
-        const _pageModalEscHandler = (e) => { if (e.key === 'Escape' && _pageModalOpen) closePageModal(); };
-        document.addEventListener('keydown', _pageModalEscHandler);
+        // Close modal on Escape. Registered once — a module-level flag prevents
+        // stacking duplicate listeners if injectPageModalButton() is ever called
+        // more than once (e.g. future hot-reload or feature toggle path).
+        if (!injectPageModalButton._escInstalled) {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && _pageModalOpen) closePageModal();
+            });
+            injectPageModalButton._escInstalled = true;
+        }
     }
 
     appendStyleSheet(`
