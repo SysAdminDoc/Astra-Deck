@@ -2,6 +2,8 @@
 // @name         Theater Split v1.0.1
 // @namespace    https://github.com/SysAdminDoc/YouTube-Kit
 // @version      1.0.2
+// @updateURL      https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/theater-split.user.js
+// @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
 // @author       Matthew Parker
 // @match        https://www.youtube.com/*
