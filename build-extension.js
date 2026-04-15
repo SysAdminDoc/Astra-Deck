@@ -260,18 +260,8 @@ function writeDefaultSettingsCatalog(ytkitSource) {
         throw new Error('Parsed defaults are not a plain object');
     }
 
-    const retiredSettingKeys = [
-        'autoExpandComments',
-        'chatStyleComments',
-        'commentEnhancements',
-        'commentNavigator',
-        'commentSearch',
-        'condenseComments',
-        'hideCommentActionMenu',
-        'hideCommentDislikeButton',
-        'hideCommentTeaser',
-        'hidePinnedComments'
-    ];
+    // Keep this empty unless a setting is fully removed from defaults, UI, and runtime.
+    const retiredSettingKeys = [];
 
     for (const key of retiredSettingKeys) {
         delete defaults[key];

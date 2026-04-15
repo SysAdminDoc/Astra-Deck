@@ -15,18 +15,8 @@
         legacySidebarOrder: 'ytkit_sidebar_order'
     };
 
-    const RETIRED_SETTING_KEYS = new Set([
-        'autoExpandComments',
-        'chatStyleComments',
-        'commentEnhancements',
-        'commentNavigator',
-        'commentSearch',
-        'condenseComments',
-        'hideCommentActionMenu',
-        'hideCommentDislikeButton',
-        'hideCommentTeaser',
-        'hidePinnedComments'
-    ]);
+    // Keep this empty unless a setting is fully removed from defaults, UI, and runtime.
+    const RETIRED_SETTING_KEYS = new Set();
 
     const INTERNAL_SETTING_KEY_PREFIX = '_';
 
@@ -238,7 +228,7 @@
         if (typeof value === 'string') {
             const compact = value.replace(/\s+/g, ' ').trim();
             if (!compact) return 'Empty';
-            return compact.length > 60 ? compact.slice(0, 57) + '...' : compact;
+            return compact.length > 60 ? compact.slice(0, 57) + '…' : compact;
         }
         if (Array.isArray(value)) return value.length + (value.length === 1 ? ' item' : ' items');
         if (value && typeof value === 'object') return Object.keys(value).length + ' keys';

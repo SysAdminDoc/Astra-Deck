@@ -274,6 +274,25 @@
         }
     }
 
+    async function extensionFetchText(details) {
+        const req = { ...details };
+        const useRetry = appState?.settings?.apiRetryBackoff !== false;
+        const response = useRetry
+            ? await extensionRequestWithRetry(req)
+            : await extensionRequestAsync(req);
+
+        if (!response || response.status < 200 || response.status >= 300) {
+            const error = new Error(`HTTP ${response?.status ?? 0}`);
+            error.response = response;
+            throw error;
+        }
+
+        return {
+            response,
+            text: response.responseText || ''
+        };
+    }
+
     const browserCookies = {
         list(filter, callback) {
             sendRuntimeMessage({
@@ -719,10 +738,11 @@ return response;
             // YouTube rotates client versions roughly weekly.
             const clientVersion = this._getClientVersion() || '2.20260401.00.00';
 
-            const response = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {
+            const { response, data } = await extensionFetchJson({
+                url: `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`,
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                data: JSON.stringify({
                     context: {
                         client: {
                             clientName: 'WEB',
@@ -733,18 +753,17 @@ return response;
                 })
             });
 
-            if (!response.ok) throw new Error(`Innertube API returned ${response.status}`);
-
-            const data = await response.json();
+            if (!response || response.status < 200 || response.status >= 300) {
+                throw new Error(`Innertube API returned ${response?.status}`);
+            }
             return this._extractFromPlayerResponse(data);
         },
 
         // Method 3: Fetch HTML and extract ytInitialPlayerResponse
         async _method3_HTMLPageFetch(videoId) {
-            const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-            if (!response.ok) throw new Error(`Page fetch returned ${response.status}`);
-
-            const html = await response.text();
+            const { text: html } = await extensionFetchText({
+                url: `https://www.youtube.com/watch?v=${videoId}`
+            });
 
             const patterns = [
                 /ytInitialPlayerResponse\s*=\s*({.+?});\s*(?:var\s|const\s|let\s|<\/script>)/s,
@@ -769,10 +788,9 @@ return response;
 
         // Method 4: Direct captionTracks regex extraction
         async _method4_CaptionTracksRegex(videoId) {
-            const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
-            if (!response.ok) throw new Error(`Page fetch returned ${response.status}`);
-
-            const html = await response.text();
+            const { text: html } = await extensionFetchText({
+                url: `https://www.youtube.com/watch?v=${videoId}`
+            });
 
             const captionMatch = html.match(/"captionTracks":(\[.*?\])(?:,|\})/);
             if (!captionMatch || !captionMatch[1]) {
@@ -886,11 +904,7 @@ return response;
             for (const fmt of formats) {
                 try {
                     const url = fmt === 'xml' ? baseUrl : `${baseUrl}&fmt=${fmt}`;
-                    const response = await fetch(url);
-
-                    if (!response.ok) continue;
-
-                    const content = await response.text();
+                    const { text: content } = await extensionFetchText({ url });
 
                     if (fmt === 'json3') {
                         return this._parseJSON3(content);
@@ -1349,6 +1363,12 @@ return response;
             animation: ytkit-toast-fade var(--ytkit-toast-duration, 2.5s) ease-out forwards;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            .ytkit-global-toast {
+                animation: none;
+            }
+        }
+
         .ytkit-toast-action {
             appearance: none;
             -webkit-appearance: none;
@@ -1390,6 +1410,9 @@ return response;
         toast.style.setProperty('--ytkit-toast-color', color);
         toast.style.setProperty('--ytkit-toast-z', String(Z.TOAST));
         toast.style.setProperty('--ytkit-toast-duration', `${options.duration || 2.5}s`);
+        toast.setAttribute('role', options.role || (color === '#ef4444' ? 'alert' : 'status'));
+        toast.setAttribute('aria-live', options.ariaLive || (color === '#ef4444' ? 'assertive' : 'polite'));
+        toast.setAttribute('aria-atomic', 'true');
 
         const textSpan = document.createElement('span');
         textSpan.textContent = message;
@@ -1426,7 +1449,10 @@ return response;
 
         document.body.appendChild(toast);
         const duration = (options.duration || 2.5) * 1000;
-        setTimeout(() => toast.remove(), duration);
+        const removeToast = () => {
+            if (toast.isConnected) toast.remove();
+        };
+        setTimeout(removeToast, duration);
 
         return toast;
     }
@@ -2102,18 +2128,8 @@ return response;
         });
     }
 
-    const RETIRED_SETTING_KEYS = new Set([
-        'autoExpandComments',
-        'chatStyleComments',
-        'commentEnhancements',
-        'commentNavigator',
-        'commentSearch',
-        'condenseComments',
-        'hideCommentActionMenu',
-        'hideCommentDislikeButton',
-        'hideCommentTeaser',
-        'hidePinnedComments'
-    ]);
+    // Keep this empty unless a setting is fully removed from defaults, UI, and runtime.
+    const RETIRED_SETTING_KEYS = new Set();
 
     //  SECTION 1: SETTINGS MANAGER
     const settingsManager = {
@@ -2752,7 +2768,9 @@ return response;
 
         document.querySelectorAll('.ytkit-pm-card[data-fid]').forEach(card => {
             const featureId = card.dataset.fid;
-            card.classList.toggle('on', !!appState.settings[featureId]);
+            const isOn = !!appState.settings[featureId];
+            card.classList.toggle('on', isOn);
+            card.setAttribute('aria-checked', String(isOn));
         });
     }
 
@@ -2961,8 +2979,13 @@ return response;
                             ? features.find(f => f.id === key) : null;
                         if (feat && prev !== value) {
                             try {
-                                if (value && typeof feat.init === 'function') feat.init();
-                                else if (!value && typeof feat.destroy === 'function') feat.destroy();
+                                if (value && typeof feat.init === 'function') {
+                                    feat.init();
+                                    feat._initialized = true;
+                                } else if (!value && typeof feat.destroy === 'function') {
+                                    feat.destroy();
+                                    feat._initialized = false;
+                                }
                             } catch (e) { console.warn('[YTKit] live toggle failed for', key, e); }
                         }
                         sendResponse?.({ ok: true });
@@ -8236,12 +8259,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'users-x',
             _subscriptions: [],
             _observer: null,
+            _navTimer: null,
             _initialized: false,
 
             async _fetchSubscriptions() {
                 try {
-                    const response = await fetch('https://www.youtube.com/feed/channels');
-                    const html = await response.text();
+                    const { text: html } = await extensionFetchText({
+                        url: 'https://www.youtube.com/feed/channels'
+                    });
                     const dataMarker = 'ytInitialData = ';
                     let startIdx = html.indexOf(dataMarker);
                     if (startIdx === -1) return [];
@@ -8334,6 +8359,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             destroy() {
                 this._observer?.disconnect();
+                this._observer = null;
+                clearTimeout(this._navTimer);
+                this._navTimer = null;
                 removeNavigateRule(this.id);
             }
         },
@@ -8744,6 +8772,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _processAllDebounceTimer: null,
+            _chipSecondPassTimer: null,
             _processAllVideos() {
                 // Clear pending batch to prevent race with MutationObserver
                 this._clearBatchBuffer?.();
@@ -8934,7 +8963,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (chip) {
                         this._processAllVideosDebounced(800);
                         // Second pass for late-rendering thumbnails
-                        setTimeout(() => this._processAllVideosDebounced(300), 1500);
+                        if (this._chipSecondPassTimer) clearTimeout(this._chipSecondPassTimer);
+                        this._chipSecondPassTimer = setTimeout(() => {
+                            this._chipSecondPassTimer = null;
+                            this._processAllVideosDebounced(300);
+                        }, 1500);
                     }
                 };
                 document.addEventListener('click', this._chipClickHandler, true);
@@ -8947,6 +8980,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._observer?.disconnect();
                 this._clearBatchBuffer?.();
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
+                if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
                 if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
                 clearTimeout(this._subsButtonTimer); this._subsButtonTimer = null;
                 clearTimeout(this._homeButtonTimer); this._homeButtonTimer = null;
@@ -9753,6 +9787,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Content',
             icon: 'type',
             _observer: null,
+            _processTimer: null,
+
+            _scheduleProcess(delay = 1000) {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = setTimeout(() => {
+                    this._processTimer = null;
+                    this._processAll();
+                }, delay);
+            },
 
             _toTitleCase(str) {
                 // Only normalize if more than 50% of letters are uppercase
@@ -9770,14 +9813,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _processTitle(el) {
-                if (el._ytkitNormalized) return;
                 const text = el.textContent.trim();
                 if (!text) return;
+                if (el._ytkitNormalized) {
+                    // YouTube's Polymer renderer can recycle DOM elements with new text.
+                    // If the current text matches what we set, nothing to do.
+                    // If it differs, the element was updated — reset and fall through to re-process.
+                    if (text === el._ytkitNormalizedText) return;
+                    el.removeAttribute('data-ytkit-normalized');
+                    el.title = '';
+                    delete el._ytkitNormalized;
+                    delete el._ytkitOriginalTitle;
+                    delete el._ytkitNormalizedText;
+                }
                 const normalized = this._toTitleCase(text);
                 if (normalized !== text) {
                     el._ytkitOriginalTitle = text;
+                    el._ytkitNormalizedText = normalized;
                     el.textContent = normalized;
                     el._ytkitNormalized = true;
+                    el.setAttribute('data-ytkit-normalized', '1');
                     el.title = text; // Show original on hover
                 }
             },
@@ -9792,14 +9847,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._processAll();
                 addMutationRule(this.id, () => this._processAll());
-                addNavigateRule('titleNorm', () => setTimeout(() => this._processAll(), 1000));
+                addNavigateRule('titleNorm', () => this._scheduleProcess(1000));
             },
             destroy() {
+                if (this._processTimer) { clearTimeout(this._processTimer); this._processTimer = null; }
                 removeMutationRule(this.id);
                 removeNavigateRule('titleNorm');
                 // Restore original titles
                 document.querySelectorAll('[data-ytkit-normalized]').forEach(el => {
                     if (el._ytkitOriginalTitle) el.textContent = el._ytkitOriginalTitle;
+                    el.removeAttribute('data-ytkit-normalized');
+                    el.title = '';
+                    delete el._ytkitOriginalTitle;
+                    delete el._ytkitNormalizedText;
+                    delete el._ytkitNormalized;
                 });
             }
         },
@@ -9812,6 +9873,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _storageKey: 'ytkit-watch-progress',
             _saveInterval: null,
+            _addBarsTimer: null,
+
+            _scheduleAddBars(delay = 1500) {
+                if (this._addBarsTimer) clearTimeout(this._addBarsTimer);
+                this._addBarsTimer = setTimeout(() => {
+                    this._addBarsTimer = null;
+                    this._addProgressBars();
+                }, delay);
+            },
 
             _getProgress() {
                 return StorageManager.get(this._storageKey, {});
@@ -9879,7 +9949,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addMutationRule(this.id, () => this._addProgressBars());
                 addNavigateRule('watchProgress', () => {
                     this._saveCurrentProgress();
-                    setTimeout(() => this._addProgressBars(), 1500);
+                    this._scheduleAddBars(1500);
                 });
                 // Periodically save progress while watching.
                 // Clear any previous interval first to guard against rapid
@@ -9890,6 +9960,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeMutationRule(this.id);
                 removeNavigateRule('watchProgress');
+                if (this._addBarsTimer) { clearTimeout(this._addBarsTimer); this._addBarsTimer = null; }
                 if (this._saveInterval) { clearInterval(this._saveInterval); this._saveInterval = null; }
                 this._saveCurrentProgress(); // Save one last time
                 this._styleElement?.remove();
@@ -9955,6 +10026,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
             _interval: null,
             _el: null,
+            _updateTimer: null,
+
+            _scheduleUpdate(delay = 2000) {
+                if (this._updateTimer) clearTimeout(this._updateTimer);
+                this._updateTimer = setTimeout(() => {
+                    this._updateTimer = null;
+                    this._update();
+                }, delay);
+            },
 
             _formatTime(secs) {
                 const neg = secs < 0;
@@ -9982,9 +10062,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._interval = setInterval(() => this._update(), 1000);
-                addNavigateRule('remainTime', () => { this._el = null; setTimeout(() => this._update(), 2000); });
+                addNavigateRule('remainTime', () => {
+                    this._el = null;
+                    this._scheduleUpdate(2000);
+                });
             },
             destroy() {
+                if (this._updateTimer) { clearTimeout(this._updateTimer); this._updateTimer = null; }
                 if (this._interval) { clearInterval(this._interval); this._interval = null; }
                 removeNavigateRule('remainTime');
                 this._el?.remove(); this._el = null;
@@ -9997,6 +10081,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'list',
             _observer: null,
+            _calculateTimer: null,
+            _scheduleCalculate(delay = 2000) {
+                if (this._calculateTimer) clearTimeout(this._calculateTimer);
+                this._calculateTimer = setTimeout(() => {
+                    this._calculateTimer = null;
+                    this._calculate();
+                }, delay);
+            },
 
             _formatDuration(secs) {
                 const h = Math.floor(secs / 3600);
@@ -10030,13 +10122,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._calculate(), 2000);
-                addNavigateRule('playlistDur', () => setTimeout(() => this._calculate(), 2000));
+                this._scheduleCalculate(2000);
+                addNavigateRule('playlistDur', () => this._scheduleCalculate(2000));
                 addMutationRule(this.id, () => {
                     if (!document.querySelector('.ytkit-playlist-duration')) this._calculate();
                 });
             },
             destroy() {
+                if (this._calculateTimer) clearTimeout(this._calculateTimer);
+                this._calculateTimer = null;
                 removeNavigateRule('playlistDur');
                 removeMutationRule(this.id);
                 document.querySelectorAll('.ytkit-playlist-duration').forEach(el => el.remove());
@@ -10124,6 +10218,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'arrow-down-up',
             _injected: false,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _inject() {
                 const menu = document.querySelector('ytd-playlist-panel-renderer #playlist-action-menu, ytd-playlist-panel-renderer .header-action-menu');
@@ -10144,13 +10246,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2000);
-                addNavigateRule('reversePlaylist', () => setTimeout(() => this._inject(), 2000));
+                this._scheduleInject(2000);
+                addNavigateRule('reversePlaylist', () => this._scheduleInject(2000));
                 addMutationRule(this.id, () => {
                     if (!document.querySelector('.ytkit-reverse-btn')) this._inject();
                 });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('reversePlaylist');
                 removeMutationRule(this.id);
                 document.querySelectorAll('.ytkit-reverse-btn').forEach(el => el.remove());
@@ -10163,6 +10267,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Home / Subscriptions',
             icon: 'rss',
             pages: [PageTypes.CHANNEL],
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _inject() {
                 const container = document.querySelector('#channel-header-container #inner-header-container #buttons, ytd-c4-tabbed-header-renderer #buttons, #page-header #flexible-item-buttons');
@@ -10182,10 +10294,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2000);
-                addNavigateRule('rssFeed', () => setTimeout(() => this._inject(), 2000));
+                this._scheduleInject(2000);
+                addNavigateRule('rssFeed', () => this._scheduleInject(2000));
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('rssFeed');
                 document.querySelectorAll('.ytkit-rss-btn').forEach(el => el.remove());
             }
@@ -10197,6 +10311,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'hash',
             pages: [PageTypes.WATCH],
+            _processTimer: null,
+            _scheduleProcess(delay = 1500) {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = setTimeout(() => {
+                    this._processTimer = null;
+                    this._process();
+                }, delay);
+            },
 
             _process() {
                 const infoEl = document.querySelector('ytd-watch-metadata #info-container yt-formatted-string, ytd-watch-metadata .view-count, #info-text .view-count, ytd-video-primary-info-renderer .view-count');
@@ -10216,10 +10338,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._process(), 1500);
-                addNavigateRule('preciseViews', () => setTimeout(() => this._process(), 2000));
+                this._scheduleProcess(1500);
+                addNavigateRule('preciseViews', () => this._scheduleProcess(2000));
             },
             destroy() {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = null;
                 removeNavigateRule('preciseViews');
             }
         },
@@ -10233,6 +10357,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'camera',
             pages: [PageTypes.WATCH],
             _btn: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _capture() {
                 const video = document.querySelector('video.html5-main-video');
@@ -10291,10 +10423,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2000);
-                addNavigateRule('screenshot', () => { this._btn = null; setTimeout(() => this._inject(), 2000); });
+                this._scheduleInject(2000);
+                addNavigateRule('screenshot', () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('screenshot');
                 this._btn?.remove(); this._btn = null;
             }
@@ -10375,6 +10512,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             options: { 'dim': 'Dim (50% opacity)', 'hide': 'Fully Hidden' },
             settingKey: 'hideWatchedMode',
             _styleEl: null,
+            _processTimer: null,
+            _scheduleProcess(delay = 1500) {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = setTimeout(() => {
+                    this._processTimer = null;
+                    this._process();
+                }, delay);
+            },
 
             _process() {
                 const mode = appState.settings.hideWatchedMode || 'dim';
@@ -10398,10 +10543,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         el.classList.remove('ytkit-watched');
                         el.style.opacity = ''; el.style.display = '';
                     });
-                    setTimeout(() => this._process(), 1500);
+                    this._scheduleProcess(1500);
                 });
             },
             destroy() {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule('hideWatched');
                 document.querySelectorAll('[ytkit-watched-check]').forEach(el => {
@@ -10417,6 +10564,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Prevent YouTube from auto-translating video titles and descriptions to your language',
             group: 'Content',
             icon: 'languages',
+            _processTimer: null,
+            _scheduleProcess(delay = 1500) {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = setTimeout(() => {
+                    this._processTimer = null;
+                    this._process();
+                }, delay);
+            },
 
             _process() {
                 // YouTube stores original title in data attributes or in the ytInitialData structure
@@ -10444,11 +10599,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._process(), 1500);
+                this._scheduleProcess(1500);
                 addMutationRule(this.id, () => this._process());
-                addNavigateRule('antiTranslate', () => setTimeout(() => this._process(), 2000));
+                addNavigateRule('antiTranslate', () => this._scheduleProcess(2000));
             },
             destroy() {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule('antiTranslate');
                 document.querySelectorAll('[ytkit-antitranslate]').forEach(el => el.removeAttribute('ytkit-antitranslate'));
@@ -10504,6 +10661,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
             _markers: null,
             _styleEl: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _formatTime(secs) {
                 const m = Math.floor(secs / 60);
@@ -10611,14 +10776,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._styleEl = injectStyle('.ytkit-ab-markers { pointer-events: none; }', this.id, true);
-                setTimeout(() => this._inject(), 2000);
+                this._scheduleInject(2000);
                 addNavigateRule('abLoop', () => {
                     this._clearLoop();
                     this._btn = null;
-                    setTimeout(() => this._inject(), 2000);
+                    this._scheduleInject(2000);
                 });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('abLoop');
                 this._stopLoop();
                 this._removeMarkers();
@@ -10636,6 +10803,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _badge: null,
             _wheelHandler: null,
+            _createTimer: null,
+
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._createBadge();
+                }, delay);
+            },
 
             _createBadge() {
                 const player = document.querySelector('#movie_player');
@@ -10673,16 +10849,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._createBadge(), 2000);
+                this._scheduleCreate(2000);
                 // Update badge when speed changes externally
                 this._rateHandler = () => this._updateBadge();
                 document.addEventListener('ratechange', this._rateHandler, true);
                 addNavigateRule('fineSpeed', () => {
                     this._badge = null;
-                    setTimeout(() => this._createBadge(), 2000);
+                    this._scheduleCreate(2000);
                 });
             },
             destroy() {
+                if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 removeNavigateRule('fineSpeed');
                 document.removeEventListener('ratechange', this._rateHandler, true);
                 this._badge?.remove(); this._badge = null;
@@ -10695,34 +10872,95 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'hash',
             pages: [PageTypes.WATCH],
+            _countCache: null,
+            _countRequests: null,
+            _injectTimer: null,
+
+            _normalizeChannelKey(channelUrl) {
+                try {
+                    const parsed = new URL(channelUrl, location.origin);
+                    return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`.toLowerCase();
+                } catch {
+                    return String(channelUrl || '').trim().toLowerCase();
+                }
+            },
+
+            _rememberCount(key, count) {
+                if (!this._countCache || !key || count == null) return count;
+                if (this._countCache.has(key)) this._countCache.delete(key);
+                this._countCache.set(key, count);
+                if (this._countCache.size > 200) {
+                    const oldestKey = this._countCache.keys().next().value;
+                    this._countCache.delete(oldestKey);
+                }
+                return count;
+            },
+
+            async _fetchVideoCount(channelUrl) {
+                if (!channelUrl) return null;
+                if (!this._countCache) this._countCache = new Map();
+                if (!this._countRequests) this._countRequests = new Map();
+
+                const key = this._normalizeChannelKey(channelUrl);
+                if (!key) return null;
+                if (this._countCache.has(key)) return this._countCache.get(key);
+                if (this._countRequests.has(key)) return this._countRequests.get(key);
+
+                const request = fetch(`${channelUrl.replace(/\/+$/, '')}/about`, { credentials: 'same-origin' })
+                    .then(async (resp) => {
+                        if (!resp.ok) return null;
+                        const html = await resp.text();
+                        const match = html.match(/"videoCountText":\s*\{"simpleText":\s*"([^"]+)"\}/);
+                        return match?.[1] || null;
+                    })
+                    .catch(() => null)
+                    .then((count) => {
+                        this._countRequests?.delete(key);
+                        return this._rememberCount(key, count);
+                    });
+
+                this._countRequests.set(key, request);
+                return request;
+            },
+
+            _applyCount(ownerEl, count) {
+                if (!ownerEl || !ownerEl.isConnected || !count) return;
+                const container = ownerEl.parentElement;
+                if (!container || container.hasAttribute('ytkit-vid-count')) return;
+                const badge = document.createElement('span');
+                badge.className = 'ytkit-channel-vid-count';
+                badge.textContent = ` · ${count}`;
+                container.setAttribute('ytkit-vid-count', '1');
+                ownerEl.after(badge);
+            },
 
             async _inject() {
                 const ownerEl = document.querySelector('ytd-video-owner-renderer #owner-sub-count, ytd-watch-metadata ytd-channel-name + yt-formatted-string');
                 if (!ownerEl || ownerEl.closest('[ytkit-vid-count]')) return;
                 const channelLink = document.querySelector('ytd-video-owner-renderer a, ytd-watch-metadata ytd-channel-name a');
                 if (!channelLink) return;
-                const channelUrl = channelLink.href;
-                try {
-                    const resp = await fetch(channelUrl + '/about', { credentials: 'same-origin' });
-                    const html = await resp.text();
-                    // YouTube embeds channel stats in ytInitialData
-                    const match = html.match(/"videoCountText":\s*\{"simpleText":\s*"([^"]+)"\}/);
-                    if (match) {
-                        const badge = document.createElement('span');
-                        badge.className = 'ytkit-channel-vid-count';
-                        badge.textContent = ` · ${match[1]}`;
-                        ownerEl.parentElement.setAttribute('ytkit-vid-count', '1');
-                        ownerEl.after(badge);
-                    }
-                } catch {}
+                const count = await this._fetchVideoCount(channelLink.href);
+                this._applyCount(ownerEl, count);
+            },
+
+            _scheduleInject() {
+                clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    void this._inject();
+                }, 3000);
             },
 
             init() {
-                setTimeout(() => this._inject(), 3000);
-                addNavigateRule('channelVidCount', () => setTimeout(() => this._inject(), 3000));
+                if (!this._countCache) this._countCache = new Map();
+                if (!this._countRequests) this._countRequests = new Map();
+                this._scheduleInject();
+                addNavigateRule('channelVidCount', () => this._scheduleInject());
             },
             destroy() {
                 removeNavigateRule('channelVidCount');
+                clearTimeout(this._injectTimer);
+                this._injectTimer = null;
+                this._countRequests?.clear();
                 document.querySelectorAll('.ytkit-channel-vid-count').forEach(el => el.remove());
                 document.querySelectorAll('[ytkit-vid-count]').forEach(el => el.removeAttribute('ytkit-vid-count'));
             }
@@ -10734,6 +10972,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Home / Subscriptions',
             icon: 'arrow-right',
             _navRuleId: 'redirectHomeToSubsNav',
+            _checkTimer: null,
+
+            _scheduleCheck(delay = 100) {
+                if (this._checkTimer) clearTimeout(this._checkTimer);
+                this._checkTimer = setTimeout(() => {
+                    this._checkTimer = null;
+                    this._check();
+                }, delay);
+            },
 
             _check() {
                 if (window.location.pathname === '/' || window.location.pathname === '/feed/trending') {
@@ -10743,9 +10990,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._check();
-                addNavigateRule(this._navRuleId, () => setTimeout(() => this._check(), 100));
+                addNavigateRule(this._navRuleId, () => this._scheduleCheck(100));
             },
             destroy() {
+                if (this._checkTimer) { clearTimeout(this._checkTimer); this._checkTimer = null; }
                 removeNavigateRule(this._navRuleId);
             }
         },
@@ -10839,6 +11087,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _storageKey: 'ytkit-bookmarks',
             _panel: null,
             _btn: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2500) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _getBookmarks() { return StorageManager.get(this._storageKey, {}); },
 
@@ -10951,13 +11207,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2500);
+                this._scheduleInject(2500);
                 addNavigateRule('bookmarks', () => {
                     this._panel = null;
-                    setTimeout(() => this._inject(), 2500);
+                    this._scheduleInject(2500);
                 });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('bookmarks');
                 this._panel = null;
                 document.querySelectorAll('.ytkit-bookmarks-container').forEach(el => el.remove());
@@ -11007,6 +11265,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.HOME, PageTypes.SEARCH, PageTypes.SUBSCRIPTIONS],
             _observer: null,
             _styleEl: null,
+            _processTimer: null,
+            _scheduleProcess(delay = 2000) {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = setTimeout(() => {
+                    this._processTimer = null;
+                    this._process();
+                }, delay);
+            },
 
             _process() {
                 const continuations = document.querySelectorAll('ytd-continuation-item-renderer:not([ytkit-load-more])');
@@ -11046,11 +11312,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 this._styleEl = injectStyle('ytd-continuation-item-renderer[ytkit-load-more] { visibility: hidden !important; height: 0 !important; overflow: hidden !important; }', this.id, true);
-                setTimeout(() => this._process(), 2000);
+                this._scheduleProcess(2000);
                 addMutationRule(this.id, () => this._process());
-                addNavigateRule('infiniteScroll', () => setTimeout(() => this._process(), 2000));
+                addNavigateRule('infiniteScroll', () => this._scheduleProcess(2000));
             },
             destroy() {
+                if (this._processTimer) clearTimeout(this._processTimer);
+                this._processTimer = null;
                 removeMutationRule(this.id);
                 removeNavigateRule('infiniteScroll');
                 this._styleEl?.remove(); this._styleEl = null;
@@ -11072,6 +11340,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _btn: null,
             _pipWindow: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             async _activate() {
                 const video = document.querySelector('video.html5-main-video');
@@ -11159,10 +11435,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2000);
-                addNavigateRule('popOut', () => { this._btn = null; setTimeout(() => this._inject(), 2000); });
+                this._scheduleInject(2000);
+                addNavigateRule('popOut', () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('popOut');
                 this._btn?.remove(); this._btn = null;
                 if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
@@ -11253,6 +11534,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Comments',
             icon: 'arrow-down',
             pages: [PageTypes.WATCH],
+            _sortTimer: null,
+
+            _scheduleSort(delay = 4000) {
+                if (this._sortTimer) clearTimeout(this._sortTimer);
+                this._sortTimer = setTimeout(() => {
+                    this._sortTimer = null;
+                    this._sort();
+                }, delay);
+            },
 
             _sort() {
                 // YouTube's sort menu: click the sort button, then select "Newest first"
@@ -11289,11 +11579,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('sortComments', () => setTimeout(() => this._sort(), 4000));
+                addNavigateRule('sortComments', () => this._scheduleSort(4000));
                 addMutationRule('sortCommentsMutation', () => this._sort());
-                setTimeout(() => this._sort(), 4000);
+                this._scheduleSort(4000);
             },
             destroy() {
+                if (this._sortTimer) { clearTimeout(this._sortTimer); this._sortTimer = null; }
                 removeNavigateRule('sortComments');
                 removeMutationRule('sortCommentsMutation');
             }
@@ -11379,6 +11670,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _prevBtn: null,
             _nextBtn: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2500) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _getChapterTimes() {
                 const times = [];
@@ -11444,13 +11743,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2500);
+                this._scheduleInject(2500);
                 addNavigateRule('chapterNav', () => {
                     this._prevBtn = null; this._nextBtn = null;
-                    setTimeout(() => this._inject(), 2500);
+                    this._scheduleInject(2500);
                 });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('chapterNav');
                 this._prevBtn?.remove(); this._nextBtn?.remove();
                 this._prevBtn = null; this._nextBtn = null;
@@ -11464,6 +11765,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'repeat',
             pages: [PageTypes.WATCH],
             _btn: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             _inject() {
                 const controls = document.querySelector('.ytp-right-controls');
@@ -11486,10 +11795,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2000);
-                addNavigateRule('loopBtn', () => { this._btn = null; setTimeout(() => this._inject(), 2000); });
+                this._scheduleInject(2000);
+                addNavigateRule('loopBtn', () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                });
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('loopBtn');
                 const video = document.querySelector('video.html5-main-video');
                 if (video) video.loop = false;
@@ -11511,6 +11825,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             settingKey: 'persistentSpeedValue',
             _applied: false,
+            _applyTimer: null,
+            _scheduleApply(delay = 2500) {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = setTimeout(() => {
+                    this._applyTimer = null;
+                    this._apply();
+                }, delay);
+            },
 
             _apply() {
                 if (this._applied) return;
@@ -11525,10 +11847,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._apply(), 2500);
-                addNavigateRule('persistSpeed', () => { this._applied = false; setTimeout(() => this._apply(), 2500); });
+                this._scheduleApply(2500);
+                addNavigateRule('persistSpeed', () => {
+                    this._applied = false;
+                    this._scheduleApply(2500);
+                });
             },
-            destroy() { removeNavigateRule('persistSpeed'); }
+            destroy() {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = null;
+                removeNavigateRule('persistSpeed');
+            }
         },
         {
             id: 'codecSelector',
@@ -11570,6 +11899,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'shield-off',
             pages: [PageTypes.WATCH],
+            _bypassTimer: null,
 
             async _bypass() {
                 // Check if the page shows an age gate
@@ -11584,8 +11914,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 try {
                     // Fetch from embed endpoint — doesn't require authentication
-                    const resp = await fetch(`https://www.youtube.com/embed/${videoId}`, { credentials: 'omit' });
-                    const html = await resp.text();
+                    const { text: html } = await extensionFetchText({
+                        url: `https://www.youtube.com/embed/${videoId}`
+                    });
                     // Extract embedded player config
                     const configMatch = html.match(/ytcfg\.set\((\{[^}]+\})\)/);
                     if (!configMatch) { DebugManager.log('AgeBypass', 'No config found in embed'); return; }
@@ -11609,11 +11940,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch(e) { DebugManager.log('AgeBypass', 'Failed: ' + e.message); }
             },
 
-            init() {
-                setTimeout(() => this._bypass(), 3000);
-                addNavigateRule('ageBypass', () => setTimeout(() => this._bypass(), 3000));
+            _scheduleBypass() {
+                clearTimeout(this._bypassTimer);
+                this._bypassTimer = setTimeout(() => {
+                    this._bypassTimer = null;
+                    void this._bypass();
+                }, 3000);
             },
-            destroy() { removeNavigateRule('ageBypass'); }
+
+            init() {
+                this._scheduleBypass();
+                addNavigateRule('ageBypass', () => this._scheduleBypass());
+            },
+            destroy() {
+                removeNavigateRule('ageBypass');
+                clearTimeout(this._bypassTimer);
+                this._bypassTimer = null;
+            }
         },
         {
             id: 'autoLikeSubscribed',
@@ -11705,6 +12048,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _glowEl: null,
             _raf: null,
             _active: false,
+            _setupTimer: null,
+
+            _scheduleSetup(delay = 1500) {
+                if (this._setupTimer) clearTimeout(this._setupTimer);
+                this._setupTimer = setTimeout(() => {
+                    this._setupTimer = null;
+                    this._setup();
+                }, delay);
+            },
 
             _setup() {
                 const player = document.querySelector('#movie_player');
@@ -11756,13 +12108,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('cinemaAmbientGlow', () => {
                     this._cleanup();
-                    setTimeout(() => this._setup(), 1500);
+                    this._scheduleSetup(1500);
                 });
-                setTimeout(() => this._setup(), 1500);
+                this._scheduleSetup(1500);
             },
 
             _cleanup() {
                 this._active = false;
+                if (this._setupTimer) { clearTimeout(this._setupTimer); this._setupTimer = null; }
                 if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
                 if (this._hiddenTimer) { clearTimeout(this._hiddenTimer); this._hiddenTimer = null; }
                 this._glowEl?.remove(); this._glowEl = null;
@@ -11782,7 +12135,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'file-text',
             _panel: null,
             _navRule: null,
+            _createTimer: null,
             _cues: [],
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _formatSrtTime(sec) {
                 const ms = Math.max(0, Math.round(sec * 1000));
@@ -11873,9 +12234,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         return;
                     }
                     const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
-                    const resp = await fetch(track.baseUrl + '&fmt=json3');
-                    if (!resp.ok) { body.textContent = 'Failed to load transcript.'; return; }
-                    const data = await resp.json();
+                    const { response, data } = await extensionFetchJson({
+                        url: track.baseUrl + '&fmt=json3'
+                    });
+                    if (!response || response.status < 200 || response.status >= 300) {
+                        body.textContent = 'Failed to load transcript.';
+                        return;
+                    }
                     body.textContent = '';
 
                     (data.events || []).forEach(ev => {
@@ -11980,11 +12345,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('transcriptViewer', () => {
                     this._panel?.remove(); this._panel = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('transcriptViewer');
                 this._panel?.remove(); this._panel = null;
             }
@@ -12073,6 +12440,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically expands the video description so you never need to click "Show more"',
             group: 'Watch Page',
             icon: 'chevrons-down',
+            _expandTimer: null,
+
+            _scheduleExpand(delay = 2000) {
+                if (this._expandTimer) clearTimeout(this._expandTimer);
+                this._expandTimer = setTimeout(() => {
+                    this._expandTimer = null;
+                    this._expand();
+                }, delay);
+            },
 
             _expand() {
                 // New YouTube layout uses a truncated-text with "...more" button
@@ -12088,14 +12464,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('autoExpandDescription', () => setTimeout(() => this._expand(), 2000));
+                addNavigateRule('autoExpandDescription', () => this._scheduleExpand(2000));
                 addMutationRule('autoExpandDescription', () => {
                     const expander = document.querySelector('ytd-text-inline-expander[is-collapsed], ytd-expander[collapsed]');
-                    if (expander) setTimeout(() => this._expand(), 500);
+                    if (expander) this._scheduleExpand(500);
                 });
-                setTimeout(() => this._expand(), 2000);
+                this._scheduleExpand(2000);
             },
             destroy() {
+                if (this._expandTimer) { clearTimeout(this._expandTimer); this._expandTimer = null; }
                 removeNavigateRule('autoExpandDescription');
                 removeMutationRule('autoExpandDescription');
             }
@@ -12163,6 +12540,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically enter theater (wide) mode when opening a video',
             group: 'Video Player',
             icon: 'maximize-2',
+            _applyTimer: null,
+            _scheduleApply(delay = 1000) {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = setTimeout(() => {
+                    this._applyTimer = null;
+                    this._apply();
+                }, delay);
+            },
 
             _apply() {
                 if (location.pathname !== '/watch') return;
@@ -12176,10 +12561,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('autoTheaterMode', () => setTimeout(() => this._apply(), 1000));
-                setTimeout(() => this._apply(), 1000);
+                addNavigateRule('autoTheaterMode', () => this._scheduleApply(1000));
+                this._scheduleApply(1000);
             },
-            destroy() { removeNavigateRule('autoTheaterMode'); }
+            destroy() {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = null;
+                removeNavigateRule('autoTheaterMode');
+            }
         },
         {
             id: 'resumePlayback',
@@ -12188,8 +12577,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'play-circle',
             _saveInterval: null,
+            _restoreTimer: null,
             _positions: null,
             _MAX_ENTRIES: 500,
+
+            _scheduleRestore(delay = 2000) {
+                if (this._restoreTimer) clearTimeout(this._restoreTimer);
+                this._restoreTimer = setTimeout(() => {
+                    this._restoreTimer = null;
+                    void this._restore();
+                }, delay);
+            },
 
             _getVideoId() {
                 const url = new URL(location.href);
@@ -12215,7 +12613,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _savePosition() {
                 const vid = this._getVideoId();
                 const video = document.querySelector('video');
-                if (!vid || !video || video.duration < 60) return; // Only for videos > 1 min
+                if (!this._positions || !vid || !video || video.duration < 60) return; // Only for videos > 1 min
                 const time = video.currentTime;
                 const duration = video.duration;
                 // Don't save if near start or end (within 10s)
@@ -12255,17 +12653,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async init() {
                 await this._load();
                 addNavigateRule('resumePlayback', () => {
-                    this._savePosition();
-                    setTimeout(() => this._restore(), 2000);
+                    // Note: _savePosition() is intentionally omitted here.
+                    // yt-navigate-finish fires after the URL has already changed to the new video,
+                    // so _getVideoId() would return the new video's ID — saving position 0 for it
+                    // would delete a legitimate saved position. The 15s interval and destroy()
+                    // already cover periodic and final saves for the video being left.
+                    this._scheduleRestore(2000);
                 });
                 // Save position every 15 seconds.
                 // Clear any existing interval so a rapid re-init (e.g. async load
                 // overlap during a disable/enable toggle) cannot stack loops.
                 if (this._saveInterval) clearInterval(this._saveInterval);
                 this._saveInterval = setInterval(() => this._savePosition(), 15000);
-                setTimeout(() => this._restore(), 2000);
+                this._scheduleRestore(2000);
             },
             destroy() {
+                if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
                 this._savePosition();
                 this._save();
                 removeNavigateRule('resumePlayback');
@@ -12281,6 +12684,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _bar: null,
             _observer: null,
             _scrollHandler: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 1500) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (this._bar) return;
@@ -12378,12 +12789,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('miniPlayerBar', () => {
                     this._cleanup();
-                    setTimeout(() => this._create(), 1500);
+                    this._scheduleCreate(1500);
                 });
-                setTimeout(() => this._create(), 1500);
+                this._scheduleCreate(1500);
             },
 
             _cleanup() {
+                if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 if (this._playerObserver) { this._playerObserver.disconnect(); this._playerObserver = null; }
                 if (this._progressInterval) { clearInterval(this._progressInterval); this._progressInterval = null; }
                 this._bar?.remove(); this._bar = null;
@@ -12403,6 +12815,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'activity',
             _overlay: null,
             _interval: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (this._overlay) return;
@@ -12469,12 +12889,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('playbackStatsOverlay', () => {
                     this._cleanup();
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
 
             _cleanup() {
+                if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 if (this._interval) { clearInterval(this._interval); this._interval = null; }
                 this._overlay?.remove(); this._overlay = null;
                 this._btn?.remove(); this._btn = null;
@@ -12572,6 +12993,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'clipboard',
             _btn: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (this._btn) return;
@@ -12618,16 +13047,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('copyVideoTitle', () => {
                     this._btn = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
                 addMutationRule('copyVideoTitle', () => {
                     if (location.pathname === '/watch' && !document.querySelector('.ytkit-copy-title-btn')) {
                         this._create();
                     }
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('copyVideoTitle');
                 removeMutationRule('copyVideoTitle');
                 document.querySelector('.ytkit-copy-title-btn')?.remove();
@@ -12641,6 +13072,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'calendar',
             _el: null,
+            _calculateTimer: null,
+            _scheduleCalculate(delay = 2500) {
+                if (this._calculateTimer) clearTimeout(this._calculateTimer);
+                this._calculateTimer = setTimeout(() => {
+                    this._calculateTimer = null;
+                    this._calculate();
+                }, delay);
+            },
 
             _calculate() {
                 if (location.pathname !== '/watch') return;
@@ -12682,11 +13121,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('channelAgeDisplay', () => {
                     this._el?.remove(); this._el = null;
-                    setTimeout(() => this._calculate(), 2500);
+                    this._scheduleCalculate(2500);
                 });
-                setTimeout(() => this._calculate(), 2500);
+                this._scheduleCalculate(2500);
             },
             destroy() {
+                if (this._calculateTimer) clearTimeout(this._calculateTimer);
+                this._calculateTimer = null;
                 removeNavigateRule('channelAgeDisplay');
                 this._el?.remove(); this._el = null;
                 document.querySelector('.ytkit-age-badge')?.remove();
@@ -12700,6 +13141,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'gauge',
             _overlay: null,
             _interval: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 1500) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (this._overlay) return;
@@ -12728,12 +13177,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('speedIndicatorOverlay', () => {
                     this._cleanup();
-                    setTimeout(() => this._create(), 1500);
+                    this._scheduleCreate(1500);
                 });
-                setTimeout(() => this._create(), 1500);
+                this._scheduleCreate(1500);
             },
 
             _cleanup() {
+                if (this._createTimer) { clearTimeout(this._createTimer); this._createTimer = null; }
                 if (this._interval) { clearInterval(this._interval); this._interval = null; }
                 this._overlay?.remove(); this._overlay = null;
             },
@@ -12792,6 +13242,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Persist your volume level across videos and sessions',
             group: 'Playback',
             icon: 'volume-1',
+            _applyTimer: null,
+            _scheduleApply(delay = 1500) {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = setTimeout(() => {
+                    this._applyTimer = null;
+                    this._apply();
+                }, delay);
+            },
 
             _apply() {
                 const level = appState.settings.rememberVolumeLevel || 100;
@@ -12807,8 +13265,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _saveHandler: null,
 
             init() {
-                addNavigateRule('rememberVolume', () => setTimeout(() => this._apply(), 1500));
-                setTimeout(() => this._apply(), 1500);
+                addNavigateRule('rememberVolume', () => this._scheduleApply(1500));
+                this._scheduleApply(1500);
 
                 // Save volume changes
                 this._saveHandler = () => {
@@ -12823,6 +13281,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.addEventListener('volumechange', this._saveHandler, true);
             },
             destroy() {
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = null;
                 removeNavigateRule('rememberVolume');
                 if (this._saveHandler) { document.removeEventListener('volumechange', this._saveHandler, true); this._saveHandler = null; }
             }
@@ -12834,6 +13294,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'airplay',
             _btn: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (this._btn) return;
@@ -12870,11 +13338,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('pipButton', () => {
                     this._btn = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('pipButton');
                 document.querySelector('.ytkit-pip-btn')?.remove();
                 this._btn = null;
@@ -12886,6 +13356,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically turns on closed captions when a video starts playing',
             group: 'Playback',
             icon: 'subtitles',
+            _enableTimer: null,
+            _scheduleEnable(delay = 3000) {
+                if (this._enableTimer) clearTimeout(this._enableTimer);
+                this._enableTimer = setTimeout(() => {
+                    this._enableTimer = null;
+                    this._enable();
+                }, delay);
+            },
 
             _enable() {
                 if (location.pathname !== '/watch') return;
@@ -12903,10 +13381,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('autoSubtitles', () => setTimeout(() => this._enable(), 3000));
-                setTimeout(() => this._enable(), 3000);
+                addNavigateRule('autoSubtitles', () => this._scheduleEnable(3000));
+                this._scheduleEnable(3000);
             },
-            destroy() { removeNavigateRule('autoSubtitles'); }
+            destroy() {
+                if (this._enableTimer) clearTimeout(this._enableTimer);
+                this._enableTimer = null;
+                removeNavigateRule('autoSubtitles');
+            }
         },
         {
             id: 'focusedMode',
@@ -12950,6 +13432,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Upgrades video thumbnails to maximum resolution where available',
             group: 'Content',
             icon: 'image',
+            _upgradeTimer: null,
+            _scheduleUpgrade(delay = 1500) {
+                if (this._upgradeTimer) clearTimeout(this._upgradeTimer);
+                this._upgradeTimer = setTimeout(() => {
+                    this._upgradeTimer = null;
+                    this._upgradeAll();
+                }, delay);
+            },
 
             _upgradeAll() {
                 const thumbnails = document.querySelectorAll('ytd-thumbnail img[src*="i.ytimg.com"], ytd-playlist-thumbnail img[src*="i.ytimg.com"]');
@@ -12969,11 +13459,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('thumbnailQualityUpgrade', () => setTimeout(() => this._upgradeAll(), 1500));
+                addNavigateRule('thumbnailQualityUpgrade', () => this._scheduleUpgrade(1500));
                 addMutationRule('thumbnailQualityUpgrade', () => this._upgradeAll());
-                setTimeout(() => this._upgradeAll(), 1500);
+                this._scheduleUpgrade(1500);
             },
             destroy() {
+                if (this._upgradeTimer) clearTimeout(this._upgradeTimer);
+                this._upgradeTimer = null;
                 removeNavigateRule('thumbnailQualityUpgrade');
                 removeMutationRule('thumbnailQualityUpgrade');
             }
@@ -12984,6 +13476,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Adds a clock icon on every thumbnail for one-click Watch Later saving',
             group: 'Content',
             icon: 'clock',
+            _addButtonsTimer: null,
+
+            _scheduleAddButtons(delay = 1500) {
+                if (this._addButtonsTimer) clearTimeout(this._addButtonsTimer);
+                this._addButtonsTimer = setTimeout(() => {
+                    this._addButtonsTimer = null;
+                    this._addButtons();
+                }, delay);
+            },
 
             _addButtons() {
                 const thumbnails = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
@@ -13037,11 +13538,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('watchLaterQuickAdd', () => setTimeout(() => this._addButtons(), 1500));
+                addNavigateRule('watchLaterQuickAdd', () => this._scheduleAddButtons(1500));
                 addMutationRule('watchLaterQuickAdd', () => this._addButtons());
-                setTimeout(() => this._addButtons(), 1500);
+                this._scheduleAddButtons(1500);
             },
             destroy() {
+                if (this._addButtonsTimer) { clearTimeout(this._addButtonsTimer); this._addButtonsTimer = null; }
                 removeNavigateRule('watchLaterQuickAdd');
                 removeMutationRule('watchLaterQuickAdd');
                 document.querySelectorAll('.ytkit-wl-btn').forEach(b => b.remove());
@@ -13054,6 +13556,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'shuffle',
             _btns: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (location.pathname !== '/watch') return;
@@ -13104,11 +13614,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('playlistEnhancer', () => {
                     this._btns?.remove(); this._btns = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('playlistEnhancer');
                 this._btns?.remove(); this._btns = null;
                 document.querySelectorAll('.ytkit-playlist-enhance').forEach(b => b.remove());
@@ -13121,6 +13633,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Comments',
             icon: 'search',
             _bar: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 3000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (location.pathname !== '/watch') return;
@@ -13209,16 +13729,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('commentSearch', () => {
                     this._bar?.remove(); this._bar = null;
-                    setTimeout(() => this._create(), 3000);
+                    this._scheduleCreate(3000);
                 });
                 addMutationRule('commentSearch', () => {
                     if (location.pathname === '/watch' && !document.querySelector('.ytkit-comment-search')) {
                         this._create();
                     }
                 });
-                setTimeout(() => this._create(), 3000);
+                this._scheduleCreate(3000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('commentSearch');
                 removeMutationRule('commentSearch');
                 // Reset any hidden comments
@@ -13419,6 +13941,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically dismisses cookie consent, survey prompts, and other YouTube popups',
             group: 'Content',
             icon: 'x-circle',
+            _dismissTimer: null,
+
+            _scheduleDismiss(delay = 2000) {
+                if (this._dismissTimer) clearTimeout(this._dismissTimer);
+                this._dismissTimer = setTimeout(() => {
+                    this._dismissTimer = null;
+                    this._dismiss();
+                }, delay);
+            },
 
             _dismiss() {
                 // Cookie consent / GDPR
@@ -13440,10 +13971,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addMutationRule('autoClosePopups', () => this._dismiss());
-                addNavigateRule('autoClosePopups', () => setTimeout(() => this._dismiss(), 2000));
+                addNavigateRule('autoClosePopups', () => this._scheduleDismiss(2000));
                 this._dismiss();
             },
             destroy() {
+                if (this._dismissTimer) { clearTimeout(this._dismissTimer); this._dismissTimer = null; }
                 removeMutationRule('autoClosePopups');
                 removeNavigateRule('autoClosePopups');
             }
@@ -13454,6 +13986,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Shows a 4K, HD, or SD badge on video thumbnails based on available quality',
             group: 'Content',
             icon: 'monitor',
+            _addBadgesTimer: null,
+
+            _scheduleAddBadges(delay = 1500) {
+                if (this._addBadgesTimer) clearTimeout(this._addBadgesTimer);
+                this._addBadgesTimer = setTimeout(() => {
+                    this._addBadgesTimer = null;
+                    this._addBadges();
+                }, delay);
+            },
 
             _addBadges() {
                 const thumbnails = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
@@ -13504,11 +14045,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('videoResolutionBadge', () => setTimeout(() => this._addBadges(), 1500));
+                addNavigateRule('videoResolutionBadge', () => this._scheduleAddBadges(1500));
                 addMutationRule('videoResolutionBadge', () => this._addBadges());
-                setTimeout(() => this._addBadges(), 1500);
+                this._scheduleAddBadges(1500);
             },
             destroy() {
+                if (this._addBadgesTimer) { clearTimeout(this._addBadgesTimer); this._addBadgesTimer = null; }
                 removeNavigateRule('videoResolutionBadge');
                 removeMutationRule('videoResolutionBadge');
                 document.querySelectorAll('.ytkit-res-badge').forEach(b => b.remove());
@@ -13521,6 +14063,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'percent',
             _el: null,
+            _calculateTimer: null,
+            _scheduleCalculate(delay = 3000) {
+                if (this._calculateTimer) clearTimeout(this._calculateTimer);
+                this._calculateTimer = setTimeout(() => {
+                    this._calculateTimer = null;
+                    this._calculate();
+                }, delay);
+            },
 
             _calculate() {
                 if (location.pathname !== '/watch') return;
@@ -13558,11 +14108,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('likeViewRatio', () => {
                     this._el?.remove(); this._el = null;
-                    setTimeout(() => this._calculate(), 3000);
+                    this._scheduleCalculate(3000);
                 });
-                setTimeout(() => this._calculate(), 3000);
+                this._scheduleCalculate(3000);
             },
             destroy() {
+                if (this._calculateTimer) clearTimeout(this._calculateTimer);
+                this._calculateTimer = null;
                 removeNavigateRule('likeViewRatio');
                 this._el?.remove(); this._el = null;
                 document.querySelector('.ytkit-lv-ratio')?.remove();
@@ -13575,6 +14127,54 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'image',
             _btn: null,
+            _createTimer: null,
+            _feedbackTimer: null,
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
+
+            _setButtonFeedback(labelEl, btn, text) {
+                labelEl.textContent = text;
+                btn.setAttribute('aria-label', text === 'Thumbnail' ? 'Download thumbnail' : text);
+                if (this._feedbackTimer) clearTimeout(this._feedbackTimer);
+                if (text !== 'Thumbnail') {
+                    this._feedbackTimer = setTimeout(() => {
+                        labelEl.textContent = 'Thumbnail';
+                        btn.setAttribute('aria-label', 'Download thumbnail');
+                        this._feedbackTimer = null;
+                    }, 2000);
+                } else {
+                    this._feedbackTimer = null;
+                }
+            },
+
+            async _resolveThumbnailUrl(videoId) {
+                const candidates = [
+                    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+                    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+                ];
+
+                for (const candidate of candidates) {
+                    try {
+                        const response = await extensionRequestAsync({
+                            method: 'HEAD',
+                            url: candidate,
+                            timeout: 5000
+                        });
+                        if (response?.status >= 200 && response.status < 400) {
+                            return candidate;
+                        }
+                    } catch (_) {
+                        // Try the next thumbnail candidate.
+                    }
+                }
+
+                return candidates[candidates.length - 1];
+            },
 
             _create() {
                 if (location.pathname !== '/watch') return;
@@ -13613,25 +14213,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.appendChild(label);
 
                 btn.addEventListener('click', async () => {
-                    const thumbUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+                    if (btn.disabled) return;
+                    btn.disabled = true;
                     try {
-                        const resp = await fetch(thumbUrl);
-                        if (!resp.ok) throw new Error('Not found');
-                        const blob = await resp.blob();
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = `${videoId}_thumbnail.jpg`;
-                        a.click();
-                        URL.revokeObjectURL(a.href);
-                        btn.textContent = '\u2705 Downloaded';
-                        setTimeout(() => btn.textContent = '\uD83D\uDDBC Thumbnail', 2000);
-                    } catch(e) {
-                        // Fallback to hqdefault
-                        const a = document.createElement('a');
-                        a.href = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-                        a.download = `${videoId}_thumbnail.jpg`;
-                        a.target = '_blank';
-                        a.click();
+                        this._setButtonFeedback(label, btn, 'Checking…');
+                        const thumbUrl = await this._resolveThumbnailUrl(videoId);
+                        this._setButtonFeedback(label, btn, 'Downloading…');
+                        await triggerDownload(thumbUrl, `${videoId}_thumbnail.jpg`);
+                        this._setButtonFeedback(label, btn, 'Downloaded');
+                    } catch (e) {
+                        this._setButtonFeedback(label, btn, 'Retry');
+                        showToast('Thumbnail download failed', '#ef4444', { duration: 4 });
+                    } finally {
+                        btn.disabled = false;
                     }
                 });
 
@@ -13642,12 +14236,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('downloadThumbnail', () => {
                     this._btn = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('downloadThumbnail');
+                if (this._feedbackTimer) clearTimeout(this._feedbackTimer);
+                this._feedbackTimer = null;
                 document.querySelectorAll('.ytkit-dl-thumb-btn').forEach(b => b.remove());
                 this._btn = null;
             }
@@ -13686,6 +14284,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Prevents the next video from automatically playing when the current one finishes',
             group: 'Playback',
             icon: 'skip-forward',
+            _disableTimer: null,
+            _scheduleDisable(delay = 2000) {
+                if (this._disableTimer) clearTimeout(this._disableTimer);
+                this._disableTimer = setTimeout(() => {
+                    this._disableTimer = null;
+                    this._disable();
+                }, delay);
+            },
 
             _disable() {
                 if (location.pathname !== '/watch') return;
@@ -13697,10 +14303,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                addNavigateRule('disableAutoplayNext', () => setTimeout(() => this._disable(), 2000));
-                setTimeout(() => this._disable(), 2000);
+                addNavigateRule('disableAutoplayNext', () => this._scheduleDisable(2000));
+                this._scheduleDisable(2000);
             },
-            destroy() { removeNavigateRule('disableAutoplayNext'); }
+            destroy() {
+                if (this._disableTimer) clearTimeout(this._disableTimer);
+                this._disableTimer = null;
+                removeNavigateRule('disableAutoplayNext');
+            }
         },
         {
             id: 'channelSubCount',
@@ -13709,6 +14319,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'users',
             _el: null,
+            _showTimer: null,
+            _scheduleShow(delay = 2500) {
+                if (this._showTimer) clearTimeout(this._showTimer);
+                this._showTimer = setTimeout(() => {
+                    this._showTimer = null;
+                    this._show();
+                }, delay);
+            },
 
             _show() {
                 if (location.pathname !== '/watch') return;
@@ -13735,11 +14353,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('channelSubCount', () => {
                     this._el?.remove(); this._el = null;
-                    setTimeout(() => this._show(), 2500);
+                    this._scheduleShow(2500);
                 });
-                setTimeout(() => this._show(), 2500);
+                this._scheduleShow(2500);
             },
             destroy() {
+                if (this._showTimer) clearTimeout(this._showTimer);
+                this._showTimer = null;
                 removeNavigateRule('channelSubCount');
                 this._el?.remove(); this._el = null;
                 document.querySelector('.ytkit-sub-count-badge')?.remove();
@@ -13754,6 +14374,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _container: null,
             _video: null,
             _rateHandler: null,
+            _createTimer: null,
+            _scheduleCreate(delay = 2000) {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = setTimeout(() => {
+                    this._createTimer = null;
+                    this._create();
+                }, delay);
+            },
 
             _create() {
                 if (location.pathname !== '/watch') return;
@@ -13805,11 +14433,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._video = null;
                     this._rateHandler = null;
                     this._container?.remove(); this._container = null;
-                    setTimeout(() => this._create(), 2000);
+                    this._scheduleCreate(2000);
                 });
-                setTimeout(() => this._create(), 2000);
+                this._scheduleCreate(2000);
             },
             destroy() {
+                if (this._createTimer) clearTimeout(this._createTimer);
+                this._createTimer = null;
                 removeNavigateRule('customSpeedButtons');
                 this._video?.removeEventListener('ratechange', this._rateHandler);
                 this._video = null;
@@ -13894,9 +14524,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'pause-circle',
             _navRuleId: 'preventAutoplayNav',
-            init() {
-                const pauseRule = () => {
-                    if (!isWatchPagePath()) return;
+            _pauseTimer: null,
+            _schedulePause(delay = 500) {
+                if (this._pauseTimer) clearTimeout(this._pauseTimer);
+                this._pauseTimer = setTimeout(() => {
+                    this._pauseTimer = null;
                     const video = getMainVideoElement();
                     const player = getMoviePlayerElement();
                     if (video && player && !video.paused) {
@@ -13904,10 +14536,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         player.classList.remove('playing-mode');
                         player.classList.add('paused-mode');
                     }
-                };
-                addNavigateRule(this._navRuleId, () => setTimeout(pauseRule, 500));
+                }, delay);
+            },
+            init() {
+                addNavigateRule(this._navRuleId, () => {
+                    if (!isWatchPagePath()) return;
+                    this._schedulePause(500);
+                });
             },
             destroy() {
+                if (this._pauseTimer) { clearTimeout(this._pauseTimer); this._pauseTimer = null; }
                 removeNavigateRule(this._navRuleId);
             }
         },
@@ -13919,19 +14557,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically open the chapters panel when available',
             group: 'Playback',
             icon: 'list-tree',
-            init() {
-                const openChapters = () => {
+            _openTimer: null,
+            _scheduleOpen(delay = 1000) {
+                if (this._openTimer) clearTimeout(this._openTimer);
+                this._openTimer = setTimeout(() => {
+                    this._openTimer = null;
                     if (!window.location.pathname.startsWith('/watch')) return;
-                    setTimeout(() => {
-                        const chaptersButton = document.querySelector('ytd-video-description-chapters-section-renderer button');
-                        if (chaptersButton && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]')) {
-                            chaptersButton.click();
-                        }
-                    }, 1000);
-                };
-                addNavigateRule(this.id, openChapters);
+                    const chaptersButton = document.querySelector('ytd-video-description-chapters-section-renderer button');
+                    if (chaptersButton && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]')) {
+                        chaptersButton.click();
+                    }
+                }, delay);
             },
-            destroy() { removeNavigateRule(this.id); }
+            init() {
+                addNavigateRule(this.id, () => this._scheduleOpen(1000));
+                this._scheduleOpen(1000);
+            },
+            destroy() {
+                if (this._openTimer) { clearTimeout(this._openTimer); this._openTimer = null; }
+                removeNavigateRule(this.id);
+            }
         },
 
         // ── Auto-Open Transcript ──
@@ -13941,19 +14586,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Automatically open the transcript panel when available',
             group: 'Playback',
             icon: 'scroll-text',
-            init() {
-                const openTranscript = () => {
+            _openTimer: null,
+            _scheduleOpen(delay = 1200) {
+                if (this._openTimer) clearTimeout(this._openTimer);
+                this._openTimer = setTimeout(() => {
+                    this._openTimer = null;
                     if (!window.location.pathname.startsWith('/watch')) return;
-                    setTimeout(() => {
-                        const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
-                        if (moreBtn && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]')) {
-                            moreBtn.click();
-                        }
-                    }, 1200);
-                };
-                addNavigateRule(this.id, openTranscript);
+                    const moreBtn = document.querySelector('ytd-video-description-transcript-section-renderer button');
+                    if (moreBtn && !document.querySelector('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]')) {
+                        moreBtn.click();
+                    }
+                }, delay);
             },
-            destroy() { removeNavigateRule(this.id); }
+            init() {
+                addNavigateRule(this.id, () => this._scheduleOpen(1200));
+                this._scheduleOpen(1200);
+            },
+            destroy() {
+                if (this._openTimer) { clearTimeout(this._openTimer); this._openTimer = null; }
+                removeNavigateRule(this.id);
+            }
         },
 
         // ── Sort Notifications Chronologically ──
@@ -13998,14 +14650,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Eagerly load the comment section so it is ready when you scroll down',
             group: 'Playback',
             icon: 'message-square',
+            _preloadTimer: null,
             init() {
                 const preloadRule = () => {
                     if (!window.location.pathname.startsWith('/watch')) return;
+                    // Cancel any pending retry chain from the previous navigation
+                    if (this._preloadTimer) { clearTimeout(this._preloadTimer); this._preloadTimer = null; }
                     const tryPreload = (attempts = 0) => {
+                        if (!this._preloadTimer && attempts > 0) return; // Cancelled by navigate/destroy
+                        this._preloadTimer = null;
                         if (document.querySelector('ytd-comments#comments ytd-comment-thread-renderer')) return;
                         const continuation = document.querySelector('ytd-comments#comments ytd-continuation-item-renderer');
                         if (!continuation) {
-                            if (attempts < 30) setTimeout(() => tryPreload(attempts + 1), 500);
+                            if (attempts < 30) {
+                                this._preloadTimer = setTimeout(() => tryPreload(attempts + 1), 500);
+                            }
                             return;
                         }
                         const orig = continuation.style.cssText;
@@ -14014,11 +14673,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             requestAnimationFrame(() => { continuation.style.cssText = orig; });
                         });
                     };
-                    setTimeout(() => tryPreload(), 1500);
+                    this._preloadTimer = setTimeout(() => tryPreload(), 1500);
                 };
                 addNavigateRule(this.id, preloadRule);
             },
-            destroy() { removeNavigateRule(this.id); }
+            destroy() {
+                if (this._preloadTimer) { clearTimeout(this._preloadTimer); this._preloadTimer = null; }
+                removeNavigateRule(this.id);
+            }
         },
 
         // ── Adaptive Live Layout ──
@@ -14074,6 +14736,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _filterHandler: null,
             _currentIndex: -1,
             _filterState: null,
+            _refreshTimer: null,
             _ensureNav() {
                 if (this._container || !window.location.pathname.startsWith('/watch')) return;
                 const comments = document.querySelector('ytd-comments#comments');
@@ -14400,6 +15063,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._updateState();
                 };
 
+                const scheduleRefresh = (delay = 2200) => {
+                    if (this._refreshTimer) clearTimeout(this._refreshTimer);
+                    this._refreshTimer = setTimeout(() => {
+                        this._refreshTimer = null;
+                        refresh();
+                    }, delay);
+                };
+
                 document.addEventListener('ytkit-comment-filter', this._filterHandler);
                 addNavigateRule(this.id, () => {
                     this._setActiveThread(null);
@@ -14410,10 +15081,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._prevBtn = null;
                     this._nextBtn = null;
                     this._filterState = null;
-                    setTimeout(refresh, 2200);
+                    scheduleRefresh(2200);
                 });
                 addMutationRule(this.id + '-sync', refresh);
-                setTimeout(refresh, 2200);
+                scheduleRefresh(2200);
             },
             _navigate(direction) {
                 const threads = this._getThreads();
@@ -14437,6 +15108,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._updateState();
             },
             destroy() {
+                if (this._refreshTimer) { clearTimeout(this._refreshTimer); this._refreshTimer = null; }
                 removeNavigateRule(this.id);
                 removeMutationRule(this.id + '-sync');
                 document.removeEventListener('ytkit-comment-filter', this._filterHandler);
@@ -14724,58 +15396,120 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Show the original channel name next to @handle in comments',
             group: 'Advanced',
             icon: 'at-sign',
+            pages: [PageTypes.WATCH, PageTypes.SHORTS],
             _observer: null,
             _nameMap: null,
+            _pendingAuthors: null,
+            _abortController: null,
+            _COMMENT_ROOT_SELECTOR: 'ytd-comment-view-model, ytd-comment-renderer, ytd-comment-thread-renderer',
+
+            _normalizeAuthorKey(author) {
+                try {
+                    const parsed = new URL(author.href, location.origin);
+                    const normalizedPath = parsed.pathname.replace(/\/+$/, '');
+                    if (normalizedPath) {
+                        return `${parsed.origin}${normalizedPath}`.toLowerCase();
+                    }
+                } catch {}
+                return author?.textContent?.trim() || null;
+            },
+
+            _rememberName(authorKey, name) {
+                if (!this._nameMap || !authorKey || !name) return;
+                if (this._nameMap.has(authorKey)) this._nameMap.delete(authorKey);
+                this._nameMap.set(authorKey, name);
+                if (this._nameMap.size > 500) {
+                    const oldestKey = this._nameMap.keys().next().value;
+                    this._nameMap.delete(oldestKey);
+                }
+            },
+
+            _appendName(author, name) {
+                if (!author || !author.isConnected || !name) return;
+                const target = author.querySelector('#author-text') || author;
+                let span = target.querySelector('span[data-ytkit-name]');
+                if (!span) {
+                    span = document.createElement('span');
+                    span.style.cssText = 'margin-left:4px;color:var(--yt-spec-text-secondary);font-size:0.9em;';
+                    span.dataset.ytkitName = '1';
+                    target.appendChild(span);
+                }
+                span.textContent = `( ${name} )`;
+                span.dataset.ytkitResolvedName = name;
+            },
+
+            _flushPending(authorKey, name) {
+                const waiters = this._pendingAuthors?.get(authorKey);
+                if (!waiters) return;
+                this._pendingAuthors.delete(authorKey);
+                if (!name) return;
+                waiters.forEach((author) => this._appendName(author, name));
+            },
+
+            _processAuthor(author, decode) {
+                if (!(author instanceof HTMLAnchorElement) || !author.href) return;
+                const authorKey = this._normalizeAuthorKey(author);
+                if (!authorKey) return;
+
+                const cachedName = this._nameMap?.get(authorKey);
+                if (cachedName) {
+                    this._appendName(author, cachedName);
+                    return;
+                }
+
+                const pending = this._pendingAuthors?.get(authorKey);
+                if (pending) {
+                    pending.add(author);
+                    return;
+                }
+
+                this._pendingAuthors?.set(authorKey, new Set([author]));
+                fetch(author.href, {
+                    credentials: 'same-origin',
+                    signal: this._abortController?.signal
+                }).then(async (resp) => {
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const text = await resp.text();
+                    const metaMatch = text.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+                    const titleMatch = text.match(/(?<=<title>).+?(?= - YouTube)/);
+                    const rawName = metaMatch?.[1] || titleMatch?.[0];
+                    if (!rawName) throw new Error('No channel title found');
+                    const decoded = decode(rawName);
+                    this._rememberName(authorKey, decoded);
+                    this._flushPending(authorKey, decoded);
+                }).catch((error) => {
+                    if (error?.name === 'AbortError') return;
+                    this._flushPending(authorKey, null);
+                });
+            },
+
+            _processRoot(root, decode) {
+                if (!(root instanceof HTMLElement)) return;
+                const commentRoots = root.matches?.(this._COMMENT_ROOT_SELECTOR)
+                    ? [root]
+                    : Array.from(root.querySelectorAll?.(this._COMMENT_ROOT_SELECTOR) || []);
+                for (const commentRoot of commentRoots) {
+                    for (const author of commentRoot.querySelectorAll('#author-text[href]')) {
+                        this._processAuthor(author, decode);
+                    }
+                }
+            },
+
             init() {
                 this._nameMap = new Map();
-                const nameMap = this._nameMap;
+                this._pendingAuthors = new Map();
+                this._abortController = new AbortController();
                 const pageManager = document.getElementById('page-manager');
                 if (!pageManager) return;
                 const decode = (() => {
                     const ENTITIES = [['amp','&'],['apos',"'"],['quot','"'],['nbsp',' '],['lt','<'],['gt','>'],['#39',"'"]];
                     return s => ENTITIES.reduce((acc, [e, sym]) => acc.replaceAll(`&${e};`, sym), s);
                 })();
-                const appendName = (anchor, name) => {
-                    if (anchor.querySelector('span[data-ytkit-name]')) return;
-                    const span = document.createElement('span');
-                    span.textContent = `( ${name} )`;
-                    span.style.cssText = 'margin-left:4px;color:var(--yt-spec-text-secondary);font-size:0.9em;';
-                    span.dataset.ytkitName = name;
-                    const target = anchor.querySelector('#author-text') || anchor;
-                    target.appendChild(span);
-                };
+                this._processRoot(pageManager, decode);
                 this._observer = new MutationObserver(records => {
                     for (const r of records) {
                         for (const node of r.addedNodes) {
-                            if (!(node instanceof HTMLElement)) continue;
-                            const vms = node.tagName === 'YTD-COMMENT-VIEW-MODEL' ? [node] :
-                                Array.from(node.querySelectorAll?.('ytd-comment-view-model') || []);
-                            for (const vm of vms) {
-                                for (const author of vm.querySelectorAll('#author-text')) {
-                                    const handle = author.textContent.trim();
-                                    if (!handle || !author.href) continue;
-                                    if (nameMap.has(handle)) {
-                                        const n = nameMap.get(handle);
-                                        if (n) appendName(author, n);
-                                        continue;
-                                    }
-                                    // LRU eviction: cap at 500 entries
-                                    if (nameMap.size >= 500) {
-                                        const oldest = nameMap.keys().next().value;
-                                        nameMap.delete(oldest);
-                                    }
-                                    nameMap.set(handle, null);
-                                    fetch(author.href).then(async resp => {
-                                        const text = await resp.text();
-                                        const m = text.match(/(?<=<title>).+?(?= - YouTube)/);
-                                        if (m) {
-                                            const decoded = decode(m[0]);
-                                            nameMap.set(handle, decoded);
-                                            appendName(author, decoded);
-                                        } else nameMap.delete(handle);
-                                    }).catch(() => nameMap.delete(handle));
-                                }
-                            }
+                            this._processRoot(node, decode);
                         }
                     }
                 });
@@ -14783,7 +15517,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 this._observer?.disconnect(); this._observer = null;
+                this._abortController?.abort(); this._abortController = null;
+                this._pendingAuthors?.clear(); this._pendingAuthors = null;
                 document.querySelectorAll('span[data-ytkit-name]').forEach(el => el.remove());
+                this._nameMap?.clear();
                 this._nameMap = null;
             }
         },
@@ -15546,6 +16283,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _buttons: [],
             _injected: false,
             _styleEl: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 1500) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._insert();
+                }, delay);
+            },
             _insert() {
                 if (this._injected) return;
                 const controls = document.querySelector('.ytp-right-controls');
@@ -15581,10 +16326,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this.id, true
                 );
                 this._insert();
-                this._navRule = () => { this._injected = false; this._buttons = []; setTimeout(() => this._insert(), 1500); };
+                this._navRule = () => {
+                    this._injected = false;
+                    this._buttons = [];
+                    this._scheduleInject(1500);
+                };
                 addNavigateRule('frameByFrameButtons', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 this._buttons.forEach(b => b.remove());
                 this._buttons = []; this._injected = false;
                 this._styleEl?.remove(); this._styleEl = null;
@@ -15601,6 +16352,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'clock',
             _timer: null,
             _overlay: null,
+            _overlayKeyHandler: null,
             _sessionStart: 0,
             _persistTimer: null,
 
@@ -15622,24 +16374,74 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _showOverlay(kind, message, onDismiss) {
-                if (this._overlay) this._overlay.remove();
+                if (this._overlay) {
+                    this._overlay.remove();
+                    this._overlay = null;
+                }
+                if (this._overlayKeyHandler) {
+                    document.removeEventListener('keydown', this._overlayKeyHandler, true);
+                    this._overlayKeyHandler = null;
+                }
                 const video = document.querySelector('video');
                 if (video && !video.paused) video.pause();
                 const o = document.createElement('div');
                 o.className = 'ytkit-wellbeing-overlay';
-                o.innerHTML = `
-                    <div class="ytkit-wellbeing-card">
-                        <div class="ytkit-wellbeing-icon">${kind === 'break' ? '☕' : '⏰'}</div>
-                        <h2 class="ytkit-wellbeing-title">${kind === 'break' ? 'Take a break' : 'Daily limit reached'}</h2>
-                        <p class="ytkit-wellbeing-msg">${message}</p>
-                        <button type="button" class="ytkit-wellbeing-btn">${kind === 'break' ? 'Continue watching' : 'Dismiss until tomorrow'}</button>
-                    </div>`;
+                o.setAttribute('role', 'dialog');
+                o.setAttribute('aria-modal', 'true');
+
+                const card = document.createElement('div');
+                card.className = 'ytkit-wellbeing-card';
+
+                const icon = document.createElement('div');
+                icon.className = 'ytkit-wellbeing-icon';
+                icon.textContent = kind === 'break' ? '☕' : '⏰';
+                icon.setAttribute('aria-hidden', 'true');
+
+                const title = document.createElement('h2');
+                title.className = 'ytkit-wellbeing-title';
+                title.id = `ytkit-wellbeing-title-${kind}`;
+                title.textContent = kind === 'break' ? 'Take a break' : 'Daily limit reached';
+
+                const body = document.createElement('p');
+                body.className = 'ytkit-wellbeing-msg';
+                body.id = `ytkit-wellbeing-msg-${kind}`;
+                body.textContent = message;
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'ytkit-wellbeing-btn';
+                button.textContent = kind === 'break' ? 'Continue watching' : 'Dismiss until tomorrow';
+
+                o.setAttribute('aria-labelledby', title.id);
+                o.setAttribute('aria-describedby', body.id);
+                card.append(icon, title, body, button);
+                o.appendChild(card);
                 document.body.appendChild(o);
                 this._overlay = o;
-                o.querySelector('.ytkit-wellbeing-btn').addEventListener('click', () => {
-                    o.remove(); this._overlay = null;
+
+                const dismissOverlay = () => {
+                    if (this._overlayKeyHandler) {
+                        document.removeEventListener('keydown', this._overlayKeyHandler, true);
+                        this._overlayKeyHandler = null;
+                    }
+                    o.remove();
+                    if (this._overlay === o) this._overlay = null;
                     if (onDismiss) onDismiss();
-                });
+                };
+
+                this._overlayKeyHandler = (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        dismissOverlay();
+                        return;
+                    }
+                    if (event.key === 'Tab') {
+                        trapFocusWithin(o, event);
+                    }
+                };
+                document.addEventListener('keydown', this._overlayKeyHandler, true);
+                button.addEventListener('click', dismissOverlay);
+                requestAnimationFrame(() => button.focus({ preventScroll: true }));
             },
 
             _tick() {
@@ -15690,12 +16492,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         cursor: pointer; transition: transform 120ms ease;
                     }
                     .ytkit-wellbeing-btn:hover { transform: translateY(-1px); }
+                    @media (prefers-reduced-motion: reduce) {
+                        .ytkit-wellbeing-overlay { animation: none; }
+                        .ytkit-wellbeing-btn { transition: none; }
+                        .ytkit-wellbeing-btn:hover { transform: none; }
+                    }
                 `, this.id, true);
                 this._timer = setInterval(() => this._tick(), 1000);
             },
             destroy() {
                 if (this._timer) clearInterval(this._timer);
                 this._timer = null;
+                if (this._overlayKeyHandler) {
+                    document.removeEventListener('keydown', this._overlayKeyHandler, true);
+                    this._overlayKeyHandler = null;
+                }
                 this._overlay?.remove(); this._overlay = null;
                 this._styleEl?.remove(); this._styleEl = null;
             }
@@ -15714,6 +16525,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'subtitles',
             pages: [PageTypes.WATCH],
             _btn: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             _formatTs(totalMs) {
                 const ms = Math.max(0, totalMs | 0);
                 const h = Math.floor(ms / 3600000);
@@ -15736,9 +16555,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!tracks || !tracks.length) { showToast('No captions available', '#ef4444'); return; }
                     const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
                     showToast('Fetching captions...', '#3b82f6');
-                    const resp = await fetch(track.baseUrl + '&fmt=json3');
-                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                    const data = await resp.json();
+                    const { response, data } = await extensionFetchJson({
+                        url: track.baseUrl + '&fmt=json3'
+                    });
+                    if (!response || response.status < 200 || response.status >= 300) {
+                        throw new Error('HTTP ' + response?.status);
+                    }
                     const lines = [];
                     let idx = 1;
                     for (const ev of (data.events || [])) {
@@ -15775,11 +16597,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn = btn;
             },
             init() {
-                setTimeout(() => this._inject(), 2000);
-                this._navRule = () => { this._btn = null; setTimeout(() => this._inject(), 2000); };
+                this._scheduleInject(2000);
+                this._navRule = () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                };
                 addNavigateRule('subtitleDownload', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('subtitleDownload');
                 this._btn?.remove(); this._btn = null;
             }
@@ -15794,8 +16621,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'sliders',
             pages: [PageTypes.WATCH],
             _styleEl: null,
+            _panelStyleEl: null,
             _panel: null,
             _btn: null,
+            _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             _apply() {
                 const s = appState.settings;
                 const f = [
@@ -15880,7 +16716,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             init() {
                 this._apply();
-                injectStyle(`
+                this._panelStyleEl = injectStyle(`
                     .ytkit-vvf-panel {
                         position: fixed; z-index: 2147483647; width: 260px;
                         background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
@@ -15899,8 +16735,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     .ytkit-vvf-reset:hover { background: #45475a; }
                 `, 'vvf-panel-css', true);
-                setTimeout(() => this._inject(), 2000);
-                this._navRule = () => { this._btn = null; this._apply(); setTimeout(() => this._inject(), 2000); };
+                this._scheduleInject(2000);
+                this._navRule = () => {
+                    this._btn = null;
+                    this._apply();
+                    this._scheduleInject(2000);
+                };
                 addNavigateRule('videoVisualFilters', this._navRule);
                 this._docClick = (e) => {
                     if (this._panel && !this._panel.contains(e.target) && e.target !== this._btn) {
@@ -15910,9 +16750,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.addEventListener('click', this._docClick, true);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('videoVisualFilters');
                 document.removeEventListener('click', this._docClick, true);
                 this._styleEl?.remove(); this._styleEl = null;
+                this._panelStyleEl?.remove(); this._panelStyleEl = null;
                 this._btn?.remove(); this._btn = null;
                 this._panel?.remove(); this._panel = null;
             }
@@ -15926,7 +16769,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'eye',
             _styleEl: null,
-            _keyDown: null, _keyUp: null,
+            _keyDown: null, _keyUp: null, _blurHandler: null,
             init() {
                 // Add CSS that hides the rewritten text when .ytkit-peek is on <html>
                 this._styleEl = injectStyle(`
@@ -15948,13 +16791,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `, this.id, true);
                 this._keyDown = (e) => { if (e.key === 'Alt' && !e.repeat) document.documentElement.classList.add('ytkit-peek'); };
                 this._keyUp = (e) => { if (e.key === 'Alt') document.documentElement.classList.remove('ytkit-peek'); };
+                this._blurHandler = () => document.documentElement.classList.remove('ytkit-peek');
                 document.addEventListener('keydown', this._keyDown);
                 document.addEventListener('keyup', this._keyUp);
-                window.addEventListener('blur', () => document.documentElement.classList.remove('ytkit-peek'));
+                window.addEventListener('blur', this._blurHandler);
             },
             destroy() {
                 document.removeEventListener('keydown', this._keyDown);
                 document.removeEventListener('keyup', this._keyUp);
+                if (this._blurHandler) {
+                    window.removeEventListener('blur', this._blurHandler);
+                    this._blurHandler = null;
+                }
                 document.documentElement.classList.remove('ytkit-peek');
                 this._styleEl?.remove(); this._styleEl = null;
             }
@@ -16032,7 +16880,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'layout',
             pages: [PageTypes.WATCH],
-            _tabsEl: null, _styleEl: null, _navRule: null,
+            _tabsEl: null, _styleEl: null, _navRule: null, _injectTimer: null,
+            _scheduleInject(delay = 1500) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             _activate(which) {
                 const below = document.querySelector('#below.ytd-watch-flexy');
                 if (!below) return;
@@ -16084,11 +16939,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wtab:hover { background: var(--yt-spec-badge-chip-background, #272727); }
                     .ytkit-wtab--active { background: #89b4fa; color: #1e1e2e; }
                 `, this.id, true);
-                this._navRule = () => { this._tabsEl = null; setTimeout(() => this._inject(), 1200); };
-                setTimeout(() => this._inject(), 1500);
+                this._navRule = () => {
+                    this._tabsEl = null;
+                    this._scheduleInject(1200);
+                };
+                this._scheduleInject(1500);
                 addNavigateRule('watchPageTabs', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('watchPageTabs');
                 this._tabsEl?.remove(); this._tabsEl = null;
                 document.querySelectorAll('#below.ytd-watch-flexy [style*="display: none"]').forEach(el => el.style.display = '');
@@ -16104,7 +16964,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'message-circle',
             pages: [PageTypes.WATCH],
-            _panel: null, _navRule: null,
+            _panel: null, _navRule: null, _styleEl: null, _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             async _load(container) {
                 const vid = getVideoId();
                 if (!vid) { container.textContent = 'No video id'; return; }
@@ -16156,7 +17023,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._panel = panel;
             },
             init() {
-                injectStyle(`
+                this._styleEl = injectStyle(`
                     .ytkit-rc-panel {
                         background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
                         border-radius: 10px; padding: 12px; margin-bottom: 12px;
@@ -16175,13 +17042,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-rc-title { font-weight: 600; font-size: 13px; }
                     .ytkit-rc-meta { color: #a6adc8; font-size: 11px; margin-top: 2px; }
                 `, this.id + '-css', true);
-                setTimeout(() => this._inject(), 2000);
-                this._navRule = () => { this._panel = null; setTimeout(() => this._inject(), 1500); };
+                this._scheduleInject(2000);
+                this._navRule = () => {
+                    this._panel = null;
+                    this._scheduleInject(1500);
+                };
                 addNavigateRule('redditComments', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('redditComments');
                 this._panel?.remove(); this._panel = null;
+                this._styleEl?.remove(); this._styleEl = null;
             }
         },
 
@@ -16286,7 +17159,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'bar-chart',
             _modal: null,
+            _styleEl: null,
+            _injectTimer: null,
             _storageKey: 'ytkit-watch-time',
+            _scheduleInject(delay = 2500) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._injectBtn();
+                }, delay);
+            },
             _fmt(s) { const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); return h > 0 ? `${h}h ${m}m` : `${m}m`; },
             _open() {
                 if (this._modal) { this._modal.remove(); this._modal = null; return; }
@@ -16346,7 +17228,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._modal = overlay;
             },
             init() {
-                injectStyle(`
+                this._styleEl = injectStyle(`
                     .ytkit-wha-overlay {
                         position: fixed; inset: 0; z-index: 2147483647;
                         background: rgba(17, 17, 27, 0.85); display: flex; align-items: center; justify-content: center;
@@ -16375,8 +17257,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `, this.id, true);
                 window.__ytkitOpenAnalytics = () => this._open();
                 // Add entry point as a button on watch page
-                this._navRule = () => setTimeout(() => this._injectBtn(), 2000);
-                setTimeout(() => this._injectBtn(), 2500);
+                this._navRule = () => this._scheduleInject(2000);
+                this._scheduleInject(2500);
                 addNavigateRule('watchHistoryAnalytics', this._navRule);
             },
             _injectBtn() {
@@ -16390,8 +17272,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 menu.appendChild(btn);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('watchHistoryAnalytics');
                 this._modal?.remove(); this._modal = null;
+                this._styleEl?.remove(); this._styleEl = null;
                 document.querySelectorAll('.ytkit-wha-btn').forEach(b => b.remove());
                 delete window.__ytkitOpenAnalytics;
             }
@@ -16445,7 +17330,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'sparkles',
             pages: [PageTypes.WATCH],
-            _btn: null, _panel: null, _navRule: null,
+            _btn: null, _panel: null, _navRule: null, _styleEl: null, _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             async _fetchTranscript(videoId) {
                 try {
                     const pageData = document.querySelector('ytd-watch-flexy');
@@ -16453,9 +17345,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
                     if (!tracks?.length) throw new Error('No captions available');
                     const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
-                    const resp = await fetch(track.baseUrl + '&fmt=json3');
-                    if (!resp.ok) throw new Error('Caption fetch HTTP ' + resp.status);
-                    const data = await resp.json();
+                    const { response, data } = await extensionFetchJson({
+                        url: track.baseUrl + '&fmt=json3'
+                    });
+                    if (!response || response.status < 200 || response.status >= 300) {
+                        throw new Error('Caption fetch HTTP ' + response?.status);
+                    }
                     return (data.events || [])
                         .filter(e => e.segs)
                         .map(e => e.segs.map(s => s.utf8 || '').join('').trim())
@@ -16467,51 +17362,63 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const s = appState.settings;
                 if (!s.aiSummaryApiKey && s.aiSummaryProvider !== 'ollama') throw new Error('Set aiSummaryApiKey first (via options page)');
                 const provider = s.aiSummaryProvider || 'openai';
-                if (provider === 'openai' || provider === 'ollama') {
-                    const resp = await fetch(s.aiSummaryEndpoint, {
+                const requestJson = async (providerName, url, payload, headers = {}, timeout = 120000) => {
+                    const { response, data } = await extensionFetchJson({
                         method: 'POST',
+                        url,
                         headers: {
                             'Content-Type': 'application/json',
-                            ...(s.aiSummaryApiKey ? { 'Authorization': 'Bearer ' + s.aiSummaryApiKey } : {}),
+                            ...headers
                         },
-                        body: JSON.stringify({
+                        data: JSON.stringify(payload),
+                        timeout
+                    });
+
+                    if (!response || response.status < 200 || response.status >= 300) {
+                        const apiMessage = data?.error?.message || data?.error || data?.message;
+                        throw new Error(apiMessage ? `${providerName} HTTP ${response?.status}: ${apiMessage}` : `${providerName} HTTP ${response?.status}`);
+                    }
+
+                    return data;
+                };
+
+                if (provider === 'openai' || provider === 'ollama') {
+                    const data = await requestJson(
+                        provider,
+                        s.aiSummaryEndpoint,
+                        {
                             model: s.aiSummaryModel,
                             messages: [{ role: 'user', content: prompt }],
                             max_tokens: 800,
-                        }),
-                    });
-                    if (!resp.ok) throw new Error(`${provider} HTTP ${resp.status}`);
-                    const data = await resp.json();
+                        },
+                        s.aiSummaryApiKey ? { 'Authorization': 'Bearer ' + s.aiSummaryApiKey } : {},
+                        provider === 'ollama' ? 300000 : 120000
+                    );
                     return data.choices?.[0]?.message?.content || '[no content]';
                 }
                 if (provider === 'anthropic') {
-                    const resp = await fetch(s.aiSummaryEndpoint || 'https://api.anthropic.com/v1/messages', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-api-key': s.aiSummaryApiKey,
-                            'anthropic-version': '2023-06-01',
-                            'anthropic-dangerous-direct-browser-access': 'true',
-                        },
-                        body: JSON.stringify({
+                    const data = await requestJson(
+                        'anthropic',
+                        s.aiSummaryEndpoint || 'https://api.anthropic.com/v1/messages',
+                        {
                             model: s.aiSummaryModel || 'claude-haiku-4-5-20251001',
                             max_tokens: 800,
                             messages: [{ role: 'user', content: prompt }],
-                        }),
-                    });
-                    if (!resp.ok) throw new Error(`anthropic HTTP ${resp.status}`);
-                    const data = await resp.json();
+                        },
+                        {
+                            'x-api-key': s.aiSummaryApiKey,
+                            'anthropic-version': '2023-06-01'
+                        }
+                    );
                     return data.content?.[0]?.text || '[no content]';
                 }
                 if (provider === 'gemini') {
                     const url = `${s.aiSummaryEndpoint || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'}?key=${encodeURIComponent(s.aiSummaryApiKey)}`;
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-                    });
-                    if (!resp.ok) throw new Error(`gemini HTTP ${resp.status}`);
-                    const data = await resp.json();
+                    const data = await requestJson(
+                        'gemini',
+                        url,
+                        { contents: [{ parts: [{ text: prompt }] }] }
+                    );
                     return data.candidates?.[0]?.content?.parts?.[0]?.text || '[no content]';
                 }
                 throw new Error('Unknown provider: ' + provider);
@@ -16570,7 +17477,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn = btn;
             },
             init() {
-                injectStyle(`
+                this._styleEl = injectStyle(`
                     .ytkit-aisum-panel {
                         position: fixed; top: 80px; right: 20px; z-index: 2147483647;
                         width: 420px; max-height: 70vh; overflow: auto;
@@ -16587,14 +17494,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         border-radius: 6px; padding: 6px 14px; cursor: pointer; font-weight: 600;
                     }
                 `, this.id, true);
-                setTimeout(() => this._inject(), 2000);
-                this._navRule = () => { this._btn = null; setTimeout(() => this._inject(), 2000); };
+                this._scheduleInject(2000);
+                this._navRule = () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                };
                 addNavigateRule('aiVideoSummary', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('aiVideoSummary');
                 this._btn?.remove(); this._btn = null;
                 this._panel?.remove(); this._panel = null;
+                this._styleEl?.remove(); this._styleEl = null;
             }
         },
 
@@ -16606,7 +17519,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Watch Page',
             icon: 'list',
             pages: [PageTypes.WATCH],
-            _btn: null, _navRule: null,
+            _btn: null, _navRule: null, _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             _extract() {
                 // Parse chapters from macro markers
                 const chapters = [];
@@ -16650,11 +17570,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn = btn;
             },
             init() {
-                setTimeout(() => this._inject(), 2000);
-                this._navRule = () => { this._btn = null; setTimeout(() => this._inject(), 2000); };
+                this._scheduleInject(2000);
+                this._navRule = () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                };
                 addNavigateRule('copyChapterMarkdown', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('copyChapterMarkdown');
                 this._btn?.remove(); this._btn = null;
             }
@@ -16668,7 +17593,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Video Player',
             icon: 'skip-forward',
             pages: [PageTypes.WATCH],
-            _prev: null, _next: null, _navRule: null,
+            _prev: null, _next: null, _navRule: null, _injectTimer: null,
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
             _getChapterTimes() {
                 const times = [];
                 const nodes = document.querySelectorAll('ytd-macro-markers-list-item-renderer');
@@ -16713,11 +17645,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._prev = prev; this._next = next;
             },
             init() {
-                setTimeout(() => this._inject(), 2000);
-                this._navRule = () => { this._prev = null; this._next = null; setTimeout(() => this._inject(), 2000); };
+                this._scheduleInject(2000);
+                this._navRule = () => {
+                    this._prev = null;
+                    this._next = null;
+                    this._scheduleInject(2000);
+                };
                 addNavigateRule('chapterJumpButtons', this._navRule);
             },
             destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
                 removeNavigateRule('chapterJumpButtons');
                 this._prev?.remove(); this._next?.remove();
                 this._prev = null; this._next = null;
@@ -20189,6 +21127,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
     function closePageModal() {
         if (!_pageModalOpen) return;
         _pageModalOpen = false;
+        document.querySelector('#ytkit-page-btn')?.setAttribute('aria-expanded', 'false');
+        document.querySelector('#ytkit-page-btn-watch')?.setAttribute('aria-expanded', 'false');
         if (_pageModalEl) {
             _pageModalEl.classList.remove('ytkit-pm-visible');
             setTimeout(() => _pageModalEl?.remove(), 220);
@@ -20220,6 +21160,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         _pageModalOpen = true;
         document.querySelector('#ytkit-page-btn')?.classList.add('active');
         document.querySelector('#ytkit-page-btn-watch')?.classList.add('active');
+        document.querySelector('#ytkit-page-btn')?.setAttribute('aria-expanded', 'true');
+        document.querySelector('#ytkit-page-btn-watch')?.setAttribute('aria-expanded', 'true');
 
         // Overlay
         const ov = document.createElement('div');
@@ -20276,6 +21218,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
             card.type = 'button';
             card.className = 'ytkit-pm-card' + (isOn ? ' on' : '');
             card.dataset.fid = fid;
+            card.setAttribute('role', 'switch');
+            card.setAttribute('aria-checked', String(isOn));
+            card.setAttribute('aria-label', label || feat.name);
 
             // Icon area
             const iconWrap = document.createElement('div');
@@ -20325,6 +21270,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                     DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
                 }
                 card.classList.toggle('on', newVal);
+                card.setAttribute('aria-checked', String(newVal));
                 // Update all matching dock pills if any remain
                 document.querySelectorAll(`.ytkit-dock-pill[data-fid="${fid}"]`).forEach(p => p.classList.toggle('on', newVal));
             });
@@ -20385,6 +21331,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         btn.title = 'Open page controls';
         btn.setAttribute('aria-label', 'Open page controls');
             btn.setAttribute('aria-haspopup', 'dialog');
+            btn.setAttribute('aria-expanded', 'false');
             // Sliders icon
             const svg = createSVG('0 0 24 24', [
                 { type: 'line', x1: 4, y1: 21, x2: 4, y2: 14 },
@@ -20455,6 +21402,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: min(360px, calc(100vw - 24px));
             max-height: calc(100vh - 80px);
             overflow-y: auto;
+            overscroll-behavior: contain;
             z-index: 99991;
             background: rgba(18,18,18,0.98);
             border: 1px solid rgba(255,255,255,0.08);
@@ -20485,6 +21433,13 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-pm-visible {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ytkit-pm-overlay,
+            .ytkit-pm {
+                transition: none;
+            }
         }
 
         .ytkit-pm-header {

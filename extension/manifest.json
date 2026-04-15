@@ -30,11 +30,17 @@
     "https://*.youtube.com/*",
     "https://*.youtube-nocookie.com/*",
     "https://youtu.be/*",
+    "https://i.ytimg.com/*",
     "https://sponsor.ajay.app/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://generativelanguage.googleapis.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*",
     "http://127.0.0.1:9751/*",
-    "http://localhost:9751/*"
+    "http://localhost:9751/*",
+    "http://127.0.0.1:11434/*",
+    "http://localhost:11434/*"
   ],
   "background": {
     "service_worker": "background.js"

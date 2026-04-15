@@ -57,7 +57,7 @@ Requires Firefox 128+.
 
 A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then **[click here to install](https://github.com/SysAdminDoc/YouTube-Kit/raw/refs/heads/main/YTKit.user.js)**.
 
-> Some features (SharedAudio, SponsorBlock per-category, Cobalt downloads) are only available in the userscript. The extension uses a MediaDL-only download path.
+> Some features (SharedAudio, Return YouTube Dislike, SponsorBlock per-category, Cobalt downloads) are only available in the userscript. The extension uses a MediaDL-only download path.
 
 ---
 
@@ -71,7 +71,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Video Hider — hide videos/channels from feeds with X buttons, keyword filter, regex, duration filter | On |
 | Video Context Menu — right-click player for downloads, VLC/MPV streaming, transcript, screenshot | On |
 | Settings Panel — searchable, categorized, instant-apply, export/import/reset | On |
-| Return YouTube Dislike — show dislike counts via RYD API | Off |
+| Comment Search — filter watch-page comments inline | Off |
 | DeArrow — replace clickbait titles/thumbnails via crowdsourced database | Off |
 
 ### Interface
