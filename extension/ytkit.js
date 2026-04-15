@@ -2693,6 +2693,10 @@ return response;
     }
 
     let _settingsPanelLastFocus = null;
+    let _pageModalOpen = false;
+    let _pageModalEl = null;
+    let _pageModalOverlay = null;
+    let _pageModalLastFocus = null;
 
     function setSettingsPanelOpen(open) {
         if (!document.body || !shouldBuildPrimaryUI()) return false;
@@ -2870,14 +2874,18 @@ return response;
         // Fallback: DOM signals
         _fromDOM() {
             const video = getMainVideoElement();
-            const liveBadge = cachedQuery('.ytp-live-badge');
+            const liveBadge = document.querySelector('.ytp-live-badge');
             const liveBadgeActive = liveBadge && !liveBadge.classList.contains('ytp-live-badge-disabled')
                 && window.getComputedStyle(liveBadge).display !== 'none';
-            const chatFrame = cachedQuery('ytd-live-chat-frame, #chat');
+            const chatFrame = document.querySelector('ytd-live-chat-frame#chat, ytd-live-chat-frame, #chat');
             const hasChatFrame = chatFrame && !chatFrame.hasAttribute('hidden');
 
-            // Currently live: badge active + infinite duration
-            if (liveBadgeActive) return 'live';
+            // Check ytd-watch-flexy for live attribute (YouTube sets this on live pages)
+            const watchFlexy = document.querySelector('ytd-watch-flexy');
+            const flexyIsLive = watchFlexy?.hasAttribute('is-live');
+
+            // Currently live: badge active OR flexy attribute
+            if (liveBadgeActive || flexyIsLive) return 'live';
             if (video && !isFinite(video.duration) && hasChatFrame) return 'live';
 
             // VOD: has chat frame (replay) but not currently live
@@ -4743,7 +4751,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         // ─── Video Player ───
         cssFeature('hideRelatedVideos', 'Hide Related Videos', 'Remove the related videos panel on watch pages', 'Watch Page', 'panel-right',
-            `ytd-watch-flexy #secondary { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
+            `ytd-watch-flexy #secondary #related { display: none !important; } ytd-watch-flexy #secondary:not(:has(ytd-live-chat-frame:not([hidden]))) { display: none !important; } ytd-watch-flexy #primary { max-width: none !important; }`, { isParent: true }),
         {
             id: 'expandVideoWidth',
             name: 'Expand Video Width',
@@ -5084,6 +5092,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _isActive: false,         // overlay is mounted
             _entering: false,
             _dismissed: false,        // user explicitly closed split — block re-expand until nav
+            _chatWatcherObs: null,    // observer for late chat frame insertion
             _lastVideoId: null,
             _splitWrapper: null,
             _navRuleId: '_theaterSplit',
@@ -5516,6 +5525,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 }
 
+                // Watch for late chat frame insertion — if we mounted as 'standard'
+                // but a chat frame appears later (SPA race), reclassify and un-hide #secondary
+                if (this._videoType === 'standard' && !this._getChatEl()) {
+                    this._chatWatcherObs?.disconnect();
+                    this._chatWatcherObs = new MutationObserver(() => {
+                        const chatEl = this._getChatEl();
+                        if (!chatEl || !this._isActive) return;
+                        this._chatWatcherObs.disconnect();
+                        this._chatWatcherObs = null;
+                        // Reclassify video type
+                        const newType = VideoTypeDetector.refresh();
+                        if (newType === 'live' || newType === 'vod') {
+                            this._videoType = newType;
+                            // Un-hide #secondary so chat is accessible
+                            const sec2 = document.querySelector('#secondary');
+                            if (sec2) {
+                                sec2.style.display = '';
+                                sec2.style.setProperty('display', 'block', 'important');
+                                sec2.style.setProperty('pointer-events', 'none', 'important');
+                                const related = sec2.querySelector('#related');
+                                if (related) { related.dataset.ytkitSplitHidden='1'; related.style.display='none'; }
+                            }
+                            DebugManager.log('Theater', `Late chat detected, reclassified as ${newType}`);
+                        }
+                    });
+                    this._chatWatcherObs.observe(document.body, { childList: true, subtree: true });
+                    // Safety: stop watching after 15s
+                    setTimeout(() => { this._chatWatcherObs?.disconnect(); this._chatWatcherObs = null; }, 15000);
+                }
+
                 // Masthead hidden via CSS class added in _activate()
                 const mast = document.querySelector('ytd-masthead, #masthead');
                 if (mast) this._mastheadDisplay = mast.style.display;
@@ -5860,6 +5899,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!this._isActive) return;
                 clearTimeout(this._resizeTimer);
                 clearTimeout(this._initResizeTimer);
+                this._chatWatcherObs?.disconnect();
+                this._chatWatcherObs = null;
 
                 // Remove scroll handlers from scroll target
                 const scrollEl = this._scrollTarget;
@@ -18589,11 +18630,6 @@ body.ytkit-panel-open #ytkit-settings-panel {
         [PageTypes.WATCH]: 'watch',
         [PageTypes.CHANNEL]: 'channel',
     };
-
-    let _pageModalOpen = false;
-    let _pageModalEl = null;
-    let _pageModalOverlay = null;
-    let _pageModalLastFocus = null;
 
     function closePageModal() {
         if (!_pageModalOpen) return;
