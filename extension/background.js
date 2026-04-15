@@ -18,11 +18,17 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://music.youtube.com',
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
+    'https://i.ytimg.com',
     'https://sponsor.ajay.app',
+    'https://api.openai.com',
+    'https://api.anthropic.com',
+    'https://generativelanguage.googleapis.com',
     'https://www.reddit.com',
     'https://old.reddit.com',
     'http://127.0.0.1:9751',
     'http://localhost:9751',
+    'http://127.0.0.1:11434',
+    'http://localhost:11434',
 ];
 
 // Origins that are allowed to receive cookies on proxied requests.
@@ -37,6 +43,21 @@ const CREDENTIALED_FETCH_ORIGINS = new Set([
     'https://www.youtube-nocookie.com',
     'http://127.0.0.1:9751',
     'http://localhost:9751',
+]);
+
+const ALLOWED_COOKIE_DOMAINS = new Set([
+    '.youtube.com',
+    'youtube.com',
+    '.www.youtube.com',
+    'www.youtube.com',
+    '.m.youtube.com',
+    'm.youtube.com',
+    '.music.youtube.com',
+    'music.youtube.com',
+    '.youtube-nocookie.com',
+    'youtube-nocookie.com',
+    '.www.youtube-nocookie.com',
+    'www.youtube-nocookie.com'
 ]);
 
 function shouldSendCredentials(url) {
@@ -85,6 +106,28 @@ function filterHeaders(headers, blocklist) {
         }
     }
     return filtered;
+}
+
+function normalizeRequestBody(data, headers = {}) {
+    if (data == null) return null;
+    if (typeof data === 'string') return data;
+    if (data instanceof FormData || data instanceof URLSearchParams || data instanceof Blob) return data;
+    if (data instanceof ArrayBuffer) return data;
+    if (ArrayBuffer.isView(data)) return data;
+
+    const contentTypeHeader = Object.entries(headers).find(([key]) => key.toLowerCase() === 'content-type');
+    const contentType = typeof contentTypeHeader?.[1] === 'string' ? contentTypeHeader[1].toLowerCase() : '';
+    if (contentType.includes('application/json')) {
+        return JSON.stringify(data);
+    }
+
+    return String(data);
+}
+
+function isAllowedCookieDomain(domain) {
+    if (typeof domain !== 'string') return false;
+    const normalized = domain.trim().toLowerCase();
+    return ALLOWED_COOKIE_DOMAINS.has(normalized);
 }
 
 function sendTabMessage(tabId, message) {
@@ -214,7 +257,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             fetchOpts.headers = filteredHeaders;
         }
         if (data && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
-            fetchOpts.body = typeof data === 'string' ? data : String(data);
+            fetchOpts.body = normalizeRequestBody(data, filteredHeaders);
         }
 
         fetch(url, fetchOpts).then(async (resp) => {
@@ -334,7 +377,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     if (msg.type === 'EXT_COOKIE_LIST') {
-        const domain = msg.filter?.domain || '.youtube.com';
+        const requestedDomain = typeof msg.filter?.domain === 'string' ? msg.filter.domain : '.youtube.com';
+        const domain = requestedDomain.trim().toLowerCase() || '.youtube.com';
+        if (!isAllowedCookieDomain(domain)) {
+            sendResponse({ cookies: null, error: `Cookie domain not allowed: ${requestedDomain}` });
+            return false;
+        }
         chrome.cookies.getAll({ domain }).then(cookies => {
             sendResponse({
                 cookies: cookies.map(c => ({
