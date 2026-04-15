@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Astra Deck</title>
@@ -15,12 +15,13 @@
     </div>
   </header>
   <div class="search-row">
-    <input id="q" type="search" placeholder="Filter toggles…" autofocus>
+    <label class="sr-only" for="q">Filter quick toggles</label>
+    <input id="q" name="quick-toggle-filter" type="search" placeholder="Filter toggles…" aria-label="Filter quick toggles" autocomplete="off" spellcheck="false" autofocus>
   </div>
-  <section id="toggles" class="toggles"></section>
+  <section id="toggles" class="toggles" aria-label="Quick toggles"></section>
   <footer>
-    <button id="openPanel" class="primary">Open full settings panel</button>
-    <button id="openOptions" class="ghost">Options page</button>
+    <button id="openPanel" class="primary" type="button">Open full settings panel</button>
+    <button id="openOptions" class="ghost" type="button">Options page</button>
   </footer>
 </div>
 <script src="popup.js"></script>
