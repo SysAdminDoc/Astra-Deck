@@ -191,14 +191,75 @@
         });
     }
 
+    // v3.9.0: retry with exponential backoff for transient failures
+    async function extensionRequestWithRetry(details, { retries = 3, baseDelayMs = 1000 } = {}) {
+        let lastErr;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const resp = await extensionRequestAsync(details);
+                const st = resp?.status;
+                // Retry on 5xx / 429. Return on everything else.
+                if (st && (st === 429 || (st >= 500 && st < 600)) && attempt < retries) {
+                    lastErr = new Error('HTTP ' + st);
+                    await new Promise(r => setTimeout(r, baseDelayMs * Math.pow(2, attempt)));
+                    continue;
+                }
+                return resp;
+            } catch (e) {
+                lastErr = e;
+                if (attempt >= retries) break;
+                await new Promise(r => setTimeout(r, baseDelayMs * Math.pow(2, attempt)));
+            }
+        }
+        throw lastErr || new Error('Request failed after retries');
+    }
+
+    // v3.9.0: diagnostic error ring buffer
+    const DiagnosticLog = {
+        _enabled: false,
+        _cap: 500,
+        enable() { this._enabled = true; },
+        disable() { this._enabled = false; },
+        record(ctx, msg) {
+            if (!this._enabled && !appState?.settings?.diagnosticLog) return;
+            try {
+                const arr = appState.settings._errors || [];
+                arr.push({ ts: Date.now(), ctx: String(ctx).slice(0, 40), msg: String(msg).slice(0, 500) });
+                if (arr.length > this._cap) arr.splice(0, arr.length - this._cap);
+                appState.settings._errors = arr;
+                // Debounced save handled by settingsManager on next settings touch; avoid thrashing
+            } catch {}
+        },
+        get() { return appState.settings._errors || []; },
+        clear() { appState.settings._errors = []; settingsManager.save(appState.settings); },
+        download() {
+            const data = JSON.stringify({
+                version: (typeof YTKIT_VERSION !== 'undefined') ? YTKIT_VERSION : 'unknown',
+                userAgent: navigator.userAgent,
+                url: location.href,
+                entries: this.get(),
+            }, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `ytkit-diagnostic-${Date.now()}.json`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+        },
+    };
+
     async function extensionFetchJson(details) {
-        const response = await extensionRequestAsync({
+        const req = {
             ...details,
             headers: {
                 Accept: 'application/json',
                 ...(details?.headers || {})
             }
-        });
+        };
+        const useRetry = appState?.settings?.apiRetryBackoff !== false;
+        const response = useRetry
+            ? await extensionRequestWithRetry(req)
+            : await extensionRequestAsync(req);
 
         try {
             return {
@@ -330,7 +391,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.8.0';
+    const YTKIT_VERSION = '3.9.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2311,6 +2372,23 @@ return response;
             dwWatchTimeToday: { date: '', seconds: 0 },
             _profiles: {},                   // { profileName: { settingKey: value, ... } }
             _activeProfile: 'default',
+            // v3.9.0 additions
+            subtitleDownload: false,
+            videoVisualFilters: false,
+            vvfBrightness: 100,              // 0-200%
+            vvfContrast: 100,                // 0-200%
+            vvfSaturation: 100,              // 0-200%
+            vvfHue: 0,                       // -180..180 deg
+            vvfGrayscale: 0,                 // 0-100%
+            vvfSepia: 0,                     // 0-100%
+            dearrowPeekButton: false,
+            videoAgeColors: false,
+            watchPageTabs: false,
+            redditComments: false,
+            diagnosticLog: false,
+            _errors: [],                     // { ts, ctx, msg }
+            storageQuotaLRU: false,
+            apiRetryBackoff: true,
         },
 
         // Settings versioning and migration
@@ -15603,6 +15681,579 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._timer = null;
                 this._overlay?.remove(); this._overlay = null;
                 this._styleEl?.remove(); this._styleEl = null;
+            }
+        },
+
+        // ═══════════════════════════════════════════════════════════════════
+        // v3.9.0 — New Feature Wave
+        // ═══════════════════════════════════════════════════════════════════
+
+        // ── Subtitle / Caption Download (SRT) ──
+        {
+            id: 'subtitleDownload',
+            name: 'Subtitle Download (SRT)',
+            description: 'One-click SRT download of the active caption track — standalone player button, no sidebar required',
+            group: 'Downloads',
+            icon: 'subtitles',
+            pages: [PageTypes.WATCH],
+            _btn: null,
+            _formatTs(totalMs) {
+                const ms = Math.max(0, totalMs | 0);
+                const h = Math.floor(ms / 3600000);
+                const m = Math.floor((ms % 3600000) / 60000);
+                const s = Math.floor((ms % 60000) / 1000);
+                const f = ms % 1000;
+                const pad = (n, w = 2) => String(n).padStart(w, '0');
+                return `${pad(h)}:${pad(m)}:${pad(s)},${pad(f, 3)}`;
+            },
+            _decode(s) {
+                const t = document.createElement('textarea');
+                t.innerHTML = s;
+                return t.value;
+            },
+            async _download() {
+                try {
+                    const pageData = document.querySelector('ytd-watch-flexy');
+                    const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
+                    const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+                    if (!tracks || !tracks.length) { showToast('No captions available', '#ef4444'); return; }
+                    const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
+                    showToast('Fetching captions...', '#3b82f6');
+                    const resp = await fetch(track.baseUrl + '&fmt=json3');
+                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                    const data = await resp.json();
+                    const lines = [];
+                    let idx = 1;
+                    for (const ev of (data.events || [])) {
+                        if (!ev.segs) continue;
+                        const text = ev.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ').trim();
+                        if (!text) continue;
+                        const start = ev.tStartMs || 0;
+                        const end = start + (ev.dDurationMs || 2000);
+                        lines.push(`${idx++}\n${this._formatTs(start)} --> ${this._formatTs(end)}\n${text}\n`);
+                    }
+                    const blob = new Blob([lines.join('\n')], { type: 'text/srt' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const vid = getVideoId() || 'video';
+                    const lang = track.languageCode || 'en';
+                    a.href = url; a.download = `${vid}_${lang}.srt`;
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 5000);
+                    showToast('SRT downloaded', '#22c55e');
+                } catch (e) {
+                    DiagnosticLog?.record('subtitleDownload', e.message);
+                    showToast('Subtitle download failed: ' + e.message, '#ef4444');
+                }
+            },
+            _inject() {
+                const controls = document.querySelector('.ytp-right-controls');
+                if (!controls || controls.querySelector('.ytkit-subdl-btn')) return;
+                const btn = document.createElement('button');
+                btn.className = 'ytp-button ytkit-player-btn ytkit-subdl-btn';
+                btn.title = 'Download SRT (YTKit)';
+                TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM6 13h4v2H6v-2zm0-3h10v2H6v-2zm12 5h-4v-2h4v2zm0-3h-2v-2h2v2z"/></svg>');
+                btn.onclick = (e) => { e.stopPropagation(); this._download(); };
+                controls.insertBefore(btn, controls.firstChild);
+                this._btn = btn;
+            },
+            init() {
+                setTimeout(() => this._inject(), 2000);
+                this._navRule = () => { this._btn = null; setTimeout(() => this._inject(), 2000); };
+                addNavigateRule('subtitleDownload', this._navRule);
+            },
+            destroy() {
+                removeNavigateRule('subtitleDownload');
+                this._btn?.remove(); this._btn = null;
+            }
+        },
+
+        // ── Video Visual Filters ──
+        {
+            id: 'videoVisualFilters',
+            name: 'Video Visual Filters',
+            description: 'Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element',
+            group: 'Video Player',
+            icon: 'sliders',
+            pages: [PageTypes.WATCH],
+            _styleEl: null,
+            _panel: null,
+            _btn: null,
+            _apply() {
+                const s = appState.settings;
+                const f = [
+                    `brightness(${s.vvfBrightness || 100}%)`,
+                    `contrast(${s.vvfContrast || 100}%)`,
+                    `saturate(${s.vvfSaturation || 100}%)`,
+                    `hue-rotate(${s.vvfHue || 0}deg)`,
+                    `grayscale(${s.vvfGrayscale || 0}%)`,
+                    `sepia(${s.vvfSepia || 0}%)`,
+                ].join(' ');
+                const css = `.html5-main-video { filter: ${f} !important; }`;
+                if (this._styleEl) this._styleEl.textContent = css;
+                else this._styleEl = injectStyle(css, this.id, true);
+            },
+            _togglePanel() {
+                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-vvf-panel';
+                const fields = [
+                    ['vvfBrightness', 'Brightness', 0, 200, '%'],
+                    ['vvfContrast', 'Contrast', 0, 200, '%'],
+                    ['vvfSaturation', 'Saturation', 0, 200, '%'],
+                    ['vvfHue', 'Hue', -180, 180, '°'],
+                    ['vvfGrayscale', 'Grayscale', 0, 100, '%'],
+                    ['vvfSepia', 'Sepia', 0, 100, '%'],
+                ];
+                const title = document.createElement('div');
+                title.className = 'ytkit-vvf-title';
+                title.textContent = 'Visual Filters';
+                panel.appendChild(title);
+                for (const [key, label, min, max, unit] of fields) {
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-vvf-row';
+                    const lab = document.createElement('label');
+                    lab.textContent = label;
+                    const val = document.createElement('span');
+                    val.className = 'ytkit-vvf-val';
+                    val.textContent = `${appState.settings[key]}${unit}`;
+                    const sl = document.createElement('input');
+                    sl.type = 'range'; sl.min = min; sl.max = max;
+                    sl.value = appState.settings[key];
+                    sl.oninput = () => {
+                        appState.settings[key] = parseInt(sl.value);
+                        val.textContent = `${sl.value}${unit}`;
+                        this._apply();
+                    };
+                    sl.onchange = () => settingsManager.save(appState.settings);
+                    row.append(lab, sl, val);
+                    panel.appendChild(row);
+                }
+                const reset = document.createElement('button');
+                reset.className = 'ytkit-vvf-reset';
+                reset.textContent = 'Reset';
+                reset.onclick = () => {
+                    Object.assign(appState.settings, {
+                        vvfBrightness: 100, vvfContrast: 100, vvfSaturation: 100,
+                        vvfHue: 0, vvfGrayscale: 0, vvfSepia: 0,
+                    });
+                    settingsManager.save(appState.settings);
+                    this._apply();
+                    this._panel?.remove(); this._panel = null; this._togglePanel();
+                };
+                panel.appendChild(reset);
+                document.body.appendChild(panel);
+                const r = this._btn?.getBoundingClientRect();
+                if (r) {
+                    panel.style.right = `${Math.max(12, window.innerWidth - r.right)}px`;
+                    panel.style.bottom = `${window.innerHeight - r.top + 8}px`;
+                }
+                this._panel = panel;
+            },
+            _inject() {
+                const controls = document.querySelector('.ytp-right-controls');
+                if (!controls || controls.querySelector('.ytkit-vvf-btn')) return;
+                const btn = document.createElement('button');
+                btn.className = 'ytp-button ytkit-player-btn ytkit-vvf-btn';
+                btn.title = 'Visual Filters (YTKit)';
+                TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm2 5h14v2H5v-2zm4 5h6v2H9v-2z"/></svg>');
+                btn.onclick = (e) => { e.stopPropagation(); this._togglePanel(); };
+                controls.insertBefore(btn, controls.firstChild);
+                this._btn = btn;
+            },
+            init() {
+                this._apply();
+                injectStyle(`
+                    .ytkit-vvf-panel {
+                        position: fixed; z-index: 2147483647; width: 260px;
+                        background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
+                        border-radius: 10px; padding: 12px; font: 13px/1.4 Roboto, system-ui, sans-serif;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                    }
+                    .ytkit-vvf-title { font-weight: 700; margin-bottom: 8px; color: #89b4fa; }
+                    .ytkit-vvf-row { display: grid; grid-template-columns: 80px 1fr 48px; gap: 8px; align-items: center; margin-bottom: 6px; }
+                    .ytkit-vvf-row label { font-size: 12px; color: #a6adc8; }
+                    .ytkit-vvf-row input[type=range] { accent-color: #89b4fa; }
+                    .ytkit-vvf-val { text-align: right; font-variant-numeric: tabular-nums; color: #f5c2e7; font-size: 11px; }
+                    .ytkit-vvf-reset {
+                        display: block; margin-top: 8px; width: 100%;
+                        background: #313244; color: #cdd6f4; border: 1px solid #45475a;
+                        padding: 6px; border-radius: 6px; cursor: pointer; font-size: 12px;
+                    }
+                    .ytkit-vvf-reset:hover { background: #45475a; }
+                `, 'vvf-panel-css', true);
+                setTimeout(() => this._inject(), 2000);
+                this._navRule = () => { this._btn = null; this._apply(); setTimeout(() => this._inject(), 2000); };
+                addNavigateRule('videoVisualFilters', this._navRule);
+                this._docClick = (e) => {
+                    if (this._panel && !this._panel.contains(e.target) && e.target !== this._btn) {
+                        this._panel.remove(); this._panel = null;
+                    }
+                };
+                document.addEventListener('click', this._docClick, true);
+            },
+            destroy() {
+                removeNavigateRule('videoVisualFilters');
+                document.removeEventListener('click', this._docClick, true);
+                this._styleEl?.remove(); this._styleEl = null;
+                this._btn?.remove(); this._btn = null;
+                this._panel?.remove(); this._panel = null;
+            }
+        },
+
+        // ── DeArrow "Show Original" Peek ──
+        {
+            id: 'dearrowPeekButton',
+            name: 'DeArrow Peek Button',
+            description: 'Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)',
+            group: 'Watch Page',
+            icon: 'eye',
+            _styleEl: null,
+            _keyDown: null, _keyUp: null,
+            init() {
+                // Add CSS that hides the rewritten text when .ytkit-peek is on <html>
+                this._styleEl = injectStyle(`
+                    html.ytkit-peek [data-ytkit-dearrow-title]::before,
+                    html.ytkit-peek .ytkit-dearrow-rewritten::before {
+                        content: attr(data-ytkit-orig-title) !important;
+                        position: absolute; inset: 0;
+                        background: rgba(30, 30, 46, 0.92); color: #f5c2e7;
+                        padding: 4px 6px; border-radius: 4px;
+                        font: inherit; white-space: normal;
+                        z-index: 5; pointer-events: none;
+                    }
+                    html.ytkit-peek::after {
+                        content: 'Peek: showing original titles';
+                        position: fixed; top: 12px; right: 12px; z-index: 2147483647;
+                        background: #f5c2e7; color: #1e1e2e; padding: 6px 12px;
+                        border-radius: 999px; font: 600 12px Roboto, system-ui;
+                    }
+                `, this.id, true);
+                this._keyDown = (e) => { if (e.key === 'Alt' && !e.repeat) document.documentElement.classList.add('ytkit-peek'); };
+                this._keyUp = (e) => { if (e.key === 'Alt') document.documentElement.classList.remove('ytkit-peek'); };
+                document.addEventListener('keydown', this._keyDown);
+                document.addEventListener('keyup', this._keyUp);
+                window.addEventListener('blur', () => document.documentElement.classList.remove('ytkit-peek'));
+            },
+            destroy() {
+                document.removeEventListener('keydown', this._keyDown);
+                document.removeEventListener('keyup', this._keyUp);
+                document.documentElement.classList.remove('ytkit-peek');
+                this._styleEl?.remove(); this._styleEl = null;
+            }
+        },
+
+        // ── Video Age Color Coding ──
+        {
+            id: 'videoAgeColors',
+            name: 'Video Age Color Coding',
+            description: 'Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)',
+            group: 'Home / Subscriptions',
+            icon: 'calendar',
+            _styleEl: null, _mutRule: null,
+            _ageClass(txt) {
+                if (!txt) return null;
+                const t = txt.toLowerCase();
+                if (/(second|minute|hour)s? ago/.test(t)) return 'fresh';
+                if (/\b(\d+)\s+days?\s+ago/.test(t)) return 'week';
+                if (/\b(\d+)\s+weeks?\s+ago/.test(t)) return 'month';
+                if (/\b(\d+)\s+months?\s+ago/.test(t)) return 'year';
+                if (/\b(\d+)\s+years?\s+ago/.test(t)) return 'ancient';
+                return null;
+            },
+            _process() {
+                const items = document.querySelectorAll('ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer');
+                for (const it of items) {
+                    if (it.dataset.ytkitAge) continue;
+                    const meta = it.querySelector('#metadata-line, .ytd-video-meta-block, ytd-video-meta-block');
+                    const txt = meta?.textContent || '';
+                    const cls = this._ageClass(txt);
+                    if (cls) {
+                        it.dataset.ytkitAge = cls;
+                        it.classList.add('ytkit-age-' + cls);
+                    }
+                }
+            },
+            init() {
+                this._styleEl = injectStyle(`
+                    ytd-rich-item-renderer[data-ytkit-age], ytd-grid-video-renderer[data-ytkit-age],
+                    ytd-video-renderer[data-ytkit-age], ytd-compact-video-renderer[data-ytkit-age] {
+                        position: relative;
+                    }
+                    ytd-rich-item-renderer[data-ytkit-age]::before, ytd-grid-video-renderer[data-ytkit-age]::before,
+                    ytd-video-renderer[data-ytkit-age]::before, ytd-compact-video-renderer[data-ytkit-age]::before {
+                        content: ''; position: absolute; inset: 0; pointer-events: none;
+                        border: 3px solid transparent; border-radius: 12px; z-index: 3;
+                    }
+                    .ytkit-age-fresh::before   { border-color: #22c55e !important; box-shadow: 0 0 12px rgba(34, 197, 94, 0.55); }
+                    .ytkit-age-week::before    { border-color: #3b82f6 !important; }
+                    .ytkit-age-month::before   { border-color: #eab308 !important; }
+                    .ytkit-age-year::before    { border-color: #f97316 !important; }
+                    .ytkit-age-ancient::before { border-color: #ef4444 !important; opacity: 0.65; }
+                `, this.id, true);
+                this._process();
+                this._mutRule = () => this._process();
+                addMutationRule('videoAgeColors', this._mutRule);
+                addNavigateRule('videoAgeColors', this._mutRule);
+            },
+            destroy() {
+                removeMutationRule('videoAgeColors');
+                removeNavigateRule('videoAgeColors');
+                this._styleEl?.remove(); this._styleEl = null;
+                document.querySelectorAll('[data-ytkit-age]').forEach(el => {
+                    delete el.dataset.ytkitAge;
+                    el.classList.remove('ytkit-age-fresh', 'ytkit-age-week', 'ytkit-age-month', 'ytkit-age-year', 'ytkit-age-ancient');
+                });
+            }
+        },
+
+        // ── Watch Page Tabs (Desc / Comments / Chapters / Transcript) ──
+        {
+            id: 'watchPageTabs',
+            name: 'Watch Page Tabs',
+            description: 'Horizontal tab bar above the comments/description area to quickly switch views on the watch page',
+            group: 'Watch Page',
+            icon: 'layout',
+            pages: [PageTypes.WATCH],
+            _tabsEl: null, _styleEl: null, _navRule: null,
+            _activate(which) {
+                const below = document.querySelector('#below.ytd-watch-flexy');
+                if (!below) return;
+                const desc = below.querySelector('ytd-watch-metadata, #description-inline-expander, ytd-text-inline-expander');
+                const comments = document.querySelector('ytd-comments#comments');
+                const chapters = document.querySelector('ytd-macro-markers-list-renderer, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-macro-markers-description-chapters"]');
+                const transcript = document.querySelector('ytd-transcript-renderer, ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
+                const setVis = (el, vis) => { if (!el) return; el.style.display = vis ? '' : 'none'; };
+                setVis(desc, which === 'desc');
+                setVis(comments, which === 'comments');
+                setVis(chapters, which === 'chapters');
+                setVis(transcript, which === 'transcript');
+                if (which === 'transcript') {
+                    document.querySelector('ytd-video-description-transcript-section-renderer button')?.click();
+                }
+                this._tabsEl?.querySelectorAll('.ytkit-wtab').forEach(b => {
+                    b.classList.toggle('ytkit-wtab--active', b.dataset.wtab === which);
+                });
+            },
+            _inject() {
+                const below = document.querySelector('#below.ytd-watch-flexy');
+                if (!below || below.querySelector('.ytkit-wtabs')) return;
+                const bar = document.createElement('div');
+                bar.className = 'ytkit-wtabs';
+                for (const [key, label] of [['desc', 'Description'], ['comments', 'Comments'], ['chapters', 'Chapters'], ['transcript', 'Transcript']]) {
+                    const b = document.createElement('button');
+                    b.className = 'ytkit-wtab';
+                    b.dataset.wtab = key;
+                    b.textContent = label;
+                    b.onclick = () => this._activate(key);
+                    bar.appendChild(b);
+                }
+                below.prepend(bar);
+                this._tabsEl = bar;
+                this._activate('desc');
+            },
+            init() {
+                this._styleEl = injectStyle(`
+                    .ytkit-wtabs {
+                        display: flex; gap: 6px; padding: 8px 0; margin: 4px 0 12px;
+                        border-bottom: 1px solid var(--yt-spec-10-percent-layer, #303030);
+                    }
+                    .ytkit-wtab {
+                        background: transparent; color: var(--yt-spec-text-primary, #f1f1f1);
+                        border: 1px solid transparent; border-radius: 999px;
+                        padding: 6px 14px; font: 500 13px Roboto, system-ui, sans-serif;
+                        cursor: pointer;
+                    }
+                    .ytkit-wtab:hover { background: var(--yt-spec-badge-chip-background, #272727); }
+                    .ytkit-wtab--active { background: #89b4fa; color: #1e1e2e; }
+                `, this.id, true);
+                this._navRule = () => { this._tabsEl = null; setTimeout(() => this._inject(), 1200); };
+                setTimeout(() => this._inject(), 1500);
+                addNavigateRule('watchPageTabs', this._navRule);
+            },
+            destroy() {
+                removeNavigateRule('watchPageTabs');
+                this._tabsEl?.remove(); this._tabsEl = null;
+                document.querySelectorAll('#below.ytd-watch-flexy [style*="display: none"]').forEach(el => el.style.display = '');
+                this._styleEl?.remove(); this._styleEl = null;
+            }
+        },
+
+        // ── Reddit Comments Link ──
+        {
+            id: 'redditComments',
+            name: 'Reddit Comments',
+            description: 'Find Reddit discussions mentioning the current video (button in secondary sidebar)',
+            group: 'Watch Page',
+            icon: 'message-circle',
+            pages: [PageTypes.WATCH],
+            _panel: null, _navRule: null,
+            async _load(container) {
+                const vid = getVideoId();
+                if (!vid) { container.textContent = 'No video id'; return; }
+                container.textContent = 'Searching Reddit...';
+                try {
+                    const url = `https://www.reddit.com/search.json?q=url%3Ayoutube.com%2Fwatch%3Fv%3D${vid}+OR+url%3Ayoutu.be%2F${vid}&sort=top&limit=15`;
+                    const { data } = await extensionFetchJson({ url });
+                    const posts = data?.data?.children || [];
+                    if (!posts.length) { container.textContent = 'No Reddit threads found for this video.'; return; }
+                    container.textContent = '';
+                    for (const p of posts) {
+                        const d = p.data;
+                        const row = document.createElement('a');
+                        row.className = 'ytkit-rc-row';
+                        row.href = 'https://reddit.com' + d.permalink;
+                        row.target = '_blank';
+                        row.rel = 'noopener';
+                        row.innerHTML = '';
+                        const title = document.createElement('div');
+                        title.className = 'ytkit-rc-title';
+                        title.textContent = d.title || '(untitled)';
+                        const meta = document.createElement('div');
+                        meta.className = 'ytkit-rc-meta';
+                        meta.textContent = `r/${d.subreddit} • ${d.score} pts • ${d.num_comments} comments`;
+                        row.append(title, meta);
+                        container.appendChild(row);
+                    }
+                } catch (e) {
+                    DiagnosticLog?.record('redditComments', e.message);
+                    container.textContent = 'Reddit fetch failed: ' + e.message;
+                }
+            },
+            _inject() {
+                const secondary = document.querySelector('#secondary.ytd-watch-flexy');
+                if (!secondary || secondary.querySelector('.ytkit-rc-panel')) return;
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-rc-panel';
+                const head = document.createElement('div');
+                head.className = 'ytkit-rc-head';
+                head.textContent = 'Reddit Discussions';
+                const body = document.createElement('div');
+                body.className = 'ytkit-rc-body';
+                const btn = document.createElement('button');
+                btn.className = 'ytkit-rc-load';
+                btn.textContent = 'Load threads';
+                btn.onclick = () => { btn.remove(); this._load(body); };
+                panel.append(head, btn, body);
+                secondary.prepend(panel);
+                this._panel = panel;
+            },
+            init() {
+                injectStyle(`
+                    .ytkit-rc-panel {
+                        background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
+                        border-radius: 10px; padding: 12px; margin-bottom: 12px;
+                        font: 13px Roboto, system-ui;
+                    }
+                    .ytkit-rc-head { font-weight: 700; color: #fab387; margin-bottom: 8px; }
+                    .ytkit-rc-load {
+                        background: #fab387; color: #1e1e2e; border: none; border-radius: 6px;
+                        padding: 6px 12px; cursor: pointer; font-weight: 600;
+                    }
+                    .ytkit-rc-row {
+                        display: block; padding: 8px; margin-top: 6px; border-radius: 6px;
+                        background: #313244; color: #cdd6f4; text-decoration: none;
+                    }
+                    .ytkit-rc-row:hover { background: #45475a; }
+                    .ytkit-rc-title { font-weight: 600; font-size: 13px; }
+                    .ytkit-rc-meta { color: #a6adc8; font-size: 11px; margin-top: 2px; }
+                `, this.id + '-css', true);
+                setTimeout(() => this._inject(), 2000);
+                this._navRule = () => { this._panel = null; setTimeout(() => this._inject(), 1500); };
+                addNavigateRule('redditComments', this._navRule);
+            },
+            destroy() {
+                removeNavigateRule('redditComments');
+                this._panel?.remove(); this._panel = null;
+            }
+        },
+
+        // ── Diagnostic Log ──
+        {
+            id: 'diagnosticLog',
+            name: 'Diagnostic Error Log',
+            description: 'Capture a rolling log of YTKit errors and export as JSON for bug reports',
+            group: 'Advanced',
+            icon: 'alert-triangle',
+            _origConsoleError: null,
+            init() {
+                DiagnosticLog.enable();
+                // Capture console errors referencing ytkit
+                this._origConsoleError = console.error;
+                console.error = (...args) => {
+                    try {
+                        const joined = args.map(a => (a && a.message) ? a.message : String(a)).join(' ');
+                        if (/ytkit|astra/i.test(joined)) DiagnosticLog.record('console', joined.slice(0, 500));
+                    } catch {}
+                    this._origConsoleError.apply(console, args);
+                };
+                window.addEventListener('error', this._onWinError = (ev) => {
+                    if (ev.filename && /ytkit|astra/i.test(ev.filename)) {
+                        DiagnosticLog.record('window', `${ev.message} @ ${ev.filename}:${ev.lineno}`);
+                    }
+                });
+                window.__ytkitDiagnostics = {
+                    get: () => DiagnosticLog.get(),
+                    clear: () => DiagnosticLog.clear(),
+                    download: () => DiagnosticLog.download(),
+                };
+                showToast('Diagnostic log active. window.__ytkitDiagnostics.download()', '#3b82f6', { duration: 5 });
+            },
+            destroy() {
+                if (this._origConsoleError) console.error = this._origConsoleError;
+                if (this._onWinError) window.removeEventListener('error', this._onWinError);
+                DiagnosticLog.disable();
+                delete window.__ytkitDiagnostics;
+            }
+        },
+
+        // ── Storage Quota / LRU ──
+        {
+            id: 'storageQuotaLRU',
+            name: 'Storage Quota Management',
+            description: 'LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, deArrowCache) to prevent quota exhaustion',
+            group: 'Advanced',
+            icon: 'database',
+            _timer: null,
+            _prune() {
+                try {
+                    const caps = [
+                        ['hiddenVideos', 5000],
+                        ['hiddenChannels', 2000],
+                        ['timestampBookmarks', 2000],
+                        ['deArrowCache', 1000],
+                        ['_errors', 500],
+                    ];
+                    let pruned = 0;
+                    for (const [key, cap] of caps) {
+                        const cur = appState.settings[key];
+                        if (Array.isArray(cur) && cur.length > cap) {
+                            appState.settings[key] = cur.slice(cur.length - cap);
+                            pruned += cur.length - cap;
+                        } else if (cur && typeof cur === 'object' && !Array.isArray(cur)) {
+                            const keys = Object.keys(cur);
+                            if (keys.length > cap) {
+                                const toRemove = keys.length - cap;
+                                for (let i = 0; i < toRemove; i++) delete cur[keys[i]];
+                                pruned += toRemove;
+                            }
+                        }
+                    }
+                    if (pruned > 0) {
+                        settingsManager.save(appState.settings);
+                        DiagnosticLog?.record('storageQuotaLRU', `pruned ${pruned} entries`);
+                    }
+                } catch (e) {
+                    DiagnosticLog?.record('storageQuotaLRU', e.message);
+                }
+            },
+            init() {
+                this._prune();
+                this._timer = setInterval(() => this._prune(), 5 * 60 * 1000);
+            },
+            destroy() {
+                if (this._timer) clearInterval(this._timer);
+                this._timer = null;
             }
         },
 
