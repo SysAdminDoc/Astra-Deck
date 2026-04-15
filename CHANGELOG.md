@@ -4,6 +4,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.9.0] - Visual Filters, Subtitle Download, Reddit Comments, Diagnostics
+
+### Added
+
+- **Subtitle Download (SRT).** One-click player-button download of the active caption track as SRT. Reuses the existing JSON3 caption fetch path, no sidebar required. Filename is `${videoId}_${languageCode}.srt`.
+- **Video Visual Filters.** Floating panel with six CSS-filter sliders (brightness, contrast, saturation, hue, grayscale, sepia) applied live to `.html5-main-video`. Includes Reset button; filter persists across navigations. Catppuccin-mocha panel anchored to a new player-controls button.
+- **DeArrow Peek Button.** Hold Alt to temporarily overlay original titles on top of DeArrow/custom rewrites. Lightweight CSS-only overlay — works with anything that sets `data-ytkit-orig-title` or `.ytkit-dearrow-rewritten`.
+- **Video Age Color Coding.** Thumbnails on Home / Subscriptions / Search / sidebar get colored borders by upload age — green (fresh), blue (week), yellow (month), orange (year), red/dimmed (year+). Re-scans on mutations and SPA navigations.
+- **Watch Page Tabs.** Description / Comments / Chapters / Transcript tabs injected above `#below` on watch pages. One view at a time, no scrolling between sections. Catppuccin pill-style tabs.
+- **Reddit Comments.** Secondary-sidebar panel with "Load threads" button → fetches `reddit.com/search.json` for threads linking the current video. Shows top 15 with subreddit / score / comments. Origin added to `ALLOWED_FETCH_ORIGINS` (non-credentialed — no cookies sent).
+- **Diagnostic Error Log.** Captures a rolling 500-entry ring buffer of YTKit errors (console + window.onerror + internal `DiagnosticLog.record`). `window.__ytkitDiagnostics.download()` emits a JSON bug report including version, user agent, URL, and entries.
+- **Storage Quota LRU.** Periodic 5-minute sweep caps growing collections: `hiddenVideos` (5k), `hiddenChannels` (2k), `timestampBookmarks` (2k), `deArrowCache` (1k), `_errors` (500). Oldest entries pruned first; prevents `chrome.storage.local` quota exhaustion.
+- **API Retry with Exponential Backoff.** `extensionFetchJson` now transparently retries 1s / 2s / 4s on 429 / 5xx / network errors. Default ON (`apiRetryBackoff: true`); feature flag exposed for disabling.
+
+### Security
+
+- `reddit.com` added to `ALLOWED_FETCH_ORIGINS` only (not `CREDENTIALED_FETCH_ORIGINS`) — no cookies ever forwarded to Reddit.
+
+---
+
 ## [3.8.0] - Toolbar Popup, Digital Wellbeing, Settings Profiles, New Player Features
 
 ### Added

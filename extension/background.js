@@ -19,6 +19,8 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
     'https://sponsor.ajay.app',
+    'https://www.reddit.com',
+    'https://old.reddit.com',
     'http://127.0.0.1:9751',
     'http://localhost:9751',
 ];
