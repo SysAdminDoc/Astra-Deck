@@ -252,5 +252,21 @@
     "seconds": 0
   },
   "_profiles": {},
-  "_activeProfile": "default"
+  "_activeProfile": "default",
+  "subtitleDownload": false,
+  "videoVisualFilters": false,
+  "vvfBrightness": 100,
+  "vvfContrast": 100,
+  "vvfSaturation": 100,
+  "vvfHue": 0,
+  "vvfGrayscale": 0,
+  "vvfSepia": 0,
+  "dearrowPeekButton": false,
+  "videoAgeColors": false,
+  "watchPageTabs": false,
+  "redditComments": false,
+  "diagnosticLog": false,
+  "_errors": [],
+  "storageQuotaLRU": false,
+  "apiRetryBackoff": true
 }
