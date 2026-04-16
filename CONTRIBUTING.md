@@ -23,7 +23,7 @@ YouTube-Kit/
     popup.*            # Toolbar popup UI
   build-extension.js   # Canonical packager for Chrome/Firefox/userscript artifacts
   tests/               # Focused Node-based verification
-  ytkit.user.js        # Repo-tracked userscript source
+  YTKit.user.js        # Repo-tracked userscript source
   CHANGELOG.md         # Public version history
   CODEX-CHANGELOG.md   # Agent repair ledger / handoff trail
 ```

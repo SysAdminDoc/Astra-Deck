@@ -1450,21 +1450,31 @@
         event.returnValue = '';
     });
 
-    chrome.storage.onChanged.addListener(async (changes, areaName) => {
-        if (areaName !== 'local') return;
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        void (async () => {
+            try {
+                if (areaName !== 'local') return;
 
-        await renderStorageInfo();
+                await renderStorageInfo();
 
-        if (!changes[STORAGE_KEYS.settings]) return;
-        if (!state.modalOpen) return;
+                if (!changes[STORAGE_KEYS.settings]) return;
+                if (!state.modalOpen) return;
 
-        if (state.dirtyKeys.size === 0 && state.invalidKeys.size === 0) {
-            await refreshSettingsState({ resetDraft: true });
-            renderSettingsWorkspace();
-        } else {
-            showModalStatus('Stored settings changed elsewhere. Save or discard your draft to resync.', 'info');
-        }
+                if (state.dirtyKeys.size === 0 && state.invalidKeys.size === 0) {
+                    await refreshSettingsState({ resetDraft: true });
+                    renderSettingsWorkspace();
+                } else {
+                    showModalStatus('Stored settings changed elsewhere. Save or discard your draft to resync.', 'info');
+                }
+            } catch (error) {
+                console.warn('[Astra Deck options] Failed to process storage change:', error);
+                showStatus('Storage refresh failed: ' + error.message, 'error');
+            }
+        })();
     });
 
-    renderStorageInfo();
+    void renderStorageInfo().catch((error) => {
+        console.warn('[Astra Deck options] Failed to render storage info:', error);
+        showStatus('Could not read extension storage: ' + error.message, 'error');
+    });
 })();

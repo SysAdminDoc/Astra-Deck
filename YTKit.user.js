@@ -1,13 +1,14 @@
 // ==UserScript==
-// @name         YTKit v3.10.1
+// @name         YTKit v3.10.2
 // @namespace    https://github.com/SysAdminDoc/YouTube-Kit
-// @version      3.10.1
-// @updateURL      https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/ytkit.user.js
-// @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/ytkit.user.js
+// @version      3.10.2
+// @updateURL      https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js
+// @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
 // @author       Matthew Parker
 // @match        https://www.youtube.com/*
 // @match        https://youtube.com/*
+// @match        https://youtu.be/*
 // @exclude      https://m.youtube.com/*
 // @exclude      https://studio.youtube.com/*
 // @run-at       document-start
@@ -46,10 +47,22 @@
             a.href = url;
             if (filename) a.download = filename;
             a.style.display = 'none';
-            document.body.appendChild(a);
+            const parent = document.body || document.documentElement;
+            if (parent) parent.appendChild(a);
             a.click();
-            setTimeout(() => { try { document.body.removeChild(a); } catch(_) {} resolve({ ok: true }); }, 200);
+            setTimeout(() => { try { a.remove(); } catch(_) {} resolve({ ok: true }); }, 200);
         });
+    }
+
+    function setSafeBlankTarget(anchor) {
+        if (!(anchor instanceof HTMLAnchorElement)) return anchor;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        return anchor;
+    }
+
+    function openExternalWindow(url) {
+        return window.open(url, '_blank', 'noopener,noreferrer');
     }
 
 
@@ -74,11 +87,24 @@
         LIBRARY: 'library',
         OTHER: 'other'
     };
+    const WATCH_PAGE_VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
+
+    function isYoutuBeHost(host = window.location.hostname) {
+        const normalizedHost = typeof host === 'string' ? host.toLowerCase() : '';
+        return normalizedHost === 'youtu.be' || normalizedHost === 'www.youtu.be';
+    }
+
+    function isWatchPagePath(path = window.location.pathname, host = window.location.hostname) {
+        if (typeof path === 'string' && path.startsWith('/watch')) return true;
+        if (!isYoutuBeHost(host)) return false;
+        const candidate = String(path || '').replace(/^\/+/, '').split(/[/?#]/, 1)[0];
+        return WATCH_PAGE_VIDEO_ID_PATTERN.test(candidate);
+    }
 
     function getCurrentPage() {
         const path = window.location.pathname;
+        if (isWatchPagePath(path, window.location.hostname)) return PageTypes.WATCH;
         if (path === '/' || path === '/feed/trending') return PageTypes.HOME;
-        if (path.startsWith('/watch')) return PageTypes.WATCH;
         if (path.startsWith('/results')) return PageTypes.SEARCH;
         if (path.startsWith('/shorts')) return PageTypes.SHORTS;
         if (path.startsWith('/feed/subscriptions')) return PageTypes.SUBSCRIPTIONS;
@@ -90,7 +116,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.10.1';
+    const YTKIT_VERSION = '3.10.2';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -1165,7 +1191,7 @@
         const base = cobaltUrl.includes('#') ? cobaltUrl : cobaltUrl.replace(/\/?$/, '/#');
         const downloadUrl = base + encodeURIComponent(videoUrl);
         showToast('Opening web downloader...', '#3b82f6', { duration: 4 });
-        window.open(downloadUrl, '_blank');
+        openExternalWindow(downloadUrl);
     }
 
     // ── MediaDL Server Manager ──
@@ -1341,7 +1367,7 @@
                     copyBtn.style.background = '#16a34a';
                     showToast('Install command copied! Open PowerShell and paste to install.', '#22c55e', { duration: 8 });
                 } catch (_) {
-                    window.open(this.INSTALLER_URL, '_blank');
+                    openExternalWindow(this.INSTALLER_URL);
                 }
             });
             btnCol.appendChild(copyBtn);
@@ -1349,7 +1375,7 @@
             // 3. Download Installer Script
             const dlBtn = makeBtn('Download Installer Script (.ps1)', 'transparent', '1px solid #30363d', () => {
                 triggerDownload(this.INSTALLER_URL, 'Install-YTYT.ps1').catch(() => {
-                    window.open(this.INSTALLER_URL, '_blank');
+                    openExternalWindow(this.INSTALLER_URL);
                 });
                 showToast('Installer downloaded! Right-click \u2192 Run with PowerShell', '#3b82f6', { duration: 6 });
             });
@@ -1660,7 +1686,7 @@
                                     showToast('Download started via Cobalt', '#22c55e', { duration: 3 });
                                     resolve(true);
                                 }).catch(() => {
-                                    window.open(resp.url, '_blank');
+                                    openExternalWindow(resp.url);
                                     resolve(true);
                                 });
                             } else if (resp.status === 'local-processing' && resp.url) {
@@ -1669,7 +1695,7 @@
                                     showToast('Download started via Cobalt', '#22c55e', { duration: 3 });
                                     resolve(true);
                                 }).catch(() => {
-                                    window.open(resp.url, '_blank');
+                                    openExternalWindow(resp.url);
                                     resolve(true);
                                 });
                             } else if (resp.status === 'picker' && resp.picker?.length > 0) {
@@ -2596,6 +2622,10 @@
         }
 
         const pathname = parsed.pathname || '';
+        if (isYoutuBeHost(parsed.hostname)) {
+            const candidate = pathname.replace(/^\/+/, '').split(/[/?#]/, 1)[0];
+            if (VIDEO_ID_PATTERN.test(candidate)) return candidate;
+        }
         for (const prefix of VIDEO_ID_PATH_PREFIXES) {
             if (!pathname.startsWith(prefix)) continue;
             const candidate = pathname.slice(prefix.length).split(/[/?#]/, 1)[0];
@@ -3639,13 +3669,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const cleanUrl = (url) => {
                     try {
                         const u = new URL(url);
-                        if (!u.hostname.includes('youtube.com') && !u.hostname.includes('youtu.be')) return url;
+                        const hostname = u.hostname.toLowerCase();
+                        const isYouTubeHost = hostname === 'youtu.be'
+                            || hostname === 'youtube.com'
+                            || hostname === 'youtube-nocookie.com'
+                            || hostname.endsWith('.youtube.com')
+                            || hostname.endsWith('.youtube-nocookie.com');
+                        if (!isYouTubeHost) return url;
                         STRIP_PARAMS.forEach(p => u.searchParams.delete(p));
                         // Convert to short URL if it's a watch page
-                        if (u.pathname === '/watch' && u.searchParams.has('v')) {
-                            const videoId = u.searchParams.get('v');
-                            u.searchParams.delete('v');
-                            const remaining = u.searchParams.toString();
+                        const videoId = getVideoId(u);
+                        if (videoId && (u.pathname === '/watch' || isYoutuBeHost(hostname))) {
+                            const remainingParams = new URLSearchParams(u.searchParams);
+                            remainingParams.delete('v');
+                            const remaining = remainingParams.toString();
                             return `https://youtu.be/${videoId}${remaining ? '?' + remaining : ''}`;
                         }
                         return u.toString();
@@ -5035,7 +5072,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     btn.addEventListener('click', () => {
                         const videoUrl = window.location.href;
                         const downloadUrl = this._getDownloadUrl(videoUrl);
-                        if (downloadUrl) window.open(downloadUrl, '_blank');
+                        if (downloadUrl) openExternalWindow(downloadUrl);
                     });
                     parent.appendChild(btn);
                 });
@@ -7019,7 +7056,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const btn = document.createElement('a');
                 btn.className = 'ytkit-rss-btn';
                 btn.href = rssUrl;
-                btn.target = '_blank';
+                setSafeBlankTarget(btn);
                 btn.title = 'RSS Feed';
                 btn.textContent = 'RSS';
                 btn.style.cssText = 'display:inline-flex;align-items:center;padding:6px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:18px;background:rgba(255,255,255,0.08);color:#f97316;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;margin-left:8px;transition:background 0.2s;';
@@ -8881,7 +8918,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addNavigateRule('scrollToPlayer', () => {
-                    if (location.pathname === '/watch') {
+                    if (isWatchPagePath()) {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 });
@@ -8936,7 +8973,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'maximize-2',
 
             _apply() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const player = document.querySelector('#movie_player');
                 if (!player) return;
                 const isTheater = document.querySelector('ytd-watch-flexy')?.hasAttribute('theater');
@@ -9052,7 +9089,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _create() {
                 if (this._bar) return;
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
 
                 const bar = document.createElement('div');
                 bar.id = 'ytkit-mini-player-bar';
@@ -9326,7 +9363,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _create() {
                 if (this._btn) return;
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
 
                 const titleContainer = document.querySelector('h1.ytd-watch-metadata, #title h1');
                 if (!titleContainer) return;
@@ -9361,7 +9398,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     setTimeout(() => this._create(), 2000);
                 });
                 addMutationRule('copyVideoTitle', () => {
-                    if (location.pathname === '/watch' && !document.querySelector('.ytkit-copy-title-btn')) {
+                    if (isWatchPagePath() && !document.querySelector('.ytkit-copy-title-btn')) {
                         this._create();
                     }
                 });
@@ -9383,7 +9420,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _el: null,
 
             _calculate() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const dateEl = document.querySelector('#info-strings yt-formatted-string, ytd-watch-metadata #info-container yt-formatted-string');
                 if (!dateEl) return;
                 const text = dateEl.textContent?.trim();
@@ -9629,7 +9666,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'subtitles',
 
             _enable() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const player = document.querySelector('#movie_player');
                 if (!player) return;
 
@@ -9797,7 +9834,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btns: null,
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const playlistHeader = document.querySelector('ytd-playlist-panel-renderer #header-contents, ytd-playlist-panel-renderer .header');
                 if (!playlistHeader) return;
                 if (playlistHeader.querySelector('.ytkit-playlist-enhance')) return;
@@ -9863,7 +9900,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _bar: null,
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const comments = document.querySelector('ytd-comments#comments');
                 if (!comments) return;
                 if (comments.querySelector('.ytkit-comment-search')) return;
@@ -9927,7 +9964,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     setTimeout(() => this._create(), 3000);
                 });
                 addMutationRule('commentSearch', () => {
-                    if (location.pathname === '/watch' && !document.querySelector('.ytkit-comment-search')) {
+                    if (isWatchPagePath() && !document.querySelector('.ytkit-comment-search')) {
                         this._create();
                     }
                 });
@@ -10227,7 +10264,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _el: null,
 
             _calculate() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 document.querySelector('.ytkit-lv-ratio')?.remove();
 
                 // Get view count
@@ -10281,7 +10318,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _btn: null,
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 if (document.querySelector('.ytkit-dl-thumb-btn')) return;
 
                 const url = new URL(location.href);
@@ -10317,7 +10354,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const a = document.createElement('a');
                         a.href = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
                         a.download = `${videoId}_thumbnail.jpg`;
-                        a.target = '_blank';
+                        setSafeBlankTarget(a);
                         a.click();
                     }
                 });
@@ -10375,7 +10412,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'skip-forward',
 
             _disable() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 // Turn off autoplay toggle if it's on
                 const toggle = document.querySelector('.ytp-autonav-toggle-button');
                 if (!toggle) return;
@@ -10398,7 +10435,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _el: null,
 
             _show() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 document.querySelector('.ytkit-sub-count-badge')?.remove();
 
                 const ownerEl = document.querySelector('#owner #channel-name a, ytd-watch-metadata #owner ytd-channel-name a');
@@ -10441,7 +10478,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _container: null,
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 if (document.querySelector('.ytkit-speed-presets')) return;
 
                 const below = document.querySelector('#below, ytd-watch-metadata');
@@ -10510,7 +10547,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._handler = (e) => {
                     // Only on non-watch pages
-                    if (location.pathname === '/watch') return;
+                    if (isWatchPagePath()) return;
 
                     const link = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
                     if (!link) return;
@@ -10525,7 +10562,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     e.preventDefault();
                     e.stopPropagation();
-                    window.open(link.href, '_blank');
+                    openExternalWindow(link.href);
                 };
                 document.addEventListener('click', this._handler, true);
             },
@@ -10979,6 +11016,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Advanced',
             icon: 'cpu',
             _originals: null,
+            _pumpInterval: null,
             init() {
                 this._originals = {
                     setTimeout: window.setTimeout,
@@ -11028,17 +11066,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
                 win.setTimeout = schedule(origSetTimeout);
                 win.setInterval = schedule(origSetInterval);
-                origSetInterval(() => {
+                this._pumpInterval = origSetInterval(() => {
                     if (afHandler) { afHandler(); afHandler = null; }
                 }, 125);
             },
             destroy() {
+                if (this._pumpInterval && this._originals?.clearInterval) {
+                    this._originals.clearInterval.call(window, this._pumpInterval);
+                }
+                this._pumpInterval = null;
                 if (this._originals) {
                     window.setTimeout = this._originals.setTimeout;
                     window.setInterval = this._originals.setInterval;
                     window.clearTimeout = this._originals.clearTimeout;
                     window.clearInterval = this._originals.clearInterval;
                 }
+                this._originals = null;
                 window.__ytkit_cpu_tamer = false;
             }
         },
@@ -11052,51 +11095,117 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'at-sign',
             _observer: null,
             _nameMap: null,
+            _pendingAuthors: null,
+            _abortController: null,
+            _COMMENT_ROOT_SELECTOR: 'ytd-comment-view-model, ytd-comment-renderer, ytd-comment-thread-renderer',
+
+            _normalizeAuthorKey(author) {
+                try {
+                    const parsed = new URL(author.href, location.origin);
+                    const normalizedPath = parsed.pathname.replace(/\/+$/, '');
+                    if (normalizedPath) {
+                        return `${parsed.origin}${normalizedPath}`.toLowerCase();
+                    }
+                } catch {}
+                return author?.textContent?.trim() || null;
+            },
+
+            _rememberName(authorKey, name) {
+                if (!this._nameMap || !authorKey || !name) return;
+                if (this._nameMap.has(authorKey)) this._nameMap.delete(authorKey);
+                this._nameMap.set(authorKey, name);
+                if (this._nameMap.size > 500) {
+                    const oldestKey = this._nameMap.keys().next().value;
+                    this._nameMap.delete(oldestKey);
+                }
+            },
+
+            _appendName(author, name) {
+                if (!author || !author.isConnected || !name) return;
+                const target = author.querySelector('#author-text') || author;
+                let span = target.querySelector('span[data-ytkit-name]');
+                if (!span) {
+                    span = document.createElement('span');
+                    span.style.cssText = 'margin-left:4px;color:var(--yt-spec-text-secondary);font-size:0.9em;';
+                    span.dataset.ytkitName = '1';
+                    target.appendChild(span);
+                }
+                span.textContent = `( ${name} )`;
+                span.dataset.ytkitResolvedName = name;
+            },
+
+            _flushPending(authorKey, name) {
+                const waiters = this._pendingAuthors?.get(authorKey);
+                if (!waiters) return;
+                this._pendingAuthors.delete(authorKey);
+                if (!name) return;
+                waiters.forEach((author) => this._appendName(author, name));
+            },
+
+            _processAuthor(author, decode) {
+                if (!(author instanceof HTMLAnchorElement) || !author.href) return;
+                const authorKey = this._normalizeAuthorKey(author);
+                if (!authorKey) return;
+
+                const cachedName = this._nameMap?.get(authorKey);
+                if (cachedName) {
+                    this._appendName(author, cachedName);
+                    return;
+                }
+
+                const pending = this._pendingAuthors?.get(authorKey);
+                if (pending) {
+                    pending.add(author);
+                    return;
+                }
+
+                this._pendingAuthors?.set(authorKey, new Set([author]));
+                fetch(author.href, {
+                    credentials: 'same-origin',
+                    signal: this._abortController?.signal
+                }).then(async (resp) => {
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const text = await resp.text();
+                    const metaMatch = text.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+                    const titleMatch = text.match(/(?<=<title>).+?(?= - YouTube)/);
+                    const rawName = metaMatch?.[1] || titleMatch?.[0];
+                    if (!rawName) throw new Error('No channel title found');
+                    const decoded = decode(rawName);
+                    this._rememberName(authorKey, decoded);
+                    this._flushPending(authorKey, decoded);
+                }).catch((error) => {
+                    if (error?.name === 'AbortError') return;
+                    this._flushPending(authorKey, null);
+                });
+            },
+
+            _processRoot(root, decode) {
+                if (!(root instanceof HTMLElement)) return;
+                const commentRoots = root.matches?.(this._COMMENT_ROOT_SELECTOR)
+                    ? [root]
+                    : Array.from(root.querySelectorAll?.(this._COMMENT_ROOT_SELECTOR) || []);
+                for (const commentRoot of commentRoots) {
+                    for (const author of commentRoot.querySelectorAll('#author-text[href]')) {
+                        this._processAuthor(author, decode);
+                    }
+                }
+            },
+
             init() {
                 this._nameMap = new Map();
-                const nameMap = this._nameMap;
+                this._pendingAuthors = new Map();
+                this._abortController = typeof AbortController === 'function' ? new AbortController() : null;
                 const pageManager = document.getElementById('page-manager');
                 if (!pageManager) return;
                 const decode = (() => {
                     const ENTITIES = [['amp','&'],['apos',"'"],['quot','"'],['nbsp',' '],['lt','<'],['gt','>'],['#39',"'"]];
                     return s => ENTITIES.reduce((acc, [e, sym]) => acc.replaceAll(`&${e};`, sym), s);
                 })();
-                const appendName = (anchor, name) => {
-                    if (anchor.querySelector('span[data-ytkit-name]')) return;
-                    const span = document.createElement('span');
-                    span.textContent = `( ${name} )`;
-                    span.style.cssText = 'margin-left:4px;color:var(--yt-spec-text-secondary);font-size:0.9em;';
-                    span.dataset.ytkitName = name;
-                    const target = anchor.querySelector('#author-text') || anchor;
-                    target.appendChild(span);
-                };
+                this._processRoot(pageManager, decode);
                 this._observer = new MutationObserver(records => {
                     for (const r of records) {
                         for (const node of r.addedNodes) {
-                            if (!(node instanceof HTMLElement)) continue;
-                            const vms = node.tagName === 'YTD-COMMENT-VIEW-MODEL' ? [node] :
-                                Array.from(node.querySelectorAll?.('ytd-comment-view-model') || []);
-                            for (const vm of vms) {
-                                for (const author of vm.querySelectorAll('#author-text')) {
-                                    const handle = author.textContent.trim();
-                                    if (!handle || !author.href) continue;
-                                    if (nameMap.has(handle)) {
-                                        const n = nameMap.get(handle);
-                                        if (n) appendName(author, n);
-                                        continue;
-                                    }
-                                    nameMap.set(handle, null);
-                                    fetch(author.href).then(async resp => {
-                                        const text = await resp.text();
-                                        const m = text.match(/(?<=<title>).+?(?= - YouTube)/);
-                                        if (m) {
-                                            const decoded = decode(m[0]);
-                                            nameMap.set(handle, decoded);
-                                            appendName(author, decoded);
-                                        } else nameMap.delete(handle);
-                                    }).catch(() => nameMap.delete(handle));
-                                }
-                            }
+                            this._processRoot(node, decode);
                         }
                     }
                 });
@@ -11104,7 +11213,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 this._observer?.disconnect(); this._observer = null;
+                this._abortController?.abort(); this._abortController = null;
+                this._pendingAuthors?.clear(); this._pendingAuthors = null;
                 document.querySelectorAll('span[data-ytkit-name]').forEach(el => el.remove());
+                this._nameMap?.clear();
                 this._nameMap = null;
             }
         },
@@ -12540,7 +12652,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             vidId.textContent = vid;
                             const link = document.createElement('a');
                             link.href = `https://youtube.com/watch?v=${vid}`;
-                            link.target = '_blank';
+                            setSafeBlankTarget(link);
                             link.style.cssText = 'font-size:11px;color:var(--ytkit-accent);text-decoration:none;';
                             link.textContent = 'View on YouTube';
                             info.appendChild(vidId);
@@ -13023,7 +13135,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 showToast('Paste in PowerShell (Win+X \u2192 Terminal) to install.', '#22c55e', { duration: 8 });
                                 setTimeout(() => { installBtn.textContent = 'Install'; installBtn.style.background = '#22c55e'; }, 3000);
                             } catch (_) {
-                                window.open(MediaDLManager.INSTALLER_URL, '_blank');
+                                openExternalWindow(MediaDLManager.INSTALLER_URL);
                             }
                         };
                         actions.appendChild(installBtn);
@@ -13035,7 +13147,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         dlBtn.title = 'Download the installer script to run manually';
                         dlBtn.onclick = () => {
                             triggerDownload(MediaDLManager.INSTALLER_URL, 'Install-YTYT.ps1').catch(() => {
-                                window.open(MediaDLManager.INSTALLER_URL, '_blank');
+                                openExternalWindow(MediaDLManager.INSTALLER_URL);
                             });
                             showToast('Installer downloaded! Right-click \u2192 Run with PowerShell', '#3b82f6', { duration: 6 });
                         };
@@ -13124,7 +13236,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const githubLink = document.createElement('a');
         githubLink.href = 'https://github.com/SysAdminDoc/YouTube-Kit';
-        githubLink.target = '_blank';
+        setSafeBlankTarget(githubLink);
         githubLink.className = 'ytkit-github';
         githubLink.title = 'View on GitHub';
         githubLink.appendChild(ICONS.github());

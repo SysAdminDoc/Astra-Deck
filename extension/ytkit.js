@@ -117,7 +117,7 @@
             }
 
             if (!hasExtensionContext()) {
-                const opened = window.open(normalizedUrl, '_blank', 'noopener');
+                const opened = window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
                 if (opened) resolve({ ok: true, fallback: true });
                 else reject(new Error('Failed to open URL'));
                 return;
@@ -143,13 +143,15 @@
             return;
         }
 
+        const hasRequestBody = details && Object.prototype.hasOwnProperty.call(details, 'data');
+
         sendRuntimeMessage({
             type: 'EXT_FETCH',
             details: {
                 method: details.method || 'GET',
                 url: details.url,
                 headers: details.headers || {},
-                data: details.data || null,
+                data: hasRequestBody ? details.data : null,
                 timeout: details.timeout || 0
             }
         }).then((response) => {
@@ -5483,13 +5485,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const cleanUrl = (url) => {
                     try {
                         const u = new URL(url);
-                        if (!u.hostname.includes('youtube.com') && !u.hostname.includes('youtu.be')) return url;
+                        const hostname = u.hostname.toLowerCase();
+                        const isYouTubeHost = hostname === 'youtu.be'
+                            || hostname === 'youtube.com'
+                            || hostname === 'youtube-nocookie.com'
+                            || hostname.endsWith('.youtube.com')
+                            || hostname.endsWith('.youtube-nocookie.com');
+                        if (!isYouTubeHost) return url;
                         STRIP_PARAMS.forEach(p => u.searchParams.delete(p));
                         // Convert to short URL if it's a watch page
-                        if (u.pathname === '/watch' && u.searchParams.has('v')) {
-                            const videoId = u.searchParams.get('v');
-                            u.searchParams.delete('v');
-                            const remaining = u.searchParams.toString();
+                        const videoId = getVideoId(u);
+                        if (videoId && (u.pathname === '/watch' || u.hostname === 'youtu.be' || u.hostname === 'www.youtu.be')) {
+                            const remainingParams = new URLSearchParams(u.searchParams);
+                            remainingParams.delete('v');
+                            const remaining = remainingParams.toString();
                             return `https://youtu.be/${videoId}${remaining ? '?' + remaining : ''}`;
                         }
                         return u.toString();
@@ -11673,6 +11682,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.className = 'ytkit-rss-btn';
                 btn.href = rssUrl;
                 btn.target = '_blank';
+                btn.rel = 'noopener noreferrer';
                 btn.title = 'RSS Feed';
                 btn.textContent = 'RSS';
                 container.appendChild(btn);
@@ -11916,7 +11926,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _inject() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const controls = document.querySelector('.ytp-right-controls');
                 if (!controls) return;
                 const existingBtn = controls.querySelector('.ytkit-screenshot-btn');
@@ -11984,7 +11994,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleInject(2000);
                 });
                 addMutationRule('videoScreenshot', () => {
-                    if (location.pathname === '/watch' && !document.querySelector('.ytkit-screenshot-btn')) {
+                    if (isWatchPagePath() && !document.querySelector('.ytkit-screenshot-btn')) {
                         this._scheduleInject(400);
                     }
                 });
@@ -12472,7 +12482,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._countCache.has(key)) return this._countCache.get(key);
                 if (this._countRequests.has(key)) return this._countRequests.get(key);
 
-                const request = fetch(`${channelUrl.replace(/\/+$/, '')}/about`, { credentials: 'same-origin' })
+                const timeoutController = typeof AbortController === 'function' ? new AbortController() : null;
+                const timeoutId = timeoutController
+                    ? setTimeout(() => timeoutController.abort(), 8000)
+                    : null;
+                const request = fetch(`${channelUrl.replace(/\/+$/, '')}/about`, {
+                    credentials: 'same-origin',
+                    signal: timeoutController?.signal
+                })
                     .then(async (resp) => {
                         if (!resp.ok) return null;
                         const html = await resp.text();
@@ -12481,6 +12498,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     })
                     .catch(() => null)
                     .then((count) => {
+                        if (timeoutId) clearTimeout(timeoutId);
                         this._countRequests?.delete(key);
                         return this._rememberCount(key, count);
                     });
@@ -14262,7 +14280,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addNavigateRule('scrollToPlayer', () => {
-                    if (location.pathname === '/watch') {
+                    if (isWatchPagePath()) {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 });
@@ -14326,7 +14344,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _apply() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const player = document.querySelector('#movie_player');
                 if (!player) return;
                 const isTheater = document.querySelector('ytd-watch-flexy')?.hasAttribute('theater');
@@ -14477,7 +14495,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _create() {
                 if (this._bar) return;
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
 
                 const bar = document.createElement('div');
                 bar.id = 'ytkit-mini-player-bar';
@@ -14918,7 +14936,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _create() {
                 if (this._btn) return;
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
 
                 const titleContainer = document.querySelector('h1.ytd-watch-metadata, #title h1');
                 if (!titleContainer) return;
@@ -14978,7 +14996,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCreate(2000);
                 });
                 addMutationRule('copyVideoTitle', () => {
-                    if (location.pathname === '/watch' && !document.querySelector('.ytkit-copy-title-btn')) {
+                    if (isWatchPagePath() && !document.querySelector('.ytkit-copy-title-btn')) {
                         this._create();
                     }
                 });
@@ -15119,7 +15137,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _calculate() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const dateEl = this._getAnchorEl();
                 if (!dateEl) {
                     this._el?.remove();
@@ -15156,7 +15174,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCalculate(2500);
                 });
                 addMutationRule('channelAgeDisplay', () => {
-                    if (location.pathname === '/watch') this._scheduleCalculate(400);
+                    if (isWatchPagePath()) this._scheduleCalculate(400);
                 });
                 this._scheduleCalculate(2500);
             },
@@ -15402,7 +15420,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _enable() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const player = document.querySelector('#movie_player');
                 if (!player) return;
 
@@ -15824,7 +15842,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const playlistHeader = document.querySelector('ytd-playlist-panel-renderer #header-contents, ytd-playlist-panel-renderer .header');
                 if (!playlistHeader) return;
                 if (playlistHeader.querySelector('.ytkit-playlist-enhance')) return;
@@ -15931,7 +15949,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCreate(2000);
                 });
                 addMutationRule('playlistEnhancer', () => {
-                    if (location.pathname === '/watch') {
+                    if (isWatchPagePath()) {
                         if (!document.querySelector('.ytkit-playlist-enhance')) this._scheduleCreate(400);
                         else this._scheduleSync(250);
                     }
@@ -16081,7 +16099,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 const comments = document.querySelector('ytd-comments#comments');
                 if (!comments) return;
                 if (comments.querySelector('.ytkit-comment-search')) return;
@@ -16226,7 +16244,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCreate(3000);
                 });
                 addMutationRule('commentSearch', () => {
-                    if (location.pathname !== '/watch') return;
+                    if (!isWatchPagePath()) return;
                     if (!document.querySelector('.ytkit-comment-search') || !this._bar || !document.body.contains(this._bar)) {
                         this._create();
                         return;
@@ -16680,7 +16698,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _calculate() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 this._el?.remove();
                 this._el = null;
 
@@ -16726,7 +16744,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCalculate(3000);
                 });
                 addMutationRule('likeViewRatio', () => {
-                    if (location.pathname === '/watch') this._scheduleCalculate(500);
+                    if (isWatchPagePath()) this._scheduleCalculate(500);
                 });
                 this._scheduleCalculate(3000);
             },
@@ -16834,7 +16852,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 if (document.querySelector('.ytkit-dl-thumb-btn')) return;
 
                 const videoId = getVideoId();
@@ -16898,7 +16916,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCreate(2000);
                 });
                 addMutationRule('downloadThumbnail', () => {
-                    if (location.pathname === '/watch' && !document.querySelector('.ytkit-dl-thumb-btn')) {
+                    if (isWatchPagePath() && !document.querySelector('.ytkit-dl-thumb-btn')) {
                         this._scheduleCreate(400);
                     }
                 });
@@ -16959,7 +16977,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _disable() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 // Turn off autoplay toggle if it's on
                 const toggle = document.querySelector('.ytp-autonav-toggle-button');
                 if (!toggle) return;
@@ -16994,7 +17012,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _show() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 this._el?.remove();
                 this._el = null;
 
@@ -17024,7 +17042,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleShow(2500);
                 });
                 addMutationRule('channelSubCount', () => {
-                    if (location.pathname === '/watch') this._scheduleShow(500);
+                    if (isWatchPagePath()) this._scheduleShow(500);
                 });
                 this._scheduleShow(2500);
             },
@@ -17099,7 +17117,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _create() {
-                if (location.pathname !== '/watch') return;
+                if (!isWatchPagePath()) return;
                 if (document.querySelector('.ytkit-speed-presets')) return;
 
                 const below = document.querySelector('#below, ytd-watch-metadata');
@@ -17169,7 +17187,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._scheduleCreate(2000);
                 });
                 addMutationRule('customSpeedButtons', () => {
-                    if (location.pathname === '/watch') {
+                    if (isWatchPagePath()) {
                         if (!document.querySelector('.ytkit-speed-presets')) this._scheduleCreate(400);
                         else this._scheduleSync(200);
                     }
@@ -17201,7 +17219,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._handler = (e) => {
                     // Only on non-watch pages
-                    if (location.pathname === '/watch') return;
+                    if (isWatchPagePath()) return;
 
                     const link = e.target.closest('a[href*="/watch"], a[href*="/shorts/"]');
                     if (!link) return;
@@ -20532,7 +20550,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const copy = document.createElement('button');
                     copy.className = 'ytkit-aisum-copy';
                     copy.textContent = 'Copy';
-                    copy.onclick = () => navigator.clipboard.writeText(result).then(() => showToast('Summary copied', '#22c55e'));
+                    copy.onclick = async () => {
+                        try {
+                            await navigator.clipboard.writeText(result);
+                            showToast('Summary copied', '#22c55e');
+                        } catch (_) {
+                            showToast('Clipboard write failed', '#ef4444');
+                        }
+                    };
                     panel.append(head, body, copy);
                 } catch (e) {
                     DiagnosticLog?.record('aiVideoSummary', e.message);
@@ -20629,7 +20654,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }).join('\n');
                 navigator.clipboard.writeText(mk).then(
                     () => showToast(`${chapters.length} chapters copied as markdown`, '#22c55e'),
-                    () => showToast('Clipboard write failed', '#ef4444'),
+                    () => showToast('Clipboard write failed', '#ef4444')
                 );
             },
             _inject() {
@@ -22706,6 +22731,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const githubLink = document.createElement('a');
         githubLink.href = 'https://github.com/SysAdminDoc/YouTube-Kit';
         githubLink.target = '_blank';
+        githubLink.rel = 'noopener noreferrer';
         githubLink.className = 'ytkit-github';
         githubLink.title = 'View on GitHub';
         githubLink.appendChild(ICONS.github());
@@ -30236,3 +30262,4 @@ body.ytkit-panel-open #ytkit-settings-panel {
         window.addEventListener('DOMContentLoaded', main, { once: true });
     }
 })();
+
