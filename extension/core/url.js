@@ -33,6 +33,11 @@
         return typeof value === 'string' && VIDEO_ID_PATTERN.test(value);
     }
 
+    function isYoutuBeHost(host = '') {
+        const normalizedHost = typeof host === 'string' ? host.toLowerCase() : '';
+        return normalizedHost === 'youtu.be' || normalizedHost === 'www.youtu.be';
+    }
+
     function parseUrl(urlValue = window.location.href) {
         if (urlValue instanceof URL) return urlValue;
         const href = typeof urlValue === 'string' && urlValue ? urlValue : window.location.href;
@@ -59,6 +64,11 @@
 
         const queryVideoId = url.searchParams.get('v');
         if (isValidVideoId(queryVideoId)) return queryVideoId;
+
+        if (isYoutuBeHost(url.hostname)) {
+            const candidate = url.pathname.replace(/^\/+/, '').split(/[/?#]/, 1)[0];
+            if (isValidVideoId(candidate)) return candidate;
+        }
 
         return extractVideoIdFromPath(url.pathname);
     }

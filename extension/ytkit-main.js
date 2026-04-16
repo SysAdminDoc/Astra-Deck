@@ -5,8 +5,10 @@
 (function() {
     'use strict';
 
+    if (typeof HTMLVideoElement === 'undefined') return;
+
     var _origCanPlay = HTMLVideoElement.prototype.canPlayType;
-    var _origIsTypeSupported = MediaSource && MediaSource.isTypeSupported
+    var _origIsTypeSupported = typeof MediaSource !== 'undefined' && MediaSource && MediaSource.isTypeSupported
         ? MediaSource.isTypeSupported.bind(MediaSource) : null;
     var _origDecodingInfo = (typeof MediaCapabilities !== 'undefined' && MediaCapabilities.prototype.decodingInfo)
         ? MediaCapabilities.prototype.decodingInfo : null;

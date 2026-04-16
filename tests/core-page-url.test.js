@@ -15,6 +15,8 @@ function loadCoreAtUrl(href) {
     const location = {
         href: parsed.href,
         origin: parsed.origin,
+        host: parsed.host,
+        hostname: parsed.hostname,
         pathname: parsed.pathname,
         search: parsed.search
     };
@@ -50,6 +52,14 @@ test('core video id helper supports shorts, live, and embed routes', () => {
     assert.equal(core.getVideoId(), 'dQw4w9WgXcQ');
     assert.equal(core.extractVideoIdFromUrl('https://www.youtube.com/live/9bZkp7q19f0'), '9bZkp7q19f0');
     assert.equal(core.extractVideoIdFromUrl('https://www.youtube.com/embed/M7lc1UVf-VE?start=30'), 'M7lc1UVf-VE');
+});
+
+test('core helpers treat youtu.be short links as watch pages', () => {
+    const core = loadCoreAtUrl('https://youtu.be/dQw4w9WgXcQ?t=43');
+    assert.equal(core.getCurrentPage(), core.PageTypes.WATCH);
+    assert.equal(core.getCurrentPage('/dQw4w9WgXcQ', 'youtu.be'), core.PageTypes.WATCH);
+    assert.equal(core.getVideoId(), 'dQw4w9WgXcQ');
+    assert.equal(core.extractVideoIdFromUrl('https://youtu.be/9bZkp7q19f0?si=abc123'), '9bZkp7q19f0');
 });
 
 test('core video id helper rejects invalid path segments and invalid urls', () => {

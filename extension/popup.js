@@ -425,26 +425,36 @@ function render(settings, filter) {
     }
 
     openPanelButton.addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-        if (tab?.id && isSupportedInlinePanelUrl(tab.url || '')) {
-            const opened = await sendTabMessage(tab.id, { type: PANEL_OPEN_MESSAGE });
-            if (opened) {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+            if (tab?.id && isSupportedInlinePanelUrl(tab.url || '')) {
+                const opened = await sendTabMessage(tab.id, { type: PANEL_OPEN_MESSAGE });
+                if (opened) {
+                    window.close();
+                    return;
+                }
+            }
+
+            if (isAnyYouTubeUrl(tab?.url || '')) {
+                await chrome.runtime.openOptionsPage();
                 window.close();
                 return;
             }
-        }
 
-        if (isAnyYouTubeUrl(tab?.url || '')) {
-            chrome.runtime.openOptionsPage();
+            await chrome.tabs.create({ url: 'https://www.youtube.com/' });
             window.close();
-            return;
+        } catch (error) {
+            console.warn('[Astra Deck popup] Failed to open the full workspace:', error);
+            showStatus('Could not open the full settings workspace. Try again.', 'error', 4200);
         }
-
-        await chrome.tabs.create({ url: 'https://www.youtube.com/' });
-        window.close();
     });
-    openOptionsButton.addEventListener('click', () => {
-        chrome.runtime.openOptionsPage();
-        window.close();
+    openOptionsButton.addEventListener('click', async () => {
+        try {
+            await chrome.runtime.openOptionsPage();
+            window.close();
+        } catch (error) {
+            console.warn('[Astra Deck popup] Failed to open options page:', error);
+            showStatus('Could not open the options page. Try again.', 'error', 4200);
+        }
     });
 })();
