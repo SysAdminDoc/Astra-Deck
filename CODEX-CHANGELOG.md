@@ -7,6 +7,56 @@ Scope: wider audit + repair pass across the MV3 extension, tracked userscript, a
 
 ## What Codex repaired
 
+### 46. Premium UI polish pass (Claude continuation)
+- Targeted visual/UX polish across popup, options page, settings panel, and early.css.
+
+#### 46a. Settings panel missing `border-radius` on desktop
+- **Bug**: `#ytkit-settings-panel` had no `border-radius` in its default CSS rule — only responsive breakpoints added it. Desktop panel rendered with sharp corners.
+- **Fix**: Added `border-radius: 22px` to the default panel styles.
+
+#### 46b. Conflicting responsive breakpoints
+- **Bug**: The 860px breakpoint set `border-radius: 0` which overrode the 900px breakpoint's `border-radius: 14px` for viewports 860–900px wide. The panel got sharp corners too early.
+- **Fix**: Changed 860px breakpoint to `border-radius: 14px` to match.
+
+#### 46c. Branded scrollbar across all scrollable UI
+- **Bug**: Popup toggle list, options modal sidebar/editor, and settings panel sidebar/content all used default browser scrollbars — visually jarring against the dark theme.
+- **Fix**: Added `scrollbar-width: thin` + `scrollbar-color` (Firefox) and `::-webkit-scrollbar` rules (Chrome) to all scrollable containers. Userscript sidebar/content already had webkit rules; added `scrollbar-width: thin` for Firefox parity.
+
+#### 46d. `.ytkit-nav-count` missing `border-radius`
+- **Bug**: The category count pill in the settings panel sidebar had `background` + `border` but no `border-radius` — rendered as a sharp rectangle among pill-shaped elements.
+- **Fix**: Added `border-radius: 999px`.
+
+#### 46e. Duplicate `border-color` on `.ytkit-close`
+- **Bug**: Close button had `border: 1px solid rgba(...)` immediately followed by redundant `border-color: rgba(...)` with the same value.
+- **Fix**: Removed the duplicate `border-color` declaration.
+
+#### 46f. Unicode search icon replaced with SVG
+- **Bug**: Popup and options page used `⌕` (U+2315) as the search icon — an obscure Unicode character that renders as a box or wrong glyph on many systems/fonts.
+- **Fix**: Replaced with inline SVG magnifying glass icon in both `popup.html` and `options.html`. Removed now-unnecessary `font-size` from the icon CSS.
+
+#### 46g. Early.css expanded with anti-FOUC rules
+- **Bug**: Only 6 CSS-only features had early-inject rules. High-visibility features like `removeAllShorts`, `hideRelatedVideos`, `hideVoiceSearch`, and `hideMiniPlayer` would flash content on page load before ytkit.js applied styles at document_idle.
+- **Fix**: Added body-class-scoped `display: none !important` rules for Shorts shelves, related videos panel, voice search button, and miniplayer.
+
+#### 46h. Popup body `overscroll-behavior: contain`
+- **Bug**: Chrome extension popup could exhibit bounce-scroll that leaked to the underlying page.
+- **Fix**: Added `overscroll-behavior: contain` to the popup body.
+
+#### Verification
+- `node --check` on all 16 source files ✓
+- `npm test` ✓ (29/29)
+- `npm run check` ✓
+- `npm run build:userscript` ✓
+- All five v3.10.2 artifacts rebuilt cleanly
+
+#### Files changed
+- `extension/ytkit.js` (border-radius, scrollbar, nav-count, close button)
+- `extension/popup.html` (SVG search icon)
+- `extension/popup.css` (scrollbar, overscroll, icon CSS)
+- `extension/options.html` (SVG search icon, scrollbar)
+- `extension/early.css` (4 new anti-FOUC rules)
+- `YTKit.user.js` (scrollbar-width for Firefox)
+
 ### 45. Deep engineering audit — core modules, build, CI, options, segment validation (Claude continuation)
 - Comprehensive audit across all source files, core modules, build system, CI/CD pipeline, and feature-level correctness.
 
