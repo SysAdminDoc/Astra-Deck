@@ -2,10 +2,50 @@
 
 Purpose: quick handoff notes for other agents working in this repo. This is not the public release changelog.
 
-Last updated: 2026-04-15
-Scope: wider audit + repair pass on the MV3 extension build in `extension/`
+Last updated: 2026-04-16
+Scope: wider audit + repair pass across the MV3 extension, tracked userscript, and build/release path
 
 ## What Codex repaired
+
+### 27. Cross-platform release hardening + youtu.be parity follow-through
+- Hardened the release/build path so the tracked userscript file is resolved case-safely across Windows and Linux:
+  - added `scripts/repo-paths.js`
+  - added `scripts/check-syntax.js`
+  - updated `package.json` `check`
+  - updated `build-extension.js` and `sync-userscript.js` to use the tracked userscript path instead of assuming lowercase filenames
+- Fixed canonical userscript metadata/install URLs so the tracked source now points at:
+  - `https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js`
+- Extended watch-page route parity:
+  - `extension/core/page.js` and `extension/core/url.js` now treat `youtu.be/<videoId>` as watch pages and extract IDs correctly
+  - remaining userscript watch-only guards were moved off raw `location.pathname === '/watch'` checks and onto `isWatchPagePath()`
+  - userscript metadata now includes `@match https://youtu.be/*`
+- Hardened extension runtime/networking:
+  - `EXT_FETCH` now preserves falsy request bodies like `''`
+  - response byte measurement now uses encoded byte length when `ReadableStream` readers are unavailable
+  - forwarded headers are normalized and nullish values are dropped
+  - download filenames are sanitized more defensively for Windows reserved names, control chars, and overlong names
+  - background keyboard-command handling and options-page storage listeners now trap async failures instead of surfacing unhandled rejections
+  - popup panel/options launch actions now show user-facing error feedback on failure
+- Continued userscript parity/safety work:
+  - added safe `_blank` helpers with `noopener,noreferrer`
+  - added `rel="noopener noreferrer"` to userscript-created blank-target anchors
+  - fixed the userscript CPU tamer so its internal pump interval is actually cancelled on destroy
+  - rebuilt the userscript comment handle revealer to match the extension-side behavior more closely:
+    - in-flight dedupe
+    - request abort on teardown
+    - bounded cache behavior
+    - multi-anchor flush for repeated authors
+- Added/expanded targeted regression coverage:
+  - `tests/background.test.js`
+  - `tests/repo-paths.test.js`
+  - `tests/core-page-url.test.js`
+  - `tests/userscript-parity.test.js`
+- Updated contributor notes in `CONTRIBUTING.md` so repo instructions no longer point at the wrong userscript casing.
+
+#### Verification
+- `npm test` ✓
+- `npm run check` ✓
+- `npm run build:userscript` ✓
 
 ### 1. Popup, settings, and options flow
 - Repaired popup storage wiring so quick toggles read/write `ytSuiteSettings` instead of broken top-level `chrome.storage.local` keys.
