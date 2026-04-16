@@ -427,7 +427,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.10.2';
+    const YTKIT_VERSION = '3.11.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1224,7 +1224,12 @@ return response;
             padding: 0 8px !important;
             margin: 0 !important;
             opacity: 1 !important;
-            transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 120ms ease !important;
+            transition:
+                background-color 180ms var(--ytkit-ease-out),
+                border-color 180ms var(--ytkit-ease-out),
+                color 180ms var(--ytkit-ease-out),
+                box-shadow 180ms var(--ytkit-ease-out),
+                transform 180ms var(--ytkit-ease-out) !important;
             color: rgba(255,255,255,0.82) !important;
             border: 1px solid transparent !important;
             border-radius: 10px !important;
@@ -1496,7 +1501,7 @@ return response;
             position: fixed;
             bottom: calc(18px + env(safe-area-inset-bottom, 0px));
             left: 50%;
-            transform: translateX(-50%) translateY(16px);
+            transform: translateX(-50%) translateY(18px) scale(0.985);
             display: grid;
             grid-template-columns: auto minmax(0, 1fr) auto;
             align-items: center;
@@ -1516,13 +1521,16 @@ return response;
             opacity: 0;
             pointer-events: none;
             overscroll-behavior: contain;
-            transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+            transition:
+                opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 220ms ease;
         }
 
         .ytkit-global-toast.is-visible {
             opacity: 1;
             pointer-events: auto;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(0) scale(1);
         }
 
         .ytkit-global-toast[data-tone="error"] {
@@ -1625,7 +1633,11 @@ return response;
             min-width: 32px;
             padding: 0;
             justify-content: center;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255,255,255,0.78);
+        }
+
+        .ytkit-toast-close:hover {
+            color: #fff;
         }
 
         @media (max-width: 680px) {
@@ -1924,9 +1936,15 @@ return response;
         panel.appendChild(actions);
         document.body.appendChild(panel);
 
-        closeBtn.addEventListener('click', () => panel.remove());
-
         let pollInterval = null;
+        closeBtn.addEventListener('click', () => {
+            // Stop polling immediately when the user closes the panel so we
+            // don't keep hitting the local downloader every second for a UI
+            // that is already gone.
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+            panel.remove();
+        });
+
         async function poll() {
             if (!panel.isConnected) { clearInterval(pollInterval); return; }
             try {
@@ -10006,11 +10024,50 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 const css = `
-                    .ytkit-video-hide-btn { position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.8);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:${Z.HIDE_BTN};opacity:0;transition:all 0.15s;padding:0;color:#fff; }
-                    .ytkit-video-hide-btn:hover { background:rgba(200,0,0,0.9);transform:scale(1.1); }
-                    .ytkit-video-hide-btn svg { width:16px;height:16px;fill:#fff;pointer-events:none; }
-                    ytd-rich-item-renderer:hover .ytkit-video-hide-btn, ytd-video-renderer:hover .ytkit-video-hide-btn, ytd-grid-video-renderer:hover .ytkit-video-hide-btn, ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity:1; }
-                    .ytkit-video-hidden { display:none !important; }
+                    .ytkit-video-hide-btn {
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        width: 28px;
+                        height: 28px;
+                        background: rgba(8, 11, 16, 0.72);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 50%;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: ${Z.HIDE_BTN};
+                        opacity: 0;
+                        /* Enumerate specific properties instead of \`all\` so we
+                           don't accidentally animate layout-affecting props on
+                           YouTube's thumbnail cards (which trigger reflow
+                           during rapid scroll). */
+                        transition:
+                            opacity 180ms var(--ytkit-ease-out),
+                            background-color 180ms var(--ytkit-ease-out),
+                            border-color 180ms var(--ytkit-ease-out),
+                            transform 180ms var(--ytkit-ease-out);
+                        padding: 0;
+                        color: #fff;
+                        backdrop-filter: blur(4px);
+                    }
+                    .ytkit-video-hide-btn:hover {
+                        background: rgba(224, 40, 40, 0.92);
+                        border-color: rgba(255, 255, 255, 0.18);
+                        transform: scale(1.08);
+                    }
+                    .ytkit-video-hide-btn:focus-visible {
+                        opacity: 1;
+                        outline: none;
+                        box-shadow: var(--ytkit-focus-ring);
+                    }
+                    .ytkit-video-hide-btn svg { width: 14px; height: 14px; fill: #fff; pointer-events: none; }
+                    ytd-rich-item-renderer:hover .ytkit-video-hide-btn,
+                    ytd-video-renderer:hover .ytkit-video-hide-btn,
+                    ytd-grid-video-renderer:hover .ytkit-video-hide-btn,
+                    ytd-compact-video-renderer:hover .ytkit-video-hide-btn { opacity: 1; }
+                    .ytkit-video-hidden { display: none !important; }
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
                 this._processAllVideos();
@@ -19641,11 +19698,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const pad = (n, w = 2) => String(n).padStart(w, '0');
                 return `${pad(h)}:${pad(m)}:${pad(s)},${pad(f, 3)}`;
             },
-            _decode(s) {
-                const t = document.createElement('textarea');
-                t.innerHTML = s;
-                return t.value;
-            },
             async _download() {
                 try {
                     const pageData = document.querySelector('ytd-watch-flexy');
@@ -20085,10 +20137,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const d = p.data;
                         const row = document.createElement('a');
                         row.className = 'ytkit-rc-row';
-                        row.href = 'https://reddit.com' + d.permalink;
+                        // Build via URL constructor so a malformed or
+                        // protocol-relative permalink ("//foo") cannot redirect
+                        // users off-reddit. Skip posts whose permalink is
+                        // missing/invalid instead of rendering a broken row.
+                        let permalinkUrl;
+                        try {
+                            permalinkUrl = new URL(String(d.permalink || ''), 'https://www.reddit.com').toString();
+                            if (!/^https:\/\/(www\.|old\.)?reddit\.com\//i.test(permalinkUrl)) continue;
+                        } catch (_) { continue; }
+                        row.href = permalinkUrl;
                         row.target = '_blank';
-                        row.rel = 'noopener';
-                        row.innerHTML = '';
+                        row.rel = 'noopener noreferrer';
                         const title = document.createElement('div');
                         title.className = 'ytkit-rc-title';
                         title.textContent = d.title || '(untitled)';
@@ -20289,7 +20349,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 card.className = 'ytkit-wha-card';
                 const head = document.createElement('div');
                 head.className = 'ytkit-wha-head';
-                head.innerHTML = '';
                 const title = document.createElement('h2'); title.textContent = 'Watch Time — Last 30 Days';
                 const close = document.createElement('button'); close.textContent = '×'; close.className = 'ytkit-wha-close'; close.onclick = () => this._open();
                 head.append(title, close);
@@ -20547,7 +20606,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     panel.textContent = '';
                     const head = document.createElement('div');
                     head.className = 'ytkit-aisum-head';
-                    head.innerHTML = '';
                     const h = document.createElement('h3'); h.textContent = '✨ AI Summary';
                     const c = document.createElement('button'); c.textContent = '×'; c.className = 'ytkit-aisum-close'; c.onclick = close;
                     head.append(h, c);
@@ -22127,7 +22185,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const icon = document.createElement('div');
                             icon.className = 'ytkit-vh-avatar';
                             icon.setAttribute('aria-hidden', 'true');
-                            icon.textContent = (ch.name || ch.id || '?')[0].toUpperCase();
+                            // Use Array.from() so multi-code-unit characters
+                            // (emoji, CJK surrogates) aren't split into a
+                            // dangling half-pair when we grab the first glyph.
+                            icon.textContent = (Array.from(ch.name || ch.id || '?')[0] || '?').toUpperCase();
                             const info = document.createElement('div');
                             info.className = 'ytkit-vh-item-main';
                             const label = document.createElement('div');
@@ -23114,10 +23175,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         fileInput.type = 'file';
         fileInput.accept = '.json,application/json';
         fileInput.onchange = e => {
-            const file = e.target.files[0];
+            const file = e.target.files?.[0];
             if (!file) return;
+            // Refuse oversize imports up-front so the whole renderer isn't
+            // blocked parsing a runaway JSON blob.
+            const IMPORT_MAX_BYTES = 10 * 1024 * 1024;
+            if (file.size > IMPORT_MAX_BYTES) {
+                showToast('Import file exceeds 10 MB limit', '#ef4444', { duration: 4 });
+                return;
+            }
             const reader = new FileReader();
-            reader.onload = readerEvent => callback(readerEvent.target.result);
+            reader.onload = readerEvent => {
+                const result = readerEvent.target?.result;
+                if (typeof result === 'string') callback(result);
+                else showToast('Could not read import file', '#ef4444', { duration: 4 });
+            };
+            reader.onerror = () => {
+                showToast('Could not read import file', '#ef4444', { duration: 4 });
+            };
             reader.readAsText(file);
         };
         fileInput.click();
@@ -23128,7 +23203,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const url = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement('a'), { href: url, download: filename });
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        // Keep the blob alive long enough for slower Chromium download flows
+        // (the previous 1 s window occasionally cancelled exports on Windows
+        // when the save dialog was busy).
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
 
     let _globalUIListenersAttached = false;
@@ -23713,6 +23791,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     --ytkit-text-muted: #6b7a90;
     --ytkit-accent: #ff6b4a;
     --ytkit-accent-soft: rgba(255,107,74,0.12);
+    /* Shared motion curves so every Astra Deck surface (popup, options,
+       in-page panel, toasts, download progress) eases on the same timing.
+       Overshoot spring is reserved for tactile controls like toggles. */
+    --ytkit-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ytkit-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ytkit-focus-ring: 0 0 0 2px rgba(8,11,16,0.98), 0 0 0 4px rgba(255,107,74,0.55);
 }
 
 body.ytkit-panel-open {
@@ -23731,14 +23815,19 @@ body.ytkit-panel-open {
     border: none;
     border-radius: 14px;
     cursor: pointer;
-    transition: background-color 180ms ease, transform 180ms ease, opacity 180ms ease;
+    transition:
+        background-color 180ms var(--ytkit-ease-out),
+        transform 180ms var(--ytkit-ease-out),
+        opacity 180ms var(--ytkit-ease-out);
 }
 
 .ytkit-trigger-btn svg {
     width: 20px;
     height: 20px;
     color: var(--yt-spec-icon-inactive, #aaa);
-    transition: color 180ms ease, transform 180ms ease;
+    transition:
+        color 180ms var(--ytkit-ease-out),
+        transform 220ms var(--ytkit-ease-out);
 }
 
 .ytkit-trigger-btn:hover {
@@ -23783,7 +23872,7 @@ body.ytkit-panel-open {
     color: var(--ytkit-text-primary);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 240ms cubic-bezier(0.32, 0.72, 0, 1), transform 240ms cubic-bezier(0.32, 0.72, 0, 1);
+    transition: opacity 260ms var(--ytkit-ease-out), transform 260ms var(--ytkit-ease-out);
     overflow: hidden;
 }
 
@@ -23797,7 +23886,7 @@ body.ytkit-panel-open {
         linear-gradient(180deg, rgba(6,9,14,0.78), rgba(3,6,10,0.92));
     opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
+    transition: opacity 220ms var(--ytkit-ease-out);
     overflow: hidden;
     isolation: isolate;
 }
@@ -23936,8 +24025,18 @@ body.ytkit-panel-open #ytkit-settings-panel {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
     cursor: pointer;
-    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease, color 180ms ease;
+    transition:
+        background-color 200ms var(--ytkit-ease-out),
+        border-color 200ms var(--ytkit-ease-out),
+        transform 200ms var(--ytkit-ease-out),
+        color 200ms var(--ytkit-ease-out);
     flex-shrink: 0;
+}
+
+.ytkit-close:focus-visible {
+    outline: none;
+    box-shadow: var(--ytkit-focus-ring);
+    border-color: rgba(255,107,74,0.42);
 }
 
 .ytkit-close svg {
@@ -23970,6 +24069,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,0.12) transparent;
+    scrollbar-gutter: stable;
     flex-shrink: 0;
 }
 
@@ -24091,7 +24191,24 @@ body.ytkit-panel-open #ytkit-settings-panel {
     border: 1px solid transparent;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 120ms ease, border-color 120ms ease;
+    transition:
+        background-color 180ms var(--ytkit-ease-out),
+        border-color 180ms var(--ytkit-ease-out),
+        color 180ms var(--ytkit-ease-out);
+}
+
+.ytkit-nav-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--ytkit-focus-ring);
+    border-color: rgba(255,107,74,0.38);
+}
+
+.ytkit-nav-arrow {
+    transition: opacity 180ms var(--ytkit-ease-out), transform 180ms var(--ytkit-ease-out);
+}
+
+.ytkit-nav-btn:hover .ytkit-nav-arrow {
+    transform: translateX(2px);
 }
 
 .ytkit-nav-btn:hover {
@@ -24296,7 +24413,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
     border-radius: 6px;
     background: transparent;
     border: 1px solid transparent;
-    transition: background-color 100ms ease, border-color 100ms ease;
+    transition:
+        background-color 160ms var(--ytkit-ease-out),
+        border-color 160ms var(--ytkit-ease-out);
     position: relative;
 }
 
@@ -27599,7 +27718,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.94);
             box-shadow: 0 28px 60px rgba(0,0,0,0.42);
             z-index: 2147483647;
-            animation: ytkit-slide-in 0.28s ease-out;
+            animation: ytkit-slide-in 320ms var(--ytkit-ease-out);
             overscroll-behavior: contain;
         }
 
@@ -27650,9 +27769,12 @@ body.ytkit-panel-open #ytkit-settings-panel {
             border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.62);
+            color: rgba(255,255,255,0.72);
             cursor: pointer;
-            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            transition:
+                border-color 180ms var(--ytkit-ease-out),
+                background-color 180ms var(--ytkit-ease-out),
+                color 180ms var(--ytkit-ease-out);
             outline: none;
         }
 
@@ -27723,7 +27845,12 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-weight: 700;
             letter-spacing: -0.01em;
             cursor: pointer;
-            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            transition:
+                border-color 180ms var(--ytkit-ease-out),
+                background-color 180ms var(--ytkit-ease-out),
+                color 180ms var(--ytkit-ease-out),
+                transform 180ms var(--ytkit-ease-out),
+                box-shadow 180ms var(--ytkit-ease-out);
             outline: none;
         }
 
@@ -27835,7 +27962,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.94);
             box-shadow: 0 28px 56px rgba(0,0,0,0.38);
             z-index: 2147483647;
-            animation: ytkit-slide-in 0.28s ease-out;
+            animation: ytkit-slide-in 320ms var(--ytkit-ease-out);
         }
 
         .ytkit-dl-progress[data-state="pending"] {
@@ -27888,9 +28015,12 @@ body.ytkit-panel-open #ytkit-settings-panel {
             border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.56);
+            color: rgba(255,255,255,0.68);
             cursor: pointer;
-            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            transition:
+                border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+                color 180ms cubic-bezier(0.22, 1, 0.36, 1);
             outline: none;
         }
 
@@ -27953,11 +28083,47 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-dl-progress__fill {
+            position: relative;
             height: 100%;
             width: 0%;
             border-radius: inherit;
             background: linear-gradient(90deg, #22c55e, #16a34a);
-            transition: width 0.4s ease, background-color 0.2s ease;
+            transition:
+                width 400ms cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 200ms ease;
+            overflow: hidden;
+        }
+
+        /* Subtle forward-moving sheen so users can tell the download is alive
+           even between progress updates. Suppressed at the finished/errored
+           end states and under reduced-motion. */
+        .ytkit-dl-progress__fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.18) 50%,
+                transparent 100%
+            );
+            transform: translateX(-100%);
+            animation: ytkit-dl-sheen 1.8s linear infinite;
+        }
+
+        .ytkit-dl-progress__fill.is-success::after,
+        .ytkit-dl-progress__fill.is-error::after {
+            animation: none;
+            opacity: 0;
+        }
+
+        @keyframes ytkit-dl-sheen {
+            from { transform: translateX(-100%); }
+            to   { transform: translateX(100%); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ytkit-dl-progress__fill::after { animation: none; opacity: 0; }
         }
 
         .ytkit-dl-progress__fill.is-success {
@@ -28007,7 +28173,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-weight: 700;
             cursor: pointer;
             touch-action: manipulation;
-            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+            transition:
+                border-color 180ms var(--ytkit-ease-out),
+                background-color 180ms var(--ytkit-ease-out),
+                color 180ms var(--ytkit-ease-out),
+                transform 180ms var(--ytkit-ease-out);
+        }
+
+        .ytkit-dl-progress__action:active:not(:disabled) {
+            transform: scale(0.985);
         }
 
         .ytkit-dl-progress__action:hover {
@@ -28146,7 +28320,11 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-weight: 700;
             cursor: pointer;
             touch-action: manipulation;
-            transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 120ms ease;
+            transition:
+                border-color 180ms var(--ytkit-ease-out),
+                background-color 180ms var(--ytkit-ease-out),
+                color 180ms var(--ytkit-ease-out),
+                transform 180ms var(--ytkit-ease-out);
             outline: none;
         }
 
