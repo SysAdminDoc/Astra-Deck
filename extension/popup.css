@@ -40,6 +40,7 @@ body {
 
 body {
   width: 368px;
+  overscroll-behavior: contain;
 }
 
 .wrap {
@@ -198,7 +199,6 @@ button:focus-visible {
 .search-icon {
   left: 13px;
   color: var(--text-muted);
-  font-size: 15px;
   pointer-events: none;
 }
 
@@ -271,7 +271,14 @@ button:focus-visible {
   display: grid;
   gap: 8px;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
+
+.toggles::-webkit-scrollbar { width: 6px; }
+.toggles::-webkit-scrollbar-track { background: transparent; }
+.toggles::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
+.toggles::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
 
 .toggle,
 .toggle-skeleton {
