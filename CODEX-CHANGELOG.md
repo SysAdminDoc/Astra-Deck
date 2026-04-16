@@ -7,6 +7,102 @@ Scope: wider audit + repair pass across the MV3 extension, tracked userscript, a
 
 ## What Codex repaired
 
+### 45. Deep engineering audit — core modules, build, CI, options, segment validation (Claude continuation)
+- Comprehensive audit across all source files, core modules, build system, CI/CD pipeline, and feature-level correctness.
+
+#### 45a. Build system: CRX failure made fatal + indentation fixed
+- **Bug**: `build-extension.js` swallowed CRX build failures with `console.error()` instead of throwing, so the build reported success even when the CRX was broken. ZIP failures were already fatal.
+- **Fix**: Changed to `throw new Error()` to match ZIP error handling. Also fixed broken indentation (0-indent lines inside a try block) on artifact name assignments.
+
+#### 45b. Core `styles.js`: `cleanupRetiredCommentUi` scope bug
+- **Bug**: Function accepted a `root` parameter but used `document.getElementById()` instead of the passed root. Would fail for non-document roots (shadow DOM, fragments).
+- **Fix**: Replaced with `root.querySelector()` which works universally on any Element/Document.
+
+#### 45c. Core `navigation.js`: `waitForPageContent` now returns cancellation handle
+- **Bug**: Function set up event listeners + timer + element observer internally but returned `undefined`. Callers had no way to cancel pending work on feature destroy, leaving a 3-second leak window.
+- **Fix**: Added `cancel()` function returned to callers, and made the no-callback early return also return a no-op cleanup.
+
+#### 45d. Options save path: merge-on-save preserves external changes
+- **Bug**: If the user had unsaved changes in the settings modal and another tab changed settings (e.g., popup toggles), saving would overwrite ALL settings with the stale draft, silently losing the external changes to keys the user hadn't touched.
+- **Fix**: `saveSettingsDraft()` now re-reads latest stored settings before saving and only applies the user's `dirtyKeys` on top, preserving external changes to unmodified keys.
+
+#### 45e. SponsorBlock segment data bounds validation
+- **Bug**: Segment data from the SponsorBlock API was validated for array shape (`length === 2`) but not for numeric correctness. Malformed responses with `NaN`, `Infinity`, negative, or inverted start/end values would produce invalid CSS percentages or incorrect skip behavior.
+- **Fix**: Added `Number.isFinite()`, non-negative, and `end > start` validation to the segment filter.
+
+#### 45f. CI/CD workflow hardened
+- **Bug (1)**: `gh release upload` fails if the release doesn't exist yet. The workflow required manual pre-creation.
+- **Bug (2)**: No check that the git tag version matches the manifest version — could ship mismatched artifacts.
+- **Fix**: Added a version consistency check step. Changed release step to try `gh release create` first, falling back to `gh release upload --clobber`.
+
+#### 45g. Syntax check now covers `ytkit-main.js`
+- **Bug**: The MAIN world bridge script was shipped in the extension but not included in `npm run check`.
+- **Fix**: Added `extension/ytkit-main.js` to `scripts/check-syntax.js`.
+
+#### Verification
+- `node --check` on all 16 source files ✓
+- `npm test` ✓ (29/29)
+- `npm run check` ✓
+- `npm run build:userscript` ✓
+- All five v3.10.2 artifacts rebuilt cleanly
+
+#### Files changed
+- `build-extension.js`
+- `extension/core/styles.js`
+- `extension/core/navigation.js`
+- `extension/options.js`
+- `extension/ytkit.js`
+- `.github/workflows/build.yml`
+- `scripts/check-syntax.js`
+
+#### What still looks risky
+- Theater Split rapid mount/collapse/fullscreen remains untested in-browser
+- Options modal: external changes to the SAME keys the user is editing are still last-writer-wins (merge only protects DIFFERENT keys)
+- Userscript still has ~30 remaining raw `pathname.startsWith('/watch')` checks (low-risk since youtu.be redirects before features fire)
+- The settings panel MutationObserver in the userscript (body class watcher) is a singleton and never disconnected — acceptable but notable
+- No browser-level automated integration suite
+
+### 44. Lifecycle leak + async race repair pass (Claude continuation)
+- Fixed 7 real bugs across both runtimes, focused on resource leaks, async init races, and userscript parity gaps.
+
+#### 44a. Userscript `popOutPlayer` interval + timer leak (CRITICAL)
+- **Bug**: `setInterval` for PiP time display (500ms) was never assigned to a variable. Every PiP open leaked an orphan interval that kept running after the window closed, holding references to the video element and PiP document. Two `pagehide` handlers were also stacked instead of merged. Additionally, both `setTimeout` calls in `init()` and the navigate rule were unmanaged.
+- **Fix**: Added `_timeInterval` and `_injectTimer` fields. Stored the interval, merged pagehide handlers into one that clears it, added `_scheduleInject()` managed timer pattern (matching the already-fixed extension side), and clear all timers in `destroy()`.
+
+#### 44b. Userscript persistent buttons path check (youtu.be gap)
+- **Bug**: `tryInjectButton()` and `checkAllButtons()` used `window.location.pathname.startsWith('/watch')` instead of the shared `isWatchPagePath()` helper. This meant watch-page action buttons would not inject on `youtu.be` short-link URLs.
+- **Fix**: Replaced both raw pathname checks with `isWatchPagePath()`.
+
+#### 44c. Extension Theater Split `_waitForChat` unmanaged timeout
+- **Bug**: The 10-second safety timeout that disconnects the chat-frame observer was a bare `setTimeout` — not stored or cleared anywhere. If `destroy()` ran within 10 seconds (rapid toggle or fast navigation), the timeout would fire after teardown and null `_pendingChatObs` on a potentially re-initialized instance.
+- **Fix**: Added `_chatSafetyTimeout` field. Stored the timeout, cleared it at the start of `_waitForChat()` and in `destroy()`.
+
+#### 44d. Async init race in `hideCollaborations` (both runtimes)
+- **Bug**: `hideCollaborations.init()` awaits `_fetchSubscriptions()`. Since `safeInitFeature()` does not await async init, `_initialized` is set to `true` immediately after the sync return. If `destroy()` runs during the await, `_initialized` is set back to `false` — but when the await resolves, the feature's own `this._initialized = true` re-sets it, and init continues to create an observer and navigate rule that will never be cleaned up.
+- **Fix**: Removed the feature's redundant `_initialized` management. Added a post-await `if (!this._initialized) return;` guard so the feature bails out if destroyed during the async gap. Applied in both `extension/ytkit.js` and `YTKit.user.js`.
+
+#### 44e. Async init race in `resumePlayback` (both runtimes)
+- **Bug**: Same pattern — `await this._load()` in `resumePlayback.init()` creates an async gap during which destroy can run. The extension version was missing the post-await guard. The userscript version was missing the guard AND had unmanaged `setTimeout` calls for restore plus the wrong-video save bug (calling `_savePosition()` in the navigate rule after the URL has already changed to the new video).
+- **Fix**: Added `if (!this._initialized) return;` post-await guard in both runtimes. In the userscript, also added `_restoreTimer` field with managed scheduling, removed the stale `_savePosition()` call from the navigate rule (matching the extension's batch 15c fix), and protected against interval stacking on rapid re-init.
+
+#### Verification
+- `node --check extension/ytkit.js` ✓
+- `node --check YTKit.user.js` ✓
+- `npm test` ✓ (29/29)
+- `npm run check` ✓
+- `npm run build:userscript` ✓
+- All five v3.10.2 artifacts rebuilt cleanly
+
+#### Files changed
+- `extension/ytkit.js`
+- `YTKit.user.js`
+
+#### What still looks risky
+- Theater Split rapid mount/collapse/fullscreen remains the biggest manual QA gap (batch 20 improvements untested in-browser)
+- Userscript still has ~30 remaining `pathname.startsWith('/watch')` checks in individual feature rules — low risk since youtu.be redirects to youtube.com/watch before features fire, but could become a parity concern if YouTube ever changes redirect behavior
+- No browser-level automated integration suite — live manual QA is still the main gap
+- The settings panel observer in the userscript (body class watcher) is never disconnected — acceptable since it's a singleton, but worth noting
+
 ### 27. Cross-platform release hardening + youtu.be parity follow-through
 - Hardened the release/build path so the tracked userscript file is resolved case-safely across Windows and Linux:
   - added `scripts/repo-paths.js`
@@ -684,6 +780,7 @@ All bugs were in `extension/ytkit.js`.
 - `build-extension.js`
 - `package.json`
 - `scripts/catalog-utils.js`
+- `scripts/check-syntax.js`
 - `sync-userscript.js`
 - `tests/core-page-url.test.js`
 - `tests/catalog-utils.test.js`
@@ -691,6 +788,7 @@ All bugs were in `extension/ytkit.js`.
 - `extension/background.js`
 - `extension/core/navigation.js`
 - `extension/core/storage.js`
+- `extension/core/styles.js`
 - `extension/core/url.js`
 - `extension/default-settings.json`
 - `extension/manifest.json`

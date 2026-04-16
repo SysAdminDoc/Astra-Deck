@@ -77,7 +77,7 @@
     }
 
     function waitForPageContent(callback, fallbackSelector = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer') {
-        if (typeof callback !== 'function') return;
+        if (typeof callback !== 'function') return () => {};
         let fired = false;
         let fallbackTimer = null;
         let cancelElementWait = null;
@@ -96,10 +96,18 @@
             document.removeEventListener('yt-page-data-updated', onPageUpdated);
             callback();
         };
+        const cancel = () => {
+            if (fired) return;
+            fired = true;
+            if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+            if (cancelElementWait) { cancelElementWait(); cancelElementWait = null; }
+            document.removeEventListener('yt-page-data-updated', onPageUpdated);
+        };
 
         document.addEventListener('yt-page-data-updated', onPageUpdated, { once: true });
         cancelElementWait = waitForElement(fallbackSelector, fire);
         fallbackTimer = setTimeout(fire, 3000);
+        return cancel;
     }
 
     function getIsWatchPage() {

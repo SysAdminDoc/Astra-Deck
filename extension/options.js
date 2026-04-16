@@ -1331,7 +1331,23 @@
         }
 
         try {
-            const nextStoredSettings = applySettingsVersion(deepClone(state.draftSettings));
+            // Merge-on-save: read latest stored settings and apply only the
+            // keys the user actually changed.  This preserves external changes
+            // (e.g. popup toggles in another tab) to keys the user did NOT
+            // touch in this editing session.
+            let mergedSettings;
+            if (state.dirtyKeys.size > 0) {
+                const freshStorage = await chrome.storage.local.get(STORAGE_KEYS.settings);
+                const latestStored = freshStorage[STORAGE_KEYS.settings] || {};
+                const base = { ...deepClone(state.defaultSettings), ...deepClone(latestStored) };
+                for (const key of state.dirtyKeys) {
+                    base[key] = deepClone(state.draftSettings[key]);
+                }
+                mergedSettings = base;
+            } else {
+                mergedSettings = deepClone(state.draftSettings);
+            }
+            const nextStoredSettings = applySettingsVersion(mergedSettings);
             await chrome.storage.local.set({
                 [STORAGE_KEYS.settings]: nextStoredSettings
             });
