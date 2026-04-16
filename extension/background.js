@@ -86,6 +86,13 @@ const BLOCKED_RESPONSE_HEADERS = new Set([
     'proxy-authorization', 'www-authenticate'
 ]);
 
+const WINDOWS_RESERVED_FILENAME_BASENAMES = new Set([
+    'con', 'prn', 'aux', 'nul',
+    'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
+    'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'
+]);
+const MAX_DOWNLOAD_FILENAME_LENGTH = 180;
+
 function isUrlAllowed(url) {
     try {
         const parsed = new URL(url);
@@ -104,9 +111,8 @@ function filterHeaders(headers, blocklist) {
     if (!headers || typeof headers !== 'object') return {};
     const filtered = {};
     for (const [key, value] of Object.entries(headers)) {
-        if (!blocklist.has(key.toLowerCase())) {
-            filtered[key] = value;
-        }
+        if (blocklist.has(key.toLowerCase()) || value == null) continue;
+        filtered[key] = Array.isArray(value) ? value.map((item) => String(item)).join(', ') : String(value);
     }
     return filtered;
 }
@@ -186,6 +192,35 @@ function isAllowedCookieDomain(domain) {
     return ALLOWED_COOKIE_DOMAINS.has(normalized);
 }
 
+function sanitizeDownloadFilename(filename) {
+    if (typeof filename !== 'string') return undefined;
+
+    let sanitized = filename
+        .replace(/[\x00-\x1f]/g, '')
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^[. ]+|[. ]+$/g, '');
+
+    if (!sanitized) return undefined;
+
+    const extensionIndex = sanitized.lastIndexOf('.');
+    const extension = extensionIndex > 0 ? sanitized.slice(extensionIndex) : '';
+    let baseName = extensionIndex > 0 ? sanitized.slice(0, extensionIndex) : sanitized;
+    if (WINDOWS_RESERVED_FILENAME_BASENAMES.has(baseName.toLowerCase())) {
+        baseName = '_' + baseName;
+    }
+    sanitized = baseName + extension;
+
+    if (sanitized.length > MAX_DOWNLOAD_FILENAME_LENGTH) {
+        const maxBaseLength = Math.max(1, MAX_DOWNLOAD_FILENAME_LENGTH - extension.length);
+        sanitized = sanitized.slice(0, maxBaseLength) + extension;
+        sanitized = sanitized.replace(/[. ]+$/g, '');
+    }
+
+    return sanitized || undefined;
+}
+
 function sendTabMessage(tabId, message) {
     return new Promise((resolve) => {
         if (!tabId) {
@@ -217,10 +252,16 @@ async function togglePanelForTab(tabId) {
 // manifest, so the toolbar click is handled entirely by popup.html/popup.js.
 // The keyboard shortcut (Ctrl+Shift+Y) still needs the commands listener.
 
-chrome.commands.onCommand.addListener(async (command) => {
-    if (command !== 'toggle-control-center') return;
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    await togglePanelForTab(tab?.id);
+chrome.commands.onCommand.addListener((command) => {
+    void (async () => {
+        if (command !== 'toggle-control-center') return;
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+            await togglePanelForTab(tab?.id);
+        } catch (error) {
+            console.warn('[Astra Deck background] Failed to handle keyboard command:', error);
+        }
+    })();
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -315,7 +356,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (Object.keys(filteredHeaders).length > 0) {
             fetchOpts.headers = filteredHeaders;
         }
-        if (data && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
+        if (data !== null && data !== undefined && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
             fetchOpts.body = normalizeRequestBody(data, filteredHeaders);
         }
 
@@ -360,9 +401,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     text = new TextDecoder('utf-8').decode(merged);
                 } else {
                     text = await resp.text();
-                    if (text.length > MAX_RESPONSE_BYTES) {
+                    const measuredBytes = new TextEncoder().encode(text).byteLength;
+                    if (measuredBytes > MAX_RESPONSE_BYTES) {
                         responded = true;
-                        sendResponse({ error: `Response body too large (${text.length} chars)` });
+                        sendResponse({ error: `Response body too large (${measuredBytes} bytes)` });
                         return;
                     }
                 }
@@ -410,9 +452,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
-        const filename = typeof msg.filename === 'string'
-            ? msg.filename.replace(/[\\/:*?"<>|]/g, '_')
-            : undefined;
+        const filename = sanitizeDownloadFilename(msg.filename);
 
         const opts = { url: downloadUrl, saveAs: false };
         if (filename) opts.filename = filename;
