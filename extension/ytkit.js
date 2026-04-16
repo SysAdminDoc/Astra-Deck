@@ -13972,6 +13972,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const { response, data } = await extensionFetchJson({
                         url: track.baseUrl + '&fmt=json3'
                     });
+                    if (!this._panel || !panel.isConnected) return;
                     if (!response || response.status < 200 || response.status >= 300) {
                         this._setTranscriptMeta('Unavailable', 'The transcript could not be fetched from YouTube right now.', 'danger');
                         this._renderBodyState(body, 'error', 'Transcript unavailable', 'Reload the page or try again in a moment if captions are still processing.');
@@ -14972,6 +14973,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 addNavigateRule('copyVideoTitle', () => {
                     this._clearResetTimer();
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleCreate(2000);
                 });
@@ -15050,7 +15052,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     const playerResponse = _rw.ytInitialPlayerResponse;
                     const responseVideoId = playerResponse?.videoDetails?.videoId;
-                    if (!responseVideoId || !currentVideoId || responseVideoId === currentVideoId) {
+                    if (responseVideoId && currentVideoId && responseVideoId === currentVideoId) {
                         const microformat = playerResponse?.microformat?.playerMicroformatRenderer;
                         const raw = microformat?.publishDate
                             || microformat?.uploadDate
@@ -15677,6 +15679,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 });
                 document.querySelectorAll('.ytkit-wl-btn').forEach(b => b.remove());
+                document.querySelectorAll('.ytkit-thumb-action-host').forEach(t => t.classList.remove('ytkit-thumb-action-host'));
             }
         },
         {
@@ -16890,6 +16893,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             init() {
                 addNavigateRule('downloadThumbnail', () => {
+                    this._btn?.remove();
                     this._btn = null;
                     this._scheduleCreate(2000);
                 });
@@ -19239,7 +19243,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _overlay: null,
             _overlayKeyHandler: null,
             _sessionStart: 0,
-            _persistTimer: null,
             _capDismissKey: 'ytkit_dw_cap_dismissed_date',
 
             _todayKey() {
@@ -19426,7 +19429,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         background:
                             radial-gradient(circle at top, rgba(99,102,241,0.12), transparent 28%),
                             rgba(8, 11, 16, 0.86);
-                        backdrop-filter: blur(10px);
                         display: flex; align-items: center; justify-content: center;
                         overscroll-behavior: contain;
                         animation: ytkit-wb-fade 220ms ease-out;
@@ -19580,6 +19582,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._overlay?.remove(); this._overlay = null;
                 this._styleEl?.remove(); this._styleEl = null;
+                this._sessionStart = 0;
             }
         },
 
@@ -22496,7 +22499,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (switchEl) switchEl.classList.toggle('active', toggle.checked);
                     }
                 });
-                createToast(`Reset "${cat}" to defaults`, 'success');
                 showToast(`"${cat}" reset to defaults`, '#f97316', { duration: 5, action: { text: 'Undo', onClick: async () => {
                     categoryFeatures.forEach(f => {
                         if (backup[f.id] !== undefined) {
