@@ -50,7 +50,12 @@ const openOptionsButton = $('#openOptions');
 function getVersion() {
     try { return (chrome.runtime.getManifest().version || '—'); } catch { return '—'; }
 }
-$('#version').textContent = 'v' + getVersion();
+const versionEl = $('#version');
+const resolvedVersion = getVersion();
+versionEl.textContent = 'v' + resolvedVersion;
+versionEl.title = resolvedVersion === '—'
+    ? 'Astra Deck version unavailable'
+    : `Astra Deck v${resolvedVersion}`;
 
 function storageGet(keys) {
     return new Promise((resolve, reject) => {
@@ -405,6 +410,25 @@ function render(settings, filter) {
 
     q.addEventListener('input', () => {
         render(popupState.settings, q.value);
+    });
+    q.addEventListener('keydown', (event) => {
+        // Enter on the search field focuses the first visible toggle so
+        // keyboard users can filter-then-activate without an extra Tab step.
+        if (event.key === 'Enter') {
+            const firstToggle = list.querySelector('.toggle');
+            if (firstToggle) {
+                event.preventDefault();
+                firstToggle.focus();
+            }
+            return;
+        }
+        // Escape in the search field clears it (one key press) instead of
+        // needing to arrow-select-delete or click the × button.
+        if (event.key === 'Escape' && q.value) {
+            event.preventDefault();
+            q.value = '';
+            render(popupState.settings, '');
+        }
     });
     clearSearchButton.addEventListener('click', () => {
         q.value = '';

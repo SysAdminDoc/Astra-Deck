@@ -75,7 +75,14 @@
 
         return chrome.storage.local.set(writes).catch((error) => {
             console.warn('[YTKit] Storage flush failed:', error);
-            pendingStorageWrites = { ...writes, ...pendingStorageWrites };
+            // Merge back onto a prototype-less target so retries cannot
+            // inherit Object.prototype entries. Newer pending writes that
+            // arrived while the failing set() was in flight take precedence
+            // over the ones that failed.
+            const merged = Object.create(null);
+            Object.assign(merged, writes);
+            Object.assign(merged, pendingStorageWrites);
+            pendingStorageWrites = merged;
             schedulePendingStorageFlush();
         });
     }

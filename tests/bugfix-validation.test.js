@@ -226,3 +226,93 @@ test('findBalancedObjectLiteral handles comments with braces', () => {
 test('findBalancedObjectLiteral returns null for missing token', () => {
     assert.equal(findBalancedObjectLiteral('no match here', 'defaults:'), null);
 });
+
+// ── Hardening pass: ensure previously-dead unsafe innerHTML assignments stayed removed ──
+
+test('ytkit.js has no unsafe innerHTML reset on freshly created elements', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    // Pattern: assign innerHTML to empty string on a variable that was just
+    // created via document.createElement. Such assignments are dead code and
+    // also trigger Trusted Types violations on strict YouTube pages.
+    const badPattern = /document\.createElement\([^)]+\)[\s\S]{0,200}?\.innerHTML\s*=\s*['"]['"]\s*;/;
+    assert.ok(!badPattern.test(source), 'freshly created DOM elements must not be reset via innerHTML = ""');
+});
+
+test('ytkit.js Reddit discussion links validate permalink via URL constructor', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    // The hardened flow replaces raw concatenation with a URL constructor
+    // guard that also requires the result to stay on reddit.com.
+    assert.ok(source.includes("new URL(String(d.permalink || ''), 'https://www.reddit.com')"),
+        'Reddit permalink should be normalised through the URL constructor');
+    assert.ok(/reddit discussion|ytkit-rc-row[\s\S]*?rel = 'noopener noreferrer'/i.test(source)
+        || source.includes("row.rel = 'noopener noreferrer';"),
+        'Reddit discussion rows should set rel="noopener noreferrer"');
+});
+
+test('subtitle download no longer carries the unused unsafe _decode helper', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    // Dead code that violated Trusted Types has been removed.
+    assert.ok(!/_decode\s*\(\s*s\s*\)\s*\{[\s\S]{0,100}?t\.innerHTML\s*=\s*s/.test(source),
+        'subtitle _decode(s) with innerHTML=s must stay removed');
+});
+
+test('blocked channel avatar initial survives surrogate-pair names', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    // Array.from() iterates by code point so emoji/CJK-only channel names
+    // no longer render half of a surrogate pair in the avatar bubble.
+    assert.ok(source.includes("Array.from(ch.name || ch.id || '?')[0]"),
+        'blocked channel avatar initial should iterate by code point, not UTF-16 unit');
+});
+
+test('download progress panel close button stops the poll interval immediately', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    // The close handler now clears the 1 s poll interval synchronously so we
+    // don't keep hitting the local downloader for a panel the user dismissed.
+    const start = source.indexOf('function showDownloadProgress');
+    assert.ok(start > -1, 'showDownloadProgress should exist');
+    const block = source.slice(start, start + 6000);
+    assert.ok(/closeBtn\.addEventListener\('click'[\s\S]*?clearInterval\(pollInterval\)[\s\S]*?panel\.remove\(\)/.test(block),
+        'close button should clearInterval(pollInterval) before removing the panel');
+});
+
+test('handleFileImport guards against oversized files and FileReader errors', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf('function handleFileImport');
+    assert.ok(start > -1, 'handleFileImport should exist');
+    const block = source.slice(start, start + 1500);
+    assert.ok(block.includes('IMPORT_MAX_BYTES'), 'handleFileImport should enforce an import size cap');
+    assert.ok(block.includes('reader.onerror'), 'handleFileImport should surface FileReader errors');
+});
+
+test('core storage retry rebuild uses a prototype-less merge target', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'core', 'storage.js'), 'utf8');
+
+    // Regression check: before this fix, a retry would replace the no-prototype
+    // pendingStorageWrites with a regular object literal, reintroducing a
+    // proto-pollution footgun on a hot storage path.
+    assert.ok(!/pendingStorageWrites\s*=\s*\{\s*\.\.\.writes/.test(source),
+        'storage retry must not rebuild pendingStorageWrites with an object literal');
+    assert.ok(source.includes('Object.create(null)'),
+        'storage module should keep using Object.create(null) for pending writes');
+});
+

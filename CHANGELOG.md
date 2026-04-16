@@ -4,6 +4,46 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.11.0] - Hardening, Accessibility, and Cross-Surface Polish
+
+### Fixed
+
+- **Reddit Comments link hardening.** `d.permalink` from the Reddit JSON API is now validated through the `URL` constructor against a `reddit.com` allowlist before being used as `href`, and the row is promoted to `rel="noopener noreferrer"` to match every other external link.
+- **Subtitle Download dead code removed.** Deleted an unused `_decode(s)` helper that set `textarea.innerHTML = s` — dead path that also tripped strict Trusted Types on YouTube pages.
+- **Removed three `element.innerHTML = ''` resets** on freshly created `document.createElement` nodes (Reddit Comments, Watch-Time Analytics, AI Summary) — dead code and additional TT sinks.
+- **Blocked-channel avatar surrogate pair.** The first-letter avatar initial now iterates by code point (`Array.from(str)[0]`) so emoji / CJK-only channel names no longer render a dangling half-surrogate glyph.
+- **Download progress panel** — close button now synchronously clears the 1 s poll interval before removing the panel, so dismissing a download no longer wastes a full polling cycle on local HTTP hits.
+- **File import guard.** In-page settings import now refuses files larger than 10 MB up-front and surfaces `FileReader` errors via toast instead of silently dropping them. Export object-URL revoke extended from 1 s → 60 s to match the options page exporter and avoid cancelled downloads on slower save-dialog paths.
+- **Core storage retry integrity.** A failing `chrome.storage.local.set` retry used to merge pending writes into a regular object literal, replacing the `Object.create(null)` target with an `Object.prototype`-linked target. Retries now rebuild on a fresh prototype-less target.
+
+### Added
+
+- **Visual spinner on `aria-busy` buttons** (options page). Every long-running action (export, import, reset, save, open-settings) now shows a 12×12 spinner glyph next to its label while in flight.
+- **Popup keyboard ergonomics.** Pressing Enter in the quick-toggle search now focuses the first visible toggle so it can be activated with Space. Pressing Escape clears the filter in one keystroke.
+- **Forced-colors / Windows High Contrast support.** Both the popup and the options page restate borders, toggle surfaces, and focus indicators using system `CanvasText` / `Canvas` / `Highlight` keywords so every control stays distinguishable under forced-color themes.
+- **Inline sliders glyph** on the popup empty state — a data-URI SVG layered over the accent gradient, no extra asset required.
+- **Accessible reset button titles.** Each settings card's Reset button now explains its target value (`Reset AI Summary Model to gpt-4o-mini`) or the reason it's disabled (`No catalog default is available for this setting.`) via both `title` and `aria-label`.
+- **Version chip tooltip** on the popup, showing the full `Astra Deck v3.11.0` string on hover.
+- **7 new regression tests** guarding the bug-hardening fixes.
+
+### Changed — cross-surface premium polish
+
+- **Shared motion tokens** (`--ease-out`, `--ease-spring`, `--ytkit-ease-out`, `--ytkit-ease-spring`) introduced on the popup, options page, and in-page content-script CSS. Every interactive surface now breathes on the same curves.
+- **Unified double-halo focus ring** across every interactive control on all three surfaces.
+- **Toggle rows lift** on hover with a subtle `translateY(-1px)` + shadow on the popup; spring-eased thumb transitions on both popup and options toggles.
+- **Action cards** on the options page elevate on hover; stat cards are now static (removed false-affordance hover lift since they are informational readouts).
+- **Modal entrance animation.** The options settings modal fades + scales in (260ms) with a 220ms backdrop fade.
+- **Scrollbar-gutter stability** on every scrollable region prevents horizontal jitter when scrollbars appear.
+- **Download progress fill sheen.** A subtle 1.8s forward-moving highlight sweeps across active downloads. Auto-suppressed on success/error and under `prefers-reduced-motion`.
+- **Status banner fade-ins** on the page-level and modal-level status banners.
+- **Video-hider × button redesign.** Translucent bordered pill + 4px backdrop blur, enumerated transitions, visible `:focus-visible` for keyboard users.
+- **Text overflow hardening** on popup toggle rows — names ellipsize, descriptions cap at two lines.
+- **Options action-card grid** caps at 4 columns on ≥1240px viewports.
+- **Settings workspace banner** now cross-fades between in-sync / unsaved / needs-attention / filtered states.
+- **Microcopy** tightened across the options hero, action cards, and version card for more active phrasing.
+
+---
+
 ## [3.10.0] - Watch Analytics, Subtitle Styling, AI Summary, Chapters
 
 ### Added
