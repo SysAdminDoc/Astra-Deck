@@ -1894,7 +1894,7 @@
     }
 
     function tryInjectButton(id) {
-        if (!window.location.pathname.startsWith('/watch')) return false;
+        if (!isWatchPagePath()) return false;
 
         const config = persistentButtons.get(id);
         if (!config) return false;
@@ -1975,7 +1975,7 @@
     let lastVideoId = null;
 
     function checkAllButtons() {
-        if (!window.location.pathname.startsWith('/watch')) return;
+        if (!isWatchPagePath()) return;
 
         // Check if video changed
         const currentVideoId = getVideoId();
@@ -5240,11 +5240,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async init() {
                 if (window.location.pathname !== '/feed/subscriptions') return;
-                if (!this._initialized) {
-                    this._subscriptions = await this._fetchSubscriptions();
-                    this._initialized = true;
-                    DebugManager.log('Content', `Loaded ${this._subscriptions.length} subscriptions`);
-                }
+                this._subscriptions = await this._fetchSubscriptions();
+                // Feature may have been destroyed during the async fetch
+                if (!this._initialized) return;
+                DebugManager.log('Content', `Loaded ${this._subscriptions.length} subscriptions`);
                 if (this._subscriptions.length === 0) return;
 
                 // Process existing items
@@ -7999,6 +7998,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _btn: null,
             _pipWindow: null,
+            _timeInterval: null,
+            _injectTimer: null,
+
+            _scheduleInject(delay = 2000) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
 
             async _activate() {
                 const video = document.querySelector('video.html5-main-video');
@@ -8029,7 +8038,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         };
                         const timeEl = this._pipWindow.document.createElement('span');
                         timeEl.className = 'time';
-                        setInterval(() => {
+                        this._timeInterval = setInterval(() => {
                             const c = Math.floor(video.currentTime);
                             const d = Math.floor(video.duration || 0);
                             const fmt = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
@@ -8038,15 +8047,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         controls.appendChild(playBtn);
                         controls.appendChild(timeEl);
                         this._pipWindow.document.body.appendChild(controls);
-                        // Return video on close
+                        window.__ytkit_videoPopped = true;
+                        // Single pagehide handler: stop interval, restore video, clear state
                         this._pipWindow.addEventListener('pagehide', () => {
+                            if (this._timeInterval) {
+                                clearInterval(this._timeInterval);
+                                this._timeInterval = null;
+                            }
                             if (origNext) origParent.insertBefore(video, origNext);
                             else origParent.appendChild(video);
+                            window.__ytkit_videoPopped = false;
                             this._pipWindow = null;
                         });
-                        window.__ytkit_videoPopped = true;
-                        // Clear flag when video returns
-                        this._pipWindow.addEventListener('pagehide', () => { window.__ytkit_videoPopped = false; });
                         showToast('Video popped out', '#22c55e');
                         return;
                     } catch(e) { DebugManager.log('PopOut', 'Document PiP failed: ' + e.message); }
@@ -8075,12 +8087,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                setTimeout(() => this._inject(), 2000);
-                addNavigateRule('popOut', () => { this._btn = null; setTimeout(() => this._inject(), 2000); });
+                this._scheduleInject(2000);
+                addNavigateRule('popOut', () => {
+                    this._btn = null;
+                    this._scheduleInject(2000);
+                });
             },
             destroy() {
+                if (this._injectTimer) { clearTimeout(this._injectTimer); this._injectTimer = null; }
                 removeNavigateRule('popOut');
                 this._btn?.remove(); this._btn = null;
+                if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
                 // Close any open PiP window
                 if (this._pipWindow) { try { this._pipWindow.close(); } catch {} this._pipWindow = null; }
             }
@@ -8996,6 +9013,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Playback',
             icon: 'play-circle',
             _saveInterval: null,
+            _restoreTimer: null,
             _positions: null,
             _MAX_ENTRIES: 500,
 
@@ -9062,15 +9080,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async init() {
                 await this._load();
+                // Feature may have been destroyed during the async load
+                if (!this._initialized) return;
                 addNavigateRule('resumePlayback', () => {
-                    this._savePosition();
-                    setTimeout(() => this._restore(), 2000);
+                    // Note: _savePosition() is intentionally omitted here.
+                    // yt-navigate-finish fires after the URL has already changed to the new video,
+                    // so _getVideoId() would return the new video's ID — saving position 0 for it
+                    // would delete a legitimate saved position. The 15s interval and destroy()
+                    // already cover periodic and final saves for the video being left.
+                    if (this._restoreTimer) clearTimeout(this._restoreTimer);
+                    this._restoreTimer = setTimeout(() => { this._restoreTimer = null; this._restore(); }, 2000);
                 });
                 // Save position every 15 seconds
+                if (this._saveInterval) clearInterval(this._saveInterval);
                 this._saveInterval = setInterval(() => this._savePosition(), 15000);
-                setTimeout(() => this._restore(), 2000);
+                this._restoreTimer = setTimeout(() => { this._restoreTimer = null; this._restore(); }, 2000);
             },
             destroy() {
+                if (this._restoreTimer) { clearTimeout(this._restoreTimer); this._restoreTimer = null; }
                 this._savePosition();
                 this._save();
                 removeNavigateRule('resumePlayback');

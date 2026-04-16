@@ -211,7 +211,7 @@ async function build() {
     try {
     copyDir(EXT_DIR, chromeStageDir);
 
-const chromeZipName = 'astra-deck-chrome-v' + version + '.zip';
+    const chromeZipName = 'astra-deck-chrome-v' + version + '.zip';
     const chromeZipPath = path.join(BUILD_DIR, chromeZipName);
 
     try {
@@ -222,7 +222,7 @@ const chromeZipName = 'astra-deck-chrome-v' + version + '.zip';
     }
 
     // ── Chrome CRX Build ──
-const chromeCrxName = 'astra-deck-chrome-v' + version + '.crx';
+    const chromeCrxName = 'astra-deck-chrome-v' + version + '.crx';
     const chromeCrxPath = path.join(BUILD_DIR, chromeCrxName);
 
     try {
@@ -247,7 +247,7 @@ const chromeCrxName = 'astra-deck-chrome-v' + version + '.crx';
 
         console.log('Chrome CRX: build/' + chromeCrxName + ' (' + formatSize(chromeCrxPath) + ' KB)');
     } catch (e) {
-        console.error('Chrome CRX failed:', e.message);
+        throw new Error('Chrome CRX failed: ' + e.message);
     }
 
     // ── Firefox Build ──
@@ -272,7 +272,7 @@ const chromeCrxName = 'astra-deck-chrome-v' + version + '.crx';
 
     fs.writeFileSync(ffManifestPath, JSON.stringify(ffManifest, null, 2) + '\n', 'utf8');
 
-const firefoxZipName = 'astra-deck-firefox-v' + version + '.zip';
+    const firefoxZipName = 'astra-deck-firefox-v' + version + '.zip';
     const firefoxZipPath = path.join(BUILD_DIR, firefoxZipName);
 
     try {
@@ -284,7 +284,7 @@ const firefoxZipName = 'astra-deck-firefox-v' + version + '.zip';
 
     // ── Firefox XPI Build ──
     // XPI is just a ZIP with .xpi extension
-const firefoxXpiName = 'astra-deck-firefox-v' + version + '.xpi';
+    const firefoxXpiName = 'astra-deck-firefox-v' + version + '.xpi';
     const firefoxXpiPath = path.join(BUILD_DIR, firefoxXpiName);
     fs.copyFileSync(firefoxZipPath, firefoxXpiPath);
     console.log('Firefox XPI: build/' + firefoxXpiName + ' (' + formatSize(firefoxXpiPath) + ' KB)');

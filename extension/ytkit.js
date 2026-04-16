@@ -6035,8 +6035,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Wait for chat frame via MutationObserver (replaces 10s polling loop)
             _waitForChat(rightPct, topOffset, heightStr) {
                 const self = this;
-                // Clean up any prior pending observer
+                // Clean up any prior pending observer + safety timeout
                 if (this._pendingChatObs) { this._pendingChatObs.disconnect(); this._pendingChatObs = null; }
+                if (this._chatSafetyTimeout) { clearTimeout(this._chatSafetyTimeout); this._chatSafetyTimeout = null; }
                 let _chatObs = null;
                 const _onFound = (chatEl) => {
                     if (_chatObs) { _chatObs.disconnect(); _chatObs = null; }
@@ -6069,8 +6070,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 _chatObs.observe(document.body, { childList: true, subtree: true });
                 this._pendingChatObs = _chatObs;
-                // Safety timeout: disconnect after 10s
-                setTimeout(() => { if (_chatObs) { _chatObs.disconnect(); _chatObs = null; self._pendingChatObs = null; } }, 10000);
+                // Safety timeout: disconnect after 10s (managed so destroy() can cancel it)
+                this._chatSafetyTimeout = setTimeout(() => { this._chatSafetyTimeout = null; if (_chatObs) { _chatObs.disconnect(); _chatObs = null; self._pendingChatObs = null; } }, 10000);
             },
 
             // ── Build the fixed overlay (video full-width, right panel hidden) ──
@@ -8035,6 +8036,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._unmount();
                 if (this._pendingChatObs) { this._pendingChatObs.disconnect(); this._pendingChatObs = null; }
+                if (this._chatSafetyTimeout) { clearTimeout(this._chatSafetyTimeout); this._chatSafetyTimeout = null; }
                 this._lastVideoId = null;
                 this._styleEl?.remove();
                 this._splitMetaStyleEl?.remove();
@@ -9317,11 +9319,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async init() {
                 if (window.location.pathname !== '/feed/subscriptions') return;
-                if (!this._initialized) {
-                    this._subscriptions = await this._fetchSubscriptions();
-                    this._initialized = true;
-                    DebugManager.log('Content', `Loaded ${this._subscriptions.length} subscriptions`);
-                }
+                this._subscriptions = await this._fetchSubscriptions();
+                // Feature may have been destroyed during the async fetch
+                if (!this._initialized) return;
+                DebugManager.log('Content', `Loaded ${this._subscriptions.length} subscriptions`);
                 if (this._subscriptions.length === 0) return;
 
                 // Process existing items
@@ -14452,6 +14453,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             async init() {
                 await this._load();
+                // Feature may have been destroyed during the async load
+                if (!this._initialized) return;
                 addNavigateRule('resumePlayback', () => {
                     // Note: _savePosition() is intentionally omitted here.
                     // yt-navigate-finish fires after the URL has already changed to the new video,
@@ -18488,7 +18491,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Filter for exact video ID match from hash-prefix results
                     const match = data.find(entry => entry.videoID === videoId);
                     if (!match || !Array.isArray(match.segments)) return [];
-                    return match.segments.filter(s => Array.isArray(s.segment) && s.segment.length === 2);
+                    return match.segments.filter(s =>
+                        Array.isArray(s.segment) && s.segment.length === 2
+                        && Number.isFinite(s.segment[0]) && Number.isFinite(s.segment[1])
+                        && s.segment[0] >= 0 && s.segment[1] > s.segment[0]
+                    );
                 } catch (_) {
                     return [];
                 }
