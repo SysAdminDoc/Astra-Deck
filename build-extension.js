@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const crx3 = require('crx3');
+const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
 const {
     extractDefaultsFromSource,
     extractSettingsVersionFromSource
@@ -17,7 +18,8 @@ const MANIFEST = path.join(EXT_DIR, 'manifest.json');
 const YTKIT_JS = path.join(EXT_DIR, 'ytkit.js');
 const DEFAULT_SETTINGS_JSON = path.join(EXT_DIR, 'default-settings.json');
 const SETTINGS_META_JSON = path.join(EXT_DIR, 'settings-meta.json');
-const USERSCRIPT = path.join(__dirname, 'ytkit.user.js');
+const USERSCRIPT = resolveUserscriptPath(__dirname);
+const USERSCRIPT_BASENAME = getUserscriptBasename(__dirname);
 const CRX_KEY = path.join(__dirname, 'ytkit.pem');
 
 // Parse args
@@ -74,12 +76,15 @@ if (bumpType) {
     if (fs.existsSync(USERSCRIPT)) {
         let usSrc = fs.readFileSync(USERSCRIPT, 'utf8');
         const before = usSrc;
+        const userscriptRawUrl = `https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/${USERSCRIPT_BASENAME}`;
         usSrc = usSrc.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m, '$1YTKit v' + version);
         usSrc = usSrc.replace(/^(\/\/ @version\s+)[\d.]+/m, '$1' + version);
+        usSrc = usSrc.replace(/^(\/\/ @updateURL\s+).+$/m, '$1' + userscriptRawUrl);
+        usSrc = usSrc.replace(/^(\/\/ @downloadURL\s+).+$/m, '$1' + userscriptRawUrl);
         usSrc = usSrc.replace(/const YTKIT_VERSION = '[^']+';/, "const YTKIT_VERSION = '" + version + "';");
         if (usSrc !== before) {
             fs.writeFileSync(USERSCRIPT, usSrc, 'utf8');
-            console.log('Updated userscript version header in ytkit.user.js');
+            console.log('Updated userscript metadata in ' + USERSCRIPT_BASENAME);
         }
     }
 
@@ -128,11 +133,17 @@ function copyDir(src, dest) {
     }
 }
 
+function escapePowershellSingleQuotedString(value) {
+    return String(value).replace(/'/g, "''");
+}
+
 function createZip(sourceDir, zipPath) {
     if (process.platform === 'win32') {
         // Use Get-ChildItem -Force to include dotfiles, unlike the \* glob
+        const escapedSourceDir = escapePowershellSingleQuotedString(sourceDir);
+        const escapedZipPath = escapePowershellSingleQuotedString(zipPath);
         execSync(
-            `powershell -NoProfile -Command "Get-ChildItem -Path '${sourceDir}' -Force | Compress-Archive -DestinationPath '${zipPath}' -Force"`,
+            `powershell -NoProfile -Command "Get-ChildItem -LiteralPath '${escapedSourceDir}' -Force | Compress-Archive -DestinationPath '${escapedZipPath}' -Force"`,
             { stdio: 'inherit' }
         );
     } else {
@@ -185,7 +196,7 @@ function writeSettingsMetaCatalog(ytkitSource) {
 
 function readUserscriptSource() {
     if (!fs.existsSync(USERSCRIPT)) {
-        throw new Error('ytkit.user.js is missing — cannot package userscript artifact');
+        throw new Error(USERSCRIPT_BASENAME + ' is missing — cannot package userscript artifact');
     }
     return fs.readFileSync(USERSCRIPT, 'utf8');
 }
