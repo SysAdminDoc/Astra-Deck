@@ -13,6 +13,7 @@ const filesToCheck = [
     'extension/options.js',
     'extension/popup.js',
     'extension/ytkit.js',
+    'extension/ytkit-main.js',
     'extension/core/env.js',
     'extension/core/navigation.js',
     'extension/core/page.js',

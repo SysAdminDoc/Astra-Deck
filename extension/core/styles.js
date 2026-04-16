@@ -49,7 +49,7 @@
             'hidePinnedComments',
             'watchPageRestyle-comments'
         ].forEach((styleId) => {
-            document.getElementById(`yt-suite-style-${styleId}`)?.remove();
+            root.querySelector(`#yt-suite-style-${styleId}`)?.remove();
         });
         root.querySelectorAll('.ytkit-comment-search, #ytkit-comment-nav, .ytkit-vote-badge, .ytkit-heat-indicator').forEach((el) => el.remove());
         root.querySelectorAll('[data-ytkit-chat], [data-ytkit-pinned], [data-ytkit-heart], [data-ytkit-linked], [data-ytkit-enhanced], [data-ytkit-creator], [data-ytkit-comment-current]').forEach((el) => {
