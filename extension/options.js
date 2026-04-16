@@ -1188,6 +1188,16 @@
         resetButton.className = 'settings-reset-inline';
         resetButton.textContent = 'Reset';
         resetButton.disabled = defaultValue === undefined;
+        // Explain why the button is inert when there's no catalog default to
+        // fall back to; otherwise surface the default value that will be
+        // applied so the user knows what "Reset" actually does.
+        if (defaultValue === undefined) {
+            resetButton.title = 'No catalog default is available for this setting.';
+            resetButton.setAttribute('aria-label', `Reset ${humanizeKey(key)} (no catalog default available)`);
+        } else {
+            resetButton.title = `Reset ${humanizeKey(key)} to ${formatValuePreview(defaultValue)}`;
+            resetButton.setAttribute('aria-label', `Reset ${humanizeKey(key)} to ${formatValuePreview(defaultValue)}`);
+        }
         resetButton.addEventListener('click', () => {
             if (defaultValue === undefined) return;
             state.draftSettings[key] = deepClone(defaultValue);
