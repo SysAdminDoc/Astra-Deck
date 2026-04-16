@@ -30,3 +30,21 @@ body.ytkit-keyMoments ytd-macro-markers-list-item-renderer.ytd-structured-descri
     padding-left: 8px;
     margin-bottom: 4px;
 }
+
+/* removeAllShorts — prevent Shorts shelf flash on home/subscriptions */
+body.ytkit-removeAllShorts ytd-rich-shelf-renderer[is-shorts],
+body.ytkit-removeAllShorts ytd-reel-shelf-renderer,
+body.ytkit-removeAllShorts [is-shorts].ytd-rich-grid-row {
+    display: none !important;
+}
+
+/* hideRelatedVideos — prevent related panel flash on watch pages */
+body.ytkit-hideRelatedVideos ytd-watch-next-secondary-results-renderer {
+    display: none !important;
+}
+
+/* hideVoiceSearch */
+body.ytkit-hideVoiceSearch #voice-search-button { display: none !important; }
+
+/* hideMiniPlayer */
+body.ytkit-hideMiniPlayer ytd-miniplayer { display: none !important; }

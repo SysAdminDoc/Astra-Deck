@@ -561,7 +561,6 @@
         .settings-search-icon {
             left: 12px;
             color: var(--text-muted);
-            font-size: 14px;
             pointer-events: none;
         }
 
@@ -602,6 +601,8 @@
             flex-direction: column;
             gap: 4px;
             overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
         }
 
         .settings-group-button {
@@ -757,6 +758,8 @@
             gap: 10px;
             align-content: start;
             overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
         }
 
         .settings-empty {
@@ -1027,6 +1030,15 @@
             border-color: rgba(255, 107, 74, 0.3);
         }
 
+        .settings-groups::-webkit-scrollbar,
+        .settings-list::-webkit-scrollbar { width: 6px; height: 6px; }
+        .settings-groups::-webkit-scrollbar-track,
+        .settings-list::-webkit-scrollbar-track { background: transparent; }
+        .settings-groups::-webkit-scrollbar-thumb,
+        .settings-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
+        .settings-groups::-webkit-scrollbar-thumb:hover,
+        .settings-list::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
+
         @media (max-width: 960px) {
             .hero,
             .action-grid,
@@ -1258,7 +1270,7 @@
 
             <div class="settings-modal-toolbar">
                 <div class="settings-search-shell">
-                    <span class="settings-search-icon" aria-hidden="true">⌕</span>
+                    <svg class="settings-search-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input class="settings-search-input" id="settings-search" name="settings-search" type="search" placeholder="Search settings, keys, or groups…" aria-label="Search settings" autocomplete="off" spellcheck="false">
                     <button id="settings-clear-search-btn" class="settings-search-clear" type="button" aria-label="Clear settings search" hidden>×</button>
                 </div>

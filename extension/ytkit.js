@@ -23756,6 +23756,11 @@ body.ytkit-panel-open {
     box-sizing: border-box;
 }
 
+#ytkit-settings-panel ::-webkit-scrollbar { width: 6px; height: 6px; }
+#ytkit-settings-panel ::-webkit-scrollbar-track { background: transparent; }
+#ytkit-settings-panel ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+#ytkit-settings-panel ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.24); }
+
 #ytkit-settings-panel {
     position: fixed;
     top: 50%;
@@ -23771,6 +23776,7 @@ body.ytkit-panel-open {
         radial-gradient(ellipse at top left, rgba(255,107,74,0.05), transparent 40%),
         var(--ytkit-bg-base);
     border: 1px solid var(--ytkit-border);
+    border-radius: 22px;
     box-shadow: 0 24px 80px rgba(0,0,0,0.5);
     color-scheme: dark;
     font-family: var(--ytkit-font);
@@ -23929,7 +23935,6 @@ body.ytkit-panel-open #ytkit-settings-panel {
     border-radius: 12px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.08);
     cursor: pointer;
     transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease, color 180ms ease;
     flex-shrink: 0;
@@ -23963,6 +23968,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
     background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 20%), rgba(9,13,18,0.88);
     border-right: 1px solid rgba(255,255,255,0.08);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.12) transparent;
     flex-shrink: 0;
 }
 
@@ -24136,6 +24143,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-nav-count {
     padding: 5px 8px;
+    border-radius: 999px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.06);
     font-size: 10px;
@@ -24157,6 +24165,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
     min-width: 0;
     padding: 14px 16px 16px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.12) transparent;
 }
 
 .ytkit-pane {
@@ -24613,7 +24623,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     #ytkit-settings-panel {
         width: 100vw;
         height: 100vh;
-        border-radius: 0;
+        border-radius: 14px;
         max-height: 100vh;
     }
 
