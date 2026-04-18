@@ -1,5 +1,13 @@
 {
   "private": true,
+  "name": "youtube-kit",
+  "description": "Chrome/Firefox MV3 extension and Tampermonkey userscript for YouTube enhancement",
+  "author": "SysAdminDoc",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SysAdminDoc/YouTube-Kit.git"
+  },
   "engines": {
     "node": ">=22"
   },

@@ -11,15 +11,13 @@
   <header class="hero">
     <div class="hero-lockup">
       <div class="hero-mark-shell" aria-hidden="true">
-        <img class="hero-mark" src="icons/brand-glyph.svg" alt="" width="28" height="28">
+        <img class="hero-mark" src="icons/brand-glyph.svg" alt="" width="20" height="20">
       </div>
       <div class="hero-copy">
         <div class="eyebrow-row">
           <span class="eyebrow">Astra Deck</span>
           <span class="sub" id="version">v—</span>
         </div>
-        <h1>Quick Controls</h1>
-        <p class="hero-note">Flip your most-used YouTube enhancements without opening the full workspace.</p>
       </div>
     </div>
     <div class="hero-pills" aria-label="Popup summary">
@@ -30,17 +28,17 @@
   <div class="toolbar">
     <div class="search-row">
       <label class="sr-only" for="q">Filter quick toggles</label>
-      <svg class="search-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <svg class="search-icon" aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="q" name="quick-toggle-filter" type="search" placeholder="Filter toggles…" aria-label="Filter quick toggles" autocomplete="off" spellcheck="false" autofocus>
-      <button id="clearSearch" class="clear-search" type="button" aria-label="Clear quick toggle filter" hidden>×</button>
+      <button id="clearSearch" class="clear-search" type="button" aria-label="Clear quick toggle filter" hidden>&times;</button>
     </div>
-    <p class="support-note" id="supportNote">Quick toggles sync to open YouTube tabs automatically.</p>
+    <p class="support-note" id="supportNote">Changes sync to open YouTube tabs automatically.</p>
     <div class="status-banner" id="status" aria-live="polite"></div>
   </div>
   <section id="toggles" class="toggles" aria-label="Quick toggles"></section>
   <footer>
-    <button id="openPanel" class="primary" type="button">Open Settings On This Tab</button>
-    <button id="openOptions" class="ghost" type="button">Open Options Page</button>
+    <button id="openPanel" class="primary" type="button">Open Full Settings</button>
+    <button id="openOptions" class="ghost" type="button">Options</button>
   </footer>
 </div>
 <script src="popup.js"></script>

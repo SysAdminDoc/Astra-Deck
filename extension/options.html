@@ -162,7 +162,7 @@
 
         .hero-copy {
             margin: 0;
-            max-width: 62ch;
+            max-width: 52ch;
             color: var(--text-muted);
             font-size: 13px;
             line-height: 1.6;
@@ -242,8 +242,8 @@
 
         .stat-value {
             display: block;
-            margin-top: 8px;
-            font-size: clamp(22px, 2.6vw, 30px);
+            margin-top: 6px;
+            font-size: clamp(20px, 2.4vw, 28px);
             font-weight: 800;
             letter-spacing: -0.05em;
             font-variant-numeric: tabular-nums;
@@ -1344,12 +1344,9 @@
                 </div>
                 <h1>Astra <span class="brand-accent">Deck</span> Settings</h1>
                 <p class="hero-copy">
-                    Back up your setup, restore a saved configuration, or inspect what Astra Deck keeps on this device.
-                    Open the full editor whenever you want to browse every setting without loading YouTube.
+                    Back up your configuration, restore from a snapshot, or browse every setting without loading YouTube.
                 </p>
                 <div class="hero-pills">
-                    <span class="pill">Export Ready</span>
-                    <span class="pill">Import Ready</span>
                     <span class="pill">Local Storage Only</span>
                 </div>
             </div>
@@ -1359,36 +1356,36 @@
                     <div class="version-value" id="version"></div>
                 </div>
                 <p class="version-note">
-                    Backups, resets, and quick storage inspection all live here.
+                    Installed and running.
                 </p>
             </div>
         </section>
 
         <section class="stats-grid" aria-label="Storage statistics">
             <div class="stat-card">
-                <span class="stat-label">Keys</span>
+                <span class="stat-label">Storage Keys</span>
                 <span class="stat-value" id="stat-keys">0</span>
-                <span class="stat-subtext">items stored</span>
+                <span class="stat-subtext">items</span>
             </div>
             <div class="stat-card">
-                <span class="stat-label">Storage</span>
+                <span class="stat-label">Disk Usage</span>
                 <span class="stat-value" id="stat-size">0 KB</span>
-                <span class="stat-subtext">estimated usage</span>
+                <span class="stat-subtext">estimated</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Hidden Videos</span>
                 <span class="stat-value" id="stat-hidden-videos">0</span>
-                <span class="stat-subtext">video rules</span>
+                <span class="stat-subtext">rules</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Blocked Channels</span>
                 <span class="stat-value" id="stat-blocked-channels">0</span>
-                <span class="stat-subtext">channel rules</span>
+                <span class="stat-subtext">rules</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Bookmarks</span>
                 <span class="stat-value" id="stat-bookmarks">0</span>
-                <span class="stat-subtext">saved items</span>
+                <span class="stat-subtext">saved</span>
             </div>
         </section>
 
@@ -1396,52 +1393,52 @@
             <article class="action-card">
                 <h2 class="action-title">Edit Settings</h2>
                 <p class="action-copy">
-                    Search, review, and save every Astra Deck preference in one place — no YouTube tab required.
+                    Browse and edit every preference in one place. No YouTube tab required.
                 </p>
                 <div class="button-row">
-                    <button id="open-settings-modal-btn" class="primary" type="button">Open Settings</button>
+                    <button id="open-settings-modal-btn" class="primary" type="button">Open Editor</button>
                 </div>
             </article>
 
             <article class="action-card">
-                <h2 class="action-title">Export Snapshot</h2>
+                <h2 class="action-title">Export</h2>
                 <p class="action-copy">
-                    Save your current preferences, hidden content rules, and bookmarks as a portable JSON backup.
+                    Download your settings, hidden videos, blocked channels, and bookmarks as JSON.
                 </p>
                 <div class="button-row">
-                    <button id="export-btn" class="primary" type="button">Export Settings</button>
+                    <button id="export-btn" class="primary" type="button">Export</button>
                 </div>
             </article>
 
             <article class="action-card">
-                <h2 class="action-title">Import Setup</h2>
+                <h2 class="action-title">Import</h2>
                 <p class="action-copy">
-                    Restore a previous Astra Deck configuration from a backup. Open YouTube tabs update automatically after.
+                    Restore from a previous backup. Open YouTube tabs update automatically.
                 </p>
                 <div class="button-row">
-                    <button id="import-btn" type="button">Import Settings</button>
+                    <button id="import-btn" type="button">Import</button>
                     <input type="file" id="import-file" accept=".json,application/json" hidden>
                 </div>
             </article>
 
             <article class="action-card">
-                <h2 class="action-title">Reset Storage</h2>
+                <h2 class="action-title">Reset</h2>
                 <p class="action-copy">
-                    Clear everything stored by the extension when you want a fresh start or to remove stale state.
+                    Clear all extension storage for a fresh start. This cannot be undone.
                 </p>
                 <div class="button-row">
-                    <button id="reset-btn" class="danger" type="button">Reset All Settings</button>
+                    <button id="reset-btn" class="danger" type="button">Reset All</button>
                 </div>
             </article>
         </section>
 
         <section class="panel" aria-label="Storage notes">
-            <h2>What Gets Stored</h2>
+            <h2>Storage</h2>
             <p id="storage-info">Loading storage details…</p>
             <ul class="notes-list">
-                <li><strong>Export</strong> includes core settings, hidden videos, blocked channels, and bookmarks.</li>
-                <li><strong>Import</strong> replaces matching stored data with what is found in the selected file.</li>
-                <li><strong>Reset</strong> clears extension storage only. It does not remove built artifacts or local downloader files.</li>
+                <li><strong>Export</strong> saves settings, hidden videos, blocked channels, and bookmarks to JSON.</li>
+                <li><strong>Import</strong> restores matching data from a previously exported file.</li>
+                <li><strong>Reset</strong> clears extension storage only — no system files are affected.</li>
             </ul>
             <div class="status" id="status" aria-live="polite"></div>
         </section>

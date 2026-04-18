@@ -4,6 +4,33 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.11.1] - Deep Audit, Bugfixes, and Premium Polish
+
+### Fixed
+
+- **DiagnosticLog null safety.** `record()`, `get()`, and `clear()` now use optional chaining on `appState?.settings` to prevent crashes before settings initialization. `record()` catch block logs warnings instead of silently swallowing. `clear()` guards against missing `settingsManager`.
+- **DeArrow fetch deduplication.** In-flight fetch dedup map (`_pending`) now declared in the feature object instead of lazy-initialized inside `_fetchBranding()`, preventing race conditions on first concurrent access.
+- **CPU Tamer init ordering.** Native timer snapshot moved after WebGL prerequisite checks pass. Added `_patched` flag so `destroy()` only restores timers if they were actually patched, preventing stale restoration on early bail.
+- **Video rotation validation.** `videoRotationAngle` now clamped to `[0, 90, 180, 270]` via allowlist, preventing arbitrary CSS from corrupted settings values.
+- **Subtitle download guard.** Added `_downloading` flag to prevent parallel downloads from rapid double-clicks on the SRT button.
+- **CI workflow.** Moved tag-vs-manifest version check before the build step to fail fast. Removed `2>/dev/null` on `gh release create` to surface real errors.
+
+### Changed — Premium UI Polish
+
+- **Popup header compressed** from 180px lockup to 70px compact header. Reclaims ~110px for toggle list.
+- **Toggle on-state redesigned** with warm-gradient background and accent-tinted name text for instant visual scannability.
+- **Toggle density tightened** — 4px gap (was 8px), 10px padding (was 12px), 1-line descriptions (was 2). Fits 2-3 more toggles in viewport.
+- **Switch resized** from 42x24 to 38x22 for better proportion.
+- **Footer buttons shortened** — "Open Settings On This Tab" → "Open Full Settings", "Open Options Page" → "Options".
+- **Contextual notes simplified** from 30+ words to 5-8 words.
+- **Options page copy tightened** across hero, action cards, stat subtexts, and notes panel.
+- **CSS custom properties** added for radius tokens (`--radius-sm/md/lg`).
+- **Padding grid standardized** to 8/10/12/16px increments.
+- **Transitions snapped** from 220ms to 140-160ms for faster feel.
+- **package.json** — added name, description, author, license, and repository fields.
+
+---
+
 ## [3.11.0] - Hardening, Accessibility, and Cross-Surface Polish
 
 ### Fixed
