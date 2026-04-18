@@ -436,7 +436,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.11.2';
+    const YTKIT_VERSION = '3.11.3';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -6469,46 +6469,48 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 this._wheelHandler = (e) => {
                     if (!this._isActive) return;
-                    if (!isOverPlayer(e.target) && !isInRightContent(e.target)) return;
-                    // Any time we take action on a wheel event (expand, collapse,
-                    // or manual scroll of the right panel), we must stop it from
-                    // continuing to propagate — otherwise YouTube's own
-                    // wheel-to-volume listener on #movie_player fires on the same
-                    // event and the user's scroll gesture also changes the volume.
-                    // `passive: true` only prevents preventDefault(); stopPropagation
-                    // is still legal and kills the bubble phase entirely.
-                    if (!this._isSplit && e.deltaY > 0 && isOverPlayer(e.target)) {
-                        e.stopPropagation();
-                        this._expandSplit();
+
+                    // Before split opens: scroll-down over player → expand
+                    if (!this._isSplit) {
+                        if (e.deltaY > 0 && isOverPlayer(e.target)) {
+                            e.stopPropagation();
+                            this._expandSplit();
+                        }
                         return;
                     }
-                    if (this._isSplit) {
-                        // Scroll UP over the video → collapse split (3-tick guard)
-                        if (isOverPlayer(e.target) && e.deltaY < 0) {
-                            e.stopPropagation();
-                            _playerCollapseCount++;
-                            clearTimeout(_playerCollapseTimer);
-                            _playerCollapseTimer = setTimeout(() => { _playerCollapseCount = 0; }, 600);
-                            if (_playerCollapseCount >= 3) {
-                                _playerCollapseCount = 0;
-                                this._collapseSplit(false);
-                            }
-                            return;
-                        }
-                        // Reset collapse counter on any non-up scroll over player
-                        if (isOverPlayer(e.target)) {
+
+                    // ── Split is open ──
+                    // The entire viewport is either the player (left) or the
+                    // right panel content.  No isInRightContent gate needed —
+                    // any wheel event the user can physically generate is on
+                    // one of these two surfaces.
+
+                    // Scroll UP over the video → collapse split (3-tick guard)
+                    if (isOverPlayer(e.target) && e.deltaY < 0) {
+                        e.stopPropagation();
+                        _playerCollapseCount++;
+                        clearTimeout(_playerCollapseTimer);
+                        _playerCollapseTimer = setTimeout(() => { _playerCollapseCount = 0; }, 600);
+                        if (_playerCollapseCount >= 3) {
                             _playerCollapseCount = 0;
+                            this._collapseSplit(false);
                         }
-                        // Forward wheel events to the right panel scroll target.
-                        // Covers both:
-                        //  - scrolling over the player area (target not in right content)
-                        //  - scrolling over the right panel comments (target in right
-                        //    content but native scroll blocked by position:fixed layout)
-                        const scrollEl = this._scrollTarget;
-                        if (scrollEl) {
-                            e.stopPropagation();
-                            scrollEl.scrollTop += e.deltaY;
-                        }
+                        return;
+                    }
+
+                    // Reset collapse counter on any downward scroll over player
+                    if (isOverPlayer(e.target) && e.deltaY > 0) {
+                        _playerCollapseCount = 0;
+                    }
+
+                    // Forward wheel to the right panel scroll target.
+                    // This covers scrolling over the player area (proxied to
+                    // comments) AND scrolling directly over the right panel
+                    // content where native scroll is blocked by position:fixed.
+                    const scrollEl = this._scrollTarget;
+                    if (scrollEl) {
+                        e.stopPropagation();
+                        scrollEl.scrollTop += e.deltaY;
                     }
                 };
                 this._touchStartY = 0;
