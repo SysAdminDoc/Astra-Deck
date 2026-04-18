@@ -230,16 +230,25 @@
         disable() { this._enabled = false; },
         record(ctx, msg) {
             if (!this._enabled && !appState?.settings?.diagnosticLog) return;
+            if (!appState?.settings) return;
             try {
                 const arr = appState.settings._errors || [];
                 arr.push({ ts: Date.now(), ctx: String(ctx).slice(0, 40), msg: String(msg).slice(0, 500) });
                 if (arr.length > this._cap) arr.splice(0, arr.length - this._cap);
                 appState.settings._errors = arr;
                 // Debounced save handled by settingsManager on next settings touch; avoid thrashing
-            } catch {}
+            } catch (e) {
+                console.warn('[YTKit] DiagnosticLog.record failed:', e);
+            }
         },
-        get() { return appState.settings._errors || []; },
-        clear() { appState.settings._errors = []; settingsManager.save(appState.settings); },
+        get() { return appState?.settings?._errors || []; },
+        clear() {
+            if (!appState?.settings) return;
+            appState.settings._errors = [];
+            if (typeof settingsManager !== 'undefined' && settingsManager?.save) {
+                settingsManager.save(appState.settings);
+            }
+        },
         download() {
             const data = JSON.stringify({
                 version: (typeof YTKIT_VERSION !== 'undefined') ? YTKIT_VERSION : 'unknown',
@@ -427,7 +436,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.11.0';
+    const YTKIT_VERSION = '3.11.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -18219,22 +18228,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'cpu',
             _originals: null,
             _pumpInterval: null,
+            _patched: false,
             init() {
                 if (window.__ytkit_cpu_tamer) return;
-                // Snapshot native timers BEFORE setting the patch flag so destroy
-                // can always restore cleanly even if setup bails out mid-way.
-                this._originals = {
-                    setTimeout: window.setTimeout,
-                    setInterval: window.setInterval,
-                    clearTimeout: window.clearTimeout,
-                    clearInterval: window.clearInterval
-                };
                 const win = window;
-                const { setTimeout: origSetTimeout, setInterval: origSetInterval } = this._originals;
                 const PromiseCtor = (async () => {})().constructor;
                 let canvas;
                 try { canvas = document.createElement('canvas'); } catch(e) { return; }
                 if (!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))) return;
+                // Snapshot native timers only after prerequisite checks pass
+                this._originals = {
+                    setTimeout: win.setTimeout,
+                    setInterval: win.setInterval,
+                    clearTimeout: win.clearTimeout,
+                    clearInterval: win.clearInterval
+                };
+                const { setTimeout: origSetTimeout, setInterval: origSetInterval } = this._originals;
                 win.__ytkit_cpu_tamer = true;
                 let afHandler = null;
                 const rafPromise = (resolve) => requestAnimationFrame(afHandler = resolve);
@@ -18274,6 +18283,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pumpInterval = origSetInterval(() => {
                     if (afHandler) { afHandler(); afHandler = null; }
                 }, 125);
+                this._patched = true;
             },
             destroy() {
                 // Use the preserved native clearInterval (not the patched one) so the
@@ -18282,13 +18292,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._originals.clearInterval.call(window, this._pumpInterval);
                 }
                 this._pumpInterval = null;
-                if (this._originals) {
+                if (this._patched && this._originals) {
                     window.setTimeout = this._originals.setTimeout;
                     window.setInterval = this._originals.setInterval;
                     window.clearTimeout = this._originals.clearTimeout;
                     window.clearInterval = this._originals.clearInterval;
                 }
                 this._originals = null;
+                this._patched = false;
                 window.__ytkit_cpu_tamer = false;
             }
         },
@@ -18732,6 +18743,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             isParent: true,
             _cache: {},
             _cacheMeta: {},
+            _pending: {},
             _observer: null,
             _navRuleId: 'deArrowNav',
             _generation: 0,
@@ -18804,9 +18816,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 }
                 // Deduplicate in-flight fetches for the same videoId
-                if (this._pending?.[videoId]) return this._pending[videoId];
+                if (this._pending[videoId]) return this._pending[videoId];
                 const promise = this._doFetch(videoId);
-                if (!this._pending) this._pending = {};
                 this._pending[videoId] = promise;
                 try { return await promise; } finally { delete this._pending[videoId]; }
             },
@@ -19223,7 +19234,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingKey: 'videoRotationAngle',
             _styleEl: null,
             _apply() {
-                const angle = parseInt(appState.settings.videoRotationAngle) || 0;
+                const raw = parseInt(appState.settings.videoRotationAngle) || 0;
+                const angle = [0, 90, 180, 270].includes(raw) ? raw : 0;
                 const css = angle === 0
                     ? `.html5-main-video { transform: none !important; }`
                     : `.html5-main-video {
@@ -19682,6 +19694,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _btn: null,
             _injectTimer: null,
+            _downloading: false,
             _scheduleInject(delay = 2000) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = setTimeout(() => {
@@ -19699,6 +19712,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return `${pad(h)}:${pad(m)}:${pad(s)},${pad(f, 3)}`;
             },
             async _download() {
+                if (this._downloading) return;
+                this._downloading = true;
                 try {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
@@ -19734,6 +19749,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (e) {
                     DiagnosticLog?.record('subtitleDownload', e.message);
                     showToast('Subtitle download failed: ' + e.message, '#ef4444');
+                } finally {
+                    this._downloading = false;
                 }
             },
             _inject() {

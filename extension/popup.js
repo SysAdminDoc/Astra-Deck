@@ -222,22 +222,22 @@ function getTabContext(tab) {
     const url = tab?.url || '';
     if (isSupportedInlinePanelUrl(url)) {
         return {
-            label: 'This Tab',
-            note: 'Open the full Astra Deck workspace directly inside this YouTube page.',
-            openLabel: 'Open Settings On This Tab'
+            label: 'YouTube',
+            note: 'Changes sync to this tab automatically.',
+            openLabel: 'Open Full Settings'
         };
     }
     if (isAnyYouTubeUrl(url)) {
         return {
-            label: 'YouTube Tab',
-            note: 'This page cannot host the inline workspace, but the options page is ready whenever you need the full editor.',
+            label: 'YouTube',
+            note: 'Changes sync to open YouTube tabs automatically.',
             openLabel: 'Open Full Settings'
         };
     }
     return {
         label: 'Any Tab',
-        note: 'Quick toggles still sync to open YouTube tabs. Open YouTube first if you want the full in-page workspace.',
-        openLabel: 'Open YouTube First'
+        note: 'Changes sync when you open YouTube.',
+        openLabel: 'Go to YouTube'
     };
 }
 

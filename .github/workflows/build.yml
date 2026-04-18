@@ -27,16 +27,6 @@ jobs:
           npm test
           npm run check
 
-      - name: Build Release Artifacts
-        run: npm run build:userscript
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: YouTube-Kit-build-artifacts
-          path: build/*
-          if-no-files-found: error
-
       - name: Verify tag matches manifest version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -47,10 +37,20 @@ jobs:
             exit 1
           fi
 
+      - name: Build Release Artifacts
+        run: npm run build:userscript
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: YouTube-Kit-build-artifacts
+          path: build/*
+          if-no-files-found: error
+
       - name: Release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          gh release create "${{ github.ref_name }}" build/* --generate-notes 2>/dev/null \
+          gh release create "${{ github.ref_name }}" build/* --generate-notes \
             || gh release upload "${{ github.ref_name }}" build/* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
