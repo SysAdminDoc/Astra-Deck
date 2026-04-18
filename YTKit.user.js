@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v3.11.2
+// @name         YTKit v3.11.3
 // @namespace    https://github.com/SysAdminDoc/YouTube-Kit
-// @version      3.11.2
+// @version      3.11.3
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
@@ -116,7 +116,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.11.2';
+    const YTKIT_VERSION = '3.11.3';
 
     // ── Z-Index Hierarchy ──
     const Z = {
