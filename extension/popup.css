@@ -1,25 +1,28 @@
 :root {
   color-scheme: dark;
-  --page-bg: #08090c;
-  --panel-bg: rgba(15, 20, 28, 0.96);
-  --panel-bg-strong: #0f141c;
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --surface-soft: rgba(255, 255, 255, 0.04);
-  --surface-hover: rgba(255, 255, 255, 0.08);
-  --text-primary: #f4f6fb;
-  --text-secondary: #d6deea;
-  --text-muted: #8a95a9;
+  --page-bg: #07080b;
+  --panel-bg: rgba(13, 17, 24, 0.96);
+  --panel-bg-strong: #0d1118;
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --surface-soft: rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.065);
+  --text-primary: #f0f3f9;
+  --text-secondary: #c4cedf;
+  --text-muted: #7d8a9e;
   --accent: #ff6b4a;
   --accent-strong: #ff8e74;
-  --accent-soft: rgba(255, 107, 74, 0.14);
-  --accent-blue: #6aa9ff;
-  --success: #35c77f;
+  --accent-soft: rgba(255, 107, 74, 0.12);
+  --accent-glow: rgba(255, 107, 74, 0.06);
+  --success: #34c77e;
   --error: #ff7480;
   --info: #6aa9ff;
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.48);
-  --focus-ring: 0 0 0 2px rgba(8, 9, 12, 0.98), 0 0 0 4px rgba(255, 107, 74, 0.55);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.5);
+  --focus-ring: 0 0 0 2px var(--page-bg), 0 0 0 4px rgba(255, 107, 74, 0.55);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
 }
 
 * {
@@ -29,65 +32,68 @@
 html,
 body {
   margin: 0;
-  min-width: 368px;
-  min-height: 488px;
+  min-width: 360px;
+  min-height: 480px;
   background:
-    radial-gradient(circle at top left, rgba(255, 107, 74, 0.12), transparent 26%),
-    radial-gradient(circle at top right, rgba(106, 169, 255, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 14%),
+    radial-gradient(ellipse at 0% 0%, rgba(255, 107, 74, 0.09), transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(106, 169, 255, 0.06), transparent 50%),
     var(--page-bg);
   color: var(--text-primary);
-  font: 13px/1.45 "Aptos", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  width: 368px;
+  width: 360px;
   overscroll-behavior: contain;
 }
 
 .wrap {
   display: flex;
   flex-direction: column;
-  min-height: 488px;
+  min-height: 480px;
 }
 
+/* ── Header ── */
+
 .hero {
-  padding: 16px 14px 12px;
+  padding: 14px 16px 12px;
   border-bottom: 1px solid var(--panel-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
-    rgba(10, 14, 20, 0.68);
-  backdrop-filter: blur(18px);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    rgba(10, 13, 19, 0.7);
+  backdrop-filter: blur(20px);
 }
 
 .hero-lockup {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  gap: 10px;
+  align-items: center;
 }
 
 .hero-mark-shell {
-  width: 46px;
-  height: 46px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 11px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    linear-gradient(145deg, rgba(255, 107, 74, 0.18), rgba(106, 169, 255, 0.06)),
+    linear-gradient(145deg, rgba(255, 107, 74, 0.16), rgba(106, 169, 255, 0.05)),
     rgba(255, 255, 255, 0.02);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 22px rgba(255, 107, 74, 0.08);
+  box-shadow: 0 4px 12px rgba(255, 107, 74, 0.06);
   flex-shrink: 0;
 }
 
 .hero-mark {
   display: block;
+  width: 20px;
+  height: 20px;
 }
 
 .hero-copy {
   min-width: 0;
+  flex: 1;
 }
 
 .eyebrow-row {
@@ -97,77 +103,64 @@ body {
 }
 
 .eyebrow {
-  display: inline-flex;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  border: 1px solid rgba(255, 107, 74, 0.22);
-  color: #ffb7a4;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .sub {
   color: var(--text-muted);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  opacity: 0.8;
 }
 
+/* Collapsed: no h1 or hero-note needed in compact header */
 .hero h1 {
-  margin: 10px 0 4px;
-  font-size: 22px;
-  line-height: 1;
-  letter-spacing: -0.05em;
-  text-wrap: balance;
+  display: none;
 }
 
 .hero-note {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.55;
-  text-wrap: pretty;
+  display: none;
 }
 
 .hero-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 5px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .pill strong {
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
 
-.toolbar {
-  padding: 12px 14px 10px;
-}
+/* ── Toolbar ── */
 
-.toolbar > .search-row + .support-note {
-  margin-top: 10px;
+.toolbar {
+  padding: 10px 12px 8px;
 }
 
 .search-row {
@@ -176,32 +169,44 @@ body {
 
 .search-row input {
   width: 100%;
-  min-height: 40px;
-  padding: 0 40px 0 38px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
-    rgba(10, 14, 20, 0.88);
+  min-height: 36px;
+  padding: 0 36px 0 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.035);
   color: var(--text-primary);
   font: inherit;
+  font-size: 12px;
+  transition:
+    border-color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+
+.search-row input:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .search-row input::placeholder {
   color: var(--text-muted);
 }
 
-.search-row input:focus-visible,
+.search-row input:focus-visible {
+  outline: none;
+  border-color: rgba(255, 107, 74, 0.4);
+  box-shadow: var(--focus-ring);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 button:focus-visible {
   outline: none;
-  border-color: rgba(255, 107, 74, 0.42);
+  border-color: rgba(255, 107, 74, 0.4);
   box-shadow: var(--focus-ring);
 }
 
-/* Slightly inset the toggle row ring so the double-halo focus indicator
-   reads as a clean accent outline rather than clipping the 16px radius. */
 .toggle:focus-visible {
-  border-color: rgba(255, 107, 74, 0.42);
+  border-color: rgba(255, 107, 74, 0.4);
   box-shadow: var(--focus-ring);
 }
 
@@ -213,13 +218,14 @@ button:focus-visible {
 }
 
 .search-icon {
-  left: 13px;
+  left: 11px;
   color: var(--text-muted);
   pointer-events: none;
+  opacity: 0.7;
 }
 
 .clear-search {
-  right: 8px;
+  right: 6px;
   width: 24px;
   height: 24px;
   display: inline-flex;
@@ -230,11 +236,11 @@ button:focus-visible {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   padding: 0;
   transition:
-    background-color 180ms var(--ease-out),
-    color 180ms var(--ease-out);
+    background-color 140ms var(--ease-out),
+    color 140ms var(--ease-out);
 }
 
 .clear-search:hover {
@@ -243,69 +249,77 @@ button:focus-visible {
 }
 
 .support-note {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.55;
+  font-size: 10.5px;
+  line-height: 1.5;
+  opacity: 0.75;
 }
+
+.toolbar > .search-row + .support-note {
+  margin-top: 8px;
+}
+
+/* ── Status Banner ── */
 
 .status-banner {
   display: none;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   font-size: 11px;
-  font-weight: 700;
-  line-height: 1.45;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .status-banner.is-visible {
   display: block;
-  animation: ytkit-fade-up 220ms var(--ease-out) both;
+  animation: ytkit-fade-up 180ms var(--ease-out) both;
 }
 
 @keyframes ytkit-fade-up {
-  from { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 0; transform: translateY(-3px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .status-banner.status-success {
-  background: rgba(53, 199, 127, 0.12);
-  border-color: rgba(53, 199, 127, 0.24);
-  color: #d7ffe8;
+  background: rgba(52, 199, 126, 0.1);
+  border-color: rgba(52, 199, 126, 0.2);
+  color: #b8f5d5;
 }
 
 .status-banner.status-error {
-  background: rgba(255, 116, 128, 0.12);
-  border-color: rgba(255, 116, 128, 0.24);
-  color: #ffe0e4;
+  background: rgba(255, 116, 128, 0.1);
+  border-color: rgba(255, 116, 128, 0.2);
+  color: #ffd4d9;
 }
 
 .status-banner.status-info {
-  background: rgba(106, 169, 255, 0.12);
-  border-color: rgba(106, 169, 255, 0.24);
-  color: #ddecff;
+  background: rgba(106, 169, 255, 0.1);
+  border-color: rgba(106, 169, 255, 0.2);
+  color: #d0e3ff;
 }
+
+/* ── Toggle List ── */
 
 .toggles {
   flex: 1;
   overflow-y: auto;
-  padding: 2px 10px 12px;
+  padding: 4px 8px 10px;
   display: grid;
-  gap: 8px;
+  gap: 4px;
+  align-content: start;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-  /* Reserve the scrollbar lane even when the list is short so rows don't
-     shift horizontally the moment scrolling kicks in. */
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   scrollbar-gutter: stable;
 }
 
-.toggles::-webkit-scrollbar { width: 6px; }
+.toggles::-webkit-scrollbar { width: 5px; }
 .toggles::-webkit-scrollbar-track { background: transparent; }
-.toggles::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
-.toggles::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
+.toggles::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 999px; }
+.toggles::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
 .toggle,
 .toggle-skeleton {
@@ -314,13 +328,10 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 12px 12px 12px 13px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
-    rgba(11, 16, 23, 0.9);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
 }
 
 .toggle {
@@ -330,37 +341,39 @@ button:focus-visible {
   font: inherit;
   appearance: none;
   transition:
-    background-color 180ms var(--ease-out),
-    border-color 180ms var(--ease-out),
-    transform 160ms var(--ease-out),
-    box-shadow 180ms var(--ease-out);
+    background-color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    box-shadow 140ms var(--ease-out);
 }
 
 .toggle:hover {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
-    rgba(15, 20, 28, 0.96);
-  border-color: rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 6px 18px rgba(0, 0, 0, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .toggle:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.03);
 }
 
+/* ── On State ── */
 .toggle.on {
-  border-color: rgba(255, 107, 74, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
-    rgba(20, 17, 18, 0.96);
+    linear-gradient(135deg, rgba(255, 107, 74, 0.06), rgba(255, 107, 74, 0.02));
+  border-color: rgba(255, 107, 74, 0.14);
+}
+
+.toggle.on:hover {
+  background:
+    linear-gradient(135deg, rgba(255, 107, 74, 0.09), rgba(255, 107, 74, 0.04));
+  border-color: rgba(255, 107, 74, 0.2);
+}
+
+.toggle.on .name {
+  color: #ffd8cc;
 }
 
 .toggle:disabled {
-  opacity: 0.62;
+  opacity: 0.55;
   cursor: progress;
 }
 
@@ -369,42 +382,40 @@ button:focus-visible {
 }
 
 .toggle .name {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  /* Long toggle names stay on one line with ellipsis instead of wrapping and
-     compressing the switch column. */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 140ms var(--ease-out);
 }
 
 .toggle .desc {
-  margin-top: 3px;
+  margin-top: 1px;
   color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.5;
-  text-wrap: pretty;
-  /* Cap at two lines so a verbose description never pushes the row into a
-     tall card that breaks the list's vertical rhythm. */
+  font-size: 10.5px;
+  line-height: 1.45;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+/* ── Switch ── */
+
 .switch {
-  width: 42px;
-  height: 24px;
+  width: 38px;
+  height: 22px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
   flex-shrink: 0;
   transition:
-    background-color 220ms var(--ease-out),
-    border-color 220ms var(--ease-out);
+    background-color 200ms var(--ease-out),
+    border-color 200ms var(--ease-out);
 }
 
 .switch::after {
@@ -412,16 +423,14 @@ button:focus-visible {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.24),
-    0 6px 16px rgba(0, 0, 0, 0.28);
-  /* Spring curve makes the thumb settle with a subtle overshoot — feels
-     tactile and premium without distracting on rapid toggles. */
-  transition: transform 260ms var(--ease-spring), background-color 220ms var(--ease-out);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 220ms var(--ease-spring),
+    background-color 200ms var(--ease-out);
 }
 
 .toggle.on .switch {
@@ -430,19 +439,23 @@ button:focus-visible {
 }
 
 .toggle.on .switch::after {
-  transform: translateX(18px);
+  transform: translateX(16px);
+  background: #fff;
 }
 
+/* ── Skeletons ── */
+
 .toggle-skeleton {
-  grid-template-columns: minmax(0, 1fr) 42px;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  border: 1px solid transparent;
 }
 
 .toggle-skeleton::after {
   content: '';
-  width: 42px;
-  height: 24px;
+  width: 38px;
+  height: 22px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .skeleton-copy {
@@ -451,146 +464,146 @@ button:focus-visible {
 }
 
 .skeleton-line {
-  height: 11px;
+  height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.08), rgba(255,255,255,0.03));
   background-size: 220% 100%;
-  animation: shimmer 1.4s linear infinite;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
 
 .skeleton-line.short {
-  width: 54%;
+  width: 50%;
 }
+
+/* ── Empty State ── */
 
 .empty {
   display: grid;
   place-items: center;
-  min-height: 220px;
-  padding: 22px 18px;
+  min-height: 180px;
+  padding: 24px 20px;
   text-align: center;
-  border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  background:
-    radial-gradient(circle at top, rgba(255, 107, 74, 0.06), transparent 62%),
-    rgba(255, 255, 255, 0.015);
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.01);
 }
 
 .empty::before {
   content: '';
   display: block;
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  background-color: rgba(255, 255, 255, 0.04);
-  /* Inline sliders glyph layered over the accent gradient — drawn as a data
-     URI so the empty state doesn't need an extra image asset and stays safe
-     under the content script's Trusted Types policy. */
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.03);
   background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23ffb59f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><line x1='4' y1='7' x2='20' y2='7'/><circle cx='9' cy='7' r='2.3' fill='%23171a24'/><line x1='4' y1='12' x2='20' y2='12'/><circle cx='15' cy='12' r='2.3' fill='%23171a24'/><line x1='4' y1='17' x2='20' y2='17'/><circle cx='11' cy='17' r='2.3' fill='%23171a24'/></svg>"),
-    linear-gradient(145deg, rgba(255, 107, 74, 0.22), rgba(106, 169, 255, 0.08));
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23ffb59f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><line x1='4' y1='7' x2='20' y2='7'/><circle cx='9' cy='7' r='2.3' fill='%23171a24'/><line x1='4' y1='12' x2='20' y2='12'/><circle cx='15' cy='12' r='2.3' fill='%23171a24'/><line x1='4' y1='17' x2='20' y2='17'/><circle cx='11' cy='17' r='2.3' fill='%23171a24'/></svg>"),
+    linear-gradient(145deg, rgba(255, 107, 74, 0.15), rgba(106, 169, 255, 0.06));
   background-repeat: no-repeat, no-repeat;
   background-position: center, 0 0;
-  background-size: 22px 22px, cover;
+  background-size: 20px 20px, cover;
 }
 
 .empty-title {
   display: block;
   color: var(--text-primary);
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .empty-copy {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 
 .empty-action {
-  margin-top: 14px;
-  min-height: 36px;
-  padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  margin-top: 12px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
   font: inherit;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition:
-    background-color 180ms var(--ease-out),
-    border-color 180ms var(--ease-out);
+    background-color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
 }
 
 .empty-action:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
 }
+
+/* ── Footer ── */
 
 footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 10px 12px;
   border-top: 1px solid var(--panel-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.02)),
-    rgba(8, 11, 16, 0.88);
+  background: rgba(7, 9, 14, 0.85);
 }
 
 footer button {
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font: inherit;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 11.5px;
+  font-weight: 700;
   cursor: pointer;
   transition:
-    transform 160ms var(--ease-out),
-    background-color 180ms var(--ease-out),
-    border-color 180ms var(--ease-out),
-    box-shadow 180ms var(--ease-out);
+    transform 120ms var(--ease-out),
+    background-color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    box-shadow 140ms var(--ease-out);
 }
 
 footer button:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 footer button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.98);
 }
 
 .primary {
-  background: linear-gradient(135deg, rgba(255, 143, 112, 0.98), rgba(255, 95, 74, 0.98));
-  border-color: rgba(255, 143, 112, 0.46);
-  color: #140d0a;
-  box-shadow: 0 12px 24px rgba(255, 95, 74, 0.2);
+  background: linear-gradient(135deg, #ff8a64, #ff5f4a);
+  border-color: rgba(255, 130, 100, 0.35);
+  color: #1a0e09;
+  font-weight: 750;
+  box-shadow: 0 6px 16px rgba(255, 95, 74, 0.15);
 }
 
 .primary:hover {
-  box-shadow: 0 16px 28px rgba(255, 95, 74, 0.24);
+  box-shadow: 0 8px 20px rgba(255, 95, 74, 0.22);
 }
 
 .ghost {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.12);
 }
+
+/* ── Utilities ── */
 
 .sr-only {
   position: absolute;
@@ -605,12 +618,8 @@ footer button:active:not(:disabled) {
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -20% 0;
-  }
+  0%   { background-position: 200% 0; }
+  100% { background-position: -20% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -622,9 +631,6 @@ footer button:active:not(:disabled) {
   }
 }
 
-/* Windows High Contrast / forced-colors mode: system colors replace our
-   palette, so restate borders and focus indicators using system keywords so
-   toggles, search, and buttons remain visually distinguishable. */
 @media (forced-colors: active) {
   .toggle,
   .search-row input,
