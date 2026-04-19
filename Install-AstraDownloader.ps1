@@ -11,10 +11,17 @@
 
 #Requires -Version 5.1
 
-# Self-elevate
+# Admin elevation is handled by the exe manifest (-RequireAdmin flag).
+# When running the .ps1 directly, self-elevate:
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    exit
+    if ($PSCommandPath) {
+        Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+        exit
+    }
+    # In compiled exe, the manifest should have already elevated. If we're here without admin, warn and exit.
+    Add-Type -AssemblyName PresentationFramework
+    [System.Windows.MessageBox]::Show("This installer requires administrator privileges. Please right-click and select 'Run as administrator'.", "Astra Downloader Setup", "OK", "Warning")
+    exit 1
 }
 
 # Hide console
