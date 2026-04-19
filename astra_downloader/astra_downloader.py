@@ -6,7 +6,7 @@ Manages yt-dlp downloads with a PyQt6 GUI, system tray, and REST API on port 975
 First run auto-downloads yt-dlp + ffmpeg. No separate installer needed.
 """
 
-import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil
+import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil, traceback, hmac
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse
@@ -14,6 +14,10 @@ from urllib.parse import urlparse
 # ── Bootstrap: auto-install dependencies ──
 def _bootstrap():
     """Install required packages before importing them."""
+    if getattr(sys, "frozen", False):
+        return
+    if os.environ.get("ASTRA_DOWNLOADER_NO_BOOTSTRAP"):
+        return
     required = {'PyQt6': 'PyQt6', 'flask': 'flask', 'requests': 'requests'}
     missing = []
     for mod, pkg in required.items():
@@ -52,6 +56,8 @@ import requests as http_requests
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
 APP_VERSION = "1.1.0"
+SERVICE_ID = "astra-downloader"
+SERVICE_API_VERSION = 2
 SERVER_PORT = 9751
 # Ordered fallback ports the server tries when the configured port is unavailable.
 # The browser extension probes the same list to discover the running port.
@@ -62,6 +68,7 @@ CONFIG_PATH = INSTALL_DIR / 'config.json'
 HISTORY_PATH = INSTALL_DIR / 'history.json'
 ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
 LOG_PATH = INSTALL_DIR / 'server.log'
+CRASH_LOG_PATH = INSTALL_DIR / 'crash.log'
 YTDLP_PATH = INSTALL_DIR / 'yt-dlp.exe'
 FFMPEG_PATH = INSTALL_DIR / 'ffmpeg.exe'
 ICON_PATH = INSTALL_DIR / 'AstraDownloader.ico'
@@ -98,6 +105,36 @@ DOWNLOAD_TERMINAL_STATES = {'complete', 'failed', 'cancelled'}
 CONTROL_CHARS_RE = re.compile(r'[\x00-\x1f\x7f]')
 MAX_TEXT_FIELD = 500
 MAX_PATH_FIELD = 2048
+LOG_MAX_BYTES = 1024 * 1024
+_LOG_LOCK = threading.Lock()
+
+
+def write_persistent_log(message, path=LOG_PATH):
+    """Best-effort disk log for diagnostics when the windowed exe has no console."""
+    try:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with _LOG_LOCK:
+            if path.exists() and path.stat().st_size > LOG_MAX_BYTES:
+                backup = path.with_suffix(path.suffix + ".1")
+                try:
+                    if backup.exists():
+                        backup.unlink()
+                    path.replace(backup)
+                except Exception:
+                    pass
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(path, 'a', encoding='utf-8') as f:
+                f.write(f"{ts} {message}\n")
+    except Exception:
+        pass
+
+
+def log_crash(context="Unhandled exception"):
+    try:
+        write_persistent_log(f"{context}\n{traceback.format_exc()}", CRASH_LOG_PATH)
+    except Exception:
+        pass
 
 
 def _timestamp_suffix():
@@ -184,6 +221,15 @@ def clean_path_text(value):
     return clean_text(value, "", MAX_PATH_FIELD)
 
 
+def normalize_long_text(value, default="", max_len=MAX_TEXT_FIELD):
+    if value is None:
+        return default, False
+    value = CONTROL_CHARS_RE.sub("", str(value)).strip()
+    if len(value) > max_len:
+        return value, True
+    return value, False
+
+
 def ps_single_quote(value):
     return "'" + str(value).replace("'", "''") + "'"
 
@@ -222,21 +268,25 @@ def normalize_sublangs(value):
 
 
 def normalize_url(value):
-    url = clean_text(value, "", 4096)
+    url, too_long = normalize_long_text(value, "", 4096)
+    if too_long:
+        return None, "URL is too long to download safely."
     if not url or any(ch.isspace() for ch in url):
         return None, "Enter a valid http or https URL."
     parsed = urlparse(url)
     if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         return None, "Enter a valid http or https URL."
-    if len(url) > 4096:
-        return None, "URL is too long to download safely."
     return url, None
 
 
 def normalize_output_dir(value, default_dir=None):
-    raw = clean_path_text(value)
+    raw, too_long = normalize_long_text(value, "", MAX_PATH_FIELD)
+    if too_long:
+        return None, "Output folder path is too long."
     if not raw:
-        raw = clean_path_text(default_dir)
+        raw, too_long = normalize_long_text(default_dir, "", MAX_PATH_FIELD)
+        if too_long:
+            return None, "Default output folder path is too long."
     if not raw:
         raw = str(Path.home() / "Videos")
     try:
@@ -294,6 +344,139 @@ def sanitize_history_entries(raw):
             "duration": max(0, clamp_int(item.get("duration"), 0, 0, 60 * 60 * 24 * 30)),
         })
     return entries
+
+
+def is_frozen_app():
+    return bool(getattr(sys, "frozen", False))
+
+
+def current_executable_path():
+    if is_frozen_app():
+        return Path(sys.executable).resolve()
+    return Path(__file__).resolve()
+
+
+def install_target_exe():
+    return INSTALL_DIR / "AstraDownloader.exe"
+
+
+def ensure_installed_executable():
+    """Copy a downloaded one-file exe into the managed install directory."""
+    current = current_executable_path()
+    if not is_frozen_app():
+        return current
+
+    target = install_target_exe()
+    try:
+        if current == target.resolve():
+            return target
+    except Exception:
+        pass
+
+    try:
+        INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
+        shutil.copy2(current, tmp)
+        os.replace(tmp, target)
+        write_persistent_log(f"Installed executable updated: {target}")
+        return target
+    except Exception as e:
+        write_persistent_log(f"Could not update installed executable from {current}: {e}")
+        try:
+            if 'tmp' in locals() and tmp.exists():
+                tmp.unlink()
+        except Exception:
+            pass
+        return current
+
+
+def launch_command_parts(prefer_installed=True):
+    if is_frozen_app():
+        exe = ensure_installed_executable() if prefer_installed else current_executable_path()
+        return str(exe), []
+    return sys.executable, [str(Path(__file__).resolve())]
+
+
+def command_line(parts):
+    return subprocess.list2cmdline([str(p) for p in parts])
+
+
+def register_desktop_shortcut(target, base_args):
+    try:
+        desktop = Path.home() / "Desktop"
+        lnk = desktop / "Astra Downloader.lnk"
+        ico = str(ICON_PATH) if ICON_PATH.exists() else ""
+        arguments = command_line(base_args)
+        workdir = str(Path(target).parent if Path(target).parent.exists() else INSTALL_DIR)
+        ps_cmd = (
+            f'$ws = New-Object -ComObject WScript.Shell; '
+            f'$sc = $ws.CreateShortcut({ps_single_quote(lnk)}); '
+            f'$sc.TargetPath = {ps_single_quote(target)}; '
+            f'$sc.WorkingDirectory = {ps_single_quote(workdir)}; '
+            f'$sc.Arguments = {ps_single_quote(arguments)}; '
+            + (f'$sc.IconLocation = {ps_single_quote(ico)}; ' if ico else '')
+            + f'$sc.Description = "Astra Deck Download Server"; '
+            f'$sc.Save()'
+        )
+        subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd],
+                       capture_output=True, creationflags=CREATE_NO_WINDOW)
+    except Exception as e:
+        write_persistent_log(f"Shortcut registration failed: {e}")
+
+
+def register_startup_task(target, base_args):
+    try:
+        task_cmd = command_line([target] + list(base_args) + ['-Background'])
+        subprocess.run([
+            'schtasks', '/Create', '/TN', 'AstraDownloader',
+            '/TR', task_cmd, '/SC', 'ONLOGON', '/RL', 'LIMITED', '/F'
+        ], capture_output=True, creationflags=CREATE_NO_WINDOW)
+    except Exception as e:
+        write_persistent_log(f"Startup task registration failed: {e}")
+
+
+def register_protocol_handlers(target, base_args):
+    try:
+        import winreg
+        open_cmd = command_line([target] + list(base_args)) + ' "%1"'
+        for proto in ('ytdl', 'mediadl'):
+            key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, f'Software\\Classes\\{proto}', 0, winreg.KEY_WRITE)
+            winreg.SetValueEx(key, '', 0, winreg.REG_SZ, f'URL:{proto} Protocol')
+            winreg.SetValueEx(key, 'URL Protocol', 0, winreg.REG_SZ, '')
+            winreg.CloseKey(key)
+            cmd_key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, f'Software\\Classes\\{proto}\\shell\\open\\command', 0, winreg.KEY_WRITE)
+            winreg.SetValueEx(cmd_key, '', 0, winreg.REG_SZ, open_cmd)
+            winreg.CloseKey(cmd_key)
+    except Exception as e:
+        write_persistent_log(f"Protocol registration failed: {e}")
+
+
+def register_uninstall_entry(target, base_args):
+    try:
+        import winreg
+        uninstall_cmd = command_line([target] + list(base_args) + ['--uninstall'])
+        key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\AstraDownloader', 0, winreg.KEY_WRITE)
+        winreg.SetValueEx(key, 'DisplayName', 0, winreg.REG_SZ, APP_NAME)
+        winreg.SetValueEx(key, 'DisplayVersion', 0, winreg.REG_SZ, APP_VERSION)
+        winreg.SetValueEx(key, 'Publisher', 0, winreg.REG_SZ, 'SysAdminDoc')
+        winreg.SetValueEx(key, 'InstallLocation', 0, winreg.REG_SZ, str(INSTALL_DIR))
+        if ICON_PATH.exists():
+            winreg.SetValueEx(key, 'DisplayIcon', 0, winreg.REG_SZ, f'{ICON_PATH},0')
+        winreg.SetValueEx(key, 'UninstallString', 0, winreg.REG_SZ, uninstall_cmd)
+        winreg.SetValueEx(key, 'NoModify', 0, winreg.REG_DWORD, 1)
+        winreg.SetValueEx(key, 'NoRepair', 0, winreg.REG_DWORD, 1)
+        winreg.CloseKey(key)
+    except Exception as e:
+        write_persistent_log(f"Uninstall registration failed: {e}")
+
+
+def ensure_system_integrations(prefer_installed=True):
+    target, base_args = launch_command_parts(prefer_installed=prefer_installed)
+    register_desktop_shortcut(target, base_args)
+    register_startup_task(target, base_args)
+    register_protocol_handlers(target, base_args)
+    register_uninstall_entry(target, base_args)
+    return target, base_args
 
 # ── Dark theme stylesheet ──
 STYLESHEET = """
@@ -508,8 +691,10 @@ class Config:
         try:
             self._data = sanitize_config(self._data)
             atomic_write_json(CONFIG_PATH, self._data)
-        except Exception:
-            pass
+            return True
+        except Exception as e:
+            write_persistent_log(f"Config save failed: {e}")
+            return False
 
     @property
     def data(self):
@@ -520,27 +705,80 @@ class Config:
 # ══════════════════════════════════════════════════════════════
 class History:
     def __init__(self):
+        self._lock = threading.Lock()
         if not HISTORY_PATH.exists():
             self._write([])
 
     def load(self):
-        return sanitize_history_entries(load_json_file(HISTORY_PATH, []))
+        with self._lock:
+            return sanitize_history_entries(load_json_file(HISTORY_PATH, []))
 
     def add(self, entry):
-        data = self.load()
-        data.append(entry)
-        if len(data) > 500:
-            data = data[-500:]
-        self._write(data)
+        with self._lock:
+            data = sanitize_history_entries(load_json_file(HISTORY_PATH, []))
+            data.append(entry)
+            if len(data) > 500:
+                data = data[-500:]
+            self._write_unlocked(data)
 
     def clear(self):
-        self._write([])
+        with self._lock:
+            self._write_unlocked([])
 
     def _write(self, data):
+        with self._lock:
+            self._write_unlocked(data)
+
+    def _write_unlocked(self, data):
         try:
             atomic_write_json(HISTORY_PATH, sanitize_history_entries(data))
-        except Exception:
-            pass
+        except Exception as e:
+            write_persistent_log(f"History save failed: {e}")
+
+
+def is_playlist_url(url):
+    try:
+        parsed = urlparse(url)
+        params = {}
+        for part in parsed.query.split('&'):
+            if '=' in part:
+                key, value = part.split('=', 1)
+                params.setdefault(key, []).append(value)
+        has_list = bool(params.get('list', [''])[0])
+        has_video = bool(params.get('v', [''])[0])
+        return has_list and not has_video
+    except Exception:
+        return False
+
+
+def terminate_process_tree(proc, timeout=3):
+    if not proc or proc.poll() is not None:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=timeout)
+        return
+    except subprocess.TimeoutExpired:
+        pass
+    except Exception:
+        pass
+
+    if sys.platform == 'win32':
+        try:
+            subprocess.run(
+                ['taskkill', '/PID', str(proc.pid), '/T', '/F'],
+                capture_output=True,
+                creationflags=CREATE_NO_WINDOW,
+                timeout=5,
+            )
+            return
+        except Exception as e:
+            write_persistent_log(f"Process tree termination warning: {e}")
+
+    try:
+        proc.kill()
+    except Exception:
+        pass
 
 # ══════════════════════════════════════════════════════════════
 # DOWNLOAD MANAGER
@@ -644,16 +882,17 @@ class DownloadManager(QObject):
 
         ytdlp = str(YTDLP_PATH)
         ffmpeg_dir = str(FFMPEG_PATH.parent)
-        is_playlist = '?list=' in dl.url and '?v=' not in dl.url and '&v=' not in dl.url
+        is_playlist = is_playlist_url(dl.url)
 
         # Output template
         if is_playlist:
-            out_tpl = str(Path(dl.output_dir) / "%(playlist_title)s" / f"%(title)s.{dl.format}")
+            out_tpl = str(Path(dl.output_dir) / "%(playlist_title).200B" / "%(title).200B.%(ext)s")
         else:
-            out_tpl = str(Path(dl.output_dir) / f"%(title)s.{dl.format}")
+            out_tpl = str(Path(dl.output_dir) / "%(title).200B.%(ext)s")
 
         # Build args
         args = [ytdlp, '--newline', '--progress', '--no-colors',
+                '--windows-filenames', '--trim-filenames', '180',
                 '--ffmpeg-location', ffmpeg_dir, '-o', out_tpl,
                 '--progress-template', 'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s']
 
@@ -700,7 +939,8 @@ class DownloadManager(QObject):
         try:
             proc = subprocess.Popen(
                 args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, bufsize=1, creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+                text=True, encoding='utf-8', errors='replace', bufsize=1,
+                creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
             )
             dl.process = proc
             last_lines = []
@@ -776,11 +1016,16 @@ class DownloadManager(QObject):
                     dl.error = error_lines[-1] if error_lines else " ".join(last_lines)[-240:] if last_lines else "Unknown error"
 
         except FileNotFoundError:
-            dl.status = "failed"
-            dl.error = "yt-dlp not found. Run setup first."
+            if dl.status != "cancelled":
+                dl.status = "failed"
+                dl.error = "yt-dlp not found. Run setup first."
         except Exception as e:
-            dl.status = "failed"
-            dl.error = str(e)[:200]
+            if dl.status != "cancelled":
+                dl.status = "failed"
+                dl.error = str(e)[:200]
+                write_persistent_log(f"Download {dl.id} failed unexpectedly: {e}")
+        finally:
+            dl.process = None
 
         if dl.status == "complete":
             self.total_completed += 1
@@ -808,16 +1053,7 @@ class DownloadManager(QObject):
         proc = dl.process
         if proc and proc.poll() is None:
             def terminate():
-                try:
-                    proc.terminate()
-                    proc.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    try:
-                        proc.kill()
-                    except Exception:
-                        pass
-                except Exception:
-                    pass
+                terminate_process_tree(proc)
             threading.Thread(target=terminate, daemon=True).start()
         self.progress_updated.emit()
         return True
@@ -851,10 +1087,15 @@ def create_api(config, dl_manager, history):
     token = config.get("ServerToken")
 
     def check_auth():
-        return request.headers.get("X-Auth-Token") == token
+        provided = request.headers.get("X-Auth-Token", "")
+        return bool(token and provided and hmac.compare_digest(str(provided), str(token)))
 
     def is_extension_origin(origin):
-        return bool(re.match(r'^(chrome-extension|moz-extension)://', origin or ""))
+        try:
+            parsed = urlparse(origin or "")
+            return parsed.scheme in {"chrome-extension", "moz-extension"} and bool(parsed.netloc)
+        except Exception:
+            return False
 
     def cors_response(data, status=200):
         resp = jsonify(data)
@@ -862,6 +1103,7 @@ def create_api(config, dl_manager, history):
         origin = request.headers.get("Origin", "")
         if is_extension_origin(origin):
             resp.headers["Access-Control-Allow-Origin"] = origin
+            resp.headers["Vary"] = "Origin"
         resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type,X-Auth-Token,X-MDL-Client"
         return resp
@@ -874,7 +1116,8 @@ def create_api(config, dl_manager, history):
     @api.route('/health')
     def health():
         resp = {
-            "status": "ok", "version": APP_VERSION,
+            "status": "ok", "service": SERVICE_ID, "api": SERVICE_API_VERSION,
+            "name": APP_NAME, "version": APP_VERSION,
             "port": clamp_int(config.get("ServerPort", SERVER_PORT), SERVER_PORT, 1024, 65535),
             "downloads": dl_manager.active_count(),
             "token_required": True,
@@ -889,7 +1132,7 @@ def create_api(config, dl_manager, history):
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
         body = request.get_json(silent=True)
-        if not body or not body.get('url'):
+        if not isinstance(body, dict) or not body.get('url'):
             return cors_response({"error": "Missing download URL."}, 400)
         url, url_err = normalize_url(body['url'])
         if url_err:
@@ -931,6 +1174,8 @@ def create_api(config, dl_manager, history):
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
         h = history.load()
         limit = request.args.get('limit', type=int)
+        if limit is not None:
+            limit = clamp_int(limit, 50, 1, 500)
         if limit and len(h) > limit:
             h = h[-limit:]
         return cors_response({"history": h, "count": len(h)})
@@ -998,20 +1243,25 @@ class SetupWorker(QThread):
             if not FFMPEG_PATH.exists():
                 self.log.emit("Downloading ffmpeg (this may take a moment)...")
                 self.progress.emit(35)
-                import zipfile, io
-                data = io.BytesIO()
+                import zipfile
+                tmp_zip = INSTALL_DIR / f".ffmpeg.{uuid.uuid4().hex}.zip"
                 with http_requests.get(FFMPEG_URL, stream=True, timeout=120) as r:
                     r.raise_for_status()
-                    for chunk in r.iter_content(65536):
-                        if chunk:
-                            data.write(chunk)
-                data.seek(0)
+                    with open(tmp_zip, 'wb') as data:
+                        for chunk in r.iter_content(65536):
+                            if chunk:
+                                data.write(chunk)
+                        data.flush()
+                        os.fsync(data.fileno())
+                if tmp_zip.stat().st_size <= 0:
+                    raise RuntimeError("Downloaded ffmpeg archive was empty")
                 found = False
                 tmp_ffmpeg = FFMPEG_PATH.with_name(f".{FFMPEG_PATH.name}.{uuid.uuid4().hex}.download")
                 try:
-                    with zipfile.ZipFile(data) as zf:
+                    with zipfile.ZipFile(tmp_zip) as zf:
                         for entry in zf.namelist():
-                            if entry.endswith('ffmpeg.exe'):
+                            normalized = entry.replace('\\', '/')
+                            if normalized.endswith('/ffmpeg.exe') or normalized == 'ffmpeg.exe':
                                 with zf.open(entry) as src, open(tmp_ffmpeg, 'wb') as dst:
                                     shutil.copyfileobj(src, dst)
                                     dst.flush()
@@ -1025,6 +1275,11 @@ class SetupWorker(QThread):
                     try:
                         if tmp_ffmpeg.exists():
                             tmp_ffmpeg.unlink()
+                    except Exception:
+                        pass
+                    try:
+                        if tmp_zip.exists():
+                            tmp_zip.unlink()
                     except Exception:
                         pass
                 if not found:
@@ -1080,78 +1335,20 @@ class SetupWorker(QThread):
             self.finished_err.emit(str(e))
 
     def _create_shortcut(self):
-        try:
-            import winreg
-            # Use PowerShell to create .lnk — most reliable cross-version method
-            exe = self._get_exe_path()
-            desktop = Path.home() / "Desktop"
-            lnk = desktop / "Astra Downloader.lnk"
-            ico = str(ICON_PATH) if ICON_PATH.exists() else ""
-            ps_cmd = (
-                f'$ws = New-Object -ComObject WScript.Shell; '
-                f'$sc = $ws.CreateShortcut({ps_single_quote(lnk)}); '
-                f'$sc.TargetPath = {ps_single_quote(exe)}; '
-                f'$sc.WorkingDirectory = {ps_single_quote(INSTALL_DIR)}; '
-                + (f'$sc.IconLocation = {ps_single_quote(ico)}; ' if ico else '')
-                + f'$sc.Description = "Astra Deck Download Server"; '
-                f'$sc.Save()'
-            )
-            subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd],
-                           capture_output=True, creationflags=CREATE_NO_WINDOW)
-        except Exception:
-            pass
+        target, base_args = launch_command_parts(prefer_installed=True)
+        register_desktop_shortcut(target, base_args)
 
     def _register_startup(self):
-        try:
-            exe = self._get_exe_path()
-            subprocess.run([
-                'schtasks', '/Create', '/TN', 'AstraDownloader',
-                '/TR', f'"{exe}" -Background',
-                '/SC', 'ONLOGON', '/RL', 'LIMITED', '/F'
-            ], capture_output=True, creationflags=CREATE_NO_WINDOW)
-        except Exception:
-            pass
+        target, base_args = launch_command_parts(prefer_installed=True)
+        register_startup_task(target, base_args)
 
     def _register_protocols(self):
-        try:
-            import winreg
-            exe = self._get_exe_path()
-            for proto in ('ytdl', 'mediadl'):
-                key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, f'Software\\Classes\\{proto}', 0, winreg.KEY_WRITE)
-                winreg.SetValueEx(key, '', 0, winreg.REG_SZ, f'URL:{proto} Protocol')
-                winreg.SetValueEx(key, 'URL Protocol', 0, winreg.REG_SZ, '')
-                winreg.CloseKey(key)
-                cmd_key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, f'Software\\Classes\\{proto}\\shell\\open\\command', 0, winreg.KEY_WRITE)
-                winreg.SetValueEx(cmd_key, '', 0, winreg.REG_SZ, f'"{exe}" "%1"')
-                winreg.CloseKey(cmd_key)
-        except Exception:
-            pass
+        target, base_args = launch_command_parts(prefer_installed=True)
+        register_protocol_handlers(target, base_args)
 
     def _register_uninstall(self):
-        try:
-            import winreg
-            exe = self._get_exe_path()
-            key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\AstraDownloader', 0, winreg.KEY_WRITE)
-            winreg.SetValueEx(key, 'DisplayName', 0, winreg.REG_SZ, APP_NAME)
-            winreg.SetValueEx(key, 'DisplayVersion', 0, winreg.REG_SZ, APP_VERSION)
-            winreg.SetValueEx(key, 'Publisher', 0, winreg.REG_SZ, 'SysAdminDoc')
-            winreg.SetValueEx(key, 'InstallLocation', 0, winreg.REG_SZ, str(INSTALL_DIR))
-            if ICON_PATH.exists():
-                winreg.SetValueEx(key, 'DisplayIcon', 0, winreg.REG_SZ, f'{ICON_PATH},0')
-            # Uninstall = re-run with --uninstall flag
-            winreg.SetValueEx(key, 'UninstallString', 0, winreg.REG_SZ, f'"{exe}" --uninstall')
-            winreg.SetValueEx(key, 'NoModify', 0, winreg.REG_DWORD, 1)
-            winreg.SetValueEx(key, 'NoRepair', 0, winreg.REG_DWORD, 1)
-            winreg.CloseKey(key)
-        except Exception:
-            pass
-
-    def _get_exe_path(self):
-        exe = sys.executable
-        # If running as .py, point to the py file instead
-        if exe.lower().endswith(('python.exe', 'pythonw.exe')):
-            exe = os.path.abspath(__file__)
-        return exe
+        target, base_args = launch_command_parts(prefer_installed=True)
+        register_uninstall_entry(target, base_args)
 
 # ══════════════════════════════════════════════════════════════
 # UNINSTALL
@@ -1169,12 +1366,15 @@ def run_uninstall():
 
     # Kill processes
     if sys.platform == 'win32':
-        subprocess.run(['taskkill', '/F', '/IM', 'AstraDownloader.exe'], capture_output=True)
-        subprocess.run(['taskkill', '/F', '/IM', 'yt-dlp.exe'], capture_output=True)
-        subprocess.run(['taskkill', '/F', '/IM', 'ffmpeg.exe'], capture_output=True)
+        current_pid = str(os.getpid())
+        subprocess.run(['taskkill', '/F', '/T', '/IM', 'AstraDownloader.exe', '/FI', f'PID ne {current_pid}'],
+                       capture_output=True, creationflags=CREATE_NO_WINDOW)
+        subprocess.run(['taskkill', '/F', '/T', '/IM', 'yt-dlp.exe'], capture_output=True, creationflags=CREATE_NO_WINDOW)
+        subprocess.run(['taskkill', '/F', '/T', '/IM', 'ffmpeg.exe'], capture_output=True, creationflags=CREATE_NO_WINDOW)
 
     # Remove scheduled task
-    subprocess.run(['schtasks', '/Delete', '/TN', 'AstraDownloader', '/F'], capture_output=True)
+    subprocess.run(['schtasks', '/Delete', '/TN', 'AstraDownloader', '/F'],
+                   capture_output=True, creationflags=CREATE_NO_WINDOW)
 
     # Remove registry entries
     try:
@@ -1210,7 +1410,18 @@ def run_uninstall():
 
     # Remove install directory
     if INSTALL_DIR.exists():
-        shutil.rmtree(INSTALL_DIR, ignore_errors=True)
+        try:
+            shutil.rmtree(INSTALL_DIR, ignore_errors=False)
+        except Exception:
+            write_persistent_log("Install directory will be removed after exit.")
+            if is_frozen_app():
+                cleanup_cmd = (
+                    f'ping 127.0.0.1 -n 3 > nul & '
+                    f'rmdir /S /Q {subprocess.list2cmdline([str(INSTALL_DIR)])}'
+                )
+                subprocess.Popen(['cmd', '/C', cleanup_cmd],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                 creationflags=CREATE_NO_WINDOW)
 
     QMessageBox.information(None, "Uninstall Complete",
                             "Astra Downloader has been uninstalled.\nYour downloaded videos were not removed.")
@@ -1338,6 +1549,8 @@ def make_stat(label_text, value_text="0", hint_text=""):
 # MAIN WINDOW
 # ══════════════════════════════════════════════════════════════
 class MainWindow(QMainWindow):
+    log_message = pyqtSignal(str)
+
     def __init__(self, config, dl_manager, history, start_minimized=False):
         super().__init__()
         self.config = config
@@ -1348,6 +1561,7 @@ class MainWindow(QMainWindow):
         self._setup_running = False
         self._tray_hint_shown = False
         self._downloads_signature = None
+        self.log_message.connect(self._append_log)
 
         self.setWindowTitle(APP_NAME)
         self.setMinimumSize(760, 560)
@@ -1935,6 +2149,8 @@ class MainWindow(QMainWindow):
             )
             # Persist so future starts prefer the working port.
             self.config.set("ServerPort", chosen_port)
+            self.config.save()
+            self._sync_connection_ui()
 
         try:
             # SystemExit from werkzeug's internal bind is caught here as a last
@@ -1957,7 +2173,7 @@ class MainWindow(QMainWindow):
             try:
                 self.server_obj.serve_forever()
             except Exception as e:
-                self._append_log(f"Server error: {e}")
+                self.log_message.emit(f"Server error: {e}")
 
         self.server_thread = threading.Thread(target=run, daemon=True)
         self.server_thread.start()
@@ -1978,9 +2194,12 @@ class MainWindow(QMainWindow):
             try:
                 self.server_obj.shutdown()
                 self.server_obj.server_close()
+                if self.server_thread and self.server_thread.is_alive():
+                    self.server_thread.join(timeout=2)
             except Exception as e:
                 self._append_log(f"Server shutdown warning: {e}")
             self.server_obj = None
+        self.server_thread = None
         self.server_running = False
         self.server_start_time = None
         self._append_log("Server stopped")
@@ -2410,6 +2629,7 @@ class MainWindow(QMainWindow):
     def _append_log(self, msg):
         ts = datetime.now().strftime("%H:%M:%S")
         self.log_text.append(f"{ts} {msg}")
+        write_persistent_log(msg)
         cursor = self.log_text.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         self.log_text.setTextCursor(cursor)
@@ -2513,7 +2733,27 @@ class MainWindow(QMainWindow):
 # SINGLE INSTANCE GUARD
 # ══════════════════════════════════════════════════════════════
 def check_single_instance():
-    """Use a socket lock on port 9752 to prevent multiple instances."""
+    """Prevent multiple GUI instances without relying on a TCP port."""
+    if sys.platform == 'win32':
+        try:
+            import ctypes
+            from ctypes import wintypes
+            kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+            kernel32.CreateMutexW.argtypes = (wintypes.LPVOID, wintypes.BOOL, wintypes.LPCWSTR)
+            kernel32.CreateMutexW.restype = wintypes.HANDLE
+            kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+            handle = kernel32.CreateMutexW(None, False, "Local\\AstraDownloader.SingleInstance")
+            if not handle:
+                write_persistent_log(f"Single-instance mutex failed: {ctypes.get_last_error()}")
+                return None
+            if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS
+                kernel32.CloseHandle(handle)
+                return None
+            return handle
+        except Exception as e:
+            write_persistent_log(f"Mutex single-instance guard unavailable: {e}")
+
+    # Cross-platform fallback for source runs outside Windows.
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('127.0.0.1', 9752))
@@ -2533,10 +2773,14 @@ def main():
 
     start_minimized = '-Background' in sys.argv or '--background' in sys.argv
 
+    if is_frozen_app():
+        ensure_system_integrations(prefer_installed=True)
+
     # Single instance check
     lock = check_single_instance()
     if lock is None:
         # Already running
+        write_persistent_log("Launch ignored because another instance is already running.")
         sys.exit(0)
 
     app = QApplication(sys.argv)
@@ -2568,4 +2812,8 @@ def main():
     sys.exit(app.exec())
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception:
+        log_crash("Fatal startup error")
+        raise
