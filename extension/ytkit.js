@@ -2037,9 +2037,9 @@ return response;
         _CHECK_INTERVAL: 30000, // Re-check every 30s
 
         // GitHub raw URL for the compiled installer exe
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-AstraDownloader.exe',
-        INSTALLER_FILE_NAME: 'Install-AstraDownloader.exe',
-        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'Install-AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-AstraDownloader.exe' -OutFile $out; Start-Process $out\"",
+        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.exe',
+        INSTALLER_FILE_NAME: 'AstraDownloader.exe',
+        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.exe' -OutFile $out; Start-Process $out\"",
         INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
 
         // Quick health check — returns { ok, token, version } or { ok: false }

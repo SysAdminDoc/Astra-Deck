@@ -10,3 +10,10 @@ CODEX-CHANGELOG.md
 CLAUDE-HANDOFF-PROMPT.md
 CONTINUATION_PROMPT.md
 .claude-octopus/
+
+# Python build artifacts
+astra_downloader/build/
+astra_downloader/dist/
+astra_downloader/*.spec
+astra_downloader/__pycache__/
+*.pyc
