@@ -436,7 +436,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.13.0';
+    const YTKIT_VERSION = '3.13.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2036,11 +2036,11 @@ return response;
         _autoStartAttempted: false,
         _CHECK_INTERVAL: 30000, // Re-check every 30s
 
-        // GitHub raw URL for the PowerShell installer
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/MediaDL/main/Install-MediaDL.ps1',
-        INSTALLER_FILE_NAME: 'Astra-Deck-Downloader-Setup.ps1',
-        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'Astra-Deck-Downloader-Setup.ps1'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/MediaDL/main/Install-MediaDL.ps1' -OutFile $out; powershell -ExecutionPolicy Bypass -File $out\"",
-        INSTALLER_RUN_HINT: 'Open Downloads, right-click the setup file, and choose Run with PowerShell.',
+        // GitHub raw URL for the compiled installer exe
+        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/MediaDL/main/Install-MediaDL.exe',
+        INSTALLER_FILE_NAME: 'Astra-Deck-Downloader-Setup.exe',
+        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'Astra-Deck-Downloader-Setup.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/MediaDL/main/Install-MediaDL.exe' -OutFile $out; Start-Process $out\"",
+        INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
 
         // Quick health check — returns { ok, token, version } or { ok: false }
         async check(force) {
@@ -2197,7 +2197,7 @@ return response;
                 isRetryMode
                     ? 'Try Starting Again to wake the local service if it is already installed.'
                     : 'Download Setup to grab the Astra Deck installer for local downloads.',
-                'Run the downloaded file with PowerShell from your Downloads folder.',
+                'Double-click the downloaded setup file to install.',
                 'Use Check Again after setup finishes so Astra Deck can confirm everything is ready.'
             ].forEach((copy) => {
                 const item = document.createElement('li');
@@ -2276,7 +2276,7 @@ return response;
             const dlBtn = makeBtn('Copy Fallback Command', 'ghost', async () => {
                 const copied = await this.copyInstallCommand();
                 if (copied) {
-                    setPromptButtonState(dlBtn, 'Copied! Paste into PowerShell', 'success');
+                    setPromptButtonState(dlBtn, 'Copied! Paste into a terminal', 'success');
                     showToast('Fallback install command copied. Use it only if you cannot run the downloaded setup file.', '#3b82f6', { duration: 6 });
                     setTimeout(() => { setPromptButtonState(dlBtn, 'Copy Fallback Command'); }, 3500);
                 } else {
