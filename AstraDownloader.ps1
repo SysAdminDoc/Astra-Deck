@@ -12,16 +12,22 @@ $ErrorActionPreference = 'Continue'
 
 # ── Single instance guard ──
 $mutexName = 'Global\AstraDownloader-Mutex'
-$mutex = New-Object System.Threading.Mutex($false, $mutexName)
-if (-not $mutex.WaitOne(0, $false)) {
-    # Already running — try to show existing window via named pipe
-    try {
-        $pipe = New-Object System.IO.Pipes.NamedPipeClientStream('.', 'AstraDownloader-Show', [System.IO.Pipes.PipeDirection]::Out)
-        $pipe.Connect(500)
-        $pipe.WriteByte(1)
-        $pipe.Close()
-    } catch {}
-    exit
+$script:mutex = $null
+try {
+    $script:mutex = New-Object System.Threading.Mutex($false, $mutexName)
+    if (-not $script:mutex.WaitOne(0, $false)) {
+        # Already running — try to show existing window via named pipe
+        try {
+            $pipe = New-Object System.IO.Pipes.NamedPipeClientStream('.', 'AstraDownloader-Show', [System.IO.Pipes.PipeDirection]::Out)
+            $pipe.Connect(1000)
+            $pipe.WriteByte(1)
+            $pipe.Close()
+        } catch {}
+        $script:mutex.Dispose()
+        exit
+    }
+} catch {
+    # Mutex creation failed (permissions issue) — proceed anyway
 }
 
 Add-Type -AssemblyName PresentationFramework
@@ -38,8 +44,25 @@ $script:ArchivePath = Join-Path $PSScriptRoot "archive.txt"
 $script:LogPath = Join-Path $PSScriptRoot "server.log"
 
 # ── Config ──
-if (!(Test-Path $script:ConfigPath)) { Write-Host "FATAL: config.json not found"; exit 1 }
-$script:Config = Get-Content $script:ConfigPath -Raw | ConvertFrom-Json
+if (!(Test-Path $script:ConfigPath)) {
+    [System.Windows.MessageBox]::Show(
+        "config.json not found in:`n$PSScriptRoot`n`nPlease run the installer first.",
+        "Astra Downloader", "OK", "Error"
+    )
+    if ($script:mutex) { try { $script:mutex.ReleaseMutex(); $script:mutex.Dispose() } catch {} }
+    exit 1
+}
+
+try {
+    $script:Config = Get-Content $script:ConfigPath -Raw -ErrorAction Stop | ConvertFrom-Json
+} catch {
+    [System.Windows.MessageBox]::Show(
+        "config.json is corrupt or unreadable:`n$($_.Exception.Message)`n`nDelete it and re-run the installer.",
+        "Astra Downloader", "OK", "Error"
+    )
+    if ($script:mutex) { try { $script:mutex.ReleaseMutex(); $script:mutex.Dispose() } catch {} }
+    exit 1
+}
 
 $configDefaults = @{
     DownloadPath = "$env:USERPROFILE\Videos\YouTube"
@@ -74,7 +97,11 @@ if (-not $script:Config.ServerToken) {
 $script:Config | ConvertTo-Json -Depth 3 | Set-Content $script:ConfigPath -Encoding UTF8
 
 function Save-Config {
-    $script:Config | ConvertTo-Json -Depth 3 | Set-Content $script:ConfigPath -Encoding UTF8
+    try {
+        $script:Config | ConvertTo-Json -Depth 3 | Set-Content $script:ConfigPath -Encoding UTF8
+    } catch {
+        Write-Log "Config save failed: $_"
+    }
 }
 
 # ── Logging ──
@@ -90,16 +117,18 @@ if ((Test-Path $script:LogPath) -and (Get-Item $script:LogPath -ErrorAction Sile
 # ── History ──
 if (!(Test-Path $script:HistoryPath)) { "[]" | Set-Content $script:HistoryPath -Encoding UTF8 }
 
-# ── Server State (shared with runspace) ──
+# ── Server State (shared with runspace via synchronized hashtable) ──
+# Log uses a ConcurrentQueue to avoid string concatenation race conditions
+$script:LogQueue = [System.Collections.Concurrent.ConcurrentQueue[string]]::new()
+
 $script:ServerState = [hashtable]::Synchronized(@{
     Running = $false
     Downloads = [hashtable]::Synchronized(@{})
     NextId = 0
     TotalCompleted = 0
-    TotalBytes = 0
     StartTime = $null
     ShouldStop = $false
-    Port = $script:Config.ServerPort
+    Port = [int]$script:Config.ServerPort
     Token = $script:Config.ServerToken
     Config = $script:Config
     ConfigPath = $script:ConfigPath
@@ -107,6 +136,7 @@ $script:ServerState = [hashtable]::Synchronized(@{
     ArchivePath = $script:ArchivePath
     LogPath = $script:LogPath
     InstallPath = $script:InstallPath
+    LogQueue = $script:LogQueue
 })
 
 # ══════════════════════════════════════════════════════════════
@@ -242,13 +272,11 @@ $xamlString = @"
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Logo -->
                 <StackPanel Grid.Row="0" Margin="16,20,16,24">
                     <TextBlock Text="Astra Downloader" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
                     <TextBlock x:Name="lblVersion" Text="v1.0.0" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <!-- Nav -->
                 <StackPanel Grid.Row="1">
                     <Button x:Name="navDashboard" Content="Dashboard" Style="{StaticResource NavBtn}"/>
                     <Button x:Name="navDownloads" Content="Downloads" Style="{StaticResource NavBtn}"/>
@@ -256,7 +284,6 @@ $xamlString = @"
                     <Button x:Name="navSettings" Content="Settings" Style="{StaticResource NavBtn}"/>
                 </StackPanel>
 
-                <!-- Status dot -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="16,0,16,16">
                     <Ellipse x:Name="statusDot" Width="8" Height="8" Fill="#525a65" Margin="0,0,8,0"/>
                     <TextBlock x:Name="statusLabel" Text="Stopped" FontSize="11" Foreground="{StaticResource TextMuted}"/>
@@ -276,7 +303,6 @@ $xamlString = @"
                     <StackPanel>
                         <TextBlock Text="Dashboard" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
 
-                        <!-- Server control card -->
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="12" Padding="20" Margin="0,0,0,16">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -294,15 +320,11 @@ $xamlString = @"
                             </Grid>
                         </Border>
 
-                        <!-- Stats row -->
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="16,12">
@@ -323,7 +345,6 @@ $xamlString = @"
                             </Border>
                         </Grid>
 
-                        <!-- Log -->
                         <TextBlock Text="Server Log" FontSize="12" Foreground="{StaticResource TextMuted}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="12" MaxHeight="200">
                             <ScrollViewer x:Name="logScroll" VerticalScrollBarVisibility="Auto">
@@ -371,8 +392,7 @@ $xamlString = @"
                     <StackPanel MaxWidth="560">
                         <TextBlock Text="Settings" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
 
-                        <!-- Paths -->
-                        <TextBlock Text="PATHS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMuted}" Margin="0,0,0,8" LetterSpacing="0.5"/>
+                        <TextBlock Text="PATHS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="Video Download Folder" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
@@ -381,14 +401,13 @@ $xamlString = @"
                                     <Button x:Name="btnBrowseDl" Content="..." Style="{StaticResource SecBtn}" Grid.Column="1" Margin="6,0,0,0" Padding="10,6" Width="36"/>
                                 </Grid>
                                 <TextBlock Text="Audio Download Folder (blank = same as video)" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                <Grid Margin="0,0,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBox x:Name="cfgAudioPath" Grid.Column="0"/>
                                     <Button x:Name="btnBrowseAudio" Content="..." Style="{StaticResource SecBtn}" Grid.Column="1" Margin="6,0,0,0" Padding="10,6" Width="36"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
-                        <!-- Embedding -->
                         <TextBlock Text="POST-PROCESSING" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
                             <StackPanel>
@@ -404,7 +423,6 @@ $xamlString = @"
                             </StackPanel>
                         </Border>
 
-                        <!-- Performance -->
                         <TextBlock Text="PERFORMANCE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
                             <StackPanel>
@@ -416,14 +434,13 @@ $xamlString = @"
                                     <TextBlock Text="Rate limit (e.g. 500K, 2M, blank=unlimited):" FontSize="12" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBox x:Name="cfgRateLimit" Width="80" FontSize="12"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                                <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Proxy (e.g. socks5://host:port, blank=none):" FontSize="12" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBox x:Name="cfgProxy" Width="200" FontSize="12"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
-                        <!-- Behavior -->
                         <TextBlock Text="BEHAVIOR" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
                         <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,16">
                             <StackPanel>
@@ -476,7 +493,6 @@ $historyList = $window.FindName("historyList")
 $noHistory = $window.FindName("noHistory")
 $btnClearHistory = $window.FindName("btnClearHistory")
 
-# Settings controls
 $cfgDownloadPath = $window.FindName("cfgDownloadPath")
 $cfgAudioPath = $window.FindName("cfgAudioPath")
 $btnBrowseDl = $window.FindName("btnBrowseDl")
@@ -499,6 +515,13 @@ $btnSaveSettings = $window.FindName("btnSaveSettings")
 $statPort.Text = "$($script:Config.ServerPort)"
 $dashEndpoint.Text = "http://127.0.0.1:$($script:Config.ServerPort)"
 
+# ── Set window icon early ──
+$winIconPath = Join-Path $PSScriptRoot "AstraDownloader.ico"
+if (!(Test-Path $winIconPath)) { $winIconPath = Join-Path $PSScriptRoot "icon.ico" }
+if (Test-Path $winIconPath) {
+    try { $window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create([System.Uri]::new($winIconPath)) } catch {}
+}
+
 # ── Load settings into UI ──
 function Load-SettingsUI {
     $c = $script:Config
@@ -520,6 +543,18 @@ function Load-SettingsUI {
 }
 Load-SettingsUI
 
+# ── Cached brushes (avoid creating new BrushConverter on every timer tick) ──
+$script:Brushes = @{
+    Green  = [Windows.Media.BrushConverter]::new().ConvertFromString("#22c55e")
+    Red    = [Windows.Media.BrushConverter]::new().ConvertFromString("#ef4444")
+    Muted  = [Windows.Media.BrushConverter]::new().ConvertFromString("#525a65")
+    Card   = [Windows.Media.BrushConverter]::new().ConvertFromString("#151b23")
+    Border = [Windows.Media.BrushConverter]::new().ConvertFromString("#2a3140")
+    Input  = [Windows.Media.BrushConverter]::new().ConvertFromString("#1a2028")
+    Text   = [Windows.Media.BrushConverter]::new().ConvertFromString("#e6edf3")
+    Meta   = [Windows.Media.BrushConverter]::new().ConvertFromString("#8b949e")
+}
+
 # ── Nav active state ──
 $script:ActiveNav = $null
 function Set-ActiveNav($btn, $index) {
@@ -527,7 +562,7 @@ function Set-ActiveNav($btn, $index) {
         $script:ActiveNav.Foreground = [System.Windows.Media.Brushes]::Gray
         $script:ActiveNav.FontWeight = "SemiBold"
     }
-    $btn.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString("#22c55e")
+    $btn.Foreground = $script:Brushes.Green
     $btn.FontWeight = "Bold"
     $script:ActiveNav = $btn
     $tabContent.SelectedIndex = $index
@@ -548,8 +583,9 @@ $trayIcon.Visible = $true
 # Load icon from file, fallback to generated glyph
 $icoPath = Join-Path $PSScriptRoot "AstraDownloader.ico"
 if (Test-Path $icoPath) {
-    $trayIcon.Icon = New-Object System.Drawing.Icon($icoPath, 32, 32)
-} else {
+    try { $trayIcon.Icon = New-Object System.Drawing.Icon($icoPath, 32, 32) } catch {}
+}
+if (-not $trayIcon.Icon) {
     $bmp = New-Object System.Drawing.Bitmap(16,16)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
@@ -559,7 +595,6 @@ if (Test-Path $icoPath) {
     $trayIcon.Icon = [System.Drawing.Icon]::FromHandle($bmp.GetHicon())
 }
 
-# Tray context menu
 $trayMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $trayShow = $trayMenu.Items.Add("Show Astra Downloader")
 $trayStartStop = $trayMenu.Items.Add("Start Server")
@@ -567,16 +602,15 @@ $trayMenu.Items.Add("-")
 $trayExit = $trayMenu.Items.Add("Exit")
 $trayIcon.ContextMenuStrip = $trayMenu
 
-$trayIcon.Add_DoubleClick({
+function Show-MainWindow {
     $window.Show()
+    $window.ShowInTaskbar = $true
     $window.WindowState = [System.Windows.WindowState]::Normal
     $window.Activate()
-})
-$trayShow.Add_Click({
-    $window.Show()
-    $window.WindowState = [System.Windows.WindowState]::Normal
-    $window.Activate()
-})
+}
+
+$trayIcon.Add_DoubleClick({ Show-MainWindow })
+$trayShow.Add_Click({ Show-MainWindow })
 $trayExit.Add_Click({
     $script:ForceExit = $true
     $window.Close()
@@ -587,6 +621,7 @@ $script:ForceExit = $false
 
 $window.Add_StateChanged({
     if ($window.WindowState -eq [System.Windows.WindowState]::Minimized) {
+        $window.ShowInTaskbar = $false
         $window.Hide()
     }
 })
@@ -595,6 +630,7 @@ $window.Add_Closing({
     param($s, $e)
     if (-not $script:ForceExit -and $script:Config.CloseToTray -eq $true) {
         $e.Cancel = $true
+        $window.ShowInTaskbar = $false
         $window.Hide()
     }
 })
@@ -608,7 +644,16 @@ $script:ServerPipeline = $null
 function Start-Server {
     if ($script:ServerState.Running) { return }
 
-    # Reload config into shared state
+    # Validate yt-dlp exists
+    if (!(Test-Path $script:Config.YtDlpPath)) {
+        $script:LogQueue.Enqueue("$(Get-Date -Format 'HH:mm:ss') ERROR: yt-dlp not found at $($script:Config.YtDlpPath)")
+        [System.Windows.MessageBox]::Show(
+            "yt-dlp.exe not found at:`n$($script:Config.YtDlpPath)`n`nRe-run the installer or update the path in Settings.",
+            "Astra Downloader", "OK", "Warning"
+        )
+        return
+    }
+
     $script:ServerState.Config = $script:Config
     $script:ServerState.ShouldStop = $false
     $script:ServerState.StartTime = Get-Date
@@ -625,8 +670,9 @@ function Start-Server {
         $PORT = $state.Port
         $MAX_CONCURRENT = 3
         $config = $state.Config
+        $logQ = $state.LogQueue
 
-        function Write-SLog { param([string]$msg); $state.Log += "$(Get-Date -Format 'HH:mm:ss') $msg`n" }
+        function Write-SLog { param([string]$msg); $logQ.Enqueue("$(Get-Date -Format 'HH:mm:ss') $msg") }
 
         function Read-FileTail {
             param([string]$Path, [int]$Bytes = 4096)
@@ -646,14 +692,20 @@ function Start-Server {
         function Save-HistoryEntry {
             param([hashtable]$entry)
             try {
-                $history = @()
-                if (Test-Path $state.HistoryPath) {
-                    $raw = Get-Content $state.HistoryPath -Raw -ErrorAction SilentlyContinue
-                    if ($raw) { $history = @($raw | ConvertFrom-Json) }
-                }
-                $history += [PSCustomObject]$entry
-                if ($history.Count -gt 500) { $history = $history[-500..-1] }
-                $history | ConvertTo-Json -Depth 3 -Compress | Set-Content $state.HistoryPath -Encoding UTF8
+                # Use a file lock to prevent race with UI thread reading history
+                $lockPath = $state.HistoryPath + ".lock"
+                $lock = $null
+                try {
+                    $lock = [System.IO.File]::Open($lockPath, 'OpenOrCreate', 'ReadWrite', 'None')
+                    $history = @()
+                    if (Test-Path $state.HistoryPath) {
+                        $raw = Get-Content $state.HistoryPath -Raw -ErrorAction SilentlyContinue
+                        if ($raw) { $history = @($raw | ConvertFrom-Json) }
+                    }
+                    $history += [PSCustomObject]$entry
+                    if ($history.Count -gt 500) { $history = $history[-500..-1] }
+                    $history | ConvertTo-Json -Depth 3 -Compress | Set-Content $state.HistoryPath -Encoding UTF8
+                } finally { if ($lock) { $lock.Close() } }
             } catch {}
         }
 
@@ -671,8 +723,8 @@ function Start-Server {
 
             $allowedVF = @('mp4','mkv','webm'); $allowedAF = @('mp3','m4a','opus','flac','wav')
             $allowedQ = @('best','2160','1440','1080','720','480')
-            $reqFmt = if ($params.format) { $params.format.ToLower() } else { $null }
-            $reqQ = if ($params.quality) { $params.quality.ToLower() } else { 'best' }
+            $reqFmt = if ($params.format) { "$($params.format)".ToLower() } else { $null }
+            $reqQ = if ($params.quality) { "$($params.quality)".ToLower() } else { 'best' }
             $format = if ($audioOnly) { if ($reqFmt -and $allowedAF -contains $reqFmt) { $reqFmt } else { 'mp3' } } else { if ($reqFmt -and $allowedVF -contains $reqFmt) { $reqFmt } else { 'mp4' } }
             $quality = if ($allowedQ -contains $reqQ) { $reqQ } else { 'best' }
 
@@ -686,6 +738,11 @@ function Start-Server {
                 }
             }
 
+            # Ensure output dir exists
+            if (!(Test-Path $outDir)) {
+                try { New-Item -ItemType Directory -Path $outDir -Force | Out-Null } catch {}
+            }
+
             $ffLoc = Split-Path $config.FfmpegPath -Parent
             $isPlaylist = $url -match '[?&]list=' -and $url -notmatch '[?&]v='
             if ($isPlaylist) { $outTpl = Join-Path $outDir "%(playlist_title)s/%(title)s.$format" }
@@ -693,27 +750,28 @@ function Start-Server {
 
             $fmtSel = if ($quality -eq 'best') { "bestvideo+bestaudio/best" } else { "bestvideo[height<=$quality]+bestaudio/best[height<=$quality]/best" }
 
-            $args = @('--newline','--progress','--no-colors','--ffmpeg-location',$ffLoc,'-o',$outTpl)
-            $args += '--progress-template'; $args += 'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s'
+            # IMPORTANT: do NOT use $args as variable name — it's a PS automatic variable
+            $dlArgs = @('--newline','--progress','--no-colors','--ffmpeg-location',$ffLoc,'-o',$outTpl)
+            $dlArgs += '--progress-template'; $dlArgs += 'download:MDLP %(progress._percent_str)s %(progress._speed_str)s %(progress._eta_str)s'
             $frags = if ($config.ConcurrentFragments -gt 0) { $config.ConcurrentFragments } else { 4 }
-            $args += '--concurrent-fragments'; $args += "$frags"
-            if ($config.EmbedMetadata -eq $true) { $args += '--embed-metadata' }
-            if ($config.EmbedThumbnail -eq $true) { $args += '--embed-thumbnail' }
-            if ($config.EmbedChapters -eq $true) { $args += '--embed-chapters' }
-            if ($config.EmbedSubs -eq $true) { $args += '--embed-subs'; $args += '--write-subs'; $args += '--write-auto-subs'; $args += '--sub-langs'; $args += ($config.SubLangs -replace '[^a-zA-Z0-9,\-]','') }
-            if ($config.SponsorBlock -eq $true) { $action = if ($config.SponsorBlockAction -eq 'mark') {'mark'} else {'remove'}; $args += "--sponsorblock-$action"; $args += 'all' }
-            if ($config.DownloadArchive -eq $true) { $args += '--download-archive'; $args += $state.ArchivePath }
-            if ($config.RateLimit -and $config.RateLimit -match '^\d+[KMG]?$') { $args += '--limit-rate'; $args += $config.RateLimit }
-            if ($config.Proxy -and $config.Proxy -match '^(socks|https?):') { $args += '--proxy'; $args += $config.Proxy }
-            if ($referer) { $args += '--referer'; $args += $referer }
-            if ($isPlaylist) { $args += '--yes-playlist' }
+            $dlArgs += '--concurrent-fragments'; $dlArgs += "$frags"
+            if ($config.EmbedMetadata -eq $true) { $dlArgs += '--embed-metadata' }
+            if ($config.EmbedThumbnail -eq $true) { $dlArgs += '--embed-thumbnail' }
+            if ($config.EmbedChapters -eq $true) { $dlArgs += '--embed-chapters' }
+            if ($config.EmbedSubs -eq $true) { $dlArgs += '--embed-subs'; $dlArgs += '--write-subs'; $dlArgs += '--write-auto-subs'; $dlArgs += '--sub-langs'; $dlArgs += ($config.SubLangs -replace '[^a-zA-Z0-9,\-]','') }
+            if ($config.SponsorBlock -eq $true) { $sbAction = if ($config.SponsorBlockAction -eq 'mark') {'mark'} else {'remove'}; $dlArgs += "--sponsorblock-$sbAction"; $dlArgs += 'all' }
+            if ($config.DownloadArchive -eq $true) { $dlArgs += '--download-archive'; $dlArgs += $state.ArchivePath }
+            if ($config.RateLimit -and $config.RateLimit -match '^\d+[KMG]?$') { $dlArgs += '--limit-rate'; $dlArgs += $config.RateLimit }
+            if ($config.Proxy -and $config.Proxy -match '^(socks|https?):') { $dlArgs += '--proxy'; $dlArgs += $config.Proxy }
+            if ($referer) { $dlArgs += '--referer'; $dlArgs += $referer }
+            if ($isPlaylist) { $dlArgs += '--yes-playlist' }
 
             if ($audioOnly) {
-                $ytArgs = @('-f','bestaudio','--extract-audio','--audio-format',$format,'--audio-quality','0') + $args + @($url)
+                $ytArgs = @('-f','bestaudio','--extract-audio','--audio-format',$format,'--audio-quality','0') + $dlArgs + @($url)
             } elseif ($isDirect) {
-                $ytArgs = $args + @($url)
+                $ytArgs = $dlArgs + @($url)
             } else {
-                $ytArgs = @('-f',$fmtSel,'--merge-output-format',$format) + $args + @($url)
+                $ytArgs = @('-f',$fmtSel,'--merge-output-format',$format) + $dlArgs + @($url)
             }
 
             $proc = Start-Process -FilePath $config.YtDlpPath -ArgumentList $ytArgs -NoNewWindow -PassThru `
@@ -765,7 +823,11 @@ function Start-Server {
                         Save-HistoryEntry @{ id=$dl.id; url=$dl.url; title=$dl.title; filename=$dl.filename; format=$dl.format; quality=$dl.quality; audioOnly=$dl.audioOnly; date=(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'); duration=[math]::Round(((Get-Date)-$dl.startTime).TotalSeconds) }
                     } else {
                         $dl.status = "failed"
-                        Write-SLog "[$id] Failed"
+                        $errFile = Join-Path $env:TEMP "mdl_stderr_$id.txt"
+                        $errTail = if (Test-Path $errFile) { Read-FileTail $errFile 1024 } else { "" }
+                        $errMsg = if ($errTail) { ($errTail -split "`n" | Select-Object -Last 1).Trim() } else { "Unknown error" }
+                        $dl.error = $errMsg
+                        Write-SLog "[$id] Failed: $errMsg"
                     }
                     foreach ($f in @($dl.progressFile, (Join-Path $env:TEMP "mdl_stderr_$id.txt"), (Join-Path $env:TEMP "mdl_wrap_$id.ps1"))) {
                         if (Test-Path $f) { Remove-Item $f -Force -ErrorAction SilentlyContinue }
@@ -788,18 +850,30 @@ function Start-Server {
             $buf = [System.Text.Encoding]::UTF8.GetBytes($json)
             $ctx.Response.StatusCode = $code
             $ctx.Response.ContentType = "application/json; charset=utf-8"
-            $ctx.Response.Headers.Add("Access-Control-Allow-Origin","*")
+            # Restrict CORS to extension origins only (chrome-extension:// and moz-extension://)
+            $origin = $ctx.Request.Headers["Origin"]
+            if ($origin -match '^(chrome-extension|moz-extension)://') {
+                $ctx.Response.Headers.Add("Access-Control-Allow-Origin", $origin)
+            } else {
+                $ctx.Response.Headers.Add("Access-Control-Allow-Origin", "null")
+            }
             $ctx.Response.Headers.Add("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS")
             $ctx.Response.Headers.Add("Access-Control-Allow-Headers","Content-Type,X-Auth-Token,X-MDL-Client")
             $ctx.Response.ContentLength64 = $buf.Length
             try { $ctx.Response.OutputStream.Write($buf,0,$buf.Length); $ctx.Response.OutputStream.Close() } catch {}
         }
         function Read-Body { param($req)
-            try { $r = New-Object System.IO.StreamReader($req.InputStream,$req.ContentEncoding); $b = $r.ReadToEnd(); $r.Close(); return $b } catch { return $null }
+            try {
+                $r = New-Object System.IO.StreamReader($req.InputStream, $req.ContentEncoding)
+                $b = $r.ReadToEnd(); $r.Close()
+                # Cap body size at 1MB to prevent memory exhaustion
+                if ($b.Length -gt 1048576) { return $null }
+                return $b
+            } catch { return $null }
         }
 
         # ── Auto-update yt-dlp ──
-        if ($config.AutoUpdateYtDlp -eq $true) {
+        if ($config.AutoUpdateYtDlp -eq $true -and (Test-Path $config.YtDlpPath)) {
             try { Start-Process -FilePath $config.YtDlpPath -ArgumentList "-U" -NoNewWindow -ErrorAction SilentlyContinue } catch {}
             Write-SLog "yt-dlp auto-update triggered"
         }
@@ -807,20 +881,23 @@ function Start-Server {
         # ── Start listener ──
         $listener = New-Object System.Net.HttpListener
         $listener.Prefixes.Add("http://127.0.0.1:$PORT/")
-        try { $listener.Start() } catch { Write-SLog "FATAL: Cannot start on port $PORT"; $state.Running = $false; return }
+        try { $listener.Start() } catch {
+            Write-SLog "FATAL: Cannot start on port $PORT - $_"
+            $state.Running = $false
+            return
+        }
         $state.Running = $true
-        $state.Log = ""
         Write-SLog "Server listening on port $PORT"
 
         while ($listener.IsListening -and -not $state.ShouldStop) {
             try {
-                $result = $listener.BeginGetContext($null,$null)
-                while (-not $result.AsyncWaitHandle.WaitOne(500)) {
+                $asyncResult = $listener.BeginGetContext($null,$null)
+                while (-not $asyncResult.AsyncWaitHandle.WaitOne(500)) {
                     Update-Downloads
                     if ($state.ShouldStop) { break }
                 }
                 if ($state.ShouldStop) { break }
-                $ctx = $listener.EndGetContext($result)
+                $ctx = $listener.EndGetContext($asyncResult)
                 $method = $ctx.Request.HttpMethod
                 $path = $ctx.Request.Url.AbsolutePath.TrimEnd('/')
 
@@ -832,16 +909,20 @@ function Start-Server {
                 switch -Regex ($path) {
                     '^/health$' {
                         $active = @($state.Downloads.Values | Where-Object { $_.status -match 'downloading|merging|extracting' }).Count
-                        $resp = @{status="ok";version="5.0.0";port=$PORT;downloads=$active;token_required=$true}
+                        $resp = @{status="ok";version="1.0.0";port=$PORT;downloads=$active;token_required=$true}
                         if ($ctx.Request.Headers["X-MDL-Client"] -eq "MediaDL") { $resp.token = $state.Token }
                         Send-Json $ctx $resp
                     }
                     '^/download$' {
                         if ($method -ne 'POST') { Send-Json $ctx @{error="Method not allowed"} 405; break }
                         $body = Read-Body $ctx.Request
-                        if (-not $body) { Send-Json $ctx @{error="Empty body"} 400; break }
+                        if (-not $body) { Send-Json $ctx @{error="Empty or oversized body"} 400; break }
                         try { $p = $body | ConvertFrom-Json } catch { Send-Json $ctx @{error="Invalid JSON"} 400; break }
                         if (-not $p.url) { Send-Json $ctx @{error="Missing url"} 400; break }
+                        # URL validation: must be http(s)
+                        $urlStr = "$($p.url)"
+                        if ($urlStr -notmatch '^https?://') { Send-Json $ctx @{error="Invalid URL protocol"} 400; break }
+                        if ($urlStr.Length -gt 4096) { Send-Json $ctx @{error="URL too long"} 400; break }
                         $active = @($state.Downloads.Values | Where-Object { $_.status -match 'downloading|merging|extracting' }).Count
                         if ($active -ge $MAX_CONCURRENT) { Send-Json $ctx @{error="Too many concurrent downloads";active=$active} 429; break }
                         $id = Start-Download $p
@@ -851,7 +932,7 @@ function Start-Server {
                         $sid = $matches[1]; Update-Downloads
                         if ($state.Downloads.ContainsKey($sid)) {
                             $dl = $state.Downloads[$sid]
-                            Send-Json $ctx @{id=$dl.id;status=$dl.status;progress=[math]::Round($dl.progress,1);speed=$dl.speed;eta=$dl.eta;title=$dl.title;filename=$dl.filename}
+                            Send-Json $ctx @{id=$dl.id;status=$dl.status;progress=[math]::Round($dl.progress,1);speed=$dl.speed;eta=$dl.eta;title=$dl.title;filename=$dl.filename;error=$dl.error}
                         } else { Send-Json $ctx @{error="Not found"} 404 }
                     }
                     '^/queue$' {
@@ -865,7 +946,16 @@ function Start-Server {
                     }
                     '^/config$' {
                         if ($method -eq 'GET') {
-                            Send-Json $ctx @{downloadPath=$config.DownloadPath;audioDownloadPath=$config.AudioDownloadPath;embedMetadata=$config.EmbedMetadata;embedThumbnail=$config.EmbedThumbnail;embedChapters=$config.EmbedChapters;embedSubs=$config.EmbedSubs;subLangs=$config.SubLangs;sponsorBlock=$config.SponsorBlock;concurrentFragments=$config.ConcurrentFragments;downloadArchive=$config.DownloadArchive;rateLimit=$config.RateLimit;proxy=$config.Proxy;videoFormats=@('mp4','mkv','webm');audioFormats=@('mp3','m4a','opus','flac','wav');qualities=@('best','2160','1440','1080','720','480')}
+                            Send-Json $ctx @{
+                                downloadPath=$config.DownloadPath; audioDownloadPath=$config.AudioDownloadPath
+                                embedMetadata=$config.EmbedMetadata; embedThumbnail=$config.EmbedThumbnail
+                                embedChapters=$config.EmbedChapters; embedSubs=$config.EmbedSubs
+                                subLangs=$config.SubLangs; sponsorBlock=$config.SponsorBlock
+                                concurrentFragments=$config.ConcurrentFragments; downloadArchive=$config.DownloadArchive
+                                rateLimit=$config.RateLimit; proxy=$config.Proxy
+                                videoFormats=@('mp4','mkv','webm'); audioFormats=@('mp3','m4a','opus','flac','wav')
+                                qualities=@('best','2160','1440','1080','720','480')
+                            }
                         } else { Send-Json $ctx @{error="Use GUI settings"} 405 }
                     }
                     '^/cancel/(.+)$' {
@@ -893,7 +983,6 @@ function Start-Server {
 
     $script:ServerRunspace = $rs
     $script:ServerPipeline = $ps
-    $script:ServerState.Log = ""
     $ps.BeginInvoke() | Out-Null
 
     Write-Log "Server runspace started"
@@ -902,7 +991,6 @@ function Start-Server {
 
 function Stop-Server {
     $script:ServerState.ShouldStop = $true
-    # Wait briefly for clean shutdown
     $deadline = (Get-Date).AddSeconds(3)
     while ($script:ServerState.Running -and (Get-Date) -lt $deadline) {
         $window.Dispatcher.Invoke([action]{}, [System.Windows.Threading.DispatcherPriority]::Background)
@@ -911,9 +999,11 @@ function Stop-Server {
     if ($script:ServerPipeline) {
         try { $script:ServerPipeline.Stop() } catch {}
         try { $script:ServerPipeline.Dispose() } catch {}
+        $script:ServerPipeline = $null
     }
     if ($script:ServerRunspace) {
         try { $script:ServerRunspace.Close() } catch {}
+        $script:ServerRunspace = $null
     }
     $script:ServerState.Running = $false
     $script:ServerState.StartTime = $null
@@ -922,19 +1012,19 @@ function Stop-Server {
 
 function Update-ServerUI {
     if ($script:ServerState.Running) {
-        $statusDot.Fill = [Windows.Media.BrushConverter]::new().ConvertFromString("#22c55e")
+        $statusDot.Fill = $script:Brushes.Green
         $statusLabel.Text = "Running"
         $dashStatus.Text = "Server Running"
         $btnStartStop.Content = "Stop Server"
-        $btnStartStop.Background = [Windows.Media.BrushConverter]::new().ConvertFromString("#ef4444")
+        $btnStartStop.Background = $script:Brushes.Red
         $trayStartStop.Text = "Stop Server"
         $trayIcon.Text = "Astra Downloader - Running"
     } else {
-        $statusDot.Fill = [Windows.Media.BrushConverter]::new().ConvertFromString("#525a65")
+        $statusDot.Fill = $script:Brushes.Muted
         $statusLabel.Text = "Stopped"
         $dashStatus.Text = "Server Stopped"
         $btnStartStop.Content = "Start Server"
-        $btnStartStop.Background = [Windows.Media.BrushConverter]::new().ConvertFromString("#22c55e")
+        $btnStartStop.Background = $script:Brushes.Green
         $trayStartStop.Text = "Start Server"
         $trayIcon.Text = "Astra Downloader - Stopped"
     }
@@ -945,7 +1035,9 @@ function Update-ServerUI {
 # ══════════════════════════════════════════════════════════════
 
 $btnStartStop.Add_Click({
+    $btnStartStop.IsEnabled = $false
     if ($script:ServerState.Running) { Stop-Server } else { Start-Server }
+    $btnStartStop.IsEnabled = $true
 })
 
 $trayStartStop.Add_Click({
@@ -954,35 +1046,37 @@ $trayStartStop.Add_Click({
 
 $btnOpenFolder.Add_Click({
     $p = $script:Config.DownloadPath
-    if ($p -and (Test-Path $p)) { Start-Process explorer.exe -ArgumentList $p }
-    else { Start-Process explorer.exe -ArgumentList $script:InstallPath }
+    if ($p -and (Test-Path $p)) { Start-Process explorer.exe -ArgumentList "`"$p`"" }
+    else { Start-Process explorer.exe -ArgumentList "`"$($script:InstallPath)`"" }
 })
 
-# Browse buttons
 $btnBrowseDl.Add_Click({
     $d = New-Object System.Windows.Forms.FolderBrowserDialog
+    $d.Description = "Select video download folder"
     $d.SelectedPath = $cfgDownloadPath.Text
     if ($d.ShowDialog() -eq 'OK') { $cfgDownloadPath.Text = $d.SelectedPath }
 })
 $btnBrowseAudio.Add_Click({
     $d = New-Object System.Windows.Forms.FolderBrowserDialog
+    $d.Description = "Select audio download folder"
     $d.SelectedPath = $cfgAudioPath.Text
     if ($d.ShowDialog() -eq 'OK') { $cfgAudioPath.Text = $d.SelectedPath }
 })
 
-# Save settings
+# Save settings — no sleep, use a timer for the "Saved!" feedback
+$script:SaveFeedbackTimer = $null
 $btnSaveSettings.Add_Click({
-    $script:Config.DownloadPath = $cfgDownloadPath.Text
-    $script:Config.AudioDownloadPath = $cfgAudioPath.Text
+    $script:Config.DownloadPath = $cfgDownloadPath.Text.Trim()
+    $script:Config.AudioDownloadPath = $cfgAudioPath.Text.Trim()
     $script:Config.EmbedMetadata = $cfgEmbedMetadata.IsChecked
     $script:Config.EmbedThumbnail = $cfgEmbedThumbnail.IsChecked
     $script:Config.EmbedChapters = $cfgEmbedChapters.IsChecked
     $script:Config.EmbedSubs = $cfgEmbedSubs.IsChecked
-    $script:Config.SubLangs = $cfgSubLangs.Text
+    $script:Config.SubLangs = $cfgSubLangs.Text.Trim()
     $script:Config.SponsorBlock = $cfgSponsorBlock.IsChecked
     $v = 0; if ([int]::TryParse($cfgFragments.Text, [ref]$v) -and $v -ge 1 -and $v -le 32) { $script:Config.ConcurrentFragments = $v }
-    $script:Config.RateLimit = $cfgRateLimit.Text
-    $script:Config.Proxy = $cfgProxy.Text
+    $script:Config.RateLimit = $cfgRateLimit.Text.Trim()
+    $script:Config.Proxy = $cfgProxy.Text.Trim()
     $script:Config.AutoUpdateYtDlp = $cfgAutoUpdate.IsChecked
     $script:Config.DownloadArchive = $cfgArchive.IsChecked
     $script:Config.CloseToTray = $cfgCloseToTray.IsChecked
@@ -990,10 +1084,17 @@ $btnSaveSettings.Add_Click({
     Save-Config
     $script:ServerState.Config = $script:Config
     $btnSaveSettings.Content = "Saved!"
-    $window.Dispatcher.BeginInvoke([action]{ Start-Sleep -Milliseconds 1500; $btnSaveSettings.Content = "Save Settings" })
+    # Reset label after 1.5s using a dispatcher timer (non-blocking)
+    if ($script:SaveFeedbackTimer) { $script:SaveFeedbackTimer.Stop() }
+    $script:SaveFeedbackTimer = New-Object System.Windows.Threading.DispatcherTimer
+    $script:SaveFeedbackTimer.Interval = [TimeSpan]::FromMilliseconds(1500)
+    $script:SaveFeedbackTimer.Add_Tick({
+        $btnSaveSettings.Content = "Save Settings"
+        $script:SaveFeedbackTimer.Stop()
+    })
+    $script:SaveFeedbackTimer.Start()
 })
 
-# Clear history
 $btnClearHistory.Add_Click({
     "[]" | Set-Content $script:HistoryPath -Encoding UTF8
     Refresh-History
@@ -1010,7 +1111,7 @@ function Refresh-History {
         $t = New-Object System.Windows.Controls.TextBlock
         $t.Text = "No downloads yet."
         $t.FontSize = 13
-        $t.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString("#525a65")
+        $t.Foreground = $script:Brushes.Muted
         $historyList.Children.Add($t)
         return
     }
@@ -1019,8 +1120,8 @@ function Refresh-History {
     for ($i = 0; $i -lt $shown; $i++) {
         $h = $history[$i]
         $card = New-Object System.Windows.Controls.Border
-        $card.Background = [Windows.Media.BrushConverter]::new().ConvertFromString("#151b23")
-        $card.BorderBrush = [Windows.Media.BrushConverter]::new().ConvertFromString("#2a3140")
+        $card.Background = $script:Brushes.Card
+        $card.BorderBrush = $script:Brushes.Border
         $card.BorderThickness = [System.Windows.Thickness]::new(1)
         $card.CornerRadius = [System.Windows.CornerRadius]::new(8)
         $card.Padding = [System.Windows.Thickness]::new(12,8,12,8)
@@ -1028,16 +1129,21 @@ function Refresh-History {
 
         $sp = New-Object System.Windows.Controls.StackPanel
         $titleTb = New-Object System.Windows.Controls.TextBlock
-        $titleTb.Text = "$($h.title)"
+        $titleTb.Text = if ($h.title) { "$($h.title)" } else { "(untitled)" }
         $titleTb.FontSize = 12; $titleTb.FontWeight = "SemiBold"
-        $titleTb.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString("#e6edf3")
+        $titleTb.Foreground = $script:Brushes.Text
         $titleTb.TextTrimming = "CharacterEllipsis"
         $sp.Children.Add($titleTb)
 
         $metaTb = New-Object System.Windows.Controls.TextBlock
-        $metaTb.Text = "$($h.date)  |  $($h.format)  |  $($h.quality)  |  $($h.duration)s"
+        $metaParts = @()
+        if ($h.date) { $metaParts += "$($h.date)" }
+        if ($h.format) { $metaParts += "$($h.format)" }
+        if ($h.quality) { $metaParts += "$($h.quality)" }
+        if ($h.duration) { $metaParts += "$($h.duration)s" }
+        $metaTb.Text = $metaParts -join "  |  "
         $metaTb.FontSize = 10
-        $metaTb.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString("#525a65")
+        $metaTb.Foreground = $script:Brushes.Muted
         $metaTb.Margin = [System.Windows.Thickness]::new(0,2,0,0)
         $sp.Children.Add($metaTb)
 
@@ -1066,16 +1172,19 @@ $timer.Add_Tick({
         else { $statUptime.Text = "{0:0}s" -f $up.TotalSeconds }
     } else { $statUptime.Text = "--" }
 
-    # Log
-    if ($script:ServerState.Log) {
-        $logText.Text += $script:ServerState.Log
-        $script:ServerState.Log = ""
-        # Trim to last 2000 chars
-        if ($logText.Text.Length -gt 2000) { $logText.Text = $logText.Text.Substring($logText.Text.Length - 2000) }
+    # Drain log queue (thread-safe)
+    $logEntry = $null
+    $newLog = ""
+    while ($script:LogQueue.TryDequeue([ref]$logEntry)) {
+        $newLog += $logEntry + "`n"
+    }
+    if ($newLog) {
+        $logText.Text += $newLog
+        if ($logText.Text.Length -gt 4000) { $logText.Text = $logText.Text.Substring($logText.Text.Length - 4000) }
         $logScroll.ScrollToEnd()
     }
 
-    # Active downloads list
+    # Active downloads list — only rebuild if count changed to reduce GC pressure
     $dls = @($script:ServerState.Downloads.Values | Where-Object { $_.status -notmatch 'complete|failed|cancelled' })
     if ($dls.Count -eq 0) {
         if ($downloadsList.Children.Count -ne 1 -or $downloadsList.Children[0] -ne $noDownloads) {
@@ -1086,8 +1195,8 @@ $timer.Add_Tick({
         $downloadsList.Children.Clear()
         foreach ($dl in $dls) {
             $card = New-Object System.Windows.Controls.Border
-            $card.Background = [Windows.Media.BrushConverter]::new().ConvertFromString("#151b23")
-            $card.BorderBrush = [Windows.Media.BrushConverter]::new().ConvertFromString("#2a3140")
+            $card.Background = $script:Brushes.Card
+            $card.BorderBrush = $script:Brushes.Border
             $card.BorderThickness = [System.Windows.Thickness]::new(1)
             $card.CornerRadius = [System.Windows.CornerRadius]::new(10)
             $card.Padding = [System.Windows.Thickness]::new(14,10,14,10)
@@ -1096,31 +1205,42 @@ $timer.Add_Tick({
             $sp = New-Object System.Windows.Controls.StackPanel
 
             $titleTb = New-Object System.Windows.Controls.TextBlock
-            $titleTb.Text = "$($dl.title)"
+            $titleTb.Text = if ($dl.title) { "$($dl.title)" } else { "Downloading..." }
             $titleTb.FontSize = 13; $titleTb.FontWeight = "SemiBold"
-            $titleTb.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString("#e6edf3")
+            $titleTb.Foreground = $script:Brushes.Text
             $titleTb.TextTrimming = "CharacterEllipsis"
             $sp.Children.Add($titleTb)
 
-            # Progress bar
+            # Progress bar — use percentage width via a Grid for proper scaling
             $barBg = New-Object System.Windows.Controls.Border
-            $barBg.Background = [Windows.Media.BrushConverter]::new().ConvertFromString("#1a2028")
+            $barBg.Background = $script:Brushes.Input
             $barBg.CornerRadius = [System.Windows.CornerRadius]::new(4)
             $barBg.Height = 6
             $barBg.Margin = [System.Windows.Thickness]::new(0,6,0,4)
-            $barFill = New-Object System.Windows.Controls.Border
-            $barFill.Background = [Windows.Media.BrushConverter]::new().ConvertFromString("#22c55e")
-            $barFill.CornerRadius = [System.Windows.CornerRadius]::new(4)
-            $barFill.HorizontalAlignment = "Left"
             $pct = [Math]::Min([Math]::Max($dl.progress, 0), 100)
-            $barFill.Width = [Math]::Max(($pct / 100.0) * 400, 0)
-            $barBg.Child = $barFill
+            $barGrid = New-Object System.Windows.Controls.Grid
+            $col1 = New-Object System.Windows.Controls.ColumnDefinition
+            $col1.Width = [System.Windows.GridLength]::new($pct, [System.Windows.GridUnitType]::Star)
+            $col2 = New-Object System.Windows.Controls.ColumnDefinition
+            $col2.Width = [System.Windows.GridLength]::new([Math]::Max(100 - $pct, 0), [System.Windows.GridUnitType]::Star)
+            $barGrid.ColumnDefinitions.Add($col1)
+            $barGrid.ColumnDefinitions.Add($col2)
+            $barFill = New-Object System.Windows.Controls.Border
+            $barFill.Background = $script:Brushes.Green
+            $barFill.CornerRadius = [System.Windows.CornerRadius]::new(4)
+            [System.Windows.Controls.Grid]::SetColumn($barFill, 0)
+            $barGrid.Children.Add($barFill)
+            $barBg.Child = $barGrid
             $sp.Children.Add($barBg)
 
             $metaTb = New-Object System.Windows.Controls.TextBlock
-            $metaTb.Text = "$([math]::Round($dl.progress,1))%  |  $($dl.speed)  |  ETA $($dl.eta)  |  $($dl.status)"
+            $statusText = "$([math]::Round($dl.progress,1))%"
+            if ($dl.speed) { $statusText += "  |  $($dl.speed)" }
+            if ($dl.eta) { $statusText += "  |  ETA $($dl.eta)" }
+            $statusText += "  |  $($dl.status)"
+            $metaTb.Text = $statusText
             $metaTb.FontSize = 10
-            $metaTb.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString("#8b949e")
+            $metaTb.Foreground = $script:Brushes.Meta
             $sp.Children.Add($metaTb)
 
             $card.Child = $sp
@@ -1133,25 +1253,45 @@ $timer.Start()
 # ══════════════════════════════════════════════════════════════
 # NAMED PIPE (single instance show-window IPC)
 # ══════════════════════════════════════════════════════════════
+$script:PipeShouldStop = $false
 $pipeRunspace = [runspacefactory]::CreateRunspace()
 $pipeRunspace.Open()
 $pipeRunspace.SessionStateProxy.SetVariable('dispatcher', $window.Dispatcher)
-$pipeRunspace.SessionStateProxy.SetVariable('window', $window)
+$pipeRunspace.SessionStateProxy.SetVariable('showAction', [action]{
+    $window.Show()
+    $window.ShowInTaskbar = $true
+    $window.WindowState = [System.Windows.WindowState]::Normal
+    $window.Activate()
+})
+# Share a cancellation token so the pipe thread can exit cleanly
+$script:PipeCts = New-Object System.Threading.CancellationTokenSource
+$pipeRunspace.SessionStateProxy.SetVariable('cts', $script:PipeCts)
 $pipePipeline = [powershell]::Create()
 $pipePipeline.Runspace = $pipeRunspace
 $pipePipeline.AddScript({
-    while ($true) {
+    while (-not $cts.Token.IsCancellationRequested) {
         try {
-            $pipe = New-Object System.IO.Pipes.NamedPipeServerStream('AstraDownloader-Show', [System.IO.Pipes.PipeDirection]::In)
-            $pipe.WaitForConnection()
+            $pipe = New-Object System.IO.Pipes.NamedPipeServerStream(
+                'AstraDownloader-Show',
+                [System.IO.Pipes.PipeDirection]::In,
+                1,
+                [System.IO.Pipes.PipeTransmissionMode]::Byte,
+                [System.IO.Pipes.PipeOptions]::Asynchronous
+            )
+            # Use async wait so we can check cancellation
+            $connectResult = $pipe.BeginWaitForConnection($null, $null)
+            while (-not $connectResult.AsyncWaitHandle.WaitOne(500)) {
+                if ($cts.Token.IsCancellationRequested) { $pipe.Close(); return }
+            }
+            if ($cts.Token.IsCancellationRequested) { $pipe.Close(); return }
+            $pipe.EndWaitForConnection($connectResult)
             $pipe.ReadByte() | Out-Null
             $pipe.Close()
-            $dispatcher.Invoke([action]{
-                $window.Show()
-                $window.WindowState = [System.Windows.WindowState]::Normal
-                $window.Activate()
-            })
-        } catch { Start-Sleep -Seconds 1 }
+            $dispatcher.Invoke($showAction)
+        } catch {
+            if ($cts.Token.IsCancellationRequested) { return }
+            Start-Sleep -Seconds 1
+        }
     }
 }) | Out-Null
 $pipePipeline.BeginInvoke() | Out-Null
@@ -1170,20 +1310,20 @@ if ($Background -or $script:Config.StartMinimized -eq $true) {
     $window.Hide()
 }
 
-# Set window icon if available
-$winIconPath = Join-Path $PSScriptRoot "AstraDownloader.ico"
-if (!(Test-Path $winIconPath)) { $winIconPath = Join-Path $PSScriptRoot "icon.ico" }
-if (Test-Path $winIconPath) {
-    try { $window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create([System.Uri]::new($winIconPath)) } catch {}
-}
-
 $window.ShowDialog() | Out-Null
 
-# ── Cleanup ──
+# ══════════════════════════════════════════════════════════════
+# CLEANUP (always runs, even on crash)
+# ══════════════════════════════════════════════════════════════
 $timer.Stop()
 Stop-Server
 $trayIcon.Visible = $false
 $trayIcon.Dispose()
+# Cancel pipe thread before stopping it
+try { $script:PipeCts.Cancel() } catch {}
+Start-Sleep -Milliseconds 200
 try { $pipePipeline.Stop(); $pipePipeline.Dispose(); $pipeRunspace.Close() } catch {}
-$mutex.ReleaseMutex()
-$mutex.Dispose()
+try { $script:PipeCts.Dispose() } catch {}
+if ($script:mutex) {
+    try { $script:mutex.ReleaseMutex(); $script:mutex.Dispose() } catch {}
+}
