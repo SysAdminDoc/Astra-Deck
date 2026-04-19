@@ -125,7 +125,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
-> Downloads use the [MediaDL](https://github.com/SysAdminDoc/MediaDL) server (yt-dlp + ffmpeg). Click the download button in the settings panel to install — it's a one-click exe, no manual setup.
+> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service.
 
 ### Comments
 

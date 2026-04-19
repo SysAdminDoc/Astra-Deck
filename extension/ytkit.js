@@ -2046,9 +2046,18 @@ return response;
         // The server prefers 9751 but falls back when Windows (e.g. Hyper-V) blocks it.
         _PORT_CANDIDATES: [9751, 9761, 9771, 9781, 9791, 9851],
         _port: 9751,
+        _SERVICE_ID: 'astra-downloader',
 
         // Base URL for server calls. Always reflects the currently discovered port.
         baseUrl() { return 'http://127.0.0.1:' + this._port; },
+
+        _isAstraDownloaderHealth(data) {
+            if (!data || !data.token) return false;
+            if (data.service === this._SERVICE_ID) return true;
+            // Backward-compatible acceptance for hardened builds that predate
+            // the explicit service id but still expose the Astra-only health schema.
+            return data.token_required === true && Number.isInteger(data.port);
+        },
 
         // Quick health check — returns { ok, token, version, port } or { ok: false }.
         // Tries the cached port first, then probes the fallback list.
@@ -2066,7 +2075,10 @@ return response;
                         headers: { 'X-MDL-Client': 'MediaDL' },
                         timeout: 1500
                     });
-                    if (data && data.token) return data;
+                    if (this._isAstraDownloaderHealth(data)) return data;
+                    if (data && data.token) {
+                        DebugManager.log('MediaDL', `Ignoring non-Astra downloader response on port ${port}`);
+                    }
                 } catch (_) {}
                 return null;
             };
