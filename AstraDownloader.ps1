@@ -37,16 +37,19 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ── Paths ──
-$script:InstallPath = $PSScriptRoot
-$script:ConfigPath = Join-Path $PSScriptRoot "config.json"
-$script:HistoryPath = Join-Path $PSScriptRoot "history.json"
-$script:ArchivePath = Join-Path $PSScriptRoot "archive.txt"
-$script:LogPath = Join-Path $PSScriptRoot "server.log"
+# $PSScriptRoot is empty inside ps2exe-compiled .exe — detect from process path
+$script:InstallPath = if ($PSScriptRoot) { $PSScriptRoot } else {
+    Split-Path ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) -Parent
+}
+$script:ConfigPath = Join-Path $script:InstallPath "config.json"
+$script:HistoryPath = Join-Path $script:InstallPath "history.json"
+$script:ArchivePath = Join-Path $script:InstallPath "archive.txt"
+$script:LogPath = Join-Path $script:InstallPath "server.log"
 
 # ── Config ──
 if (!(Test-Path $script:ConfigPath)) {
     [System.Windows.MessageBox]::Show(
-        "config.json not found in:`n$PSScriptRoot`n`nPlease run the installer first.",
+        "config.json not found in:`n$($script:InstallPath)`n`nPlease run the installer first.",
         "Astra Downloader", "OK", "Error"
     )
     if ($script:mutex) { try { $script:mutex.ReleaseMutex(); $script:mutex.Dispose() } catch {} }
@@ -67,8 +70,8 @@ try {
 $configDefaults = @{
     DownloadPath = "$env:USERPROFILE\Videos\YouTube"
     AudioDownloadPath = ""
-    YtDlpPath = (Join-Path $PSScriptRoot "yt-dlp.exe")
-    FfmpegPath = (Join-Path $PSScriptRoot "ffmpeg.exe")
+    YtDlpPath = (Join-Path $script:InstallPath "yt-dlp.exe")
+    FfmpegPath = (Join-Path $script:InstallPath "ffmpeg.exe")
     ServerPort = 9751
     ServerToken = ""
     EmbedMetadata = $true
@@ -516,8 +519,8 @@ $statPort.Text = "$($script:Config.ServerPort)"
 $dashEndpoint.Text = "http://127.0.0.1:$($script:Config.ServerPort)"
 
 # ── Set window icon early ──
-$winIconPath = Join-Path $PSScriptRoot "AstraDownloader.ico"
-if (!(Test-Path $winIconPath)) { $winIconPath = Join-Path $PSScriptRoot "icon.ico" }
+$winIconPath = Join-Path $script:InstallPath "AstraDownloader.ico"
+if (!(Test-Path $winIconPath)) { $winIconPath = Join-Path $script:InstallPath "icon.ico" }
 if (Test-Path $winIconPath) {
     try { $window.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create([System.Uri]::new($winIconPath)) } catch {}
 }
@@ -581,7 +584,7 @@ $trayIcon.Text = "Astra Downloader"
 $trayIcon.Visible = $true
 
 # Load icon from file, fallback to generated glyph
-$icoPath = Join-Path $PSScriptRoot "AstraDownloader.ico"
+$icoPath = Join-Path $script:InstallPath "AstraDownloader.ico"
 if (Test-Path $icoPath) {
     try { $trayIcon.Icon = New-Object System.Drawing.Icon($icoPath, 32, 32) } catch {}
 }
