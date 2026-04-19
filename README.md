@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="extension/icons/128.png" alt="Astra Deck" width="80">
+  <img src="logo.png" alt="Astra Deck" width="100">
 </p>
 
 <h1 align="center">Astra Deck</h1>
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 150+ features — theater split, DeArrow, downloads, transcript viewer, video/channel hiding, and deep playback controls. Zero configuration required.
+  Premium YouTube enhancement extension for Chrome and Firefox with 150+ features — theater split, DeArrow, downloads with format/quality controls, transcript viewer, video/channel hiding, and deep playback customization. Zero configuration required.
 </p>
 
 <p align="center">
@@ -116,13 +116,16 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 
 | Feature | Default |
 |---------|---------|
-| Local Download Button (via MediaDL / yt-dlp) | On |
-| MP3 Download Button | On |
+| Download Options Popup — format, quality, and save directory per download | On |
+| Video Formats — MP4, MKV, WebM | MP4 |
+| Audio Formats — MP3, M4A, Opus, FLAC, WAV | MP3 |
+| Quality Selector — Best, 4K, 1440p, 1080p, 720p, 480p | Best |
+| Custom Save Directory — override per download or set globally | Downloads |
+| Context Menu — quick "Download Video" and "Download Audio" on right-click | On |
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
-| Download Quality selector (best/2160/1440/1080/720/480) | Best |
 
-> Downloads use the built-in MediaDL server which bundles yt-dlp + ffmpeg. Install via the one-click installer in the settings panel — no manual setup required.
+> Downloads use the [MediaDL](https://github.com/SysAdminDoc/MediaDL) server (yt-dlp + ffmpeg). Click the download button in the settings panel to install — it's a one-click exe, no manual setup.
 
 ### Comments
 
@@ -162,9 +165,11 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Resume Playback (500-entry cap, 15s save interval) | Off |
 | Mini Player Bar (floating progress/play/pause on scroll-past) | Off |
 | Playback Stats Overlay (codec, resolution, dropped frames, bandwidth) | Off |
-| Watch Time Tracker (90-day retention) | Off |
+| Watch Time Tracker (90-day retention) + Analytics Dashboard | Off |
 | Timestamp Bookmarks (inline notes, persistent storage) | Off |
-| Transcript Viewer (sidebar with clickable timestamps) | Off |
+| Transcript Viewer (sidebar with clickable timestamps) + Export | Off |
+| AI Video Summary (OpenAI / Anthropic / Gemini / Ollama, BYO key) | Off |
+| Subtitle Styling (font, size, color, background, position) | Off |
 | Blue Light Filter (adjustable 10-80%) | Off |
 | Focused Mode (hide everything except video + comments) | Off |
 | Custom CSS Injection | Off |
@@ -185,7 +190,7 @@ Toggle individual elements on/off through the settings panel:
 
 ## Settings Panel
 
-Click the gear icon in the YouTube masthead or player controls, or press **Ctrl+Alt+Y** / **Ctrl+Shift+Y**.
+Click the gear icon in the YouTube masthead or player controls, or press **Ctrl+Shift+Y**.
 
 - Searchable sidebar with categorized feature groups
 - Toggle switches with instant apply
@@ -203,13 +208,15 @@ The extension also has a standalone **Options Page** (`chrome://extensions` > As
 ```
 document_start
   early.css          Anti-FOUC CSS (scoped to feature body classes)
+  ytkit-main.js      MAIN world — canPlayType patching for codec/format filtering
 
 document_idle
+  core/*.js          ISOLATED world — env, storage, styles, url, page, navigation, player
   ytkit.js           ISOLATED world — all features, DOM manipulation, settings UI
-  background.js      Service worker — fetch proxy, downloads, cookie bridge, panel toggle
+  background.js      Service worker — fetch proxy, downloads, cookie bridge
 ```
 
-- **Single ISOLATED world script** — no MAIN world scripts in the extension build
+- **Split-context model** — MAIN world for page API interception, ISOLATED world for extension APIs and DOM
 - **SPA-aware** — hooks `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, and `video-id` attribute changes
 - **Tiered feature init** — critical features load synchronously, normal features in `requestAnimationFrame`, lazy features in `requestIdleCallback`
 - **Crash recovery** — features that crash 3 times auto-disable with console warning
@@ -225,6 +232,7 @@ document_idle
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
+- Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs
 - Explicit CSP: `script-src 'self'; object-src 'self'`
 
 ---
@@ -245,7 +253,6 @@ document_idle
 ## Building
 
 ```bash
-nvm use                                   # Optional, uses .nvmrc (Node 22)
 npm ci
 npm test
 npm run check
@@ -260,9 +267,7 @@ Outputs in `build/`:
 - `astra-deck-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript`)
 
-Notes:
-- Node 22+ is required because the `crx3` packager dependency requires it.
-- CI builds and releases now use the same `build-extension.js` path as local builds, so generated catalogs and packaged artifacts stay in sync.
+Requires Node 22+ (the `crx3` packager dependency needs it).
 
 ---
 
@@ -270,8 +275,9 @@ Notes:
 
 | Project | Description |
 |---------|-------------|
+| [MediaDL](https://github.com/SysAdminDoc/MediaDL) | Local download server (yt-dlp + ffmpeg) with one-click installer |
 | [YoutubeAdblock](https://github.com/SysAdminDoc/YoutubeAdblock) | Standalone aggressive ad blocker with deeper proxy hooks |
-| [Chapterizer](https://github.com/SysAdminDoc/Chapterizer) | Offline AI chapter generation via NLP (formerly YTKit's ChapterForge) |
+| [Chapterizer](https://github.com/SysAdminDoc/Chapterizer) | Offline AI chapter generation via NLP |
 
 ---
 
