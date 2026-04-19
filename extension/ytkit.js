@@ -436,7 +436,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.13.2';
+    const YTKIT_VERSION = '3.13.3';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2037,9 +2037,9 @@ return response;
         _CHECK_INTERVAL: 30000, // Re-check every 30s
 
         // GitHub raw URL for the compiled installer exe
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/MediaDL/main/Install-MediaDL.exe',
-        INSTALLER_FILE_NAME: 'Astra-Deck-Downloader-Setup.exe',
-        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'Astra-Deck-Downloader-Setup.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/MediaDL/main/Install-MediaDL.exe' -OutFile $out; Start-Process $out\"",
+        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-AstraDownloader.exe',
+        INSTALLER_FILE_NAME: 'Install-AstraDownloader.exe',
+        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'Install-AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-AstraDownloader.exe' -OutFile $out; Start-Process $out\"",
         INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
 
         // Quick health check — returns { ok, token, version } or { ok: false }
@@ -2081,14 +2081,14 @@ return response;
             }
             this._autoStartAttempted = true;
             DebugManager.log('MediaDL', 'Attempting auto-start via mediadl:// protocol...');
-            showToast('Starting MediaDL server...', '#3b82f6', { duration: 4 });
+            showToast('Starting Astra Downloader...', '#3b82f6', { duration: 4 });
             openProtocol('mediadl://start');
             // Poll for server readiness
             for (let i = 0; i < retries; i++) {
                 await new Promise(r => setTimeout(r, 1500));
                 const result = await this.check(true);
                 if (result.ok) {
-                    showToast('MediaDL server started!', '#22c55e', { duration: 2 });
+                    showToast('Astra Downloader started!', '#22c55e', { duration: 2 });
                     return result;
                 }
             }
@@ -2249,7 +2249,7 @@ return response;
                     this.resetAutoStart();
                     const result = await this.tryAutoStart(5);
                     if (result.ok) {
-                        showToast('MediaDL server is running!', '#22c55e', { duration: 3 });
+                        showToast('Astra Downloader is running!', '#22c55e', { duration: 3 });
                         prompt.remove();
                     } else {
                         retryBtn.setAttribute('aria-busy', 'false');
@@ -22939,7 +22939,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 bannerInfo.style.cssText = 'min-width:0;';
                 const bannerTitle = document.createElement('div');
                 bannerTitle.style.cssText = 'font-size:13px;font-weight:600;color:var(--ytkit-text-primary);';
-                bannerTitle.textContent = 'MediaDL Server';
+                bannerTitle.textContent = 'Astra Downloader';
                 const bannerStatus = document.createElement('div');
                 bannerStatus.id = 'ytkit-mediadl-status-text';
                 bannerStatus.style.cssText = 'font-size:11px;color:var(--ytkit-text-muted);margin-top:2px;';
