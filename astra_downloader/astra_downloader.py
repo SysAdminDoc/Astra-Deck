@@ -53,6 +53,9 @@ import requests as http_requests
 APP_NAME = "Astra Downloader"
 APP_VERSION = "1.1.0"
 SERVER_PORT = 9751
+# Ordered fallback ports the server tries when the configured port is unavailable.
+# The browser extension probes the same list to discover the running port.
+PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
 MAX_CONCURRENT = 3
 INSTALL_DIR = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local')) / 'AstraDownloader'
 CONFIG_PATH = INSTALL_DIR / 'config.json'
@@ -1885,16 +1888,70 @@ class MainWindow(QMainWindow):
             self._run_setup()
             return
 
-        port = clamp_int(self.config.get("ServerPort", SERVER_PORT), SERVER_PORT, 1024, 65535)
+        configured_port = clamp_int(self.config.get("ServerPort", SERVER_PORT), SERVER_PORT, 1024, 65535)
         api = create_api(self.config, self.dl_manager, self.history_mgr)
 
+        # Port discovery: try configured port first, then fall back to well-known
+        # alternatives. Fixes systems where Windows/Hyper-V has blocked the default
+        # (WinError 10013) or another process holds it (WinError 10048).
+        fallback_ports = [configured_port] + [p for p in PORT_FALLBACKS if p != configured_port]
+        chosen_port = None
+        last_err: Exception | None = None
+        for candidate in fallback_ports:
+            probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                probe.bind(('127.0.0.1', candidate))
+                chosen_port = candidate
+                break
+            except OSError as e:
+                last_err = e
+                continue
+            finally:
+                try:
+                    probe.close()
+                except OSError:
+                    pass
+
+        if chosen_port is None:
+            assert last_err is not None
+            if getattr(last_err, 'winerror', None) == 10013:
+                msg = ("All candidate ports are blocked by Windows.\n\n"
+                       "Run as Administrator in PowerShell:\n"
+                       "  net stop winnat\n"
+                       "  netsh int ipv4 delete excludedportrange protocol=tcp "
+                       f"startport={configured_port} numberofports=1\n"
+                       "  net start winnat")
+            elif getattr(last_err, 'winerror', None) == 10048:
+                msg = "All candidate ports are already in use by other processes."
+            else:
+                msg = f"Cannot bind any server port: {last_err}"
+            self._append_log(f"Server error: {msg}")
+            self._show_server_error(msg)
+            return
+
+        if chosen_port != configured_port:
+            self._append_log(
+                f"Port {configured_port} is unavailable; using fallback port {chosen_port}."
+            )
+            # Persist so future starts prefer the working port.
+            self.config.set("ServerPort", chosen_port)
+
         try:
+            # SystemExit from werkzeug's internal bind is caught here as a last
+            # line of defense in case the port becomes unavailable between the
+            # probe and make_server (TOCTOU race).
             from werkzeug.serving import make_server
-            self.server_obj = make_server('127.0.0.1', port, api, threaded=True)
+            try:
+                self.server_obj = make_server('127.0.0.1', chosen_port, api, threaded=True)
+            except SystemExit:
+                raise OSError(f"Werkzeug aborted while binding port {chosen_port}")
         except Exception as e:
             self.server_obj = None
             self._append_log(f"Server error: {e}")
+            self._show_server_error(str(e))
             return
+
+        port = chosen_port
 
         def run():
             try:
@@ -2356,6 +2413,16 @@ class MainWindow(QMainWindow):
         cursor = self.log_text.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         self.log_text.setTextCursor(cursor)
+
+    def _show_server_error(self, msg):
+        """Show a blocking error dialog and ensure the main window is visible."""
+        try:
+            self.show()
+            self.raise_()
+            self.activateWindow()
+            QMessageBox.warning(self, "Astra Downloader — Server failed to start", msg)
+        except Exception:
+            pass
 
     # ── Tray ──
     def _tray_activated(self, reason):
