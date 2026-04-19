@@ -1959,7 +1959,7 @@ return response;
             try {
                 const { data } = await extensionFetchJson({
                     method: 'GET',
-                    url: 'http://127.0.0.1:9751/status/' + id,
+                    url: MediaDLManager.baseUrl() + '/status/' + id,
                     headers: { 'X-Auth-Token': token },
                     timeout: 3000
                 });
@@ -2042,28 +2042,49 @@ return response;
         INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.exe' -OutFile $out; Start-Process $out\"",
         INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
 
-        // Quick health check — returns { ok, token, version } or { ok: false }
+        // Ports the server may have bound to — must match AstraDownloader.PORT_FALLBACKS.
+        // The server prefers 9751 but falls back when Windows (e.g. Hyper-V) blocks it.
+        _PORT_CANDIDATES: [9751, 9761, 9771, 9781, 9791, 9851],
+        _port: 9751,
+
+        // Base URL for server calls. Always reflects the currently discovered port.
+        baseUrl() { return 'http://127.0.0.1:' + this._port; },
+
+        // Quick health check — returns { ok, token, version, port } or { ok: false }.
+        // Tries the cached port first, then probes the fallback list.
         async check(force) {
             const now = Date.now();
             if (!force && this._status === 'running' && this._token && (now - this._lastCheck < this._CHECK_INTERVAL)) {
-                return { ok: true, token: this._token, version: this._serverVersion };
+                return { ok: true, token: this._token, version: this._serverVersion, port: this._port };
             }
-            try {
-                const { data } = await extensionFetchJson({
-                    method: 'GET',
-                    url: 'http://127.0.0.1:9751/health',
-                    headers: { 'X-MDL-Client': 'MediaDL' },
-                    timeout: 2000
-                });
-                if (data.token) {
+
+            const tryPort = async (port) => {
+                try {
+                    const { data } = await extensionFetchJson({
+                        method: 'GET',
+                        url: 'http://127.0.0.1:' + port + '/health',
+                        headers: { 'X-MDL-Client': 'MediaDL' },
+                        timeout: 1500
+                    });
+                    if (data && data.token) return data;
+                } catch (_) {}
+                return null;
+            };
+
+            // Try previously-known port first, then all others.
+            const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
+            for (const port of order) {
+                const data = await tryPort(port);
+                if (data) {
+                    this._port = port;
                     this._status = 'running';
                     this._token = data.token;
                     this._serverVersion = data.version || null;
                     this._lastCheck = now;
-                    DebugManager.log('MediaDL', `Server running (v${this._serverVersion || '?'}, ${data.downloads || 0} active)`);
-                    return { ok: true, token: data.token, version: this._serverVersion };
+                    DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, ${data.downloads || 0} active)`);
+                    return { ok: true, token: data.token, version: this._serverVersion, port };
                 }
-            } catch (_) {}
+            }
 
             this._status = 'not-installed';
             this._token = null;
@@ -2390,7 +2411,7 @@ return response;
             try {
                 const { response, data: resp } = await extensionFetchJson({
                     method: 'POST',
-                    url: 'http://127.0.0.1:9751/download',
+                    url: MediaDLManager.baseUrl() + '/download',
                     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
                     data: JSON.stringify(payload),
                     timeout: 5000
@@ -2464,7 +2485,7 @@ return response;
         try {
             const { data } = await extensionFetchJson({
                 method: 'GET',
-                url: 'http://127.0.0.1:9751/config',
+                url: MediaDLManager.baseUrl() + '/config',
                 headers: { 'X-Auth-Token': token },
                 timeout: 2000
             });

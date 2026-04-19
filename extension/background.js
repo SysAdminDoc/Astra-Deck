@@ -25,8 +25,14 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://generativelanguage.googleapis.com',
     'https://www.reddit.com',
     'https://old.reddit.com',
-    'http://127.0.0.1:9751',
-    'http://localhost:9751',
+    // AstraDownloader — primary port plus fallbacks (must match astra_downloader.PORT_FALLBACKS
+    // and MediaDLManager._PORT_CANDIDATES). Extension probes these when 9751 is blocked.
+    'http://127.0.0.1:9751', 'http://localhost:9751',
+    'http://127.0.0.1:9761', 'http://localhost:9761',
+    'http://127.0.0.1:9771', 'http://localhost:9771',
+    'http://127.0.0.1:9781', 'http://localhost:9781',
+    'http://127.0.0.1:9791', 'http://localhost:9791',
+    'http://127.0.0.1:9851', 'http://localhost:9851',
     'http://127.0.0.1:11434',
     'http://localhost:11434',
 ];
@@ -41,8 +47,12 @@ const CREDENTIALED_FETCH_ORIGINS = new Set([
     'https://music.youtube.com',
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
-    'http://127.0.0.1:9751',
-    'http://localhost:9751',
+    'http://127.0.0.1:9751', 'http://localhost:9751',
+    'http://127.0.0.1:9761', 'http://localhost:9761',
+    'http://127.0.0.1:9771', 'http://localhost:9771',
+    'http://127.0.0.1:9781', 'http://localhost:9781',
+    'http://127.0.0.1:9791', 'http://localhost:9791',
+    'http://127.0.0.1:9851', 'http://localhost:9851',
 ]);
 
 const ALLOWED_COOKIE_DOMAINS = new Set([
@@ -120,10 +130,13 @@ function filterHeaders(headers, blocklist) {
 const AUTH_HEADER_ALLOWED_ORIGINS = new Set([
     'https://api.openai.com',
     'https://api.anthropic.com',
-    'http://127.0.0.1:9751',
-    'http://localhost:9751',
-    'http://127.0.0.1:11434',
-    'http://localhost:11434',
+    'http://127.0.0.1:9751', 'http://localhost:9751',
+    'http://127.0.0.1:9761', 'http://localhost:9761',
+    'http://127.0.0.1:9771', 'http://localhost:9771',
+    'http://127.0.0.1:9781', 'http://localhost:9781',
+    'http://127.0.0.1:9791', 'http://localhost:9791',
+    'http://127.0.0.1:9851', 'http://localhost:9851',
+    'http://127.0.0.1:11434', 'http://localhost:11434',
 ]);
 
 function getRequestOrigin(url) {
