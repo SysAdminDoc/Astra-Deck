@@ -35,6 +35,9 @@ class FakeHistory:
     def add(self, entry):
         self.entries.append(entry)
 
+    def load(self):
+        return list(self.entries)
+
 
 class NormalizationTests(unittest.TestCase):
     def test_normalize_url_rejects_invalid_or_ambiguous_values(self):
@@ -47,6 +50,12 @@ class NormalizationTests(unittest.TestCase):
         url, err = ad.normalize_url("https://example.com/watch?v=abc")
         self.assertEqual(url, "https://example.com/watch?v=abc")
         self.assertIsNone(err)
+
+    def test_normalize_url_rejects_overlong_values_without_truncating(self):
+        value = "https://example.com/" + ("a" * 5000)
+        url, err = ad.normalize_url(value)
+        self.assertIsNone(url)
+        self.assertEqual(err, "URL is too long to download safely.")
 
     def test_sanitize_config_clamps_and_normalizes_untrusted_values(self):
         cfg = ad.sanitize_config({
@@ -70,6 +79,11 @@ class NormalizationTests(unittest.TestCase):
         path, err = ad.normalize_output_dir("relative-folder")
         self.assertIsNone(path)
         self.assertEqual(err, "Choose an absolute output folder.")
+
+    def test_output_directory_rejects_overlong_values(self):
+        path, err = ad.normalize_output_dir("C:\\" + ("a" * 3000))
+        self.assertIsNone(path)
+        self.assertEqual(err, "Output folder path is too long.")
 
 
 class PersistenceTests(unittest.TestCase):
@@ -118,6 +132,18 @@ class DownloadManagerTests(unittest.TestCase):
 
 
 class ApiSecurityTests(unittest.TestCase):
+    def test_health_advertises_service_identity(self):
+        config = FakeConfig({"ServerToken": "a" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().get("/health", headers={"X-MDL-Client": "MediaDL"})
+        body = resp.get_json()
+
+        self.assertEqual(body["service"], ad.SERVICE_ID)
+        self.assertEqual(body["api"], ad.SERVICE_API_VERSION)
+        self.assertTrue(body["token_required"])
+        self.assertEqual(body["token"], "a" * 32)
+
     def test_health_token_is_not_exposed_to_null_origin_pages(self):
         config = FakeConfig({"ServerToken": "a" * 32})
         manager = ad.DownloadManager(config, FakeHistory())
@@ -141,6 +167,33 @@ class ApiSecurityTests(unittest.TestCase):
 
         background_resp = client.get("/health", headers={"X-MDL-Client": "MediaDL"})
         self.assertEqual(background_resp.get_json()["token"], "a" * 32)
+
+    def test_download_rejects_non_object_json_body(self):
+        token = "c" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().post(
+            "/download",
+            json=["https://example.com/video"],
+            headers={"X-Auth-Token": token},
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json()["error"], "Missing download URL.")
+
+    def test_history_limit_is_clamped(self):
+        token = "d" * 32
+        history = FakeHistory()
+        history.entries = [{"id": str(i), "url": "https://example.com", "title": str(i)} for i in range(3)]
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, history)
+        api = ad.create_api(config, manager, history)
+
+        resp = api.test_client().get("/history?limit=-5", headers={"X-Auth-Token": token})
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json()["count"], 1)
 
     def test_cancel_finished_download_returns_conflict_not_not_found(self):
         token = "b" * 32
