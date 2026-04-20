@@ -283,7 +283,9 @@
             error.response = response;
             try {
                 error.data = JSON.parse(response?.responseText || '');
-            } catch (_) {}
+            } catch (_) {
+                // reason: error body may be plain text / HTML; leave error.data unset
+            }
             throw error;
         }
 
@@ -415,7 +417,9 @@ return response;
                                         }
                                         try {
                                             this._prCache = JSON.parse(text.substring(jsonStart, end));
-                                        } catch (_) {}
+                                        } catch (_) {
+                                            // reason: brace-counting fallback; try next script tag on failure
+                                        }
                                     }
                                 }
                             }
@@ -436,7 +440,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.13.3';
+    const YTKIT_VERSION = '3.15.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -479,7 +483,9 @@ return response;
             if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
                 return chrome.runtime.getURL(`icons/${fileName}`);
             }
-        } catch (_) {}
+        } catch (_) {
+            // reason: userscript context lacks chrome.runtime; fall back to relative path
+        }
         return `icons/${fileName}`;
     }
 
@@ -1148,7 +1154,9 @@ return response;
                     const m = text.match(/"INNERTUBE_CLIENT_VERSION"\s*:\s*"(\d{1,2}\.\d{6,10}\.\d{1,2}\.\d{1,2})"/);
                     if (m) { this._cachedClientVersion = m[1]; return m[1]; }
                 }
-            } catch (_) {}
+            } catch (_) {
+                // reason: script may be CSP-protected or not yet loaded; caller falls back to default
+            }
             return null;
         },
 
@@ -1833,7 +1841,11 @@ return response;
             a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
-            setTimeout(() => { try { document.body.removeChild(a); } catch (_) {} }, 200);
+            setTimeout(() => {
+                try { document.body.removeChild(a); } catch (_) {
+                    // reason: node may already be removed by SPA navigation
+                }
+            }, 200);
         } catch (e) {
             if (errorMsg) showToast(errorMsg, '#ef4444', { duration: 5 });
         }
@@ -2078,7 +2090,9 @@ return response;
                     if (data && data.token) {
                         DebugManager.log('MediaDL', `Ignoring non-Astra downloader response on port ${port}`);
                     }
-                } catch (_) {}
+                } catch (_) {
+                    // reason: port may be occupied by unrelated local service; skip
+                }
                 return null;
             };
 
@@ -3491,6 +3505,72 @@ return response;
     // App state - declared before features so feature closures can reference it
     let appState = {};
     let _extensionBridgeAttached = false;
+
+    // v3.14.0: Null-safe settings reader. Replaces the scattered
+    // `appState.settings.X || default` / `appState?.settings?.X ?? default`
+    // pattern with a single choke point so a future settings-init race
+    // cannot turn `undefined` into `NaN`/`null` in arithmetic paths.
+    function getSetting(key, def) {
+        const settings = appState && appState.settings;
+        if (!settings || typeof settings !== 'object') return def;
+        const value = settings[key];
+        return value === undefined ? def : value;
+    }
+
+    // v3.14.0: Selector chain with first-miss diagnostics. Used at the
+    // highest-churn YouTube DOM regions so platform drift surfaces in
+    // diagnosticLog instead of silent feature no-ops.
+    //
+    // Usage:
+    //   selectorChain(['primary', 'fallback1'], { label: 'chipCloud' })
+    //     → first match (single element) or null
+    //   selectorChain(['primary', 'fallback1'], { label: 'chapters', all: true })
+    //     → NodeList from the first selector that matches at least one node,
+    //       or an empty NodeList-like array if all miss
+    const _selectorMissLogged = new Set();
+    const _EMPTY_NODE_LIST = Object.freeze([]);
+    function selectorChain(selectors, options = {}) {
+        const root = options.root || document;
+        const label = options.label || '';
+        const wantAll = options.all === true;
+        if (!Array.isArray(selectors) || selectors.length === 0) {
+            return wantAll ? _EMPTY_NODE_LIST : null;
+        }
+        for (let i = 0; i < selectors.length; i++) {
+            const sel = selectors[i];
+            if (typeof sel !== 'string' || !sel) continue;
+            try {
+                if (wantAll) {
+                    const nodes = root.querySelectorAll(sel);
+                    if (nodes && nodes.length > 0) return nodes;
+                } else {
+                    const el = root.querySelector(sel);
+                    if (el) return el;
+                }
+            } catch (e) {
+                // reason: invalid selector string, keep trying fallbacks
+                continue;
+            }
+        }
+        // All selectors missed. Log once per session per label so the
+        // diagnosticLog ring buffer isn't flooded by a single drift site.
+        const key = label || selectors.join('|');
+        if (!_selectorMissLogged.has(key)) {
+            _selectorMissLogged.add(key);
+            try {
+                DiagnosticLog?.record?.('selectorChain',
+                    `miss: ${label || '(unlabeled)'} | tried: ${selectors.length}`);
+            } catch (e) {
+                // reason: DiagnosticLog may not be initialized yet during early boot
+            }
+        }
+        if (typeof options.onMiss === 'function') {
+            try { options.onMiss(selectors); } catch (e) {
+                // reason: caller-supplied callback should not break chain
+            }
+        }
+        return wantAll ? _EMPTY_NODE_LIST : null;
+    }
 
     function getFeatureSettingKey(feature) {
         return feature?.settingKey || feature?.id;
@@ -8662,7 +8742,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!player) return false;
                 this._temporarilyHideQualityPopup();
 
-                const settingsBtn = player.querySelector('.ytp-settings-button');
+                const settingsBtn = selectorChain([
+                    '.ytp-settings-button',
+                    'button[aria-label*="Settings" i]',
+                    '.ytp-right-controls button[data-tooltip-target-id="ytp-settings-button"]'
+                ], { root: player, label: 'player.settingsButton' });
                 if (!settingsBtn) return false;
 
                 // Open settings menu
@@ -10239,11 +10323,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         try {
                             const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
                             if (regexMatch) {
-                                // Reject patterns with nested quantifiers (ReDoS risk)
-                                // Catches: a*+, a{2}*, (a+)+, (a|b*)+, etc.
+                                // Reject patterns with nested quantifiers (ReDoS risk).
+                                // Catches: a*+, a{2}*, (a+)+, (a|b*)+, (foo|bar*)+, ((a+)b)+, etc.
+                                // Any group whose body contains *any* quantifier and is itself
+                                // followed by another quantifier is rejected. This covers
+                                // alternation-wrapped quantifier stacks that the narrower
+                                // `(a+)+`-only guard used to miss.
                                 const pat = regexMatch[1];
-                                const hasNestedQuantifiers = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat)
-                                    || /\([^)]*[+*][^)]*\)\s*[+*?{]/.test(pat);
+                                const adjacentQuantifiers = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
+                                const groupWithInnerQuantifier = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
+                                const hasNestedQuantifiers = adjacentQuantifiers || groupWithInnerQuantifier;
                                 if (hasNestedQuantifiers) {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
@@ -19807,7 +19896,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _saveToday(state) {
                 appState.settings.dwWatchTimeToday = state;
                 if (typeof settingsManager !== 'undefined' && settingsManager.save) {
-                    try { settingsManager.save(appState.settings); } catch (_) {}
+                    try { settingsManager.save(appState.settings); } catch (e) {
+                        DebugManager.log('DigitalWellbeing', `save failed: ${e.message}`);
+                    }
                 }
             },
 
@@ -20685,7 +20776,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     try {
                         const joined = args.map(a => (a && a.message) ? a.message : String(a)).join(' ');
                         if (/ytkit|astra/i.test(joined)) DiagnosticLog.record('console', joined.slice(0, 500));
-                    } catch {}
+                    } catch {
+                        // reason: do not break the user's console.error on our own failure
+                    }
                     this._origConsoleError.apply(console, args);
                 };
                 window.addEventListener('error', this._onWinError = (ev) => {
@@ -20704,6 +20797,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._origConsoleError) console.error = this._origConsoleError;
                 if (this._onWinError) window.removeEventListener('error', this._onWinError);
                 DiagnosticLog.disable();
+                // v3.14.0: Immediately drop the _errors ring buffer so disabling
+                // diagnosticLog releases its storage budget now, not at the next
+                // 5-minute storageQuotaLRU sweep. clear() handles the settings
+                // save and the missing-settings guard.
+                try { DiagnosticLog.clear(); } catch (e) {
+                    console.warn('[YTKit] DiagnosticLog.clear on disable failed:', e);
+                }
                 delete window.__ytkitDiagnostics;
             }
         },
@@ -21146,7 +21246,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _extract() {
                 // Parse chapters from macro markers
                 const chapters = [];
-                const nodes = document.querySelectorAll('ytd-macro-markers-list-item-renderer');
+                const nodes = selectorChain([
+                    'ytd-macro-markers-list-item-renderer',
+                    'ytd-macro-markers-list-renderer ytd-macro-markers-list-item-renderer',
+                    '[data-testid="chapter-item"]'
+                ], { all: true, label: 'chapters.macroMarkers' });
                 for (const n of nodes) {
                     const time = n.querySelector('#time')?.textContent?.trim();
                     const title = n.querySelector('h4, #details')?.textContent?.trim();
@@ -21219,7 +21323,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _getChapterTimes() {
                 const times = [];
-                const nodes = document.querySelectorAll('ytd-macro-markers-list-item-renderer');
+                const nodes = selectorChain([
+                    'ytd-macro-markers-list-item-renderer',
+                    'ytd-macro-markers-list-renderer ytd-macro-markers-list-item-renderer',
+                    '[data-testid="chapter-item"]'
+                ], { all: true, label: 'chapters.macroMarkers' });
                 for (const n of nodes) {
                     const t = n.querySelector('#time')?.textContent?.trim();
                     if (!t) continue;
@@ -24118,8 +24226,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (_textareaReinitTimer) clearTimeout(_textareaReinitTimer);
                     _textareaReinitTimer = setTimeout(() => {
                         _textareaReinitTimer = null;
-                        try { feature.destroy?.(); } catch (_) {}
-                        try { feature.init?.(); } catch (_) {}
+                        try { feature.destroy?.(); } catch (e) {
+                            DebugManager.log('SettingsPanel', `destroy failed for ${feature.id}: ${e.message}`);
+                        }
+                        try { feature.init?.(); } catch (e) {
+                            DebugManager.log('SettingsPanel', `re-init failed for ${feature.id}: ${e.message}`);
+                        }
                     }, 600);
                 }
             }
@@ -25540,7 +25652,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
         if (_pageModalPendingRemoval.length) {
             _pageModalPendingRemoval.forEach((node) => {
-                try { node?.remove(); } catch (_) {}
+                try { node?.remove(); } catch (_) {
+                    // reason: node may already be detached by SPA navigation
+                }
             });
             _pageModalPendingRemoval = [];
         }

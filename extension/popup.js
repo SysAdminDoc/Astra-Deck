@@ -329,9 +329,13 @@ async function broadcast(key, value) {
                     // Swallow "Receiving end does not exist" — tab may not have loaded ytkit.js yet
                     void chrome.runtime.lastError;
                 });
-            } catch (_) {}
+            } catch (_) {
+                // reason: tab may be closing or extension host has no receiver
+            }
         }
-    } catch (_) {}
+    } catch (_) {
+        // reason: chrome.tabs.query rejects when extension is suspended during broadcast
+    }
 }
 
 function render(settings, filter) {
