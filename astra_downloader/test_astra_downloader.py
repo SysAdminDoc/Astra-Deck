@@ -208,6 +208,54 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 409)
         self.assertIn("already finished", resp.get_json()["error"])
 
+    def test_dns_rebinding_attack_is_rejected_before_handler(self):
+        """Verify Host-header validation blocks DNS rebinding to attacker-controlled domains."""
+        token = "e" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+
+        # Simulate a DNS-rebinding attack: the browser resolved attacker.com
+        # to 127.0.0.1 after the page loaded, but it still sends the attacker
+        # hostname in the Host header. Legitimate local clients always send
+        # 127.0.0.1 / localhost / ::1.
+        for bad_host in ("attacker.com", "attacker.com:9751", "example.org:80"):
+            with self.subTest(host=bad_host):
+                resp = client.get(
+                    "/health",
+                    headers={"Host": bad_host, "X-MDL-Client": "MediaDL"},
+                )
+                self.assertEqual(resp.status_code, 421, f"Expected 421 Misdirected Request for Host={bad_host}")
+                self.assertIn("Invalid Host", resp.get_json().get("error", ""))
+
+        for good_host in ("127.0.0.1:9751", "localhost:9751", "[::1]:9751"):
+            with self.subTest(host=good_host):
+                resp = client.get(
+                    "/health",
+                    headers={"Host": good_host, "X-MDL-Client": "MediaDL"},
+                )
+                self.assertEqual(resp.status_code, 200, f"Expected 200 for Host={good_host}")
+
+    def test_bootstrap_surfaces_failure_to_stderr(self):
+        """Verify _bootstrap writes a helpful message to stderr when pip is unreachable."""
+        import io
+        import unittest.mock as mock
+        # Only run if running from source (frozen exe skips bootstrap entirely)
+        buf = io.StringIO()
+        with mock.patch.object(ad, "subprocess") as fake_subproc, \
+             mock.patch.object(ad.sys, "stderr", buf), \
+             mock.patch.object(ad.os.environ, "get", return_value=None), \
+             mock.patch.object(ad.sys, "frozen", False, create=True):
+            # Force each install strategy to report that pip is not on PATH
+            fake_subproc.check_call.side_effect = FileNotFoundError(2, "No such file", "pip")
+            # Force the import check to report every dependency as missing
+            with mock.patch("builtins.__import__", side_effect=ImportError):
+                ad._bootstrap()
+        stderr = buf.getvalue()
+        self.assertIn("Failed to auto-install", stderr)
+        self.assertIn("pip install", stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

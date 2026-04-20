@@ -10,6 +10,12 @@ const PANEL_MESSAGE = Object.freeze({
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 
+// v3.14.0: Track downloads that requested "show in folder" so the reveal
+// fires exactly when the file transitions to `state.complete`. Using a
+// setTimeout meant the service worker could be killed mid-wait on slow
+// networks.
+const _pendingReveals = new Set();
+
 // Allowed origins for EXT_FETCH proxy — blocks SSRF to private networks
 const ALLOWED_FETCH_ORIGINS = [
     'https://www.youtube.com',
@@ -256,7 +262,7 @@ async function togglePanelForTab(tabId) {
         try {
             await chrome.runtime.openOptionsPage();
         } catch (_) {
-            // Ignore fallback failures
+            // reason: options page may not be available in some browser contexts
         }
     }
 }
@@ -264,6 +270,26 @@ async function togglePanelForTab(tabId) {
 // chrome.action.onClicked does not fire when default_popup is set in the
 // manifest, so the toolbar click is handled entirely by popup.html/popup.js.
 // The keyboard shortcut (Ctrl+Shift+Y) still needs the commands listener.
+
+// v3.14.0: Fire "show in folder" reveal when the download reaches the
+// complete state, not from a setTimeout. The previous implementation lost
+// reveals whenever the MV3 service worker was killed during the wait.
+if (chrome.downloads?.onChanged?.addListener) {
+    chrome.downloads.onChanged.addListener((delta) => {
+        if (!delta || !_pendingReveals.has(delta.id)) return;
+        const state = delta.state?.current;
+        if (state === 'complete') {
+            _pendingReveals.delete(delta.id);
+            try {
+                chrome.downloads.show(delta.id);
+            } catch (_) {
+                // reason: Explorer reveal may fail if file was moved before reveal
+            }
+        } else if (state === 'interrupted') {
+            _pendingReveals.delete(delta.id);
+        }
+    });
+}
 
 chrome.commands.onCommand.addListener((command) => {
     void (async () => {
@@ -281,7 +307,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // Guard: reject malformed messages up front so a missing/non-object `msg`
     // cannot throw before any handler runs.
     if (!msg || typeof msg !== 'object' || typeof msg.type !== 'string') {
-        try { sendResponse({ error: 'Invalid message.' }); } catch (_) {}
+        try { sendResponse({ error: 'Invalid message.' }); } catch (_) {
+            // reason: sender may have disconnected before response is delivered
+        }
         return false;
     }
 
@@ -383,7 +411,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
                     responded = true;
                     sendResponse({ error: `Response too large (${contentLength} bytes)` });
-                    try { controller.abort(); } catch (_) {}
+                    try { controller.abort(); } catch (_) {
+                        // reason: controller may already be aborted by timeout
+                    }
                     return;
                 }
             }
@@ -401,7 +431,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                         if (done) break;
                         received += value.byteLength;
                         if (received > MAX_RESPONSE_BYTES) {
-                            try { reader.cancel(); } catch (_) {}
+                            try { reader.cancel(); } catch (_) {
+                                // reason: stream may already be closed by caller abort
+                            }
                             responded = true;
                             sendResponse({ error: `Response body too large (${received} bytes)` });
                             return;
@@ -474,13 +506,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 sendResponse({ error: chrome.runtime.lastError.message });
             } else {
                 if (msg.showInFolder) {
-                    setTimeout(() => {
-                        try {
-                            chrome.downloads.show(downloadId);
-                        } catch (_) {
-                            // Ignore Explorer reveal failures
-                        }
-                    }, 900);
+                    // v3.14.0: switch from setTimeout(900) to chrome.downloads.onChanged.
+                    // The service worker can be terminated during the 900 ms window on
+                    // slow networks, silently dropping the reveal. Listening for the
+                    // `state.complete` transition fires reveal when the file actually
+                    // exists, and the SW is kept alive while a download is in flight.
+                    _pendingReveals.add(downloadId);
                 }
                 sendResponse({ downloadId });
             }

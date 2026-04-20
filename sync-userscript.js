@@ -9,7 +9,7 @@ const REPO_ROOT = __dirname;
 const EXTENSION_SOURCE = path.join(REPO_ROOT, 'extension', 'ytkit.js');
 const USERSCRIPT_SOURCE = resolveUserscriptPath(REPO_ROOT);
 const USERSCRIPT_BASENAME = getUserscriptBasename(REPO_ROOT);
-const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/${USERSCRIPT_BASENAME}`;
+const USERSCRIPT_RAW_URL = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
 
 const extensionText = fs.readFileSync(EXTENSION_SOURCE, 'utf8');
 const versionMatch = extensionText.match(/const YTKIT_VERSION = '([^']+)'/);

@@ -27,6 +27,10 @@ def _bootstrap():
             missing.append(pkg)
     if not missing:
         return
+    # v3.15.0: Keep the last failure's stderr so we can surface a useful error
+    # if every strategy fails. Previously all three silently fell through and
+    # the user saw a cryptic ImportError at line 43+ instead of the pip output.
+    last_error = None
     for strategy in [
         [sys.executable, '-m', 'pip', 'install', '--quiet'],
         [sys.executable, '-m', 'pip', 'install', '--quiet', '--user'],
@@ -35,8 +39,22 @@ def _bootstrap():
         try:
             subprocess.check_call(strategy + missing, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return
-        except Exception:
+        except FileNotFoundError as e:
+            last_error = f"python/pip not on PATH ({e.filename or 'unknown'})"
+            break  # No pip at all — retrying won't help
+        except subprocess.CalledProcessError as e:
+            last_error = f"pip install exited with code {e.returncode}"
             continue
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {e}"
+            continue
+    # All strategies failed — emit a helpful message so the ImportError that
+    # will follow has context.
+    sys.stderr.write(
+        f"[Astra Downloader] Failed to auto-install dependencies "
+        f"({', '.join(missing)}): {last_error}\n"
+        f"Install manually with: pip install {' '.join(missing)}\n"
+    )
 
 _bootstrap()
 
@@ -1097,6 +1115,22 @@ def create_api(config, dl_manager, history):
         except Exception:
             return False
 
+    # v3.15.0: DNS-rebinding defense. A browser visiting attacker.com that
+    # rebinds the host to 127.0.0.1 will send `Host: attacker.com` — legitimate
+    # local clients always send `Host: 127.0.0.1:PORT` or `localhost:PORT`.
+    # Werkzeug does not validate Host by default, so we have to do it ourselves.
+    def is_allowed_host():
+        host = (request.headers.get("Host") or "").strip().lower()
+        if not host:
+            return False
+        # Strip the port so we compare hostnames reliably across port fallbacks.
+        if host.startswith('['):  # ipv6 literal like "[::1]:9751"
+            end = host.find(']')
+            hostname = host[1:end] if end != -1 else host
+        else:
+            hostname = host.split(':', 1)[0]
+        return hostname in {'127.0.0.1', 'localhost', '::1'}
+
     def cors_response(data, status=200):
         resp = jsonify(data)
         resp.status_code = status
@@ -1109,7 +1143,10 @@ def create_api(config, dl_manager, history):
         return resp
 
     @api.before_request
-    def handle_preflight():
+    def guard_request():
+        # Reject DNS-rebinding probes before any route handler sees them.
+        if not is_allowed_host():
+            return cors_response({"error": "Invalid Host header"}, 421)
         if request.method == 'OPTIONS':
             return cors_response({"ok": True})
 
@@ -1122,6 +1159,13 @@ def create_api(config, dl_manager, history):
             "downloads": dl_manager.active_count(),
             "token_required": True,
         }
+        # v3.15.0: Token disclosure is now gated by the Host check at
+        # `guard_request()` — DNS-rebinding attacks send `Host: attacker.com`
+        # and are rejected before reaching this handler. Any request that
+        # gets here proves it targeted 127.0.0.1/localhost directly, which is
+        # either the extension (extension Origin) or a local-machine tool
+        # (no Origin). Keeping both paths so local dev tooling (curl, the
+        # downloader GUI's own self-test) can still probe the service.
         origin = request.headers.get("Origin", "")
         if request.headers.get("X-MDL-Client") == "MediaDL" and (not origin or is_extension_origin(origin)):
             resp["token"] = token
