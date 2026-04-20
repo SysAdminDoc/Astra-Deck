@@ -4,6 +4,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.16.0] - Baked-in UI preferences (no more Stylebot + uBlock needed)
+
+Rolls the maintainer's previously-external Stylebot CSS overrides and uBlock element-hiding rules into `extension/early.css`. Clean installs now reproduce the intended compact-settings, no-avatars, no-shelf look without two extra extensions.
+
+### Changed — settings panel chrome
+- `.ytkit-brand-intro`, `.ytkit-brand-badges`, `.ytkit-search-container`, `.ytkit-pane-header`, `.ytkit-nav-count`, `.ytkit-shortcut`, `.ytkit-version` are hidden in the in-page settings panel.
+- `.ytkit-nav-btn` margins/padding zeroed and `.ytkit-nav-list` given a `-10px` vertical margin so more feature toggles fit in view.
+- `.ytkit-global-toast` suppressed; inline status banners and `diagnosticLog` still surface feedback.
+- `.ytkit-subs-load-banner` hidden on the subscriptions feed.
+- Watch-page owner row (`ytd-video-owner-renderer`) gets a `margin-top: 10px` to keep the collapsed header from crowding the title.
+
+### Changed — YouTube page chrome
+- Skeleton / continuation placeholders removed: `ytd-ghost-grid-renderer`, `ytd-continuation-item-renderer` inside `ytd-rich-grid-renderer`.
+- Rich-section shelves removed: the outer `ytd-rich-section-renderer` wrapper and its inner `div.style-scope.ytd-rich-section-renderer`.
+- Avatars collapsed site-wide: `img.style-scope.yt-img-shadow` is hidden, plus the watch-page owner-row wrapper `yt-img-shadow.ytd-video-owner-renderer.no-transition`.
+
+### Notes
+- All rules are injected at `document_start` via `early.css`, so they apply before YouTube's first paint.
+- Rules use `!important` to defeat YouTube's and the extension's own inline styles without needing specificity tuning.
+- The upstream Stylebot line `a.yt-simple-endpoint.style-scope.yt-formatted-string { margin-bottom: -px; }` was dropped because `-px` is not a valid CSS length. Drop-in a concrete value (e.g. `-4px`) to restore that tweak.
+- Opt-out path: if any of these ever need to become user-toggleable, re-scope the selectors under a `body.ytkit-cleanUi` class the same way `body.ytkit-hideEndCards` etc. gate the existing rules in `early.css`.
+
+---
+
 ## [3.15.0] - Hardening Pass 5 — Repo-wide deep audit
 
 End-to-end audit covering the Python downloader, build system, CI pipeline, and ancillary scripts. Ships coordinated fixes across three surfaces the v3.14.0 pass didn't touch.
