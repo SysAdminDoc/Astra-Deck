@@ -76,7 +76,7 @@ if (bumpType) {
     if (fs.existsSync(USERSCRIPT)) {
         let usSrc = fs.readFileSync(USERSCRIPT, 'utf8');
         const before = usSrc;
-        const userscriptRawUrl = `https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/${USERSCRIPT_BASENAME}`;
+        const userscriptRawUrl = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
         usSrc = usSrc.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m, '$1YTKit v' + version);
         usSrc = usSrc.replace(/^(\/\/ @version\s+)[\d.]+/m, '$1' + version);
         usSrc = usSrc.replace(/^(\/\/ @updateURL\s+).+$/m, '$1' + userscriptRawUrl);
