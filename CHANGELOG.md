@@ -4,6 +4,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.16.1] - Remove Workspace summary card from settings sidebar
+
+Settings panel reclaimed ~180 px of vertical space by removing the "Workspace / Home controls" summary card (kicker + title + copy + 3 stat counters + "Live apply" footnote). The section was decorative — the stats (enabled count, total features, populated sections) added no actionable information that wasn't visible elsewhere in the panel.
+
+### Removed
+- `<section class="ytkit-sidebar-card">` DOM construction in `ytkit.js` (~56 lines).
+- The 4 computed variables that fed it (`totalTopLevelFeatures`, `enabledTopLevelFeatures`, `populatedCategoryCount`, `currentPageLabel`) — each was read only by the card, so removing the card made the computations dead weight.
+
+### Notes
+- CSS rules for `.ytkit-sidebar-card*` classes remain in the stylesheet, unused. They're one-line declarations each; left in place in case a future stat strip wants to reuse the styling. Can be pruned in a future cleanup pass.
+- No behavioral change to any feature — only the summary card was touched.
+
+---
+
 ## [3.16.0] - Baked-in UI preferences (no more Stylebot + uBlock needed)
 
 Rolls the maintainer's previously-external Stylebot CSS overrides and uBlock element-hiding rules into `extension/early.css`. Clean installs now reproduce the intended compact-settings, no-avatars, no-shelf look without two extra extensions.
