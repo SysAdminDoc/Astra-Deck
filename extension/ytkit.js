@@ -440,7 +440,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.16.0';
+    const YTKIT_VERSION = '3.16.1';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -22032,11 +22032,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         liveFeatureList.forEach(f => {
             if (f.group && featuresByCategory[f.group]) featuresByCategory[f.group].push(f);
         });
-        const topLevelFeatures = liveFeatureList.filter((feature) => !feature.isSubFeature);
-        const totalTopLevelFeatures = topLevelFeatures.length;
-        const enabledTopLevelFeatures = countEnabledToggleFeatures(topLevelFeatures);
-        const populatedCategoryCount = categoryOrder.filter((cat) => (featuresByCategory[cat] || []).length > 0).length;
-        const currentPageLabel = formatPageLabel(getCurrentPage());
+        // v3.17.0: the sidebar "Workspace / Home controls" summary card was
+        // removed to reclaim vertical space for feature toggles. The four
+        // stats (enabled count, total features, populated sections,
+        // current-page label) that it displayed were only consumed by that
+        // card — computing them here is now dead weight.
 
         // Create overlay
         const overlay = document.createElement('div');
@@ -22123,62 +22123,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const sidebarTop = document.createElement('div');
         sidebarTop.className = 'ytkit-sidebar-top';
 
-        const sidebarCard = document.createElement('section');
-        sidebarCard.className = 'ytkit-sidebar-card';
-        sidebarCard.setAttribute('aria-label', 'Settings workspace summary');
-
-        const sidebarKicker = document.createElement('span');
-        sidebarKicker.className = 'ytkit-sidebar-card-kicker';
-        sidebarKicker.textContent = 'Workspace';
-
-        const sidebarTitle = document.createElement('h2');
-        sidebarTitle.className = 'ytkit-sidebar-card-title';
-        sidebarTitle.textContent = currentPageLabel === 'Other'
-            ? 'All YouTube controls'
-            : `${currentPageLabel} controls`;
-
-        const sidebarCopy = document.createElement('p');
-        sidebarCopy.className = 'ytkit-sidebar-card-copy';
-        sidebarCopy.textContent = 'Search across the catalog, switch sections, and apply changes instantly.';
-
-        const sidebarStats = document.createElement('div');
-        sidebarStats.className = 'ytkit-sidebar-stats';
-        [
-            { value: enabledTopLevelFeatures, label: 'On' },
-            { value: totalTopLevelFeatures, label: 'Features' },
-            { value: populatedCategoryCount, label: 'Sections' }
-        ].forEach(({ value, label }) => {
-            const stat = document.createElement('span');
-            stat.className = 'ytkit-sidebar-stat';
-
-            const statValue = document.createElement('strong');
-            statValue.className = 'ytkit-sidebar-stat-value';
-            statValue.textContent = String(value);
-
-            const statLabel = document.createElement('span');
-            statLabel.className = 'ytkit-sidebar-stat-label';
-            statLabel.textContent = label;
-
-            stat.appendChild(statValue);
-            stat.appendChild(statLabel);
-            sidebarStats.appendChild(stat);
-        });
-
-        const sidebarFootnote = document.createElement('p');
-        sidebarFootnote.className = 'ytkit-sidebar-footnote';
-        const sidebarFootnoteStrong = document.createElement('strong');
-        sidebarFootnoteStrong.textContent = 'Live apply.';
-        const sidebarFootnoteCopy = document.createElement('span');
-        sidebarFootnoteCopy.textContent = 'Most changes update open YouTube surfaces immediately.';
-        sidebarFootnote.appendChild(sidebarFootnoteStrong);
-        sidebarFootnote.appendChild(sidebarFootnoteCopy);
-
-        sidebarCard.appendChild(sidebarKicker);
-        sidebarCard.appendChild(sidebarTitle);
-        sidebarCard.appendChild(sidebarCopy);
-        sidebarCard.appendChild(sidebarStats);
-        sidebarCard.appendChild(sidebarFootnote);
-        sidebarTop.appendChild(sidebarCard);
+        // v3.17.0: removed the "Workspace / Home controls" summary card
+        // from the sidebar — the kicker, title, copy, 3 stat counters,
+        // and "Live apply" footnote were wasting vertical space that's
+        // better spent on the feature toggle list.
 
         // Search box
         const searchContainer = document.createElement('div');
