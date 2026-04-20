@@ -13,7 +13,7 @@ Thanks for your interest in contributing to YTKit! This guide will help you get 
 ## Project Structure
 
 ```
-YouTube-Kit/
+Astra-Deck/
   extension/           # MV3 extension source
     core/              # Shared runtime utilities
     ytkit.js           # Main feature/content-script runtime
@@ -89,7 +89,7 @@ npm run build
 
 ## Reporting Bugs
 
-Use the [Bug Report template](https://github.com/SysAdminDoc/YouTube-Kit/issues/new?template=bug_report.md) and include:
+Use the [Bug Report template](https://github.com/SysAdminDoc/Astra-Deck/issues/new?template=bug_report.md) and include:
 - Browser + version
 - Userscript manager + version
 - YTKit version

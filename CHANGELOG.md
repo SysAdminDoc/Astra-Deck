@@ -4,6 +4,62 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.15.0] - Hardening Pass 5 — Repo-wide deep audit
+
+End-to-end audit covering the Python downloader, build system, CI pipeline, and ancillary scripts. Ships coordinated fixes across three surfaces the v3.14.0 pass didn't touch.
+
+### Security (Astra Downloader / Flask API)
+- **DNS-rebinding defense** (`astra_downloader.py`) — added a `before_request` Host-header check that rejects any request whose Host isn't `127.0.0.1`, `localhost`, or `[::1]` (with or without a port). A malicious webpage that rebinds `attacker.com` to the downloader's port now receives `421 Misdirected Request` before any route handler runs. Protects the token-discovery path on `/health` and every authenticated endpoint.
+- **`/health` token-disclosure trust boundary documented** — the Host check is the primary defense; the extension-origin + no-Origin paths are preserved for legitimate local tooling (curl, the GUI's own health probe). Comment at the handler explains the defense-in-depth layering so a future refactor doesn't remove the wrong piece.
+- **IPv6 literal host support** — the Host parser handles `[::1]:9751` correctly so IPv6 clients aren't erroneously rejected.
+
+### Reliability (Astra Downloader)
+- **`_bootstrap()` surfaces install failures** — previously every pip install strategy silently fell through to an `ImportError` on the subsequent imports, hiding the real cause (missing pip, blocked PyPI, proxy). The helper now captures the last failure and writes a pointed `[Astra Downloader] Failed to auto-install dependencies (...)` message to stderr with the exact manual command to run.
+- **`FileNotFoundError` short-circuits retries** — if `python -m pip` can't locate pip at all, we stop iterating through strategies since retrying won't help.
+
+### Rebrand / Link Hygiene
+- **12 hardcoded `SysAdminDoc/YouTube-Kit` URLs migrated to `Astra-Deck`** across `build-extension.js`, `sync-userscript.js`, `YTKit.user.js` (update/download URLs, GitHub link, installer URL, nyan cat asset, installer .bat emission), `theater-split.user.js` (namespace + update/download), `CONTRIBUTING.md`, `package-lock.json`. Userscript auto-updaters (Tampermonkey, Violentmonkey) cached the old URL and were relying on GitHub's redirect; the direct URL is now canonical.
+- **CONTRIBUTING.md project tree** updated to say `Astra-Deck/` not `YouTube-Kit/`.
+
+### CI / Release Pipeline (`.github/workflows/build.yml`)
+- **Tag-vs-version check expanded** — was only comparing `manifest.json`. Now also verifies `ytkit.js` `YTKIT_VERSION`, `YTKit.user.js` `@version`, and `package.json`. Any drift across the four version strings fails the release build before artifacts are uploaded.
+- **Artifact name renamed** from `YouTube-Kit-build-artifacts` to `astra-deck-build-artifacts`.
+
+### Tests
+- **2 new Python tests** — `test_dns_rebinding_attack_is_rejected_before_handler` covers the Host validation with 3 attack hosts and 3 legitimate hosts (IPv4, localhost, IPv6); `test_bootstrap_surfaces_failure_to_stderr` asserts the helpful stderr message is emitted when all pip strategies fail. Total: 15 Python tests pass.
+- **10 new JS hardening regression tests** in `tests/hardening.test.js` — capture v3.14.0 invariants so future refactors can't silently regress the fixes: ReDoS guard (alternation coverage), `applyImportedSettingsVersion` preserving exporter version, `importSettings` routing through the migration-aware helper, `selectorChain` helper shape + `all:true` + first-miss logging, adoption at macro-markers (2 sites) and player settings button, `getSetting` null-safety, `chrome.downloads.onChanged` reveal path, zero empty `catch (_) {}` blocks across extension source, `diagnosticLog.destroy()` clearing `_errors`. Total: 47 JS tests pass (was 37).
+- **`tests/repo-paths.test.js` updated** to assert the new `Astra-Deck` URL pattern.
+
+### Documentation
+- **`HARDENING.md`** — extended with Pass 5 section.
+- **README badge** bumped to 3.15.0.
+- **CHANGELOG**, **CLAUDE.md**, memory file — synced.
+
+---
+
+## [3.14.0] - Hardening Pass 4
+
+Deep audit pass — correctness, MV3 lifecycle, platform-drift resilience. No new features; see `HARDENING.md` for findings, including false-positive list retained so future audits don't re-raise the same noise.
+
+### Fixed
+- **ReDoS guard in video-title filter** (`ytkit.js:videoHider`) — broadened to reject alternation-wrapped quantifier stacks like `(a|b+)+` and `(foo|bar*)+`. The previous guard only caught `(a+)+`-style patterns, leaving a path for malicious paste into `hideVideosKeywordFilter` to stall grid rendering.
+- **Profile import preserves `_settingsVersion`** (`options.js:applyImportedSettingsVersion`) — imports no longer stamp the current schema version over whatever the exporter wrote. Imports from an older schema now run through the runtime's migration chain from the exported version forward, instead of silently bypassing it.
+- **`chrome.downloads.show` reveal** (`background.js`) — switched from `setTimeout(900)` to `chrome.downloads.onChanged` listening for `state.complete`. The service worker can be terminated inside the 900 ms window on slow networks; the event-driven path fires exactly when the file exists and keeps the SW alive while downloads are in flight.
+- **`diagnosticLog` off drops `_errors` immediately** (`ytkit.js`) — disabling the feature now calls `DiagnosticLog.clear()` in `destroy()` instead of waiting up to 5 minutes for the next `storageQuotaLRU` sweep.
+- **Feature re-init failures surface to `diagnosticLog`** (`ytkit.js`) — settings-panel textarea re-init now routes `destroy()`/`init()` catches through `DebugManager.log()` instead of swallowing silently.
+
+### Added — Infrastructure
+- **`getSetting(key, default)`** (`ytkit.js`) — null-safe reader over `appState.settings`. Single choke point for settings access; replaces the scattered `appState.settings.X || default` pattern. Lays groundwork for gradual adoption across hot paths.
+- **`selectorChain(selectors, { label, all, root, onMiss })`** (`ytkit.js`) — fallback-chain selector with first-miss diagnostics. Each miss is logged once per session per label, surfacing YouTube DOM drift to `diagnosticLog` instead of silent feature no-ops. Supports `all: true` for NodeList results.
+- **`selectorChain` adopted at 3 high-churn regions** — macro-markers (chapter extract and chapter-jump features, with `ytd-macro-markers-list-renderer` + `[data-testid="chapter-item"]` fallbacks), player settings button (quality-forcing path, with `aria-label` and tooltip-target fallbacks).
+- **Audit doc `HARDENING.md`** — checked-in audit covering real issues fixed in this release, false positives (already-mitigated claims documented so future audits skip them), YouTube platform drift watchlist, MV3 lifecycle notes, and recommended invariants.
+
+### Changed
+- **Empty `catch (_) {}` blocks** across `ytkit.js`, `background.js`, `popup.js` now either carry a `// reason:` comment explaining why silence is safe, or route through `DebugManager.log()` / `DiagnosticLog`. Pattern documentation for future audits; no behavioral change in the success path.
+- **`_pendingReveals` set in `background.js`** — tracks downloads awaiting "show in folder" so the reveal survives service-worker restarts.
+
+---
+
 ## [3.13.0] - Download Options Popup, Format/Quality/Directory Controls
 
 ### Added
