@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         YTKit v3.13.3
+// @name         YTKit v3.15.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      3.13.3
-// @updateURL      https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js
-// @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/YTKit.user.js
+// @version      3.15.0
+// @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
+// @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
 // @author       Matthew Parker
 // @match        https://www.youtube.com/*
@@ -116,7 +116,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.13.3';
+    const YTKIT_VERSION = '3.15.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -1205,8 +1205,8 @@
         _CHECK_INTERVAL: 30000, // Re-check every 30s
 
         // GitHub raw URL for the PowerShell installer
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/Install-YTYT.ps1',
-        INSTALLER_COMMAND: "powershell -ExecutionPolicy Bypass -Command \"irm 'https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/Install-YTYT.ps1' | iex\"",
+        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1',
+        INSTALLER_COMMAND: "powershell -ExecutionPolicy Bypass -Command \"irm 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1' | iex\"",
 
         // Quick health check — returns { ok, token, version } or { ok: false }
         async check(force) {
@@ -2947,7 +2947,7 @@
 
 /* Nyan Cat scrubber */
 .html5-scrubber-button, .ytp-scrubber-button {
-    background: url("https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/refs/heads/main/assets/cat.gif") no-repeat center / contain !important;
+    background: url("https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/assets/cat.gif") no-repeat center / contain !important;
     border: none !important;
 }
 
@@ -13262,7 +13262,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         footerLeft.className = 'ytkit-footer-left';
 
         const githubLink = document.createElement('a');
-        githubLink.href = 'https://github.com/SysAdminDoc/YouTube-Kit';
+        githubLink.href = 'https://github.com/SysAdminDoc/Astra-Deck';
         setSafeBlankTarget(githubLink);
         githubLink.className = 'ytkit-github';
         githubLink.title = 'View on GitHub';
@@ -13288,7 +13288,7 @@ echo ========================================
 echo.
 echo Downloading and running installer...
 echo.
-powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SysAdminDoc/YouTube-Kit/main/Install-YTYT.ps1' -OutFile '%TEMP%\\Install-YTYT.ps1'"
+powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1' -OutFile '%TEMP%\\Install-YTYT.ps1'"
 powershell -ExecutionPolicy Bypass -File "%TEMP%\\Install-YTYT.ps1"
 echo.
 echo If the window closes immediately, right-click and Run as Administrator.

@@ -318,6 +318,29 @@
         return next;
     }
 
+    // v3.14.0: Import path must not silently overwrite the exporter's settings
+    // version. Preserving `_settingsVersion` surfaces cross-version imports so
+    // the runtime's migration code (driven off that version) can actually run,
+    // rather than being bypassed by a current-version stamp.
+    function applyImportedSettingsVersion(settings) {
+        if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return {};
+        const next = sanitizeSettingsObject(settings);
+        const importedVersion = Number(settings._settingsVersion);
+        const current = Number(state.settingsVersion);
+        if (Number.isFinite(importedVersion) && importedVersion > 0) {
+            next._settingsVersion = importedVersion;
+            if (Number.isFinite(current) && current > 0 && importedVersion > current) {
+                console.warn('[Astra Deck] Imported settings version', importedVersion,
+                    'is newer than current', current, '— unknown keys may be dropped');
+            }
+        } else if (Number.isFinite(current) && current > 0) {
+            // No version on import — treat as legacy/v0, stamp current so the
+            // migration chain runs from the beginning on next load.
+            next._settingsVersion = 0;
+        }
+        return next;
+    }
+
     function buildExportData(allStorage) {
         const mergedSettings = mergeLegacySettings(
             allStorage[STORAGE_KEYS.settings] || {},
@@ -696,17 +719,17 @@
 
             const writes = {};
             if (data.exportVersion >= 3 && data.exportVersion < 100) {
-                if (isPlainObject(data.settings)) writes[STORAGE_KEYS.settings] = applySettingsVersion(data.settings);
+                if (isPlainObject(data.settings)) writes[STORAGE_KEYS.settings] = applyImportedSettingsVersion(data.settings);
                 if (Array.isArray(data.hiddenVideos)) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(data.hiddenVideos);
                 if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
                 if (isPlainObject(data.bookmarks)) writes[STORAGE_KEYS.bookmarks] = sanitizeImportedBookmarks(data.bookmarks);
             } else if (data.exportVersion >= 2) {
-                if (isPlainObject(data.settings)) writes[STORAGE_KEYS.settings] = applySettingsVersion(data.settings);
+                if (isPlainObject(data.settings)) writes[STORAGE_KEYS.settings] = applyImportedSettingsVersion(data.settings);
                 if (Array.isArray(data.hiddenVideos)) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(data.hiddenVideos);
                 if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
             } else {
                 if (isPlainObject(data)) {
-                    writes[STORAGE_KEYS.settings] = applySettingsVersion(data);
+                    writes[STORAGE_KEYS.settings] = applyImportedSettingsVersion(data);
                 }
             }
 
