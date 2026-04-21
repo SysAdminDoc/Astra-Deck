@@ -184,7 +184,7 @@
             margin: 0;
             color: var(--text-primary);
             font-size: clamp(24px, 4vw, 38px);
-            line-height: 0.98;
+            line-height: 1.05;
             font-weight: 850;
             letter-spacing: -0.05em;
             text-wrap: balance;
@@ -200,7 +200,7 @@
 
         .storage-overview {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 8px;
         }
 
@@ -457,6 +457,10 @@
             text-transform: uppercase;
         }
 
+        .confirm-dialog.is-danger .confirm-eyebrow {
+            color: #ff7480;
+        }
+
         .confirm-title {
             margin: 0;
             color: var(--text-primary);
@@ -655,8 +659,10 @@
             border: 0;
             background: transparent;
             color: var(--text-muted);
-            font-size: 16px;
             box-shadow: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .settings-search-clear:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
@@ -708,8 +714,8 @@
 
         .settings-group-button.active {
             color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.055);
-            border-color: rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.09);
+            border-color: rgba(255, 255, 255, 0.14);
         }
 
         .settings-group-count {
@@ -1294,14 +1300,14 @@
                         <strong id="settings-problem-count">0</strong> need attention
                     </div>
                 </div>
-                <button id="close-settings-modal-btn" class="icon-button" type="button" aria-label="Close settings">×</button>
+                <button id="close-settings-modal-btn" class="icon-button" type="button" aria-label="Close settings"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg></button>
             </header>
 
             <div class="settings-modal-toolbar">
                 <div class="settings-search-shell">
                     <svg class="settings-search-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input class="settings-search-input" id="settings-search" name="settings-search" type="search" placeholder="Search settings…" aria-label="Search settings" autocomplete="off" spellcheck="false">
-                    <button id="settings-clear-search-btn" class="settings-search-clear" type="button" aria-label="Clear search" hidden>×</button>
+                    <button id="settings-clear-search-btn" class="settings-search-clear" type="button" aria-label="Clear search" hidden><svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg></button>
                 </div>
                 <div class="button-row settings-toolbar-actions">
                     <button id="settings-restore-defaults-btn" type="button">Restore Defaults</button>

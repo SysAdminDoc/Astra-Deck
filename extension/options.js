@@ -165,7 +165,7 @@
     }
 
     function formatBytes(bytes) {
-        if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB';
+        if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
@@ -634,6 +634,9 @@
 
             if (!settingsVersion) {
                 const response = await fetch(SETTINGS_SOURCE_URL, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`Failed to load settings source: HTTP ${response.status}`);
+                }
                 const source = await response.text();
                 const versionMatch = source.match(/SETTINGS_VERSION:\s*(\d+)/);
                 if (!versionMatch) {
@@ -677,7 +680,7 @@
         } catch (error) {
             elements.storageInfo.textContent = 'Unable to read extension storage.';
             elements.statKeys.textContent = '0';
-            elements.statSize.textContent = '0 KB';
+            elements.statSize.textContent = '0 B';
             elements.statHiddenVideos.textContent = '0';
             elements.statBlockedChannels.textContent = '0';
             elements.statBookmarks.textContent = '0';
@@ -1067,7 +1070,11 @@
             button.type = 'button';
             button.className = 'settings-group-button' + (state.activeGroup === group.id ? ' active' : '');
             button.dataset.group = group.id;
-            button.setAttribute('aria-pressed', state.activeGroup === group.id ? 'true' : 'false');
+            if (state.activeGroup === group.id) {
+                button.setAttribute('aria-current', 'true');
+            } else {
+                button.removeAttribute('aria-current');
+            }
 
             const label = document.createElement('span');
             label.textContent = group.label;
@@ -1604,6 +1611,13 @@
 
                 if (!changes[STORAGE_KEYS.settings]) return;
                 if (!state.modalOpen) return;
+
+                // If the settings change was triggered by our own save,
+                // saveSettingsDraft already re-rendered with preserveScroll:true
+                // and updated state.storedSettings before this event fires.
+                // Re-rendering here would scroll the list back to the top.
+                const newValue = changes[STORAGE_KEYS.settings].newValue;
+                if (newValue && areValuesEqual(newValue, state.storedSettings)) return;
 
                 if (state.dirtyKeys.size === 0 && state.invalidKeys.size === 0) {
                     await refreshSettingsState({ resetDraft: true });
