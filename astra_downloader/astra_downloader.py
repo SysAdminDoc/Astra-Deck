@@ -274,7 +274,7 @@ def normalize_proxy(value):
     if not value:
         return ""
     parsed = urlparse(value)
-    if parsed.scheme.lower() in {"http", "https", "socks", "socks4", "socks5"} and parsed.netloc:
+    if parsed.scheme.lower() in {"http", "https", "socks", "socks4", "socks4a", "socks5", "socks5h"} and parsed.netloc:
         return value
     return ""
 
@@ -934,7 +934,7 @@ class DownloadManager(QObject):
         if rate and re.match(r'^\d+[KMG]?$', rate):
             args += ['--limit-rate', rate]
         proxy = self.config.get("Proxy", "")
-        if proxy and re.match(r'^(socks|https?):', proxy):
+        if proxy and re.match(r'^(socks(?:4a?|5h?)?|https?)://', proxy):
             args += ['--proxy', proxy]
         if dl.referer:
             args += ['--referer', dl.referer]
