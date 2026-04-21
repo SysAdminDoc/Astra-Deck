@@ -426,7 +426,9 @@ return response;
                             if (this._prCache) break;
                         }
                     }
-                } catch(e) {}
+                } catch (_) {
+                    // reason: script DOM walk is best-effort; any access error is suppressed here so callers receive null
+                }
             }
             return this._prCache;
         },
@@ -688,7 +690,7 @@ return response;
         },
 
         get(key, defaultVal = null) {
-            if (this._cache.hasOwnProperty(key)) {
+            if (Object.prototype.hasOwnProperty.call(this._cache, key)) {
                 return this._cache[key];
             }
             const val = storageRead(key, defaultVal);
@@ -1649,6 +1651,8 @@ return response;
             width: 32px;
             min-width: 32px;
             padding: 0;
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
             color: rgba(255,255,255,0.78);
         }
@@ -2971,7 +2975,9 @@ return response;
             buttonObserver.observe(document.body, { childList: true, subtree: true });
         }
 
-        // Initial checks
+        // Initial checks — record page arrival time so the debug warning in
+        // tryInjectButton fires correctly on direct (non-SPA) page loads too.
+        tryInjectButton._pageArrival = Date.now();
         checkAllButtons();
         let spaTimers = [
             setTimeout(checkAllButtons, 500),
@@ -28518,6 +28524,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-install-prompt__close {
             appearance: none;
             -webkit-appearance: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 30px;
             height: 30px;
             padding: 0;
@@ -28790,6 +28799,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.68);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition:
                 border-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
                 background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -28999,6 +29011,9 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-dl-popup__close {
             appearance: none;
             -webkit-appearance: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 26px;
             height: 26px;
             padding: 0;
@@ -29007,7 +29022,6 @@ body.ytkit-panel-open #ytkit-settings-panel {
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.6);
             cursor: pointer;
-            font-size: 12px;
             transition: background 150ms, color 150ms;
             outline: none;
         }
