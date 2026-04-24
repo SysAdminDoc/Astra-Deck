@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v3.17.0
+// @name         YTKit v3.18.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      3.17.0
+// @version      3.18.0
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
@@ -116,7 +116,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '3.17.0';
+    const YTKIT_VERSION = '3.18.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -2205,9 +2205,6 @@
             quickLinkMenu: true,
             quickLinkItems: 'History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /',
             autoMaxResolution: true,
-            preferredQuality: 'max', // 'max' | '4320' | '2160' | '1440' | '1080' | '720' | '480'
-            useEnhancedBitrate: true,
-            hideQualityPopup: true,
             hideMerchShelf: true,
             hideAiSummary: true,
 
@@ -2752,7 +2749,7 @@
         stickyVideo: 'Full-screen player with scroll-triggered side-by-side comments',
         hideRelatedVideos: 'Secondary panel hidden, primary stretches to full width',
         expandVideoWidth: 'Primary column gets max-width:none when sidebar is hidden',
-        autoMaxResolution: 'Forces highest available resolution on video load',
+        autoMaxResolution: 'Forces the highest available stream on every video — picks 1080p Premium when offered',
         autoExpandComments: 'Removes comment truncation, clicks Read More automatically',
         commentEnhancements: 'Highlights creator replies, shows like heat, collapse toggle',
     };
@@ -4617,101 +4614,49 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ─── Quality ───
         {
             id: 'autoMaxResolution',
-            name: 'Auto Quality',
-            description: 'Automatically select preferred video quality (max, 4K, 1440p, 1080p, 720p, 480p)',
+            name: 'Always Best Quality',
+            description: 'Force the highest available stream on every video (1080p Premium when offered)',
             group: 'Video Player',
             icon: 'sparkles',
-            isParent: true,
-            type: 'select',
-            options: {
-                'max': 'Maximum Available',
-                '2160': '4K (2160p)',
-                '1440': '1440p',
-                '1080': '1080p',
-                '720': '720p',
-                '480': '480p'
-            },
-            settingKey: 'preferredQuality',
-            _lastProcessedVideoId: null,
-            _onPlayerUpdated: null,
-            _styleElement: null,
-            _qualityMap: { '2160': 'hd2160', '1440': 'hd1440', '1080': 'hd1080', '720': 'hd720', '480': 'large' },
+            _scriptEl: null,
             init() {
-                this._onPlayerUpdated = (evt) => {
-                    const player = evt?.target?.player_ || document.getElementById('movie_player');
-                    this.setQuality(player);
-                };
-                window.addEventListener('yt-player-updated', this._onPlayerUpdated, true);
-                if (appState.settings.hideQualityPopup) {
-                    this._styleElement = injectStyle('.ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'hide-quality-popup', true);
+                if (document.getElementById('ytkit-quality-forcer')) {
+                    document.documentElement.setAttribute('data-ytkit-quality', 'on');
+                    return;
                 }
+                // Inject a MAIN-world script — the userscript itself runs in the
+                // content/sandbox context where movie_player methods aren't directly
+                // callable. Same Premium-aware logic as ytkit-main.js in the extension.
+                const code = `(function(){'use strict';
+                    var ON=false,lastApplied='',pendingTimer=null;
+                    function getPlayer(){return document.getElementById('movie_player')||document.querySelector('.html5-video-player');}
+                    function getVid(){try{var u=new URL(location.href);return u.searchParams.get('v')||(u.pathname.indexOf('/shorts/')===0?u.pathname.split('/')[2]:'')||'';}catch(e){return '';}}
+                    function pickBest(data){if(!data||!data.length)return null;var real=data.filter(function(d){return d&&d.quality&&d.quality!=='auto';});if(!real.length)return null;var top=real[0].quality;var tier=real.filter(function(d){return d.quality===top;});for(var i=0;i<tier.length;i++){if(/premium/i.test(tier[i].qualityLabel||''))return tier[i];}return tier[0];}
+                    function apply(){if(!ON)return;var p=getPlayer();if(!p||typeof p.setPlaybackQualityRange!=='function')return;var data=(typeof p.getAvailableQualityData==='function')?p.getAvailableQualityData():null;var t=null;if(data&&data.length){t=pickBest(data);}else if(typeof p.getAvailableQualityLevels==='function'){var l=p.getAvailableQualityLevels();if(l&&l.length)for(var i=0;i<l.length;i++){if(l[i]&&l[i]!=='auto'){t={quality:l[i]};break;}}}
+                        if(!t)return;var k=getVid()+':'+t.quality+':'+(t.qualityLabel||'');if(k===lastApplied)return;
+                        try{p.setPlaybackQualityRange(t.quality,t.quality);if(typeof p.setPlaybackQuality==='function')p.setPlaybackQuality(t.quality);lastApplied=k;}catch(e){}}
+                    function schedule(d){if(pendingTimer)clearTimeout(pendingTimer);pendingTimer=setTimeout(function(){pendingTimer=null;apply();},d||0);}
+                    function reset(){lastApplied='';schedule(0);schedule(400);schedule(1500);}
+                    document.addEventListener('loadstart',function(e){if(ON&&e&&e.target&&e.target.classList&&e.target.classList.contains('html5-main-video'))reset();},true);
+                    document.addEventListener('loadedmetadata',function(e){if(ON&&e&&e.target&&e.target.classList&&e.target.classList.contains('html5-main-video'))schedule(150);},true);
+                    document.addEventListener('canplay',function(e){if(ON&&e&&e.target&&e.target.classList&&e.target.classList.contains('html5-main-video'))schedule(0);},true);
+                    window.addEventListener('yt-navigate-finish',function(){if(ON)reset();});
+                    window.addEventListener('yt-page-data-updated',function(){if(ON)schedule(200);});
+                    function syncFromAttr(){var v=document.documentElement.getAttribute('data-ytkit-quality');var n=(v==='on');if(n===ON)return;ON=n;if(ON)reset();else{lastApplied='';if(pendingTimer){clearTimeout(pendingTimer);pendingTimer=null;}}}
+                    new MutationObserver(syncFromAttr).observe(document.documentElement,{attributes:true,attributeFilter:['data-ytkit-quality']});
+                    syncFromAttr();
+                })();`;
+                this._scriptEl = document.createElement('script');
+                this._scriptEl.id = 'ytkit-quality-forcer';
+                this._scriptEl.textContent = code;
+                (document.head || document.documentElement).appendChild(this._scriptEl);
+                document.documentElement.setAttribute('data-ytkit-quality', 'on');
             },
             destroy() {
-                if (this._onPlayerUpdated) window.removeEventListener('yt-player-updated', this._onPlayerUpdated, true);
-                this._styleElement?.remove();
-                this._lastProcessedVideoId = null;
-            },
-            setQuality(player) {
-                const currentVideoId = getVideoId();
-                if (!player || !currentVideoId || currentVideoId === this._lastProcessedVideoId) return;
-                if (typeof player.getAvailableQualityLevels !== 'function') return;
-                const levels = player.getAvailableQualityLevels();
-                if (!levels || !levels.length) return;
-                this._lastProcessedVideoId = currentVideoId;
-                const pref = appState.settings.preferredQuality || 'max';
-                // Ordered quality levels for fallback chain
-                const qualityOrder = ['highres', 'hd2160', 'hd1440', 'hd1080', 'hd720', 'large', 'medium', 'small', 'tiny'];
-                let target;
-                if (pref === 'max') {
-                    target = levels[0];
-                } else {
-                    const ytLabel = this._qualityMap[pref] || 'hd1080';
-                    if (levels.includes(ytLabel)) {
-                        target = ytLabel;
-                    } else {
-                        // Walk down from preferred quality to find closest available
-                        const startIdx = qualityOrder.indexOf(ytLabel);
-                        if (startIdx !== -1) {
-                            for (let i = startIdx; i < qualityOrder.length; i++) {
-                                if (levels.includes(qualityOrder[i])) { target = qualityOrder[i]; break; }
-                            }
-                        }
-                        if (!target) target = levels[0];
-                    }
-                }
-                try { player.setPlaybackQualityRange(target, target); } catch { /* ignore */ }
+                document.documentElement.removeAttribute('data-ytkit-quality');
+                // Leave the injected script in place — toggling the attribute is enough
+                // to disable it, and re-toggling avoids re-injecting on every cycle.
             }
-        },
-        {
-            id: 'useEnhancedBitrate',
-            name: 'Enhanced Bitrate',
-            description: 'Re-apply max quality on navigation to counter YouTube quality resets',
-            group: 'Video Player',
-            icon: 'gauge',
-            isSubFeature: true,
-            parentId: 'autoMaxResolution',
-            init() {
-                addNavigateRule(this.id, () => {
-                    const parentFeature = features.find(f => f.id === 'autoMaxResolution');
-                    if (parentFeature) {
-                        parentFeature._lastProcessedVideoId = null;
-                        const player = document.getElementById('movie_player');
-                        if (player) parentFeature.setQuality(player);
-                    }
-                });
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'hideQualityPopup',
-            name: 'Hide Quality Popup',
-            description: 'Suppress the quality selection popup during auto-selection',
-            group: 'Video Player',
-            icon: 'eye-off',
-            isSubFeature: true,
-            parentId: 'autoMaxResolution',
-            init() {},
-            destroy() {}
         },
 
         // ─── Clutter ───
