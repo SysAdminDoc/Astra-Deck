@@ -487,3 +487,86 @@ Python: 37 pass (was 19). JS: 81 pass (unchanged).
   not yet wired to UI).
 - Optional per-download output confinement log entry for defense-in-
   depth auditing.
+
+---
+
+## Hardening Pass 7 (v3.20.0 — 2026-04-24)
+
+Audit-only release. Closes three of the six audit-pass open items from
+2026-04-23 plus two platform-drift fixes (storage ceiling, Firefox
+shortcut). No new features.
+
+### Real Issues
+
+**P7-C1 — `_pendingReveals` in-memory only across MV3 SW restarts**
+`background.js#_pendingReveals` was a `const Set()`. When the user
+queued a download with `showInFolder: true`, the id was added to the
+Set; the `chrome.downloads.onChanged` listener then fired
+`chrome.downloads.show(id)` on the `state.complete` transition. If
+the MV3 service worker went idle between those two events (normal on
+slow networks or when other extension work isn't keeping it alive),
+the Set was recreated fresh on SW restart and the `.has(id)` check
+returned false — silently dropping the reveal.
+
+Fix: mirror writes into `chrome.storage.session` (MV3-only, survives
+SW restart, cleared on browser restart — correct semantics for a
+transient reveal intent). `_pendingRevealsReady` is a module-level
+hydration promise awaited by the onChanged listener so a reveal
+queued before a cold-start is still honoured when the event arrives.
+
+Regression: `tests/hardening.test.js` →
+`_pendingReveals is mirrored to chrome.storage.session for SW-restart survival`.
+
+**P7-C2 — `astra_downloader._run_download` dead regex assignment**
+Line 1613 had `m = re.search(r'\[download\] Downloading video (?:\d+ of \d+|\d+)', line)` — assigned but never read. Harmless, but masked
+whether title detection was intentional or vestigial.
+
+Fix: deleted the match. Filename detection (Merger merge target +
+`[download] Destination: …`) keeps its matches; everything else
+continues through the existing progress-parsing loop.
+
+Regression: `_run_download no longer contains the dead "Downloading video" regex match`.
+
+### Platform Drift / UX
+
+**P7-D1 — `chrome.storage.local` 10 MB ceiling with no release valve**
+`storageQuotaLRU` (Pass 1) trims hot caches on a 5-minute cadence but
+cannot prevent steady-state growth from outpacing LRU eviction (long
+watch-history windows, large DeArrow caches, diagnostic error
+ring-buffer spikes).
+
+Fix: declared `"unlimitedStorage"` in `manifest.permissions`.
+Zero-risk — only effect is raising the storage.local ceiling. LRU is
+retained so normal usage stays well under typical user-profile disk
+budgets.
+
+Regression: `manifest declares unlimitedStorage to exceed the 10 MB default quota`.
+
+**P7-D2 — Firefox `Ctrl+Shift+Y` collision**
+Firefox reserves `Ctrl+Shift+Y` for "Show Downloads". Since Astra
+Deck's manifest declared the same key for `toggle-control-center`, no
+command fired on Firefox (the browser-level binding won). MV3
+`commands` can't branch per vendor, so the fix has to happen at
+build-manifest-patch time.
+
+Fix: `build-extension.js` Firefox patch now also rewrites
+`ffManifest.commands['toggle-control-center'].suggested_key.default`
+to `Ctrl+Alt+Y`. The patch is guarded on the Chrome-side default so
+a future Chrome-side remap stays idempotent. Chrome manifest
+unchanged.
+
+Regression: `Firefox build rewrites Ctrl+Shift+Y (reserved by Firefox Downloads) to Ctrl+Alt+Y`.
+
+### Still Open (deferred to Pass 8)
+
+- **SponsorBlock POI category semantics** — `poi_highlight` segments
+  still get the skip treatment (`currentTime = end`) rather than
+  jump-to-marker treatment. Mitigated by the zero-length segment
+  filter dropping most of them on arrival; only matters if the
+  category is ever re-enabled by default.
+- **`ytkit.js` monolith uncovered paths** — DeArrow cache lifetime,
+  theater-split cleanup on fast SPA navigations, Wave-8/9 restored
+  features. Per-area audits rather than another whole-file pass.
+- **Extension cookie `expirationDate || 0` fragility** — correct for
+  the current Netscape-format server-side writer; flagged for
+  re-review if the cookie wire format ever changes.
