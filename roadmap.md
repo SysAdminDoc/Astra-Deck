@@ -18,7 +18,7 @@ Architectural analysis captured during the v3.7.0 research phase. These are *not
 
 - **Monolithic content script (~1.1MB, 22K+ LOC).** `ytkit.js` holds every feature in one file. Load time, parseability, and maintainability will degrade as the file grows. The `core/` extraction (env, storage, styles, url, page, navigation, player) covers shared utilities only.
 - **No minification or bundling.** `build-extension.js` copies files verbatim. A minifier would cut payload by ~60-70%.
-- **Unbounded storage growth addressed in v3.9.0** via `storageQuotaLRU`. The underlying concern — `chrome.storage.local`'s 10MB quota with `unlimitedStorage` not declared — remains.
+- **Unbounded storage growth addressed in v3.9.0** via `storageQuotaLRU`; **v3.20.0** adds the `unlimitedStorage` permission so long-term users can't hit the default 10 MB `chrome.storage.local` quota while LRU continues to trim hot caches (hidden videos/channels, DeArrow, timestamps, diagnostic errors).
 - **No rate limiting on EXT_FETCH proxy.** No per-origin limits on SponsorBlock/RYD/DeArrow. Rapid SPA navigation could trigger community-expected rate limits.
 - **`credentials: 'omit'` default** shipped in v3.7.0 via `CREDENTIALED_FETCH_ORIGINS` allowlist.
 
@@ -120,14 +120,17 @@ Risks that materialized (or were pre-mitigated) during v3.7.0–v3.10.0.
 | URL param stripping breaks YouTube Music's `si=` linking | Mitigated | `stripTrackingParams` scoped to `www.youtube.com` only; skips `music.youtube.com`. |
 | `credentials: 'omit'` breaks RYD's user-vote attribution | Mitigated | RYD public endpoints don't require auth. |
 
-### Audit-Pass Open Items (2026-04-23)
+### Audit-Pass Open Items (2026-04-23, updated 2026-04-24)
 
 Follow-ups surfaced during the end-to-end audit. Not scheduled work — logged so they aren't forgotten. The critical findings from the same pass (SSRF post-redirect, storage retry storm, download poll races, cookie passthrough to yt-dlp) shipped in the same audit and are locked down by `tests/hardening.test.js` / `astra_downloader/test_astra_downloader.py`.
 
-- **MV3 `_pendingReveals` Set is in-memory only** (`extension/background.js`). If the service worker is terminated between `chrome.downloads.download()` returning and the `state: 'complete'` transition, the "show in folder" reveal is silently dropped. Persist pending IDs to `chrome.storage.session` so they survive SW restart.
+#### Shipped in Hardening Pass 7 (v3.20.0, 2026-04-24)
+- ~~**MV3 `_pendingReveals` Set is in-memory only**~~ — **shipped**. `_pendingReveals` now mirrors into `chrome.storage.session` with an async hydration promise awaited by the `onChanged` listener. A SW cold-start between `chrome.downloads.download()` and `state.complete` no longer drops the reveal. Regression: `tests/hardening.test.js` "`_pendingReveals is mirrored to chrome.storage.session`".
+- ~~**Dead code in `_run_download`**~~ — **shipped**. The assigned-but-unused `re.search(r'\[download\] Downloading video …', line)` was removed; filename detection keeps its matches, which was the only meaningful path through that block. Regression: "`_run_download no longer contains the dead "Downloading video" regex match`".
+- ~~**`normalize_output_dir` accepts any absolute path**~~ — **shipped in downloader v1.2.0** (before this audit line was triaged). `normalize_output_dir(..., allowed_roots=…)` now confines client-supplied output dirs to `allowed_output_roots(self.config)` (Downloads / Videos / Desktop / configured `DownloadPath`). Gate stays token-authenticated for defence-in-depth.
+
+#### Still open
 - **SponsorBlock POI category semantics** (`extension/ytkit.js` `sponsorBlock._checkSkip`). `poi_highlight` is currently treated like any other skip segment (`currentTime = end`), but the API intends POI as a highlight/jump-to marker. Segment filter already rejects zero-length entries so most POI data is dropped on arrival, but if the category is ever re-enabled by default this needs rework.
-- **`normalize_output_dir` accepts any absolute path** (`astra_downloader/astra_downloader.py`). Gated by the auth token, but a leaked token would let a caller point yt-dlp's output into arbitrary user-writable directories. Defence-in-depth: restrict to user-profile roots (Downloads/Videos/Desktop + configured DownloadPath).
-- **Dead code in `_run_download`** (`astra_downloader/astra_downloader.py:~1022`). `re.search(r'\[download\] Downloading video …', line)` matches but the result is never assigned. Safe to delete on the next pass through that function.
 - **`ytkit.js` monolith (~34K lines)** still harbours uncovered code paths — DeArrow cache lifetime, theater-split cleanup on fast SPA navigations, Wave-8/9 restored features. A targeted audit per area is better value than another pass at this size.
 - **Extension cookie `expirationDate: c.expirationDate || 0`** (`extension/ytkit.js` `_mediaDLSendDownload`). Correct for the Netscape-format writer on the server side (0 = session cookie), but fragile if a future transport expects `null`/`undefined` for session cookies. Keep in mind before changing the server's cookie wire format.
 
@@ -198,7 +201,7 @@ Still applied on every release.
 
 ---
 
-*Last updated: 2026-04-14 — forward-looking feature backlog removed per user direction after v3.10.0 shipped.*
+*Last updated: 2026-04-24 — Hardening Pass 7 (v3.20.0): retired the three audit-pass items it closed (`_pendingReveals` persistence, `normalize_output_dir` root confinement, dead-regex in `_run_download`); flagged `unlimitedStorage` as shipped alongside `storageQuotaLRU`.*
 
 ## Open-Source Research (Round 2)
 
@@ -231,3 +234,32 @@ Still applied on every release.
 - Isolated/MAIN world split: SponsorBlock uses `chrome.scripting.executeScript` with `world:"MAIN"` for player API access — extend Astra-Deck's existing split-context pattern for SponsorBlock parity
 - Offline-first subscription sync pattern (NewPipe) — IndexedDB persistence with rsync-style delta sync to a user's own server
 - Declarative config → cron/systemd runner (ytdl-sub) — pattern for Astra-Deck's downloader daemon
+
+## Implementation Deep Dive (Round 3)
+
+### Reference Implementations to Study
+- **ajayyy/SponsorBlock / src/content.ts** — https://github.com/ajayyy/SponsorBlock — segment polling + skip heuristics; reference for throttling against SPA navigation on `yt-navigate-finish`.
+- **0x48piraj/fadblock / fadblock.user.js** — https://github.com/0x48piraj/fadblock — "undetectable" ad skip heuristics that bypass YT's adblock detector without triggering the interstitial.
+- **fvnky07/youtube-shorts-blocker / src/content.js** — https://github.com/fvnky07/youtube-shorts-blocker — CSS-first shorts removal: injects one stylesheet, then uses a coarse-grained observer to reapply on SPA nav; documented pattern to follow vs. our current JS-traversal code.
+- **TheRealJoelmatic/RemoveAdblockThing** — https://github.com/TheRealJoelmatic/RemoveAdblockThing — player recreation trick that sidesteps YT's "Ad blockers not allowed" modal; read as a defensive reference even though we don't ship it.
+- **KMoszczyc/yt-dlp-back / app.py** — https://github.com/KMoszczyc/yt-dlp-back — minimal Flask + yt-dlp surface; compare to our downloader's `/download` endpoint and progress queue.
+- **yt-dlp/yt-dlp / yt_dlp/networking/** — https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/networking — pluggable request handler registry (`register_rh`); how to swap `RequestsRH` → `CurlCFFIRH` for TLS impersonation when age-gated/bot-detected.
+- **Tampermonkey/tampermonkey-editors** — https://github.com/Tampermonkey/tampermonkey-editors — external-extension messaging via `externalExtensionIds`; useful pattern if we ever want to split `ytkit.js` into a companion editor.
+
+### Known Pitfalls from Similar Projects
+- **MutationObserver storm on YT feed** — observing `document.documentElement` with `subtree:true` fires thousands of times during scroll; scope to `ytd-app` or the specific feed container. See the Shorts-blocker writeup: https://techpp.com/2026/01/12/hide-youtube-shorts/
+- **Observer re-entry** — style mutations you trigger re-fire the callback; guard with `data-ytkit-injected` or a `WeakSet` of processed nodes. Reference: https://github.com/fvnky07/youtube-shorts-blocker#performance-notes
+- **SPA nav misses** — observers set up pre-nav won't see nodes after `yt-navigate-finish`; hook `pushState`/`replaceState` AND the custom `yt-navigate-finish` event. See: https://github.com/Mr-Comand/youtube-shorts-remover-tampermonkey
+- **yt-dlp DNS-rebinding / SSRF** — resolve hostname once, reject RFC1918/link-local/loopback, pin connection to resolved IP so it can't re-resolve between check and fetch. Issue backdrop: https://github.com/yt-dlp/yt-dlp/issues/1231
+- **MV3 remotely hosted code** — any `eval` / dynamic `import()` fails under MV3 CSP; check that our userscript-style feature flags don't rely on `Function()` constructors. RES MV3 migration wrote this up: https://redditenhancementsuite.com/releases/5.24.3/
+- **`credentials: 'omit'` breaks SponsorBlock login** — community endpoints need cookies only when the user has a privateID; default omit + per-origin allowlist is correct, but test RYD and DeArrow separately.
+- **`chrome.storage.local` 10MB cap** — `unlimitedStorage` not declared; watch-history + DeArrow cache can blow through it. Precedent: https://github.com/ajayyy/SponsorBlock/issues (storage growth threads).
+
+### Library Integration Checklist
+- **yt-dlp** pinned `>=2026.01.26` in downloader `requirements.txt`; entrypoint `yt_dlp.YoutubeDL`; gotcha: bump monthly, extractors break weekly.
+- **Flask** pinned `3.0.x`; entrypoint `Flask(__name__)`; gotcha: bind to `127.0.0.1` only, never `0.0.0.0`, and enforce `Host` header allowlist for DNS-rebinding defense.
+- **curl_cffi** pinned `>=0.7`; entrypoint `curl_cffi.requests.Session(impersonate="chrome124")`; gotcha: wheels required, no pure-python fallback on Windows.
+- **SponsorBlock API** base `https://sponsor.ajay.app/api/`; entrypoint `/skipSegments/:sha256Prefix`; gotcha: rate-limited, use the 4-char SHA256 prefix mode for privacy.
+- **Return YouTube Dislike** base `https://returnyoutubedislikeapi.com`; gotcha: no CORS, must proxy via service worker.
+- **DeArrow** base `https://sponsor.ajay.app/api/branding`; gotcha: same rate limits as SponsorBlock, share the token bucket.
+- **esbuild** (if we ever bundle) pin `>=0.25.0` to match RES's migration baseline; entrypoint `esbuild.build({ format:"iife" })`; gotcha: MV3 requires ES modules for the service worker, IIFE for content scripts.
