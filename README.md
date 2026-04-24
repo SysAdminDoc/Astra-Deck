@@ -5,7 +5,7 @@
 <h1 align="center">Astra Deck</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.16.1-ff4e45?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.18.0-ff4e45?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/manifest-V3-blue?style=flat-square" alt="Manifest V3">
   <img src="https://img.shields.io/badge/YouTube-Desktop-ff0000?style=flat-square&logo=youtube&logoColor=white" alt="YouTube">
@@ -90,7 +90,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 
 | Feature | Default |
 |---------|---------|
-| Auto Quality (Max/4K/1440p/1080p/720p/480p) / Enhanced Bitrate | On |
+| Always Best Quality — picks highest available stream, prefers 1080p Premium when offered | On |
 | Auto-Resume Position (configurable threshold) | On |
 | Custom Progress Bar Color (color picker) | Off |
 | Remaining Time Display / Time in Tab Title | Off |

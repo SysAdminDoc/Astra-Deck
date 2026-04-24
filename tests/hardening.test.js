@@ -19,6 +19,11 @@ const optionsSource = fs.readFileSync(
     'utf8'
 );
 
+const optionsHtmlSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'options.html'),
+    'utf8'
+);
+
 const backgroundSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'background.js'),
     'utf8'
@@ -181,12 +186,28 @@ test('selectorChain is adopted at macro-markers (chapter extract + chapter-jump)
     );
 });
 
-test('selectorChain is adopted at player settings button (quality-forcing)', () => {
-    const match = ytkitSource.match(/selectorChain\(\s*\[[\s\S]*?'\.ytp-settings-button'[\s\S]*?\{\s*root:\s*player[\s\S]*?label:\s*'player\.settingsButton'/);
-    assert.ok(
-        match,
-        'Quality-forcing path should use selectorChain rooted at player with label player.settingsButton'
+test('quality forcer uses MAIN-world setPlaybackQualityRange, not gear-menu DOM clicks (v3.18.0)', () => {
+    // ISOLATED side: autoMaxResolution toggles a single attribute. The whole
+    // _setQualityViaDOM / _temporarilyHideQualityPopup / settings-menu-click
+    // path that caused the popup-flash bug must stay deleted.
+    assert.match(
+        ytkitSource,
+        /id:\s*'autoMaxResolution'[\s\S]{0,800}data-ytkit-quality/,
+        'autoMaxResolution must set data-ytkit-quality on <html>'
     );
+    assert.ok(
+        !/_setQualityViaDOM|_temporarilyHideQualityPopup|ytkit-hide-quality-popup/.test(ytkitSource),
+        'gear-menu DOM-click quality forcing must remain removed'
+    );
+
+    // MAIN side: the bridge must use the documented player APIs.
+    const mainSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
+        'utf8'
+    );
+    assert.match(mainSource, /setPlaybackQualityRange/, 'MAIN bridge must call setPlaybackQualityRange');
+    assert.match(mainSource, /getAvailableQualityData/, 'MAIN bridge must use getAvailableQualityData for Premium awareness');
+    assert.match(mainSource, /\/premium\/i/, 'MAIN bridge must detect Premium-labelled qualityLabel entries');
 });
 
 // ── v3.14.0 getSetting helper ──
@@ -293,6 +314,34 @@ test('popup.js serializes toggle writes to avoid read-merge-write race', () => {
     assert.doesNotMatch(fnBody, /await\s+storageGet\s*\(/, 'writeSetting must not re-read storage per call');
 });
 
+test('popup.js avoids duplicate footer actions and exposes live result counts', () => {
+    const popupSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'),
+        'utf8'
+    );
+    const popupHtmlSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'),
+        'utf8'
+    );
+
+    assert.ok(
+        popupSource.includes('showSecondary: false'),
+        'popup context model should be able to suppress the secondary footer action when it would duplicate the primary action'
+    );
+    assert.ok(
+        popupSource.includes("footerActions.classList.toggle('is-single', !nextContext.showSecondary);"),
+        'popup.js should collapse the footer layout when only one action is relevant'
+    );
+    assert.ok(
+        popupSource.includes('function updateResultsState(totalCount, visibleCount, filter)'),
+        'popup.js should compute a live quick-control results summary'
+    );
+    assert.ok(
+        popupHtmlSource.includes('id="resultsState"'),
+        'popup.html should expose a dedicated results summary chip'
+    );
+});
+
 // ── v3.16+ Audit Pass: options.js import cap removed ──
 
 test('options.js import accepts exportVersion >= 3 without an upper cap', () => {
@@ -322,6 +371,54 @@ test('options.js tracks invalidReasons for list / json / number parse errors', (
         optSource,
         /state\.invalidReasons\?\.\[key\]/,
         'updateCardState must render the per-key reason when available'
+    );
+});
+
+test('options.js derives display metadata from ytkit source instead of relying only on key heuristics', () => {
+    assert.match(
+        optionsSource,
+        /function\s+extractSettingsCatalogFromSource\s*\(/,
+        'options.js should define a catalog extractor for feature metadata'
+    );
+    assert.ok(
+        optionsSource.includes('FEATURE_GROUP_TO_PRIMARY_GROUP'),
+        'options.js should map runtime feature groups into editor navigation groups'
+    );
+    assert.ok(
+        optionsSource.includes('state.settingCatalog = extractSettingsCatalogFromSource(settingsSource);'),
+        'options.js should hydrate the display catalog from ytkit.js source when available'
+    );
+    assert.ok(
+        optionsSource.includes('const mappedFeatureRegex'),
+        'options.js should preserve metadata for generated sub-feature families'
+    );
+});
+
+test('options settings editor renders sectioned, description-led cards', () => {
+    assert.match(
+        optionsSource,
+        /function\s+groupSettingsBySection\s*\(/,
+        'options.js should group visible settings into sections'
+    );
+    assert.ok(
+        optionsSource.includes('description.textContent = descriptionText;'),
+        'settings cards should render feature descriptions for scanning'
+    );
+    assert.ok(
+        optionsSource.includes('createSettingsCard(key, { sectionLabel: section.title })'),
+        'section-aware cards should suppress redundant subgroup labels inside the same section'
+    );
+    assert.ok(
+        optionsHtmlSource.includes('.settings-section-header'),
+        'options.html should style section headers inside the settings list'
+    );
+    assert.ok(
+        optionsHtmlSource.includes('.settings-item-copy'),
+        'options.html should provide a dedicated copy column for settings card content'
+    );
+    assert.ok(
+        optionsHtmlSource.includes('grid-template-columns: minmax(0, 1fr) auto;'),
+        'toggle cards should use a stable two-column layout'
     );
 });
 
