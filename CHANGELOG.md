@@ -4,6 +4,63 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.20.0] - Hardening Pass 7
+
+Audit-only release. Closes three of the open items from the 2026-04-23
+audit pass, lifts the `chrome.storage.local` ceiling for long-term
+users, and stops Firefox users from triple-binding the built-in
+"Show Downloads" shortcut.
+
+### Fixed
+
+- **`_pendingReveals` survives service-worker restarts.** The "show in
+  folder" reveal for `chrome.downloads.download({ showInFolder: true })`
+  used an in-memory `Set` only. If the MV3 service worker was terminated
+  between the download being queued and the `state.complete` transition,
+  the reveal was silently dropped. The Set now mirrors into
+  `chrome.storage.session`, the onChanged listener awaits a one-time
+  hydration promise on SW cold-start, and the DOWNLOAD_FILE handler
+  persists every add. Regression test in `tests/hardening.test.js`.
+- **`astra_downloader._run_download` dead code removed.** The
+  `re.search(r'\[download\] Downloading video …', line)` match was
+  assigned to `m` and never read — leftover from an earlier title-
+  detection draft. Deleting it keeps the hot log-parsing loop focused
+  on filename detection + progress.
+- **Theater Split userscript honours the new comment DOM.** YouTube's
+  Polymer renderer now wraps comment text in `yt-core-attributed-string`;
+  split-theater CSS and the `isSplitCommentTextTarget` selector chain
+  didn't match it, so text selection silently broke on the current
+  rollout. CSS rulesets for `pointer-events`, `user-select`, and
+  `cursor` now cover the new class, and a capture-phase `selectstart`
+  listener stops the autoscroll handler from swallowing the selection.
+  Shipped as `theater-split.user.js` v1.0.6.
+
+### Added
+
+- **`unlimitedStorage` permission.** Watch history, DeArrow cache, and
+  `storageQuotaLRU` can collectively push `chrome.storage.local` past
+  the 10 MB default for long-term users. Declaring `unlimitedStorage`
+  removes the ceiling without changing any other permission surface.
+  LRU continues to trim hot caches on its 5-minute cadence.
+
+### Changed
+
+- **Firefox rebinds `toggle-control-center` to `Ctrl+Alt+Y`.** Firefox
+  reserves `Ctrl+Shift+Y` for "Show Downloads", which previously shadowed
+  the Astra Deck toggle shortcut. The Chrome manifest keeps the original
+  binding (no vendor conflict there); the Firefox manifest-patch step in
+  `build-extension.js` rewrites only the Firefox staged copy. Users can
+  still remap via `about:addons` → Manage Extension Shortcuts.
+
+### Tests
+
+- 84/84 JS tests pass (+4 new Pass 7 regressions:
+  `_pendingReveals` session mirror, `unlimitedStorage` permission,
+  Firefox shortcut patch, dead-regex removal).
+- 37 Python tests + 10 subtests still pass.
+
+---
+
 ## [3.19.0] - Toolbar popup absorbs the options page
 
 The standalone settings page (`chrome-extension://…/options.html`) is gone.

@@ -1609,9 +1609,6 @@ class DownloadManager(QObject):
                     if m:
                         dl.filename = m.group(1)
 
-                # Title detection
-                m = re.search(r'\[download\] Downloading video (?:\d+ of \d+|\d+)', line)
-
             proc.wait()
 
             if dl.status != "complete":
