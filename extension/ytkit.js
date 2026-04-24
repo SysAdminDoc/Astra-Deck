@@ -3166,7 +3166,7 @@ return response;
             hideCommentActionMenu: false,
             condenseComments: false,
             hideCommentTeaser: false,
-            autoExpandComments: false,
+            autoExpandComments: true,
             hideLiveChatEngagement: true,
             premiumLiveChat: true,
             hidePaidPromotionWatch: true,
@@ -3407,7 +3407,7 @@ return response;
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 3,
+        SETTINGS_VERSION: 4,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -3418,6 +3418,10 @@ return response;
             },
             3: (s) => {
                 s.hidePinnedComments = true;
+                return s;
+            },
+            4: (s) => {
+                s.autoExpandComments = true;
                 return s;
             },
         },
@@ -4731,6 +4735,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.WATCH],
             _styleElement: null,
             _commentHeaderStyleElement: null,
+            _popupStyleElement: null,
             init() {
                 // CSS selectors are scoped to ytd-watch-metadata — safe to inject globally
                 // (removing path guard so styles persist across SPA navigations)
@@ -4797,13 +4802,274 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     (value, [unsafeFragment, safeFragment]) => value.replace(unsafeFragment, safeFragment),
                     css
                 );
+                const popupCss = `
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app):has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) {
+                        margin-top: 8px !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) #contentWrapper:has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) {
+                        border-radius: 18px !important;
+                        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        background:
+                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.016)),
+                            rgba(9, 12, 18, 0.96) !important;
+                        box-shadow:
+                            0 24px 48px rgba(0, 0, 0, 0.34),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                        backdrop-filter: blur(18px) saturate(1.08) !important;
+                        overflow: hidden !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) {
+                        min-width: 224px !important;
+                        max-width: min(280px, calc(100vw - 24px)) !important;
+                        max-height: min(320px, calc(100vh - 32px)) !important;
+                        margin: 0 !important;
+                        padding: 8px !important;
+                        border: none !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        color: rgba(255, 255, 255, 0.9) !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) tp-yt-paper-listbox {
+                        padding: 0 !important;
+                        background: transparent !important;
+                        outline: none !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) #footer:empty {
+                        display: none !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) {
+                        display: block !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        box-sizing: border-box !important;
+                        margin: 0 !important;
+                        padding: 0 0 0 0 !important;
+                        border: 1px solid transparent !important;
+                        border-radius: 12px !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        overflow: hidden !important;
+                        transition:
+                            background 160ms ease,
+                            border-color 160ms ease,
+                            color 160ms ease,
+                            transform 160ms ease !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) ytd-menu-navigation-item-renderer > a {
+                        display: block !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        color: inherit !important;
+                        text-decoration: none !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) tp-yt-paper-item {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        min-height: 42px !important;
+                        padding: 0 12px !important;
+                        margin: 0 !important;
+                        border: none !important;
+                        border-radius: inherit !important;
+                        background: transparent !important;
+                        color: rgba(226, 232, 240, 0.78) !important;
+                        box-shadow: none !important;
+                        box-sizing: border-box !important;
+                        overflow: visible !important;
+                        transition: none !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer):hover,
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer):focus-within {
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.18) !important;
+                        background:
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+                            rgba(255, 255, 255, 0.03) !important;
+                        color: rgba(255, 255, 255, 0.96) !important;
+                        transform: translateY(-1px) !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer).iron-selected,
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)[aria-selected="true"] {
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.24) !important;
+                        background:
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
+                            rgba(var(--ytkit-accent-rgb), 0.13) !important;
+                        color: rgba(255, 255, 255, 0.98) !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) yt-icon,
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) svg {
+                        width: 18px !important;
+                        height: 18px !important;
+                        margin-right: 10px !important;
+                        color: inherit !important;
+                        fill: currentColor !important;
+                        vertical-align: middle !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) yt-formatted-string {
+                        display: inline-block !important;
+                        min-width: 0 !important;
+                        color: inherit !important;
+                        font-size: 12.5px !important;
+                        line-height: 1.3 !important;
+                        font-weight: 600 !important;
+                        letter-spacing: 0 !important;
+                        white-space: normal !important;
+                        vertical-align: middle !important;
+                    }
+
+                    :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) ytd-menu-popup-renderer:has(:is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer) ytd-badge-supported-renderer {
+                        display: none !important;
+                    }
+
+                    tp-yt-iron-dropdown:has(tp-yt-paper-listbox.yt-dropdown-menu) {
+                        margin-top: 8px !important;
+                    }
+
+                    tp-yt-iron-dropdown #contentWrapper:has(tp-yt-paper-listbox.yt-dropdown-menu) {
+                        border-radius: 18px !important;
+                        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        background:
+                            radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.016)),
+                            rgba(9, 12, 18, 0.96) !important;
+                        box-shadow:
+                            0 24px 48px rgba(0, 0, 0, 0.34),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                        backdrop-filter: blur(18px) saturate(1.08) !important;
+                        overflow: hidden !important;
+                    }
+
+                    tp-yt-iron-dropdown .dropdown-content.style-scope.tp-yt-paper-menu-button:has(tp-yt-paper-listbox.yt-dropdown-menu) {
+                        min-width: 252px !important;
+                        max-width: min(320px, calc(100vw - 24px)) !important;
+                        max-height: min(320px, calc(100vh - 32px)) !important;
+                        margin: 0 !important;
+                        padding: 8px !important;
+                        background: transparent !important;
+                        box-sizing: border-box !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu {
+                        display: grid !important;
+                        gap: 4px !important;
+                        padding: 0 !important;
+                        background: transparent !important;
+                        outline: none !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu {
+                        display: block !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        border: 1px solid transparent !important;
+                        border-radius: 12px !important;
+                        color: rgba(226, 232, 240, 0.8) !important;
+                        text-decoration: none !important;
+                        background: transparent !important;
+                        box-sizing: border-box !important;
+                        transition:
+                            background 160ms ease,
+                            border-color 160ms ease,
+                            color 160ms ease,
+                            transform 160ms ease !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu:hover,
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu:focus-visible {
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.18) !important;
+                        background:
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+                            rgba(255, 255, 255, 0.03) !important;
+                        color: rgba(255, 255, 255, 0.96) !important;
+                        outline: none !important;
+                        transform: translateY(-1px) !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu.iron-selected,
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu[aria-selected="true"] {
+                        border-color: rgba(var(--ytkit-accent-rgb), 0.24) !important;
+                        background:
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
+                            rgba(var(--ytkit-accent-rgb), 0.13) !important;
+                        color: rgba(255, 255, 255, 0.98) !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu tp-yt-paper-item {
+                        width: 100% !important;
+                        min-height: 54px !important;
+                        margin: 0 !important;
+                        padding: 0 14px !important;
+                        border: none !important;
+                        border-radius: inherit !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        box-sizing: border-box !important;
+                        color: inherit !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu yt-icon,
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu > a.yt-simple-endpoint.yt-dropdown-menu svg {
+                        width: 18px !important;
+                        height: 18px !important;
+                        margin-right: 12px !important;
+                        color: inherit !important;
+                        fill: currentColor !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu tp-yt-paper-item-body {
+                        min-width: 0 !important;
+                        padding: 10px 0 !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu #item-with-badge {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: space-between !important;
+                        gap: 10px !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu .item.style-scope.yt-dropdown-menu {
+                        color: inherit !important;
+                        font-size: 13px !important;
+                        line-height: 1.25 !important;
+                        font-weight: 700 !important;
+                        letter-spacing: 0 !important;
+                    }
+
+                    tp-yt-iron-dropdown tp-yt-paper-listbox.yt-dropdown-menu #subtitle.style-scope.yt-dropdown-menu {
+                        margin-top: 3px !important;
+                        color: rgba(255, 255, 255, 0.58) !important;
+                        font-size: 11px !important;
+                        line-height: 1.35 !important;
+                        font-weight: 500 !important;
+                        white-space: normal !important;
+                    }
+                `;
                 this._styleElement = injectStyle(stripCommentRestyleCss(saferCss), this.id, true);
+                this._popupStyleElement?.remove();
+                this._popupStyleElement = injectStyle(popupCss, `${this.id}-popup`, true);
                 this._commentHeaderStyleElement?.remove();
                 this._commentHeaderStyleElement = null;
             },
             destroy() {
                 this._styleElement?.remove();
                 this._styleElement = null;
+                this._popupStyleElement?.remove();
+                this._popupStyleElement = null;
                 this._commentHeaderStyleElement?.remove();
                 this._commentHeaderStyleElement = null;
             }
@@ -4951,7 +5217,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model,
                     #comments ytd-comment-renderer {
                         margin: 0 !important;
-                        padding: 10px 12px 9px !important;
+                        padding: 6px 6px 6px !important;
                         border-radius: 14px !important;
                         border: 1px solid rgba(255, 255, 255, 0.05) !important;
                         background:
@@ -4987,8 +5253,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const premiumInteractionCss = `
                     #comments ytd-comment-view-model > #body,
                     #comments ytd-comment-renderer > #body {
-                        gap: 12px !important;
+                        gap: 6px !important;
                         align-items: flex-start !important;
+                    }
+
+                    #comments ytd-comment-view-model,
+                    #comments ytd-comment-renderer {
+                        --ytd-comment-thumb-dimension: 24px !important;
                     }
 
                     #comments ytd-comment-view-model #author-thumbnail,
@@ -4997,21 +5268,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-renderer #author-thumbnail img,
                     #comments ytd-comment-view-model #author-thumbnail yt-img-shadow,
                     #comments ytd-comment-renderer #author-thumbnail yt-img-shadow {
-                        width: 32px !important;
-                        height: 32px !important;
+                        width: 24px !important;
+                        height: 24px !important;
                         border-radius: 50% !important;
+                    }
+
+                    #comments ytd-comment-view-model #author-thumbnail,
+                    #comments ytd-comment-renderer #author-thumbnail {
+                        margin-right: 0 !important;
+                        flex: 0 0 24px !important;
                     }
 
                     #comments ytd-comment-view-model > #body > #main,
                     #comments ytd-comment-renderer > #body > #main {
                         min-width: 0 !important;
-                        padding-right: 32px !important;
+                        flex: 1 1 0 !important;
+                        padding-right: 6px !important;
                     }
 
                     #comments ytd-comment-view-model #header-author,
                     #comments ytd-comment-renderer #header-author {
                         align-items: center !important;
-                        gap: 8px !important;
+                        gap: 6px !important;
                     }
 
                     #comments ytd-comment-view-model #author-text,
@@ -5039,6 +5317,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: rgba(255, 255, 255, 0.88) !important;
                         font-size: 13.5px !important;
                         line-height: 1.62 !important;
+                        display: block !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                        min-width: 0 !important;
                     }
 
                     #comments ytd-comment-view-model #content-text a,
@@ -5056,9 +5338,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-renderer ytd-expander,
                     #comments ytd-comment-view-model #content,
                     #comments ytd-comment-renderer #content {
+                        display: block !important;
                         position: relative !important;
                         z-index: 1 !important;
                         pointer-events: auto !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                        min-width: 0 !important;
                     }
 
                     #comments ytd-comment-view-model #author-text,
@@ -5082,14 +5368,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     #comments ytd-comment-view-model #content-text,
                     #comments ytd-comment-renderer #content-text,
-                    #comments ytd-comment-view-model #content-text *,
-                    #comments ytd-comment-renderer #content-text *,
                     #comments ytd-comment-view-model yt-attributed-string,
                     #comments ytd-comment-renderer yt-attributed-string,
                     #comments ytd-comment-view-model .ytAttributedStringHost,
                     #comments ytd-comment-renderer .ytAttributedStringHost,
                     #comments ytd-comment-view-model yt-core-attributed-string,
                     #comments ytd-comment-renderer yt-core-attributed-string {
+                        display: block !important;
+                        pointer-events: auto !important;
+                        -webkit-user-select: text !important;
+                        user-select: text !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                        min-width: 0 !important;
+                    }
+
+                    #comments ytd-comment-view-model #content-text *,
+                    #comments ytd-comment-renderer #content-text * {
                         pointer-events: auto !important;
                         -webkit-user-select: text !important;
                         user-select: text !important;
@@ -5115,8 +5410,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model #inline-action-menu,
                     #comments ytd-comment-renderer #inline-action-menu {
                         position: absolute !important;
-                        top: 12px !important;
-                        right: 12px !important;
+                        top: 10px !important;
+                        right: 6px !important;
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
@@ -5150,10 +5445,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-renderer #action-menu tp-yt-paper-icon-button,
                     #comments ytd-comment-view-model #inline-action-menu tp-yt-paper-icon-button,
                     #comments ytd-comment-renderer #inline-action-menu tp-yt-paper-icon-button {
-                        width: 30px !important;
-                        height: 30px !important;
-                        min-width: 30px !important;
-                        min-height: 30px !important;
+                        width: 28px !important;
+                        height: 28px !important;
+                        min-width: 28px !important;
+                        min-height: 28px !important;
                         padding: 0 !important;
                         border-radius: 999px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -5209,9 +5504,58 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-engagement-bar #toolbar {
                         display: flex !important;
                         align-items: center !important;
-                        gap: 5px !important;
-                        flex-wrap: wrap !important;
+                        gap: 4px !important;
+                        flex-wrap: nowrap !important;
                         margin: 0 !important;
+                        row-gap: 0 !important;
+                        width: max-content !important;
+                        max-width: 100% !important;
+                        white-space: nowrap !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #toolbar > * {
+                        flex: 0 0 auto !important;
+                        min-width: 0 !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #reply-button-end,
+                    #comments ytd-comment-engagement-bar #reply-button-end yt-button-shape,
+                    #comments ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next,
+                    #comments ytd-comment-engagement-bar #creator-heart,
+                    #comments ytd-comment-engagement-bar ytd-creator-heart-renderer {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        flex: 0 0 auto !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #dislike-button {
+                        display: none !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox tp-yt-paper-input-container,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox #input-container,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox #creation-box {
+                        border: none !important;
+                        border-bottom: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox .underline,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox .unfocused-line,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox .focused-line,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox .add-on-content,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox tp-yt-paper-input-container[use-v2-underline]::before,
+                    #comments ytd-comment-engagement-bar #reply-dialog ytd-commentbox tp-yt-paper-input-container[use-v2-underline]::after {
+                        content: none !important;
+                        display: none !important;
+                        opacity: 0 !important;
+                        visibility: hidden !important;
+                        height: 0 !important;
+                        border: none !important;
+                        border-bottom: none !important;
+                        box-shadow: none !important;
+                        overflow: hidden !important;
                     }
 
                     #comments ytd-comment-engagement-bar #like-button,
@@ -5323,6 +5667,89 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model #creator-heart-button,
                     #comments ytd-comment-renderer #creator-heart-button {
                         color: rgba(255, 112, 122, 0.95) !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #creator-heart,
+                    #comments ytd-comment-engagement-bar ytd-creator-heart-renderer,
+                    #comments ytd-comment-engagement-bar #creator-heart-button {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        flex: 0 0 auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        min-width: 0 !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #creator-heart-button,
+                    #comments ytd-comment-engagement-bar #creator-heart-button button {
+                        width: 28px !important;
+                        min-width: 28px !important;
+                        height: 28px !important;
+                        min-height: 28px !important;
+                        padding: 0 !important;
+                        border-radius: 999px !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #creator-heart-button button {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        border: 1px solid rgba(255, 112, 122, 0.22) !important;
+                        background: radial-gradient(circle at 30% 30%, rgba(255, 132, 144, 0.2), rgba(255, 112, 122, 0.08)) !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+                        overflow: hidden !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #creator-heart-button yt-interaction,
+                    #comments ytd-comment-engagement-bar #creator-heart-button #hearted-thumbnail,
+                    #comments ytd-comment-engagement-bar #creator-heart-button #hearted-border {
+                        display: none !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #creator-heart-button #hearted,
+                    #comments ytd-comment-engagement-bar #creator-heart-button #hearted svg,
+                    #comments ytd-comment-engagement-bar #creator-heart-button #hearted .yt-icon-shape {
+                        display: block !important;
+                        width: 14px !important;
+                        height: 14px !important;
+                        color: rgba(255, 112, 122, 0.98) !important;
+                        fill: currentColor !important;
+                    }
+
+                    #comments ytd-comment-engagement-bar #creator-heart-button #hearted {
+                        margin: 0 !important;
+                    }
+
+                    tp-yt-paper-tooltip.ytd-creator-heart-renderer,
+                    tp-yt-paper-tooltip.ytd-creator-heart-renderer #tooltip,
+                    #comments ytd-comment-engagement-bar ytd-creator-heart-renderer tp-yt-paper-tooltip,
+                    #comments ytd-comment-engagement-bar ytd-creator-heart-renderer tp-yt-paper-tooltip #tooltip {
+                        border-radius: 999px !important;
+                    }
+
+                    tp-yt-paper-tooltip.ytd-creator-heart-renderer,
+                    #comments ytd-comment-engagement-bar ytd-creator-heart-renderer tp-yt-paper-tooltip {
+                        z-index: ${Z.TOAST + 2} !important;
+                        pointer-events: none !important;
+                    }
+
+                    tp-yt-paper-tooltip.ytd-creator-heart-renderer #tooltip,
+                    #comments ytd-comment-engagement-bar ytd-creator-heart-renderer tp-yt-paper-tooltip #tooltip {
+                        min-height: 24px !important;
+                        padding: 0 10px !important;
+                        border: 1px solid rgba(255, 112, 122, 0.22) !important;
+                        background:
+                            linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)),
+                            rgba(11, 15, 21, 0.96) !important;
+                        color: rgba(255, 228, 232, 0.96) !important;
+                        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34) !important;
+                        backdrop-filter: blur(12px) saturate(1.08) !important;
+                        font-size: 10.5px !important;
+                        font-weight: 700 !important;
+                        letter-spacing: 0.01em !important;
+                        line-height: 24px !important;
+                        white-space: nowrap !important;
                     }
 
                     #comments ytd-comment-view-model ytd-author-comment-badge-renderer[creator],
@@ -5764,6 +6191,69 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     else delete comment.dataset[flagName];
                 };
 
+                const applyLayoutStyles = (nodes, styles) => {
+                    nodes.forEach((node) => {
+                        if (!(node instanceof Element)) return;
+                        Object.entries(styles).forEach(([key, value]) => node.style.setProperty(key, value, 'important'));
+                    });
+                };
+
+                const normalizeCommentLayoutSurface = (comment) => {
+                    if (!(comment instanceof Element)) return;
+                    comment.removeAttribute('optimal-reading-width-comments');
+                    comment.style.setProperty('--ytd-comment-thumb-dimension', '24px', 'important');
+                    comment.style.setProperty('padding', '6px 6px 6px', 'important');
+                    comment.style.setProperty('width', '100%', 'important');
+                    comment.style.setProperty('max-width', 'none', 'important');
+                    comment.style.setProperty('box-sizing', 'border-box', 'important');
+
+                    const body = comment.querySelector(':scope > #body');
+                    applyLayoutStyles([body], {
+                        display: 'flex',
+                        'align-items': 'flex-start',
+                        gap: '6px',
+                        width: '100%',
+                        'max-width': 'none',
+                        'box-sizing': 'border-box'
+                    });
+
+                    const authorThumbnail = comment.querySelector('#author-thumbnail');
+                    applyLayoutStyles([authorThumbnail], {
+                        'margin-right': '0',
+                        flex: '0 0 24px',
+                        width: '24px',
+                        'min-width': '24px'
+                    });
+                    applyLayoutStyles(comment.querySelectorAll('#author-thumbnail yt-img-shadow, #author-thumbnail img, #author-thumbnail button'), {
+                        width: '24px',
+                        height: '24px'
+                    });
+
+                    const main = comment.querySelector(':scope > #body > #main');
+                    applyLayoutStyles([main], {
+                        display: 'block',
+                        flex: '1 1 0',
+                        width: 'auto',
+                        'max-width': 'none',
+                        'min-width': '0',
+                        'padding-right': '6px',
+                        'box-sizing': 'border-box'
+                    });
+
+                    applyLayoutStyles(comment.querySelectorAll('#header, #header-author, ytd-expander, #content, #content-text, yt-attributed-string, .ytAttributedStringHost, yt-core-attributed-string'), {
+                        width: '100%',
+                        'max-width': 'none',
+                        'min-width': '0',
+                        'box-sizing': 'border-box'
+                    });
+
+                    const actionMenu = comment.querySelector('#action-menu, #inline-action-menu');
+                    applyLayoutStyles([actionMenu], {
+                        right: '6px',
+                        top: '8px'
+                    });
+                };
+
                 const normalizeCommentInteractionSurface = (comment) => {
                     if (!(comment instanceof Element)) return;
                     const thread = comment.closest('ytd-comment-thread-renderer');
@@ -5801,6 +6291,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted], #creator-heart-button:not([hidden])'));
                     setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
                     comment.querySelector('.ytkit-vote-badge')?.remove();
+                    normalizeCommentLayoutSurface(comment);
                     normalizeCommentInteractionSurface(comment);
                 };
 
@@ -5844,7 +6335,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         dialog.dataset.ytkitStyled = '1';
 
                         const S = (el, props) => { if (!el) return; for (const [k, v] of Object.entries(props)) el.style.setProperty(k, v, 'important'); };
-                        const HIDE = { display: 'none', height: '0', border: 'none', 'border-bottom': 'none', overflow: 'hidden' };
+                        const HIDE = { display: 'none', height: '0', border: 'none', 'border-bottom': 'none', overflow: 'hidden', opacity: '0', visibility: 'hidden', 'box-shadow': 'none' };
                         const CLEAR = { display: 'block', width: '100%', border: 'none', 'border-bottom': 'none', outline: 'none', background: 'transparent', 'box-shadow': 'none', padding: '0', margin: '0', 'box-sizing': 'border-box' };
 
                         S(dialog, { display: 'block', padding: '10px 0 4px', margin: '0', position: 'relative', width: '100%', 'box-sizing': 'border-box', overflow: 'visible', border: 'none', outline: 'none', background: 'transparent' });
@@ -5854,7 +6345,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         S(cb.querySelector('#divider-line'), HIDE);
                         S(cb.querySelector('#creation-box'), CLEAR);
                         const inputContainer = cb.querySelector('#input-container') || cb.querySelector('tp-yt-paper-input-container');
-                        S(inputContainer, CLEAR);
+                        S(inputContainer, { ...CLEAR, 'border-bottom': 'none', 'box-shadow': 'none' });
                         S(cb.querySelector('.input-wrapper'), CLEAR);
                         S(cb.querySelector('#labelAndInputContainer'), CLEAR);
                         cb.querySelectorAll('.paper-input-input').forEach(el => S(el, CLEAR));
@@ -5866,7 +6357,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         S(replyRenderer, { ...CLEAR, overflow: 'visible' });
 
                         // Hide paper-input underlines
-                        cb.querySelectorAll('.underline, .unfocused-line, .focused-line').forEach(el => S(el, HIDE));
+                        cb.querySelectorAll('.underline, .unfocused-line, .focused-line, .add-on-content').forEach(el => S(el, HIDE));
 
                         // Style the contenteditable textarea (outer yt-formatted-string)
                         const textarea = cb.querySelector('#contenteditable-textarea');
@@ -10881,10 +11372,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar {
                         display: flex !important;
-                        flex-wrap: wrap !important;
+                        flex-wrap: nowrap !important;
                         align-items: center !important;
-                        gap: 6px !important;
+                        gap: 5px !important;
                         margin: 0 !important;
+                        row-gap: 0 !important;
+                        width: max-content !important;
+                        max-width: 100% !important;
+                        white-space: nowrap !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar > * {
+                        flex: 0 0 auto !important;
+                        min-width: 0 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #reply-button-end,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #reply-button-end yt-button-shape,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-creator-heart-renderer {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        flex: 0 0 auto !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #dislike-button {
+                        display: none !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-engagement-bar #toolbar button,
@@ -11162,6 +11676,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button svg {
                         max-width: 15px !important;
                         max-height: 15px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-creator-heart-renderer,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        min-width: 0 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button button {
+                        width: 26px !important;
+                        min-width: 26px !important;
+                        height: 26px !important;
+                        min-height: 26px !important;
+                        padding: 0 !important;
+                        border-radius: 999px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button button {
+                        border: 1px solid rgba(255, 112, 122, 0.2) !important;
+                        background: radial-gradient(circle at 30% 30%, rgba(255, 132, 144, 0.18), rgba(255, 112, 122, 0.07)) !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button yt-interaction,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button #hearted-thumbnail,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button #hearted-border {
+                        display: none !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button #hearted,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button #hearted svg,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button #hearted .yt-icon-shape {
+                        display: block !important;
+                        width: 13px !important;
+                        height: 13px !important;
+                        max-width: 13px !important;
+                        max-height: 13px !important;
+                        color: rgba(255, 112, 122, 0.98) !important;
+                        fill: currentColor !important;
                     }
                 `;
                 this._splitCommentsStyleEl = injectStyle(splitCommentsCss, this.id + '-comments', true);
@@ -11634,12 +12193,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     /* Hide Read more / Show less buttons since everything is expanded */
                     ytd-comment-view-model ytd-expander #more,
                     ytd-comment-view-model ytd-expander [slot="more"],
+                    ytd-comment-view-model ytd-expander tp-yt-paper-button#more,
                     ytd-comment-view-model ytd-expander #less,
                     ytd-comment-view-model ytd-expander [slot="less"],
+                    ytd-comment-view-model ytd-expander tp-yt-paper-button#less,
+                    ytd-comment-view-model ytd-expander .more-button,
+                    ytd-comment-view-model ytd-expander .less-button,
                     ytd-comment-renderer ytd-expander #more,
                     ytd-comment-renderer ytd-expander [slot="more"],
+                    ytd-comment-renderer ytd-expander tp-yt-paper-button#more,
                     ytd-comment-renderer ytd-expander #less,
                     ytd-comment-renderer ytd-expander [slot="less"],
+                    ytd-comment-renderer ytd-expander tp-yt-paper-button#less,
+                    ytd-comment-renderer ytd-expander .more-button,
+                    ytd-comment-renderer ytd-expander .less-button,
                     ytd-comment-renderer tp-yt-paper-button.ytd-expander {
                         display: none !important;
                     }
@@ -11648,11 +12215,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 // MutationObserver fallback: programmatically expand any collapsed expanders
                 // YouTube sometimes sets truncation via JS attributes that resist CSS overrides
+                const hideExpandControls = (exp) => {
+                    exp.querySelectorAll(
+                        '#more, [slot="more"], tp-yt-paper-button#more, #less, [slot="less"], tp-yt-paper-button#less, .more-button, .less-button'
+                    ).forEach(control => {
+                        if (!(control instanceof HTMLElement)) return;
+                        control.hidden = true;
+                        control.setAttribute('hidden', '');
+                        control.setAttribute('aria-hidden', 'true');
+                        control.style.setProperty('display', 'none', 'important');
+                        control.style.setProperty('visibility', 'hidden', 'important');
+                        control.style.setProperty('pointer-events', 'none', 'important');
+                    });
+                };
                 const expandComments = () => {
                     const expanders = document.querySelectorAll(
-                        'ytd-comment-view-model ytd-expander[collapsed], ytd-comment-renderer ytd-expander[collapsed]'
+                        'ytd-comment-view-model ytd-expander, ytd-comment-renderer ytd-expander'
                     );
                     expanders.forEach(exp => {
+                        hideExpandControls(exp);
+                        if (!exp.hasAttribute('collapsed')) return;
                         // Remove collapsed attribute to trigger expansion
                         exp.removeAttribute('collapsed');
                         // Also try clicking the "Read more" button if it exists (handles edge cases)
@@ -11662,9 +12244,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 DebugManager.log('Description', `Click failed: ${e.message}`);
                             }
                         }
+                        hideExpandControls(exp);
                     });
                 };
 
+                expandComments();
                 addMutationRule(this.id, expandComments);
             },
             destroy() {
@@ -12015,8 +12599,72 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-comment-replies-tools').forEach(el => el.remove());
             }
         },
-        cssFeature('hideLiveChatEngagement', 'Hide Chat Engagement', 'Remove engagement prompts in live chat', 'Live Chat', 'message-circle-off',
-            'yt-live-chat-viewer-engagement-message-renderer,yt-live-chat-toast-renderer'),
+        {
+            id: 'hideLiveChatEngagement',
+            name: 'Hide Chat Engagement',
+            description: 'Remove engagement prompts in live chat',
+            group: 'Live Chat',
+            icon: 'message-circle-off',
+            _styleElement: null,
+
+            _tooltipDetailsNeedle: 'people will be able to see that you subscribe to this channel',
+
+            _hideNode(node) {
+                if (!(node instanceof Element) || node.dataset.ytkitLiveChatEngagementHidden === '1') return;
+                if (!node.dataset.ytkitLiveChatEngagementDisplay) node.dataset.ytkitLiveChatEngagementDisplay = node.style.display || '';
+                if (!node.dataset.ytkitLiveChatEngagementVisibility) node.dataset.ytkitLiveChatEngagementVisibility = node.style.visibility || '';
+                node.style.setProperty('display', 'none', 'important');
+                node.style.setProperty('visibility', 'hidden', 'important');
+                node.dataset.ytkitLiveChatEngagementHidden = '1';
+            },
+
+            _restoreHiddenNodes() {
+                document.querySelectorAll('[data-ytkit-live-chat-engagement-hidden="1"]').forEach((node) => {
+                    if (!(node instanceof Element)) return;
+                    node.style.display = node.dataset.ytkitLiveChatEngagementDisplay || '';
+                    node.style.visibility = node.dataset.ytkitLiveChatEngagementVisibility || '';
+                    delete node.dataset.ytkitLiveChatEngagementHidden;
+                    delete node.dataset.ytkitLiveChatEngagementDisplay;
+                    delete node.dataset.ytkitLiveChatEngagementVisibility;
+                });
+            },
+
+            _shouldHideSubscriberNotice(tooltip) {
+                if (!(tooltip instanceof Element)) return false;
+                const dropdown = tooltip.closest('tp-yt-iron-dropdown');
+                const isLiveChatTooltip = tooltip.classList.contains('yt-live-chat-app')
+                    || dropdown?.classList?.contains('yt-live-chat-app')
+                    || tooltip.closest('.yt-live-chat-app');
+                if (!isLiveChatTooltip) return false;
+
+                const detailsText = tooltip.querySelector('#details-text')?.textContent?.trim().toLowerCase() || '';
+                return detailsText.includes(this._tooltipDetailsNeedle);
+            },
+
+            _scan() {
+                document.querySelectorAll('yt-live-chat-viewer-engagement-message-renderer, yt-live-chat-toast-renderer')
+                    .forEach((node) => this._hideNode(node));
+
+                document.querySelectorAll('yt-tooltip-renderer').forEach((tooltip) => {
+                    if (!this._shouldHideSubscriberNotice(tooltip)) return;
+                    this._hideNode(tooltip);
+                    const dropdown = tooltip.closest('tp-yt-iron-dropdown');
+                    if (dropdown instanceof Element) this._hideNode(dropdown);
+                });
+            },
+
+            init() {
+                this._styleElement = injectStyle('yt-live-chat-viewer-engagement-message-renderer,yt-live-chat-toast-renderer', this.id, false);
+                this._scan();
+                addMutationRule(this.id, () => this._scan());
+            },
+
+            destroy() {
+                this._styleElement?.remove(); this._styleElement = null;
+                removeMutationRule(this.id);
+                this._restoreHiddenNodes();
+            }
+        },
         {
             id: 'premiumLiveChat',
             name: 'Premium Live Chat',
@@ -13221,6 +13869,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!hidden.includes(videoId)) { hidden.push(videoId); this._setHiddenVideos(hidden); }
                 element.classList.add('ytkit-video-hidden');
                 this._lastHidden = { type: 'video', id: videoId, element };
+                this._updatePageActionButtons();
                 this._showToast('Video hidden', [
                     { text: 'Undo', onClick: () => this._undoHide() },
                     { text: 'Manage', onClick: () => this._showManager() }
@@ -13262,6 +13911,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (idx > -1) { channels.splice(idx, 1); this._setBlockedChannels(channels); }
                     this._processAllVideos();
                 }
+                this._updatePageActionButtons();
                 this._lastHidden = null;
             },
 
@@ -13275,6 +13925,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         el.classList.remove('ytkit-video-hidden');
                     });
                     this._processAllVideos();
+                    this._updatePageActionButtons();
                     return true;
                 }
                 return false;
@@ -13393,6 +14044,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer')
                     .forEach(el => this._processVideoElement(el));
+                this._updatePageActionButtons();
             },
             _processAllVideosDebounced(delay = 300) {
                 if (this._processAllDebounceTimer) clearTimeout(this._processAllDebounceTimer);
@@ -13412,6 +14064,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return videos;
             },
 
+            _getHiddenVideosOnPage() {
+                const hiddenIds = new Set();
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(item => {
+                    const videoId = this._extractVideoId(item);
+                    if (!videoId || !this._isVideoIdHidden(videoId)) return;
+                    hiddenIds.add(videoId);
+                });
+                return [...hiddenIds];
+            },
+
+            _updatePageActionButtons() {
+                const hiddenCount = this._getHiddenVideosOnPage().length;
+                document.querySelectorAll('.ytkit-hide-all-restore-btn').forEach(btn => {
+                    if (!(btn instanceof HTMLButtonElement)) return;
+                    btn.disabled = hiddenCount === 0;
+                    btn.title = hiddenCount === 0
+                        ? 'No hidden videos on this page'
+                        : `Restore ${hiddenCount} hidden video${hiddenCount === 1 ? '' : 's'} on this page`;
+                    btn.setAttribute('aria-label', btn.title);
+                });
+            },
+
             _hideAllVideos() {
                 const videos = this._getVisibleVideos();
                 if (videos.length === 0) { showToast('No visible videos to hide', '#6b7280'); return; }
@@ -13422,6 +14096,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     v.element.classList.add('ytkit-video-hidden');
                 });
                 this._setHiddenVideos(hidden);
+                this._updatePageActionButtons();
                 this._showToast(`Hidden ${newlyHidden} videos`, [
                     { text: 'Undo All', onClick: () => this._undoHideAll(videos) },
                     { text: 'Manage', onClick: () => this._showManager() }
@@ -13436,7 +14111,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     v.element.classList.remove('ytkit-video-hidden');
                 });
                 this._setHiddenVideos(hidden);
+                this._updatePageActionButtons();
                 showToast('Restored all videos', '#22c55e');
+            },
+
+            _restoreHiddenVideosOnPage() {
+                const hiddenIds = this._getHiddenVideosOnPage();
+                if (hiddenIds.length === 0) {
+                    showToast('No hidden videos on this page', '#6b7280');
+                    this._updatePageActionButtons();
+                    return;
+                }
+                const hiddenSet = new Set(hiddenIds);
+                const previousHidden = this._getHiddenVideos();
+                const remaining = previousHidden.filter(id => !hiddenSet.has(id));
+                this._setHiddenVideos(remaining);
+                this._processAllVideos();
+                this._updatePageActionButtons();
+                showToast(`Restored ${hiddenIds.length} hidden video${hiddenIds.length === 1 ? '' : 's'}`, '#22c55e', {
+                    duration: 5,
+                    action: {
+                        text: 'Undo',
+                        onClick: () => {
+                            const restored = this._getHiddenVideos();
+                            const merged = [...new Set([...restored, ...hiddenIds])];
+                            this._setHiddenVideos(merged);
+                            this._processAllVideos();
+                            this._updatePageActionButtons();
+                        }
+                    }
+                });
             },
 
             _createHideAllButtonElement(className) {
@@ -13446,9 +14150,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
                     return el;
                 };
+                const group = document.createElement('div');
+                group.className = `${className} ytkit-hide-all-group`;
+                group.setAttribute('role', 'group');
+                group.setAttribute('aria-label', 'Video Hider quick actions');
+
+                const restoreBtn = document.createElement('button');
+                restoreBtn.type = 'button';
+                restoreBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-restore-btn';
+                restoreBtn.title = 'Restore hidden videos on this page';
+                restoreBtn.setAttribute('aria-label', 'Restore hidden videos on this page');
+                const restoreSvg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+                restoreSvg.appendChild(createSvgElement('path', { d: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z' }));
+                restoreSvg.appendChild(createSvgElement('circle', { cx: '12', cy: '12', r: '3' }));
+                const restoreIconWrap = document.createElement('span');
+                restoreIconWrap.className = 'ytkit-watch-action-btn__icon';
+                restoreIconWrap.appendChild(restoreSvg);
+                restoreBtn.appendChild(restoreIconWrap);
+                restoreBtn.addEventListener('click', () => this._restoreHiddenVideosOnPage());
+
                 const hideAllBtn = document.createElement('button');
                 hideAllBtn.type = 'button';
-                hideAllBtn.className = `${className} ytkit-watch-action-btn ytkit-hide-all-btn`;
+                hideAllBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-btn';
                 hideAllBtn.title = 'Hide all visible videos on this page';
                 const svg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
                 svg.appendChild(createSvgElement('path', { d: 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24' }));
@@ -13462,7 +14185,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 text.textContent = 'Hide All';
                 hideAllBtn.appendChild(text);
                 hideAllBtn.addEventListener('click', () => this._hideAllVideos());
-                return hideAllBtn;
+                group.appendChild(restoreBtn);
+                group.appendChild(hideAllBtn);
+                this._updatePageActionButtons();
+                return group;
             },
 
             _createSubsHideAllButton() {
@@ -13472,6 +14198,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!headerButtons) return;
                 const hideAllBtn = this._createHideAllButtonElement('ytkit-subs-hide-all-btn');
                 headerButtons.appendChild(hideAllBtn);
+                this._updatePageActionButtons();
             },
 
             _removeSubsHideAllButton() {
@@ -13485,6 +14212,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!headerButtons) return;
                 const hideAllBtn = this._createHideAllButtonElement('ytkit-home-hide-all-btn');
                 headerButtons.appendChild(hideAllBtn);
+                this._updatePageActionButtons();
             },
 
             _removeHomeHideAllButton() {
@@ -13554,6 +14282,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._trackSubsLoadBatch(batchBuffer);
                         batchBuffer = [];
                     }
+                    this._updatePageActionButtons();
                 };
 
                 this._observer = new MutationObserver(mutations => {
@@ -13596,6 +14325,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._removeHomeHideAllButton();
                     }
                     wasOnSubsPage = isOnSubsPage;
+                    this._updatePageActionButtons();
                 };
 
                 addNavigateRule('hideVideosFromHomeNav', () => {
@@ -30836,6 +31566,41 @@ body.ytkit-panel-open #ytkit-settings-panel {
             white-space: nowrap;
         }
 
+        .ytkit-hide-all-group {
+            display: inline-flex !important;
+            align-items: stretch !important;
+            gap: 0 !important;
+            margin-left: 0 !important;
+            border-radius: 999px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            background: rgba(255,255,255,0.045) !important;
+            box-shadow: none !important;
+        }
+
+        .ytkit-hide-all-group .ytkit-watch-action-btn {
+            border: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .ytkit-hide-all-group .ytkit-watch-action-btn + .ytkit-watch-action-btn {
+            border-left: 1px solid rgba(255,255,255,0.08) !important;
+        }
+
+        .ytkit-hide-all-restore-btn {
+            min-width: 28px !important;
+            width: 28px !important;
+            padding: 0 !important;
+        }
+
+        .ytkit-hide-all-restore-btn .ytkit-watch-action-btn__icon {
+            width: 16px;
+            height: 16px;
+        }
+
         .ytkit-watch-action-btn[data-state="busy"] .ytkit-watch-action-btn__icon svg,
         .ytkit-copy-title-btn[data-state="copying"] .ytkit-copy-title-btn__icon svg {
             animation: ytkit-spin 0.8s linear infinite;
@@ -33460,6 +34225,21 @@ body.ytkit-panel-open #ytkit-settings-panel {
             background: rgba(239,68,68,0.18) !important;
             border-color: rgba(239,68,68,0.3) !important;
             color: #fff !important;
+        }
+
+        .ytkit-hide-all-restore-btn {
+            color: rgba(196,237,255,0.92) !important;
+        }
+
+        .ytkit-hide-all-restore-btn:hover:not(:disabled) {
+            background: rgba(var(--ytkit-accent-rgb),0.14) !important;
+            color: #fff !important;
+        }
+
+        .ytkit-hide-all-restore-btn:disabled {
+            color: rgba(255,255,255,0.36) !important;
+            background: transparent !important;
+            border-color: transparent !important;
         }
 
         .ytkit-vh-clear-btn {
