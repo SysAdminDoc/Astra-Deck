@@ -14,7 +14,41 @@ const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 // fires exactly when the file transitions to `state.complete`. Using a
 // setTimeout meant the service worker could be killed mid-wait on slow
 // networks.
+// v3.20.0: Mirror into `chrome.storage.session` so a SW restart between
+// `chrome.downloads.download()` and the `state.complete` transition
+// doesn't silently drop the reveal. The in-memory Set stays the fast
+// path; the session mirror is authoritative when the SW cold-starts.
 const _pendingReveals = new Set();
+const _PENDING_REVEALS_KEY = '_pendingReveals';
+
+const _pendingRevealsReady = (async () => {
+    if (!chrome.storage?.session) return;
+    try {
+        const stored = await chrome.storage.session.get(_PENDING_REVEALS_KEY);
+        const ids = stored?.[_PENDING_REVEALS_KEY];
+        if (Array.isArray(ids)) {
+            for (const id of ids) _pendingReveals.add(id);
+        }
+    } catch (_) {
+        // reason: chrome.storage.session is MV3+ (Chrome 102, Firefox 115);
+        // absence is benign — we still fire reveals while the SW stays alive.
+    }
+})();
+
+function _persistPendingReveals() {
+    if (!chrome.storage?.session) return;
+    try {
+        const payload = { [_PENDING_REVEALS_KEY]: [..._pendingReveals] };
+        const maybePromise = chrome.storage.session.set(payload);
+        if (maybePromise && typeof maybePromise.catch === 'function') {
+            maybePromise.catch(() => {
+                // reason: best-effort mirror; Set remains authoritative in memory.
+            });
+        }
+    } catch (_) {
+        // reason: storage.session unavailable or quota-exceeded; ignore
+    }
+}
 
 // Allowed origins for EXT_FETCH proxy — blocks SSRF to private networks
 const ALLOWED_FETCH_ORIGINS = [
@@ -280,18 +314,26 @@ async function togglePanelForTab(tabId) {
 // reveals whenever the MV3 service worker was killed during the wait.
 if (chrome.downloads?.onChanged?.addListener) {
     chrome.downloads.onChanged.addListener((delta) => {
-        if (!delta || !_pendingReveals.has(delta.id)) return;
+        if (!delta) return;
         const state = delta.state?.current;
-        if (state === 'complete') {
-            _pendingReveals.delete(delta.id);
-            try {
-                chrome.downloads.show(delta.id);
-            } catch (_) {
-                // reason: Explorer reveal may fail if file was moved before reveal
+        if (state !== 'complete' && state !== 'interrupted') return;
+        // v3.20.0: await hydration so a reveal added before a SW cold-start
+        // is still honoured when the change event arrives post-hydrate.
+        void (async () => {
+            try { await _pendingRevealsReady; } catch (_) {
+                // reason: hydration already logged; fall through to in-memory check
             }
-        } else if (state === 'interrupted') {
+            if (!_pendingReveals.has(delta.id)) return;
             _pendingReveals.delete(delta.id);
-        }
+            _persistPendingReveals();
+            if (state === 'complete') {
+                try {
+                    chrome.downloads.show(delta.id);
+                } catch (_) {
+                    // reason: Explorer reveal may fail if file was moved before reveal
+                }
+            }
+        })();
     });
 }
 
@@ -529,7 +571,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     // slow networks, silently dropping the reveal. Listening for the
                     // `state.complete` transition fires reveal when the file actually
                     // exists, and the SW is kept alive while a download is in flight.
+                    // v3.20.0: mirror to chrome.storage.session so a SW cold-start
+                    // between add and `state.complete` still honours the reveal.
                     _pendingReveals.add(downloadId);
+                    _persistPendingReveals();
                 }
                 sendResponse({ downloadId });
             }
