@@ -446,7 +446,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.17.0';
+    const YTKIT_VERSION = '3.18.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -3108,7 +3108,13 @@ return response;
     }
 
     // Keep this empty unless a setting is fully removed from defaults, UI, and runtime.
-    const RETIRED_SETTING_KEYS = new Set();
+    const RETIRED_SETTING_KEYS = new Set([
+        // v3.18.0: Auto Quality replaced its select+sub-features with a single
+        // Premium-aware MAIN-world toggle. These keys are no longer read.
+        'preferredQuality',
+        'useEnhancedBitrate',
+        'hideQualityPopup',
+    ]);
 
     //  SECTION 1: SETTINGS MANAGER
     const settingsManager = {
@@ -3153,9 +3159,6 @@ return response;
             quickLinkMenu: true,
             quickLinkItems: 'History | /feed/history\nWatch Later | /playlist?list=WL\nPlaylists | /feed/library\nLiked Videos | /playlist?list=LL\nSubscriptions | /feed/subscriptions\nFor You Page | /',
             autoMaxResolution: true,
-            preferredQuality: 'max', // 'max' | '4320' | '2160' | '1440' | '1080' | '720' | '480'
-            useEnhancedBitrate: true,
-            hideQualityPopup: true,
             hideMerchShelf: true,
             hideAiSummary: true,
 
@@ -3425,7 +3428,7 @@ return response;
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 5,
+        SETTINGS_VERSION: 6,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -3448,6 +3451,17 @@ return response;
                 // during `load()` already seeds them. This migration is a
                 // no-op marker so `_settingsVersion` advances cleanly and
                 // future migrations can chain from a known baseline.
+                return s;
+            },
+            6: (s) => {
+                // v3.18.0: Auto Quality rewritten as a single Premium-aware
+                // toggle. Drop the dropdown + sub-feature keys here too —
+                // `_sanitize()` will also strip them on the next load via
+                // RETIRED_SETTING_KEYS, but doing it explicitly keeps any
+                // exported snapshots clean.
+                delete s.preferredQuality;
+                delete s.useEnhancedBitrate;
+                delete s.hideQualityPopup;
                 return s;
             },
         },
@@ -4222,7 +4236,7 @@ return response;
         stickyVideo: 'Full-screen player with scroll-triggered side-by-side comments',
         hideRelatedVideos: 'Secondary panel hidden, primary stretches to full width',
         expandVideoWidth: 'Primary column gets max-width:none when sidebar is hidden',
-        autoMaxResolution: 'Forces highest available resolution on video load',
+        autoMaxResolution: 'Forces the highest available stream on every video — picks 1080p Premium when offered',
         autoExpandComments: 'Removes comment truncation, clicks Read More automatically',
         hideCommentDislikeButton: 'Removes the no-op dislike control from comment toolbars',
         commentEnhancements: 'Highlights creator replies, shows like heat, collapse toggle',
@@ -11772,305 +11786,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ─── Quality ───
         {
             id: 'autoMaxResolution',
-            name: 'Auto Quality',
-            description: 'Automatically select preferred video quality (max, 4K, 1440p, 1080p, 720p, 480p)',
+            name: 'Always Best Quality',
+            description: 'Force the highest available stream on every video (1080p Premium when offered)',
             group: 'Video Player',
             icon: 'sparkles',
-            isParent: true,
-            type: 'select',
             pages: [PageTypes.WATCH],
-            options: {
-                'max': 'Maximum Available',
-                '4320': '8K (4320p)',
-                '2160': '4K (2160p)',
-                '1440': '1440p',
-                '1080': '1080p',
-                '720': '720p',
-                '480': '480p'
-            },
-            settingKey: 'preferredQuality',
-            _lastProcessedVideoId: null,
-            _lastAppliedTarget: null,
-            _mediaEventHandler: null,
-            _qualityLocked: false,
-            _settingsHandler: null,
-            _styleElement: null,
-            _retryTimers: [],
-            _watchdogInterval: null,
-            _watchdogStopTimer: null,
-            _popupHideTimer: null,
-            _domClickPending: false,
-            _navRuleId: 'autoMaxResolutionNav',
-            _qualityMap: { '4320': 'highres', '2160': 'hd2160', '1440': 'hd1440', '1080': 'hd1080', '720': 'hd720', '480': 'large' },
-            _qualityOrder: ['highres', 'hd2880', 'hd2160', 'hd1440', 'hd1080', 'hd720', 'large', 'medium', 'small', 'tiny'],
+            // Flips a single attribute on <html>; ytkit-main.js (MAIN world) reads
+            // it and calls movie_player.setPlaybackQualityRange directly. No gear-
+            // menu DOM click — no popup flash. Premium-aware via getAvailableQualityData.
             init() {
-                addNavigateRule(this._navRuleId, () => {
-                    this._lastProcessedVideoId = null;
-                    this._lastAppliedTarget = null;
-                    this._qualityLocked = false;
-                    this._scheduleQualityAttempts();
-                    this._startQualityWatchdog();
-                });
-                this._mediaEventHandler = (event) => {
-                    const target = event?.target;
-                    if (!(target instanceof HTMLMediaElement)) return;
-                    if (!target.closest('#movie_player, .html5-video-player, ytd-player')) return;
-                    // Once quality is locked for this video, ignore seek-triggered events
-                    if (this._qualityLocked && getVideoId() === this._lastProcessedVideoId) return;
-                    if (event.type === 'loadedstart' || event.type === 'loadedmetadata') {
-                        // New video source — reset lock and apply quality
-                        this._qualityLocked = false;
-                        this._scheduleQualityAttempts();
-                        this._startQualityWatchdog();
-                        return;
-                    }
-                    if (event.type === 'canplay' || event.type === 'loadeddata' || event.type === 'playing') {
-                        if (this._lastAppliedTarget) return; // Already applied, skip
-                    }
-                    this.setQuality(this._getPlayer(), { force: true });
-                    this._startQualityWatchdog();
-                };
-                ['loadedstart', 'loadedmetadata', 'loadeddata', 'canplay', 'playing'].forEach((type) => {
-                    document.addEventListener(type, this._mediaEventHandler, true);
-                });
-                this._settingsHandler = (event) => {
-                    const key = event?.detail?.key;
-                    if (key === 'preferredQuality') {
-                        this._lastProcessedVideoId = null;
-                        this._lastAppliedTarget = null;
-                        this._qualityLocked = false;
-                        this._scheduleQualityAttempts();
-                        this._startQualityWatchdog();
-                    } else if (key === 'hideQualityPopup') {
-                        this._syncPopupHider();
-                    }
-                };
-                document.addEventListener('ytkit-settings-changed', this._settingsHandler);
-                this._scheduleQualityAttempts();
-                this._startQualityWatchdog();
-                this._syncPopupHider();
+                document.documentElement.setAttribute('data-ytkit-quality', 'on');
             },
             destroy() {
-                if (this._mediaEventHandler) {
-                    ['loadedstart', 'loadedmetadata', 'loadeddata', 'canplay', 'playing'].forEach((type) => {
-                        document.removeEventListener(type, this._mediaEventHandler, true);
-                    });
-                }
-                if (this._settingsHandler) {
-                    document.removeEventListener('ytkit-settings-changed', this._settingsHandler);
-                }
-                removeNavigateRule(this._navRuleId);
-                this._clearRetryTimers();
-                this._clearWatchdog();
-                if (this._popupHideTimer) clearTimeout(this._popupHideTimer);
-                document.documentElement.classList.remove('ytkit-hide-quality-popup');
-                this._styleElement?.remove();
-                this._lastProcessedVideoId = null;
-                this._lastAppliedTarget = null;
-                this._qualityLocked = false;
-                this._mediaEventHandler = null;
-                this._settingsHandler = null;
-            },
-            _clearRetryTimers() {
-                this._retryTimers.forEach(timer => clearTimeout(timer));
-                this._retryTimers = [];
-            },
-            _clearWatchdog() {
-                if (this._watchdogInterval) clearInterval(this._watchdogInterval);
-                if (this._watchdogStopTimer) clearTimeout(this._watchdogStopTimer);
-                this._watchdogInterval = null;
-                this._watchdogStopTimer = null;
-            },
-            _syncPopupHider() {
-                // Always inject popup hider style — needed for DOM click quality setting
-                if (!this._styleElement) {
-                    this._styleElement = injectStyle('html.ytkit-hide-quality-popup .ytp-popup.ytp-settings-menu { opacity: 0 !important; pointer-events: none !important; }', 'hide-quality-popup', true);
-                }
-            },
-            _temporarilyHideQualityPopup() {
-                document.documentElement.classList.add('ytkit-hide-quality-popup');
-                if (this._popupHideTimer) clearTimeout(this._popupHideTimer);
-                this._popupHideTimer = setTimeout(() => {
-                    document.documentElement.classList.remove('ytkit-hide-quality-popup');
-                    this._popupHideTimer = null;
-                }, 2500);
-            },
-            _getPlayer() {
-                return document.getElementById('movie_player') || document.querySelector('#movie_player');
-            },
-            _resolveTarget(levels) {
-                const available = (levels || [])
-                    .map(level => String(level || '').trim())
-                    .filter(Boolean)
-                    .filter(level => level !== 'auto');
-                if (!available.length) return null;
-
-                const pref = appState.settings.preferredQuality || 'max';
-                if (pref === 'max') {
-                    return this._qualityOrder.find(level => available.includes(level)) || available[0];
-                }
-
-                const ytLabel = this._qualityMap[pref] || 'hd1080';
-                if (available.includes(ytLabel)) return ytLabel;
-
-                const startIdx = this._qualityOrder.indexOf(ytLabel);
-                if (startIdx !== -1) {
-                    for (let i = startIdx; i < this._qualityOrder.length; i++) {
-                        if (available.includes(this._qualityOrder[i])) return this._qualityOrder[i];
-                    }
-                }
-
-                return this._qualityOrder.find(level => available.includes(level)) || available[0];
-            },
-            _scheduleQualityAttempts() {
-                this._clearRetryTimers();
-                const delays = [500, 1500, 3000, 6000, 10000];
-                delays.forEach((delay) => {
-                    const timer = setTimeout(() => {
-                        this.setQuality(this._getPlayer(), { force: true });
-                    }, delay);
-                    this._retryTimers.push(timer);
-                });
-            },
-            _startQualityWatchdog() {
-                this._clearWatchdog();
-                const durationMs = appState.settings.useEnhancedBitrate ? 30000 : 12000;
-                this._watchdogInterval = setInterval(() => {
-                    this.setQuality(this._getPlayer(), { force: true });
-                }, 1500);
-                this._watchdogStopTimer = setTimeout(() => this._clearWatchdog(), durationMs);
-            },
-            async setQuality(player, options = {}) {
-                const currentVideoId = getVideoId();
-                if (!player || !currentVideoId) return false;
-                if (!options.force && currentVideoId === this._lastProcessedVideoId) return false;
-                if (this._domClickPending) return false;
-
-                this._domClickPending = true;
-                this._lastProcessedVideoId = currentVideoId;
-
-                try {
-                    const success = await this._setQualityViaDOM(player);
-                    if (success) {
-                        this._lastAppliedTarget = appState.settings.preferredQuality || 'max';
-                        this._qualityLocked = true;
-                        this._clearRetryTimers();
-                        this._clearWatchdog();
-                    }
-                    return success;
-                } catch (e) {
-                    DebugManager.log('Quality', 'DOM click failed: ' + e.message);
-                    return false;
-                } finally {
-                    this._domClickPending = false;
-                }
-            },
-            async _setQualityViaDOM(player) {
-                if (!player) return false;
-                this._temporarilyHideQualityPopup();
-
-                const settingsBtn = selectorChain([
-                    '.ytp-settings-button',
-                    'button[aria-label*="Settings" i]',
-                    '.ytp-right-controls button[data-tooltip-target-id="ytp-settings-button"]'
-                ], { root: player, label: 'player.settingsButton' });
-                if (!settingsBtn) return false;
-
-                // Open settings menu
-                settingsBtn.click();
-                await new Promise(r => setTimeout(r, 250));
-
-                // Find Quality menu item
-                let items = Array.from(player.querySelectorAll('.ytp-settings-menu .ytp-menuitem'));
-                if (!items.length) { settingsBtn.click(); return false; }
-
-                let qItem = items.find(i => /quality/i.test(i.querySelector('.ytp-menuitem-label')?.textContent || ''));
-                if (!qItem) qItem = items[items.length - 1]; // Quality is typically last
-
-                // Open quality submenu
-                qItem.click();
-                await new Promise(r => setTimeout(r, 250));
-
-                // Get quality options from submenu
-                items = Array.from(player.querySelectorAll('.ytp-settings-menu .ytp-menuitem'));
-                if (!items.length) { settingsBtn.click(); return false; }
-
-                const pref = appState.settings.preferredQuality || 'max';
-                let target = null;
-
-                if (pref === 'max') {
-                    // First item with a resolution label (highest quality, skip Auto)
-                    target = items.find(i => /^\d+p/.test(i.querySelector('.ytp-menuitem-label')?.textContent?.trim() || ''));
-                    if (!target) target = items[0];
-                } else {
-                    const targetNum = parseInt(pref);
-                    // Exact match
-                    target = items.find(i => {
-                        const label = i.querySelector('.ytp-menuitem-label')?.textContent?.trim() || '';
-                        return label.startsWith(pref + 'p');
-                    });
-                    // Closest at or below target
-                    if (!target) {
-                        let best = null, bestRes = 0;
-                        for (const item of items) {
-                            const label = item.querySelector('.ytp-menuitem-label')?.textContent?.trim() || '';
-                            const m = label.match(/^(\d+)p/);
-                            if (m) {
-                                const res = parseInt(m[1]);
-                                if (res <= targetNum && res > bestRes) { bestRes = res; best = item; }
-                            }
-                        }
-                        target = best;
-                    }
-                    // Fallback: highest available
-                    if (!target) {
-                        target = items.find(i => /^\d+p/.test(i.querySelector('.ytp-menuitem-label')?.textContent?.trim() || ''));
-                    }
-                }
-
-                if (target) {
-                    const label = target.querySelector('.ytp-menuitem-label')?.textContent?.trim();
-                    target.click();
-                    DebugManager.log('Quality', `Set via DOM click: ${label}`);
-                    return true;
-                }
-
-                settingsBtn.click(); // Close menu on failure
-                return false;
+                document.documentElement.removeAttribute('data-ytkit-quality');
             }
-        },
-        {
-            id: 'useEnhancedBitrate',
-            name: 'Enhanced Bitrate',
-            description: 'Re-apply max quality on navigation to counter YouTube quality resets',
-            group: 'Video Player',
-            icon: 'gauge',
-            isSubFeature: true,
-            parentId: 'autoMaxResolution',
-            pages: [PageTypes.WATCH],
-            init() {
-                addNavigateRule(this.id, () => {
-                    const parentFeature = getFeatureById('autoMaxResolution');
-                    if (parentFeature) {
-                        parentFeature._lastProcessedVideoId = null;
-                        parentFeature._lastAppliedTarget = null;
-                        parentFeature._scheduleQualityAttempts();
-                    }
-                });
-            },
-            destroy() { removeNavigateRule(this.id); }
-        },
-        {
-            id: 'hideQualityPopup',
-            name: 'Hide Quality Popup',
-            description: 'Suppress the quality selection popup during auto-selection',
-            group: 'Video Player',
-            icon: 'eye-off',
-            isSubFeature: true,
-            parentId: 'autoMaxResolution',
-            pages: [PageTypes.WATCH],
-            init() {},
-            destroy() {}
         },
 
         // ─── Clutter ───
