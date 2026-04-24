@@ -4,6 +4,59 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.18.0] - Premium-aware Auto Quality (no popup flash)
+
+Auto Quality rewritten end-to-end. The previous implementation opened
+YouTube's player settings menu via DOM clicks, walked the Quality
+submenu, and clicked the highest item — hiding the popup with CSS for a
+brief window. When the click sequence finished but YouTube didn't auto-
+close (or timing slipped), the menu became visible to the user.
+
+The new implementation calls `movie_player.setPlaybackQualityRange()`
+directly from the MAIN-world bridge — the same API used by Auto-HD-FPS,
+Iridium, Enhancer for YouTube, and the popular YouTube HD Premium
+userscript. There is no gear-menu interaction at any point, so there is
+nothing to flash.
+
+### Changed
+- **Always Best Quality** (renamed from Auto Quality) — single toggle.
+  No dropdown. Picks the highest non-`auto` entry from
+  `getAvailableQualityData()` and prefers any entry whose `qualityLabel`
+  contains "Premium" (so 1080p Premium / Enhanced Bitrate is selected
+  automatically when the account/video offers it). Falls back to legacy
+  `getAvailableQualityLevels()` when the newer API is missing.
+- The ISOLATED content script now only flips `<html data-ytkit-quality="on">`.
+  All quality logic lives in `ytkit-main.js`, which listens for
+  `loadstart` / `loadedmetadata` / `canplay` on the video element plus
+  `yt-navigate-finish` and `yt-page-data-updated`. Re-application is
+  deduplicated per `videoId:quality:label`.
+- Userscript build (`YTKit.user.js`) injects an inline `<script>` with the
+  same Premium-aware forcer so it works under any userscript manager
+  regardless of injection mode.
+
+### Removed
+- `preferredQuality` setting (the dropdown — now always best).
+- `useEnhancedBitrate` sub-feature (Premium is detected automatically).
+- `hideQualityPopup` sub-feature (no popup is ever opened).
+- `_setQualityViaDOM`, `_temporarilyHideQualityPopup`, `_closeSettingsMenu`,
+  `_releasePopupHider`, the retry-timer schedule, and the watchdog interval.
+  All kept as RETIRED keys via `RETIRED_SETTING_KEYS` so existing user
+  storage is sanitized on next load. Migration v6 drops them from
+  exported settings snapshots.
+
+### Settings schema
+- `SETTINGS_VERSION` 5 → 6 with no-op-style migration that strips the
+  three retired keys.
+
+### Tests
+- 84/84 pass. The v3.14.0 hardening regression that asserted the gear-
+  click `selectorChain` adoption was rewritten to assert the new
+  invariant: ISOLATED sets `data-ytkit-quality`, MAIN calls
+  `setPlaybackQualityRange` + `getAvailableQualityData` with Premium
+  detection, and the gear-menu DOM-click path stays deleted.
+
+---
+
 ## [3.17.0] - Alchemy-inspired additions (Wave 10)
 
 Eleven new features imported after a feature review of the YouTube Alchemy
