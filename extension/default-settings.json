@@ -50,7 +50,7 @@
   "hideCommentActionMenu": false,
   "condenseComments": false,
   "hideCommentTeaser": false,
-  "autoExpandComments": false,
+  "autoExpandComments": true,
   "hideLiveChatEngagement": true,
   "premiumLiveChat": true,
   "hidePaidPromotionWatch": true,

@@ -244,6 +244,77 @@ test('hideJumpAheadButton defaults on and targets player jump-ahead overlays saf
         'hideJumpAheadButton should not hide the generic touch-feedback class globally');
 });
 
+test('hideLiveChatEngagement also suppresses the subscriber-visibility live chat tooltip', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    assert.equal(defaults.hideLiveChatEngagement, true, 'live chat engagement cleanup should stay enabled by default');
+
+    const start = source.indexOf("id: 'hideLiveChatEngagement'");
+    const end = source.indexOf("id: 'premiumLiveChat'", start);
+    assert.ok(start > -1 && end > start, 'hideLiveChatEngagement block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('yt-live-chat-viewer-engagement-message-renderer, yt-live-chat-toast-renderer'),
+        'hideLiveChatEngagement should still hide the broad live chat engagement surfaces');
+    assert.ok(block.includes('people will be able to see that you subscribe to this channel'),
+        'hideLiveChatEngagement should target the subscriber-visibility tooltip copy');
+    assert.ok(block.includes("tooltip.closest('tp-yt-iron-dropdown')"),
+        'hideLiveChatEngagement should hide the live chat tooltip container, not just the tooltip node');
+    assert.ok(block.includes('addMutationRule(this.id'),
+        'hideLiveChatEngagement should rescan for tooltip popups that appear on hover');
+});
+
+test('autoExpandComments defaults on and expands existing comment truncation immediately', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    assert.equal(defaults.autoExpandComments, true, 'comment auto-expansion should be enabled by default');
+    assert.match(source, /4:\s*\(s\)\s*=>\s*\{[\s\S]*?s\.autoExpandComments\s*=\s*true;/,
+        'settings migration should enable comment auto-expansion for existing profiles');
+
+    const start = source.indexOf("id: 'autoExpandComments'");
+    const end = source.indexOf("id: 'commentEnhancements'", start);
+    assert.ok(start > -1 && end > start, 'autoExpandComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes("const moreBtn = exp.querySelector('#more, [slot=\"more\"], tp-yt-paper-button#more');")
+        || block.includes("const moreBtn = exp.querySelector('#more, [slot=\"more\"], tp-yt-paper-button#more')"),
+        'autoExpandComments should still click Read more when present');
+    assert.ok(block.includes('tp-yt-paper-button#less'),
+        'autoExpandComments should explicitly target Show less button variants');
+    assert.ok(block.includes("control.style.setProperty('display', 'none', 'important');"),
+        'autoExpandComments should directly hide expand controls after expansion');
+    assert.ok(block.includes('expandComments();'),
+        'autoExpandComments should expand already-rendered comments immediately on init');
+    assert.ok(block.includes("addMutationRule(this.id, expandComments);"),
+        'autoExpandComments should continue expanding newly loaded comments');
+});
+
+test('video hider exposes split hide-all and restore-page controls', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'hideVideosFromHome'");
+    const end = source.indexOf("id: 'showLocalDownloadButton'", start);
+    assert.ok(start > -1 && end > start, 'video hider block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('_restoreHiddenVideosOnPage()'),
+        'video hider should include a restore-on-page action');
+    assert.ok(block.includes('ytkit-hide-all-group'),
+        'video hider should build a grouped hide/restore control');
+    assert.ok(block.includes('Restore hidden videos on this page'),
+        'video hider should label the restore action clearly');
+    assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-restore-btn')"),
+        'video hider should keep restore controls in sync with page state');
+});
+
 test('studio comments preserve native text selection on watch pages', () => {
     const fs = require('fs');
     const path = require('path');
@@ -731,6 +802,156 @@ test('split theater supports middle-mouse autoscroll in the right column', () =>
         'standalone split should remove the middle-mouse listener on teardown');
     assert.ok(theaterSplit.includes('stopSplitAutoscroll();'),
         'standalone split should stop autoscroll during collapse and teardown');
+});
+
+test('watchPageRestyle gives native service popups the premium comment-card treatment', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'watchPageRestyle'");
+    const end = source.indexOf("id: 'chatStyleComments'");
+    assert.ok(start > -1 && end > start, 'watchPageRestyle block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('const popupCss = `'), 'watchPageRestyle should define a dedicated native popup restyle');
+    assert.ok(block.includes('_popupStyleElement'), 'watchPageRestyle should manage native popup styles separately from the core watch-page CSS');
+    assert.ok(block.includes(':is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)'),
+        'watchPageRestyle should cover both service and navigation-style native popups');
+    assert.ok(block.includes(':is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app)'),
+        'watchPageRestyle should target both standard and live-chat native popup hosts');
+    assert.ok(block.includes('#contentWrapper:has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer))'),
+        'watchPageRestyle should target native YouTube service and navigation popup wrappers');
+    assert.ok(block.includes('border-radius: 18px !important;'),
+        'watchPageRestyle should give native service popups a rounded premium surface');
+    assert.ok(block.includes('backdrop-filter: blur(18px) saturate(1.08) !important;'),
+        'watchPageRestyle should add a layered glass treatment to native service popups');
+    assert.ok(block.includes(':is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer).iron-selected'),
+        'watchPageRestyle should style the active popup row state');
+    assert.ok(block.includes('margin-right: 10px !important;'),
+        'watchPageRestyle should preserve a readable icon-to-label gap for native popup rows');
+    assert.ok(block.includes('ytd-menu-navigation-item-renderer > a'),
+        'watchPageRestyle should stretch navigation popup anchors across the full menu width');
+    assert.ok(block.includes('width: 100% !important;'),
+        'watchPageRestyle should stretch native popup rows to the full menu width');
+    assert.ok(block.includes('tp-yt-paper-listbox.yt-dropdown-menu'),
+        'watchPageRestyle should also cover YouTube two-line dropdown menus');
+    assert.ok(block.includes('#subtitle.style-scope.yt-dropdown-menu'),
+        'watchPageRestyle should style two-line dropdown subtitles to match the premium popup treatment');
+});
+
+test('chatStyleComments gives creator hearts a dedicated compact badge treatment', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'"); 
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('ytd-comment-engagement-bar #creator-heart-button #hearted-thumbnail'),
+        'chatStyleComments should hide the creator avatar thumbnail inside the compact heart control');
+    assert.ok(block.includes('ytd-comment-engagement-bar #creator-heart-button #hearted-border'),
+        'chatStyleComments should remove the oversized native heart border layer');
+    assert.ok(block.includes('ytd-comment-engagement-bar #creator-heart-button #hearted'),
+        'chatStyleComments should keep a dedicated heart glyph visible');
+    assert.ok(block.includes('radial-gradient(circle at 30% 30%'),
+        'chatStyleComments should give creator hearts a purpose-built compact badge surface');
+});
+
+test('chatStyleComments styles creator-heart tooltips to match the premium comment UI', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'");
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('tp-yt-paper-tooltip.ytd-creator-heart-renderer #tooltip'),
+        'chatStyleComments should target the creator-heart tooltip body');
+    assert.ok(block.includes('backdrop-filter: blur(12px) saturate(1.08) !important;'),
+        'chatStyleComments should give the creator-heart tooltip the same premium glass finish');
+    assert.ok(block.includes('rgba(255, 228, 232, 0.96)'),
+        'chatStyleComments should tint the creator-heart tooltip copy to match the heart accent');
+});
+
+test('chatStyleComments removes reply-composer underline chrome', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'");
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('#reply-dialog ytd-commentbox tp-yt-paper-input-container[use-v2-underline]::before'),
+        'chatStyleComments should disable the reply composer underline pseudo-element');
+    assert.ok(block.includes('#reply-dialog ytd-commentbox .add-on-content'),
+        'chatStyleComments should also hide reply composer add-on chrome below the field');
+    assert.ok(block.includes('#reply-dialog ytd-commentbox #creation-box'),
+        'chatStyleComments should clear reply composer box borders');
+});
+
+test('chatStyleComments keeps comment action controls on a single row', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'");
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('flex-wrap: nowrap !important;'),
+        'chatStyleComments should keep comment action rows from wrapping onto a second line');
+    assert.ok(block.includes('#comments ytd-comment-engagement-bar #toolbar > *'),
+        'chatStyleComments should lock every comment action item to its own non-stretching flex slot');
+    assert.ok(block.includes('#comments ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next'),
+        'chatStyleComments should keep the Reply control inline with the rest of the action row');
+});
+
+test('chatStyleComments hides dislike buttons in compact comment actions', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'");
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('#comments ytd-comment-engagement-bar #dislike-button'),
+        'chatStyleComments should target the comment dislike control directly');
+    assert.ok(block.includes('display: none !important;'),
+        'chatStyleComments should hide the comment dislike control to preserve action-row space');
+});
+
+test('chatStyleComments lets comment text use nearly the full card width', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'");
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('padding: 6px 6px 6px !important;'),
+        'chatStyleComments should slim the comment card padding so text can use more of the card width');
+    assert.ok(block.includes('gap: 6px !important;'),
+        'chatStyleComments should reduce the avatar-to-text gutter');
+    assert.ok(block.includes('padding-right: 6px !important;'),
+        'chatStyleComments should reduce the reserved right-side gutter on comment content');
+    assert.ok(block.includes("--ytd-comment-thumb-dimension', '24px'"),
+        'chatStyleComments should tighten the renderer thumb dimension so the avatar lane stops wasting comment width');
+    assert.ok(block.includes('max-width: none !important;'),
+        'chatStyleComments should remove remaining content-width caps from comment text wrappers');
+    assert.ok(block.includes("removeAttribute('optimal-reading-width-comments')"),
+        'chatStyleComments should neutralize YouTube optimal-reading-width comment mode when it constrains the compact layout');
 });
 
 test('videoScreenshot exposes capture states and mutation-driven reinjection', () => {
