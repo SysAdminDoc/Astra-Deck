@@ -24428,17 +24428,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'storageQuotaLRU',
             name: 'Storage Quota Management',
-            description: 'LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, deArrowCache) to prevent quota exhaustion',
+            description: 'LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache) to prevent quota exhaustion',
             group: 'Advanced',
             icon: 'database',
             _timer: null,
             _prune() {
                 try {
+                    // Caps inside appState.settings. The DeArrow branding cache
+                    // is NOT in settings — it's a separate top-level storage key
+                    // (`da_branding_cache`) written via storageWriteJSON.
+                    // Previously this list contained a stale `deArrowCache` key
+                    // that never matched anything in settings — dead code.
                     const caps = [
                         ['hiddenVideos', 5000],
                         ['hiddenChannels', 2000],
                         ['timestampBookmarks', 2000],
-                        ['deArrowCache', 1000],
                         ['_errors', 500],
                     ];
                     let pruned = 0;
@@ -24459,6 +24463,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (pruned > 0) {
                         settingsManager.save(appState.settings);
                         DiagnosticLog?.record('storageQuotaLRU', `pruned ${pruned} entries`);
+                    }
+
+                    // Belt-and-suspenders sweep on the DeArrow branding cache
+                    // top-level key. DeArrow caps itself at 2000 on every
+                    // fetch + persist, but a bug that skipped the persist
+                    // path (e.g. pageshow before first fetch) could leave a
+                    // previously-bloated set on disk. Hard cap at 2000 so
+                    // the on-disk copy can never drift past the in-memory
+                    // invariant. Prune by oldest `_ts` first.
+                    const branding = storageReadJSON('da_branding_cache', null);
+                    if (branding && typeof branding === 'object' && !Array.isArray(branding)) {
+                        const entries = Object.entries(branding);
+                        if (entries.length > 2000) {
+                            entries.sort((a, b) => (Number(b[1] && b[1]._ts) || 0) - (Number(a[1] && a[1]._ts) || 0));
+                            const trimmed = Object.fromEntries(entries.slice(0, 2000));
+                            storageWriteJSON('da_branding_cache', trimmed);
+                            DiagnosticLog?.record('storageQuotaLRU', `pruned ${entries.length - 2000} da_branding_cache entries`);
+                        }
                     }
                 } catch (e) {
                     DiagnosticLog?.record('storageQuotaLRU', e.message);

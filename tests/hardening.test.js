@@ -873,3 +873,46 @@ test('popup.css styles the health banner with a warning-toned palette and focus-
     assert.match(cssSource, /\.health-copy-btn:focus-visible/,
         'Copy button must carry a focus-visible outline for keyboard users');
 });
+
+// ── v3.20.2 H5: storageQuotaLRU stale deArrowCache reference removed ──
+//
+// The prune loop iterated `appState.settings.deArrowCache`, but the actual
+// DeArrow branding cache lives under the top-level storage key
+// `da_branding_cache` (written via storageWriteJSON, not through settings).
+// The entry was dead — it never matched a real cache, regardless of
+// whether the DeArrow feature was running. H5 removes the stale entry
+// and adds a belt-and-suspenders sweep on the real top-level key.
+
+test('storageQuotaLRU._prune no longer references the dead deArrowCache key', () => {
+    const pruneStart = ytkitSource.indexOf("id: 'storageQuotaLRU'");
+    assert.ok(pruneStart > -1, 'storageQuotaLRU feature must still exist');
+    const pruneEnd = ytkitSource.indexOf("this._timer = null;", pruneStart);
+    assert.ok(pruneEnd > pruneStart, 'storageQuotaLRU must have a terminator');
+    const pruneBlock = ytkitSource.slice(pruneStart, pruneEnd);
+
+    assert.doesNotMatch(
+        pruneBlock,
+        /\['deArrowCache',/,
+        "Dead 'deArrowCache' cap entry must be removed — DeArrow does not store under appState.settings.deArrowCache"
+    );
+    assert.match(
+        pruneBlock,
+        /storageReadJSON\(['"]da_branding_cache['"]/,
+        "Prune must read da_branding_cache (the real DeArrow top-level storage key) via storageReadJSON"
+    );
+    assert.match(
+        pruneBlock,
+        /storageWriteJSON\(['"]da_branding_cache['"]/,
+        "Prune must persist the trimmed da_branding_cache via storageWriteJSON"
+    );
+});
+
+test('storageQuotaLRU description now names the real DeArrow cache key', () => {
+    const pruneStart = ytkitSource.indexOf("id: 'storageQuotaLRU'");
+    const pruneBlock = ytkitSource.slice(pruneStart, pruneStart + 500);
+    // Pre-fix: description claimed to cover 'deArrowCache' (never existed).
+    assert.doesNotMatch(pruneBlock, /description:\s*['"][^'"]*deArrowCache/,
+        'Description must not reference the dead deArrowCache key');
+    assert.match(pruneBlock, /description:\s*['"][^'"]*da_branding_cache/,
+        'Description must name the real da_branding_cache top-level key so users can audit what the sweep actually touches');
+});
