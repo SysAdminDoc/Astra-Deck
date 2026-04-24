@@ -7,9 +7,14 @@ comments.png
 YTKit-v1.2.0.user.js
 CLAUDE.md
 CODEX-CHANGELOG.md
+CODEX_CHANGELOG.md
 CLAUDE-HANDOFF-PROMPT.md
 CONTINUATION_PROMPT.md
+.claude/
 .claude-octopus/
+.codex/
+.factory/
+docs/research/
 
 # Python build artifacts
 astra_downloader/build/
