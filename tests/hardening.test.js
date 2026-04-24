@@ -501,3 +501,126 @@ test('showDownloadProgress uses self-scheduling poll with consecutive-error budg
         'Poll loop must reschedule itself with setTimeout, not setInterval'
     );
 });
+
+// ── v3.20.0 Hardening Pass 7 ──
+
+test('_pendingReveals is mirrored to chrome.storage.session for SW-restart survival', () => {
+    // The roadmap audit-pass flagged the in-memory Set as fragile: a SW
+    // terminated between download() and state.complete would lose the reveal.
+    // Pass 7 mirrors writes into chrome.storage.session (MV3-only, survives
+    // SW restart, cleared on browser restart) and hydrates on SW cold-start.
+    assert.match(
+        backgroundSource,
+        /_PENDING_REVEALS_KEY\s*=\s*'_pendingReveals'/,
+        'Session-storage key constant must exist'
+    );
+    assert.match(
+        backgroundSource,
+        /_pendingRevealsReady\s*=\s*\(async\s*\(\s*\)\s*=>/,
+        'Hydration promise must bootstrap on SW cold-start'
+    );
+    assert.match(
+        backgroundSource,
+        /chrome\.storage\.session\.get\s*\(\s*_PENDING_REVEALS_KEY/,
+        'Hydration must read from chrome.storage.session'
+    );
+    assert.match(
+        backgroundSource,
+        /function\s+_persistPendingReveals/,
+        'Persist helper must exist so add/delete mirror into storage.session'
+    );
+    assert.match(
+        backgroundSource,
+        /chrome\.storage\.session\.set\s*\(\s*payload/,
+        'Persist helper must write through chrome.storage.session.set'
+    );
+    // The onChanged listener must await the hydration promise so a reveal
+    // queued before SW cold-start is still honoured when the event arrives.
+    const listenerStart = backgroundSource.indexOf(
+        'chrome.downloads.onChanged.addListener'
+    );
+    assert.ok(listenerStart > -1, 'onChanged listener must exist');
+    const listenerBody = backgroundSource.slice(listenerStart, listenerStart + 1500);
+    assert.match(
+        listenerBody,
+        /await\s+_pendingRevealsReady/,
+        'onChanged listener must await the hydration promise before checking membership'
+    );
+    assert.match(
+        listenerBody,
+        /_persistPendingReveals\s*\(\s*\)/,
+        'onChanged listener must persist the Set after deleting a completed/interrupted id'
+    );
+
+    // The DOWNLOAD_FILE handler must persist the add, not just update the
+    // in-memory Set — otherwise a SW kill between add and state.complete
+    // loses the reveal.
+    const addStart = backgroundSource.indexOf('_pendingReveals.add(downloadId)');
+    assert.ok(addStart > -1, 'DOWNLOAD_FILE handler must still populate _pendingReveals');
+    const addBlock = backgroundSource.slice(addStart, addStart + 200);
+    assert.match(
+        addBlock,
+        /_persistPendingReveals\s*\(\s*\)/,
+        'DOWNLOAD_FILE handler must mirror the add into storage.session'
+    );
+});
+
+test('manifest declares unlimitedStorage to exceed the 10 MB default quota', () => {
+    // Watch history, DeArrow cache, and storageQuotaLRU can collectively
+    // push chrome.storage.local past the 10 MB default quota for long-term
+    // users. `unlimitedStorage` removes the ceiling without changing any
+    // other permission surface.
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    assert.ok(
+        Array.isArray(manifest.permissions) && manifest.permissions.includes('unlimitedStorage'),
+        'manifest.permissions must include "unlimitedStorage"'
+    );
+});
+
+test('Firefox build rewrites Ctrl+Shift+Y (reserved by Firefox Downloads) to Ctrl+Alt+Y', () => {
+    const buildSource = fs.readFileSync(
+        path.join(__dirname, '..', 'build-extension.js'),
+        'utf8'
+    );
+    // The patch guards on the Chrome default so running the Firefox build
+    // twice (or after a future Chrome-side remap) stays idempotent.
+    assert.match(
+        buildSource,
+        /ffManifest\.commands\?\.\['toggle-control-center'\]\?\.suggested_key\?\.default\s*===\s*'Ctrl\+Shift\+Y'/,
+        'Firefox patch must guard on the current Chrome default'
+    );
+    assert.match(
+        buildSource,
+        /ffManifest\.commands\['toggle-control-center'\]\.suggested_key\.default\s*=\s*'Ctrl\+Alt\+Y'/,
+        'Firefox patch must rebind to Ctrl+Alt+Y'
+    );
+    // Chrome's manifest must stay on the original shortcut — the Firefox
+    // rebind only applies to the firefox-stage copy produced during build.
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    assert.equal(
+        manifest.commands?.['toggle-control-center']?.suggested_key?.default,
+        'Ctrl+Shift+Y',
+        'Chrome manifest must keep Ctrl+Shift+Y as the default (no vendor conflict there)'
+    );
+});
+
+test('_run_download no longer contains the dead "Downloading video" regex match', () => {
+    const downloaderSource = fs.readFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'),
+        'utf8'
+    );
+    // The match target captured a group count but assigned it to `m` and
+    // never read it. Removing the dead line keeps `_run_download` focused
+    // on filename detection + progress parsing.
+    assert.doesNotMatch(
+        downloaderSource,
+        /m\s*=\s*re\.search\(r'\\\[download\\\] Downloading video/,
+        'Dead "Downloading video" regex must remain removed from _run_download'
+    );
+});
