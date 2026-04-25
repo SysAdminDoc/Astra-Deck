@@ -916,3 +916,123 @@ test('storageQuotaLRU description now names the real DeArrow cache key', () => {
     assert.match(pruneBlock, /description:\s*['"][^'"]*da_branding_cache/,
         'Description must name the real da_branding_cache top-level key so users can audit what the sweep actually touches');
 });
+
+// ── v3.20.3 H6: explicit cookie-jar wire contract via normalizeCookieExpiry ──
+//
+// Three sites previously inlined `expirationDate: c.expirationDate || 0`:
+//   - extension/ytkit.js (MediaDL cookie mapper, ~line 2633)
+//   - extension/background.js (EXT_COOKIE_LIST handler, ~line 620)
+//   - YTKit.user.js (GM_cookie fallback, ~line 1851)
+//
+// The contract was implicit — null/undefined/negative/NaN/strings all
+// happened to coerce to 0 because of JavaScript's truthiness rules. A
+// future wire-format change (or a future Chrome cookies API that returns
+// expirationDate as ISO string) could silently break that. Centralize as
+// a named helper so the contract is explicit, parity across sites is
+// testable, and the Python downloader's defensive parsing
+// (test_astra_downloader.py:333+) has a documented JS counterpart.
+
+function extractNormalizeFn(source, label) {
+    const startIdx = source.indexOf('function normalizeCookieExpiry');
+    assert.ok(startIdx > -1, `${label}: normalizeCookieExpiry must be defined`);
+    // Find the matching closing brace (small function — ~5 lines).
+    const openBrace = source.indexOf('{', startIdx);
+    let depth = 1;
+    let i = openBrace + 1;
+    while (i < source.length && depth > 0) {
+        if (source[i] === '{') depth++;
+        else if (source[i] === '}') depth--;
+        i++;
+    }
+    const body = source.slice(startIdx, i);
+    // eval is safe here — body is a vetted, repo-tracked function literal,
+    // and the test runs in node:test sandboxes already.
+    // eslint-disable-next-line no-new-func
+    return new Function(body + '; return normalizeCookieExpiry;')();
+}
+
+test('normalizeCookieExpiry is defined identically in all three sites', () => {
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+
+    const fnYtkit = extractNormalizeFn(ytkitSource, 'extension/ytkit.js');
+    const fnBg = extractNormalizeFn(backgroundSource, 'extension/background.js');
+    const fnUser = extractNormalizeFn(userscriptSource, 'YTKit.user.js');
+
+    // Parity check: every input shape must produce the same output across
+    // all three implementations. If a site drifts, this test trips.
+    const cases = [
+        ['undefined', undefined, 0],
+        ['null', null, 0],
+        ['empty string', '', 0],
+        ['zero', 0, 0],
+        ['negative int', -42, 0],
+        ['negative float', -1.5, 0],
+        ['positive int', 1700000000, 1700000000],
+        ['positive float (preserved)', 1700000000.123, 1700000000.123],
+        ['NaN', NaN, 0],
+        ['Infinity', Infinity, 0],
+        ['-Infinity', -Infinity, 0],
+        ['bogus string', 'bogus', 0],
+        ['numeric string', '1700000000', 1700000000],
+        ['boolean true (Number(true)===1, treated as 1s past epoch — quirky but consistent)', true, 1],
+        ['boolean false', false, 0],
+    ];
+
+    for (const [label, input, expected] of cases) {
+        const a = fnYtkit(input);
+        const b = fnBg(input);
+        const c = fnUser(input);
+        assert.equal(a, expected, `ytkit.js: ${label} must return ${expected}, got ${a}`);
+        assert.equal(b, expected, `background.js: ${label} must return ${expected}, got ${b}`);
+        assert.equal(c, expected, `YTKit.user.js: ${label} must return ${expected}, got ${c}`);
+    }
+});
+
+test('normalizeCookieExpiry replaces every prior c.expirationDate || 0 site', () => {
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+
+    // The legacy `c.expirationDate || 0` pattern must be gone everywhere
+    // we ship. Catches the case where a future PR adds back a fourth
+    // inlined site.
+    for (const [label, src] of [
+        ['extension/ytkit.js', ytkitSource],
+        ['extension/background.js', backgroundSource],
+        ['YTKit.user.js', userscriptSource],
+    ]) {
+        assert.doesNotMatch(
+            src,
+            /expirationDate:\s*c\.expirationDate\s*\|\|\s*0/,
+            `${label} must use normalizeCookieExpiry instead of "c.expirationDate || 0"`
+        );
+        assert.match(
+            src,
+            /expirationDate:\s*normalizeCookieExpiry\(c\.expirationDate\)/,
+            `${label} must call normalizeCookieExpiry on c.expirationDate at the cookie-mapper site`
+        );
+    }
+});
+
+test('normalizeCookieExpiry produces wire-compatible output with the Python downloader', () => {
+    // The Python downloader at astra_downloader/astra_downloader.py:830-838
+    // parses raw_expiry as `int(float(x)) if x not in (None, "") else 0`,
+    // clamping negatives to 0. The JS helper must produce values that
+    // survive that round-trip identically. Test the boundary cases:
+    //   - JS sends 0 → Python gets 0 → wire emits "0" (session marker)
+    //   - JS sends positive double → Python truncates to int, same int
+    //   - JS sends 0 for any non-positive-finite-number → Python sees 0
+    const fn = extractNormalizeFn(ytkitSource, 'extension/ytkit.js');
+    // Mimic Python's `int(float(x))` truncation:
+    const pythonRoundTrip = (jsOutput) => Math.trunc(Number(jsOutput));
+
+    assert.equal(pythonRoundTrip(fn(undefined)), 0);
+    assert.equal(pythonRoundTrip(fn(null)), 0);
+    assert.equal(pythonRoundTrip(fn(-1)), 0);
+    assert.equal(pythonRoundTrip(fn(1700000000)), 1700000000);
+    assert.equal(pythonRoundTrip(fn(1700000000.999)), 1700000000);  // Python truncates
+});

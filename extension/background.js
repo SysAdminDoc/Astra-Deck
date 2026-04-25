@@ -10,6 +10,20 @@ const PANEL_MESSAGE = Object.freeze({
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
 
+// v3.20.3: explicit cookie-jar wire contract.
+// Mirrors normalizeCookieExpiry() in extension/ytkit.js — keep both in sync.
+//   Session cookie    → 0 (Netscape format expects 0 for "session")
+//   Persistent cookie → positive Number, seconds since epoch (left as-is so
+//                       the Python downloader's int(float(x)) lands the same
+//                       integer regardless of fractional precision).
+//   Anything else     → 0 (treat null/NaN/negative/string/Infinity as session;
+//                          server already does the same via
+//                          test_astra_downloader.py:333+).
+function normalizeCookieExpiry(value) {
+    const num = Number(value);
+    return Number.isFinite(num) && num > 0 ? num : 0;
+}
+
 // v3.14.0: Track downloads that requested "show in folder" so the reveal
 // fires exactly when the file transitions to `state.complete`. Using a
 // setTimeout meant the service worker could be killed mid-wait on slow
@@ -617,7 +631,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     path: c.path || '/',
                     secure: !!c.secure,
                     httpOnly: !!c.httpOnly,
-                    expirationDate: c.expirationDate || 0
+                    expirationDate: normalizeCookieExpiry(c.expirationDate)
                 })),
                 error: null
             });
