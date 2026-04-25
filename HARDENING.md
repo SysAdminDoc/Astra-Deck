@@ -795,3 +795,134 @@ Fix:
 
 Two regressions in `tests/hardening.test.js` pin the absence of the
 dead reference AND the presence of the real-key sweep.
+
+### H6 — Cookie-jar wire contract is now explicit
+
+Three sites previously inlined the cookie-expiry coercion as
+`expirationDate: c.expirationDate || 0`:
+
+- `extension/ytkit.js` (MediaDL cookie mapper, near line 2633)
+- `extension/background.js` (`EXT_COOKIE_LIST` handler, near line 620)
+- `YTKit.user.js` (GM_cookie fallback, near line 1851)
+
+The wire contract — "send 0 for session cookies; send a positive
+Number of seconds since epoch for persistent cookies" — was implicit:
+JavaScript truthiness happened to coerce `null`, `undefined`,
+negative numbers, and non-numeric strings to 0 because all of those
+are falsy. Three problems with that:
+
+1. The wire format is not documented in code; a future reader has
+   to deduce it from JS truthiness rules.
+2. `Number.isFinite(NaN)` is false, but `NaN || 0` returns `0`. Both
+   land at the same wire value but the path is opaque.
+3. If a future Chrome cookies API returns `expirationDate` as an
+   ISO 8601 string (not currently planned, but not impossible),
+   `'2026-01-01T00:00:00Z' || 0` evaluates to the truthy string and
+   ships it raw to the Python side, which would then `int(float(…))`
+   and throw. Defaulting to 0 on parse failure is the right behaviour
+   but the code didn't show that.
+
+Fix: a single named helper, defined in all three files (kept inline
+rather than via shared module — extension/core/ is ISOLATED-world
+only; userscript build pipeline doesn't import from core/):
+
+```js
+function normalizeCookieExpiry(value) {
+    const num = Number(value);
+    return Number.isFinite(num) && num > 0 ? num : 0;
+}
+```
+
+Wire contract documented in the function name, the inline comment,
+and the regression tests. The Python downloader at
+`astra_downloader/astra_downloader.py:830-838` already implements
+the matching defensive parsing; the existing
+`test_dns_rebinding_attack_is_rejected_before_handler`-adjacent
+tests at `test_astra_downloader.py:333-335` cover bogus-string and
+negative-int inputs.
+
+Three regressions in `tests/hardening.test.js`:
+
+- The function is parsed out of each file via `Function()` and
+  exercised against 15 input shapes (undefined, null, 0, positive
+  int, positive float, negative int/float, NaN, ±Infinity, empty
+  string, "bogus", numeric string, true, false). Output must match
+  across all three sites — drift = test failure.
+- The legacy `c.expirationDate || 0` literal must not appear at any
+  cookie-mapper site.
+- The JS output must round-trip through Python's `int(float(x))`
+  truncation without value drift.
+
+### H7 — Selector-drift canary widened to 18 selectors
+
+H3 launched the canary with 9 critical selectors. Iter-3 research
+(YouTube DOM-fingerprinting + server-side ad-injection arms race
+escalating; selector-churn cadence moving from quarterly to weekly)
+made the case for wider coverage.
+
+Added 9 new selectors (already present in BOTH the watch + home
+fixture token sets AND `extension/ytkit.js` source — verified before
+adoption):
+
+- Layout: `ytd-watch-metadata`, `ytd-comments`
+- Player chrome / controls: `ytp-play-button`, `ytp-settings-button`,
+  `ytp-fullscreen-button`, `ytp-time-display`
+- Comments — new DOM shape: `ytd-comment-view-model` (alongside
+  the existing `ytd-comment-thread-renderer`; YouTube ships both
+  during the A/B period)
+- Text rendering wrappers: `yt-formatted-string` (older shape, still
+  widely used), `yt-attributed-string` (newer shape, recurring
+  rewrite target — broke comment-text selection in v1.0.6)
+
+The two-sided assertion (selector present in BOTH the fixtures AND
+ytkit.js) catches:
+
+- YouTube renaming a selector — fixture refresh drops it, test
+  fails on the fixture side.
+- Internal refactor losing a reference — test fails on the source
+  side.
+
+Refresh procedure unchanged from H3: recapture
+`mhtml/YouTube.mhtml` + `mhtml/WatchPage.mhtml`, then
+`npm run build:fixtures`, then commit the regenerated
+`tests/fixtures/*.tokens.txt`. The diff shows exactly which
+selectors entered or left the YouTube DOM since the last refresh.
+
+### H8 — theater-split divider drag survives SPA navigation (v1.0.7)
+
+The `theater-split.user.js` divider-drag handler attached
+`mousemove` and `mouseup` listeners to `window` and a
+position:fixed shield element to `document.body`. The only cleanup
+path was the `mouseup` handler — but if a `yt-navigate-finish`
+event fired between mousedown and mouseup (URL bar nav, browser
+back, keyboard shortcut to next video), `teardown()` would remove
+the splitWrapper while leaving the window listeners and the
+dragShield orphaned. Those listeners would keep firing closures
+over the disposed wrapper for the rest of the session, holding
+references to GC'd DOM nodes.
+
+Likelihood is low (requires the user to be mid-drag during the
+navigation event), but the consequence — listeners that never
+clean up until tab close — was a long-running memory leak.
+
+Fix:
+
+- Hoist `dragShield`, `dragOnMove`, `dragOnUp` to module-scope
+  state vars in the same block where `splitWrapper`,
+  `playerResizeObs`, `chatObserver`, etc. already live. This is
+  the same pattern the rest of the userscript uses — closure-local
+  state was the outlier.
+- Add an idempotent `abortDividerDrag()` helper that removes the
+  shield (try/catch in case it was already detached), removes the
+  window listeners, and resets `cursor` / `userSelect` on
+  `document.body`.
+- Call `abortDividerDrag()` from `teardown()` so SPA-nav mid-drag
+  is clean.
+- Defensively pre-call from the `mousedown` handler so a re-entrant
+  mousedown (rare — would require a browser bug or extension
+  conflict) cannot stack listeners.
+
+Theater Split userscript header bumped to v1.0.7. Three regressions
+in `tests/hardening.test.js` pin: the version bump + helper +
+hoisted state, the `teardown` → `abortDividerDrag` call, and the
+mousedown defensive pre-clear.
