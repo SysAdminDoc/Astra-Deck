@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.20.3] - Hardening Pass 10 - 2026-04-24
+
+Second factory-loop pass on top of v3.20.2. One real bug fix
+(theater-split divider-drag memory leak across SPA nav), one
+testability widening (selector canary 9 → 18), one wire-contract
+clarification (cookie-jar `expirationDate` helper). No user-visible
+feature changes — charter remains "no further features planned."
+
 ### Hardening
 
 - **Cookie-jar wire contract is now explicit.** Three sites previously
