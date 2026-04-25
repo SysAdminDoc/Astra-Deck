@@ -6,6 +6,41 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Hardening
+
+- **Cookie-jar wire contract is now explicit.** Three sites previously
+  inlined `expirationDate: c.expirationDate || 0` — `extension/ytkit.js`
+  (MediaDL cookie mapper), `extension/background.js`
+  (`EXT_COOKIE_LIST` handler), and `YTKit.user.js` (GM_cookie fallback).
+  All three now call a named `normalizeCookieExpiry(value)` helper that
+  documents the wire contract: session cookies → 0, persistent cookies
+  → positive Number seconds since epoch, anything else → 0. JS output
+  round-trips cleanly through the Python downloader's
+  `int(float(x))` parsing. Three regressions in
+  `tests/hardening.test.js` pin parity across all three sites and the
+  Python wire round-trip. `HARDENING.md` H6.
+- **Selector-drift canary expanded from 9 to 18 selectors.** Adds layout
+  (`ytd-watch-metadata`, `ytd-comments`), player chrome
+  (`ytp-play-button`, `ytp-settings-button`, `ytp-fullscreen-button`,
+  `ytp-time-display`), the new comments-DOM shape
+  (`ytd-comment-view-model`), and both text-rendering wrappers
+  (`yt-formatted-string`, `yt-attributed-string`). Iter-3 research
+  surfaced YouTube selector-churn moving from quarterly to weekly
+  cadence (server-side ad injection + DOM-fingerprinting arms race);
+  the wider canary lowers the probability of a silent break shipping
+  to users.
+- **Theater Split userscript v1.0.6 → v1.0.7 closes a divider-drag
+  leak across SPA navigations.** The drag attached `mousemove` /
+  `mouseup` to `window` and a position:fixed shield to `document.body`;
+  the only cleanup path was the mouseup handler. If
+  `yt-navigate-finish` fired between mousedown and mouseup, teardown()
+  removed the split wrapper but the window listeners + shield orphaned
+  and held references to disposed nodes for the rest of the session.
+  v1.0.7 hoists the drag handles to module scope, adds an idempotent
+  `abortDividerDrag()` helper, calls it from `teardown()`, and
+  defensively pre-clears in `mousedown`. Three regressions in
+  `tests/hardening.test.js`. `HARDENING.md` H8.
+
 ## [3.20.2] - Hardening Pass 9 - 2026-04-24
 
 Follow-on audit pass from the factory-loop run. No user-visible
