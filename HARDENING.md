@@ -926,3 +926,72 @@ Theater Split userscript header bumped to v1.0.7. Three regressions
 in `tests/hardening.test.js` pin: the version bump + helper +
 hoisted state, the `teardown` → `abortDividerDrag` call, and the
 mousedown defensive pre-clear.
+
+### H9 — EXT_FETCH controller.abort() consistency on size-limit early returns
+
+The EXT_FETCH proxy in `extension/background.js` has five
+"responded = true; sendResponse(...); return" paths in the success
+branch:
+
+1. Timeout fires and the timer aborts the controller.
+2. Redirect lands on a non-allowlisted origin → `controller.abort()`.
+3. Declared content-length exceeds `MAX_RESPONSE_BYTES` → `controller.abort()`.
+4. Streamed body exceeds the limit while reading → `reader.cancel()` only.
+5. Non-streaming body exceeds the limit after measuring → no abort, no cancel.
+
+Paths (4) and (5) leaked: we'd already responded to the content
+script with "too large", but the SW kept reading bytes off the wire
+until natural EOF. Wasted bandwidth; wasted SW lifetime under MV3's
+30 s idle clock; a malicious upstream could keep the SW alive
+indefinitely by trickling bytes after the cap.
+
+`reader.cancel()` closes the reader but does not always tear down
+the underlying network request — the spec leaves the behaviour to
+the underlying Source. `controller.abort()` is the authoritative
+signal that the request is done.
+
+Fix: every "too large" early-return now calls `controller.abort()`
+in addition to whatever else (reader.cancel, response.error path).
+The four catches are wrapped in try/catch because the controller
+may already be aborted by the timeout path.
+
+One regression in `tests/hardening.test.js` counts the `abort()`
+call sites in the EXT_FETCH handler (≥5 expected) and pins both
+the streamed-too-large block and the non-streaming-too-large block
+explicitly.
+
+### H10 — `npm run check` catches pre-push version-string drift
+
+The Build & Release workflow validates that the four canonical
+version strings — `package.json#version`,
+`extension/manifest.json#version`,
+`extension/ytkit.js#YTKIT_VERSION`, and
+`YTKit.user.js#@version` — all match the pushed tag. That gate
+fires AFTER the tag has landed on remote. A developer who bumps
+three of four locally and forgets to run `node sync-userscript.js`
+will ship the drift to GitHub and watch CI fail post-tag.
+
+`scripts/check-versions.js` ports the same comparison to local-
+side. On the happy path it prints `[check-versions] All 4 sources
+agree at v<...>` and exits 0. On drift it prints every source's
+value side-by-side, a remediation hint pointing at
+`node sync-userscript.js`, and exits 1.
+
+Wired into `npm run check` so `npm test && npm run check` is now
+sufficient pre-push. Also exposed standalone as
+`npm run check:versions` for tight CI/dev loops.
+
+A subtle implementation note pinned by a regression test: the
+"all sources match" guard uses `sources[0].value !== ''` instead
+of `!sources[0].value.includes('')`. The latter would always
+evaluate true (every string contains the empty substring) and
+would silently break the happy path — a draft-stage bug caught by
+running the script before shipping. The test exists so a future
+refactor can't regress it.
+
+Two regressions in `tests/hardening.test.js`:
+
+- The script exists, reads all four canonical sources, is wired
+  into `npm run check`, and uses the correct empty-string guard.
+- `execFileSync` against the current tree — if any source has
+  drifted, this test fails before any other test runs.
