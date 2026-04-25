@@ -1424,6 +1424,16 @@
         ytKitDownload(videoUrl, audioOnly);
     }
 
+    // v3.20.3: explicit cookie-jar wire contract.
+    // Mirrors normalizeCookieExpiry() in extension/ytkit.js + extension/background.js.
+    //   Session cookie    → 0
+    //   Persistent cookie → positive Number, seconds since epoch
+    //   Anything else     → 0 (treat null/NaN/negative/string/Infinity as session)
+    function normalizeCookieExpiry(value) {
+        const num = Number(value);
+        return Number.isFinite(num) && num > 0 ? num : 0;
+    }
+
     // Extract streaming URLs from YouTube's player response for direct download.
     // This bypasses cookie/auth issues entirely - the URLs contain embedded auth signatures.
     // Uses multi-method approach: inline script parsing (fast) -> Innertube API (SPA-safe).
@@ -1848,7 +1858,7 @@
                             domain: c.domain, name: c.name, value: c.value,
                             path: c.path || '/', secure: !!c.secure,
                             httpOnly: !!c.httpOnly,
-                            expirationDate: c.expirationDate || 0
+                            expirationDate: normalizeCookieExpiry(c.expirationDate)
                         }));
                         DebugManager.log('MediaDL', `Attached ${cookies.length} cookies for yt-dlp fallback`);
                     } else {

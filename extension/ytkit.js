@@ -2548,6 +2548,24 @@ return response;
         ytKitDownload(videoUrl, audioOnly);
     }
 
+    // v3.20.3: explicit cookie-jar wire contract (was: c.expirationDate || 0
+    // scattered across three sites).
+    //
+    //   Session cookie    → 0 (Netscape format expects 0 for "session")
+    //   Persistent cookie → positive Number, seconds since epoch (Chrome
+    //                       returns this as a double; we leave it as-is so
+    //                       Python's int(float(x)) produces the same int)
+    //   Anything else     → 0 (treat null/NaN/negative/string/Infinity as
+    //                          session — the server already does the same
+    //                          via test_astra_downloader.py:333+)
+    //
+    // Centralizing the contract here means a future wire-format change is
+    // one edit instead of three, and the behaviour is regression-tested.
+    function normalizeCookieExpiry(value) {
+        const num = Number(value);
+        return Number.isFinite(num) && num > 0 ? num : 0;
+    }
+
     // Main download handler — the extension now relies exclusively on the local
     // yt-dlp service. If the server is unavailable, we guide the user through the
     // single install path instead of branching into web or direct-download fallbacks.
@@ -2630,7 +2648,7 @@ return response;
                         domain: c.domain, name: c.name, value: c.value,
                         path: c.path || '/', secure: !!c.secure,
                         httpOnly: !!c.httpOnly,
-                        expirationDate: c.expirationDate || 0
+                        expirationDate: normalizeCookieExpiry(c.expirationDate)
                     }));
                     DebugManager.log('MediaDL', `Attached ${cookies.length} cookies for yt-dlp`);
                 } else {
