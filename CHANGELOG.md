@@ -6,6 +6,33 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Hardening
+
+- **EXT_FETCH proxy aborts the underlying fetch on every size-limit
+  early-return.** Two of five paths in the proxy used to leave the
+  fetch open after we'd already responded with "too large" to the
+  caller — the streamed-too-large path called `reader.cancel()` only
+  (which closes the reader but doesn't always tear down the network
+  request) and the non-streaming-too-large path did neither. Both
+  meant the SW kept reading bytes off the wire long after we'd
+  responded. All five paths (timeout, redirect-off-allowlist,
+  content-length, streamed body, non-streaming body) now consistently
+  call `controller.abort()`. `HARDENING.md` H9.
+
+### Tooling
+
+- **`npm run check` now catches version-string drift pre-push.** The
+  `Build & Release` workflow already validates that
+  `package.json`, `extension/manifest.json`,
+  `extension/ytkit.js#YTKIT_VERSION`, and `YTKit.user.js#@version`
+  agree with the pushed tag — but only AFTER the tag has landed on
+  remote. New `scripts/check-versions.js` ports the same comparison
+  to local-side; failure output lists per-source values and a
+  remediation hint pointing at `node sync-userscript.js`. Wired into
+  `npm run check` (so `npm test && npm run check` is now sufficient
+  pre-push) and exposed standalone via `npm run check:versions`.
+  `HARDENING.md` H10.
+
 ## [3.20.3] - Hardening Pass 10 - 2026-04-24
 
 Second factory-loop pass on top of v3.20.2. One real bug fix
