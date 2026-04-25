@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.20.4] - Hardening Pass 11 - 2026-04-25
+
+Third factory-loop pass on top of v3.20.3. One real resource-leak
+fix (EXT_FETCH no longer keeps the SW socket alive after responding
+with "too large") and one developer-experience improvement
+(local pre-push version-drift check). No user-visible feature
+changes — charter remains "no further features planned."
+
 ### Hardening
 
 - **EXT_FETCH proxy aborts the underlying fetch on every size-limit
