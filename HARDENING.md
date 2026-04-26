@@ -995,3 +995,54 @@ Two regressions in `tests/hardening.test.js`:
   into `npm run check`, and uses the correct empty-string guard.
 - `execFileSync` against the current tree — if any source has
   drifted, this test fails before any other test runs.
+
+### H11 — Settings import migration + popup dialog semantics
+
+Two roadmap items shipped together because they both touch the toolbar
+popup, which is the only extension-surface settings UI after v3.19.0.
+
+**N1: profile-import migration.** The popup import path wrote imported
+settings directly to `ytSuiteSettings`; the in-page settings manager did
+the same through `importAllSettings()`. Both paths preserved only safe
+object keys, but neither ran the `_settingsVersion` migration chain
+before stamping the current schema. A profile exported before v6 could
+therefore skip migrations for added/retired settings until a later load
+path happened to repair it.
+
+Fix:
+
+- `extension/ytkit.js` now routes imported settings through
+  `_prepareImportedSettings()`, which sanitizes, runs `_migrate(...,
+  'profile-import')`, merges over current defaults, and stamps
+  `_settingsVersion` only after migration.
+- `extension/popup.js` now reads generated `default-settings.json` and
+  `settings-meta.json` before import, applies the same migration steps
+  locally, restores missing defaults, strips retired settings, and writes
+  the migrated result in one storage update.
+- Every migration step appends a small `ctx: 'settings-migration'`
+  diagnostic entry. Future-version imports preserve safe unknown fields
+  while clamping local schema metadata to the current build so later
+  upgrades do not skip migrations.
+
+**N3: popup modal semantics and focus management.** Chrome extension
+popups are browser-hosted windows, but the DOM still needs the same
+keyboard contract expected of a modal surface: a named dialog root,
+initial focus inside the popup, Tab/Shift-Tab containment, and Escape
+close. The popup already had visible focus styling and an aria-live
+health banner; it lacked the root semantics and trap.
+
+Fix:
+
+- `extension/popup.html` sets `role="dialog"`,
+  `aria-modal="true"`, and `aria-labelledby="popup-title"` on the
+  popup body.
+- `extension/popup.js` installs one dialog-level key handler. It moves
+  initial focus to the first visible control after render, wraps Tab
+  from the last control to the first, wraps Shift-Tab from the first
+  control to the last, delegates to the nested confirmation dialog when
+  it is open, and closes the popup on Escape when no nested control has
+  handled the key.
+
+Two regressions in `tests/hardening.test.js` pin the import migration
+contract and the popup dialog/focus contract. `node --test
+tests/hardening.test.js` reports 47/47 passing for this pass.

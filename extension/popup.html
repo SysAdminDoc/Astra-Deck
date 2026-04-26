@@ -6,7 +6,7 @@
 <title>Astra Deck</title>
 <link rel="stylesheet" href="popup.css">
 </head>
-<body>
+<body role="dialog" aria-modal="true" aria-labelledby="popup-title">
 <div class="page-shell">
 
   <header class="app-bar">
@@ -20,11 +20,11 @@
     <div class="app-status" id="contextState" aria-label="Tab context">Local</div>
   </header>
 
-  <main class="options-workspace" aria-labelledby="options-title">
+  <main class="options-workspace" aria-labelledby="popup-title">
     <section class="workspace-command">
       <div class="workspace-copy">
         <span class="workspace-eyebrow">Settings workspace</span>
-        <h1 class="workspace-title" id="options-title">Controls and local data</h1>
+        <h1 class="workspace-title" id="popup-title">Controls and local data</h1>
         <p id="supportNote">Changes sync to open YouTube tabs automatically.</p>
       </div>
       <div class="main-action">
