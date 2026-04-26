@@ -516,8 +516,9 @@ test('split title header shows upload date and docks quick links beside YouTube 
         'extension split YouTube logo should navigate to subscriptions');
     assert.ok(source.includes('ytkit-split-upload-date'),
         'extension split should render an upload-date chip in the header');
-    assert.ok(source.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;'),
-        'extension split title header should reserve a right-aligned date column without crowding controls');
+    assert.ok(source.includes('grid-template-columns: auto minmax(0, 1fr) !important;')
+        && source.includes('"actions actions" !important;'),
+        'extension split title header should give quick controls their own row in condensed rails');
     assert.ok(source.includes('-webkit-line-clamp: 3 !important;'),
         'extension split title should clamp long titles before they overlap the owner card');
     assert.ok(source.includes('overflow-wrap: anywhere !important;'),
@@ -539,8 +540,9 @@ test('split title header shows upload date and docks quick links beside YouTube 
         'standalone split YouTube logo should navigate to subscriptions');
     assert.ok(theaterSplit.includes('ytkit-split-upload-date'),
         'standalone split should render the upload-date chip styling');
-    assert.ok(theaterSplit.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;'),
-        'standalone split title header should reserve a right-aligned date column without crowding controls');
+    assert.ok(theaterSplit.includes('grid-template-columns: auto minmax(0, 1fr) !important;')
+        && theaterSplit.includes('"actions actions" !important;'),
+        'standalone split title header should give quick controls their own row in condensed rails');
     assert.ok(theaterSplit.includes('-webkit-line-clamp: 3 !important;'),
         'standalone split title should clamp long titles before they overlap the owner card');
     assert.ok(theaterSplit.includes('overflow-wrap: anywhere !important;'),
@@ -733,8 +735,10 @@ test('split title and owner cards align while quick links stay above the video',
         [extensionTitleBar, 'extension title header'],
         [standaloneTitleBar, 'standalone title header'],
     ]) {
-        assert.ok(block.includes('grid-template-columns: auto auto minmax(0, 1fr) !important;'),
-            `${label} should reserve a right-aligned date column without crowding controls`);
+        assert.ok(block.includes('grid-template-columns: auto minmax(0, 1fr) !important;'),
+            `${label} should keep the logo and date on the top row`);
+        assert.ok(block.includes('"actions actions" !important;'),
+            `${label} should move quick controls onto their own uncrowded row`);
         assert.ok(block.includes('width: 100% !important;'), `${label} should span the full title card`);
     }
 
@@ -751,8 +755,8 @@ test('split title and owner cards align while quick links stay above the video',
         [source, 'extension owner card'],
         [theaterSplit, 'standalone owner card'],
     ]) {
-        assert.ok(contents.includes('"owner dock page watch"'), `${label} should keep channel identity and actions on one row`);
-        assert.ok(contents.includes('"sub dock page watch"'), `${label} should keep the subscribe row visually tied to the docked actions`);
+        assert.ok(contents.includes('flex-wrap: wrap !important;'), `${label} should allow controls to wrap instead of overlap`);
+        assert.ok(contents.includes('flex: 1 1 100% !important;'), `${label} should put docked actions on a full-width row`);
         assert.ok(!contents.includes('"owner owner owner owner"'), `${label} should not reserve a full empty row for identity`);
         assert.ok(contents.includes('justify-items: start !important;'), `${label} should anchor channel text to the avatar`);
         assert.ok(contents.includes('text-align: left !important;'), `${label} should keep channel metadata left-aligned`);
