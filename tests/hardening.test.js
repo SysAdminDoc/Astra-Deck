@@ -1367,3 +1367,136 @@ test('normalizeCookieExpiry produces wire-compatible output with the Python down
     assert.equal(pythonRoundTrip(fn(1700000000)), 1700000000);
     assert.equal(pythonRoundTrip(fn(1700000000.999)), 1700000000);  // Python truncates
 });
+
+// ── Pass 17 NX1: i18n scaffold ──
+
+test('_locales/en/messages.json exists and is valid JSON', () => {
+    const localesPath = path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json');
+    assert.ok(fs.existsSync(localesPath), '_locales/en/messages.json must exist');
+    let parsed;
+    assert.doesNotThrow(
+        () => { parsed = JSON.parse(fs.readFileSync(localesPath, 'utf8')); },
+        '_locales/en/messages.json must be valid JSON'
+    );
+    assert.equal(typeof parsed, 'object', 'Parsed messages must be an object');
+});
+
+test('_locales/en/messages.json contains the four required manifest-level keys', () => {
+    const localesPath = path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json');
+    const messages = JSON.parse(fs.readFileSync(localesPath, 'utf8'));
+    for (const key of ['extName', 'extDescription', 'extActionTitle', 'toggleControlCenterDesc']) {
+        assert.ok(Object.prototype.hasOwnProperty.call(messages, key),
+            `messages.json must define "${key}"`);
+        assert.equal(typeof messages[key].message, 'string',
+            `messages.json["${key}"].message must be a string`);
+        assert.ok(messages[key].message.length > 0,
+            `messages.json["${key}"].message must not be empty`);
+    }
+});
+
+test('manifest.json uses __MSG_ references for name, description, and action title', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    assert.equal(manifest.name, '__MSG_extName__',
+        'manifest.json name must use __MSG_extName__ i18n reference');
+    assert.equal(manifest.description, '__MSG_extDescription__',
+        'manifest.json description must use __MSG_extDescription__ i18n reference');
+    assert.equal(manifest.action?.default_title, '__MSG_extActionTitle__',
+        'manifest.json action.default_title must use __MSG_extActionTitle__ i18n reference');
+    assert.equal(
+        manifest.commands?.['toggle-control-center']?.description,
+        '__MSG_toggleControlCenterDesc__',
+        'manifest command description must use __MSG_toggleControlCenterDesc__ i18n reference'
+    );
+    assert.equal(manifest.default_locale, 'en',
+        'manifest.json must declare default_locale: "en" alongside __MSG_ references');
+});
+
+test('check-i18n.js exists and all __MSG_ references in manifest resolve', () => {
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'check-i18n.js');
+    assert.ok(fs.existsSync(scriptPath), 'scripts/check-i18n.js must exist');
+    const { execFileSync } = require('child_process');
+    let exitCode = 0;
+    try {
+        execFileSync(process.execPath, [scriptPath], { stdio: 'pipe' });
+    } catch (e) {
+        exitCode = e.status || 1;
+    }
+    assert.equal(exitCode, 0,
+        'check-i18n must exit 0 on the current tree — all __MSG_ and getMessage() keys must resolve');
+});
+
+// ── Pass 17 L9: DiagnosticLog clear button ──
+
+test('popup.html carries a Clear button in the health banner', () => {
+    assert.match(popupHtmlSource, /id="health-clear-btn"/,
+        'Health banner must include a Clear button with id="health-clear-btn"');
+    assert.match(popupHtmlSource, /class="health-clear-btn"/,
+        'Clear button must carry the health-clear-btn CSS class');
+    assert.match(popupHtmlSource, /aria-label="Clear diagnostic log"/,
+        'Clear button must have an accessible aria-label for screen readers');
+});
+
+test('popup.js defines clearDiagnosticLog and wires the health-clear-btn', () => {
+    assert.match(popupSource, /async function clearDiagnosticLog\s*\(\s*\)/,
+        'popup.js must define clearDiagnosticLog()');
+    assert.match(popupSource, /const healthClearBtn\s*=\s*\$\s*\(\s*'#health-clear-btn'\s*\)/,
+        'popup.js must hold a reference to health-clear-btn');
+    assert.match(popupSource, /healthClearBtn\.addEventListener\s*\(\s*'click'/,
+        'popup.js bootstrap must wire the click listener on healthClearBtn');
+    // Clear path must ask for confirmation before deleting _errors.
+    const clearFnStart = popupSource.indexOf('async function clearDiagnosticLog');
+    assert.ok(clearFnStart > -1, 'clearDiagnosticLog must exist');
+    const clearFnBody = popupSource.slice(clearFnStart, clearFnStart + 1000);
+    assert.match(clearFnBody, /confirmAction\s*\(/,
+        'clearDiagnosticLog must present a confirmation dialog before clearing');
+    assert.match(clearFnBody, /delete settings\._errors/,
+        'clearDiagnosticLog must delete _errors from the stored settings object');
+    assert.match(clearFnBody, /renderHealthBanner\s*\(\s*null\s*\)/,
+        'clearDiagnosticLog must hide the banner after clearing via renderHealthBanner(null)');
+});
+
+test('popup.css carries .health-clear-btn styles with focus-visible outline', () => {
+    const cssSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'),
+        'utf8'
+    );
+    assert.match(cssSource, /\.health-clear-btn\s*\{/,
+        '.health-clear-btn CSS rule must exist');
+    assert.match(cssSource, /\.health-clear-btn:focus-visible/,
+        'Clear button must carry a focus-visible outline for keyboard users');
+});
+
+// ── Pass 17 L1: ESLint SW addListener rule ──
+
+test('eslint.config.js exists and registers the custom no-post-await-addlistener rule', () => {
+    const configPath = path.join(__dirname, '..', 'eslint.config.js');
+    assert.ok(fs.existsSync(configPath), 'eslint.config.js must exist');
+    const configSource = fs.readFileSync(configPath, 'utf8');
+    assert.match(configSource, /no-post-await-addlistener/,
+        'eslint.config.js must reference the no-post-await-addlistener rule');
+    assert.match(configSource, /extension\/background\.js/,
+        'eslint.config.js must target extension/background.js');
+});
+
+test('scripts/eslint-rules/no-post-await-addlistener.js is loadable and has correct meta', () => {
+    const rulePath = path.join(__dirname, '..', 'scripts', 'eslint-rules', 'no-post-await-addlistener.js');
+    assert.ok(fs.existsSync(rulePath), 'Rule file must exist');
+    const rule = require(rulePath);
+    assert.equal(typeof rule.create, 'function', 'Rule must export a create function');
+    assert.equal(rule.meta.type, 'problem', 'Rule must be typed as "problem"');
+    assert.ok(rule.meta.messages.postAwaitAddListener,
+        'Rule must define the postAwaitAddListener message ID');
+});
+
+test('npm run lint passes cleanly on extension/background.js', () => {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('npm', ['run', 'lint'], {
+        stdio: 'pipe',
+        cwd: path.join(__dirname, '..'),
+        shell: true
+    });
+    assert.equal(result.status, 0,
+        'npm run lint must pass cleanly — all existing addListener calls must be at top level');
+});

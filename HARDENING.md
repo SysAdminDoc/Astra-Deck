@@ -1194,3 +1194,98 @@ measuring a real browser-exported storage payload later. Four
 regressions in `tests/storage-size-audit.test.js` pin the byte formula,
 the 7,334-byte UI-preferences result, the 172,461-byte typical-local
 result, and the final sync decision text.
+
+### H16 — i18n scaffold: `_locales/en/messages.json` + build-time key validator
+
+**Pass 17 · NX1**
+
+The extension had no WebExtension i18n infrastructure. All user-visible
+strings in `manifest.json` were hardcoded English. This is the minimum
+scaffolding for community translation, without migrating any in-source
+strings yet.
+
+**What shipped:**
+
+- `extension/_locales/en/messages.json` — the English message catalog.
+  Four keys for the manifest fields that browsers substitute at load
+  time: `extName`, `extDescription`, `extActionTitle`,
+  `toggleControlCenterDesc`.
+- `extension/manifest.json` updated: `name`, `description`,
+  `action.default_title`, and `commands.toggle-control-center.description`
+  now use `__MSG_<key>__` references; `default_locale: "en"` added.
+- `scripts/check-i18n.js` — build-time consistency gate. Reads
+  `_locales/en/messages.json`, scans all `extension/` JS files for
+  `chrome.i18n.getMessage("key")` calls and the manifest for `__MSG_key__`
+  references, and fails with exit 1 if any referenced key is absent from
+  the catalog. Hooked into `npm run check`.
+- `scripts/check-syntax.js` file list updated to cover the new script.
+- Four regressions in `tests/hardening.test.js` pin: catalog exists and
+  is valid JSON, all four required keys present, manifest uses `__MSG_`
+  references, and `check-i18n` exits 0 on the current tree.
+
+**Scope note:** Strings still hardcoded in `ytkit.js` and `popup.js` are
+intentionally not migrated. The migration is incremental — the validator
+only fires on `getMessage()` calls and `__MSG_` references that already
+exist. New getMessage() calls added without a catalog entry will trip the
+build gate immediately.
+
+### H17 — DiagnosticLog clear button in popup health banner
+
+**Pass 17 · L9**
+
+Before this change, the only way to clear `_errors` from extension
+storage was through the full Reset-all-data action or waiting for
+`storageQuotaLRU` to evict it. The `_errors` array stores TrustedTypes
+and migration-diagnostic breadcrumbs; it accumulates indefinitely on
+affected installs and there was no user-visible escape hatch.
+
+**What shipped:**
+
+- `extension/popup.html` — a "Clear" button (`id="health-clear-btn"`,
+  `class="health-clear-btn"`) added to the health banner alongside the
+  existing Copy button, with `aria-label="Clear diagnostic log"`.
+- `extension/popup.js` — `const healthClearBtn` element ref; async
+  `clearDiagnosticLog()` function: reads `ytSuiteSettings` from storage,
+  deletes `_errors`, writes back, calls `renderHealthBanner(null)` to
+  dismiss the banner, and shows a success toast. Presents a
+  `confirmAction()` dialog before acting. Wired in the bootstrap IIFE.
+- `extension/popup.css` — `.health-clear-btn` / `.health-clear-btn:hover`
+  / `.health-clear-btn:focus-visible` rules. Neutral-grey palette (not
+  amber) to visually separate it from the warning-toned Copy button.
+- Three regressions in `tests/hardening.test.js` pin: `health-clear-btn`
+  exists in popup.html with correct aria-label, `clearDiagnosticLog` is
+  defined and wires the listener, and `.health-clear-btn:focus-visible`
+  exists in popup.css.
+
+### H18 — ESLint custom rule: no non-top-level `addListener` in the SW
+
+**Pass 17 · L1**
+
+MV3 service workers must register all `chrome.*.addListener()` calls
+synchronously at the top level of the script. Listeners registered inside
+an `async` function or `.then()` callback are unreliable — the SW may be
+terminated between the outer call and the `await` that precedes the
+registration, so the listener silently never fires.
+
+All four existing listener registrations in `background.js` are correct
+(top-level). This change prevents future regressions.
+
+**What shipped:**
+
+- `eslint` installed as a devDependency (≥ 9.x flat config).
+- `eslint.config.js` — flat config targeting `extension/background.js`,
+  registers the local plugin.
+- `scripts/eslint-rules/no-post-await-addlistener.js` — custom rule that
+  flags `chrome.*.addListener()` calls whose call-site AST is nested
+  inside an `async` function (declaration, expression, or arrow) or a
+  `.then()` / `.catch()` / `.finally()` callback argument. Top-level
+  registrations are allowed.
+- `package.json` — `"lint": "eslint extension/background.js"` added;
+  `npm run check` now chains `npm run lint` after `check-i18n`.
+- `scripts/check-syntax.js` file list updated to cover `eslint.config.js`
+  and `scripts/eslint-rules/no-post-await-addlistener.js`.
+- Three regressions in `tests/hardening.test.js` pin: `eslint.config.js`
+  references the rule name, the rule module is loadable with correct meta
+  (`type: "problem"`, expected message ID), and `npm run lint` exits 0
+  on the current `background.js`.
+

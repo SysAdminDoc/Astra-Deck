@@ -443,6 +443,31 @@ body {
   outline-offset: 2px;
 }
 
+.health-clear-btn {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(160, 160, 160, 0.35);
+  background: rgba(160, 160, 160, 0.06);
+  color: #b0b0b0;
+  cursor: pointer;
+  transition: background-color var(--dur-quick) var(--ease-out),
+              border-color var(--dur-quick) var(--ease-out);
+}
+
+.health-clear-btn:hover {
+  background: rgba(160, 160, 160, 0.12);
+  border-color: rgba(160, 160, 160, 0.55);
+}
+
+.health-clear-btn:focus-visible {
+  outline: 2px solid rgba(160, 160, 160, 0.65);
+  outline-offset: 2px;
+}
+
 /* ── Main Action (CTA) ── */
 
 .main-action { margin: 0; }

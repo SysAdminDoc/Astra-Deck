@@ -164,6 +164,7 @@ const statBookmarks = $('#stat-bookmarks');
 const healthBanner = $('#health-banner');
 const healthDetail = $('#health-detail');
 const healthCopyBtn = $('#health-copy-btn');
+const healthClearBtn = $('#health-clear-btn');
 // Captured so the Copy button can drop the full diagnostic payload on the
 // clipboard without rebuilding it from DOM text.
 let healthCopyPayload = '';
@@ -823,6 +824,30 @@ if (healthCopyBtn) {
     });
 }
 
+async function clearDiagnosticLog() {
+    const confirmed = await confirmAction({
+        eyebrow: 'Confirm',
+        title: 'Clear diagnostic log?',
+        message: 'This removes all recorded diagnostic events from extension storage.',
+        confirmLabel: 'Clear',
+        tone: 'default'
+    });
+    if (!confirmed) return;
+
+    try {
+        const items = await storageGet([SETTINGS_STORAGE_KEY]);
+        const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
+            ? { ...items[SETTINGS_STORAGE_KEY] }
+            : {};
+        delete settings._errors;
+        await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
+        renderHealthBanner(null);
+        showStatus('Diagnostic log cleared.', 'success', 2400);
+    } catch (error) {
+        showStatus('Could not clear log: ' + error.message, 'error', 4200);
+    }
+}
+
 // ── Import sanitizers (ported from options.js) ──
 
 function sanitizeImportedHiddenVideos(value) {
@@ -1241,4 +1266,5 @@ function installWheelScrolling() {
         if (file) void importSettings(file);
     });
     resetButton.addEventListener('click', () => { void resetAllData(); });
+    if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
 })();
