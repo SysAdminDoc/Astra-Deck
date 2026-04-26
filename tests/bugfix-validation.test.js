@@ -267,6 +267,23 @@ test('hideLiveChatEngagement also suppresses the subscriber-visibility live chat
         'hideLiveChatEngagement should rescan for tooltip popups that appear on hover');
 });
 
+test('premium live chat keeps space between the author chip and message text', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'premiumLiveChat'");
+    const end = source.indexOf("cssFeature('hidePaidPromotionWatch'", start);
+    assert.ok(start > -1 && end > start, 'premiumLiveChat block should exist');
+
+    const block = source.slice(start, end);
+    assert.match(
+        block,
+        /yt-live-chat-author-chip\.yt-live-chat-text-message-renderer\s*\{[\s\S]*?margin:\s*1px 8px 0 0 !important;/,
+        'premium live chat should reserve visible space after the author chip before message text'
+    );
+});
+
 test('autoExpandComments defaults on and expands existing comment truncation immediately', () => {
     const fs = require('fs');
     const path = require('path');
