@@ -312,6 +312,93 @@ test('popup.js import accepts exportVersion >= 3 without an upper cap', () => {
     );
 });
 
+test('settings imports run schema migrations before stamping the current version', () => {
+    assert.match(
+        ytkitSource,
+        /_prepareImportedSettings\s*\(\s*settings\s*\)/,
+        'Content-script import path must prepare imported settings through a dedicated migration helper'
+    );
+    assert.match(
+        ytkitSource,
+        /_migrate\s*\(\s*this\._sanitize\s*\(\s*settings\s*\)\s*,\s*'profile-import'\s*\)/,
+        'Content-script imports must run the migration chain from the imported _settingsVersion'
+    );
+    assert.match(
+        ytkitSource,
+        /DiagnosticLog\?\.record\?\.\(\s*'settings-migration'/,
+        'Migration steps must be sent to DiagnosticLog with ctx === settings-migration'
+    );
+    assert.match(
+        ytkitSource,
+        /preserved future settings schema/,
+        'Future-version imports must preserve safe unknown fields while clamping local schema metadata'
+    );
+
+    assert.match(
+        popupSource,
+        /const\s+SETTINGS_IMPORT_MIGRATIONS\s*=\s*Object\.freeze/,
+        'Popup import path must carry the same forward migration steps as the content script'
+    );
+    assert.match(
+        popupSource,
+        /function\s+migrateImportedSettings\s*\(/,
+        'Popup imports must migrate old settings snapshots before writing storage'
+    );
+    assert.match(
+        popupSource,
+        /function\s+mergeImportedSettingsWithDefaults\s*\(/,
+        'Popup imports must merge migrated settings over generated defaults so missing keys are restored'
+    );
+    assert.match(
+        popupSource,
+        /settings-meta\.json/,
+        'Popup imports must read generated settings metadata instead of hard-stamping an imported version'
+    );
+    assert.match(
+        popupSource,
+        /ctx:\s*'settings-migration'/,
+        'Popup imports must append settings-migration diagnostics for each migration step'
+    );
+});
+
+test('popup root is a modal dialog with focus trapping and Escape close semantics', () => {
+    assert.match(
+        popupHtmlSource,
+        /<body[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-labelledby="popup-title"/,
+        'Popup body must expose modal dialog semantics to assistive technology'
+    );
+    assert.match(
+        popupHtmlSource,
+        /id="popup-title"/,
+        'Popup dialog must be labelled by the visible title'
+    );
+    assert.match(
+        popupSource,
+        /const\s+FOCUSABLE_SELECTOR\s*=/,
+        'Popup focus trap must enumerate focusable controls'
+    );
+    assert.match(
+        popupSource,
+        /function\s+handlePopupDialogKeydown\s*\(/,
+        'Popup must own a keyboard handler for dialog-level focus management'
+    );
+    assert.match(
+        popupSource,
+        /event\.key\s*===\s*'Tab'[\s\S]*?event\.shiftKey[\s\S]*?focus\(\{\s*preventScroll:\s*true\s*\}\)/,
+        'Tab and Shift+Tab must wrap between first and last popup controls'
+    );
+    assert.match(
+        popupSource,
+        /event\.key\s*===\s*'Escape'[\s\S]*?window\.close\(\)/,
+        'Escape must close the extension popup when no nested dialog handled it'
+    );
+    assert.match(
+        popupSource,
+        /focusInitialPopupControl\s*\(\s*\)/,
+        'Popup boot must move focus into the dialog after controls render'
+    );
+});
+
 // ── v3.16+ Audit Pass: SponsorBlock destroy is race-proof ──
 
 test('sponsorBlock _loadForVideo aborts if destroy runs mid-fetch', () => {

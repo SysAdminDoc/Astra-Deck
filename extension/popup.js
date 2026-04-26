@@ -72,6 +72,32 @@ const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const PANEL_OPEN_MESSAGE = 'YTKIT_OPEN_PANEL';
 const QUICK_TOGGLE_KEYS = QUICK_TOGGLES.map((toggle) => toggle.key);
 const UNSAFE_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+const RETIRED_SETTING_KEYS = new Set([
+    'preferredQuality',
+    'useEnhancedBitrate',
+    'hideQualityPopup',
+]);
+const SETTINGS_VERSION_FALLBACK = 6;
+const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
+    2(settings) {
+        return settings;
+    },
+    3(settings) {
+        settings.hidePinnedComments = true;
+        return settings;
+    },
+    4(settings) {
+        settings.autoExpandComments = true;
+        return settings;
+    },
+    5(settings) {
+        return settings;
+    },
+    6(settings) {
+        for (const key of RETIRED_SETTING_KEYS) delete settings[key];
+        return settings;
+    },
+});
 
 const STORAGE_KEYS = {
     settings: 'ytSuiteSettings',
@@ -106,6 +132,14 @@ const popupState = {
 };
 
 const $ = (s) => document.querySelector(s);
+const FOCUSABLE_SELECTOR = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+].join(',');
 
 // ── Element refs ──
 const list = $('#toggles');
@@ -206,9 +240,86 @@ function sanitizeSettingsObject(settings) {
     if (!isPlainObject(settings)) return {};
     const sanitized = {};
     for (const [key, value] of Object.entries(settings)) {
-        if (isSafeObjectKey(key)) sanitized[key] = value;
+        if (isSafeObjectKey(key) && !RETIRED_SETTING_KEYS.has(key)) sanitized[key] = value;
     }
     return sanitized;
+}
+
+function normalizeSettingsVersion(value) {
+    const version = Number(value);
+    return Number.isInteger(version) && version > 0 ? version : 1;
+}
+
+function recordSettingsMigrationDiagnostic(settings, message) {
+    const errors = Array.isArray(settings._errors)
+        ? settings._errors.filter(isPlainObject).slice(-499)
+        : [];
+    errors.push({
+        ts: Date.now(),
+        ctx: 'settings-migration',
+        msg: String(message).slice(0, 500)
+    });
+    settings._errors = errors;
+}
+
+function migrateImportedSettings(settings, currentVersion, source = 'popup-import') {
+    const migrated = sanitizeSettingsObject(settings);
+    const targetVersion = normalizeSettingsVersion(currentVersion || SETTINGS_VERSION_FALLBACK);
+    const startingVersion = normalizeSettingsVersion(migrated._settingsVersion);
+    let version = startingVersion;
+
+    if (version > targetVersion) {
+        recordSettingsMigrationDiagnostic(
+            migrated,
+            `${source}: preserved future settings schema v${version}; stored by v${targetVersion}`
+        );
+        migrated._settingsVersion = targetVersion;
+        return sanitizeSettingsObject(migrated);
+    }
+
+    while (version < targetVersion) {
+        version += 1;
+        const migration = SETTINGS_IMPORT_MIGRATIONS[version];
+        if (migration) migration(migrated);
+        recordSettingsMigrationDiagnostic(
+            migrated,
+            `${source}: applied settings migration v${version} (${startingVersion} -> ${targetVersion})`
+        );
+    }
+
+    migrated._settingsVersion = targetVersion;
+    return sanitizeSettingsObject(migrated);
+}
+
+async function readExtensionJson(filename, fallback) {
+    try {
+        const url = chrome.runtime?.getURL ? chrome.runtime.getURL(filename) : filename;
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+        return isPlainObject(json) ? json : fallback;
+    } catch (error) {
+        console.warn(`[Astra Deck popup] Could not read ${filename}:`, error);
+        return fallback;
+    }
+}
+
+async function loadSettingsImportCatalog() {
+    const [defaults, meta] = await Promise.all([
+        readExtensionJson('default-settings.json', {}),
+        readExtensionJson('settings-meta.json', { settingsVersion: SETTINGS_VERSION_FALLBACK })
+    ]);
+    const settingsVersion = normalizeSettingsVersion(meta.settingsVersion || SETTINGS_VERSION_FALLBACK);
+    return { defaults: sanitizeSettingsObject(defaults), settingsVersion };
+}
+
+function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, source) {
+    const migrated = migrateImportedSettings(settings, settingsVersion, source);
+    return sanitizeSettingsObject({
+        ...defaults,
+        ...migrated,
+        _settingsVersion: settingsVersion
+    });
 }
 
 function formatBytes(bytes) {
@@ -352,6 +463,70 @@ function showStatus(message = '', type = 'info', durationMs = 2800) {
             popupState.statusTimer = null;
         }, durationMs);
     }
+}
+
+function isVisibleFocusableElement(element) {
+    if (!(element instanceof HTMLElement)) return false;
+    if (element.hidden || element.closest('[hidden]')) return false;
+    if (element.getAttribute('aria-hidden') === 'true') return false;
+    return true;
+}
+
+function getFocusableElements(root = document.body) {
+    return Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isVisibleFocusableElement);
+}
+
+function getActiveFocusRoot() {
+    const confirmShell = $('#confirm-shell');
+    if (confirmShell && !confirmShell.hidden) return confirmShell;
+    return document.body;
+}
+
+function focusInitialPopupControl() {
+    requestAnimationFrame(() => {
+        if (document.activeElement && document.activeElement !== document.body) return;
+        const firstControl = getFocusableElements(document.body)[0];
+        firstControl?.focus?.({ preventScroll: true });
+    });
+}
+
+function handlePopupDialogKeydown(event) {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        window.close();
+        return;
+    }
+    if (event.key === 'Tab') {
+        const focusRoot = getActiveFocusRoot();
+        const focusable = getFocusableElements(focusRoot);
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+        if (focusable.length === 1) {
+            event.preventDefault();
+            first.focus({ preventScroll: true });
+            return;
+        }
+
+        if (event.shiftKey && (!active || active === first || !focusRoot.contains(active))) {
+            event.preventDefault();
+            last.focus({ preventScroll: true });
+            return;
+        }
+
+        if (!event.shiftKey && active === last) {
+            event.preventDefault();
+            first.focus({ preventScroll: true });
+        }
+    }
+}
+
+function installPopupFocusManagement() {
+    document.addEventListener('keydown', handlePopupDialogKeydown);
 }
 
 // ── Summary ──
@@ -862,20 +1037,31 @@ async function importSettings(file) {
         const data = JSON.parse(text);
         if (!data || typeof data !== 'object') throw new Error('Invalid format');
 
+        const importCatalog = await loadSettingsImportCatalog();
         const writes = {};
+        let importedSettings = null;
         if (data.exportVersion >= 3) {
             const filteredVideoPosts = getImportedFilteredVideoPosts(data);
-            if (isPlainObject(data.settings)) writes[STORAGE_KEYS.settings] = sanitizeSettingsObject(data.settings);
+            if (isPlainObject(data.settings)) importedSettings = data.settings;
             if (filteredVideoPosts) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(filteredVideoPosts);
             if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
             if (isPlainObject(data.bookmarks)) writes[STORAGE_KEYS.bookmarks] = sanitizeImportedBookmarks(data.bookmarks);
         } else if (data.exportVersion >= 2) {
             const filteredVideoPosts = getImportedFilteredVideoPosts(data);
-            if (isPlainObject(data.settings)) writes[STORAGE_KEYS.settings] = sanitizeSettingsObject(data.settings);
+            if (isPlainObject(data.settings)) importedSettings = data.settings;
             if (filteredVideoPosts) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(filteredVideoPosts);
             if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
         } else if (isPlainObject(data)) {
-            writes[STORAGE_KEYS.settings] = sanitizeSettingsObject(data);
+            importedSettings = data;
+        }
+
+        if (importedSettings) {
+            writes[STORAGE_KEYS.settings] = mergeImportedSettingsWithDefaults(
+                importedSettings,
+                importCatalog.defaults,
+                importCatalog.settingsVersion,
+                'popup-import'
+            );
         }
 
         if (Object.keys(writes).length === 0) throw new Error('No valid settings found in file');
@@ -965,6 +1151,7 @@ function installWheelScrolling() {
 
 (async () => {
     installWheelScrolling();
+    installPopupFocusManagement();
     renderLoading();
 
     try {
@@ -984,6 +1171,7 @@ function installWheelScrolling() {
         render({}, '');
         showStatus('Quick controls could not be loaded. Try reopening the popup.', 'error', 5000);
     }
+    focusInitialPopupControl();
 
     let _searchDebounce = null;
     q.addEventListener('input', () => {
