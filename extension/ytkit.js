@@ -12797,7 +12797,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         flex: 0 1 auto !important;
                         min-width: 0 !important;
                         max-width: 42% !important;
-                        margin: 1px 0 0 !important;
+                        margin: 1px 8px 0 0 !important;
                     }
                     html[data-ytkit-livechat-premium] #author-name.yt-live-chat-author-chip {
                         color: var(--ytkit-livechat-text) !important;
