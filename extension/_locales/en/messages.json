@@ -1,0 +1,18 @@
+{
+  "extName": {
+    "message": "Astra Deck",
+    "description": "The extension name displayed in the browser UI."
+  },
+  "extDescription": {
+    "message": "Premium watch-page customization, split layouts, content controls, and local downloads for YouTube.",
+    "description": "The extension description shown in the browser's extension management page."
+  },
+  "extActionTitle": {
+    "message": "Astra Deck",
+    "description": "Tooltip text for the toolbar action button."
+  },
+  "toggleControlCenterDesc": {
+    "message": "Toggle the Astra Deck control center on the current YouTube tab",
+    "description": "Description for the keyboard command that opens the Astra Deck control center."
+  }
+}
