@@ -20,6 +20,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   delegates to the nested confirmation dialog, and closes on Escape.
   `HARDENING.md` H11.
 
+### Testing
+
+- **Profile import migration fixtures now cover every prior settings
+  schema.** `tests/settings-migration-roundtrip.test.js` imports known
+  v1-v5 profile snapshots into the current v6 schema, verifies every
+  generated default key is restored, retired/unsafe keys are dropped,
+  migration diagnostics are emitted, and re-imports are idempotent.
+  `HARDENING.md` H12.
+
 ## [3.20.4] - Hardening Pass 11 - 2026-04-25
 
 Third factory-loop pass on top of v3.20.3. One real resource-leak
