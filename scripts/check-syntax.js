@@ -21,10 +21,12 @@ const filesToCheck = [
     'extension/core/styles.js',
     'extension/core/url.js',
     'scripts/audit-storage-size.js',
+    'scripts/audit-popup-a11y.js',
     'scripts/catalog-utils.js',
     'scripts/check-i18n.js',
     'scripts/check-syntax.js',
     'scripts/check-versions.js',
+    'scripts/check-contrast.js',
     'scripts/eslint-rules/no-post-await-addlistener.js',
     'scripts/repo-paths.js',
     'eslint.config.js'

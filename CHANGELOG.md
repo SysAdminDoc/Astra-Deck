@@ -69,14 +69,21 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   registrations in `background.js` are top-level and clean. `npm run lint`
   added; wired into `npm run check`. `HARDENING.md` H18.
 
-### Hardening
-
 - **Popup health banner now has a "Clear" button for the diagnostic log.**
   Previously the only path to clear `_errors` (TrustedTypes + migration
   diagnostics) was the full Reset-all-data action. A neutral-styled Clear
   button in the health banner reads `ytSuiteSettings._errors` from storage,
   deletes it, and re-renders the banner after user confirmation. The Copy
   button is unchanged. `HARDENING.md` H17.
+
+- **WCAG 2.2 AA accessibility audit of the toolbar popup.**
+  Build-time audits for color contrast (`npm run audit:contrast`) and
+  popup a11y (`npm run audit:a11y`) now verify the health banner meets
+  WCAG AA (14.16:1 contrast), all buttons are labelled (aria-label or
+  visible text), focus-visible CSS covers all interactive controls
+  (button, input, textarea, .toggle, etc.), and keyboard navigation
+  preserves focus traps. All checks pass. Both audits wired into
+  `npm run check`. `HARDENING.md` H19.
 
 ## [3.20.4] - Hardening Pass 11 - 2026-04-25
 

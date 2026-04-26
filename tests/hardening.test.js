@@ -1523,3 +1523,88 @@ test('npm run lint passes cleanly on extension/background.js', () => {
     assert.equal(result.status, 0,
         'npm run lint must pass cleanly — all existing addListener calls must be at top level');
 });
+
+// ── Pass 18 L7: WCAG 2.2 a11y audit ──
+
+test('popup carries dialog semantics with focus trap, Tab wrap, Escape close', () => {
+    assert.match(
+        popupHtmlSource,
+        /<body[^>]*role="dialog"[^>]*aria-modal="true"/,
+        'popup body must have role="dialog" and aria-modal="true"'
+    );
+    assert.match(
+        popupHtmlSource,
+        /aria-labelledby="popup-title"/,
+        'popup must be labelled by popup-title element'
+    );
+    assert.match(
+        popupSource,
+        /const FOCUSABLE_SELECTOR/,
+        'popup.js must define FOCUSABLE_SELECTOR for focus trap'
+    );
+    assert.match(
+        popupSource,
+        /function handlePopupDialogKeydown\s*\(/,
+        'popup.js must define handlePopupDialogKeydown for Tab/Shift-Tab wrap and Escape close'
+    );
+});
+
+test('all popup buttons carry aria-label or visible text for a11y', () => {
+    // Buttons found in popup.html: openPanel, export-btn, import-btn, reset-btn,
+    // clearSearch, health-copy-btn, health-clear-btn, confirm-cancel-btn, confirm-accept-btn
+    const buttonIds = [
+        'openPanel', 'export-btn', 'import-btn', 'reset-btn',
+        'clearSearch', 'health-copy-btn', 'health-clear-btn'
+    ];
+    for (const id of buttonIds) {
+        const hasAriaLabel = popupHtmlSource.includes(`id="${id}"`) && 
+                             popupHtmlSource.includes(`aria-label=`);
+        const hasVisibleText = popupHtmlSource.match(
+            new RegExp(`id="${id}"[^>]*>[^<]+<`, '')
+        );
+        assert.ok(
+            hasAriaLabel || hasVisibleText,
+            `Button ${id} must have aria-label or visible text`
+        );
+    }
+});
+
+test('popup CSS includes focus-visible styles for keyboard navigation', () => {
+    const cssSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'),
+        'utf8'
+    );
+    for (const selector of [
+        'button:focus-visible',
+        'input:focus-visible',
+        'textarea:focus-visible',
+        '.toggle:focus-visible'
+    ]) {
+        assert.ok(
+            cssSource.includes(selector),
+            `${selector} must be defined in popup.css for keyboard focus visibility`
+        );
+    }
+});
+
+test('health banner colors pass WCAG AA contrast (4.5:1 for text)', () => {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('npm', ['run', 'audit:contrast'], {
+        stdio: 'pipe',
+        cwd: path.join(__dirname, '..'),
+        shell: true
+    });
+    assert.equal(result.status, 0,
+        'npm run audit:contrast must pass — all health banner colors must meet WCAG AA');
+});
+
+test('npm run audit:a11y reports no popup a11y issues', () => {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('npm', ['run', 'audit:a11y'], {
+        stdio: 'pipe',
+        cwd: path.join(__dirname, '..'),
+        shell: true
+    });
+    assert.equal(result.status, 0,
+        'npm run audit:a11y must pass — all buttons must be labeled, dialog semantics must be present');
+});
