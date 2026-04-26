@@ -4,7 +4,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
-## [Unreleased]
+## [3.20.5] - Hardening Pass 18 - 2026-04-26
+
+Audit-only release on top of v3.20.4. Settings-import migration
+correctness, popup modal a11y + WCAG 2.2 AA audit, SponsorBlock
+stale segment cache, selector-drift canary expansion to overlay
+tier, deterministic storage-sync eligibility audit, i18n scaffold
+with build-time validator, ESLint custom rule for MV3 SW listener
+registration safety, popup health-banner clear-log button, and a
+live-chat author spacing fix. No user-visible feature changes.
 
 ### Hardening
 
