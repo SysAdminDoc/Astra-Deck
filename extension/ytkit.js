@@ -9477,17 +9477,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     html.ytkit-split-active #below[style*="position"] #owner #subscribe-button,
+                    html.ytkit-split-active #below[style*="position"] #owner yt-subscribe-button-view-model,
+                    html.ytkit-split-active #below[style*="position"] #owner ytd-subscribe-button-renderer {
+                        flex: 1 1 100% !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        order: 2 !important;
+                    }
+
                     html.ytkit-split-active #below[style*="position"] #owner #notification-preference-button,
                     html.ytkit-split-active #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next,
                     html.ytkit-split-active #below[style*="position"] #owner > #ytkit-watch-btn,
                     html.ytkit-split-active #below[style*="position"] #owner > #ytkit-page-btn-watch {
                         flex: 0 0 auto !important;
-                        order: 2 !important;
+                        order: 3 !important;
                     }
 
                     html.ytkit-split-active #below[style*="position"] #owner > #ytkit-watch-btn,
                     html.ytkit-split-active #below[style*="position"] #owner > #ytkit-page-btn-watch {
-                        order: 3 !important;
+                        order: 4 !important;
                     }
 
                     html.ytkit-split-active #below[style*="position"] #owner > #ytkit-watch-btn {
@@ -10093,12 +10101,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner #subscribe-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner yt-subscribe-button-view-model,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner ytd-subscribe-button-renderer {
+                        flex: 1 1 100% !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        order: 2 !important;
+                        align-self: center !important;
+                    }
+
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner #notification-preference-button,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner ytd-subscription-notification-toggle-button-renderer-next,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner > #ytkit-watch-btn,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner > #ytkit-page-btn-watch {
                         flex: 0 0 auto !important;
-                        order: 2 !important;
+                        order: 3 !important;
                         align-self: center !important;
                     }
 
@@ -10350,15 +10367,47 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
-                        display: flex !important;
-                        flex-wrap: wrap !important;
+                        display: grid !important;
+                        grid-template-columns: auto auto minmax(0, 1fr) !important;
+                        grid-template-areas:
+                            "owner owner owner"
+                            "sub notif page"
+                            "actions actions actions" !important;
                         align-content: flex-start !important;
                         align-items: center !important;
-                        gap: 10px 8px !important;
+                        justify-items: start !important;
+                        gap: 12px 8px !important;
                         overflow: visible !important;
                     }
 
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
+                        grid-area: owner !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) #subscribe-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) yt-subscribe-button-view-model,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) ytd-subscribe-button-renderer {
+                        grid-area: sub !important;
+                        flex: 0 1 auto !important;
+                        order: 2 !important;
+                        width: auto !important;
+                        max-width: 100% !important;
+                        justify-self: start !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) #notification-preference-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) ytd-subscription-notification-toggle-button-renderer-next {
+                        grid-area: notif !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) > #ytkit-page-btn-watch,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) > #ytkit-watch-btn {
+                        grid-area: page !important;
+                    }
+
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions {
+                        grid-area: actions !important;
+                        grid-column: 1 / -1 !important;
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: flex-start !important;
@@ -10366,6 +10415,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         flex-wrap: wrap !important;
                         gap: 8px !important;
                         flex: 1 1 100% !important;
+                        order: 3 !important;
                         width: 100% !important;
                         max-width: 100% !important;
                         min-width: 0 !important;
@@ -11064,7 +11114,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner #subscribe-button,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner yt-subscribe-button-view-model,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner ytd-subscribe-button-renderer {
-                        width: fit-content !important;
+                        flex: 1 1 100% !important;
+                        order: 2 !important;
+                        width: 100% !important;
                         max-width: 100% !important;
                     }
 
@@ -11111,6 +11163,50 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: inherit !important;
                         font-weight: inherit !important;
                         letter-spacing: inherit !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions),
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
+                        display: grid !important;
+                        grid-template-columns: auto auto minmax(0, 1fr) !important;
+                        grid-template-areas:
+                            "owner owner owner"
+                            "sub notif page"
+                            "actions actions actions" !important;
+                        align-content: flex-start !important;
+                        align-items: center !important;
+                        justify-items: start !important;
+                        gap: 12px 8px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
+                        grid-area: owner !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) #subscribe-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) yt-subscribe-button-view-model,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-subscribe-button-renderer {
+                        grid-area: sub !important;
+                        flex: 0 1 auto !important;
+                        order: 2 !important;
+                        width: auto !important;
+                        max-width: 100% !important;
+                        justify-self: start !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) #notification-preference-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-subscription-notification-toggle-button-renderer-next {
+                        grid-area: notif !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) > #ytkit-page-btn-watch,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) > #ytkit-watch-btn {
+                        grid-area: page !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner .ytkit-split-owner-actions {
+                        grid-area: actions !important;
+                        grid-column: 1 / -1 !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #actions,
