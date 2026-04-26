@@ -22,8 +22,12 @@ const filesToCheck = [
     'extension/core/url.js',
     'scripts/audit-storage-size.js',
     'scripts/catalog-utils.js',
+    'scripts/check-i18n.js',
     'scripts/check-syntax.js',
-    'scripts/repo-paths.js'
+    'scripts/check-versions.js',
+    'scripts/eslint-rules/no-post-await-addlistener.js',
+    'scripts/repo-paths.js',
+    'eslint.config.js'
 ].map((relativePath) => path.join(repoRoot, relativePath));
 
 filesToCheck.push(resolveUserscriptPath(repoRoot));

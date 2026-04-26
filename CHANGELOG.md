@@ -51,6 +51,33 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   the typical whole-local payload is 172,461 bytes and remains local-only.
   `HARDENING.md` H15.
 
+- **`_locales/en/messages.json` i18n scaffold + build-time key validator.**
+  The extension now has WebExtension i18n infrastructure. `manifest.json`
+  `name`, `description`, `action.default_title`, and the keyboard command
+  description use `__MSG_<key>__` references resolved at browser load time.
+  A new `scripts/check-i18n.js` gate (wired into `npm run check`) verifies
+  every `__MSG_` reference and `chrome.i18n.getMessage()` call resolves to
+  a key in `extension/_locales/en/messages.json`. In-source English strings
+  are not yet migrated — migration is incremental. `HARDENING.md` H16.
+
+- **ESLint custom rule added: no non-top-level `addListener` in `background.js`.**
+  `eslint` added as a devDependency with a flat config targeting the MV3
+  service worker. The custom rule `no-post-await-addlistener` flags any
+  `chrome.*.addListener()` call nested inside an `async` function or
+  `.then()` callback — both patterns are unreliable in MV3 because the SW
+  may be terminated before the listener registers. All four existing
+  registrations in `background.js` are top-level and clean. `npm run lint`
+  added; wired into `npm run check`. `HARDENING.md` H18.
+
+### Hardening
+
+- **Popup health banner now has a "Clear" button for the diagnostic log.**
+  Previously the only path to clear `_errors` (TrustedTypes + migration
+  diagnostics) was the full Reset-all-data action. A neutral-styled Clear
+  button in the health banner reads `ytSuiteSettings._errors` from storage,
+  deletes it, and re-renders the banner after user confirmation. The Copy
+  button is unchanged. `HARDENING.md` H17.
+
 ## [3.20.4] - Hardening Pass 11 - 2026-04-25
 
 Third factory-loop pass on top of v3.20.3. One real resource-leak
