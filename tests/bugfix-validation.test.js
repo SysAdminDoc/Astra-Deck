@@ -755,8 +755,14 @@ test('split title and owner cards align while quick links stay above the video',
         [source, 'extension owner card'],
         [theaterSplit, 'standalone owner card'],
     ]) {
-        assert.ok(contents.includes('flex-wrap: wrap !important;'), `${label} should allow controls to wrap instead of overlap`);
-        assert.ok(contents.includes('flex: 1 1 100% !important;'), `${label} should put docked actions on a full-width row`);
+        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\)[\s\S]*?display: grid !important;[\s\S]*?grid-template-areas:[\s\S]*?"owner owner owner"[\s\S]*?"sub notif page"[\s\S]*?"actions actions actions" !important;/,
+            `${label} should use grid rows when docked actions are present`);
+        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\) #subscribe-button,[\s\S]*?#owner:has\(\.ytkit-split-owner-actions\) yt-subscribe-button-view-model,[\s\S]*?#owner:has\(\.ytkit-split-owner-actions\) ytd-subscribe-button-renderer\s*\{[\s\S]*?grid-area: sub !important;[\s\S]*?width: auto !important;/,
+            `${label} should keep subscribe in its own grid row before docked actions`);
+        assert.match(contents, /#owner:has\(\.ytkit-split-owner-actions\) #notification-preference-button,[\s\S]*?grid-area: notif !important;/,
+            `${label} should keep notification controls out of the subscribe cell`);
+        assert.match(contents, /\.ytkit-split-owner-actions\s*\{[\s\S]*?grid-area: actions !important;[\s\S]*?grid-column: 1 \/ -1 !important;/,
+            `${label} should place docked like/download actions on the actions grid row`);
         assert.ok(!contents.includes('"owner owner owner owner"'), `${label} should not reserve a full empty row for identity`);
         assert.ok(contents.includes('justify-items: start !important;'), `${label} should anchor channel text to the avatar`);
         assert.ok(contents.includes('text-align: left !important;'), `${label} should keep channel metadata left-aligned`);
