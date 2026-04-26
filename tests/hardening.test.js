@@ -422,6 +422,76 @@ test('sponsorBlock _loadForVideo aborts if destroy runs mid-fetch', () => {
     assert.match(destroyBody, /this\._generation\s*=/, 'destroy must bump _generation');
 });
 
+test('sponsorBlock caches segments before network and serves stale cache on failure', () => {
+    const idx = ytkitSource.indexOf("id: 'sponsorBlock'");
+    assert.ok(idx > -1, 'sponsorBlock feature must exist');
+    const end = ytkitSource.indexOf("id: 'sbCat_sponsor'", idx);
+    const block = ytkitSource.slice(idx, end);
+
+    assert.match(block, /_CACHE_KEY:\s*'sb_segments_cache'/,
+        'SponsorBlock must store segment cache under a named top-level key');
+    assert.match(block, /_CACHE_TTL_MS:\s*12\s*\*\s*60\s*\*\s*60\s*\*\s*1000/,
+        'Fresh SponsorBlock cache TTL must be 12 hours');
+    assert.match(block, /_CACHE_STALE_MAX_MS:\s*7\s*\*\s*24\s*\*\s*60\s*\*\s*60\s*\*\s*1000/,
+        'Stale fallback window must be capped at 7 days');
+    assert.match(block, /_CACHE_MAX_ENTRIES:\s*500/,
+        'SponsorBlock cache must be bounded to 500 videos');
+
+    for (const helper of [
+        '_getCachedSegments',
+        '_rememberSegments',
+        '_markCachedSegments',
+        '_flushCachePersist',
+        '_formatCacheTimestamp'
+    ]) {
+        assert.match(block, new RegExp(`${helper}\\s*\\(`), `${helper} helper must exist`);
+    }
+
+    const fetchStart = block.indexOf('async _fetchSegments');
+    assert.ok(fetchStart > -1, '_fetchSegments must exist');
+    const fetchBody = block.slice(fetchStart, fetchStart + 2800);
+    const cacheReadIdx = fetchBody.indexOf('_getCachedSegments(videoId, cats)');
+    const networkIdx = fetchBody.indexOf('extensionFetchJson');
+    assert.ok(cacheReadIdx > -1 && networkIdx > cacheReadIdx,
+        '_fetchSegments must check fresh cache before network fetch');
+    assert.match(fetchBody, /this\._rememberSegments\(videoId,\s*cats,\s*segments\)/,
+        'Network results must be normalized and remembered in the cache');
+    assert.match(fetchBody, /allowStale:\s*true/,
+        'Fetch failure path must ask for stale cache entries');
+    assert.match(fetchBody, /stale cache fallback/,
+        'Stale fallback should emit a diagnostic breadcrumb');
+    assert.match(fetchBody, /return\s+this\._markCachedSegments\(stale\.segments,\s*stale\.ts,\s*'stale'\)/,
+        'Stale fallback must annotate returned segments as stale');
+
+    const destroyIdx = block.search(/destroy\s*\(\s*\)\s*\{/);
+    assert.ok(destroyIdx > -1, 'destroy() method must exist');
+    const destroyBody = block.slice(destroyIdx, destroyIdx + 1800);
+    assert.match(destroyBody, /this\._flushCachePersist\(\)/,
+        'Destroy must synchronously flush pending SponsorBlock cache writes');
+    assert.match(destroyBody, /this\._cache\s*=\s*null/,
+        'Destroy must release the in-memory SponsorBlock cache');
+});
+
+test('sponsorBlock stale cache markers are category-filtered and annotated', () => {
+    const idx = ytkitSource.indexOf("id: 'sponsorBlock'");
+    assert.ok(idx > -1, 'sponsorBlock feature must exist');
+    const end = ytkitSource.indexOf("id: 'sbCat_sponsor'", idx);
+    const block = ytkitSource.slice(idx, end);
+
+    const renderStart = block.search(/\n\s+_renderBarSegments\(\)\s*\{/);
+    assert.ok(renderStart > -1, '_renderBarSegments must exist');
+    const renderBody = block.slice(renderStart, renderStart + 1800);
+
+    assert.match(renderBody, /const\s+enabledCats\s*=\s*this\._getEnabledCategories\(\)/,
+        'Cached segment rendering must re-read the current enabled categories');
+    assert.match(renderBody, /enabledCats\.includes\(seg\.category\)/,
+        'Cached segments from disabled categories must not render markers');
+    assert.match(renderBody, /bar\.dataset\.ytkitCacheSource\s*=\s*'stale'/,
+        'Stale markers must expose their cache source for diagnostics and CSS');
+    assert.match(renderBody, /cached at/,
+        'Stale marker tooltip must include the cached-at timestamp microcopy');
+});
+
 // ── v3.17.0 Perf Pass: scoped mutation rule helper ──
 
 test('addScopedMutationRule exists in core/navigation.js and is selector-filtered', () => {
@@ -961,14 +1031,15 @@ test('popup.css styles the health banner with a warning-toned palette and focus-
         'Copy button must carry a focus-visible outline for keyboard users');
 });
 
-// ── v3.20.2 H5: storageQuotaLRU stale deArrowCache reference removed ──
+// ── v3.20.2 H5 + v3.20.x H13: storageQuotaLRU top-level cache pruning ──
 //
 // The prune loop iterated `appState.settings.deArrowCache`, but the actual
 // DeArrow branding cache lives under the top-level storage key
 // `da_branding_cache` (written via storageWriteJSON, not through settings).
 // The entry was dead — it never matched a real cache, regardless of
 // whether the DeArrow feature was running. H5 removes the stale entry
-// and adds a belt-and-suspenders sweep on the real top-level key.
+// and adds a belt-and-suspenders sweep on the real top-level key. H13 adds
+// the same quota hygiene for SponsorBlock's top-level segment cache.
 
 test('storageQuotaLRU._prune no longer references the dead deArrowCache key', () => {
     const pruneStart = ytkitSource.indexOf("id: 'storageQuotaLRU'");
@@ -992,9 +1063,24 @@ test('storageQuotaLRU._prune no longer references the dead deArrowCache key', ()
         /storageWriteJSON\(['"]da_branding_cache['"]/,
         "Prune must persist the trimmed da_branding_cache via storageWriteJSON"
     );
+    assert.match(
+        pruneBlock,
+        /storageReadJSON\(['"]sb_segments_cache['"]/,
+        "Prune must read sb_segments_cache (the SponsorBlock top-level storage key) via storageReadJSON"
+    );
+    assert.match(
+        pruneBlock,
+        /storageWriteJSON\(['"]sb_segments_cache['"]/,
+        "Prune must persist the trimmed sb_segments_cache via storageWriteJSON"
+    );
+    assert.match(
+        pruneBlock,
+        /entries\.slice\(0,\s*500\)/,
+        'SponsorBlock segment cache pruning must cap storage at 500 entries'
+    );
 });
 
-test('storageQuotaLRU description now names the real DeArrow cache key', () => {
+test('storageQuotaLRU description names every top-level cache it prunes', () => {
     const pruneStart = ytkitSource.indexOf("id: 'storageQuotaLRU'");
     const pruneBlock = ytkitSource.slice(pruneStart, pruneStart + 500);
     // Pre-fix: description claimed to cover 'deArrowCache' (never existed).
@@ -1002,6 +1088,8 @@ test('storageQuotaLRU description now names the real DeArrow cache key', () => {
         'Description must not reference the dead deArrowCache key');
     assert.match(pruneBlock, /description:\s*['"][^'"]*da_branding_cache/,
         'Description must name the real da_branding_cache top-level key so users can audit what the sweep actually touches');
+    assert.match(pruneBlock, /description:\s*['"][^'"]*sb_segments_cache/,
+        'Description must name the SponsorBlock segment cache key so users can audit quota pruning');
 });
 
 // ── v3.20.3 H6: explicit cookie-jar wire contract via normalizeCookieExpiry ──

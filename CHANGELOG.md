@@ -19,6 +19,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   JavaScript moves initial focus into the popup, wraps Tab/Shift-Tab,
   delegates to the nested confirmation dialog, and closes on Escape.
   `HARDENING.md` H11.
+- **SponsorBlock now has a bounded stale segment cache.** Segment
+  fetches check a 12-hour top-level `sb_segments_cache` before hitting
+  the network, cache normalized results, and fall back to 7-day stale
+  entries when the API errors or times out. Stale seekbar markers are
+  labelled with a cached-at tooltip, current category toggles still
+  filter cached markers, and `storageQuotaLRU` caps the cache at 500
+  videos. `HARDENING.md` H13.
 
 ### Testing
 
