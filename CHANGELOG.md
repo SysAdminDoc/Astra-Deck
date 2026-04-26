@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Hardening
+
+- **Settings imports now run schema migrations before writing storage.**
+  Popup and in-page imports preserve the imported `_settingsVersion`,
+  run migrations forward, merge generated defaults, log
+  `settings-migration` diagnostics, and only then stamp the current
+  schema. This prevents older backups from skipping v4-v6 migrations.
+  `HARDENING.md` H11.
+- **Toolbar popup now behaves as a named modal dialog.** The popup root
+  exposes `role="dialog"`, `aria-modal`, and a visible title label;
+  JavaScript moves initial focus into the popup, wraps Tab/Shift-Tab,
+  delegates to the nested confirmation dialog, and closes on Escape.
+  `HARDENING.md` H11.
+
 ## [3.20.4] - Hardening Pass 11 - 2026-04-25
 
 Third factory-loop pass on top of v3.20.3. One real resource-leak

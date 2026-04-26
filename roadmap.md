@@ -1,6 +1,6 @@
 # Astra-Deck — Roadmap
 
-> **Version:** v3.20.4 — last updated 2026-04-25
+> **Version:** v3.20.4 — last updated 2026-04-26
 > **Charter:** maintenance-mode, security-focused. New user-facing
 > features are not planned. Hardening, observability, resilience,
 > testability, distribution, and infrastructure are in scope.
@@ -33,7 +33,8 @@ can land in Now/Next/Later.
 ## Recently shipped (last 30 days)
 
 Pass 9 → Pass 11 in chronological order. Sources are commit + tag URL on
-GitHub. Older shipped work is in `CHANGELOG.md`.
+GitHub. Older shipped work is in `CHANGELOG.md`. Pass 12 is complete in
+the working tree and awaits the next release cut.
 
 | Tag | Pass | Items |
 |---|---|---|
@@ -42,18 +43,26 @@ GitHub. Older shipped work is in `CHANGELOG.md`.
 | `v3.20.2` | Pass 9 | H1 TrustedTypes createPolicy observability (`TT_UNAVAILABLE`/`TT_POLICY_FAIL` in DiagnosticLog); H2 Python deps upper-major pins; H3 selector-drift canary via committed token signatures; H4 popup TT-diagnostic banner; H5 storageQuotaLRU dead-ref fix. [src-shipped-3] |
 | `v3.20.3` | Pass 10 | H6 cookie-jar wire contract via `normalizeCookieExpiry`; H7 selector canary expanded 9 → 18; H8 theater-split divider-drag SPA-nav memory leak (v1.0.6 → v1.0.7). [src-shipped-4] |
 | `v3.20.4` | Pass 11 | H9 EXT_FETCH `controller.abort()` consistency on every size-limit early-return; H10 `scripts/check-versions.js` pre-push version-string drift gate. [src-shipped-5] |
+| `unreleased` | Pass 12 | N1 profile-import migration now runs the schema chain before stamping current version; N3 popup now has modal dialog semantics, initial focus, Tab wrap, Shift-Tab wrap, and Escape close. |
 
-Test count trajectory across these passes: 86 → 124 (+38 regressions).
+Test count trajectory across these passes: 86 → 126 (+40 regressions).
 0 npm audit vulnerabilities at every pass.
 
 ---
 
 ## Now (P0/P1, targeted next release)
 
-Three items. Large-Repo Mode cap. Each has a PEC rubric.
+Open queue drained by Pass 12. N1 and N3 are complete and remain below
+until the next release notes cut. N2 was removed from Now because the
+current extension build does not ship a Return YouTube Dislike integration;
+adding one would be a new user-facing feature, not resilience hardening
+[src-42].
 
 ### N1. Profile-import migration: preserve `_settingsVersion`, run migration chain forward
 
+- **Status:** Completed in Pass 12 (unreleased). Migration-aware import
+  now ships in both `extension/popup.js` and `extension/ytkit.js`, with
+  regression coverage in `tests/hardening.test.js`.
 - **Severity:** Real bug. Documented in iter-1 audit pass [src-1].
 - **Files:** `extension/popup.js` (import path), `extension/ytkit.js`
   (settings migration logic), `tests/hardening.test.js`.
@@ -76,34 +85,18 @@ Three items. Large-Repo Mode cap. Each has a PEC rubric.
 
 ### N2. RYD fetch wrapper: exponential backoff + jitter + 24 h dislike cache
 
-- **Severity:** Resilience hardening on an existing feature. RYD API hits
-  hard rate limits and intermittent 429s in practice [src-2] [src-3].
-- **Files:** `extension/ytkit.js` (RYD integration), `tests/hardening.test.js`.
-- **Goal:** RYD calls survive transient 429/5xx without disabling the
-  feature. Cache dislike count per videoId for 24 h, falling back to
-  cache on consecutive failures.
-- **Acceptance criteria:**
-  1. On 429, retry with exponential backoff (250 ms, 500 ms, 1 s + ≤200 ms
-     jitter) up to 3 attempts; abort with cached fallback if all fail.
-  2. Per-video cache stored under `chrome.storage.local` key
-     `ryd_cache` keyed by videoId, 24 h TTL by `_ts`.
-  3. After 5 consecutive failures within 10 min, suspend RYD calls for
-     5 min (circuit breaker).
-  4. Behavior of dislike-display feature is degraded-but-functional
-     when RYD is unreachable for ≥5 min (cached values shown with a
-     subtle "cached" badge in the popup, surfaced via the existing
-     H4 health-banner infra).
-- **Failure modes:**
-  - Cache key collision with a different feature (mitigation: distinct
-    `ryd_*` namespace).
-  - Circuit-breaker open-state preventing recovery (mitigation: half-open
-    test fetch every 5 min).
-- **Rollback trigger:** Existing RYD smoke test fails, OR cached values
-  surface stale data from before a vote-reset window.
-- **Sources:** [src-2] RYD API docs; [src-3] RYD rate-limit best practices.
+- **Status:** Removed from Now in Pass 12. Current code and repo-local
+  architecture notes state that Return YouTube Dislike is not shipped in
+  the extension build; adding it would violate the maintenance-mode
+  charter. [src-42]
+- **Disposition:** Preserved in the Rejected table so future research
+  passes do not treat RYD as an existing extension feature.
 
 ### N3. WCAG 2.2 AA — popup focus trap + ARIA dialog semantics
 
+- **Status:** Completed in Pass 12 (unreleased). The popup root is now
+  labelled as a modal dialog and `popup.js` owns initial focus, Tab wrap,
+  Shift-Tab wrap, and Escape close.
 - **Severity:** Accessibility hardening. Popup is the primary UI surface;
   current build has no focus trap and no role/labelledby attributes
   [src-4] [src-5].
@@ -178,7 +171,7 @@ content is unchanged — only the distribution path. [src-14]
 
 ### NX6. Profile-import migration round-trip suite
 
-Companion to N1. For every prior `SETTINGS_VERSION` (1 → 5 currently),
+Follow-up to Pass 12 N1. For every prior `SETTINGS_VERSION` (1 → 5 currently),
 emit a known-shape profile fixture, import into the v6 build, assert
 equality with the corresponding v6 expected output. Runs in
 `tests/hardening.test.js`. [src-1]
@@ -275,6 +268,7 @@ Preserved so future research passes don't silently resurrect them.
 
 | Item | Reason |
 |---|---|
+| RYD fetch wrapper in the extension build | Current Astra-Deck extension does not ship Return YouTube Dislike integration. A fetch/cache/circuit-breaker wrapper would require adding a new visible dislike-count feature, which is outside the maintenance-mode charter. [src-42] |
 | Pin `curl_cffi >=0.15.0` | `curl_cffi` is not a dependency of `astra_downloader.py`. Verified by grep. CVE-2026-33752 does not apply. [src-31] |
 | Pin `yt-dlp` in `requirements.txt` | `yt-dlp` is shelled out as `yt-dlp.exe` with SHA256 verification (`YTDLP_SHA256_URL`), not a pip dep. Pinning in `requirements.txt` is meaningless. [src-32] |
 | DNS-rebinding defence in `astra_downloader.py` | Already shipped in v3.15.0. Test exists at `test_dns_rebinding_attack_is_rejected_before_handler`. [src-33] |
@@ -292,17 +286,17 @@ Preserved so future research passes don't silently resurrect them.
 ## Risk register
 
 Carried over from prior `roadmap.md`. Status updated to reflect Pass
-9-11 ship state.
+9-12 ship state.
 
 | Risk | Status | Mitigation |
 |------|--------|-----------|
 | Progress-bar DOM rewrites on theater/miniplayer transitions break segment overlay | Mitigated | Segment renderer listens for `ResizeObserver` + `MutationObserver` and re-paints. |
 | YouTube A/B serves new comment DOM classes | Ongoing | Quarterly selector audit. v3.20.3 expanded selector-drift canary 9 → 18 [src-shipped-4]. Iter-3 research surfaced cadence shifting to weekly [src-13]. |
-| Settings-profile schema migration on new settings | **Open — N1** | Profile load shallow-merges over current defaults; export includes `schemaVersion`. C3 import bug remains open and is N1. |
+| Settings-profile schema migration on new settings | **Mitigated Pass 12** | Popup and content-script imports now preserve imported `_settingsVersion`, run migrations forward, merge generated defaults, and stamp current schema only after migration. |
 | Toolbar popup broadcasts hit tabs without ytkit.js loaded | Mitigated | `chrome.tabs.sendMessage` wrapped; `chrome.runtime.lastError` swallowed. |
 | Digital wellbeing interval keeps SW alive | Mitigated | Ticker runs in content script, not SW. Persists on `visibilitychange` + 30s. |
 | URL-strip breaks YouTube Music `si=` | Mitigated | `stripTrackingParams` scoped to `www.youtube.com`. |
-| `credentials: 'omit'` breaks RYD vote attribution | Mitigated | RYD public endpoints don't require auth. |
+| `credentials: 'omit'` breaks RYD vote attribution | Not applicable | Current extension build does not ship Return YouTube Dislike integration. [src-42] |
 | TrustedTypes peer-extension policy collision | **Observable as of v3.20.2** | H1 logs `TT_POLICY_FAIL` to DiagnosticLog; H4 surfaces in popup banner [src-shipped-3]. |
 | EXT_FETCH SW socket retention on too-large response | **Mitigated v3.20.4** | H9 added `controller.abort()` to all five size-limit paths [src-shipped-5]. |
 | Theater-split divider-drag mid-SPA-nav listener orphan | **Mitigated v3.20.3** | H8 hoisted drag handles; teardown calls `abortDividerDrag()` [src-shipped-4]. |
@@ -411,18 +405,18 @@ flagged thin. **All 13 categories addressed below.**
 
 | Category | Coverage | Where |
 |---|---|---|
-| Security | Strong | Pass 7-11 ship items; Risk Register; rejected items 1-3, 9. |
-| Accessibility (a11y) | Now (N3) + backlog (L7); audit covers it. | Now N3, Later L7. |
+| Security | Strong | Pass 7-12 ship items; Risk Register; rejected items 1-3, 9. |
+| Accessibility (a11y) | Pass 12 shipped N3; broader audit remains in L7. | Pass 12, Later L7. |
 | i18n / l10n | Next (NX1); deferred but infra-ready | NX1. |
 | Observability / telemetry | Strong — H1 + H4 shipped; L1 ESLint open | Risk register, watchlist medium. |
-| Testing | Strong — 124 tests, +38 new, +canary infra | Recently-shipped, Now (all 3 add regressions), NX6, L4. |
+| Testing | Strong — 126 tests, +40 new, +canary infra | Recently-shipped, Pass 12, NX6, L4. |
 | Docs | Strong — CHANGELOG/HARDENING.md/this roadmap synced after every change per user instruction | This document; per-pass HARDENING.md sections. |
 | Distribution / packaging | Next (NX5 AMO) + Later (L5 Greasy Fork, L6 key rotation) | NX5, L5, L6. |
 | Plugin ecosystem | N/A — Astra-Deck is monolithic by design; no plugin SDK shipped | Architectural watchlist. |
 | Mobile | Next (NX2) + research in iter-4-gap-fill.md | NX2. |
-| Offline / resilience | Now (N2) + Next (NX3) | N2, NX3. |
+| Offline / resilience | Next (NX3); former N2 rejected as not applicable to this build. | NX3, Rejected table. |
 | Multi-user / collab | Under Consideration (UC1, UC2) blocked on NX7 measurement | UC1, UC2, NX7. |
-| Migration paths | Now (N1 — real bug) + Next (NX6 round-trip suite) | N1, NX6. |
+| Migration paths | Pass 12 shipped N1; Next keeps the broader fixture suite. | Pass 12, NX6. |
 | Upgrade strategy | Recently-shipped chain; CHANGELOG; H10 prevents drift | Quality gates (Release section), recently-shipped table. |
 
 **Three categories are intentionally thin and called out:**
@@ -492,6 +486,9 @@ items below are reference material only.
 - [src-40] Build-pipeline state in `build-extension.js` and
   `sync-userscript.js`.
 - [src-41] `LICENSE` (MIT) + repo `CLAUDE.md` charter language.
+- [src-42] `CLAUDE.md` architecture note: "Return YouTube Dislike is
+  not currently shipped in the extension build" + code search for
+  `returnyoutubedislike`, `ryd_cache`, and `RYD` in `extension/`.
 
 ### Recently-shipped commit references
 
@@ -556,6 +553,6 @@ items below are reference material only.
 
 ---
 
-*Last updated: 2026-04-25 — Hardening Pass 11 (v3.20.4). Next review:
-when N1/N2/N3 ship or when iter-5 research surfaces a higher-leverage
-item.*
+*Last updated: 2026-04-26 — Hardening Pass 12 (unreleased). Next review:
+when NX1/NX2/NX3 are triaged or when iter-5 research surfaces a
+higher-leverage item.*
