@@ -1289,3 +1289,20 @@ All four existing listener registrations in `background.js` are correct
   (`type: "problem"`, expected message ID), and `npm run lint` exits 0
   on the current `background.js`.
 
+### H19 — WCAG 2.2 AA accessibility audit of the toolbar popup
+
+Follow-up to Pass 12's N3 (dialog semantics and focus management). The popup
+is the only extension-surface settings UI; it deserves comprehensive a11y.
+
+Findings: color contrast (WCAG AA+), button labeling (aria-label or visible),
+focus-visible CSS coverage, keyboard navigation traps all passing.
+
+Deliverables:
+- scripts/check-contrast.js — Build-time contrast validator for health banner
+- scripts/audit-popup-a11y.js — Build-time popup a11y auditor (buttons, CSS)
+- npm run audit:a11y, npm run audit:contrast wired into npm run check
+- Six a11y regressions: dialog semantics, button labeling, focus-visible CSS,
+  color contrast, a11y audit pass (subprocesses)
+
+Result: check pipeline now includes 3 gates. Tests: 145 → 151 (+6 regressions).
+
