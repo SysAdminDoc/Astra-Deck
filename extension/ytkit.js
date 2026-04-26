@@ -3517,8 +3517,41 @@ return response;
             },
         },
 
-        _migrate(savedSettings) {
-            let version = savedSettings._settingsVersion || 1;
+        _normalizeVersion(value) {
+            const version = Number(value);
+            return Number.isInteger(version) && version > 0 ? version : 1;
+        },
+
+        _recordMigrationStep(settings, message) {
+            if (isPlainObject(settings)) {
+                const errors = Array.isArray(settings._errors)
+                    ? settings._errors.filter(isPlainObject).slice(-499)
+                    : [];
+                errors.push({
+                    ts: Date.now(),
+                    ctx: 'settings-migration',
+                    msg: String(message).slice(0, 500)
+                });
+                settings._errors = errors;
+            }
+            try {
+                DiagnosticLog?.record?.('settings-migration', String(message).slice(0, 500));
+            } catch (_) {
+                // reason: settings migration can run before diagnostic logging is fully available
+            }
+        },
+
+        _migrate(savedSettings, source = 'load') {
+            let version = this._normalizeVersion(savedSettings._settingsVersion);
+            const startingVersion = version;
+            if (version > this.SETTINGS_VERSION) {
+                this._recordMigrationStep(
+                    savedSettings,
+                    `${source}: preserved future settings schema v${version}; stored by v${this.SETTINGS_VERSION}`
+                );
+                savedSettings._settingsVersion = this.SETTINGS_VERSION;
+                return savedSettings;
+            }
             if (version >= this.SETTINGS_VERSION) return savedSettings;
             DebugManager.log('Settings', `Migrating from v${version} to v${this.SETTINGS_VERSION}`);
             while (version < this.SETTINGS_VERSION) {
@@ -3527,9 +3560,22 @@ return response;
                     savedSettings = this._migrations[version](savedSettings);
                     DebugManager.log('Settings', `Applied migration v${version}`);
                 }
+                this._recordMigrationStep(
+                    savedSettings,
+                    `${source}: applied settings migration v${version} (${startingVersion} -> ${this.SETTINGS_VERSION})`
+                );
             }
             savedSettings._settingsVersion = this.SETTINGS_VERSION;
             return savedSettings;
+        },
+
+        _prepareImportedSettings(settings) {
+            const migrated = this._sanitize(this._migrate(this._sanitize(settings), 'profile-import'));
+            return this._sanitize({
+                ...this.defaults,
+                ...migrated,
+                _settingsVersion: this.SETTINGS_VERSION
+            });
         },
 
         _sanitize(settings = {}) {
@@ -3651,8 +3697,7 @@ return response;
                 };
 
                 try {
-                    const newSettings = this._sanitize({ ...this.defaults, ...settings });
-                    newSettings._settingsVersion = this.SETTINGS_VERSION;
+                    const newSettings = this._prepareImportedSettings(settings);
                     const bytesEstimate = estimateSerializedBytes({
                         [STORAGE_KEYS.settings]: newSettings,
                         ...(hiddenVideos !== null ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
