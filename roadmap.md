@@ -32,8 +32,8 @@ can land in Now/Next/Later.
 
 ## Recently shipped (last 30 days)
 
-Pass 9 → Pass 16 in chronological order. Sources are commit + tag URL on
-GitHub. Older shipped work is in `CHANGELOG.md`. Passes 12 through 16
+Pass 9 → Pass 18 in chronological order. Sources are commit + tag URL on
+GitHub. Older shipped work is in `CHANGELOG.md`. Passes 12 through 18
 are complete in local commits and await the next release cut.
 
 | Tag | Pass | Items |
@@ -48,8 +48,10 @@ are complete in local commits and await the next release cut.
 | `unreleased` | Pass 14 | NX3 SponsorBlock keeps a 12-hour bounded segment cache, serves 7-day stale fallback on API failure with cached-at marker tooltips, filters cached markers through current category toggles, and lets `storageQuotaLRU` cap `sb_segments_cache` at 500 entries. |
 | `unreleased` | Pass 15 | NX4 selector canary now covers player overlay anchors (`ytp-progress-bar-padding`, `ytp-tooltip-text`) and uses token-boundary source matching across runtime sources so wrapper names cannot mask missing exact selectors. |
 | `unreleased` | Pass 16 | NX7 storage-size audit reports exact sync-quota byte counts: UI preferences are 7,334 bytes and currently sync-sized, while the typical whole-local payload is 172,461 bytes and must stay local-only. |
+| `unreleased` | Pass 17 | H16 NX1 i18n scaffold (`_locales/en/messages.json` + `check-i18n.js` build gate); H17 L9 DiagnosticLog clear button in popup health banner; H18 L1 ESLint custom rule `no-post-await-addlistener`. |
+| `unreleased` | Pass 18 | H19 L7 WCAG 2.2 AA accessibility audit: `scripts/check-contrast.js` + `scripts/audit-popup-a11y.js` wired into `npm run check`, verify color contrast (14.16:1 health detail), button labeling, focus-visible CSS, keyboard navigation. |
 
-Test count trajectory across these passes: 86 → 135 (+49 regressions).
+Test count trajectory across these passes: 86 → 151 (+65 regressions).
 0 npm audit vulnerabilities at every pass.
 
 ---
@@ -140,6 +142,10 @@ The unblocker for community translation. No translation work today;
 just the infrastructure so a future contributor can add
 `_locales/<lang>/messages.json` without touching source. [src-6] [src-7]
 
+- **Status:** Completed in Pass 17 (unreleased). `extension/_locales/en/messages.json`
+  created with 4 manifest-level keys; `manifest.json` updated to use `__MSG_`
+  references; `scripts/check-i18n.js` build gate added; `HARDENING.md` H16.
+
 - ~200 message keys covering popup, options, content-script overlays.
 - Build-time validator: every `chrome.i18n.getMessage("key")` call in
   source must have a matching key in `_locales/en/messages.json`.
@@ -217,8 +223,11 @@ defer sync forever. Decision-blocking measurement. [src-15] [src-16]
 
 Concrete value, low urgency. Each line is one item.
 
-- **L1** ESLint custom rule flagging non-top-level `addListener` in
-  `background.js` (post-await loss across SW restart). [src-17]
+- **L1** ~~ESLint custom rule flagging non-top-level `addListener` in
+  `background.js` (post-await loss across SW restart). [src-17]~~
+  **Completed in Pass 17.** `eslint` added as devDep; `eslint.config.js`
+  flat config; `scripts/eslint-rules/no-post-await-addlistener.js`; `npm
+  run lint` wired into `npm run check`. `HARDENING.md` H18.
 - **L2** ARIA live region for SponsorBlock skip + DeArrow title-replace
   events. [src-5] [src-18]
 - **L3** Dependabot or Snyk on the repo for transitive pip + npm CVE
@@ -232,16 +241,24 @@ Concrete value, low urgency. Each line is one item.
 - **L6** Documented signing-key rotation policy for `ytkit.pem`. The key
   is gitignored and persistent; document rotation cadence and the
   release-side migration path. [src-23]
-- **L7** WCAG 2.2 a11y audit beyond N3 — full popup keyboard map,
+- **L7** ~~WCAG 2.2 a11y audit beyond N3 — full popup keyboard map,
   focus-visible outlines, color-contrast pass on the H4 health-banner
-  amber palette, screen-reader text on all icon-only buttons. [src-4]
+  amber palette, screen-reader text on all icon-only buttons. [src-4]~~
+  **Completed in Pass 18.** Build-time audits: `scripts/check-contrast.js`
+  validates WCAG AA color contrast (14.16:1 health detail, 10.99:1 title);
+  `scripts/audit-popup-a11y.js` validates button labeling, focus-visible
+  CSS coverage, dialog semantics, keyboard navigation. Both wired into
+  `npm run check`. `HARDENING.md` H19.
 - **L8** Async-write race instrumentation in popup ↔ ytkit.js — popup
   writes hiddenVideos, blockedChannels, bookmarks via direct
   `chrome.storage.local.set`; ytkit.js reads via `storage.onChanged`.
   Add a write-vector-clock so two near-simultaneous writes from
   popup + ytkit don't lose data. (No reproducer yet.) [src-24]
-- **L9** Toggle-button to clear DiagnosticLog from the popup. Currently
-  the only path is reset-all or Storage Quota LRU eviction. [src-25]
+- **L9** ~~Toggle-button to clear DiagnosticLog from the popup. Currently
+  the only path is reset-all or Storage Quota LRU eviction. [src-25]~~
+  **Completed in Pass 17.** Clear button added to popup health banner;
+  `clearDiagnosticLog()` with confirmation dialog; muted-grey CSS palette.
+  `HARDENING.md` H17.
 - **L10** "Wave 8/9 feature coverage audit" — pick three features added
   in v3.16-v3.17 that lack regression tests in `hardening.test.js`,
   add tests. Blocked on concrete scoping (which features specifically). [src-25]
