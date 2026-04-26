@@ -1,6 +1,6 @@
 # Astra-Deck — Roadmap
 
-> **Version:** v3.20.4 — last updated 2026-04-26
+> **Version:** v3.20.5 — last updated 2026-04-26
 > **Charter:** maintenance-mode, security-focused. New user-facing
 > features are not planned. Hardening, observability, resilience,
 > testability, distribution, and infrastructure are in scope.

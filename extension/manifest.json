@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "3.20.4",
+  "version": "3.20.5",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
