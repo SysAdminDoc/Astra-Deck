@@ -1078,3 +1078,46 @@ brace-balanced helper used by the build catalog tests, then executes
 
 `node --test tests/settings-migration-roundtrip.test.js` reports 1/1
 passing for this pass.
+
+### H13 — SponsorBlock segment cache + stale fallback
+
+SponsorBlock previously depended on a fresh API response for every
+video. That was correct when online, but a transient 5xx, timeout, or
+offline session meant existing segment knowledge was discarded and the
+seekbar had no continuity. NX3 keeps the current behavior on a healthy
+network while making failure states recoverable.
+
+`extension/ytkit.js` now stores normalized SponsorBlock segments under
+the top-level `sb_segments_cache` key. Fresh entries are reused for
+12 hours. Entries older than 12 hours but younger than 7 days are
+eligible only when the network fetch fails, and that path emits a
+`DiagnosticLog` breadcrumb so field reports can distinguish API failure
+from "no segments exist".
+
+The cache is intentionally conservative:
+
+- It is keyed by videoId and the enabled category set used for the
+  request. A cached entry is only reused when it covers the currently
+  enabled categories.
+- Segment payloads are normalized before storage and again before
+  rendering so malformed times, negative spans, and missing categories
+  cannot leak into skip logic.
+- The in-memory cache is flushed on `destroy()` before the feature
+  releases state, so an SPA navigation does not drop a pending persist.
+- Both the SponsorBlock cache's own prune path and `storageQuotaLRU`
+  cap `sb_segments_cache` at 500 newest video entries. Expired entries
+  beyond the 7-day stale window are removed.
+
+Stale UI is explicit but quiet. `_fetchSegments()` annotates stale
+fallback segments with `_ytkitCacheSource: 'stale'` and
+`_ytkitCachedAt`; `_renderBarSegments()` still filters every segment
+through the current category toggles, and stale progress-bar markers
+receive a `data-ytkit-cache-source="stale"` marker plus a tooltip of
+`<category> (cached at <time>)`. Skip behavior stays compatible; stale
+segments use the same scheduler and category checks as fresh segments.
+
+Two regressions in `tests/hardening.test.js` pin the cache constants,
+fresh-before-network lookup, stale fallback diagnostic path, destroy
+flush, stale marker tooltip, and category-filtered rendering. The
+storageQuotaLRU regressions now also assert that `sb_segments_cache`
+is named in the description and pruned through the real top-level key.

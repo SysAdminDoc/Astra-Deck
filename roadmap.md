@@ -32,9 +32,9 @@ can land in Now/Next/Later.
 
 ## Recently shipped (last 30 days)
 
-Pass 9 → Pass 13 in chronological order. Sources are commit + tag URL on
-GitHub. Older shipped work is in `CHANGELOG.md`. Passes 12 and 13 are
-complete in local commits and await the next release cut.
+Pass 9 → Pass 14 in chronological order. Sources are commit + tag URL on
+GitHub. Older shipped work is in `CHANGELOG.md`. Passes 12 through 14
+are complete in local commits and await the next release cut.
 
 | Tag | Pass | Items |
 |---|---|---|
@@ -45,8 +45,9 @@ complete in local commits and await the next release cut.
 | `v3.20.4` | Pass 11 | H9 EXT_FETCH `controller.abort()` consistency on every size-limit early-return; H10 `scripts/check-versions.js` pre-push version-string drift gate. [src-shipped-5] |
 | `unreleased` | Pass 12 | N1 profile-import migration now runs the schema chain before stamping current version; N3 popup now has modal dialog semantics, initial focus, Tab wrap, Shift-Tab wrap, and Escape close. |
 | `unreleased` | Pass 13 | NX6 profile-import migration round-trip fixtures cover every prior settings schema v1-v5 into current v6, including defaults restoration, retired/unsafe key stripping, diagnostics, and idempotency. |
+| `unreleased` | Pass 14 | NX3 SponsorBlock keeps a 12-hour bounded segment cache, serves 7-day stale fallback on API failure with cached-at marker tooltips, filters cached markers through current category toggles, and lets `storageQuotaLRU` cap `sb_segments_cache` at 500 entries. |
 
-Test count trajectory across these passes: 86 → 127 (+41 regressions).
+Test count trajectory across these passes: 86 → 129 (+43 regressions).
 0 npm audit vulnerabilities at every pass.
 
 ---
@@ -151,6 +152,12 @@ Validate the existing XPI on Firefox 128+ Android. Outcome is one of:
 README gains a definitive support-matrix entry. [src-8] [src-9]
 
 ### NX3. SponsorBlock segment cache + stale-fallback
+
+- **Status:** Completed in Pass 14 (unreleased). The cache lives at
+  top-level storage key `sb_segments_cache`, uses 12-hour fresh reuse,
+  allows 7-day stale fallback only after fetch failure, labels stale
+  seekbar markers with cached-at tooltips, and is capped at 500 videos
+  by both the feature and `storageQuotaLRU`.
 
 Cache fetched segments per videoId for 6-12 h. On 5xx or timeout, serve
 stale cache with a "cached at <ts>" tooltip in the seekbar overlay.
@@ -409,16 +416,16 @@ flagged thin. **All 13 categories addressed below.**
 
 | Category | Coverage | Where |
 |---|---|---|
-| Security | Strong | Pass 7-13 ship items; Risk Register; rejected items 1-3, 9. |
+| Security | Strong | Pass 7-14 ship items; Risk Register; rejected items 1-3, 9. |
 | Accessibility (a11y) | Pass 12 shipped N3; broader audit remains in L7. | Pass 12, Later L7. |
 | i18n / l10n | Next (NX1); deferred but infra-ready | NX1. |
 | Observability / telemetry | Strong — H1 + H4 shipped; L1 ESLint open | Risk register, watchlist medium. |
-| Testing | Strong — 127 tests, +41 new, +canary infra | Recently-shipped, Pass 12, Pass 13, L4. |
+| Testing | Strong — 129 tests, +43 new, +canary infra | Recently-shipped, Pass 12, Pass 13, Pass 14, L4. |
 | Docs | Strong — CHANGELOG/HARDENING.md/this roadmap synced after every change per user instruction | This document; per-pass HARDENING.md sections. |
 | Distribution / packaging | Next (NX5 AMO) + Later (L5 Greasy Fork, L6 key rotation) | NX5, L5, L6. |
 | Plugin ecosystem | N/A — Astra-Deck is monolithic by design; no plugin SDK shipped | Architectural watchlist. |
 | Mobile | Next (NX2) + research in iter-4-gap-fill.md | NX2. |
-| Offline / resilience | Next (NX3); former N2 rejected as not applicable to this build. | NX3, Rejected table. |
+| Offline / resilience | Pass 14 shipped NX3; former N2 rejected as not applicable to this build. | Pass 14, Rejected table. |
 | Multi-user / collab | Under Consideration (UC1, UC2) blocked on NX7 measurement | UC1, UC2, NX7. |
 | Migration paths | Pass 12 shipped N1; Pass 13 added the broader fixture suite. | Pass 12, Pass 13. |
 | Upgrade strategy | Recently-shipped chain; CHANGELOG; H10 prevents drift | Quality gates (Release section), recently-shipped table. |
@@ -557,6 +564,6 @@ items below are reference material only.
 
 ---
 
-*Last updated: 2026-04-26 — Hardening Pass 13 (unreleased). Next review:
-when NX1/NX2/NX3 are triaged or when iter-5 research surfaces a
+*Last updated: 2026-04-26 — Hardening Pass 14 (unreleased). Next review:
+when NX1/NX2/NX4 are triaged or when iter-5 research surfaces a
 higher-leverage item.*
