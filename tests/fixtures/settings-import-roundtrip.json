@@ -1,0 +1,109 @@
+{
+  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 6.",
+  "profiles": [
+    {
+      "schemaVersion": 1,
+      "settings": {
+        "_settingsVersion": 1,
+        "hideCreateButton": false,
+        "autoMaxResolution": false,
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "preferredQuality": "720p",
+        "useEnhancedBitrate": true,
+        "hideQualityPopup": true,
+        "safeUnknownKey": "custom-v1",
+        "__proto__": { "polluted": true },
+        "constructor": "blocked"
+      },
+      "expected": {
+        "hideCreateButton": false,
+        "autoMaxResolution": false,
+        "hidePinnedComments": true,
+        "autoExpandComments": true,
+        "safeUnknownKey": "custom-v1"
+      },
+      "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup", "__proto__", "constructor"]
+    },
+    {
+      "schemaVersion": 2,
+      "settings": {
+        "_settingsVersion": 2,
+        "hideCreateButton": false,
+        "cleanShareUrls": false,
+        "preferredQuality": "1080p",
+        "useEnhancedBitrate": true,
+        "hideQualityPopup": true,
+        "safeUnknownKey": "custom-v2",
+        "prototype": "blocked"
+      },
+      "expected": {
+        "hideCreateButton": false,
+        "cleanShareUrls": false,
+        "hidePinnedComments": true,
+        "autoExpandComments": true,
+        "safeUnknownKey": "custom-v2"
+      },
+      "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup", "prototype"]
+    },
+    {
+      "schemaVersion": 3,
+      "settings": {
+        "_settingsVersion": 3,
+        "hidePinnedComments": false,
+        "logoToSubscriptions": false,
+        "preferredQuality": "best",
+        "useEnhancedBitrate": true,
+        "hideQualityPopup": true,
+        "safeUnknownKey": "custom-v3"
+      },
+      "expected": {
+        "hidePinnedComments": false,
+        "logoToSubscriptions": false,
+        "autoExpandComments": true,
+        "safeUnknownKey": "custom-v3"
+      },
+      "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup"]
+    },
+    {
+      "schemaVersion": 4,
+      "settings": {
+        "_settingsVersion": 4,
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "removeAllShorts": false,
+        "preferredQuality": "1440p",
+        "useEnhancedBitrate": false,
+        "hideQualityPopup": true,
+        "safeUnknownKey": "custom-v4"
+      },
+      "expected": {
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "removeAllShorts": false,
+        "safeUnknownKey": "custom-v4"
+      },
+      "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup"]
+    },
+    {
+      "schemaVersion": 5,
+      "settings": {
+        "_settingsVersion": 5,
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "downloadOptionsPopup": false,
+        "preferredQuality": "480p",
+        "useEnhancedBitrate": true,
+        "hideQualityPopup": false,
+        "safeUnknownKey": "custom-v5"
+      },
+      "expected": {
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "downloadOptionsPopup": false,
+        "safeUnknownKey": "custom-v5"
+      },
+      "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup"]
+    }
+  ]
+}

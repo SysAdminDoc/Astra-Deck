@@ -1046,3 +1046,35 @@ Fix:
 Two regressions in `tests/hardening.test.js` pin the import migration
 contract and the popup dialog/focus contract. `node --test
 tests/hardening.test.js` reports 47/47 passing for this pass.
+
+### H12 — Profile import migration round-trip fixtures
+
+Pass 12 fixed the import path. This pass pins the behavior with
+executable fixtures so a future settings-schema edit cannot silently
+skip an older profile.
+
+`tests/fixtures/settings-import-roundtrip.json` now contains one
+known-shape settings profile for every historical schema before the
+current v6 schema. The fixtures include user-overridden settings,
+settings added by prior migrations, retired Auto Quality keys, safe
+unknown fields that must survive forward, and unsafe object keys that
+must be rejected.
+
+`tests/settings-migration-roundtrip.test.js` extracts the real
+`settingsManager` object from `extension/ytkit.js` with the same
+brace-balanced helper used by the build catalog tests, then executes
+`_prepareImportedSettings()` against each fixture. The test asserts:
+
+- every generated default setting exists after import;
+- v1-v2 profiles receive `hidePinnedComments` and
+  `autoExpandComments` through the migration chain;
+- v3+ user choices remain preserved when those settings already
+  existed in the imported schema;
+- retired keys (`preferredQuality`, `useEnhancedBitrate`,
+  `hideQualityPopup`) and unsafe object keys are absent;
+- every migration step emits both stored `_errors` diagnostics and
+  `DiagnosticLog.record('settings-migration', ...)`;
+- re-importing the migrated profile is idempotent.
+
+`node --test tests/settings-migration-roundtrip.test.js` reports 1/1
+passing for this pass.

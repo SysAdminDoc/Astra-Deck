@@ -32,9 +32,9 @@ can land in Now/Next/Later.
 
 ## Recently shipped (last 30 days)
 
-Pass 9 → Pass 11 in chronological order. Sources are commit + tag URL on
-GitHub. Older shipped work is in `CHANGELOG.md`. Pass 12 is complete in
-the working tree and awaits the next release cut.
+Pass 9 → Pass 13 in chronological order. Sources are commit + tag URL on
+GitHub. Older shipped work is in `CHANGELOG.md`. Passes 12 and 13 are
+complete in local commits and await the next release cut.
 
 | Tag | Pass | Items |
 |---|---|---|
@@ -44,8 +44,9 @@ the working tree and awaits the next release cut.
 | `v3.20.3` | Pass 10 | H6 cookie-jar wire contract via `normalizeCookieExpiry`; H7 selector canary expanded 9 → 18; H8 theater-split divider-drag SPA-nav memory leak (v1.0.6 → v1.0.7). [src-shipped-4] |
 | `v3.20.4` | Pass 11 | H9 EXT_FETCH `controller.abort()` consistency on every size-limit early-return; H10 `scripts/check-versions.js` pre-push version-string drift gate. [src-shipped-5] |
 | `unreleased` | Pass 12 | N1 profile-import migration now runs the schema chain before stamping current version; N3 popup now has modal dialog semantics, initial focus, Tab wrap, Shift-Tab wrap, and Escape close. |
+| `unreleased` | Pass 13 | NX6 profile-import migration round-trip fixtures cover every prior settings schema v1-v5 into current v6, including defaults restoration, retired/unsafe key stripping, diagnostics, and idempotency. |
 
-Test count trajectory across these passes: 86 → 126 (+40 regressions).
+Test count trajectory across these passes: 86 → 127 (+41 regressions).
 0 npm audit vulnerabilities at every pass.
 
 ---
@@ -171,10 +172,13 @@ content is unchanged — only the distribution path. [src-14]
 
 ### NX6. Profile-import migration round-trip suite
 
+- **Status:** Completed in Pass 13 (unreleased). The fixture lives at
+  `tests/fixtures/settings-import-roundtrip.json`, and the executable
+  coverage lives in `tests/settings-migration-roundtrip.test.js`.
+
 Follow-up to Pass 12 N1. For every prior `SETTINGS_VERSION` (1 → 5 currently),
 emit a known-shape profile fixture, import into the v6 build, assert
-equality with the corresponding v6 expected output. Runs in
-`tests/hardening.test.js`. [src-1]
+equality with the corresponding v6 expected output. [src-1]
 
 ### NX7. Storage size audit for sync-eligibility
 
@@ -405,18 +409,18 @@ flagged thin. **All 13 categories addressed below.**
 
 | Category | Coverage | Where |
 |---|---|---|
-| Security | Strong | Pass 7-12 ship items; Risk Register; rejected items 1-3, 9. |
+| Security | Strong | Pass 7-13 ship items; Risk Register; rejected items 1-3, 9. |
 | Accessibility (a11y) | Pass 12 shipped N3; broader audit remains in L7. | Pass 12, Later L7. |
 | i18n / l10n | Next (NX1); deferred but infra-ready | NX1. |
 | Observability / telemetry | Strong — H1 + H4 shipped; L1 ESLint open | Risk register, watchlist medium. |
-| Testing | Strong — 126 tests, +40 new, +canary infra | Recently-shipped, Pass 12, NX6, L4. |
+| Testing | Strong — 127 tests, +41 new, +canary infra | Recently-shipped, Pass 12, Pass 13, L4. |
 | Docs | Strong — CHANGELOG/HARDENING.md/this roadmap synced after every change per user instruction | This document; per-pass HARDENING.md sections. |
 | Distribution / packaging | Next (NX5 AMO) + Later (L5 Greasy Fork, L6 key rotation) | NX5, L5, L6. |
 | Plugin ecosystem | N/A — Astra-Deck is monolithic by design; no plugin SDK shipped | Architectural watchlist. |
 | Mobile | Next (NX2) + research in iter-4-gap-fill.md | NX2. |
 | Offline / resilience | Next (NX3); former N2 rejected as not applicable to this build. | NX3, Rejected table. |
 | Multi-user / collab | Under Consideration (UC1, UC2) blocked on NX7 measurement | UC1, UC2, NX7. |
-| Migration paths | Pass 12 shipped N1; Next keeps the broader fixture suite. | Pass 12, NX6. |
+| Migration paths | Pass 12 shipped N1; Pass 13 added the broader fixture suite. | Pass 12, Pass 13. |
 | Upgrade strategy | Recently-shipped chain; CHANGELOG; H10 prevents drift | Quality gates (Release section), recently-shipped table. |
 
 **Three categories are intentionally thin and called out:**
@@ -553,6 +557,6 @@ items below are reference material only.
 
 ---
 
-*Last updated: 2026-04-26 — Hardening Pass 12 (unreleased). Next review:
+*Last updated: 2026-04-26 — Hardening Pass 13 (unreleased). Next review:
 when NX1/NX2/NX3 are triaged or when iter-5 research surfaces a
 higher-leverage item.*
