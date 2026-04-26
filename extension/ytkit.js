@@ -10350,25 +10350,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
-                        grid-template-columns: minmax(0, 1fr) auto auto auto !important;
-                        grid-template-areas:
-                            "owner dock page watch"
-                            "sub dock page watch" !important;
+                        display: flex !important;
+                        flex-wrap: wrap !important;
+                        align-content: flex-start !important;
                         align-items: center !important;
-                        column-gap: 8px !important;
-                        row-gap: 6px !important;
+                        gap: 10px 8px !important;
                         overflow: visible !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions {
-                        grid-area: dock !important;
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: flex-start !important;
-                        justify-self: end !important;
-                        align-self: center !important;
+                        align-self: stretch !important;
                         flex-wrap: wrap !important;
-                        gap: 7px !important;
+                        gap: 8px !important;
+                        flex: 1 1 100% !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
                         min-width: 0 !important;
                         margin: 0 !important;
                         position: relative !important;
@@ -10380,7 +10379,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions > * {
-                        flex: 0 0 auto !important;
+                        flex: 0 1 auto !important;
                         margin: 0 !important;
                     }
 
@@ -10742,9 +10741,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] ytd-watch-metadata #title .ytkit-split-title-bar {
                         display: grid !important;
-                        grid-template-columns: auto auto minmax(0, 1fr) !important;
+                        grid-template-columns: auto minmax(0, 1fr) !important;
+                        grid-template-areas:
+                            "home date"
+                            "actions actions" !important;
                         align-items: center !important;
-                        gap: 8px !important;
+                        gap: 9px 10px !important;
                         width: 100% !important;
                         min-width: 0 !important;
                         margin: 0 !important;
@@ -10757,6 +10759,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         align-items: center !important;
                         justify-content: center !important;
                         flex: 0 0 auto !important;
+                        grid-area: home !important;
                         width: 32px !important;
                         min-width: 32px !important;
                         height: 28px !important;
@@ -10791,9 +10794,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] ytd-watch-metadata #title .ytkit-split-header-actions {
                         display: inline-flex !important;
                         align-items: center !important;
-                        flex: 0 0 auto !important;
-                        justify-self: start !important;
-                        gap: 4px !important;
+                        flex-wrap: wrap !important;
+                        grid-area: actions !important;
+                        justify-self: stretch !important;
+                        gap: 8px !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
                         min-width: 0 !important;
                         position: relative !important;
                         z-index: 30 !important;
@@ -10876,6 +10882,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         align-items: center !important;
                         justify-content: center !important;
                         flex: 0 1 auto !important;
+                        grid-area: date !important;
                         justify-self: end !important;
                         max-width: min(100%, 210px) !important;
                         min-height: 24px !important;
