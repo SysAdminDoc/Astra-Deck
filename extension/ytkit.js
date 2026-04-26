@@ -22713,6 +22713,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 filler: '#7300FF',
                 poi_highlight: '#ff1684',
             },
+            _CACHE_KEY: 'sb_segments_cache',
+            _CACHE_TTL_MS: 12 * 60 * 60 * 1000,
+            _CACHE_STALE_MAX_MS: 7 * 24 * 60 * 60 * 1000,
+            _CACHE_MAX_ENTRIES: 500,
+            _cache: null,
+            _cachePersistTimer: null,
 
             _getEnabledCategories() {
                 const cats = [];
@@ -22722,9 +22728,124 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return cats;
             },
 
+            _getCategoryKey(categories) {
+                return [...new Set(categories)].sort().join(',');
+            },
+
+            _getCache() {
+                if (this._cache && typeof this._cache === 'object' && !Array.isArray(this._cache)) return this._cache;
+                const stored = storageReadJSON(this._CACHE_KEY, {});
+                this._cache = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : {};
+                return this._cache;
+            },
+
+            _normalizeSegments(segments) {
+                if (!Array.isArray(segments)) return [];
+                return segments.filter(s =>
+                    s && typeof s === 'object'
+                    && Array.isArray(s.segment) && s.segment.length === 2
+                    && Number.isFinite(s.segment[0]) && Number.isFinite(s.segment[1])
+                    && s.segment[0] >= 0 && s.segment[1] > s.segment[0]
+                    && typeof s.category === 'string'
+                ).map(s => ({
+                    segment: [s.segment[0], s.segment[1]],
+                    category: s.category,
+                    actionType: s.actionType,
+                    UUID: s.UUID,
+                    videoDuration: s.videoDuration
+                }));
+            },
+
+            _cacheCoversCategories(entry, categories) {
+                const entryKey = typeof entry?.categoryKey === 'string'
+                    ? entry.categoryKey
+                    : this._getCategoryKey(Array.isArray(entry?.categories) ? entry.categories : []);
+                const entryCats = new Set(entryKey.split(',').filter(Boolean));
+                return categories.every(category => entryCats.has(category));
+            },
+
+            _getCachedSegments(videoId, categories, { allowStale = false } = {}) {
+                const cache = this._getCache();
+                const entry = cache[videoId];
+                if (!entry || typeof entry !== 'object' || !Array.isArray(entry.segments)) return null;
+                if (!this._cacheCoversCategories(entry, categories)) return null;
+                const cachedAt = Number(entry.ts);
+                if (!Number.isFinite(cachedAt) || cachedAt <= 0) return null;
+                const age = Date.now() - cachedAt;
+                const maxAge = allowStale ? this._CACHE_STALE_MAX_MS : this._CACHE_TTL_MS;
+                if (age < 0 || age > maxAge) return null;
+                return entry;
+            },
+
+            _markCachedSegments(segments, cachedAt, source) {
+                return this._normalizeSegments(segments).map(segment => ({
+                    ...segment,
+                    _ytkitCacheSource: source,
+                    _ytkitCachedAt: cachedAt
+                }));
+            },
+
+            _rememberSegments(videoId, categories, segments) {
+                const normalized = this._normalizeSegments(segments);
+                const cache = this._getCache();
+                cache[videoId] = {
+                    ts: Date.now(),
+                    categoryKey: this._getCategoryKey(categories),
+                    segments: normalized
+                };
+                this._pruneCache();
+                this._scheduleCachePersist();
+            },
+
+            _pruneCache() {
+                const cache = this._getCache();
+                const now = Date.now();
+                for (const [videoId, entry] of Object.entries(cache)) {
+                    const cachedAt = Number(entry && entry.ts);
+                    if (!VIDEO_ID_PATTERN.test(videoId) || !Number.isFinite(cachedAt) || now - cachedAt > this._CACHE_STALE_MAX_MS) {
+                        delete cache[videoId];
+                    }
+                }
+                const entries = Object.entries(cache);
+                if (entries.length > this._CACHE_MAX_ENTRIES) {
+                    entries.sort((a, b) => (Number(b[1] && b[1].ts) || 0) - (Number(a[1] && a[1].ts) || 0));
+                    for (const [videoId] of entries.slice(this._CACHE_MAX_ENTRIES)) delete cache[videoId];
+                }
+            },
+
+            _scheduleCachePersist() {
+                clearTimeout(this._cachePersistTimer);
+                this._cachePersistTimer = setTimeout(() => {
+                    this._cachePersistTimer = null;
+                    this._pruneCache();
+                    storageWriteJSON(this._CACHE_KEY, this._getCache());
+                }, 1000);
+            },
+
+            _flushCachePersist() {
+                if (!this._cachePersistTimer) return;
+                clearTimeout(this._cachePersistTimer);
+                this._cachePersistTimer = null;
+                this._pruneCache();
+                storageWriteJSON(this._CACHE_KEY, this._getCache());
+            },
+
+            _formatCacheTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                if (!Number.isFinite(date.getTime())) return 'unknown time';
+                return date.toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+            },
+
             async _fetchSegments(videoId) {
                 const cats = this._getEnabledCategories();
                 if (!cats.length) return [];
+                const cached = this._getCachedSegments(videoId, cats);
+                if (cached) return this._markCachedSegments(cached.segments, cached.ts, 'fresh');
                 try {
                     // Privacy-preserving hash-prefix lookup: only send the first
                     // 4 chars of the SHA-256 hash so the server never sees the
@@ -22741,13 +22862,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!Array.isArray(data)) return [];
                     // Filter for exact video ID match from hash-prefix results
                     const match = data.find(entry => entry.videoID === videoId);
-                    if (!match || !Array.isArray(match.segments)) return [];
-                    return match.segments.filter(s =>
-                        Array.isArray(s.segment) && s.segment.length === 2
-                        && Number.isFinite(s.segment[0]) && Number.isFinite(s.segment[1])
-                        && s.segment[0] >= 0 && s.segment[1] > s.segment[0]
-                    );
-                } catch (_) {
+                    const segments = match && Array.isArray(match.segments)
+                        ? this._normalizeSegments(match.segments)
+                        : [];
+                    this._rememberSegments(videoId, cats, segments);
+                    return segments;
+                } catch (error) {
+                    const stale = this._getCachedSegments(videoId, cats, { allowStale: true });
+                    if (stale) {
+                        DiagnosticLog?.record?.('sponsorBlock', `stale cache fallback for ${videoId}: ${error?.message || 'fetch failed'}`);
+                        return this._markCachedSegments(stale.segments, stale.ts, 'stale');
+                    }
+                    DiagnosticLog?.record?.('sponsorBlock', `segment fetch failed for ${videoId}: ${error?.message || 'unknown error'}`);
                     return [];
                 }
             },
@@ -22843,14 +22969,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const progressBar = getPlayerProgressBar();
                 if (!video || !progressBar || !video.duration) return;
                 const duration = video.duration;
+                const enabledCats = this._getEnabledCategories();
                 for (const seg of this._segments) {
+                    if (!enabledCats.includes(seg.category)) continue;
                     const [start, end] = seg.segment;
                     const left = (start / duration) * 100;
                     const width = ((end - start) / duration) * 100;
                     const bar = document.createElement('div');
                     bar.className = 'ytkit-sb-segment';
                     bar.style.cssText = `position:absolute;bottom:0;height:100%;left:${left}%;width:${width}%;background:${this._CATEGORY_COLORS[seg.category] || '#00d400'};opacity:0.7;pointer-events:none;z-index:35;`;
-                    bar.title = seg.category.replace(/_/g, ' ');
+                    const label = seg.category.replace(/_/g, ' ');
+                    if (seg._ytkitCacheSource === 'stale') {
+                        bar.dataset.ytkitCacheSource = 'stale';
+                        bar.title = `${label} (cached at ${this._formatCacheTimestamp(seg._ytkitCachedAt)})`;
+                    } else {
+                        bar.title = label;
+                    }
                     progressBar.appendChild(bar);
                     this._barSegments.push(bar);
                 }
@@ -22919,6 +23053,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._barObserver?.disconnect();
                 this._clearBarSegments();
                 this._styleEl?.remove();
+                this._flushCachePersist();
+                this._cache = null;
                 this._segments = [];
                 this._videoId = null;
             }
@@ -24493,7 +24629,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'storageQuotaLRU',
             name: 'Storage Quota Management',
-            description: 'LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache) to prevent quota exhaustion',
+            description: 'LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion',
             group: 'Advanced',
             icon: 'database',
             _timer: null,
@@ -24545,6 +24681,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const trimmed = Object.fromEntries(entries.slice(0, 2000));
                             storageWriteJSON('da_branding_cache', trimmed);
                             DiagnosticLog?.record('storageQuotaLRU', `pruned ${entries.length - 2000} da_branding_cache entries`);
+                        }
+                    }
+
+                    const sponsorSegments = storageReadJSON('sb_segments_cache', null);
+                    if (sponsorSegments && typeof sponsorSegments === 'object' && !Array.isArray(sponsorSegments)) {
+                        const entries = Object.entries(sponsorSegments);
+                        if (entries.length > 500) {
+                            entries.sort((a, b) => (Number(b[1] && b[1].ts) || 0) - (Number(a[1] && a[1].ts) || 0));
+                            const trimmed = Object.fromEntries(entries.slice(0, 500));
+                            storageWriteJSON('sb_segments_cache', trimmed);
+                            DiagnosticLog?.record('storageQuotaLRU', `pruned ${entries.length - 500} sb_segments_cache entries`);
                         }
                     }
                 } catch (e) {
