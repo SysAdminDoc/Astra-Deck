@@ -587,8 +587,12 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         && source.includes('_getSplitLiveViewCountText()')
         && source.includes('parts.find(text => /\\bwatching\\b/i.test(text))'),
         'extension live header should show current live viewers before falling back to total views');
-    assert.ok(source.includes('grid-template-areas:"kicker actions" "title actions" "meta actions"'),
-        'extension live header should reserve clean rows for live state, title, metadata, and actions');
+    assert.ok(source.includes('_liveHeaderHeight: 96'),
+        'extension live header should stay compact enough to leave room for chat');
+    assert.ok(source.includes('grid-template-areas:"kicker actions" "title title"'),
+        'extension live header should anchor actions beside live state instead of spanning the card');
+    assert.ok(source.includes('align-self:center;justify-content:flex-end;gap:8px;height:38px;min-height:38px'),
+        'extension live header should give pinned native actions a stable top-row measurement box');
     assert.ok(source.includes('_findSplitSubscribeControl()'),
         'extension live header should locate the native subscribe/unsubscribe control');
     assert.ok(source.includes('_pinSplitLiveHeaderActions(controls, actions)'),
@@ -622,8 +626,12 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         && theaterSplit.includes('function getSplitLiveViewCountText()')
         && theaterSplit.includes('parts.find(text => /\\bwatching\\b/i.test(text))'),
         'standalone live header should show current live viewers before falling back to total views');
-    assert.ok(theaterSplit.includes('grid-template-areas:"kicker actions" "title actions" "meta actions"'),
-        'standalone live header should reserve clean rows for live state, title, metadata, and actions');
+    assert.ok(theaterSplit.includes('const LIVE_HEADER_HEIGHT = 96;'),
+        'standalone live header should stay compact enough to leave room for chat');
+    assert.ok(theaterSplit.includes('grid-template-areas:"kicker actions" "title title"'),
+        'standalone live header should anchor actions beside live state instead of spanning the card');
+    assert.ok(theaterSplit.includes('align-self:center;justify-content:flex-end;gap:8px;height:38px;min-height:38px'),
+        'standalone live header should give pinned native actions a stable top-row measurement box');
     assert.ok(theaterSplit.includes('function findSubscribeControl()'),
         'standalone live header should locate the native subscribe/unsubscribe control');
     assert.ok(theaterSplit.includes('function pinLiveHeaderActions(controls, actions)'),
