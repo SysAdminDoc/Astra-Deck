@@ -8129,6 +8129,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return null;
             },
 
+            _findSplitNotificationControl() {
+                const root = this._getBelow() || document;
+                const selectors = [
+                    'ytd-watch-metadata #owner #notification-preference-button',
+                    'ytd-watch-metadata #owner ytd-subscription-notification-toggle-button-renderer-next'
+                ];
+
+                for (const selector of selectors) {
+                    const el = root.querySelector(selector);
+                    if (el && !el.closest('.ytkit-split-owner-actions') && !el.closest('.ytkit-split-live-actions')) return el;
+                }
+                return null;
+            },
+
+            _findSplitPageControl() {
+                const owner = this._getSplitOwner();
+                if (!owner) return null;
+                return owner.querySelector(':scope > #ytkit-page-btn-watch, :scope > #ytkit-watch-btn');
+            },
+
             _findSplitDownloadControl() {
                 const root = this._getBelow() || document;
                 const controls = Array.from(root.querySelectorAll(
@@ -8302,6 +8322,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const dock = this._ensureSplitActionDock();
                 if (!dock) return;
 
+                this._dockSplitControl(this._findSplitNotificationControl(), dock);
+                this._dockSplitControl(this._findSplitPageControl(), dock);
                 this._dockSplitControl(this._findSplitLikeControl(), dock);
                 this._dockSplitControl(this._findSplitDownloadControl(), dock);
 
@@ -10368,16 +10390,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
                         display: grid !important;
-                        grid-template-columns: auto auto minmax(0, 1fr) !important;
+                        grid-template-columns: minmax(0, 1fr) !important;
                         grid-template-areas:
-                            "owner owner owner"
-                            "sub notif page"
-                            "actions actions actions" !important;
+                            "owner"
+                            "sub"
+                            "actions" !important;
                         align-content: flex-start !important;
                         align-items: center !important;
                         justify-items: start !important;
                         gap: 12px 8px !important;
                         overflow: visible !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
+                        grid-template-areas:
+                            "owner"
+                            "actions" !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
@@ -10393,16 +10421,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         width: auto !important;
                         max-width: 100% !important;
                         justify-self: start !important;
-                    }
-
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) #notification-preference-button,
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) ytd-subscription-notification-toggle-button-renderer-next {
-                        grid-area: notif !important;
-                    }
-
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) > #ytkit-page-btn-watch,
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner:has(.ytkit-split-owner-actions) > #ytkit-watch-btn {
-                        grid-area: page !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions {
@@ -10431,6 +10449,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions > * {
                         flex: 0 1 auto !important;
                         margin: 0 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions #notification-preference-button,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions ytd-subscription-notification-toggle-button-renderer-next {
+                        order: 1 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions > #ytkit-page-btn-watch,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions > #ytkit-watch-btn {
+                        order: 2 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer,
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions like-button-view-model {
+                        order: 3 !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions .ytkit-local-dl-btn {
+                        order: 4 !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions .ytkit-local-dl-btn,
@@ -11016,12 +11054,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner ytd-video-owner-renderer {
-                        display: grid !important;
-                        grid-template-columns: 42px minmax(0, 1fr) !important;
+                        display: inline-flex !important;
                         align-items: center !important;
-                        gap: 11px !important;
+                        justify-content: flex-start !important;
+                        gap: 10px !important;
                         justify-self: start !important;
-                        width: 100% !important;
+                        width: auto !important;
                         max-width: 100% !important;
                         min-width: 0 !important;
                         margin: 0 !important;
@@ -11035,7 +11073,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         opacity: 1 !important;
                         width: 42px !important;
                         height: 42px !important;
+                        flex: 0 0 42px !important;
                         min-width: 42px !important;
+                        margin: 0 !important;
                         border-radius: 14px !important;
                         overflow: hidden !important;
                     }
@@ -11049,7 +11089,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: grid !important;
                         justify-items: start !important;
                         gap: 3px !important;
+                        flex: 0 1 auto !important;
+                        width: auto !important;
+                        max-width: 100% !important;
                         min-width: 0 !important;
+                        margin: 0 !important;
                         text-align: left !important;
                     }
 
@@ -11168,15 +11212,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions),
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
                         display: grid !important;
-                        grid-template-columns: auto auto minmax(0, 1fr) !important;
+                        grid-template-columns: minmax(0, 1fr) !important;
                         grid-template-areas:
-                            "owner owner owner"
-                            "sub notif page"
-                            "actions actions actions" !important;
+                            "owner"
+                            "sub"
+                            "actions" !important;
                         align-content: flex-start !important;
                         align-items: center !important;
                         justify-items: start !important;
                         gap: 12px 8px !important;
+                    }
+
+                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
+                        grid-template-areas:
+                            "owner"
+                            "actions" !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
@@ -11192,16 +11242,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         width: auto !important;
                         max-width: 100% !important;
                         justify-self: start !important;
-                    }
-
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) #notification-preference-button,
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-subscription-notification-toggle-button-renderer-next {
-                        grid-area: notif !important;
-                    }
-
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) > #ytkit-page-btn-watch,
-                    html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner:has(.ytkit-split-owner-actions) > #ytkit-watch-btn {
-                        grid-area: page !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner .ytkit-split-owner-actions {
