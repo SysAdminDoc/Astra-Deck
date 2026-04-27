@@ -1301,7 +1301,7 @@
     // ── Constants ──────────────────────────────────────────────────────────
     const SPLIT_RATIO_KEY = 'ts_split_ratio';
     const TRANSITION = '0.35s cubic-bezier(0.4,0,0.2,1)';
-    const LIVE_HEADER_HEIGHT = 126;
+    const LIVE_HEADER_HEIGHT = 96;
 
     // ── State ──────────────────────────────────────────────────────────────
     let isActive = false;
@@ -1918,7 +1918,7 @@
             'right:0',
             `height:${LIVE_HEADER_HEIGHT}px`,
             'z-index:10003',
-            'padding:12px 12px 10px',
+            'padding:9px 12px',
             'box-sizing:border-box',
             'pointer-events:auto',
             'color:rgba(245,247,250,0.96)',
@@ -1938,11 +1938,11 @@
             'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
             'display:grid',
             'grid-template-columns:minmax(0,1fr) auto',
-            'grid-template-areas:"kicker actions" "title actions" "meta actions"',
+            'grid-template-areas:"kicker actions" "title title"',
             'align-content:center',
             'align-items:center',
             'gap:5px 12px',
-            'padding:13px 16px',
+            'padding:8px 14px',
             'box-sizing:border-box',
             'overflow:visible'
         ].join(';');
@@ -1968,7 +1968,7 @@
         title.style.cssText = [
             'grid-area:title',
             'margin:0',
-            'font:800 17px/1.22 Arial,sans-serif',
+            'font:800 16px/1.22 Arial,sans-serif',
             'letter-spacing:0',
             'color:rgba(245,247,250,0.98)',
             'display:-webkit-box',
@@ -1980,13 +1980,14 @@
 
         const meta = document.createElement('span');
         meta.className = 'ytkit-split-live-meta';
-        meta.style.cssText = 'grid-area:meta;font:650 12px/1.35 Arial,sans-serif;color:rgba(148,163,184,0.86);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;';
+        meta.hidden = true;
+        meta.style.cssText = 'display:none;';
         card.appendChild(meta);
 
         const actions = document.createElement('div');
         actions.className = 'ytkit-split-live-actions';
         actions.setAttribute('aria-label', 'Live video actions');
-        actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:end;justify-content:flex-end;gap:8px;min-width:max-content;max-width:260px;overflow:visible;';
+        actions.style.cssText = 'grid-area:actions;display:flex;align-items:center;align-self:center;justify-content:flex-end;gap:8px;height:38px;min-height:38px;min-width:max-content;max-width:260px;overflow:visible;';
         card.appendChild(actions);
 
         header.appendChild(card);
@@ -2010,7 +2011,10 @@
         const viewText = getSplitLiveViewCountText();
         const supplementalInfo = viewText && infoText === viewText ? '' : infoText;
         const metaParts = [channel, dateText || supplementalInfo].filter(Boolean);
-        if (titleEl) titleEl.textContent = title;
+        if (titleEl) {
+            titleEl.textContent = title;
+            titleEl.hidden = !title;
+        }
         if (metaEl) metaEl.textContent = metaParts.join('  |  ');
         if (viewEl) {
             viewEl.textContent = viewText;
