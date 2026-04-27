@@ -337,12 +337,12 @@
             overflow: visible !important;
         }
         body.ts-split #below[style*="position"] #owner ytd-video-owner-renderer {
-            display: grid !important;
-            grid-template-columns: 42px minmax(0, 1fr) !important;
+            display: inline-flex !important;
             align-items: center !important;
-            gap: 11px !important;
+            justify-content: flex-start !important;
+            gap: 10px !important;
             justify-self: start !important;
-            width: 100% !important;
+            width: auto !important;
             max-width: 100% !important;
             min-width: 0 !important;
             margin: 0 !important;
@@ -355,7 +355,9 @@
             opacity: 1 !important;
             width: 42px !important;
             height: 42px !important;
+            flex: 0 0 42px !important;
             min-width: 42px !important;
+            margin: 0 !important;
             border-radius: 14px !important;
             overflow: hidden !important;
         }
@@ -367,7 +369,11 @@
             display: grid !important;
             justify-items: start !important;
             gap: 3px !important;
+            flex: 0 1 auto !important;
+            width: auto !important;
+            max-width: 100% !important;
             min-width: 0 !important;
+            margin: 0 !important;
             text-align: left !important;
         }
         body.ts-split #below[style*="position"] #owner #channel-name,
@@ -530,15 +536,20 @@
         body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions),
         body.ts-split #below[style*="position"] #owner.ytd-watch-metadata:has(.ytkit-split-owner-actions) {
             display: grid !important;
-            grid-template-columns: auto auto minmax(0, 1fr) !important;
+            grid-template-columns: minmax(0, 1fr) !important;
             grid-template-areas:
-                "owner owner owner"
-                "sub notif page"
-                "actions actions actions" !important;
+                "owner"
+                "sub"
+                "actions" !important;
             align-content: flex-start !important;
             align-items: center !important;
             justify-items: start !important;
             gap: 12px 8px !important;
+        }
+        body.ts-split #below[style*="position"] #owner:not(:has(#subscribe-button)):has(.ytkit-split-owner-actions) {
+            grid-template-areas:
+                "owner"
+                "actions" !important;
         }
         body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-video-owner-renderer {
             grid-area: owner !important;
@@ -552,22 +563,6 @@
             width: auto !important;
             max-width: 100% !important;
             justify-self: start !important;
-        }
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) #notification-preference-button,
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) ytd-subscription-notification-toggle-button-renderer-next {
-            grid-area: notif !important;
-        }
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) > #ytkit-page-btn-watch {
-            grid-area: page !important;
-            justify-self: end !important;
-            align-self: center !important;
-            margin: 0 !important;
-        }
-        body.ts-split #below[style*="position"] #owner:has(.ytkit-split-owner-actions) > #ytkit-watch-btn {
-            grid-area: page !important;
-            justify-self: end !important;
-            align-self: center !important;
-            margin: 0 !important;
         }
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions {
             grid-area: actions !important;
@@ -593,6 +588,22 @@
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions > * {
             flex: 0 1 auto !important;
             margin: 0 !important;
+        }
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions #notification-preference-button,
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-subscription-notification-toggle-button-renderer-next {
+            order: 1 !important;
+        }
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions > #ytkit-page-btn-watch,
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions > #ytkit-watch-btn {
+            order: 2 !important;
+        }
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer,
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions like-button-view-model {
+            order: 3 !important;
+        }
+        body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytkit-local-dl-btn {
+            order: 4 !important;
         }
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .ytkit-local-dl-btn,
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions button,
@@ -2000,6 +2011,26 @@
         return null;
     }
 
+    function findNotificationControl() {
+        const root = getBelow() || document;
+        const selectors = [
+            'ytd-watch-metadata #owner #notification-preference-button',
+            'ytd-watch-metadata #owner ytd-subscription-notification-toggle-button-renderer-next'
+        ];
+
+        for (const selector of selectors) {
+            const el = root.querySelector(selector);
+            if (el && !el.closest('.ytkit-split-owner-actions') && !el.closest('.ytkit-split-live-actions')) return el;
+        }
+        return null;
+    }
+
+    function findPageControl() {
+        const owner = getSplitOwner();
+        if (!owner) return null;
+        return owner.querySelector(':scope > #ytkit-page-btn-watch, :scope > #ytkit-watch-btn');
+    }
+
     function findDownloadControl() {
         const root = getBelow() || document;
         const controls = Array.from(root.querySelectorAll(
@@ -2172,6 +2203,8 @@
         const dock = ensureActionDock();
         if (!dock) return;
 
+        dockControl(findNotificationControl(), dock);
+        dockControl(findPageControl(), dock);
         dockControl(findLikeControl(), dock);
         dockControl(findDownloadControl(), dock);
 
