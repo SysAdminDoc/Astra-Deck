@@ -80,6 +80,9 @@ SERVICE_ID = "astra-downloader"
 # keys, so the major version stays at 2 (additive, backward-compatible).
 SERVICE_API_VERSION = 2
 SERVER_PORT = 9751
+INSTANCE_CONTROL_HOST = '127.0.0.1'
+INSTANCE_CONTROL_PORT = 9752
+INSTANCE_LOCK_PORT = 9753
 # Ordered fallback ports the server tries when the configured port is unavailable.
 # The browser extension probes the same list to discover the running port.
 PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
@@ -942,6 +945,35 @@ def launch_command_parts(prefer_installed=True):
 
 def command_line(parts):
     return subprocess.list2cmdline([str(p) for p in parts])
+
+
+def startup_command_from_argv(argv=None):
+    args = sys.argv[1:] if argv is None else list(argv)
+    for arg in args:
+        value = str(arg).strip().lower()
+        if value in ('--start-server', '-start-server', 'start'):
+            return 'start'
+        if value.startswith('mediadl://') or value.startswith('ytdl://'):
+            return 'start'
+    return ''
+
+
+def send_instance_command(command, host=INSTANCE_CONTROL_HOST, port=INSTANCE_CONTROL_PORT, attempts=5, delay=0.2):
+    command = str(command or '').strip().lower()
+    if command not in {'start'}:
+        return False
+    payload = (command + '\n').encode('ascii')
+    for attempt in range(max(1, int(attempts))):
+        try:
+            with socket.create_connection((host, int(port)), timeout=0.5) as conn:
+                conn.sendall(payload)
+            return True
+        except OSError as e:
+            last_err = e
+            if attempt < attempts - 1:
+                time.sleep(delay)
+    write_persistent_log(f"Could not send instance command '{command}': {last_err}")
+    return False
 
 
 def register_desktop_shortcut(target, base_args):
@@ -2376,6 +2408,7 @@ def make_stat(label_text, value_text="0", hint_text=""):
 # ══════════════════════════════════════════════════════════════
 class MainWindow(QMainWindow):
     log_message = pyqtSignal(str)
+    instance_command = pyqtSignal(str)
 
     def __init__(self, config, dl_manager, history, start_minimized=False):
         super().__init__()
@@ -2388,6 +2421,7 @@ class MainWindow(QMainWindow):
         self._tray_hint_shown = False
         self._downloads_signature = None
         self.log_message.connect(self._append_log)
+        self.instance_command.connect(self._handle_instance_command)
 
         self.setWindowTitle(APP_NAME)
         self.setMinimumSize(760, 560)
@@ -2512,6 +2546,9 @@ class MainWindow(QMainWindow):
         self.server_thread = None
         self.server_obj = None
         self.server_start_time = None
+        self._instance_command_stop = threading.Event()
+        self._instance_command_thread = None
+        self._start_instance_command_listener()
 
         if start_minimized:
             QTimer.singleShot(100, self._minimize_to_tray)
@@ -3574,6 +3611,74 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
+    def _start_instance_command_listener(self):
+        if self._instance_command_thread and self._instance_command_thread.is_alive():
+            return
+
+        def run():
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+                    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    server.bind((INSTANCE_CONTROL_HOST, INSTANCE_CONTROL_PORT))
+                    server.listen(4)
+                    server.settimeout(0.5)
+                    write_persistent_log(
+                        f"Instance command listener started on {INSTANCE_CONTROL_HOST}:{INSTANCE_CONTROL_PORT}."
+                    )
+                    while not self._instance_command_stop.is_set():
+                        try:
+                            conn, _addr = server.accept()
+                        except socket.timeout:
+                            continue
+                        except OSError:
+                            if self._instance_command_stop.is_set():
+                                break
+                            raise
+                        with conn:
+                            try:
+                                conn.settimeout(0.5)
+                                raw = conn.recv(128)
+                            except OSError:
+                                continue
+                        command = raw.decode('ascii', errors='ignore').strip().lower()
+                        if command in {'start'}:
+                            self.instance_command.emit(command)
+            except OSError as e:
+                if not self._instance_command_stop.is_set():
+                    self.log_message.emit(f"Instance command listener unavailable: {e}")
+
+        self._instance_command_thread = threading.Thread(
+            target=run,
+            daemon=True,
+            name="AstraDownloaderInstanceCommand"
+        )
+        self._instance_command_thread.start()
+
+    def _stop_instance_command_listener(self):
+        if not self._instance_command_thread:
+            return
+        self._instance_command_stop.set()
+        try:
+            with socket.create_connection((INSTANCE_CONTROL_HOST, INSTANCE_CONTROL_PORT), timeout=0.2):
+                pass
+        except OSError:
+            pass
+        if self._instance_command_thread.is_alive():
+            self._instance_command_thread.join(timeout=1)
+        self._instance_command_thread = None
+
+    def _handle_instance_command(self, command):
+        if str(command).strip().lower() != 'start':
+            return
+        self._append_log("Received browser start request.")
+        if self.server_running:
+            self._append_log("Server already running.")
+            return
+        if self._setup_running:
+            self._append_log("Setup is running. The server will start when setup finishes.")
+            return
+        self._start_server()
+
     # ── Tray ──
     def _tray_activated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
@@ -3604,6 +3709,7 @@ class MainWindow(QMainWindow):
                 )
                 self._tray_hint_shown = True
         else:
+            self._stop_instance_command_listener()
             if self.server_running:
                 self._stop_server()
             self.tray.hide()
@@ -3666,7 +3772,7 @@ class MainWindow(QMainWindow):
 # ══════════════════════════════════════════════════════════════
 # SINGLE INSTANCE GUARD
 # ══════════════════════════════════════════════════════════════
-def check_single_instance():
+def check_single_instance(startup_command=''):
     """Prevent multiple GUI instances without relying on a TCP port."""
     if sys.platform == 'win32':
         try:
@@ -3682,15 +3788,19 @@ def check_single_instance():
                 return None
             if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS
                 kernel32.CloseHandle(handle)
+                if startup_command:
+                    send_instance_command(startup_command)
                 return None
             return handle
         except Exception as e:
             write_persistent_log(f"Mutex single-instance guard unavailable: {e}")
 
     # Cross-platform fallback for source runs outside Windows.
+    if startup_command and send_instance_command(startup_command, attempts=1):
+        return None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('127.0.0.1', 9752))
+        s.bind(('127.0.0.1', INSTANCE_LOCK_PORT))
         s.listen(1)
         return s  # Keep alive
     except OSError:
@@ -3705,13 +3815,14 @@ def main():
         run_uninstall()
         return
 
-    start_minimized = '-Background' in sys.argv or '--background' in sys.argv
+    startup_command = startup_command_from_argv()
+    start_minimized = '-Background' in sys.argv or '--background' in sys.argv or startup_command == 'start'
 
     if is_frozen_app():
         ensure_system_integrations(prefer_installed=True)
 
     # Single instance check
-    lock = check_single_instance()
+    lock = check_single_instance(startup_command)
     if lock is None:
         # Already running
         write_persistent_log("Launch ignored because another instance is already running.")

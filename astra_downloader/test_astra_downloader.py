@@ -1,4 +1,6 @@
+import socket
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -99,6 +101,36 @@ class PersistenceTests(unittest.TestCase):
                 self.assertEqual(len(backups), 1)
             finally:
                 ad.HISTORY_PATH = original
+
+
+class InstanceCommandTests(unittest.TestCase):
+    def test_startup_command_detects_protocol_launches(self):
+        self.assertEqual(ad.startup_command_from_argv(["mediadl://start"]), "start")
+        self.assertEqual(ad.startup_command_from_argv(["ytdl://download"]), "start")
+        self.assertEqual(ad.startup_command_from_argv(["--start-server"]), "start")
+        self.assertEqual(ad.startup_command_from_argv(["--uninstall"]), "")
+
+    def test_send_instance_command_posts_start_to_listener(self):
+        ready = threading.Event()
+        received = []
+        port_holder = []
+
+        def run_server():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+                server.bind(("127.0.0.1", 0))
+                port_holder.append(server.getsockname()[1])
+                server.listen(1)
+                ready.set()
+                conn, _addr = server.accept()
+                with conn:
+                    received.append(conn.recv(128).decode("ascii").strip())
+
+        thread = threading.Thread(target=run_server, daemon=True)
+        thread.start()
+        self.assertTrue(ready.wait(2))
+        self.assertTrue(ad.send_instance_command("start", port=port_holder[0], attempts=1))
+        thread.join(2)
+        self.assertEqual(received, ["start"])
 
 
 class DownloadManagerTests(unittest.TestCase):

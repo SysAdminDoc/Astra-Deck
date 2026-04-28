@@ -2572,6 +2572,16 @@ return response;
     //
     // opts: { format?, outputDir? } — optional overrides from the download popup
     let _downloadInProgress = false;
+    function _isDownloaderConnectionError(error) {
+        const message = String(error?.message || error?.detail?.error || '').toLowerCase();
+        return !!error?.isTimeout
+            || message.includes('failed to fetch')
+            || message.includes('networkerror')
+            || message.includes('request aborted')
+            || message.includes('extension request timed out')
+            || message.includes('extension request failed');
+    }
+
     async function ytKitDownload(videoUrl, audioOnly, opts = {}) {
         if (_downloadInProgress) {
             showToast('A download is already in progress.', '#f59e0b', { duration: 3 });
@@ -2581,7 +2591,7 @@ return response;
         DebugManager.log('Download', `Download requested: ${videoUrl} (audio=${audioOnly}, format=${opts.format || 'default'}, dir=${opts.outputDir || 'default'})`);
         showToast(audioOnly ? 'Preparing your audio download…' : 'Preparing your video download…', '#3b82f6', { duration: 2 });
 
-        let mdl = await MediaDLManager.check();
+        let mdl = await MediaDLManager.check(true);
         if (!mdl.ok) {
             mdl = await MediaDLManager.tryAutoStart();
         }
@@ -2598,7 +2608,22 @@ return response;
         try {
             await _mediaDLSendDownload(videoUrl, audioOnly, mdl.token, opts);
         } catch (e) {
-            DebugManager.log('Download', `MediaDL download failed: ${e.message}`);
+            let finalError = e;
+            if (_isDownloaderConnectionError(e)) {
+                DebugManager.log('Download', 'Local downloader request failed; attempting one server restart');
+                showToast('Local downloader stopped. Starting it again…', '#3b82f6', { duration: 4 });
+                MediaDLManager.resetAutoStart();
+                const restarted = await MediaDLManager.tryAutoStart(5);
+                if (restarted.ok) {
+                    try {
+                        await _mediaDLSendDownload(videoUrl, audioOnly, restarted.token, opts);
+                        return;
+                    } catch (retryError) {
+                        finalError = retryError;
+                    }
+                }
+            }
+            DebugManager.log('Download', `MediaDL download failed: ${finalError.message}`);
             showToast('Local downloader request failed.', '#ef4444', { duration: 4 });
             MediaDLManager.showInstallPrompt('retry');
         } finally {
@@ -2636,7 +2661,7 @@ return response;
                 }
             } catch (error) {
                 DebugManager.log('MediaDL', `Download request error: ${error.message}`);
-                showToast(error.isTimeout ? 'MediaDL request timed out' : 'MediaDL download request failed', '#ef4444', { duration: 5 });
+                throw error;
             }
         };
 
