@@ -284,6 +284,33 @@ test('premium live chat keeps space between the author chip and message text', (
     );
 });
 
+test('reaction spammer restores styled live chat reactions and ports the userscript loop', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    assert.equal(defaults.reactionSpammer, true, 'reaction spammer should be enabled by default');
+    assert.ok(!defaults.hiddenChatElements.includes('reactions'),
+        'default live chat cleanup should not hide the native reactions control');
+
+    const start = source.indexOf("id: 'reactionSpammer'");
+    const end = source.indexOf("id: 'chatKeywordFilter'", start);
+    assert.ok(start > -1 && end > start, 'reactionSpammer block should exist before the chat keyword filter');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('_restoreReactionButton()'),
+        'reaction spammer should actively restore the native reaction control');
+    assert.ok(block.includes('yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model'),
+        'reaction spammer should target both current reaction panel host variants');
+    assert.ok(block.includes("storageWriteJSON(this._storageKey"),
+        'reaction spammer should persist panel state in extension storage');
+    assert.ok(block.includes('_fireTap(entry.button)'),
+        'reaction spammer should use the userscript tap simulation path for reaction buttons');
+    assert.ok(block.includes('Math.random()'),
+        'reaction spammer should choose selected reactions in a randomized sequence');
+});
+
 test('autoExpandComments defaults on and expands existing comment truncation immediately', () => {
     const fs = require('fs');
     const path = require('path');
