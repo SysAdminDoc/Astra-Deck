@@ -303,12 +303,18 @@ test('reaction spammer restores styled live chat reactions and ports the userscr
         'reaction spammer should actively restore the native reaction control');
     assert.ok(block.includes('yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model'),
         'reaction spammer should target both current reaction panel host variants');
+    assert.ok(block.includes('_buildLauncher()'),
+        'reaction spammer should expose a visible launcher button instead of requiring settings navigation');
+    assert.ok(block.includes('ytkit-reaction-spammer-launcher'),
+        'reaction spammer should render a live chat activation button');
     assert.ok(block.includes("storageWriteJSON(this._storageKey"),
         'reaction spammer should persist panel state in extension storage');
     assert.ok(block.includes('_fireTap(entry.button)'),
         'reaction spammer should use the userscript tap simulation path for reaction buttons');
     assert.ok(block.includes('Math.random()'),
         'reaction spammer should choose selected reactions in a randomized sequence');
+    assert.match(source, /CHAT_FEATURE_IDS[\s\S]*?'reactionSpammer'/,
+        'reaction spammer must initialize in the dedicated live_chat frame bootstrap path');
 });
 
 test('autoExpandComments defaults on and expands existing comment truncation immediately', () => {
