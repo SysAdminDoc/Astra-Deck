@@ -102,6 +102,7 @@ const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
 const STORAGE_KEYS = {
     settings: 'ytSuiteSettings',
     hiddenVideos: 'ytkit-hidden-videos',
+    allowedVideos: 'ytkit-video-hider-allowed-videos',
     blockedChannels: 'ytkit-blocked-channels',
     bookmarks: 'ytkit-bookmarks',
     legacySidebarOrder: 'ytkit_sidebar_order'
@@ -110,6 +111,7 @@ const STORAGE_KEYS = {
 const VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
 const IMPORT_LIMITS = Object.freeze({
     hiddenVideos: 5000,
+    allowedVideos: 5000,
     blockedChannels: 2000,
     bookmarkVideos: 400,
     bookmarksPerVideo: 100,
@@ -850,19 +852,24 @@ async function clearDiagnosticLog() {
 
 // ── Import sanitizers (ported from options.js) ──
 
-function sanitizeImportedHiddenVideos(value) {
+function sanitizeImportedVideoIdList(value, limit = IMPORT_LIMITS.hiddenVideos) {
     if (!Array.isArray(value)) return [];
     const seen = new Set();
     const sanitized = [];
+    const maxItems = Math.max(0, Number(limit) || 0);
     for (const entry of value) {
         if (typeof entry !== 'string') continue;
         const videoId = entry.trim();
         if (!VIDEO_ID_PATTERN.test(videoId) || seen.has(videoId)) continue;
         seen.add(videoId);
         sanitized.push(videoId);
-        if (sanitized.length >= IMPORT_LIMITS.hiddenVideos) break;
+        if (sanitized.length >= maxItems) break;
     }
     return sanitized;
+}
+
+function sanitizeImportedHiddenVideos(value) {
+    return sanitizeImportedVideoIdList(value, IMPORT_LIMITS.hiddenVideos);
 }
 
 function getImportedFilteredVideoPosts(data) {
@@ -944,11 +951,13 @@ function buildExportData(allStorage) {
         getLegacySidebarOrder(allStorage)
     );
     const hiddenVideos = sanitizeImportedHiddenVideos(allStorage[STORAGE_KEYS.hiddenVideos]);
+    const allowedVideos = sanitizeImportedVideoIdList(allStorage[STORAGE_KEYS.allowedVideos], IMPORT_LIMITS.allowedVideos);
     const settings = sanitizeSettingsObject(mergedSettings);
     return {
         settings,
         hiddenVideos,
         filteredVideoPosts: hiddenVideos,
+        allowedVideos,
         blockedChannels: sanitizeImportedBlockedChannels(allStorage[STORAGE_KEYS.blockedChannels]),
         bookmarks: sanitizeImportedBookmarks(allStorage[STORAGE_KEYS.bookmarks]),
         exportVersion: 3,
@@ -1069,6 +1078,7 @@ async function importSettings(file) {
             const filteredVideoPosts = getImportedFilteredVideoPosts(data);
             if (isPlainObject(data.settings)) importedSettings = data.settings;
             if (filteredVideoPosts) writes[STORAGE_KEYS.hiddenVideos] = sanitizeImportedHiddenVideos(filteredVideoPosts);
+            if (Array.isArray(data.allowedVideos)) writes[STORAGE_KEYS.allowedVideos] = sanitizeImportedVideoIdList(data.allowedVideos, IMPORT_LIMITS.allowedVideos);
             if (Array.isArray(data.blockedChannels)) writes[STORAGE_KEYS.blockedChannels] = sanitizeImportedBlockedChannels(data.blockedChannels);
             if (isPlainObject(data.bookmarks)) writes[STORAGE_KEYS.bookmarks] = sanitizeImportedBookmarks(data.bookmarks);
         } else if (data.exportVersion >= 2) {
@@ -1117,7 +1127,7 @@ async function resetAllData() {
     const confirmed = await confirmAction({
         eyebrow: 'Destructive action',
         title: 'Reset all local data?',
-        message: `This clears ${BRAND_NAME} settings, hidden videos, blocked channels, and bookmarks from extension storage.`,
+        message: `This clears ${BRAND_NAME} settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage.`,
         confirmLabel: 'Reset',
         tone: 'danger'
     });
@@ -1231,6 +1241,7 @@ function installWheelScrolling() {
             const relevant = changes[SETTINGS_STORAGE_KEY]
                 || QUICK_TOGGLE_KEYS.some((key) => changes[key])
                 || changes[STORAGE_KEYS.hiddenVideos]
+                || changes[STORAGE_KEYS.allowedVideos]
                 || changes[STORAGE_KEYS.blockedChannels]
                 || changes[STORAGE_KEYS.bookmarks];
             if (!relevant) return;

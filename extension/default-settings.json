@@ -116,6 +116,7 @@
   "hideVideosRemoveHiddenCards": false,
   "hideVideosShowQuickHideButton": true,
   "hideVideosAllowChannelBlock": true,
+  "hideVideosRememberRestoredVideos": true,
   "hideVideosScopeHome": true,
   "hideVideosScopeSubscriptions": true,
   "hideVideosScopeSearch": true,
