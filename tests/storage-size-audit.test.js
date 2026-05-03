@@ -22,10 +22,10 @@ test('UI preferences payload fits current storage.sync quotas', () => {
     const { uiPreferences } = buildAuditPayloads();
     const assessment = assessSyncEligibility(uiPreferences);
 
-    assert.equal(assessment.totalBytes, 7632);
+    assert.equal(assessment.totalBytes, 7672);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 7632);
+    assert.equal(assessment.largestItem.bytes, 7672);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -35,7 +35,7 @@ test('typical local payload is not storage.sync eligible', () => {
     const { typicalLocal } = buildAuditPayloads();
     const assessment = assessSyncEligibility(typicalLocal);
 
-    assert.equal(assessment.totalBytes, 172759);
+    assert.equal(assessment.totalBytes, 173952);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -55,6 +55,6 @@ test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
     assert.match(report, /UI preferences sync candidate: viable \(7\.5 KB/);
-    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(168\.7 KB/);
+    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(169\.9 KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });
