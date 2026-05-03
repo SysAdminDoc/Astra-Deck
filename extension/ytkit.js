@@ -13563,11 +13563,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 superChats: 'yt-live-chat-paid-message-renderer, yt-live-chat-paid-sticker-renderer',
                 levelUp: 'yt-live-chat-viewer-engagement-message-renderer[engagement-type="VIEWER_ENGAGEMENT_MESSAGE_TYPE_LEVEL_UP"]'
             },
+            _reactionSpammerControlKeys: new Set(['reactions', 'support', 'emoji']),
             init() {
                 const hidden = appState.settings.hiddenChatElements || [];
+                const keepReactionControls = appState.settings.reactionSpammer;
                 const selectors = hidden
                     .filter(key => key !== 'bots') // bots handled separately via mutation rule
-                    .filter(key => !(key === 'reactions' && appState.settings.reactionSpammer))
+                    .filter(key => !(keepReactionControls && this._reactionSpammerControlKeys.has(key)))
                     .map(key => this._selectors[key])
                     .filter(Boolean)
                     .join(', ');
@@ -13656,19 +13658,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
             },
 
-            _pinVisible(node) {
+            _pinVisible(node, display = 'block') {
                 if (!(node instanceof HTMLElement)) return;
                 if (node.dataset.ytkitReactionSpammerDisplay === undefined) {
                     node.dataset.ytkitReactionSpammerDisplay = node.style.display || '';
                     node.dataset.ytkitReactionSpammerVisibility = node.style.visibility || '';
                     node.dataset.ytkitReactionSpammerOpacity = node.style.opacity || '';
                     node.dataset.ytkitReactionSpammerPointerEvents = node.style.pointerEvents || '';
+                    node.dataset.ytkitReactionSpammerOverflow = node.style.overflow || '';
                 }
                 node.dataset.ytkitReactionSpammerVisible = '1';
-                node.style.setProperty('display', 'block', 'important');
+                node.style.setProperty('display', display, 'important');
                 node.style.setProperty('visibility', 'visible', 'important');
                 node.style.setProperty('opacity', '1', 'important');
                 node.style.setProperty('pointer-events', 'auto', 'important');
+                node.style.setProperty('overflow', 'visible', 'important');
+            },
+
+            _pinVisibleAll(selector, display = 'block') {
+                document.querySelectorAll(selector).forEach(node => this._pinVisible(node, display));
             },
 
             _restorePinnedNodes() {
@@ -13678,36 +13686,48 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     node.style.visibility = node.dataset.ytkitReactionSpammerVisibility || '';
                     node.style.opacity = node.dataset.ytkitReactionSpammerOpacity || '';
                     node.style.pointerEvents = node.dataset.ytkitReactionSpammerPointerEvents || '';
+                    node.style.overflow = node.dataset.ytkitReactionSpammerOverflow || '';
                     delete node.dataset.ytkitReactionSpammerDisplay;
                     delete node.dataset.ytkitReactionSpammerVisibility;
                     delete node.dataset.ytkitReactionSpammerOpacity;
                     delete node.dataset.ytkitReactionSpammerPointerEvents;
+                    delete node.dataset.ytkitReactionSpammerOverflow;
                     delete node.dataset.ytkitReactionSpammerVisible;
                 });
             },
 
             _restoreReactionButton() {
+                this._pinVisibleAll(`
+                    yt-reaction-control-panel-overlay-view-model,
+                    yt-reaction-control-panel-view-model,
+                    yt-reaction-control-panel-overlay-view-model #reaction-control-panel,
+                    yt-reaction-control-panel-view-model #hover-area,
+                    yt-reaction-control-panel-view-model #fab-container,
+                    yt-reaction-control-panel-overlay-view-model #emoji-fountain,
+                    yt-emoji-fountain-view-model,
+                    yt-emoji-fountain-view-model #fountain-bounds,
+                    yt-emoji-fountain-view-model #emoji-container
+                `);
                 document
-                    .querySelectorAll(`
-                        yt-reaction-control-panel-overlay-view-model,
-                        yt-reaction-control-panel-view-model,
-                        yt-reaction-control-panel-overlay-view-model #reaction-control-panel,
-                        yt-reaction-control-panel-view-model #hover-area,
-                        yt-reaction-control-panel-view-model #fab-container,
-                        yt-reaction-control-panel-view-model #collapsed-button,
-                        yt-reaction-control-panel-overlay-view-model #emoji-fountain,
-                        yt-emoji-fountain-view-model,
-                        yt-emoji-fountain-view-model #fountain-bounds,
-                        yt-emoji-fountain-view-model #emoji-container
-                    `)
-                    .forEach(node => this._pinVisible(node));
+                    .querySelectorAll('yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model')
+                    .forEach(node => this._pinVisible(node.closest('yt-live-chat-message-input-renderer')));
+                this._pinVisibleAll('yt-reaction-control-panel-view-model #collapsed-button', 'flex');
+                this._pinVisibleAll(`
+                    yt-reaction-control-panel-view-model #collapsed-button yt-reaction-control-panel-button-view-model,
+                    yt-reaction-control-panel-view-model #collapsed-button button,
+                    yt-reaction-control-panel-view-model #collapsed-button .image-container,
+                    yt-reaction-control-panel-view-model #collapsed-button yt-icon
+                `, 'inline-flex');
             },
 
             _restoreReactionPopup() {
                 this._restoreReactionButton();
-                document
-                    .querySelectorAll('yt-reaction-control-panel-view-model #expanded-buttons')
-                    .forEach(node => this._pinVisible(node));
+                this._pinVisibleAll('yt-reaction-control-panel-view-model #expanded-buttons', 'flex');
+                this._pinVisibleAll(`
+                    yt-reaction-control-panel-view-model #expanded-buttons yt-reaction-control-panel-button-view-model,
+                    yt-reaction-control-panel-view-model #expanded-buttons button,
+                    yt-reaction-control-panel-view-model #expanded-buttons .image-container
+                `, 'inline-flex');
             },
 
             _queryButtons(root = document) {
@@ -14125,6 +14145,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._lastSignature = '';
 
                 const css = `
+                    yt-reaction-control-panel-overlay-view-model,
+                    yt-reaction-control-panel-view-model,
+                    yt-reaction-control-panel-overlay-view-model #reaction-control-panel,
+                    yt-reaction-control-panel-view-model #hover-area,
+                    yt-reaction-control-panel-view-model #fab-container {
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                        overflow: visible !important;
+                    }
+                    yt-reaction-control-panel-view-model #collapsed-button {
+                        display: flex !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                        overflow: visible !important;
+                    }
+                    yt-reaction-control-panel-view-model #collapsed-button yt-reaction-control-panel-button-view-model,
+                    yt-reaction-control-panel-view-model #collapsed-button button,
+                    yt-reaction-control-panel-view-model #collapsed-button .image-container,
+                    yt-reaction-control-panel-view-model #collapsed-button yt-icon {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                    }
                     html[data-ytkit-livechat-premium] yt-reaction-control-panel-view-model[data-ytkit-reaction-spammer-visible="1"],
                     html[data-ytkit-livechat-premium] yt-reaction-control-panel-overlay-view-model[data-ytkit-reaction-spammer-visible="1"],
                     yt-reaction-control-panel-view-model[data-ytkit-reaction-spammer-visible="1"],
@@ -14137,9 +14186,31 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         visibility: visible !important;
                         opacity: 1 !important;
                         pointer-events: auto !important;
+                        overflow: visible !important;
                     }
                     yt-reaction-control-panel-view-model #expanded-buttons[data-ytkit-reaction-spammer-visible="1"] {
                         display: flex !important;
+                        flex-direction: column !important;
+                        height: var(--expanded-buttons-height, auto) !important;
+                        max-height: none !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                        overflow: visible !important;
+                    }
+                    yt-reaction-control-panel-view-model #collapsed-button[data-ytkit-reaction-spammer-visible="1"] {
+                        display: flex !important;
+                    }
+                    yt-reaction-control-panel-view-model #expanded-buttons[data-ytkit-reaction-spammer-visible="1"] yt-reaction-control-panel-button-view-model,
+                    yt-reaction-control-panel-view-model #expanded-buttons[data-ytkit-reaction-spammer-visible="1"] button,
+                    yt-reaction-control-panel-view-model #expanded-buttons[data-ytkit-reaction-spammer-visible="1"] .image-container,
+                    yt-reaction-control-panel-view-model #collapsed-button[data-ytkit-reaction-spammer-visible="1"] yt-reaction-control-panel-button-view-model,
+                    yt-reaction-control-panel-view-model #collapsed-button[data-ytkit-reaction-spammer-visible="1"] button,
+                    yt-reaction-control-panel-view-model #collapsed-button[data-ytkit-reaction-spammer-visible="1"] .image-container,
+                    yt-reaction-control-panel-view-model #collapsed-button[data-ytkit-reaction-spammer-visible="1"] yt-icon {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
                         visibility: visible !important;
                         opacity: 1 !important;
                         pointer-events: auto !important;
