@@ -13591,6 +13591,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _statusEl: null,
             _intervalEl: null,
             _collapseBtn: null,
+            _launcherButton: null,
             _observer: null,
             _renderFrame: 0,
             _readyTimer: null,
@@ -13803,12 +13804,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return button;
             },
 
+            _buildLauncher() {
+                if (!document.body || this._launcherButton || document.getElementById('ytkit-reaction-spammer-launcher')) return;
+                const button = document.createElement('button');
+                button.id = 'ytkit-reaction-spammer-launcher';
+                button.type = 'button';
+                button.textContent = 'React';
+                button.title = 'Reaction spammer';
+                button.setAttribute('aria-label', 'Open reaction spammer');
+                button.addEventListener('click', () => this._showPanel());
+                document.body.append(button);
+                this._launcherButton = button;
+            },
+
+            _showPanel() {
+                this._ensureExpanded();
+                this._buildPanel();
+                if (this._panel) {
+                    this._panel.hidden = false;
+                    this._panel.focus?.();
+                    this._renderList();
+                    setTimeout(() => this._renderList(), 180);
+                }
+            },
+
             _buildPanel() {
                 if (!document.body || this._panel || document.getElementById('ytkit-reaction-spammer-panel')) return;
                 const pos = this._panelPosition();
                 const panel = document.createElement('section');
                 panel.id = 'ytkit-reaction-spammer-panel';
                 panel.setAttribute('aria-label', 'Reaction spammer');
+                panel.tabIndex = -1;
                 panel.style.left = `${pos.x}px`;
                 panel.style.top = `${pos.y}px`;
 
@@ -13833,11 +13859,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
 
                 const closeBtn = this._createButton('x', 'ghost');
-                closeBtn.setAttribute('aria-label', 'Hide reaction spammer until chat reload');
+                closeBtn.setAttribute('aria-label', 'Hide reaction spammer panel');
                 closeBtn.addEventListener('click', () => {
                     this._stop();
+                    this._dragCleanup?.();
+                    this._dragCleanup = null;
                     this._panel?.remove();
                     this._panel = null;
+                    this._listEl = null;
+                    this._body = null;
+                    this._startBtn = null;
+                    this._statusEl = null;
+                    this._intervalEl = null;
+                    this._collapseBtn = null;
                 });
 
                 headerActions.append(this._collapseBtn, closeBtn);
@@ -14071,6 +14105,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         opacity: 1 !important;
                         pointer-events: auto !important;
                     }
+                    #ytkit-reaction-spammer-launcher {
+                        position: fixed;
+                        right: 12px;
+                        bottom: 74px;
+                        z-index: 2147483646;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 54px;
+                        height: 36px;
+                        padding: 0 12px;
+                        border: 1px solid rgba(245,158,11,0.42);
+                        border-radius: 999px;
+                        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+                        color: #14181f;
+                        box-shadow: 0 14px 34px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.28);
+                        font: 700 12px/1 "Roboto", "Arial", sans-serif;
+                        cursor: pointer;
+                    }
+                    #ytkit-reaction-spammer-launcher:hover {
+                        filter: brightness(1.06);
+                    }
+                    #ytkit-reaction-spammer-launcher:focus-visible {
+                        outline: 2px solid rgba(255,255,255,0.92);
+                        outline-offset: 3px;
+                    }
                     #ytkit-reaction-spammer-panel {
                         position: fixed;
                         z-index: 2147483647;
@@ -14235,8 +14295,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 this._styleElement = injectStyle(css, this.id, true);
                 this._restoreReactionButton();
-                if (document.body) this._buildPanel();
-                else this._readyTimer = setTimeout(() => this._buildPanel(), 100);
+                if (document.body) this._buildLauncher();
+                else this._readyTimer = setTimeout(() => this._buildLauncher(), 100);
 
                 this._observer = new MutationObserver(() => {
                     this._restoreReactionButton();
@@ -14268,6 +14328,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._dragCleanup = null;
                 this._panel?.remove();
                 this._panel = null;
+                this._launcherButton?.remove();
+                this._launcherButton = null;
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._restorePinnedNodes();
@@ -31203,7 +31265,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
         // Live chat iframe: only initialize chat-related features, skip full UI
         if (isLiveChatFrame()) {
             const CHAT_FEATURE_IDS = new Set([
-                'hideLiveChatEngagement', 'premiumLiveChat', 'hiddenChatElementsManager', 'chatKeywordFilter'
+                'hideLiveChatEngagement', 'premiumLiveChat', 'hiddenChatElementsManager', 'reactionSpammer',
+                'chatKeywordFilter'
             ]);
             const chatFeatures = features.filter(f =>
                 CHAT_FEATURE_IDS.has(f.id) || CHAT_FEATURE_IDS.has(f.parentId)
