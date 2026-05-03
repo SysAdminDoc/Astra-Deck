@@ -392,6 +392,10 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should include a remove-hidden-on-page action');
     assert.ok(block.includes('_getAllowedVideos()'),
         'video hider should keep a manual allowed-video list');
+    assert.ok(block.includes('_addHiddenVideos(videoIds)') && block.includes('_removeHiddenVideos(videoIds)'),
+        'video hider should support explicit hidden-list add/remove operations');
+    assert.ok(block.includes('_normalizeVideoIdInput(value)'),
+        'video hider should accept pasted video URLs or IDs in management controls');
     assert.ok(block.includes('_isVideoAllowed(videoId)'),
         'video hider should check manual allow rules before hiding');
     assert.ok(block.includes('if (videoId && this._isVideoAllowed(videoId)) return false;'),
@@ -423,10 +427,15 @@ test('video hider exposes split hide-all and restore-page controls', () => {
     assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-remove-btn')"),
         'video hider should keep remove controls in sync with page state');
     assert.ok(source.includes('Allowed Videos')
+        && source.includes('Add Hidden Video')
+        && source.includes('Add Allowed Video')
+        && source.includes('Remove From List')
+        && source.includes('Clear Hidden List Only')
+        && source.includes('Restore & Allow')
         && source.includes('Hidden Card Behavior')
         && source.includes('Thumbnail Controls')
         && source.includes('Run On'),
-        'video hider settings should expose allowlist, behavior, controls, and scope sections');
+        'video hider settings should expose manual list editing, allowlist, behavior, controls, and scope sections');
 });
 
 test('studio comments preserve native text selection on watch pages', () => {
