@@ -3282,6 +3282,15 @@ return response;
             hideVideosDurationFilter: 0,
             hideVideosSubsLoadLimit: true,
             hideVideosSubsLoadThreshold: 3,
+            hideVideosRemoveHiddenCards: false,
+            hideVideosShowQuickHideButton: true,
+            hideVideosAllowChannelBlock: true,
+            hideVideosScopeHome: true,
+            hideVideosScopeSubscriptions: true,
+            hideVideosScopeSearch: true,
+            hideVideosScopeWatch: true,
+            hideVideosScopeChannels: true,
+            hideVideosScopeOther: true,
             hideInfoPanels: true,
             colorTheme: 'none',
             commentEnhancements: false,
@@ -14647,9 +14656,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _lastHidden: null,
             _STORAGE_KEY: 'ytkit-hidden-videos',
             _CHANNELS_KEY: 'ytkit-blocked-channels',
+            _VIDEO_SELECTORS: 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer',
             _hiddenSet: null,
             _hiddenList: null,
             _channelsCache: null,
+            _removedVideoNodes: [],
             _subsBannerCollapsed: false,
             _subsLoadState: {
                 consecutiveHiddenBatches: 0,
@@ -14926,6 +14937,84 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 storageWrite(this._CHANNELS_KEY, channels);
             },
 
+            _getCurrentScope(pathname = window.location.pathname) {
+                const path = pathname || '/';
+                if (path === '/') return 'home';
+                if (path === '/feed/subscriptions') return 'subscriptions';
+                if (path === '/results') return 'search';
+                if (path.startsWith('/watch')) return 'watch';
+                if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/') || path.startsWith('/user/')) return 'channel';
+                return 'other';
+            },
+
+            _isScopeEnabledForPath(pathname = window.location.pathname) {
+                const scope = this._getCurrentScope(pathname);
+                const settingByScope = {
+                    home: 'hideVideosScopeHome',
+                    subscriptions: 'hideVideosScopeSubscriptions',
+                    search: 'hideVideosScopeSearch',
+                    watch: 'hideVideosScopeWatch',
+                    channel: 'hideVideosScopeChannels',
+                    other: 'hideVideosScopeOther'
+                };
+                const key = settingByScope[scope];
+                return !key || appState.settings[key] !== false;
+            },
+
+            _restoreRemovedVideoNodes(ids = null) {
+                const idSet = ids ? new Set(ids) : null;
+                const remaining = [];
+                let restored = 0;
+                this._removedVideoNodes.forEach(record => {
+                    if (!record || (idSet && !idSet.has(record.videoId))) {
+                        remaining.push(record);
+                        return;
+                    }
+                    if (record.element?.isConnected) {
+                        delete record.element.dataset.ytkitRemoved;
+                        return;
+                    }
+                    if (record.parent?.isConnected) {
+                        delete record.element.dataset.ytkitRemoved;
+                        if (record.nextSibling?.parentNode === record.parent) record.parent.insertBefore(record.element, record.nextSibling);
+                        else record.parent.appendChild(record.element);
+                        restored++;
+                    }
+                });
+                this._removedVideoNodes = remaining;
+                return restored;
+            },
+
+            _removeVideoElement(element) {
+                if (!(element instanceof HTMLElement) || element.dataset.ytkitRemoved === 'true') return;
+                const videoId = element.dataset.ytkitVideoId || this._extractVideoId(element);
+                if (!videoId || !element.parentNode) return;
+                this._removedVideoNodes = this._removedVideoNodes.filter(record => record.element !== element);
+                this._removedVideoNodes.push({
+                    videoId,
+                    element,
+                    parent: element.parentNode,
+                    nextSibling: element.nextSibling
+                });
+                if (this._removedVideoNodes.length > 500) {
+                    this._removedVideoNodes.splice(0, this._removedVideoNodes.length - 500);
+                }
+                element.dataset.ytkitRemoved = 'true';
+                element.remove();
+            },
+
+            _applyVideoHiddenState(element, shouldHide) {
+                if (!(element instanceof HTMLElement)) return !!shouldHide;
+                if (shouldHide && appState.settings.hideVideosRemoveHiddenCards) {
+                    element.classList.add('ytkit-video-hidden');
+                    this._removeVideoElement(element);
+                    return true;
+                }
+                element.classList.toggle('ytkit-video-hidden', !!shouldHide);
+                if (!shouldHide) delete element.dataset.ytkitRemoved;
+                return !!shouldHide;
+            },
+
             _extractVideoId(element) {
                 const lockup = element.querySelector('.yt-lockup-view-model[class*="content-id-"]');
                 if (lockup) { const m = lockup.className.match(/content-id-([a-zA-Z0-9_-]+)/); if (m) return m[1]; }
@@ -14986,9 +15075,46 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _createHideButton() {
                 const btn = document.createElement('button');
                 btn.className = 'ytkit-video-hide-btn';
-                btn.title = 'Hide this video (right-click to block channel)';
+                btn.title = appState.settings.hideVideosAllowChannelBlock === false
+                    ? 'Hide this video'
+                    : 'Hide this video (right-click to block channel)';
+                btn.setAttribute('aria-label', btn.title);
                 btn.appendChild(this._createSVG('M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'));
                 return btn;
+            },
+
+            _syncQuickHideButton(element, videoId) {
+                const thumbnail = this._findThumbnailContainer(element);
+                if (!thumbnail) return;
+                const existing = thumbnail.querySelector('.ytkit-video-hide-btn');
+                const controlsEnabled = appState.settings.hideVideosShowQuickHideButton !== false && this._isScopeEnabledForPath();
+                if (!controlsEnabled) {
+                    existing?.remove();
+                    return;
+                }
+                if (existing) {
+                    existing.title = appState.settings.hideVideosAllowChannelBlock === false
+                        ? 'Hide this video'
+                        : 'Hide this video (right-click to block channel)';
+                    existing.setAttribute('aria-label', existing.title);
+                    return;
+                }
+                if (window.getComputedStyle(thumbnail).position === 'static') thumbnail.style.position = 'relative';
+                const btn = this._createHideButton();
+                btn.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = videoId || this._extractVideoId(element);
+                    if (id) this._hideVideo(id, element);
+                });
+                btn.addEventListener('contextmenu', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (appState.settings.hideVideosAllowChannelBlock === false) return;
+                    const channelInfo = this._extractChannelInfo(element);
+                    if (channelInfo) this._blockChannel(channelInfo, element);
+                });
+                thumbnail.appendChild(btn);
             },
 
             _showToast(message, buttons = []) {
@@ -15005,7 +15131,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _hideVideo(videoId, element) {
                 const hidden = this._getHiddenVideos();
                 if (!hidden.includes(videoId)) { hidden.push(videoId); this._setHiddenVideos(hidden); }
-                element.classList.add('ytkit-video-hidden');
+                this._applyVideoHiddenState(element, true);
                 this._lastHidden = { type: 'video', id: videoId, element };
                 this._updatePageActionButtons();
                 this._showToast('Video hidden', [
@@ -15016,6 +15142,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _blockChannel(channelInfo, element) {
                 if (!channelInfo) return;
+                if (appState.settings.hideVideosAllowChannelBlock === false) {
+                    showToast('Channel blocking is disabled', '#6b7280');
+                    return;
+                }
                 const channels = this._getBlockedChannels();
                 if (!channels.find(c => c.id === channelInfo.id)) {
                     channels.push(channelInfo);
@@ -15030,9 +15160,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _hideChannelVideos(channelId) {
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(el => {
+                document.querySelectorAll(this._VIDEO_SELECTORS).forEach(el => {
                     const info = this._extractChannelInfo(el);
-                    if (info && info.id === channelId) el.classList.add('ytkit-video-hidden');
+                    if (info && info.id === channelId) this._applyVideoHiddenState(el, true);
                 });
             },
 
@@ -15042,6 +15172,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const hidden = this._getHiddenVideos();
                     const idx = hidden.indexOf(this._lastHidden.id);
                     if (idx > -1) { hidden.splice(idx, 1); this._setHiddenVideos(hidden); }
+                    this._restoreRemovedVideoNodes(new Set([this._lastHidden.id]));
                     this._lastHidden.element?.classList.remove('ytkit-video-hidden');
                 } else if (this._lastHidden.type === 'channel') {
                     const channels = this._getBlockedChannels();
@@ -15059,6 +15190,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (idx > -1) {
                     hidden.splice(idx, 1);
                     this._setHiddenVideos(hidden);
+                    this._restoreRemovedVideoNodes(new Set([videoId]));
                     document.querySelectorAll(`[data-ytkit-video-id="${videoId}"]`)?.forEach(el => {
                         el.classList.remove('ytkit-video-hidden');
                     });
@@ -15131,46 +15263,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _processVideoElement(element) {
-                const alreadyProcessed = !!element.dataset.ytkitHideProcessed;
                 element.dataset.ytkitHideProcessed = 'true';
                 const videoId = this._extractVideoId(element);
                 if (videoId) element.dataset.ytkitVideoId = videoId;
-                if (!alreadyProcessed) {
-                    if (this._shouldHide(element)) { element.classList.add('ytkit-video-hidden'); }
-                    else { element.classList.remove('ytkit-video-hidden'); }
+                if (!this._isScopeEnabledForPath()) {
+                    this._applyVideoHiddenState(element, false);
+                    this._syncQuickHideButton(element, videoId);
+                    return;
                 }
-                const thumbnail = this._findThumbnailContainer(element);
-                if (!thumbnail || thumbnail.querySelector('.ytkit-video-hide-btn')) return;
-                if (window.getComputedStyle(thumbnail).position === 'static') thumbnail.style.position = 'relative';
-                const btn = this._createHideButton();
-                const channelInfo = this._extractChannelInfo(element);
-                btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (videoId) this._hideVideo(videoId, element); });
-                btn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); if (channelInfo) this._blockChannel(channelInfo, element); });
-                thumbnail.appendChild(btn);
+                this._applyVideoHiddenState(element, this._shouldHide(element));
+                this._syncQuickHideButton(element, videoId);
             },
 
             _processVideoElementWithResult(element) {
-                const alreadyProcessed = !!element.dataset.ytkitHideProcessed;
                 element.dataset.ytkitHideProcessed = 'true';
                 const videoId = this._extractVideoId(element);
                 if (videoId) element.dataset.ytkitVideoId = videoId;
-                let shouldHide;
-                if (alreadyProcessed) {
-                    shouldHide = element.classList.contains('ytkit-video-hidden');
-                } else {
-                    shouldHide = this._shouldHide(element);
-                    if (shouldHide) { element.classList.add('ytkit-video-hidden'); }
-                    else { element.classList.remove('ytkit-video-hidden'); }
+                if (!this._isScopeEnabledForPath()) {
+                    this._applyVideoHiddenState(element, false);
+                    this._syncQuickHideButton(element, videoId);
+                    return false;
                 }
-                const thumbnail = this._findThumbnailContainer(element);
-                if (thumbnail && !thumbnail.querySelector('.ytkit-video-hide-btn')) {
-                    if (window.getComputedStyle(thumbnail).position === 'static') thumbnail.style.position = 'relative';
-                    const btn = this._createHideButton();
-                    const channelInfo = this._extractChannelInfo(element);
-                    btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (videoId) this._hideVideo(videoId, element); });
-                    btn.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); if (channelInfo) this._blockChannel(channelInfo, element); });
-                    thumbnail.appendChild(btn);
-                }
+                const shouldHide = this._shouldHide(element);
+                this._applyVideoHiddenState(element, shouldHide);
+                this._syncQuickHideButton(element, videoId);
                 return shouldHide;
             },
 
@@ -15179,9 +15295,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _processAllVideos() {
                 // Clear pending batch to prevent race with MutationObserver
                 this._clearBatchBuffer?.();
+                this._restoreRemovedVideoNodes();
                 document.querySelectorAll('[data-ytkit-hide-processed]').forEach(el => { delete el.dataset.ytkitHideProcessed; });
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer')
-                    .forEach(el => this._processVideoElement(el));
+                const videos = document.querySelectorAll(this._VIDEO_SELECTORS);
+                if (!this._isScopeEnabledForPath()) {
+                    videos.forEach(el => {
+                        this._applyVideoHiddenState(el, false);
+                        this._syncQuickHideButton(el, this._extractVideoId(el));
+                    });
+                    this._updatePageActionButtons();
+                    return;
+                }
+                videos.forEach(el => this._processVideoElement(el));
                 this._updatePageActionButtons();
             },
             _processAllVideosDebounced(delay = 300) {
@@ -15194,7 +15319,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _getVisibleVideos() {
                 const videos = [];
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(item => {
+                if (!this._isScopeEnabledForPath()) return videos;
+                document.querySelectorAll(this._VIDEO_SELECTORS).forEach(item => {
                     if (item.classList.contains('ytkit-video-hidden')) return;
                     const videoId = this._extractVideoId(item);
                     if (videoId) videos.push({ id: videoId, element: item });
@@ -15204,22 +15330,45 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _getHiddenVideosOnPage() {
                 const hiddenIds = new Set();
-                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer').forEach(item => {
+                document.querySelectorAll(this._VIDEO_SELECTORS).forEach(item => {
                     const videoId = this._extractVideoId(item);
                     if (!videoId || !this._isVideoIdHidden(videoId)) return;
                     hiddenIds.add(videoId);
                 });
+                this._removedVideoNodes.forEach(record => {
+                    if (record?.videoId && this._isVideoIdHidden(record.videoId)) hiddenIds.add(record.videoId);
+                });
                 return [...hiddenIds];
+            },
+
+            _getHiddenVideoElementsOnPage() {
+                const hiddenItems = [];
+                document.querySelectorAll(this._VIDEO_SELECTORS).forEach(item => {
+                    const videoId = this._extractVideoId(item);
+                    if ((videoId && this._isVideoIdHidden(videoId)) || item.classList.contains('ytkit-video-hidden')) {
+                        hiddenItems.push({ id: videoId, element: item });
+                    }
+                });
+                return hiddenItems;
             },
 
             _updatePageActionButtons() {
                 const hiddenCount = this._getHiddenVideosOnPage().length;
+                const removableCount = this._getHiddenVideoElementsOnPage().length;
                 document.querySelectorAll('.ytkit-hide-all-restore-btn').forEach(btn => {
                     if (!(btn instanceof HTMLButtonElement)) return;
                     btn.disabled = hiddenCount === 0;
                     btn.title = hiddenCount === 0
                         ? 'No hidden videos on this page'
                         : `Restore ${hiddenCount} hidden video${hiddenCount === 1 ? '' : 's'} on this page`;
+                    btn.setAttribute('aria-label', btn.title);
+                });
+                document.querySelectorAll('.ytkit-hide-all-remove-btn').forEach(btn => {
+                    if (!(btn instanceof HTMLButtonElement)) return;
+                    btn.disabled = removableCount === 0;
+                    btn.title = removableCount === 0
+                        ? 'No hidden videos to remove from this page'
+                        : `Remove ${removableCount} hidden video${removableCount === 1 ? '' : 's'} from this page`;
                     btn.setAttribute('aria-label', btn.title);
                 });
             },
@@ -15231,7 +15380,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 let newlyHidden = 0;
                 videos.forEach(v => {
                     if (!hidden.includes(v.id)) { hidden.push(v.id); newlyHidden++; }
-                    v.element.classList.add('ytkit-video-hidden');
+                    this._applyVideoHiddenState(v.element, true);
                 });
                 this._setHiddenVideos(hidden);
                 this._updatePageActionButtons();
@@ -15246,6 +15395,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 videos.forEach(v => {
                     const idx = hidden.indexOf(v.id);
                     if (idx > -1) hidden.splice(idx, 1);
+                    this._restoreRemovedVideoNodes(new Set([v.id]));
                     v.element.classList.remove('ytkit-video-hidden');
                 });
                 this._setHiddenVideos(hidden);
@@ -15264,6 +15414,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const previousHidden = this._getHiddenVideos();
                 const remaining = previousHidden.filter(id => !hiddenSet.has(id));
                 this._setHiddenVideos(remaining);
+                this._restoreRemovedVideoNodes(hiddenSet);
                 this._processAllVideos();
                 this._updatePageActionButtons();
                 showToast(`Restored ${hiddenIds.length} hidden video${hiddenIds.length === 1 ? '' : 's'}`, '#22c55e', {
@@ -15279,6 +15430,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     }
                 });
+            },
+
+            _removeHiddenVideosOnPage() {
+                const hiddenItems = this._getHiddenVideoElementsOnPage();
+                if (hiddenItems.length === 0) {
+                    showToast('No hidden videos to remove from this page', '#6b7280');
+                    this._updatePageActionButtons();
+                    return;
+                }
+                const ids = hiddenItems.map(item => item.id).filter(Boolean);
+                hiddenItems.forEach(item => this._removeVideoElement(item.element));
+                this._updatePageActionButtons();
+                this._showToast(`Removed ${hiddenItems.length} hidden video${hiddenItems.length === 1 ? '' : 's'} from this page`, [
+                    {
+                        text: 'Undo',
+                        onClick: () => {
+                            this._restoreRemovedVideoNodes(new Set(ids));
+                            this._updatePageActionButtons();
+                        }
+                    }
+                ]);
             },
 
             _createHideAllButtonElement(className) {
@@ -15307,6 +15479,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 restoreBtn.appendChild(restoreIconWrap);
                 restoreBtn.addEventListener('click', () => this._restoreHiddenVideosOnPage());
 
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-remove-btn';
+                removeBtn.title = 'Remove hidden videos on this page';
+                removeBtn.setAttribute('aria-label', 'Remove hidden videos on this page');
+                const removeSvg = createSvgElement('svg', { viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+                removeSvg.appendChild(createSvgElement('path', { d: 'M3 6h18' }));
+                removeSvg.appendChild(createSvgElement('path', { d: 'M8 6V4h8v2' }));
+                removeSvg.appendChild(createSvgElement('path', { d: 'M19 6l-1 14H6L5 6' }));
+                removeSvg.appendChild(createSvgElement('path', { d: 'M10 11v5' }));
+                removeSvg.appendChild(createSvgElement('path', { d: 'M14 11v5' }));
+                const removeIconWrap = document.createElement('span');
+                removeIconWrap.className = 'ytkit-watch-action-btn__icon';
+                removeIconWrap.appendChild(removeSvg);
+                removeBtn.appendChild(removeIconWrap);
+                removeBtn.addEventListener('click', () => this._removeHiddenVideosOnPage());
+
                 const hideAllBtn = document.createElement('button');
                 hideAllBtn.type = 'button';
                 hideAllBtn.className = 'ytkit-watch-action-btn ytkit-hide-all-btn';
@@ -15324,6 +15513,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 hideAllBtn.appendChild(text);
                 hideAllBtn.addEventListener('click', () => this._hideAllVideos());
                 group.appendChild(restoreBtn);
+                group.appendChild(removeBtn);
                 group.appendChild(hideAllBtn);
                 this._updatePageActionButtons();
                 return group;
@@ -15332,6 +15522,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _createSubsHideAllButton() {
                 if (document.querySelector('.ytkit-subs-hide-all-btn')) return;
                 if (window.location.pathname !== '/feed/subscriptions') return;
+                if (!this._isScopeEnabledForPath('/feed/subscriptions')) return;
                 const headerButtons = document.querySelector('#masthead #end #buttons');
                 if (!headerButtons) return;
                 const hideAllBtn = this._createHideAllButtonElement('ytkit-subs-hide-all-btn');
@@ -15346,6 +15537,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _createHomeHideAllButton() {
                 if (document.querySelector('.ytkit-home-hide-all-btn')) return;
                 if (window.location.pathname !== '/') return;
+                if (!this._isScopeEnabledForPath('/')) return;
                 const headerButtons = document.querySelector('#masthead #end #buttons');
                 if (!headerButtons) return;
                 const hideAllBtn = this._createHideAllButtonElement('ytkit-home-hide-all-btn');
@@ -15406,7 +15598,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._styleElement = injectStyle(css, this.id, true);
                 this._processAllVideos();
-                const selectors = 'ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer';
+                const selectors = this._VIDEO_SELECTORS;
 
                 let batchBuffer = [];
                 let batchTimeout = null;
@@ -15448,7 +15640,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const path = window.location.pathname;
                     const isOnSubsPage = path === '/feed/subscriptions';
                     const isOnHomePage = path === '/';
-                    if (isOnSubsPage) {
+                    if (isOnSubsPage && this._isScopeEnabledForPath('/feed/subscriptions')) {
                         if (!wasOnSubsPage) this._resetSubsLoadState();
                         clearTimeout(this._subsButtonTimer);
                         this._subsButtonTimer = setTimeout(() => this._createSubsHideAllButton(), 1000);
@@ -15456,7 +15648,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._removeSubsHideAllButton();
                         this._removeLoadBlocker();
                     }
-                    if (isOnHomePage) {
+                    if (isOnHomePage && this._isScopeEnabledForPath('/')) {
                         clearTimeout(this._homeButtonTimer);
                         this._homeButtonTimer = setTimeout(() => this._createHomeHideAllButton(), 1000);
                     } else {
@@ -15495,6 +15687,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement?.remove();
                 this._observer?.disconnect();
                 this._clearBatchBuffer?.();
+                this._restoreRemovedVideoNodes();
                 if (this._chipClickHandler) { document.removeEventListener('click', this._chipClickHandler, true); this._chipClickHandler = null; }
                 if (this._chipSecondPassTimer) { clearTimeout(this._chipSecondPassTimer); this._chipSecondPassTimer = null; }
                 if (this._processAllDebounceTimer) { clearTimeout(this._processAllDebounceTimer); this._processAllDebounceTimer = null; }
@@ -28302,7 +28495,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
 
             function getSettingsStatus() {
-                return (appState.settings.hideVideosDurationFilter || 0) > 0 || appState.settings.hideVideosSubsLoadLimit === false
+                const scopeKeys = [
+                    'hideVideosScopeHome',
+                    'hideVideosScopeSubscriptions',
+                    'hideVideosScopeSearch',
+                    'hideVideosScopeWatch',
+                    'hideVideosScopeChannels',
+                    'hideVideosScopeOther'
+                ];
+                return (appState.settings.hideVideosDurationFilter || 0) > 0
+                    || appState.settings.hideVideosSubsLoadLimit === false
+                    || (appState.settings.hideVideosSubsLoadThreshold || 3) !== 3
+                    || appState.settings.hideVideosRemoveHiddenCards === true
+                    || appState.settings.hideVideosShowQuickHideButton === false
+                    || appState.settings.hideVideosAllowChannelBlock === false
+                    || scopeKeys.some(key => appState.settings[key] === false)
                     ? 'Custom'
                     : 'Ready';
             }
@@ -28358,6 +28565,58 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 sectionHeader.appendChild(sectionCopy);
                 section.appendChild(sectionHeader);
                 return section;
+            }
+
+            function refreshVideoHiderAfterSettingChange() {
+                settingsManager.save(appState.settings);
+                videoHiderFeature?._restoreRemovedVideoNodes?.();
+                videoHiderFeature?._processAllVideos?.();
+                videoHiderFeature?._removeSubsHideAllButton?.();
+                videoHiderFeature?._removeHomeHideAllButton?.();
+                videoHiderFeature?._createSubsHideAllButton?.();
+                videoHiderFeature?._createHomeHideAllButton?.();
+                updateVideoHiderMeta();
+            }
+
+            function createVideoHiderToggle({ key, title, description, defaultChecked = true, onChange = null }) {
+                const row = document.createElement('label');
+                row.className = 'ytkit-vh-toggle-row';
+                const copy = document.createElement('div');
+                copy.className = 'ytkit-vh-toggle-copy';
+                const label = document.createElement('div');
+                label.className = 'ytkit-vh-toggle-title';
+                label.textContent = title;
+                const desc = document.createElement('div');
+                desc.className = 'ytkit-vh-toggle-desc';
+                desc.textContent = description;
+                const toggle = document.createElement('div');
+                const isChecked = defaultChecked
+                    ? appState.settings[key] !== false
+                    : appState.settings[key] === true;
+                toggle.className = 'ytkit-switch' + (isChecked ? ' active' : '');
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = key;
+                input.checked = isChecked;
+                input.setAttribute('aria-label', title);
+                const track = document.createElement('span');
+                track.className = 'ytkit-switch-track';
+                const thumb = document.createElement('span');
+                thumb.className = 'ytkit-switch-thumb';
+                track.appendChild(thumb);
+                toggle.appendChild(input);
+                toggle.appendChild(track);
+                copy.appendChild(label);
+                copy.appendChild(desc);
+                row.appendChild(copy);
+                row.appendChild(toggle);
+                input.onchange = () => {
+                    appState.settings[key] = input.checked;
+                    toggle.classList.toggle('active', input.checked);
+                    if (onChange) onChange(input.checked);
+                    else refreshVideoHiderAfterSettingChange();
+                };
+                return row;
             }
 
             function setActiveTab(nextTabId) {
@@ -28504,6 +28763,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const h = videoHiderFeature._getHiddenVideos();
                                 const idx = h.indexOf(vid);
                                 if (idx > -1) { h.splice(idx, 1); videoHiderFeature._setHiddenVideos(h); }
+                                videoHiderFeature._restoreRemovedVideoNodes?.(new Set([vid]));
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('videos');
                             };
@@ -28525,6 +28785,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getHiddenVideos()];
                             videoHiderFeature._setHiddenVideos([]);
+                            videoHiderFeature._restoreRemovedVideoNodes?.(new Set(backup));
                             videoHiderFeature._processAllVideos();
                             renderTabContent('videos');
                             showToast(`Restored ${backup.length} hidden videos`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
@@ -28536,6 +28797,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             }}});
                         };
                         tabContent.appendChild(clearBtn);
+                        const removePageBtn = document.createElement('button');
+                        removePageBtn.type = 'button';
+                        removePageBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
+                        removePageBtn.textContent = 'Remove Hidden Videos On This Page';
+                        removePageBtn.onclick = () => {
+                            videoHiderFeature._removeHiddenVideosOnPage?.();
+                            updateVideoHiderMeta();
+                        };
+                        tabContent.appendChild(removePageBtn);
                     }
                 } else if (tab === 'channels') {
                     const channels = videoHiderFeature?._getBlockedChannels() || [];
@@ -28601,6 +28871,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const c = videoHiderFeature._getBlockedChannels();
                                 const idx = c.findIndex(x => x.id === ch.id);
                                 if (idx > -1) { c.splice(idx, 1); videoHiderFeature._setBlockedChannels(c); }
+                                videoHiderFeature._restoreRemovedVideoNodes?.();
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
                             };
@@ -28621,6 +28892,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         clearBtn.onclick = () => {
                             const backup = [...videoHiderFeature._getBlockedChannels()];
                             videoHiderFeature._setBlockedChannels([]);
+                            videoHiderFeature._restoreRemovedVideoNodes?.();
                             videoHiderFeature._processAllVideos();
                             renderTabContent('channels');
                             showToast(`Unblocked ${backup.length} channels`, '#6b7280', { duration: 5, tone: 'neutral', action: { text: 'Undo', onClick: () => {
@@ -28662,6 +28934,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     textarea.onchange = async () => {
                         appState.settings.hideVideosKeywordFilter = textarea.value;
                         settingsManager.save(appState.settings);
+                        videoHiderFeature?._restoreRemovedVideoNodes?.();
                         videoHiderFeature?._processAllVideos();
                         updateVideoHiderMeta();
                     };
@@ -28680,6 +28953,62 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else if (tab === 'settings') {
                     const container = document.createElement('div');
                     container.className = 'ytkit-vh-settings';
+
+                    // Hidden card behavior
+                    const behaviorSection = createVideoHiderSection(
+                        'Hidden Card Behavior',
+                        'Choose whether hidden matches stay collapsed or are removed from the current feed DOM.'
+                    );
+                    behaviorSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosRemoveHiddenCards',
+                        title: 'Remove hidden cards automatically',
+                        description: 'When enabled, matching videos are removed from the feed DOM instead of only being hidden with CSS.',
+                        defaultChecked: false
+                    }));
+                    const removeCurrentPageBtn = document.createElement('button');
+                    removeCurrentPageBtn.type = 'button';
+                    removeCurrentPageBtn.className = 'ytkit-vh-clear-btn ytkit-vh-clear-btn--danger';
+                    removeCurrentPageBtn.textContent = 'Remove Hidden Videos On This Page';
+                    removeCurrentPageBtn.onclick = () => {
+                        videoHiderFeature?._removeHiddenVideosOnPage?.();
+                        updateVideoHiderMeta();
+                    };
+                    behaviorSection.appendChild(removeCurrentPageBtn);
+                    container.appendChild(behaviorSection);
+
+                    // Thumbnail controls
+                    const controlsSection = createVideoHiderSection(
+                        'Thumbnail Controls',
+                        'Tune the quick-hide affordances that appear on video thumbnails.'
+                    );
+                    controlsSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosShowQuickHideButton',
+                        title: 'Show thumbnail hide button',
+                        description: 'Display the X button on supported video thumbnails for one-click hiding.'
+                    }));
+                    controlsSection.appendChild(createVideoHiderToggle({
+                        key: 'hideVideosAllowChannelBlock',
+                        title: 'Allow right-click channel blocking',
+                        description: 'Use right-click on the thumbnail X button to block the whole channel.'
+                    }));
+                    container.appendChild(controlsSection);
+
+                    // Surface scope
+                    const scopeSection = createVideoHiderSection(
+                        'Run On',
+                        'Limit where Video Hider evaluates videos and shows quick actions.'
+                    );
+                    [
+                        { key: 'hideVideosScopeHome', title: 'Home', description: 'Hide matches on the YouTube home feed.' },
+                        { key: 'hideVideosScopeSubscriptions', title: 'Subscriptions', description: 'Hide matches and show bulk controls on the subscriptions feed.' },
+                        { key: 'hideVideosScopeSearch', title: 'Search results', description: 'Apply video and channel rules on search result pages.' },
+                        { key: 'hideVideosScopeWatch', title: 'Watch pages', description: 'Apply rules to recommendations beside and below the player.' },
+                        { key: 'hideVideosScopeChannels', title: 'Channel pages', description: 'Apply rules on channel home, video, live, and playlist surfaces.' },
+                        { key: 'hideVideosScopeOther', title: 'Other YouTube surfaces', description: 'Keep Video Hider active on miscellaneous browse surfaces.' }
+                    ].forEach(toggleInfo => {
+                        scopeSection.appendChild(createVideoHiderToggle(toggleInfo));
+                    });
+                    container.appendChild(scopeSection);
 
                     // Duration filter
                     const durSection = createVideoHiderSection(
@@ -28714,6 +29043,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         appState.settings.hideVideosDurationFilter = Math.max(0, Math.min(60, parseInt(durInput.value, 10) || 0));
                         durInput.value = appState.settings.hideVideosDurationFilter;
                         settingsManager.save(appState.settings);
+                        videoHiderFeature?._restoreRemovedVideoNodes?.();
                         videoHiderFeature?._processAllVideos();
                         updateVideoHiderMeta();
                     };
@@ -36041,10 +36371,38 @@ body.ytkit-panel-open #ytkit-settings-panel {
             border-color: transparent !important;
         }
 
+        .ytkit-hide-all-remove-btn {
+            color: rgba(253,186,116,0.94) !important;
+        }
+
+        .ytkit-hide-all-remove-btn:hover:not(:disabled) {
+            background: rgba(249,115,22,0.16) !important;
+            border-color: rgba(249,115,22,0.3) !important;
+            color: #fff !important;
+        }
+
+        .ytkit-hide-all-remove-btn:disabled {
+            color: rgba(255,255,255,0.36) !important;
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+
         .ytkit-vh-clear-btn {
             width: 100%;
             margin-top: 12px;
             min-height: 36px;
+        }
+
+        .ytkit-vh-clear-btn--danger {
+            border-color: rgba(249,115,22,0.22);
+            background: rgba(249,115,22,0.1);
+            color: rgba(255,237,213,0.94);
+        }
+
+        .ytkit-vh-clear-btn--danger:hover {
+            border-color: rgba(249,115,22,0.34);
+            background: rgba(249,115,22,0.16);
+            color: #fff;
         }
 
         .ytkit-hide-all-btn {
