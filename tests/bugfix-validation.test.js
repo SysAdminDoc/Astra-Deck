@@ -380,6 +380,8 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should keep quick hide controls enabled by default');
     assert.equal(defaults.hideVideosAllowChannelBlock, true,
         'video hider should keep right-click channel blocking enabled by default');
+    assert.equal(defaults.hideVideosRememberRestoredVideos, true,
+        'video hider should remember restored videos by default');
     assert.equal(defaults.hideVideosScopeHome, true,
         'video hider should run on Home by default');
     assert.equal(defaults.hideVideosScopeSubscriptions, true,
@@ -388,6 +390,14 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should include a restore-on-page action');
     assert.ok(block.includes('_removeHiddenVideosOnPage()'),
         'video hider should include a remove-hidden-on-page action');
+    assert.ok(block.includes('_getAllowedVideos()'),
+        'video hider should keep a manual allowed-video list');
+    assert.ok(block.includes('_isVideoAllowed(videoId)'),
+        'video hider should check manual allow rules before hiding');
+    assert.ok(block.includes('if (videoId && this._isVideoAllowed(videoId)) return false;'),
+        'video hider should let manual restores override automatic rules');
+    assert.ok(block.includes('_getRestorableVideoIdsOnPage()'),
+        'video hider should restore videos hidden by automatic rules on the current page');
     assert.ok(block.includes('_applyVideoHiddenState'),
         'video hider should centralize hide-versus-remove behavior');
     assert.ok(block.includes('_isScopeEnabledForPath'),
@@ -398,6 +408,8 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should expose the quick-hide button setting');
     assert.ok(block.includes('hideVideosAllowChannelBlock'),
         'video hider should expose the channel-block gesture setting');
+    assert.ok(block.includes('hideVideosRememberRestoredVideos'),
+        'video hider should expose restored-video memory control');
     assert.ok(block.includes('ytkit-hide-all-group'),
         'video hider should build a grouped hide/restore control');
     assert.ok(block.includes('ytkit-hide-all-remove-btn'),
@@ -410,10 +422,11 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should keep restore controls in sync with page state');
     assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-remove-btn')"),
         'video hider should keep remove controls in sync with page state');
-    assert.ok(source.includes('Hidden Card Behavior')
+    assert.ok(source.includes('Allowed Videos')
+        && source.includes('Hidden Card Behavior')
         && source.includes('Thumbnail Controls')
         && source.includes('Run On'),
-        'video hider settings should expose behavior, controls, and scope sections');
+        'video hider settings should expose allowlist, behavior, controls, and scope sections');
 });
 
 test('studio comments preserve native text selection on watch pages', () => {
