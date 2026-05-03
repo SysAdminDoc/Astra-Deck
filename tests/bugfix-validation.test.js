@@ -366,6 +366,7 @@ test('autoExpandComments defaults on and expands existing comment truncation imm
 test('video hider exposes split hide-all and restore-page controls', () => {
     const fs = require('fs');
     const path = require('path');
+    const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
 
     const start = source.indexOf("id: 'hideVideosFromHome'");
@@ -373,14 +374,46 @@ test('video hider exposes split hide-all and restore-page controls', () => {
     assert.ok(start > -1 && end > start, 'video hider block should exist');
 
     const block = source.slice(start, end);
+    assert.equal(defaults.hideVideosRemoveHiddenCards, false,
+        'video hider should preserve CSS hiding by default');
+    assert.equal(defaults.hideVideosShowQuickHideButton, true,
+        'video hider should keep quick hide controls enabled by default');
+    assert.equal(defaults.hideVideosAllowChannelBlock, true,
+        'video hider should keep right-click channel blocking enabled by default');
+    assert.equal(defaults.hideVideosScopeHome, true,
+        'video hider should run on Home by default');
+    assert.equal(defaults.hideVideosScopeSubscriptions, true,
+        'video hider should run on Subscriptions by default');
     assert.ok(block.includes('_restoreHiddenVideosOnPage()'),
         'video hider should include a restore-on-page action');
+    assert.ok(block.includes('_removeHiddenVideosOnPage()'),
+        'video hider should include a remove-hidden-on-page action');
+    assert.ok(block.includes('_applyVideoHiddenState'),
+        'video hider should centralize hide-versus-remove behavior');
+    assert.ok(block.includes('_isScopeEnabledForPath'),
+        'video hider should support per-surface scope controls');
+    assert.ok(block.includes('hideVideosRemoveHiddenCards'),
+        'video hider should expose the remove-hidden-cards setting');
+    assert.ok(block.includes('hideVideosShowQuickHideButton'),
+        'video hider should expose the quick-hide button setting');
+    assert.ok(block.includes('hideVideosAllowChannelBlock'),
+        'video hider should expose the channel-block gesture setting');
     assert.ok(block.includes('ytkit-hide-all-group'),
         'video hider should build a grouped hide/restore control');
+    assert.ok(block.includes('ytkit-hide-all-remove-btn'),
+        'video hider should build a remove-hidden quick action');
     assert.ok(block.includes('Restore hidden videos on this page'),
         'video hider should label the restore action clearly');
+    assert.ok(block.includes('Remove hidden videos on this page'),
+        'video hider should label the remove action clearly');
     assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-restore-btn')"),
         'video hider should keep restore controls in sync with page state');
+    assert.ok(block.includes("document.querySelectorAll('.ytkit-hide-all-remove-btn')"),
+        'video hider should keep remove controls in sync with page state');
+    assert.ok(source.includes('Hidden Card Behavior')
+        && source.includes('Thumbnail Controls')
+        && source.includes('Run On'),
+        'video hider settings should expose behavior, controls, and scope sections');
 });
 
 test('studio comments preserve native text selection on watch pages', () => {
