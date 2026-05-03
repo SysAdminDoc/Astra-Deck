@@ -307,6 +307,12 @@ test('reaction spammer restores styled live chat reactions and ports the userscr
         'reaction spammer should target both current reaction panel host variants');
     assert.ok(block.includes('yt-reaction-control-panel-view-model #expanded-buttons'),
         'reaction spammer should explicitly recover the expanded reaction buttons container');
+    assert.ok(block.includes('yt-reaction-control-panel-view-model #collapsed-button yt-reaction-control-panel-button-view-model'),
+        'reaction spammer should explicitly recover the native collapsed reaction button');
+    assert.ok(block.includes("_pinVisibleAll('yt-reaction-control-panel-view-model #collapsed-button', 'flex')"),
+        'reaction spammer should restore the collapsed reaction button with flex layout');
+    assert.ok(block.includes("`, 'inline-flex');"),
+        'reaction spammer should restore native reaction button internals without forcing them to block layout');
     assert.ok(block.includes('yt-reaction-control-panel-overlay-view-model #emoji-fountain'),
         'reaction spammer should keep the reaction fountain container visible');
     assert.ok(block.includes('_buildLauncher()'),
@@ -323,8 +329,10 @@ test('reaction spammer restores styled live chat reactions and ports the userscr
         'reaction spammer must initialize in the dedicated live_chat frame bootstrap path');
     assert.match(source, /merged\.hiddenChatElements\s*=\s*merged\.hiddenChatElements\.filter\(key\s*=>\s*key\s*!==\s*'reactions'\)/,
         'settings load should remove stale hidden reaction-panel defaults when reactionSpammer is enabled');
-    assert.match(source, /key\s*===\s*'reactions'\s*&&\s*appState\.settings\.reactionSpammer/,
-        'hiddenChatElementsManager should not hide reactions while reactionSpammer is enabled');
+    assert.ok(source.includes("_reactionSpammerControlKeys: new Set(['reactions', 'support', 'emoji'])"),
+        'hiddenChatElementsManager should keep composer controls visible while reactionSpammer is enabled');
+    assert.match(source, /keepReactionControls\s*&&\s*this\._reactionSpammerControlKeys\.has\(key\)/,
+        'hiddenChatElementsManager should not hide reaction-dependent live chat controls while reactionSpammer is enabled');
 });
 
 test('autoExpandComments defaults on and expands existing comment truncation immediately', () => {
