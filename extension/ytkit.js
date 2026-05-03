@@ -3248,12 +3248,13 @@ return response;
             autoExpandComments: true,
             hideLiveChatEngagement: true,
             premiumLiveChat: true,
+            reactionSpammer: true,
             hidePaidPromotionWatch: true,
             hideChannelJoinButton: true,
             hideFundraiser: true,
             hiddenChatElementsManager: true,
             hiddenChatElements: [
-                'header', 'menu', 'popout', 'reactions', 'timestamps',
+                'header', 'menu', 'popout', 'timestamps',
                 'polls', 'ticker', 'leaderboard', 'support', 'banner',
                 'emoji', 'topFan', 'superChats', 'levelUp', 'bots'
             ],
@@ -13576,7 +13577,704 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
                 // Auto-generated Live Chat sub-features
         ...([['header','Chat Header','Hide the live chat header bar'],['menu','Chat Menu (...)','Hide the chat overflow menu'],['popout','Popout Button','Hide the popout chat button'],['reactions','Reactions','Hide chat reactions panel'],['timestamps','Timestamps','Hide chat timestamps'],['polls','Polls & Poll Banner','Hide polls in live chat'],['ticker','Super Chat Ticker','Hide the super chat ticker'],['leaderboard','Leaderboard','Hide chat leaderboard'],['support','Support Buttons','Hide support/buy buttons in chat'],['banner','Chat Banner','Hide chat banners'],['emoji','Emoji Button','Hide emoji picker button'],['topFan','Fan Badges','Hide fan/member badges'],['superChats','Super Chats','Hide super chat messages'],['levelUp','Level Up Messages','Hide level up messages'],['bots','Bot Messages','Filter out known bot messages']].map(([v,n,d])=>({id:'chatHide_'+v,name:n,description:d,group:'Live Chat',icon:'eye-off',isSubFeature:true,parentId:'hiddenChatElementsManager',_arrayKey:'hiddenChatElements',_arrayValue:v,init(){},destroy(){}}))),
-                                                                                                                        {
+        {
+            id: 'reactionSpammer',
+            name: 'Reaction Spammer',
+            description: 'Select live chat reactions and send them in a randomized loop.',
+            group: 'Live Chat',
+            icon: 'sparkles',
+            _styleElement: null,
+            _panel: null,
+            _body: null,
+            _listEl: null,
+            _startBtn: null,
+            _statusEl: null,
+            _intervalEl: null,
+            _collapseBtn: null,
+            _observer: null,
+            _renderFrame: 0,
+            _readyTimer: null,
+            _timer: null,
+            _running: false,
+            _dragCleanup: null,
+            _beforeUnload: null,
+            _lastSignature: '',
+            _state: null,
+            _storageKey: 'ytkitReactionSpammerState',
+            _defaults: {
+                selected: [],
+                intervalMs: 600,
+                pos: { x: 20, y: 80 },
+                collapsed: false
+            },
+
+            _clampNumber(value, fallback, min, max) {
+                const n = Number(value);
+                if (!Number.isFinite(n)) return fallback;
+                return Math.min(max, Math.max(min, n));
+            },
+
+            _loadState() {
+                const saved = storageReadJSON(this._storageKey, {});
+                const pos = isPlainObject(saved?.pos) ? saved.pos : {};
+                return {
+                    selected: Array.isArray(saved?.selected)
+                        ? saved.selected.filter(value => typeof value === 'string')
+                        : [...this._defaults.selected],
+                    intervalMs: this._clampNumber(saved?.intervalMs, this._defaults.intervalMs, 50, 60000),
+                    pos: {
+                        x: this._clampNumber(pos.x, this._defaults.pos.x, 0, 10000),
+                        y: this._clampNumber(pos.y, this._defaults.pos.y, 0, 10000)
+                    },
+                    collapsed: !!saved?.collapsed
+                };
+            },
+
+            _saveState() {
+                if (!this._state) return;
+                void storageWriteJSON(this._storageKey, this._state);
+            },
+
+            _panelPosition() {
+                const maxX = Math.max(8, (window.innerWidth || 320) - 300);
+                const maxY = Math.max(8, (window.innerHeight || 320) - 160);
+                return {
+                    x: this._clampNumber(this._state?.pos?.x, this._defaults.pos.x, 8, maxX),
+                    y: this._clampNumber(this._state?.pos?.y, this._defaults.pos.y, 8, maxY)
+                };
+            },
+
+            _pinVisible(node) {
+                if (!(node instanceof HTMLElement)) return;
+                if (node.dataset.ytkitReactionSpammerDisplay === undefined) {
+                    node.dataset.ytkitReactionSpammerDisplay = node.style.display || '';
+                    node.dataset.ytkitReactionSpammerVisibility = node.style.visibility || '';
+                    node.dataset.ytkitReactionSpammerOpacity = node.style.opacity || '';
+                    node.dataset.ytkitReactionSpammerPointerEvents = node.style.pointerEvents || '';
+                }
+                node.dataset.ytkitReactionSpammerVisible = '1';
+                node.style.setProperty('display', 'block', 'important');
+                node.style.setProperty('visibility', 'visible', 'important');
+                node.style.setProperty('opacity', '1', 'important');
+                node.style.setProperty('pointer-events', 'auto', 'important');
+            },
+
+            _restorePinnedNodes() {
+                document.querySelectorAll('[data-ytkit-reaction-spammer-visible="1"]').forEach(node => {
+                    if (!(node instanceof HTMLElement)) return;
+                    node.style.display = node.dataset.ytkitReactionSpammerDisplay || '';
+                    node.style.visibility = node.dataset.ytkitReactionSpammerVisibility || '';
+                    node.style.opacity = node.dataset.ytkitReactionSpammerOpacity || '';
+                    node.style.pointerEvents = node.dataset.ytkitReactionSpammerPointerEvents || '';
+                    delete node.dataset.ytkitReactionSpammerDisplay;
+                    delete node.dataset.ytkitReactionSpammerVisibility;
+                    delete node.dataset.ytkitReactionSpammerOpacity;
+                    delete node.dataset.ytkitReactionSpammerPointerEvents;
+                    delete node.dataset.ytkitReactionSpammerVisible;
+                });
+            },
+
+            _restoreReactionButton() {
+                document
+                    .querySelectorAll('yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model')
+                    .forEach(node => this._pinVisible(node));
+            },
+
+            _queryButtons(root = document) {
+                return root.querySelectorAll(
+                    '#expanded-buttons yt-reaction-control-panel-button-view-model button'
+                );
+            },
+
+            _findButtons() {
+                const map = new Map();
+                this._queryButtons().forEach(button => {
+                    const img = button.querySelector('img[alt^="Send "]');
+                    if (!img) return;
+                    const emoji = img.alt.replace(/^Send\s+/, '').trim();
+                    if (emoji && !map.has(emoji)) {
+                        map.set(emoji, {
+                            button,
+                            host: button.closest('yt-reaction-control-panel-button-view-model')
+                        });
+                    }
+                });
+                return map;
+            },
+
+            _getHoverArea() {
+                return document.querySelector('yt-reaction-control-panel-view-model #hover-area')
+                    || document.querySelector('#hover-area');
+            },
+
+            _getCollapsedButton() {
+                return document.querySelector(
+                    '#collapsed-button yt-reaction-control-panel-button-view-model button'
+                );
+            },
+
+            _fireTap(element) {
+                if (!element) return false;
+                const rect = element.getBoundingClientRect();
+                const cx = rect.left + (rect.width / 2 || 0);
+                const cy = rect.top + (rect.height / 2 || 0);
+                const base = {
+                    bubbles: true,
+                    cancelable: true,
+                    composed: true,
+                    view: window,
+                    button: 0,
+                    buttons: 1,
+                    clientX: cx,
+                    clientY: cy,
+                    screenX: cx,
+                    screenY: cy,
+                    pointerType: 'mouse',
+                    isPrimary: true,
+                    pointerId: 1
+                };
+                try {
+                    const PointerCtor = window.PointerEvent || window.MouseEvent;
+                    element.dispatchEvent(new PointerCtor('pointerover', base));
+                    element.dispatchEvent(new PointerCtor('pointerenter', base));
+                    element.dispatchEvent(new MouseEvent('mouseover', base));
+                    element.dispatchEvent(new MouseEvent('mouseenter', base));
+                    element.dispatchEvent(new PointerCtor('pointerdown', base));
+                    element.dispatchEvent(new MouseEvent('mousedown', base));
+                    element.dispatchEvent(new PointerCtor('pointerup', { ...base, buttons: 0 }));
+                    element.dispatchEvent(new MouseEvent('mouseup', { ...base, buttons: 0 }));
+                    element.dispatchEvent(new MouseEvent('click', { ...base, buttons: 0 }));
+                } catch (_) {
+                    try { element.click(); } catch (_) {
+                        // reason: target may detach during synthetic tap fallback
+                    }
+                }
+                try { element.click(); } catch (_) {
+                    // reason: target may detach before the native click fallback
+                }
+                return true;
+            },
+
+            _ensureExpanded() {
+                this._restoreReactionButton();
+                if (this._queryButtons().length > 0) return true;
+                const hover = this._getHoverArea();
+                if (hover) {
+                    const rect = hover.getBoundingClientRect();
+                    const opts = {
+                        bubbles: true,
+                        cancelable: true,
+                        composed: true,
+                        clientX: rect.left + 1,
+                        clientY: rect.top + 1,
+                        pointerType: 'mouse',
+                        isPrimary: true,
+                        pointerId: 1
+                    };
+                    try {
+                        const PointerCtor = window.PointerEvent || window.MouseEvent;
+                        hover.dispatchEvent(new PointerCtor('pointerover', opts));
+                        hover.dispatchEvent(new PointerCtor('pointerenter', opts));
+                        hover.dispatchEvent(new MouseEvent('mouseover', opts));
+                        hover.dispatchEvent(new MouseEvent('mouseenter', opts));
+                        hover.dispatchEvent(new PointerCtor('pointermove', opts));
+                    } catch (_) {
+                        // reason: hover simulation is best effort across YouTube component revisions
+                    }
+                }
+                const collapsed = this._getCollapsedButton();
+                if (collapsed && this._queryButtons().length === 0) this._fireTap(collapsed);
+                return this._queryButtons().length > 0;
+            },
+
+            _clickReaction(emoji) {
+                this._ensureExpanded();
+                const entry = this._findButtons().get(emoji);
+                if (!entry) return false;
+                this._fireTap(entry.button);
+                return true;
+            },
+
+            _createButton(label, variant = 'secondary') {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `ytkit-rs-button ytkit-rs-button-${variant}`;
+                button.textContent = label;
+                return button;
+            },
+
+            _buildPanel() {
+                if (!document.body || this._panel || document.getElementById('ytkit-reaction-spammer-panel')) return;
+                const pos = this._panelPosition();
+                const panel = document.createElement('section');
+                panel.id = 'ytkit-reaction-spammer-panel';
+                panel.setAttribute('aria-label', 'Reaction spammer');
+                panel.style.left = `${pos.x}px`;
+                panel.style.top = `${pos.y}px`;
+
+                const header = document.createElement('div');
+                header.className = 'ytkit-rs-header';
+
+                const title = document.createElement('div');
+                title.className = 'ytkit-rs-title';
+                title.textContent = 'Reaction Spammer';
+
+                const headerActions = document.createElement('div');
+                headerActions.className = 'ytkit-rs-header-actions';
+
+                this._collapseBtn = this._createButton(this._state.collapsed ? '+' : '-', 'ghost');
+                this._collapseBtn.setAttribute('aria-label', this._state.collapsed ? 'Expand panel' : 'Collapse panel');
+                this._collapseBtn.addEventListener('click', () => {
+                    this._state.collapsed = !this._state.collapsed;
+                    this._body.hidden = this._state.collapsed;
+                    this._collapseBtn.textContent = this._state.collapsed ? '+' : '-';
+                    this._collapseBtn.setAttribute('aria-label', this._state.collapsed ? 'Expand panel' : 'Collapse panel');
+                    this._saveState();
+                });
+
+                const closeBtn = this._createButton('x', 'ghost');
+                closeBtn.setAttribute('aria-label', 'Hide reaction spammer until chat reload');
+                closeBtn.addEventListener('click', () => {
+                    this._stop();
+                    this._panel?.remove();
+                    this._panel = null;
+                });
+
+                headerActions.append(this._collapseBtn, closeBtn);
+                header.append(title, headerActions);
+
+                this._body = document.createElement('div');
+                this._body.className = 'ytkit-rs-body';
+                this._body.hidden = this._state.collapsed;
+
+                this._listEl = document.createElement('div');
+                this._listEl.className = 'ytkit-rs-list';
+
+                const refreshBtn = this._createButton('Refresh reactions');
+                refreshBtn.addEventListener('click', () => {
+                    this._ensureExpanded();
+                    this._renderList();
+                    setTimeout(() => this._renderList(), 180);
+                });
+
+                const intervalRow = document.createElement('label');
+                intervalRow.className = 'ytkit-rs-field';
+                const intervalLabel = document.createElement('span');
+                intervalLabel.textContent = 'Interval';
+                this._intervalEl = document.createElement('input');
+                this._intervalEl.type = 'number';
+                this._intervalEl.min = '50';
+                this._intervalEl.step = '50';
+                this._intervalEl.value = String(this._state.intervalMs);
+                this._intervalEl.addEventListener('change', () => {
+                    this._state.intervalMs = this._clampNumber(this._intervalEl.value, this._defaults.intervalMs, 50, 60000);
+                    this._intervalEl.value = String(this._state.intervalMs);
+                    this._saveState();
+                });
+                intervalRow.append(intervalLabel, this._intervalEl);
+
+                this._startBtn = this._createButton('Start spamming', 'primary');
+                this._startBtn.addEventListener('click', () => {
+                    if (this._running) this._stop();
+                    else this._start();
+                });
+
+                this._statusEl = document.createElement('div');
+                this._statusEl.className = 'ytkit-rs-status';
+
+                const hint = document.createElement('div');
+                hint.className = 'ytkit-rs-hint';
+                hint.textContent = 'Use Test to send one reaction before starting.';
+
+                this._body.append(this._listEl, refreshBtn, intervalRow, this._startBtn, this._statusEl, hint);
+                panel.append(header, this._body);
+                document.body.append(panel);
+
+                this._panel = panel;
+                this._dragCleanup = this._enableDrag(panel, header);
+                this._renderList();
+                this._paint();
+            },
+
+            _renderList() {
+                if (!this._listEl || !this._state) return;
+                this._restoreReactionButton();
+                const map = this._findButtons();
+                this._lastSignature = [...map.keys()].join('|');
+                this._listEl.replaceChildren();
+
+                if (map.size === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-rs-empty';
+                    empty.textContent = 'No reactions found. Open the reaction button, then refresh.';
+                    this._listEl.append(empty);
+                    this._paint();
+                    return;
+                }
+
+                for (const emoji of map.keys()) {
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-rs-row';
+
+                    const label = document.createElement('label');
+                    label.className = 'ytkit-rs-choice';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = this._state.selected.includes(emoji);
+                    checkbox.addEventListener('change', () => {
+                        if (checkbox.checked) {
+                            if (!this._state.selected.includes(emoji)) this._state.selected.push(emoji);
+                        } else {
+                            this._state.selected = this._state.selected.filter(value => value !== emoji);
+                        }
+                        this._saveState();
+                        this._paint();
+                    });
+
+                    const emojiLabel = document.createElement('span');
+                    emojiLabel.className = 'ytkit-rs-emoji';
+                    emojiLabel.textContent = emoji;
+
+                    label.append(checkbox, emojiLabel);
+
+                    const testButton = this._createButton('Test', 'compact');
+                    testButton.title = `Send ${emoji} once`;
+                    testButton.addEventListener('click', event => {
+                        event.preventDefault();
+                        this._clickReaction(emoji);
+                    });
+
+                    row.append(label, testButton);
+                    this._listEl.append(row);
+                }
+                this._paint();
+            },
+
+            _paint() {
+                if (!this._startBtn || !this._statusEl || !this._state) return;
+                const available = this._findButtons();
+                const selectedCount = this._state.selected.length;
+                const readyCount = this._state.selected.filter(emoji => available.has(emoji)).length;
+                if (this._running) {
+                    this._startBtn.textContent = 'Stop';
+                    this._startBtn.classList.add('ytkit-rs-running');
+                    this._statusEl.textContent = readyCount > 0
+                        ? `Running with ${readyCount} reaction(s).`
+                        : 'Running, waiting for selected reactions.';
+                } else {
+                    this._startBtn.textContent = 'Start spamming';
+                    this._startBtn.classList.remove('ytkit-rs-running');
+                    this._statusEl.textContent = selectedCount === 0
+                        ? 'Select at least one reaction.'
+                        : `${selectedCount} reaction(s) selected.`;
+                }
+            },
+
+            _start() {
+                if (this._running) return;
+                this._running = true;
+                this._paint();
+                this._tick();
+            },
+
+            _stop() {
+                this._running = false;
+                if (this._timer) {
+                    clearTimeout(this._timer);
+                    this._timer = null;
+                }
+                this._paint();
+            },
+
+            _tick() {
+                if (!this._running || !this._state) return;
+                this._ensureExpanded();
+                const available = this._findButtons();
+                const choices = this._state.selected.filter(emoji => available.has(emoji));
+                if (choices.length > 0) {
+                    const pick = choices[Math.floor(Math.random() * choices.length)];
+                    this._clickReaction(pick);
+                }
+                this._paint();
+                this._timer = setTimeout(() => this._tick(), Math.max(50, this._state.intervalMs));
+            },
+
+            _scheduleRender() {
+                if (this._renderFrame || !this._listEl) return;
+                this._renderFrame = requestAnimationFrame(() => {
+                    this._renderFrame = 0;
+                    const signature = [...this._findButtons().keys()].join('|');
+                    if (signature !== this._lastSignature) this._renderList();
+                    else this._paint();
+                });
+            },
+
+            _enableDrag(panel, handle) {
+                let dragging = false;
+                let startX = 0;
+                let startY = 0;
+                let startLeft = 0;
+                let startTop = 0;
+
+                const onMouseDown = event => {
+                    if (event.target instanceof Element && event.target.closest('button, input, label')) return;
+                    dragging = true;
+                    startX = event.clientX;
+                    startY = event.clientY;
+                    startLeft = panel.offsetLeft;
+                    startTop = panel.offsetTop;
+                    event.preventDefault();
+                };
+
+                const onMouseMove = event => {
+                    if (!dragging) return;
+                    const maxX = Math.max(8, (window.innerWidth || 320) - panel.offsetWidth - 8);
+                    const maxY = Math.max(8, (window.innerHeight || 320) - panel.offsetHeight - 8);
+                    const nextLeft = this._clampNumber(startLeft + event.clientX - startX, 8, 8, maxX);
+                    const nextTop = this._clampNumber(startTop + event.clientY - startY, 8, 8, maxY);
+                    panel.style.left = `${nextLeft}px`;
+                    panel.style.top = `${nextTop}px`;
+                };
+
+                const onMouseUp = () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    this._state.pos = { x: panel.offsetLeft, y: panel.offsetTop };
+                    this._saveState();
+                };
+
+                handle.addEventListener('mousedown', onMouseDown);
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+
+                return () => {
+                    handle.removeEventListener('mousedown', onMouseDown);
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+            },
+
+            init() {
+                if (!isLiveChatPath()) return;
+                this._state = this._loadState();
+                this._running = false;
+                this._lastSignature = '';
+
+                const css = `
+                    html[data-ytkit-livechat-premium] yt-reaction-control-panel-view-model[data-ytkit-reaction-spammer-visible="1"],
+                    html[data-ytkit-livechat-premium] yt-reaction-control-panel-overlay-view-model[data-ytkit-reaction-spammer-visible="1"],
+                    yt-reaction-control-panel-view-model[data-ytkit-reaction-spammer-visible="1"],
+                    yt-reaction-control-panel-overlay-view-model[data-ytkit-reaction-spammer-visible="1"] {
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                    }
+                    #ytkit-reaction-spammer-panel {
+                        position: fixed;
+                        z-index: 2147483647;
+                        width: 276px;
+                        max-width: calc(100vw - 16px);
+                        border: 1px solid rgba(255,255,255,0.14);
+                        border-radius: 12px;
+                        background: linear-gradient(180deg, rgba(18,24,35,0.98), rgba(9,12,18,0.98));
+                        color: rgba(248,250,252,0.96);
+                        box-shadow: 0 24px 60px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.06);
+                        font: 12px/1.4 "Roboto", "Arial", sans-serif;
+                        overflow: hidden;
+                    }
+                    #ytkit-reaction-spammer-panel button,
+                    #ytkit-reaction-spammer-panel input {
+                        font: inherit;
+                    }
+                    .ytkit-rs-header {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        padding: 9px 10px;
+                        cursor: move;
+                        user-select: none;
+                        background: rgba(255,255,255,0.045);
+                        border-bottom: 1px solid rgba(255,255,255,0.08);
+                    }
+                    .ytkit-rs-title {
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        font-size: 13px;
+                        font-weight: 700;
+                    }
+                    .ytkit-rs-header-actions {
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+                    .ytkit-rs-body {
+                        padding: 10px;
+                    }
+                    .ytkit-rs-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        max-height: 220px;
+                        overflow: auto;
+                        padding-right: 2px;
+                    }
+                    .ytkit-rs-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        min-height: 34px;
+                        padding: 4px 4px 4px 8px;
+                        border-radius: 8px;
+                        background: rgba(255,255,255,0.035);
+                    }
+                    .ytkit-rs-row:hover {
+                        background: rgba(255,255,255,0.065);
+                    }
+                    .ytkit-rs-choice {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        flex: 1 1 auto;
+                        min-width: 0;
+                        cursor: pointer;
+                    }
+                    .ytkit-rs-choice input {
+                        margin: 0;
+                        accent-color: #f59e0b;
+                    }
+                    .ytkit-rs-emoji {
+                        min-width: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        font-size: 18px;
+                        line-height: 1;
+                    }
+                    .ytkit-rs-button {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 32px;
+                        width: 100%;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 8px;
+                        background: rgba(255,255,255,0.055);
+                        color: rgba(248,250,252,0.92);
+                        cursor: pointer;
+                    }
+                    .ytkit-rs-button:hover {
+                        border-color: rgba(245,158,11,0.3);
+                        background: rgba(245,158,11,0.13);
+                    }
+                    .ytkit-rs-button-primary {
+                        margin-top: 8px;
+                        border-color: rgba(245,158,11,0.42);
+                        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+                        color: #14181f;
+                        font-weight: 700;
+                    }
+                    .ytkit-rs-button-primary.ytkit-rs-running {
+                        border-color: rgba(248,113,113,0.45);
+                        background: linear-gradient(135deg, #fb7185, #ef4444);
+                        color: #fff;
+                    }
+                    .ytkit-rs-button-ghost {
+                        width: 28px;
+                        min-height: 28px;
+                        border-radius: 8px;
+                        background: rgba(255,255,255,0.035);
+                    }
+                    .ytkit-rs-button-compact {
+                        flex: 0 0 auto;
+                        width: auto;
+                        min-height: 26px;
+                        padding: 0 8px;
+                        font-size: 11px;
+                    }
+                    .ytkit-rs-field {
+                        display: grid;
+                        grid-template-columns: auto minmax(0, 1fr);
+                        align-items: center;
+                        gap: 8px;
+                        margin-top: 8px;
+                        color: rgba(203,213,225,0.9);
+                    }
+                    .ytkit-rs-field input {
+                        min-width: 0;
+                        height: 30px;
+                        box-sizing: border-box;
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 8px;
+                        background: rgba(2,6,12,0.42);
+                        color: rgba(248,250,252,0.96);
+                        padding: 0 8px;
+                    }
+                    .ytkit-rs-status {
+                        min-height: 17px;
+                        margin-top: 7px;
+                        color: rgba(203,213,225,0.88);
+                        font-size: 11px;
+                    }
+                    .ytkit-rs-hint,
+                    .ytkit-rs-empty {
+                        color: rgba(148,163,184,0.78);
+                        font-size: 11px;
+                    }
+                    .ytkit-rs-empty {
+                        padding: 8px;
+                        border-radius: 8px;
+                        background: rgba(248,113,113,0.1);
+                        color: rgba(254,202,202,0.94);
+                    }
+                `;
+
+                this._styleElement = injectStyle(css, this.id, true);
+                this._restoreReactionButton();
+                if (document.body) this._buildPanel();
+                else this._readyTimer = setTimeout(() => this._buildPanel(), 100);
+
+                this._observer = new MutationObserver(() => {
+                    this._restoreReactionButton();
+                    this._scheduleRender();
+                });
+                this._observer.observe(document.documentElement, { childList: true, subtree: true });
+
+                this._beforeUnload = () => this._stop();
+                window.addEventListener('beforeunload', this._beforeUnload, { capture: true });
+            },
+
+            destroy() {
+                this._stop();
+                if (this._readyTimer) {
+                    clearTimeout(this._readyTimer);
+                    this._readyTimer = null;
+                }
+                if (this._renderFrame) {
+                    cancelAnimationFrame(this._renderFrame);
+                    this._renderFrame = 0;
+                }
+                this._observer?.disconnect();
+                this._observer = null;
+                if (this._beforeUnload) {
+                    window.removeEventListener('beforeunload', this._beforeUnload, { capture: true });
+                    this._beforeUnload = null;
+                }
+                this._dragCleanup?.();
+                this._dragCleanup = null;
+                this._panel?.remove();
+                this._panel = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
+                this._restorePinnedNodes();
+                this._state = null;
+            }
+        },
+        {
             id: 'chatKeywordFilter',
             name: 'Chat Keyword Filter',
             description: 'Hide chat messages containing these words (comma-separated)',

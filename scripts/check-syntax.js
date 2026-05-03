@@ -34,6 +34,14 @@ const filesToCheck = [
 
 filesToCheck.push(resolveUserscriptPath(repoRoot));
 
+const optionalScriptChecks = [
+    'YT_Reaction_Spammer.user.js'
+].map((relativePath) => path.join(repoRoot, relativePath));
+
+for (const filePath of optionalScriptChecks) {
+    if (require('fs').existsSync(filePath)) filesToCheck.push(filePath);
+}
+
 for (const filePath of filesToCheck) {
     execFileSync(process.execPath, ['--check', filePath], { stdio: 'inherit' });
 }
