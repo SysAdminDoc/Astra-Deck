@@ -9,6 +9,7 @@ const REPO_ROOT = path.join(__dirname, '..');
 const STORAGE_KEYS = Object.freeze({
     settings: 'ytSuiteSettings',
     hiddenVideos: 'ytkit-hidden-videos',
+    allowedVideos: 'ytkit-video-hider-allowed-videos',
     blockedChannels: 'ytkit-blocked-channels',
     bookmarks: 'ytkit-bookmarks',
     watchProgress: 'ytkit-watch-progress',
@@ -226,6 +227,7 @@ function buildTypicalLocalPayload(repoRoot = REPO_ROOT) {
         [STORAGE_KEYS.safeMode]: false,
         [STORAGE_KEYS.mediadlPromptDismissed]: false,
         [STORAGE_KEYS.hiddenVideos]: makeHiddenVideos(250),
+        [STORAGE_KEYS.allowedVideos]: makeHiddenVideos(80),
         [STORAGE_KEYS.blockedChannels]: makeBlockedChannels(80),
         [STORAGE_KEYS.bookmarks]: makeBookmarks(60, 3),
         [STORAGE_KEYS.watchProgress]: makeWatchProgress(250),
@@ -243,6 +245,7 @@ function buildCapStressPayload(repoRoot = REPO_ROOT) {
     return {
         ...buildUiPreferencesPayload(repoRoot),
         [STORAGE_KEYS.hiddenVideos]: makeHiddenVideos(5000),
+        [STORAGE_KEYS.allowedVideos]: makeHiddenVideos(5000),
         [STORAGE_KEYS.blockedChannels]: makeBlockedChannels(2000),
         [STORAGE_KEYS.bookmarks]: makeBookmarks(400, 100),
         [STORAGE_KEYS.watchProgress]: makeWatchProgress(500),

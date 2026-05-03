@@ -76,6 +76,11 @@ test('settings backups include filtered video posts and import the alias', () =>
         /filteredVideoPosts:\s*hiddenVideos/,
         'Popup exports should include filteredVideoPosts beside hiddenVideos'
     );
+    assert.match(
+        popupExportBody,
+        /allowedVideos/,
+        'Popup exports should include allowed video exceptions'
+    );
 
     const panelExportStart = ytkitSource.indexOf('exportAllSettings()');
     const panelExportEnd = ytkitSource.indexOf('importAllSettings(jsonString)');
@@ -85,6 +90,11 @@ test('settings backups include filtered video posts and import the alias', () =>
         panelExportBody,
         /filteredVideoPosts:\s*hiddenVideosForExport/,
         'In-page exports should include filteredVideoPosts beside hiddenVideos'
+    );
+    assert.match(
+        panelExportBody,
+        /allowedVideos/,
+        'In-page exports should include allowed video exceptions'
     );
 
     assert.ok(
@@ -96,6 +106,11 @@ test('settings backups include filtered video posts and import the alias', () =>
         popupSource.includes('data.filteredVideoPosts') &&
         ytkitSource.includes('data.filteredVideoPosts'),
         'Imports should restore hidden videos from filteredVideoPosts when hiddenVideos is absent'
+    );
+    assert.ok(
+        popupSource.includes('data.allowedVideos') &&
+        ytkitSource.includes('importedData.allowedVideos'),
+        'Imports should restore allowed video exceptions from backups'
     );
 });
 
