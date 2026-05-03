@@ -3635,8 +3635,18 @@ return response;
             const rawSettingsSnapshot = this._sanitize(savedSettings);
             savedSettings = this._sanitize(this._migrate(savedSettings));
             const merged = this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: this.SETTINGS_VERSION });
+            let shouldPersistMerged = storedVersion !== this.SETTINGS_VERSION
+                || JSON.stringify(rawSettingsSnapshot) !== JSON.stringify(savedSettings);
+            if (
+                merged.reactionSpammer &&
+                Array.isArray(merged.hiddenChatElements) &&
+                merged.hiddenChatElements.includes('reactions')
+            ) {
+                merged.hiddenChatElements = merged.hiddenChatElements.filter(key => key !== 'reactions');
+                shouldPersistMerged = true;
+            }
             // Persist migrated or sanitized settings if needed
-            if (storedVersion !== this.SETTINGS_VERSION || JSON.stringify(rawSettingsSnapshot) !== JSON.stringify(savedSettings)) {
+            if (shouldPersistMerged) {
                 this.save(merged);
             }
             return merged;
@@ -13557,6 +13567,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const hidden = appState.settings.hiddenChatElements || [];
                 const selectors = hidden
                     .filter(key => key !== 'bots') // bots handled separately via mutation rule
+                    .filter(key => !(key === 'reactions' && appState.settings.reactionSpammer))
                     .map(key => this._selectors[key])
                     .filter(Boolean)
                     .join(', ');
@@ -13677,7 +13688,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _restoreReactionButton() {
                 document
-                    .querySelectorAll('yt-reaction-control-panel-overlay-view-model, yt-reaction-control-panel-view-model')
+                    .querySelectorAll(`
+                        yt-reaction-control-panel-overlay-view-model,
+                        yt-reaction-control-panel-view-model,
+                        yt-reaction-control-panel-overlay-view-model #reaction-control-panel,
+                        yt-reaction-control-panel-view-model #hover-area,
+                        yt-reaction-control-panel-view-model #fab-container,
+                        yt-reaction-control-panel-view-model #collapsed-button,
+                        yt-reaction-control-panel-overlay-view-model #emoji-fountain,
+                        yt-emoji-fountain-view-model,
+                        yt-emoji-fountain-view-model #fountain-bounds,
+                        yt-emoji-fountain-view-model #emoji-container
+                    `)
+                    .forEach(node => this._pinVisible(node));
+            },
+
+            _restoreReactionPopup() {
+                this._restoreReactionButton();
+                document
+                    .querySelectorAll('yt-reaction-control-panel-view-model #expanded-buttons')
                     .forEach(node => this._pinVisible(node));
             },
 
@@ -13757,7 +13786,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _ensureExpanded() {
-                this._restoreReactionButton();
+                this._restoreReactionPopup();
                 if (this._queryButtons().length > 0) return true;
                 const hover = this._getHoverArea();
                 if (hover) {
@@ -14099,8 +14128,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-reaction-control-panel-view-model[data-ytkit-reaction-spammer-visible="1"],
                     html[data-ytkit-livechat-premium] yt-reaction-control-panel-overlay-view-model[data-ytkit-reaction-spammer-visible="1"],
                     yt-reaction-control-panel-view-model[data-ytkit-reaction-spammer-visible="1"],
-                    yt-reaction-control-panel-overlay-view-model[data-ytkit-reaction-spammer-visible="1"] {
+                    yt-reaction-control-panel-overlay-view-model[data-ytkit-reaction-spammer-visible="1"],
+                    yt-reaction-control-panel-overlay-view-model [data-ytkit-reaction-spammer-visible="1"],
+                    yt-reaction-control-panel-view-model [data-ytkit-reaction-spammer-visible="1"],
+                    yt-emoji-fountain-view-model[data-ytkit-reaction-spammer-visible="1"],
+                    yt-emoji-fountain-view-model [data-ytkit-reaction-spammer-visible="1"] {
                         display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        pointer-events: auto !important;
+                    }
+                    yt-reaction-control-panel-view-model #expanded-buttons[data-ytkit-reaction-spammer-visible="1"] {
+                        display: flex !important;
                         visibility: visible !important;
                         opacity: 1 !important;
                         pointer-events: auto !important;
