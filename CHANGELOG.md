@@ -4,6 +4,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.21.2] - Relocate language selector inline with Export/Import - 2026-05-10
+
+### Changed
+- **Language selector moved into the data-management actions row,**
+  immediately after Import. The standalone "Display language" card
+  between the actions row and Quick toggles is gone — the dropdown
+  now sits as a third control alongside Export / Import (Reset
+  stays right-aligned). Sized to match the existing 32 px button
+  height so the row reads as one tight cluster.
+
+---
+
 ## [3.21.1] - Style the language dropdown - 2026-05-10
 
 ### Fixed
