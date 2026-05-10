@@ -637,6 +637,43 @@ class AutoUpdateThrottleTests(unittest.TestCase):
         self.assertTrue(ad.should_check_ytdlp_update(_C()))
 
 
+class ArchiveSkipDetectionTests(unittest.TestCase):
+    """Sentinel: the previous implementation matched on
+    'already been downloaded', but yt-dlp's actual --download-archive
+    line is 'has already been recorded in the archive'. The mismatch
+    let archive skips silently flip to 'complete' with no file —
+    indistinguishable from a real successful download in the UI.
+    Pin both substrings so future yt-dlp output drift is caught.
+    """
+
+    YTDLP_REAL_OUTPUTS = [
+        # --download-archive: URL is in archive.txt
+        '[download] KXI62VKJG9U: has already been recorded in the archive',
+        # File on disk without archive entry (older/alternate path)
+        '[download] /path/to/file.mp4 has already been downloaded',
+    ]
+
+    def _check_line(self, line):
+        return ('has already been recorded in the archive' in line
+                or 'already been downloaded' in line)
+
+    def test_recognises_real_ytdlp_skip_lines(self):
+        for line in self.YTDLP_REAL_OUTPUTS:
+            with self.subTest(line=line):
+                self.assertTrue(self._check_line(line),
+                                f'Skip detector failed to match: {line!r}')
+
+    def test_does_not_overmatch_unrelated_lines(self):
+        for line in (
+            '[download] Destination: video.mp4',
+            '[download]   5.0% of   10MiB at 1.0MiB/s ETA 00:09',
+            '[Merger] Merging formats into "out.mp4"',
+        ):
+            with self.subTest(line=line):
+                self.assertFalse(self._check_line(line),
+                                 f'Skip detector falsely matched: {line!r}')
+
+
 class VideoFormatSelectorTests(unittest.TestCase):
     """Codec-aware format selection — the previous selector picked the
     highest-bitrate stream regardless of codec, then ``--merge-output-format

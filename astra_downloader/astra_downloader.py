@@ -74,7 +74,7 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.2.2"
+APP_VERSION = "1.2.3"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit) but older clients ignore unknown
@@ -1731,9 +1731,24 @@ class DownloadManager(QObject):
                 elif '[ExtractAudio]' in line or '[extract]' in line:
                     dl.status = "extracting"
                     self.progress_updated.emit()
-                elif 'already been downloaded' in line:
+                elif ('has already been recorded in the archive' in line
+                      or 'already been downloaded' in line):
+                    # v1.2.3: yt-dlp's actual --download-archive skip line is
+                    # "[download] <id>: has already been recorded in the archive"
+                    # (the older "already been downloaded" string only fires
+                    # when the file is already present on disk without an
+                    # archive entry — both should surface the same way).
+                    # Previously neither pattern matched the archive case, so
+                    # the post-loop returncode==0 fallback flipped status to
+                    # "complete" with an empty filename — looked identical to
+                    # a real successful download.
                     dl.progress = 100
-                    dl.status = "complete"
+                    dl.status = "skipped"
+                    dl.error = (
+                        "Already in download archive — re-download skipped. "
+                        "Disable Download Archive in Settings or clear "
+                        "archive.txt to allow re-downloading."
+                    )
                     self.progress_updated.emit()
 
                 # Filename detection
@@ -1750,6 +1765,8 @@ class DownloadManager(QObject):
             if dl.status != "complete":
                 if dl.status == "cancelled":
                     dl.error = dl.error or "Cancelled by user."
+                elif dl.status == "skipped":
+                    pass  # Set above with a user-facing message; keep terminal.
                 elif proc.returncode == 0 or dl.progress >= 99:
                     dl.status = "complete"
                     dl.progress = 100

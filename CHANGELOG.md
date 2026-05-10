@@ -4,6 +4,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.20.7] - Surface skipped re-downloads - 2026-05-10
+
+Pairs with Astra Downloader v1.2.3. The download progress panel now
+distinguishes a skipped re-download from a successful download, so
+URLs already in the archive don't silently masquerade as completed
+with no file.
+
+### Changed
+- **New `skipped` status in the progress panel.** Amber state pill,
+  amber toast, 8-second auto-dismiss. Surfaces the server's reason
+  string ("Already in download archive — re-download skipped. Disable
+  Download Archive in Settings or clear archive.txt to allow
+  re-downloading.") so users know why nothing landed and how to fix
+  it. Previously fell through to the success path and faked a
+  completed download with no file.
+
+---
+
 ## [3.20.6] - Native folder picker for downloads - 2026-05-10
 
 The download popup's "Save to" row now opens a native folder picker
@@ -524,6 +542,25 @@ block at the end of the features array for easy isolation.
   links (already covered by Astra Deck's `quickLinkMenu`), tab view
   (covered by `watchPageTabs`), and the colored transcript buttons
   (subsumed into the single `transcriptAiHandoff` selector-driven design).
+
+---
+
+## Astra Downloader [1.2.3] - Distinguish skipped re-downloads
+
+Bug-fix on top of v1.2.2. URLs already in the download archive no
+longer masquerade as successful downloads with no file.
+
+### Fixed
+- **`'already been downloaded'` from yt-dlp now flips status to
+  `skipped`, not `complete`.** With `DownloadArchive: true` (the
+  default), re-downloading a URL already in `archive.txt` makes
+  yt-dlp skip the download entirely. The previous handler set
+  `status = "complete"` with `filename = ""`, so the extension's
+  progress panel claimed success while no file ever appeared. Now
+  sets `status = "skipped"` with a clear `error` string explaining
+  why and how to re-enable. Also excluded from history (no actual
+  file was produced) and from the post-loop fallback that would
+  otherwise overwrite the status.
 
 ---
 
