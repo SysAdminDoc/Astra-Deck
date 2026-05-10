@@ -70,6 +70,14 @@
         <button id="export-btn" type="button" data-i18n="exportBtn">Export</button>
         <button id="import-btn" type="button" data-i18n="importBtn">Import</button>
         <input type="file" id="import-file" accept=".json,application/json" hidden>
+        <label class="language-inline" for="languageSelect">
+          <span class="sr-only" data-i18n="languageSelectLabel">Display language</span>
+          <select id="languageSelect" name="language" data-i18n-attr-title="languageTitle" title="Display language">
+            <option value="auto" data-i18n="languageAuto">Auto (browser default)</option>
+            <option value="en" data-i18n="languageEn">English</option>
+            <option value="zh_CN" data-i18n="languageZhCn">简体中文 (Simplified Chinese)</option>
+          </select>
+        </label>
       </div>
       <div class="actions-end">
         <button id="reset-btn" class="danger" type="button" data-i18n="resetBtn">Reset</button>
@@ -77,23 +85,6 @@
     </nav>
 
     <div class="status" id="status" aria-live="polite"></div>
-
-    <section class="language-section" aria-labelledby="language-title">
-      <div class="section-head">
-        <div class="section-head-copy">
-          <span class="section-eyebrow" data-i18n="languageEyebrow">Language</span>
-          <h2 class="section-title" id="language-title" data-i18n="languageTitle">Display language</h2>
-        </div>
-      </div>
-      <div class="language-row">
-        <label class="sr-only" for="languageSelect" data-i18n="languageSelectLabel">Display language</label>
-        <select id="languageSelect" name="language">
-          <option value="auto" data-i18n="languageAuto">Auto (browser default)</option>
-          <option value="en" data-i18n="languageEn">English</option>
-          <option value="zh_CN" data-i18n="languageZhCn">简体中文 (Simplified Chinese)</option>
-        </select>
-      </div>
-    </section>
 
     <section class="quick-toggles-section" aria-labelledby="quick-toggles-title">
       <div class="section-head">
