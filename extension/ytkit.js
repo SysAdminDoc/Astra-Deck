@@ -446,7 +446,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.20.8';
+    const YTKIT_VERSION = '3.20.9';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1393,6 +1393,87 @@ return response;
             color: #dfffea !important;
             background: rgba(34,197,94,0.18) !important;
             border-color: rgba(34,197,94,0.32) !important;
+        }
+        /* Speed control player button: needs auto-width to fit "1.5×" / "2.5×" */
+        .ytkit-player-btn.ytkit-po-speed {
+            width: auto !important;
+            min-width: 38px !important;
+            padding: 0 8px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.01em !important;
+            font-variant-numeric: tabular-nums !important;
+            font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace !important;
+        }
+        /* Speed control popup */
+        .ytkit-speed-popup {
+            position: fixed !important;
+            z-index: 2147483647 !important;
+            min-width: 196px !important;
+            padding: 12px 12px 10px !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            background:
+                linear-gradient(180deg, rgba(20,24,32,0.96), rgba(12,15,21,0.98)) !important;
+            box-shadow:
+                0 18px 48px rgba(0,0,0,0.55),
+                0 2px 6px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.07) !important;
+            color: rgba(242,246,255,0.92) !important;
+            font-family: "Roboto", "Segoe UI", Arial, sans-serif !important;
+        }
+        .ytkit-speed-popup__header {
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            color: rgba(255,255,255,0.92) !important;
+            margin-bottom: 2px !important;
+        }
+        .ytkit-speed-popup__sub {
+            font-size: 10.5px !important;
+            color: rgba(255,255,255,0.55) !important;
+            margin-bottom: 10px !important;
+        }
+        .ytkit-speed-popup__grid {
+            display: grid !important;
+            grid-template-columns: repeat(5, 1fr) !important;
+            gap: 6px !important;
+        }
+        .ytkit-speed-popup__item {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            padding: 7px 0 !important;
+            border-radius: 8px !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            background: rgba(255,255,255,0.04) !important;
+            color: rgba(255,255,255,0.78) !important;
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+            font-variant-numeric: tabular-nums !important;
+            font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace !important;
+            cursor: pointer !important;
+            transition:
+                background-color 140ms var(--ytkit-ease-out),
+                border-color 140ms var(--ytkit-ease-out),
+                color 140ms var(--ytkit-ease-out) !important;
+        }
+        .ytkit-speed-popup__item:hover {
+            background: rgba(255,255,255,0.085) !important;
+            color: #fff !important;
+            border-color: rgba(255,255,255,0.18) !important;
+        }
+        .ytkit-speed-popup__item.is-active {
+            background: linear-gradient(180deg, rgba(255,107,74,0.22), rgba(255,107,74,0.12)) !important;
+            color: #fff !important;
+            border-color: rgba(255,107,74,0.45) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08) !important;
+        }
+        .ytkit-speed-popup__item:focus-visible {
+            outline: none !important;
+            box-shadow:
+                0 0 0 2px rgba(8,11,16,0.92),
+                0 0 0 4px rgba(255,107,74,0.34) !important;
         }
         .ytkit-player-btn--warn {
             opacity: 1 !important;
@@ -2741,6 +2822,107 @@ return response;
     function _closeDlPopup() {
         if (_dlPopupCleanup) { _dlPopupCleanup(); _dlPopupCleanup = null; }
         if (_dlPopup) { _dlPopup.remove(); _dlPopup = null; }
+    }
+
+    // ── Speed control popup (driven by player chrome speedBtn) ──
+    // Selecting a value enables persistentSpeed and writes
+    // persistentSpeedValue. The existing persistentSpeed feature handles
+    // applying it on subsequent navigations; we apply to the current video
+    // immediately so the change is felt without waiting for a navigate.
+    let _speedPopup = null;
+    let _speedPopupCleanup = null;
+    const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+
+    function _closeSpeedPopup() {
+        if (_speedPopupCleanup) { _speedPopupCleanup(); _speedPopupCleanup = null; }
+        if (_speedPopup) { _speedPopup.remove(); _speedPopup = null; }
+    }
+
+    function showSpeedPopup(anchorEl, onChange) {
+        _closeSpeedPopup();
+        const current = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
+
+        const popup = document.createElement('div');
+        popup.className = 'ytkit-speed-popup';
+        popup.setAttribute('role', 'menu');
+        popup.setAttribute('aria-label', 'Default playback speed');
+
+        const header = document.createElement('div');
+        header.className = 'ytkit-speed-popup__header';
+        header.textContent = 'Default speed';
+        popup.appendChild(header);
+
+        const sub = document.createElement('div');
+        sub.className = 'ytkit-speed-popup__sub';
+        sub.textContent = 'Applies to every video until changed.';
+        popup.appendChild(sub);
+
+        const grid = document.createElement('div');
+        grid.className = 'ytkit-speed-popup__grid';
+        SPEED_OPTIONS.forEach((value) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'ytkit-speed-popup__item';
+            item.setAttribute('role', 'menuitemradio');
+            const isCurrent = Math.abs(value - current) < 0.001;
+            item.setAttribute('aria-checked', String(isCurrent));
+            if (isCurrent) item.classList.add('is-active');
+            item.textContent = (Number.isInteger(value) ? value.toString() : value.toString()) + '×';
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!appState?.settings) { _closeSpeedPopup(); return; }
+                appState.settings.persistentSpeedValue = value;
+                appState.settings.persistentSpeed = true;
+                try { storageWriteJSON('ytSuiteSettings', appState.settings); } catch (_) { /* reason: storage write best-effort */ }
+                // Apply to current video immediately.
+                const video = document.querySelector('video.html5-main-video');
+                if (video) {
+                    video.playbackRate = value;
+                    // Reset persistentSpeed feature's idempotency flag so the
+                    // next navigate triggers re-application (safety net for
+                    // SPA edge cases where playbackRate gets reset).
+                    const f = getFeatureById?.('persistentSpeed');
+                    if (f) f._applied = false;
+                }
+                if (typeof onChange === 'function') onChange();
+                _closeSpeedPopup();
+            });
+            grid.appendChild(item);
+        });
+        popup.appendChild(grid);
+
+        document.body.appendChild(popup);
+        _speedPopup = popup;
+
+        // Position above the anchor; flip below if no room.
+        if (anchorEl) {
+            const r = anchorEl.getBoundingClientRect();
+            const pw = popup.offsetWidth;
+            const ph = popup.offsetHeight;
+            let left = r.left + r.width / 2 - pw / 2;
+            let top = r.top - ph - 8;
+            if (top < 8) top = r.bottom + 8;
+            if (left < 8) left = 8;
+            if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+        }
+
+        anchorEl?.setAttribute?.('aria-expanded', 'true');
+
+        const outsideClick = (e) => {
+            if (!popup.contains(e.target) && e.target !== anchorEl) _closeSpeedPopup();
+        };
+        const escHandler = (e) => { if (e.key === 'Escape') _closeSpeedPopup(); };
+        setTimeout(() => {
+            document.addEventListener('click', outsideClick, true);
+            document.addEventListener('keydown', escHandler);
+        }, 50);
+        _speedPopupCleanup = () => {
+            document.removeEventListener('click', outsideClick, true);
+            document.removeEventListener('keydown', escHandler);
+            anchorEl?.setAttribute?.('aria-expanded', 'false');
+        };
     }
 
     async function _fetchServerConfig(token) {
@@ -7189,6 +7371,33 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     dlBtn.addEventListener('click', (e) => { e.stopPropagation(); showDownloadPopup(dlBtn); });
                     wrap.appendChild(dlBtn);
                 }
+
+                // Speed control — sits between Download and Settings.
+                // Drives the existing persistentSpeed feature so the chosen
+                // value auto-applies to every subsequent video without the
+                // user having to open Settings.
+                const speedBtn = document.createElement('button');
+                speedBtn.type = 'button';
+                speedBtn.className = 'ytp-button ytkit-player-btn ytkit-po-speed';
+                speedBtn.setAttribute('aria-haspopup', 'menu');
+                speedBtn.setAttribute('aria-expanded', 'false');
+                const _formatSpeedLabel = (v) => {
+                    const n = Number(v);
+                    if (!Number.isFinite(n) || n <= 0) return '1×';
+                    return (Number.isInteger(n) ? n.toString() : n.toString().replace(/0+$/, '').replace(/\.$/, '')) + '×';
+                };
+                const _syncSpeedBtnLabel = () => {
+                    const v = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
+                    speedBtn.textContent = _formatSpeedLabel(v);
+                    speedBtn.title = `Default playback speed: ${_formatSpeedLabel(v)} — applies to every video`;
+                    speedBtn.setAttribute('aria-label', `Default playback speed ${_formatSpeedLabel(v)}. Click to change.`);
+                };
+                _syncSpeedBtnLabel();
+                speedBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showSpeedPopup(speedBtn, _syncSpeedBtnLabel);
+                });
+                wrap.appendChild(speedBtn);
 
                 // Settings gear
                 const gearBtn = document.createElement('button');
