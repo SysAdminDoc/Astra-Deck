@@ -4,6 +4,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.20.9] - Player speed control - 2026-05-10
+
+### Added
+- **Speed control button on the video player.** Sits in the player
+  chrome between the Download button and the Settings gear. Click
+  opens a 5×2 grid of speed chips (0.25× / 0.5× / 0.75× / 1× / 1.25× /
+  1.5× / 1.75× / 2× / 2.5× / 3×); the chosen value applies to the
+  current video immediately and persists as the default for every
+  subsequent video until changed. Wires into the existing
+  `persistentSpeed` feature (auto-applies on navigate via the
+  feature's existing rule) so there's no second source of truth for
+  the speed value. Button label shows the current speed (`1×`,
+  `1.5×`, etc.) so the active default is visible at a glance.
+
+---
+
 ## [3.20.8] - Re-downloads always run - 2026-05-10
 
 Pairs with Astra Downloader v1.3.0. Same URL, click 100 times, get
