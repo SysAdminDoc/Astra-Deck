@@ -446,7 +446,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.20.5';
+    const YTKIT_VERSION = '3.20.6';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2869,6 +2869,11 @@ return response;
         body.appendChild(qualityRow);
 
         // ── Directory row ──
+        // The "Change" button invokes the downloader's native QFileDialog
+        // via /pick-folder. Web pages can't open OS folder pickers
+        // themselves (showDirectoryPicker yields a handle, not a real path),
+        // so the round-trip through the local downloader is the only way
+        // to get a usable absolute path back to the extension.
         const dirRow = document.createElement('div');
         dirRow.className = 'ytkit-dl-popup__row';
         const dirLabel = document.createElement('div');
@@ -2882,36 +2887,64 @@ return response;
         dirWrap.setAttribute('aria-labelledby', dirLabel.id);
         const dirDisplay = document.createElement('span');
         dirDisplay.className = 'ytkit-dl-popup__dir-path';
-        dirDisplay.textContent = 'Default (Downloads)';
-        const dirInput = document.createElement('input');
-        dirInput.type = 'text';
-        dirInput.className = 'ytkit-dl-popup__dir-input';
-        dirInput.id = 'ytkit-dl-popup-custom-dir';
-        dirInput.setAttribute('aria-label', 'Custom download folder');
-        dirInput.placeholder = 'C:\\Users\\...\\Videos';
-        dirInput.spellcheck = false;
-        dirInput.autocomplete = 'off';
-        dirInput.hidden = true;
-        dirInput.addEventListener('input', () => { customDir = dirInput.value.trim(); });
+        dirDisplay.textContent = 'Loading…';
+        let serverDefaultPath = '';
         const dirToggle = document.createElement('button');
         dirToggle.type = 'button';
         dirToggle.className = 'ytkit-dl-popup__dir-btn';
         dirToggle.textContent = 'Change';
-        dirToggle.setAttribute('aria-controls', dirInput.id);
-        dirToggle.setAttribute('aria-expanded', 'false');
-        dirToggle.setAttribute('aria-label', 'Choose a custom download folder');
-        dirToggle.addEventListener('click', () => {
-            const showing = !dirInput.hidden;
-            dirInput.hidden = showing;
-            dirDisplay.hidden = !showing;
-            dirToggle.textContent = showing ? 'Change' : 'Default';
-            dirToggle.setAttribute('aria-expanded', String(!showing));
-            dirToggle.setAttribute('aria-label', showing ? 'Choose a custom download folder' : 'Use the default Downloads folder');
-            if (showing) { customDir = ''; dirInput.value = ''; }
-            else { dirInput.focus(); }
+        dirToggle.setAttribute('aria-label', 'Choose a download folder');
+        const setDirState = (path, isCustom) => {
+            customDir = isCustom ? (path || '') : '';
+            dirDisplay.textContent = path || 'Default';
+            dirDisplay.title = path || '';
+            if (isCustom) {
+                dirToggle.textContent = 'Reset';
+                dirToggle.setAttribute('aria-label', 'Reset to default download folder');
+            } else {
+                dirToggle.textContent = 'Change';
+                dirToggle.setAttribute('aria-label', 'Choose a download folder');
+            }
+        };
+        dirToggle.addEventListener('click', async () => {
+            // Reset path: clear the custom override, restore the server default.
+            if (customDir) {
+                setDirState(serverDefaultPath, false);
+                return;
+            }
+            const prevLabel = dirToggle.textContent;
+            dirToggle.textContent = 'Picking…';
+            dirToggle.disabled = true;
+            try {
+                const mdl = await MediaDLManager.check();
+                if (!mdl.ok) {
+                    dirDisplay.textContent = 'Downloader not running';
+                    return;
+                }
+                const { data } = await extensionFetchJson({
+                    method: 'POST',
+                    url: MediaDLManager.baseUrl() + '/pick-folder',
+                    headers: {
+                        'X-Auth-Token': mdl.token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ initial: customDir || serverDefaultPath || '' }),
+                    timeout: 130000
+                });
+                if (data?.path) {
+                    setDirState(data.path, true);
+                } else if (data?.error) {
+                    dirDisplay.textContent = data.error;
+                }
+                // Cancelled: keep prior state silently.
+            } catch (_) {
+                dirDisplay.textContent = 'Folder picker unavailable';
+            } finally {
+                dirToggle.disabled = false;
+                if (dirToggle.textContent === 'Picking…') dirToggle.textContent = prevLabel;
+            }
         });
         dirWrap.appendChild(dirDisplay);
-        dirWrap.appendChild(dirInput);
         dirWrap.appendChild(dirToggle);
         dirRow.appendChild(dirWrap);
         body.appendChild(dirRow);
@@ -2975,15 +3008,24 @@ return response;
             document.removeEventListener('keydown', escHandler);
         };
 
-        // Fetch server config to show current directory
+        // Fetch server config to show current directory.
+        // Server returns both downloadPath (camelCase, v1.2.2+) and DownloadPath
+        // (capital, legacy). Read camelCase first; fall back to capital so old
+        // downloader builds still populate the display.
         (async () => {
             const mdl = await MediaDLManager.check();
-            if (mdl.ok) {
-                const cfg = await _fetchServerConfig(mdl.token);
-                if (cfg?.downloadPath && dirDisplay.isConnected) {
-                    dirDisplay.textContent = cfg.downloadPath;
-                    dirInput.placeholder = cfg.downloadPath;
-                }
+            if (!mdl.ok) {
+                if (dirDisplay.isConnected) dirDisplay.textContent = 'Downloader not running';
+                return;
+            }
+            const cfg = await _fetchServerConfig(mdl.token);
+            const path = cfg?.downloadPath || cfg?.DownloadPath || '';
+            if (path && dirDisplay.isConnected && !customDir) {
+                serverDefaultPath = path;
+                dirDisplay.textContent = path;
+                dirDisplay.title = path;
+            } else if (!path && dirDisplay.isConnected) {
+                dirDisplay.textContent = 'Default';
             }
         })();
     }

@@ -4,6 +4,32 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.20.6] - Native folder picker for downloads - 2026-05-10
+
+The download popup's "Save to" row now opens a native folder picker
+when you click "Change". Manual path typing is gone — paths come back
+from the downloader's QFileDialog and the row reflects the chosen
+folder inline. Pairs with Astra Downloader v1.2.2.
+
+### Changed
+- **"Change" button opens a native folder picker.** Previously revealed
+  a text input where you had to type a Windows path. Web pages can't
+  open OS folder dialogs directly (`showDirectoryPicker` returns a
+  handle, not a real path), so the click round-trips through the
+  downloader's new `POST /pick-folder` endpoint. Result is wired into
+  the same `outputDir` field the download CTA already uses. Button
+  flips to "Reset" while a custom path is set, restoring the server
+  default with one click.
+- **"Save to" row reads the server config in camelCase.** Previously
+  read `cfg.downloadPath` while the server returned `DownloadPath` —
+  the row silently fell back to the placeholder forever. The row now
+  prefers `downloadPath` (new in downloader v1.2.2) and still falls
+  through to the legacy `DownloadPath` so older downloader builds keep
+  working. Initial state shows "Loading…" then the actual path,
+  instead of the misleading "Default (Downloads)".
+
+---
+
 ## [3.20.5] - Hardening Pass 18 - 2026-04-26
 
 Audit-only release on top of v3.20.4. Settings-import migration
@@ -498,6 +524,34 @@ block at the end of the features array for easy isolation.
   links (already covered by Astra Deck's `quickLinkMenu`), tab view
   (covered by `watchPageTabs`), and the colored transcript buttons
   (subsumed into the single `transcriptAiHandoff` selector-driven design).
+
+---
+
+## Astra Downloader [1.2.2] - Native folder picker + Videos default
+
+Companion bug-fix on top of v1.2.1. Adds a cross-thread folder picker
+endpoint so the extension popup can open a real OS dialog instead of
+making users type a Windows path, and changes the default download
+directory from `~/Videos/YouTube` to `~/Videos` (one fewer subfolder
+to click into when importing into Premiere/Resolve/FCP).
+
+### Added
+- **`POST /pick-folder` endpoint.** Pops a native QFileDialog on the
+  GUI thread (Qt widgets are GUI-thread only; Flask handlers run on
+  waitress workers, so requests are pumped through a queue + 150 ms
+  QTimer poll on the GUI thread). Dialog is forced on top via
+  `WindowStaysOnTopHint` because the downloader runs tray-only by
+  default and has no parent window to anchor to. Returns
+  `{ path, cancelled }` or `{ error }`. 120 s timeout.
+- **camelCase aliases on `/config`** — `downloadPath` and
+  `audioDownloadPath` mirror the existing capital-case keys so JS
+  callers can use conventional casing. Capital keys remain for
+  backward compatibility.
+
+### Changed
+- **Default `DownloadPath` is now `~/Videos`** (was `~/Videos/YouTube`).
+  Existing configs are not migrated — users on the old default keep
+  the YouTube subfolder until they reset or pick a new folder.
 
 ---
 
