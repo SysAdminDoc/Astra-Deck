@@ -637,5 +637,68 @@ class AutoUpdateThrottleTests(unittest.TestCase):
         self.assertTrue(ad.should_check_ytdlp_update(_C()))
 
 
+class VideoFormatSelectorTests(unittest.TestCase):
+    """Codec-aware format selection — the previous selector picked the
+    highest-bitrate stream regardless of codec, then ``--merge-output-format
+    mp4`` only swapped containers, leaving VP9/AV1 inside .mp4. Adobe Premiere
+    rejects that combination as "unsupported compression". These tests pin
+    the codec preferences per container so the regression can't return
+    silently.
+    """
+
+    def _selector(self, args):
+        # args is the full list returned by build_video_format_args.
+        # Layout is ['-f', '<selector>', '--merge-output-format', '<container>']
+        self.assertEqual(args[0], '-f')
+        self.assertEqual(args[2], '--merge-output-format')
+        return args[1], args[3]
+
+    def test_mp4_prefers_avc1_video_and_m4a_audio(self):
+        sel, container = self._selector(ad.build_video_format_args('mp4', 'best'))
+        self.assertEqual(container, 'mp4')
+        # Premiere requires H.264 (avc1) inside MP4. The first cascade tier
+        # MUST be avc1+m4a — anything else means the regression is back.
+        self.assertTrue(
+            sel.startswith('bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/'),
+            f'mp4 selector must lead with avc1+m4a, got: {sel}',
+        )
+        # Must terminate at plain `best` so download never fails purely on codec.
+        self.assertTrue(sel.endswith('/best'))
+
+    def test_mp4_with_quality_cap_applies_to_every_tier(self):
+        sel, _ = self._selector(ad.build_video_format_args('mp4', '1080'))
+        # Every cascade tier should respect the height cap, not just the first.
+        # If a tier omits the filter, a 4K stream could leak through when the
+        # user explicitly asked for 1080p.
+        for tier in sel.split('/'):
+            if tier == 'best':
+                continue
+            self.assertIn('[height<=1080]', tier,
+                          f'tier missing height cap: {tier!r}')
+
+    def test_webm_prefers_vp9_and_opus(self):
+        sel, container = self._selector(ad.build_video_format_args('webm', 'best'))
+        self.assertEqual(container, 'webm')
+        self.assertTrue(
+            sel.startswith('bestvideo[vcodec^=vp9]+bestaudio[ext=webm]/'),
+            f'webm selector must lead with vp9+webm-audio, got: {sel}',
+        )
+
+    def test_mkv_has_no_codec_preference(self):
+        sel, container = self._selector(ad.build_video_format_args('mkv', 'best'))
+        self.assertEqual(container, 'mkv')
+        # MKV is a universal container — codec filters here would needlessly
+        # constrain quality with no compatibility benefit.
+        self.assertNotIn('vcodec', sel)
+        self.assertNotIn('acodec', sel)
+        self.assertNotIn('[ext=', sel)
+
+    def test_no_unfiltered_height_when_quality_is_best(self):
+        # Sanity: when quality is 'best', no height filter should appear,
+        # otherwise the cascade silently caps at the previous default.
+        sel, _ = ad.build_video_format_args('mp4', 'best')[1], 'mp4'
+        self.assertNotIn('[height<=', sel)
+
+
 if __name__ == "__main__":
     unittest.main()
