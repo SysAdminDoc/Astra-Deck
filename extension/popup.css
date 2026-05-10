@@ -664,6 +664,74 @@ button:focus-visible {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Language section ── */
+/* Sits between data management and quick toggles. Mirrors the
+   .quick-toggles-section card framing so the popup reads as a single
+   stacked column of cards. */
+
+.language-section {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.015);
+  overflow: hidden;
+}
+
+.language-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 12px;
+}
+
+#languageSelect {
+  flex: 1 1 auto;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 34px;
+  padding: 0 32px 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background-color: rgba(8, 11, 16, 0.74);
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.62) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.62) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+#languageSelect:hover {
+  border-color: rgba(255, 107, 74, 0.32);
+  background-color: rgba(12, 16, 22, 0.84);
+}
+
+#languageSelect:focus-visible {
+  border-color: rgba(255, 107, 74, 0.5);
+  box-shadow:
+    0 0 0 3px rgba(255, 107, 74, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+#languageSelect option {
+  background-color: #0d1117;
+  color: var(--text-primary);
+}
+
 /* ── Quick toggles section ── */
 
 .quick-toggles-section {
