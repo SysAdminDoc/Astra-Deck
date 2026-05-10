@@ -19,7 +19,6 @@ class FakeConfig:
             "EmbedChapters": False,
             "EmbedSubs": False,
             "SponsorBlock": False,
-            "DownloadArchive": False,
             "RateLimit": "",
             "Proxy": "",
         }
@@ -637,41 +636,32 @@ class AutoUpdateThrottleTests(unittest.TestCase):
         self.assertTrue(ad.should_check_ytdlp_update(_C()))
 
 
-class ArchiveSkipDetectionTests(unittest.TestCase):
-    """Sentinel: the previous implementation matched on
-    'already been downloaded', but yt-dlp's actual --download-archive
-    line is 'has already been recorded in the archive'. The mismatch
-    let archive skips silently flip to 'complete' with no file —
-    indistinguishable from a real successful download in the UI.
-    Pin both substrings so future yt-dlp output drift is caught.
+class NoArchiveLockTests(unittest.TestCase):
+    """v1.3.0 removed the download-archive lock so re-downloads always
+    run. These tests pin the invariants so the lock can't be silently
+    re-introduced via a stray flag, config key, or yt-dlp argv branch.
     """
 
-    YTDLP_REAL_OUTPUTS = [
-        # --download-archive: URL is in archive.txt
-        '[download] KXI62VKJG9U: has already been recorded in the archive',
-        # File on disk without archive entry (older/alternate path)
-        '[download] /path/to/file.mp4 has already been downloaded',
-    ]
+    def test_default_config_has_no_download_archive_key(self):
+        self.assertNotIn('DownloadArchive', ad.DEFAULT_CONFIG,
+                         'DownloadArchive must not be a default config key.')
 
-    def _check_line(self, line):
-        return ('has already been recorded in the archive' in line
-                or 'already been downloaded' in line)
+    def test_source_does_not_pass_download_archive_to_ytdlp(self):
+        # Hard sentinel: searching the source rather than mocking the
+        # subprocess catches the case where someone re-adds the flag
+        # without going through the config knob.
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertNotIn("'--download-archive'", src,
+                         "yt-dlp argv must not include --download-archive.")
+        self.assertNotIn('"--download-archive"', src,
+                         "yt-dlp argv must not include --download-archive.")
 
-    def test_recognises_real_ytdlp_skip_lines(self):
-        for line in self.YTDLP_REAL_OUTPUTS:
-            with self.subTest(line=line):
-                self.assertTrue(self._check_line(line),
-                                f'Skip detector failed to match: {line!r}')
-
-    def test_does_not_overmatch_unrelated_lines(self):
-        for line in (
-            '[download] Destination: video.mp4',
-            '[download]   5.0% of   10MiB at 1.0MiB/s ETA 00:09',
-            '[Merger] Merging formats into "out.mp4"',
-        ):
-            with self.subTest(line=line):
-                self.assertFalse(self._check_line(line),
-                                 f'Skip detector falsely matched: {line!r}')
+    def test_source_passes_force_overwrites_to_ytdlp(self):
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertIn("'--force-overwrites'", src,
+                      "yt-dlp argv must include --force-overwrites so "
+                      "re-downloads of the same URL aren't skipped because "
+                      "the destination file already exists.")
 
 
 class VideoFormatSelectorTests(unittest.TestCase):
