@@ -73,7 +73,7 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit) but older clients ignore unknown
@@ -1368,6 +1368,58 @@ def terminate_process_tree(proc, timeout=3):
 # ══════════════════════════════════════════════════════════════
 # DOWNLOAD MANAGER
 # ══════════════════════════════════════════════════════════════
+
+def build_video_format_args(container, quality):
+    """Build yt-dlp ``-f`` / ``--merge-output-format`` args that prefer
+    codecs the target container is editor-compatible with.
+
+    YouTube's `bestvideo` itag is almost always VP9 or AV1. ``--merge-output-format``
+    only swaps the container, so a naive ``bestvideo+bestaudio`` selector with
+    ``--merge-output-format mp4`` produces an .mp4 wrapping VP9/AV1 video —
+    which Adobe Premiere, Final Cut, and DaVinci Resolve refuse to import
+    because they expect H.264 inside MP4.
+
+    Codec preference per container:
+      * mp4  → H.264 (avc1) video + AAC (m4a) audio — NLE-importable.
+                YouTube serves AVC1 up to 1080p; the cascade falls through to
+                non-AVC1 streams above that, so 4K MP4 may still be VP9/AV1.
+                Lower the quality cap to 1080p for guaranteed Premiere import.
+      * webm → VP9 video + Opus audio — container-native combination.
+      * mkv  → no codec preference. MKV is a universal wrapper.
+
+    The cascade always terminates at plain ``best`` so a download never fails
+    purely because no codec-preferred stream exists.
+    """
+    height_filter = '' if quality == 'best' else f'[height<={quality}]'
+
+    if container == 'mp4':
+        v_pref = '[vcodec^=avc1]'
+        a_pref = '[ext=m4a]'
+    elif container == 'webm':
+        v_pref = '[vcodec^=vp9]'
+        a_pref = '[ext=webm]'
+    else:  # mkv (or any future universal container)
+        v_pref = ''
+        a_pref = ''
+
+    if v_pref or a_pref:
+        fmt_sel = (
+            f'bestvideo{height_filter}{v_pref}+bestaudio{a_pref}/'
+            f'bestvideo{height_filter}{v_pref}+bestaudio/'
+            f'bestvideo{height_filter}+bestaudio{a_pref}/'
+            f'bestvideo{height_filter}+bestaudio/'
+            f'best{height_filter}{v_pref}/'
+            f'best{height_filter}/best'
+        )
+    else:
+        fmt_sel = (
+            f'bestvideo{height_filter}+bestaudio/'
+            f'best{height_filter}/best'
+        )
+
+    return ['-f', fmt_sel, '--merge-output-format', container]
+
+
 class Download:
     def __init__(self, dl_id, url, audio_only=False, fmt=None, quality='best',
                  output_dir=None, title=None, referer=None, cookies_file=None):
@@ -1546,11 +1598,7 @@ class DownloadManager(QObject):
             args += ['-f', 'bestaudio', '--extract-audio',
                      '--audio-format', dl.format, '--audio-quality', '0']
         else:
-            if dl.quality == 'best':
-                fmt_sel = 'bestvideo+bestaudio/best'
-            else:
-                fmt_sel = f'bestvideo[height<={dl.quality}]+bestaudio/best[height<={dl.quality}]/best'
-            args += ['-f', fmt_sel, '--merge-output-format', dl.format]
+            args += build_video_format_args(dl.format, dl.quality)
 
         args.append(dl.url)
 

@@ -501,6 +501,34 @@ block at the end of the features array for easy isolation.
 
 ---
 
+## Astra Downloader [1.2.1] - Editor-compatible MP4/WebM downloads
+
+Bug-fix release on top of v1.2.0. Restores codec/container alignment so
+files downloaded as MP4 are actually H.264 + AAC (Adobe Premiere /
+Final Cut / DaVinci Resolve native import), and WebM downloads are
+VP9 + Opus.
+
+### Fixed
+- **MP4 downloads now produce Premiere-compatible files.** The previous
+  `bestvideo+bestaudio` selector picked the highest-bitrate stream
+  regardless of codec (almost always VP9 or AV1 on YouTube), and
+  `--merge-output-format mp4` only swapped the container — leaving
+  VP9/AV1 video inside `.mp4`. Adobe Premiere rejects that combination
+  as "unsupported compression". The new `build_video_format_args` cascade
+  prefers `vcodec^=avc1` + `ext=m4a` for MP4, `vcodec^=vp9` + `ext=webm`
+  for WebM, and falls through to plain `best` so a download never fails
+  purely on codec. MKV remains codec-free (universal container).
+- Note for >1080p MP4 downloads: YouTube only serves AVC1 up to 1080p,
+  so the cascade falls through to AV1/VP9 above that. Pin quality to
+  1080p (or lower) for guaranteed Premiere import, or pick MKV.
+
+### Tests
+- 42 Python tests pass (was 37). New suite: `VideoFormatSelectorTests`
+  pins the codec preferences per container so the regression can't
+  return silently.
+
+---
+
 ## Astra Downloader [1.2.0] - Hardening Pass 6 (companion service)
 
 Deep audit of the Python/Flask `astra_downloader` companion. Clears every
