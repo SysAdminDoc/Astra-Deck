@@ -302,11 +302,32 @@
   "languageAuto": {
     "message": "Auto (browser default)"
   },
+  "languageDe": {
+    "message": "Deutsch (German)"
+  },
   "languageEn": {
     "message": "English"
   },
-  "languageEyebrow": {
-    "message": "Language"
+  "languageEs": {
+    "message": "Español (Spanish)"
+  },
+  "languageFr": {
+    "message": "Français (French)"
+  },
+  "languageIt": {
+    "message": "Italiano (Italian)"
+  },
+  "languageJa": {
+    "message": "日本語 (Japanese)"
+  },
+  "languageKo": {
+    "message": "한국어 (Korean)"
+  },
+  "languagePtBr": {
+    "message": "Português (Brazilian Portuguese)"
+  },
+  "languageRu": {
+    "message": "Русский (Russian)"
   },
   "languageSelectLabel": {
     "message": "Display language"

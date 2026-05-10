@@ -115,6 +115,29 @@ function initLanguageDropdown() {
     const sel = document.getElementById('languageSelect');
     if (!sel) return;
     sel.value = I18N.override || 'auto';
+
+    // Surface the auto-detected locale name on the "Auto" option label so
+    // users can see what chrome.i18n picked for them. If the detected
+    // locale matches one of our bundled options we show its native name;
+    // otherwise we just show the BCP-47 tag.
+    try {
+        const autoOpt = sel.querySelector('option[value="auto"]');
+        if (autoOpt && chrome?.i18n?.getUILanguage) {
+            const ui = chrome.i18n.getUILanguage() || '';
+            // Map BCP-47 → bundled native label so an Auto user with a
+            // German browser sees "Auto — Deutsch" instead of "Auto (de)".
+            const NATIVE = {
+                en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français',
+                it: 'Italiano', ja: '日本語', ko: '한국어',
+                'pt-BR': 'Português', 'pt': 'Português',
+                ru: 'Русский', 'zh-CN': '简体中文', 'zh': '简体中文'
+            };
+            const detected = NATIVE[ui] || NATIVE[ui.split('-')[0]] || ui || '?';
+            const baseLabel = t('languageAuto', 'Auto (browser default)');
+            autoOpt.textContent = `${baseLabel} — ${detected}`;
+        }
+    } catch (_) { /* reason: i18n detection is best-effort */ }
+
     sel.addEventListener('change', async () => {
         const locale = sel.value || 'auto';
         try {
