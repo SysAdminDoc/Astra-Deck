@@ -1,0 +1,651 @@
+{
+  "brandName": {
+    "message": "Astra Deck"
+  },
+  "clearFilterAria": {
+    "message": "Очистить фильтр быстрых переключателей"
+  },
+  "clearFilterBtn": {
+    "message": "Очистить фильтр"
+  },
+  "clearLogMessage": {
+    "message": "Это удалит все записанные события диагностики из хранилища расширения."
+  },
+  "clearLogTitle": {
+    "message": "Очистить журнал диагностики?"
+  },
+  "closeBtnAria": {
+    "message": "Закрыть"
+  },
+  "confirmCancel": {
+    "message": "Отмена"
+  },
+  "confirmContinue": {
+    "message": "Продолжить"
+  },
+  "confirmDestructiveEyebrow": {
+    "message": "Деструктивное действие"
+  },
+  "confirmEyebrow": {
+    "message": "Подтвердить"
+  },
+  "contextNoteAnyTab": {
+    "message": "Быстрые переключатели синхронизируются после открытия вкладки YouTube."
+  },
+  "contextNoteInlinePanel": {
+    "message": "Нажмите «Открыть полные настройки», чтобы запустить рабочую область на этой вкладке."
+  },
+  "contextNoteLaunch": {
+    "message": "Полные настройки находятся в рабочей области на вкладках YouTube для просмотра."
+  },
+  "contextStateAnyTab": {
+    "message": "Любая вкладка"
+  },
+  "contextStateAriaLabel": {
+    "message": "Контекст вкладки"
+  },
+  "contextStateLocal": {
+    "message": "Локально"
+  },
+  "contextStateYouTube": {
+    "message": "YouTube"
+  },
+  "controlPlural": {
+    "message": "элементов"
+  },
+  "controlSingular": {
+    "message": "элемент"
+  },
+  "dataMgmtAria": {
+    "message": "Управление данными"
+  },
+  "dlPopupAria": {
+    "message": "Параметры загрузки"
+  },
+  "dlPopupChange": {
+    "message": "Изменить"
+  },
+  "dlPopupChangeAria": {
+    "message": "Выбрать папку загрузки"
+  },
+  "dlPopupCtaAudio": {
+    "message": "Скачать аудио"
+  },
+  "dlPopupCtaAudioAriaTpl": {
+    "message": "Download audio as …"
+  },
+  "dlPopupCtaVideo": {
+    "message": "Скачать видео"
+  },
+  "dlPopupCtaVideoAriaTpl": {
+    "message": "Download video as … at …"
+  },
+  "dlPopupDefault": {
+    "message": "По умолчанию"
+  },
+  "dlPopupDownloaderOffline": {
+    "message": "Загрузчик не запущен"
+  },
+  "dlPopupFormat": {
+    "message": "Формат"
+  },
+  "dlPopupLoading": {
+    "message": "Загрузка…"
+  },
+  "dlPopupPickerUnavailable": {
+    "message": "Выбор папки недоступен"
+  },
+  "dlPopupPicking": {
+    "message": "Выбор…"
+  },
+  "dlPopupQuality": {
+    "message": "Качество"
+  },
+  "dlPopupReset": {
+    "message": "Сбросить"
+  },
+  "dlPopupResetAria": {
+    "message": "Сбросить на папку загрузки по умолчанию"
+  },
+  "dlPopupSaveTo": {
+    "message": "Сохранить в"
+  },
+  "dlPopupTabAudioOnly": {
+    "message": "Только аудио"
+  },
+  "dlPopupTabVideo": {
+    "message": "Видео"
+  },
+  "dlPopupTitle": {
+    "message": "Параметры загрузки"
+  },
+  "dlPopupTypeAria": {
+    "message": "Тип загрузки"
+  },
+  "dlProgressActiveEtaTpl": {
+    "message": "…% complete. … remaining."
+  },
+  "dlProgressActiveTpl": {
+    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+  },
+  "dlProgressAriaAudio": {
+    "message": "Прогресс загрузки аудио"
+  },
+  "dlProgressAriaVideo": {
+    "message": "Прогресс загрузки видео"
+  },
+  "dlProgressBadgeAudio": {
+    "message": "Загрузка аудио"
+  },
+  "dlProgressBadgeVideo": {
+    "message": "Загрузка видео"
+  },
+  "dlProgressCompleteCopy": {
+    "message": "Локальный загрузчик успешно завершил работу."
+  },
+  "dlProgressConnectAudio": {
+    "message": "Подключение к локальному загрузчику аудио."
+  },
+  "dlProgressConnectVideo": {
+    "message": "Подключение к локальному загрузчику видео."
+  },
+  "dlProgressDismissAria": {
+    "message": "Закрыть прогресс загрузки"
+  },
+  "dlProgressEtaPrefix": {
+    "message": "ETA"
+  },
+  "dlProgressFailureDefault": {
+    "message": "Локальный загрузчик не справился"
+  },
+  "dlProgressInProgress": {
+    "message": "В процессе"
+  },
+  "dlProgressLocal": {
+    "message": "Локально"
+  },
+  "dlProgressLostCopy": {
+    "message": "Astra Deck потерял связь с локальным загрузчиком. Выберите «Восстановить загрузчик» для восстановления."
+  },
+  "dlProgressLostTitle": {
+    "message": "Связь с загрузчиком потеряна"
+  },
+  "dlProgressLostToast": {
+    "message": "Связь с локальным загрузчиком потеряна."
+  },
+  "dlProgressPreparing": {
+    "message": "Подготовка загрузки…"
+  },
+  "dlProgressQueue": {
+    "message": "Очередь"
+  },
+  "dlProgressReady": {
+    "message": "Готово"
+  },
+  "dlProgressReconnectingCopy": {
+    "message": "Кратковременный сбой локального загрузчика — автоматическая повторная попытка."
+  },
+  "dlProgressSkippedDefault": {
+    "message": "Уже загружено — пропущено."
+  },
+  "dlProgressStateAlreadyDownloaded": {
+    "message": "Уже загружено"
+  },
+  "dlProgressStateComplete": {
+    "message": "Завершено"
+  },
+  "dlProgressStateDownloading": {
+    "message": "Загрузка"
+  },
+  "dlProgressStateError": {
+    "message": "Ошибка"
+  },
+  "dlProgressStateFailed": {
+    "message": "Ошибка"
+  },
+  "dlProgressStateFinishing": {
+    "message": "Завершение"
+  },
+  "dlProgressStateLost": {
+    "message": "Соединение потеряно"
+  },
+  "dlProgressStateNeedsAttention": {
+    "message": "Требует внимания"
+  },
+  "dlProgressStatePreparing": {
+    "message": "Подготовка"
+  },
+  "dlProgressStateReconnecting": {
+    "message": "Переподключение"
+  },
+  "dlProgressStateSkipped": {
+    "message": "Пропущено"
+  },
+  "dlProgressWaiting": {
+    "message": "Ожидание"
+  },
+  "dlProgressWrappingUp": {
+    "message": "Завершение"
+  },
+  "dlRepairAria": {
+    "message": "Открыть шаги восстановления локального загрузчика"
+  },
+  "dlRepairBtn": {
+    "message": "Восстановить загрузчик"
+  },
+  "emptyNoMatch": {
+    "message": "Нет совпадающих переключателей"
+  },
+  "emptyNoMatchHint": {
+    "message": "Очистите фильтр, чтобы снова увидеть все быстрые элементы."
+  },
+  "emptyNoToggles": {
+    "message": "Нет доступных быстрых переключателей"
+  },
+  "emptyNoTogglesHint": {
+    "message": "Всплывающее окно не может загрузить быстрые элементы прямо сейчас."
+  },
+  "enabledLabel": {
+    "message": "включено"
+  },
+  "exportBtn": {
+    "message": "Экспорт"
+  },
+  "extActionTitle": {
+    "message": "Astra Deck",
+    "description": "Tooltip text for the toolbar action button."
+  },
+  "extDescription": {
+    "message": "Премиум-настройка страницы просмотра, разделённые макеты, управление контентом и локальные загрузки для YouTube.",
+    "description": "The extension description shown in the browser's extension management page."
+  },
+  "extName": {
+    "message": "Astra Deck",
+    "description": "The extension name displayed in the browser UI."
+  },
+  "filterTogglesLabel": {
+    "message": "Фильтр быстрых переключателей"
+  },
+  "filterTogglesPlaceholder": {
+    "message": "Фильтр переключателей…"
+  },
+  "groupQuickControls": {
+    "message": "Быстрые элементы"
+  },
+  "healthClearAria": {
+    "message": "Очистить журнал диагностики"
+  },
+  "healthClearBtn": {
+    "message": "Очистить"
+  },
+  "healthCopyAria": {
+    "message": "Копировать данные диагностики"
+  },
+  "healthCopyBtn": {
+    "message": "Копировать"
+  },
+  "healthEventPlural": {
+    "message": "событий"
+  },
+  "healthEventSingular": {
+    "message": "событие"
+  },
+  "healthFallbackPrefix": {
+    "message": "Резервный режим TrustedTypes активен"
+  },
+  "healthTitle": {
+    "message": "Диагностика"
+  },
+  "importBtn": {
+    "message": "Импорт"
+  },
+  "languageAuto": {
+    "message": "Авто (по умолчанию в браузере)"
+  },
+  "languageDe": {
+    "message": "Deutsch (Немецкий)"
+  },
+  "languageEn": {
+    "message": "Английский"
+  },
+  "languageEs": {
+    "message": "Español (Испанский)"
+  },
+  "languageFr": {
+    "message": "Français (Французский)"
+  },
+  "languageIt": {
+    "message": "Italiano (Итальянский)"
+  },
+  "languageJa": {
+    "message": "日本語 (Японский)"
+  },
+  "languageKo": {
+    "message": "한국어 (Корейский)"
+  },
+  "languagePtBr": {
+    "message": "Português (Бразильский португальский)"
+  },
+  "languageRu": {
+    "message": "Русский"
+  },
+  "languageSelectLabel": {
+    "message": "Язык отображения"
+  },
+  "languageTitle": {
+    "message": "Язык отображения"
+  },
+  "languageZhCn": {
+    "message": "简体中文 (Упрощённый китайский)"
+  },
+  "loadingState": {
+    "message": "Загрузка"
+  },
+  "openFullSettings": {
+    "message": "Открыть полные настройки"
+  },
+  "openYouTube": {
+    "message": "Открыть YouTube"
+  },
+  "panelCloseAria": {
+    "message": "Закрыть настройки"
+  },
+  "panelCloseTitle": {
+    "message": "Закрыть (Esc)"
+  },
+  "panelIntro": {
+    "message": "Ищите, настраивайте и применяйте элементы управления YouTube без покидания страницы."
+  },
+  "panelLiveApplyBadge": {
+    "message": "Применять сразу"
+  },
+  "panelSearchAria": {
+    "message": "Поиск настроек"
+  },
+  "panelSearchClearAria": {
+    "message": "Очистить поиск настроек"
+  },
+  "panelSearchClearTitle": {
+    "message": "Очистить поиск"
+  },
+  "panelSearchPlaceholder": {
+    "message": "Поиск настроек…"
+  },
+  "panelSidebarAria": {
+    "message": "Категории настроек"
+  },
+  "panelTitle": {
+    "message": "Настройки"
+  },
+  "playerDownloadAria": {
+    "message": "Скачать видео"
+  },
+  "playerDownloadTitle": {
+    "message": "Скачать видео"
+  },
+  "playerGearAriaTpl": {
+    "message": "Open … settings"
+  },
+  "playerGearTitleTpl": {
+    "message": "… Settings"
+  },
+  "popupTitle": {
+    "message": "Astra Deck"
+  },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Очистка ленты"
+  },
+  "qtGroup_Focus": {
+    "message": "Фокус"
+  },
+  "qtGroup_Playback": {
+    "message": "Воспроизведение"
+  },
+  "qtGroup_Utilities": {
+    "message": "Утилиты"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Поток просмотра"
+  },
+  "qt_autoTheaterMode_desc": {
+    "message": "По умолчанию режим театра"
+  },
+  "qt_autoTheaterMode_name": {
+    "message": "Авто-театр"
+  },
+  "qt_blueLightFilter_desc": {
+    "message": "Более тёплые цвета"
+  },
+  "qt_blueLightFilter_name": {
+    "message": "Фильтр синего света"
+  },
+  "qt_cleanShareUrls_desc": {
+    "message": "Удалять параметры отслеживания"
+  },
+  "qt_cleanShareUrls_name": {
+    "message": "Чистые URL"
+  },
+  "qt_commentSearch_desc": {
+    "message": "Фильтр комментариев на страницах просмотра"
+  },
+  "qt_commentSearch_name": {
+    "message": "Поиск в комментариях"
+  },
+  "qt_deArrow_desc": {
+    "message": "Лучшие заголовки и миниатюры"
+  },
+  "qt_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "qt_debugMode_desc": {
+    "message": "Подробное логирование в консоли"
+  },
+  "qt_debugMode_name": {
+    "message": "Режим отладки"
+  },
+  "qt_digitalWellbeing_desc": {
+    "message": "Напоминания о перерывах + дневной лимит"
+  },
+  "qt_digitalWellbeing_name": {
+    "message": "Цифровое благополучие"
+  },
+  "qt_disableAutoplayNext_desc": {
+    "message": "Остановить автопереход к следующему"
+  },
+  "qt_disableAutoplayNext_name": {
+    "message": "Без автовоспроизведения"
+  },
+  "qt_disableInfiniteScroll_desc": {
+    "message": "Остановить бесконечную прокрутку"
+  },
+  "qt_disableInfiniteScroll_name": {
+    "message": "Ограничить прокрутку"
+  },
+  "qt_hideRelatedVideos_desc": {
+    "message": "Нет панели похожих при просмотре"
+  },
+  "qt_hideRelatedVideos_name": {
+    "message": "Скрыть похожие"
+  },
+  "qt_miniPlayerBar_desc": {
+    "message": "Плавающая панель при прокрутке"
+  },
+  "qt_miniPlayerBar_name": {
+    "message": "Мини-плеер"
+  },
+  "qt_persistentSpeed_desc": {
+    "message": "Запомнить скорость воспроизведения"
+  },
+  "qt_persistentSpeed_name": {
+    "message": "Постоянная скорость"
+  },
+  "qt_removeAllShorts_desc": {
+    "message": "Удалить Shorts из лент"
+  },
+  "qt_removeAllShorts_name": {
+    "message": "Скрыть Shorts"
+  },
+  "qt_sponsorBlock_desc": {
+    "message": "Пропускать спонсорские сегменты"
+  },
+  "qt_sponsorBlock_name": {
+    "message": "SponsorBlock"
+  },
+  "qt_transcriptViewer_desc": {
+    "message": "Кликабельный транскрипт + экспорт"
+  },
+  "qt_transcriptViewer_name": {
+    "message": "Боковая панель транскрипта"
+  },
+  "quickTogglesAria": {
+    "message": "Быстрые переключатели"
+  },
+  "quickTogglesEyebrow": {
+    "message": "Быстрые переключатели"
+  },
+  "resetAllMessage": {
+    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
+  },
+  "resetAllTitle": {
+    "message": "Сбросить все локальные данные?"
+  },
+  "resetBtn": {
+    "message": "Сбросить"
+  },
+  "resultsAllAvailableTpl": {
+    "message": "… quick controls are available in this popup"
+  },
+  "resultsMatchTpl": {
+    "message": "… of … … match this filter"
+  },
+  "resultsMatching": {
+    "message": "совпадает"
+  },
+  "speedBtnAriaTpl": {
+    "message": "Default playback speed …. Click to change."
+  },
+  "speedBtnTitleTpl": {
+    "message": "Default playback speed: … — applies to every video"
+  },
+  "speedPopupAria": {
+    "message": "Скорость воспроизведения по умолчанию"
+  },
+  "speedPopupHeader": {
+    "message": "Скорость по умолчанию"
+  },
+  "speedPopupSub": {
+    "message": "Применяется ко всем видео до изменения."
+  },
+  "statBlocked": {
+    "message": "Заблокировано"
+  },
+  "statBookmarks": {
+    "message": "Закладки"
+  },
+  "statHidden": {
+    "message": "Скрыто"
+  },
+  "statKeys": {
+    "message": "Ключи"
+  },
+  "statStorage": {
+    "message": "Хранилище"
+  },
+  "statusAllDataCleared": {
+    "message": "Все данные очищены."
+  },
+  "statusBackupExported": {
+    "message": "Резервная копия экспортирована."
+  },
+  "statusBackupImported": {
+    "message": "Резервная копия импортирована."
+  },
+  "statusClipboardUnavailable": {
+    "message": "Буфер обмена недоступен — см. консоль браузера."
+  },
+  "statusDiagClearFail": {
+    "message": "Не удалось очистить журнал"
+  },
+  "statusDiagCleared": {
+    "message": "Журнал диагностики очищен."
+  },
+  "statusDiagCopied": {
+    "message": "Диагностика скопирована в буфер обмена."
+  },
+  "statusExportFail": {
+    "message": "Ошибка экспорта"
+  },
+  "statusImportFail": {
+    "message": "Ошибка импорта"
+  },
+  "statusOpenWorkspaceFail": {
+    "message": "Не удалось открыть полную рабочую область. Попробуйте ещё раз."
+  },
+  "statusQuickCtrlLoadFail": {
+    "message": "Не удалось загрузить быстрые элементы. Попробуйте открыть окно повторно."
+  },
+  "statusResetFail": {
+    "message": "Ошибка сброса"
+  },
+  "statusStorageReadFail": {
+    "message": "Ошибка чтения хранилища"
+  },
+  "storageStatsAriaLabel": {
+    "message": "Статистика хранилища"
+  },
+  "toastDlCmdCopied": {
+    "message": "Резервная команда установки скопирована. Используйте её, только если не можете запустить загруженный файл установки."
+  },
+  "toastDlInProgress": {
+    "message": "Загрузка уже идёт."
+  },
+  "toastDlInstallPrompt": {
+    "message": "Установите локальный загрузчик, чтобы включить загрузки."
+  },
+  "toastDlReady": {
+    "message": "Локальный загрузчик готов."
+  },
+  "toastDlRequestFailed": {
+    "message": "Запрос к локальному загрузчику не выполнен."
+  },
+  "toastDlRunning": {
+    "message": "Astra Downloader работает!"
+  },
+  "toastDlStarted": {
+    "message": "Astra Downloader запущен!"
+  },
+  "toastDlStarting": {
+    "message": "Запуск Astra Downloader…"
+  },
+  "toastDlStopped": {
+    "message": "Локальный загрузчик остановлен. Перезапуск…"
+  },
+  "toggleControlCenterDesc": {
+    "message": "Переключить центр управления Astra Deck на текущей вкладке YouTube",
+    "description": "Description for the keyboard command that opens the Astra Deck control center."
+  },
+  "toggleStateOff": {
+    "message": "Отключено"
+  },
+  "toggleStateOffLower": {
+    "message": "отключено"
+  },
+  "toggleStateOn": {
+    "message": "Включено"
+  },
+  "toggleStateOnLower": {
+    "message": "включено"
+  },
+  "toggleUpdateFailTpl": {
+    "message": "Couldn't update …. Try again."
+  },
+  "workspaceEyebrow": {
+    "message": "Рабочая область настроек"
+  },
+  "workspaceSupport": {
+    "message": "Изменения автоматически синхронизируются с открытыми вкладками YouTube."
+  },
+  "workspaceTitle": {
+    "message": "Управление и локальные данные"
+  }
+}
