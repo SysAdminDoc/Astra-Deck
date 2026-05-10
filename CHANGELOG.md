@@ -4,6 +4,40 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.22.0] - 8 more languages + auto-detect surfaces - 2026-05-10
+
+### Added
+- **Eight new bundled locales**: German (`de`), Spanish (`es`),
+  French (`fr`), Italian (`it`), Japanese (`ja`), Korean (`ko`),
+  Brazilian Portuguese (`pt_BR`), Russian (`ru`). Each ships
+  ~199 translated messages (12-16 fall through to English where
+  brand names or template-string placeholders apply). Combined with
+  existing English and Simplified Chinese, the extension now
+  bundles 10 locales.
+- **`scripts/generate-locales.js`** — translation table per locale
+  in one file. Adding a language = appending a `T.<locale>` map
+  and running the script. Adding a key = adding it to every
+  locale's table. Keeps the diff visible in code review and means
+  no separate JSON files to keep in sync manually.
+
+### Changed
+- **The "Auto" option in the language dropdown now shows the
+  detected language inline.** When a user with a German browser
+  opens the popup, the option reads "Auto (browser default) —
+  Deutsch" instead of just "Auto". Mapping covers the bundled
+  locales plus their generic codes (e.g. `pt` → Português, `zh` →
+  简体中文); unknown locales fall back to the BCP-47 tag.
+
+### Auto-detection
+- `chrome.i18n.getMessage()` already auto-detects the browser
+  language via Chrome's i18n system (the manifest declares
+  `default_locale: "en"`). Users on a German browser with no
+  manual override now see Astra Deck in German automatically.
+  Manual override via the popup dropdown (writes
+  `chrome.storage.local._localeOverride`) still wins.
+
+---
+
 ## [3.21.2] - Relocate language selector inline with Export/Import - 2026-05-10
 
 ### Changed

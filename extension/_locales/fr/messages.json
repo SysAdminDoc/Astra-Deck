@@ -1,0 +1,651 @@
+{
+  "brandName": {
+    "message": "Astra Deck"
+  },
+  "clearFilterAria": {
+    "message": "Effacer le filtre des commutateurs rapides"
+  },
+  "clearFilterBtn": {
+    "message": "Effacer le filtre"
+  },
+  "clearLogMessage": {
+    "message": "Cela supprime tous les événements de diagnostic enregistrés du stockage de l'extension."
+  },
+  "clearLogTitle": {
+    "message": "Effacer le journal de diagnostic ?"
+  },
+  "closeBtnAria": {
+    "message": "Fermer"
+  },
+  "confirmCancel": {
+    "message": "Annuler"
+  },
+  "confirmContinue": {
+    "message": "Continuer"
+  },
+  "confirmDestructiveEyebrow": {
+    "message": "Action destructive"
+  },
+  "confirmEyebrow": {
+    "message": "Confirmer"
+  },
+  "contextNoteAnyTab": {
+    "message": "Les commutateurs rapides se synchronisent une fois qu'un onglet YouTube est ouvert."
+  },
+  "contextNoteInlinePanel": {
+    "message": "Cliquez sur « Ouvrir tous les paramètres » pour lancer l'espace de travail dans cet onglet."
+  },
+  "contextNoteLaunch": {
+    "message": "Les paramètres complets se trouvent dans l'espace de travail des onglets YouTube lisibles."
+  },
+  "contextStateAnyTab": {
+    "message": "N'importe quel onglet"
+  },
+  "contextStateAriaLabel": {
+    "message": "Contexte d'onglet"
+  },
+  "contextStateLocal": {
+    "message": "Local"
+  },
+  "contextStateYouTube": {
+    "message": "YouTube"
+  },
+  "controlPlural": {
+    "message": "commandes"
+  },
+  "controlSingular": {
+    "message": "commande"
+  },
+  "dataMgmtAria": {
+    "message": "Gestion des données"
+  },
+  "dlPopupAria": {
+    "message": "Options de téléchargement"
+  },
+  "dlPopupChange": {
+    "message": "Modifier"
+  },
+  "dlPopupChangeAria": {
+    "message": "Choisir un dossier de téléchargement"
+  },
+  "dlPopupCtaAudio": {
+    "message": "Télécharger l'audio"
+  },
+  "dlPopupCtaAudioAriaTpl": {
+    "message": "Download audio as …"
+  },
+  "dlPopupCtaVideo": {
+    "message": "Télécharger la vidéo"
+  },
+  "dlPopupCtaVideoAriaTpl": {
+    "message": "Download video as … at …"
+  },
+  "dlPopupDefault": {
+    "message": "Par défaut"
+  },
+  "dlPopupDownloaderOffline": {
+    "message": "Téléchargeur non actif"
+  },
+  "dlPopupFormat": {
+    "message": "Format"
+  },
+  "dlPopupLoading": {
+    "message": "Chargement…"
+  },
+  "dlPopupPickerUnavailable": {
+    "message": "Sélecteur de dossier indisponible"
+  },
+  "dlPopupPicking": {
+    "message": "Sélection…"
+  },
+  "dlPopupQuality": {
+    "message": "Qualité"
+  },
+  "dlPopupReset": {
+    "message": "Réinitialiser"
+  },
+  "dlPopupResetAria": {
+    "message": "Réinitialiser au dossier de téléchargement par défaut"
+  },
+  "dlPopupSaveTo": {
+    "message": "Enregistrer dans"
+  },
+  "dlPopupTabAudioOnly": {
+    "message": "Audio uniquement"
+  },
+  "dlPopupTabVideo": {
+    "message": "Vidéo"
+  },
+  "dlPopupTitle": {
+    "message": "Options de téléchargement"
+  },
+  "dlPopupTypeAria": {
+    "message": "Type de téléchargement"
+  },
+  "dlProgressActiveEtaTpl": {
+    "message": "…% complete. … remaining."
+  },
+  "dlProgressActiveTpl": {
+    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+  },
+  "dlProgressAriaAudio": {
+    "message": "Progression du téléchargement audio"
+  },
+  "dlProgressAriaVideo": {
+    "message": "Progression du téléchargement vidéo"
+  },
+  "dlProgressBadgeAudio": {
+    "message": "Téléchargement audio"
+  },
+  "dlProgressBadgeVideo": {
+    "message": "Téléchargement vidéo"
+  },
+  "dlProgressCompleteCopy": {
+    "message": "Le téléchargeur local a terminé avec succès."
+  },
+  "dlProgressConnectAudio": {
+    "message": "Connexion au téléchargeur audio local."
+  },
+  "dlProgressConnectVideo": {
+    "message": "Connexion au téléchargeur vidéo local."
+  },
+  "dlProgressDismissAria": {
+    "message": "Fermer la progression du téléchargement"
+  },
+  "dlProgressEtaPrefix": {
+    "message": "ETA"
+  },
+  "dlProgressFailureDefault": {
+    "message": "Échec du téléchargeur local"
+  },
+  "dlProgressInProgress": {
+    "message": "En cours"
+  },
+  "dlProgressLocal": {
+    "message": "Local"
+  },
+  "dlProgressLostCopy": {
+    "message": "Astra Deck a perdu le contact avec le téléchargeur local. Choisissez « Réparer le téléchargeur » pour récupérer."
+  },
+  "dlProgressLostTitle": {
+    "message": "Connexion au téléchargeur perdue"
+  },
+  "dlProgressLostToast": {
+    "message": "Contact perdu avec le téléchargeur local."
+  },
+  "dlProgressPreparing": {
+    "message": "Préparation du téléchargement…"
+  },
+  "dlProgressQueue": {
+    "message": "File"
+  },
+  "dlProgressReady": {
+    "message": "Prêt"
+  },
+  "dlProgressReconnectingCopy": {
+    "message": "Petit problème momentané avec le téléchargeur local — nouvelle tentative automatique."
+  },
+  "dlProgressSkippedDefault": {
+    "message": "Déjà téléchargé — ignoré."
+  },
+  "dlProgressStateAlreadyDownloaded": {
+    "message": "Déjà téléchargé"
+  },
+  "dlProgressStateComplete": {
+    "message": "Terminé"
+  },
+  "dlProgressStateDownloading": {
+    "message": "Téléchargement"
+  },
+  "dlProgressStateError": {
+    "message": "Erreur"
+  },
+  "dlProgressStateFailed": {
+    "message": "Échoué"
+  },
+  "dlProgressStateFinishing": {
+    "message": "Finalisation"
+  },
+  "dlProgressStateLost": {
+    "message": "Connexion perdue"
+  },
+  "dlProgressStateNeedsAttention": {
+    "message": "Attention requise"
+  },
+  "dlProgressStatePreparing": {
+    "message": "Préparation"
+  },
+  "dlProgressStateReconnecting": {
+    "message": "Reconnexion"
+  },
+  "dlProgressStateSkipped": {
+    "message": "Ignoré"
+  },
+  "dlProgressWaiting": {
+    "message": "En attente"
+  },
+  "dlProgressWrappingUp": {
+    "message": "Finalisation"
+  },
+  "dlRepairAria": {
+    "message": "Ouvrir les étapes de réparation du téléchargeur local"
+  },
+  "dlRepairBtn": {
+    "message": "Réparer le téléchargeur"
+  },
+  "emptyNoMatch": {
+    "message": "Aucun commutateur rapide correspondant"
+  },
+  "emptyNoMatchHint": {
+    "message": "Effacer le filtre pour revoir toutes les commandes rapides."
+  },
+  "emptyNoToggles": {
+    "message": "Aucun commutateur rapide disponible"
+  },
+  "emptyNoTogglesHint": {
+    "message": "La fenêtre contextuelle n'a pas pu charger de commandes rapides pour le moment."
+  },
+  "enabledLabel": {
+    "message": "activés"
+  },
+  "exportBtn": {
+    "message": "Exporter"
+  },
+  "extActionTitle": {
+    "message": "Astra Deck",
+    "description": "Tooltip text for the toolbar action button."
+  },
+  "extDescription": {
+    "message": "Personnalisation premium de la page de visionnage, mises en page divisées, contrôles de contenu et téléchargements locaux pour YouTube.",
+    "description": "The extension description shown in the browser's extension management page."
+  },
+  "extName": {
+    "message": "Astra Deck",
+    "description": "The extension name displayed in the browser UI."
+  },
+  "filterTogglesLabel": {
+    "message": "Filtrer les commutateurs rapides"
+  },
+  "filterTogglesPlaceholder": {
+    "message": "Filtrer les commutateurs…"
+  },
+  "groupQuickControls": {
+    "message": "Commandes rapides"
+  },
+  "healthClearAria": {
+    "message": "Effacer le journal de diagnostic"
+  },
+  "healthClearBtn": {
+    "message": "Effacer"
+  },
+  "healthCopyAria": {
+    "message": "Copier les détails de diagnostic"
+  },
+  "healthCopyBtn": {
+    "message": "Copier"
+  },
+  "healthEventPlural": {
+    "message": "événements"
+  },
+  "healthEventSingular": {
+    "message": "événement"
+  },
+  "healthFallbackPrefix": {
+    "message": "Repli TrustedTypes actif"
+  },
+  "healthTitle": {
+    "message": "Diagnostics"
+  },
+  "importBtn": {
+    "message": "Importer"
+  },
+  "languageAuto": {
+    "message": "Auto (par défaut du navigateur)"
+  },
+  "languageDe": {
+    "message": "Deutsch (Allemand)"
+  },
+  "languageEn": {
+    "message": "Anglais"
+  },
+  "languageEs": {
+    "message": "Español (Espagnol)"
+  },
+  "languageFr": {
+    "message": "Français"
+  },
+  "languageIt": {
+    "message": "Italiano (Italien)"
+  },
+  "languageJa": {
+    "message": "日本語 (Japonais)"
+  },
+  "languageKo": {
+    "message": "한국어 (Coréen)"
+  },
+  "languagePtBr": {
+    "message": "Português (Portugais brésilien)"
+  },
+  "languageRu": {
+    "message": "Русский (Russe)"
+  },
+  "languageSelectLabel": {
+    "message": "Langue d'affichage"
+  },
+  "languageTitle": {
+    "message": "Langue d'affichage"
+  },
+  "languageZhCn": {
+    "message": "简体中文 (Chinois simplifié)"
+  },
+  "loadingState": {
+    "message": "Chargement"
+  },
+  "openFullSettings": {
+    "message": "Ouvrir tous les paramètres"
+  },
+  "openYouTube": {
+    "message": "Ouvrir YouTube"
+  },
+  "panelCloseAria": {
+    "message": "Fermer les paramètres"
+  },
+  "panelCloseTitle": {
+    "message": "Fermer (Esc)"
+  },
+  "panelIntro": {
+    "message": "Rechercher, ajuster et appliquer les contrôles YouTube en direct sans quitter la page."
+  },
+  "panelLiveApplyBadge": {
+    "message": "Application en direct"
+  },
+  "panelSearchAria": {
+    "message": "Rechercher les paramètres"
+  },
+  "panelSearchClearAria": {
+    "message": "Effacer la recherche de paramètres"
+  },
+  "panelSearchClearTitle": {
+    "message": "Effacer la recherche"
+  },
+  "panelSearchPlaceholder": {
+    "message": "Rechercher les paramètres…"
+  },
+  "panelSidebarAria": {
+    "message": "Catégories de paramètres"
+  },
+  "panelTitle": {
+    "message": "Paramètres"
+  },
+  "playerDownloadAria": {
+    "message": "Télécharger la vidéo"
+  },
+  "playerDownloadTitle": {
+    "message": "Télécharger la vidéo"
+  },
+  "playerGearAriaTpl": {
+    "message": "Open … settings"
+  },
+  "playerGearTitleTpl": {
+    "message": "… Settings"
+  },
+  "popupTitle": {
+    "message": "Astra Deck"
+  },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Nettoyage du flux"
+  },
+  "qtGroup_Focus": {
+    "message": "Focus"
+  },
+  "qtGroup_Playback": {
+    "message": "Lecture"
+  },
+  "qtGroup_Utilities": {
+    "message": "Utilitaires"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Flux de visionnage"
+  },
+  "qt_autoTheaterMode_desc": {
+    "message": "Vue cinéma par défaut"
+  },
+  "qt_autoTheaterMode_name": {
+    "message": "Cinéma auto"
+  },
+  "qt_blueLightFilter_desc": {
+    "message": "Couleurs plus chaudes"
+  },
+  "qt_blueLightFilter_name": {
+    "message": "Filtre lumière bleue"
+  },
+  "qt_cleanShareUrls_desc": {
+    "message": "Supprimer paramètres de suivi"
+  },
+  "qt_cleanShareUrls_name": {
+    "message": "URL propres"
+  },
+  "qt_commentSearch_desc": {
+    "message": "Filtrer les commentaires sur les pages de visionnage"
+  },
+  "qt_commentSearch_name": {
+    "message": "Recherche commentaires"
+  },
+  "qt_deArrow_desc": {
+    "message": "Meilleurs titres et miniatures"
+  },
+  "qt_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "qt_debugMode_desc": {
+    "message": "Journalisation console détaillée"
+  },
+  "qt_debugMode_name": {
+    "message": "Mode débogage"
+  },
+  "qt_digitalWellbeing_desc": {
+    "message": "Rappels de pause + limite quotidienne"
+  },
+  "qt_digitalWellbeing_name": {
+    "message": "Bien-être numérique"
+  },
+  "qt_disableAutoplayNext_desc": {
+    "message": "Arrêter l'avance auto vers le suivant"
+  },
+  "qt_disableAutoplayNext_name": {
+    "message": "Pas de lecture auto"
+  },
+  "qt_disableInfiniteScroll_desc": {
+    "message": "Arrêter défilement infini"
+  },
+  "qt_disableInfiniteScroll_name": {
+    "message": "Limiter défilement"
+  },
+  "qt_hideRelatedVideos_desc": {
+    "message": "Pas de panneau de suggestions"
+  },
+  "qt_hideRelatedVideos_name": {
+    "message": "Masquer suggestions"
+  },
+  "qt_miniPlayerBar_desc": {
+    "message": "Barre flottante au défilement"
+  },
+  "qt_miniPlayerBar_name": {
+    "message": "Mini lecteur"
+  },
+  "qt_persistentSpeed_desc": {
+    "message": "Mémoriser la vitesse de lecture"
+  },
+  "qt_persistentSpeed_name": {
+    "message": "Vitesse persistante"
+  },
+  "qt_removeAllShorts_desc": {
+    "message": "Supprimer Shorts des flux"
+  },
+  "qt_removeAllShorts_name": {
+    "message": "Masquer Shorts"
+  },
+  "qt_sponsorBlock_desc": {
+    "message": "Sauter les segments sponsorisés"
+  },
+  "qt_sponsorBlock_name": {
+    "message": "SponsorBlock"
+  },
+  "qt_transcriptViewer_desc": {
+    "message": "Transcription cliquable + export"
+  },
+  "qt_transcriptViewer_name": {
+    "message": "Barre transcription"
+  },
+  "quickTogglesAria": {
+    "message": "Commutateurs rapides"
+  },
+  "quickTogglesEyebrow": {
+    "message": "Commutateurs rapides"
+  },
+  "resetAllMessage": {
+    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
+  },
+  "resetAllTitle": {
+    "message": "Réinitialiser toutes les données locales ?"
+  },
+  "resetBtn": {
+    "message": "Réinitialiser"
+  },
+  "resultsAllAvailableTpl": {
+    "message": "… quick controls are available in this popup"
+  },
+  "resultsMatchTpl": {
+    "message": "… of … … match this filter"
+  },
+  "resultsMatching": {
+    "message": "correspondants"
+  },
+  "speedBtnAriaTpl": {
+    "message": "Default playback speed …. Click to change."
+  },
+  "speedBtnTitleTpl": {
+    "message": "Default playback speed: … — applies to every video"
+  },
+  "speedPopupAria": {
+    "message": "Vitesse de lecture par défaut"
+  },
+  "speedPopupHeader": {
+    "message": "Vitesse par défaut"
+  },
+  "speedPopupSub": {
+    "message": "S'applique à toutes les vidéos jusqu'à modification."
+  },
+  "statBlocked": {
+    "message": "Bloqués"
+  },
+  "statBookmarks": {
+    "message": "Favoris"
+  },
+  "statHidden": {
+    "message": "Masqués"
+  },
+  "statKeys": {
+    "message": "Clés"
+  },
+  "statStorage": {
+    "message": "Stockage"
+  },
+  "statusAllDataCleared": {
+    "message": "Toutes les données effacées."
+  },
+  "statusBackupExported": {
+    "message": "Sauvegarde exportée."
+  },
+  "statusBackupImported": {
+    "message": "Sauvegarde importée."
+  },
+  "statusClipboardUnavailable": {
+    "message": "Presse-papiers indisponible — voir la console du navigateur."
+  },
+  "statusDiagClearFail": {
+    "message": "Impossible d'effacer le journal"
+  },
+  "statusDiagCleared": {
+    "message": "Journal de diagnostic effacé."
+  },
+  "statusDiagCopied": {
+    "message": "Diagnostic copié dans le presse-papiers."
+  },
+  "statusExportFail": {
+    "message": "Échec de l'exportation"
+  },
+  "statusImportFail": {
+    "message": "Échec de l'importation"
+  },
+  "statusOpenWorkspaceFail": {
+    "message": "Impossible d'ouvrir l'espace de travail complet. Réessayez."
+  },
+  "statusQuickCtrlLoadFail": {
+    "message": "Impossible de charger les commandes rapides. Essayez de rouvrir la fenêtre contextuelle."
+  },
+  "statusResetFail": {
+    "message": "Échec de la réinitialisation"
+  },
+  "statusStorageReadFail": {
+    "message": "Échec de lecture du stockage"
+  },
+  "storageStatsAriaLabel": {
+    "message": "Statistiques de stockage"
+  },
+  "toastDlCmdCopied": {
+    "message": "Commande d'installation de secours copiée. À utiliser uniquement si vous ne pouvez pas exécuter le fichier d'installation téléchargé."
+  },
+  "toastDlInProgress": {
+    "message": "Un téléchargement est déjà en cours."
+  },
+  "toastDlInstallPrompt": {
+    "message": "Installez le téléchargeur local pour activer les téléchargements."
+  },
+  "toastDlReady": {
+    "message": "Le téléchargeur local est prêt."
+  },
+  "toastDlRequestFailed": {
+    "message": "Échec de la requête au téléchargeur local."
+  },
+  "toastDlRunning": {
+    "message": "Astra Downloader est actif !"
+  },
+  "toastDlStarted": {
+    "message": "Astra Downloader démarré !"
+  },
+  "toastDlStarting": {
+    "message": "Démarrage d'Astra Downloader…"
+  },
+  "toastDlStopped": {
+    "message": "Téléchargeur local arrêté. Redémarrage…"
+  },
+  "toggleControlCenterDesc": {
+    "message": "Basculer le centre de contrôle Astra Deck sur l'onglet YouTube actuel",
+    "description": "Description for the keyboard command that opens the Astra Deck control center."
+  },
+  "toggleStateOff": {
+    "message": "Désactivé"
+  },
+  "toggleStateOffLower": {
+    "message": "désactivé"
+  },
+  "toggleStateOn": {
+    "message": "Activé"
+  },
+  "toggleStateOnLower": {
+    "message": "activés"
+  },
+  "toggleUpdateFailTpl": {
+    "message": "Couldn't update …. Try again."
+  },
+  "workspaceEyebrow": {
+    "message": "Espace de paramètres"
+  },
+  "workspaceSupport": {
+    "message": "Les modifications se synchronisent automatiquement avec les onglets YouTube ouverts."
+  },
+  "workspaceTitle": {
+    "message": "Contrôles et données locales"
+  }
+}

@@ -1,0 +1,651 @@
+{
+  "brandName": {
+    "message": "Astra Deck"
+  },
+  "clearFilterAria": {
+    "message": "빠른 토글 필터 지우기"
+  },
+  "clearFilterBtn": {
+    "message": "필터 지우기"
+  },
+  "clearLogMessage": {
+    "message": "확장 프로그램 스토리지에서 기록된 모든 진단 이벤트가 제거됩니다."
+  },
+  "clearLogTitle": {
+    "message": "진단 로그를 지우시겠습니까?"
+  },
+  "closeBtnAria": {
+    "message": "닫기"
+  },
+  "confirmCancel": {
+    "message": "취소"
+  },
+  "confirmContinue": {
+    "message": "계속"
+  },
+  "confirmDestructiveEyebrow": {
+    "message": "파괴적인 작업"
+  },
+  "confirmEyebrow": {
+    "message": "확인"
+  },
+  "contextNoteAnyTab": {
+    "message": "YouTube 탭이 열리면 빠른 토글이 동기화됩니다."
+  },
+  "contextNoteInlinePanel": {
+    "message": "이 탭에서 페이지 내 작업 공간을 시작하려면 \"전체 설정 열기\"를 클릭하세요."
+  },
+  "contextNoteLaunch": {
+    "message": "전체 설정은 시청 가능한 YouTube 탭의 페이지 내 작업 공간에 있습니다."
+  },
+  "contextStateAnyTab": {
+    "message": "모든 탭"
+  },
+  "contextStateAriaLabel": {
+    "message": "탭 컨텍스트"
+  },
+  "contextStateLocal": {
+    "message": "로컬"
+  },
+  "contextStateYouTube": {
+    "message": "YouTube"
+  },
+  "controlPlural": {
+    "message": "컨트롤"
+  },
+  "controlSingular": {
+    "message": "컨트롤"
+  },
+  "dataMgmtAria": {
+    "message": "데이터 관리"
+  },
+  "dlPopupAria": {
+    "message": "다운로드 옵션"
+  },
+  "dlPopupChange": {
+    "message": "변경"
+  },
+  "dlPopupChangeAria": {
+    "message": "다운로드 폴더 선택"
+  },
+  "dlPopupCtaAudio": {
+    "message": "오디오 다운로드"
+  },
+  "dlPopupCtaAudioAriaTpl": {
+    "message": "Download audio as …"
+  },
+  "dlPopupCtaVideo": {
+    "message": "비디오 다운로드"
+  },
+  "dlPopupCtaVideoAriaTpl": {
+    "message": "Download video as … at …"
+  },
+  "dlPopupDefault": {
+    "message": "기본값"
+  },
+  "dlPopupDownloaderOffline": {
+    "message": "다운로더가 실행되고 있지 않습니다"
+  },
+  "dlPopupFormat": {
+    "message": "포맷"
+  },
+  "dlPopupLoading": {
+    "message": "로드 중…"
+  },
+  "dlPopupPickerUnavailable": {
+    "message": "폴더 선택기를 사용할 수 없습니다"
+  },
+  "dlPopupPicking": {
+    "message": "선택 중…"
+  },
+  "dlPopupQuality": {
+    "message": "품질"
+  },
+  "dlPopupReset": {
+    "message": "재설정"
+  },
+  "dlPopupResetAria": {
+    "message": "기본 다운로드 폴더로 재설정"
+  },
+  "dlPopupSaveTo": {
+    "message": "저장 위치"
+  },
+  "dlPopupTabAudioOnly": {
+    "message": "오디오만"
+  },
+  "dlPopupTabVideo": {
+    "message": "비디오"
+  },
+  "dlPopupTitle": {
+    "message": "다운로드 옵션"
+  },
+  "dlPopupTypeAria": {
+    "message": "다운로드 유형"
+  },
+  "dlProgressActiveEtaTpl": {
+    "message": "…% complete. … remaining."
+  },
+  "dlProgressActiveTpl": {
+    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+  },
+  "dlProgressAriaAudio": {
+    "message": "오디오 다운로드 진행률"
+  },
+  "dlProgressAriaVideo": {
+    "message": "비디오 다운로드 진행률"
+  },
+  "dlProgressBadgeAudio": {
+    "message": "오디오 다운로드"
+  },
+  "dlProgressBadgeVideo": {
+    "message": "비디오 다운로드"
+  },
+  "dlProgressCompleteCopy": {
+    "message": "로컬 다운로더가 성공적으로 완료되었습니다."
+  },
+  "dlProgressConnectAudio": {
+    "message": "로컬 오디오 다운로더에 연결 중."
+  },
+  "dlProgressConnectVideo": {
+    "message": "로컬 비디오 다운로더에 연결 중."
+  },
+  "dlProgressDismissAria": {
+    "message": "다운로드 진행률 닫기"
+  },
+  "dlProgressEtaPrefix": {
+    "message": "ETA"
+  },
+  "dlProgressFailureDefault": {
+    "message": "로컬 다운로더 실패"
+  },
+  "dlProgressInProgress": {
+    "message": "진행 중"
+  },
+  "dlProgressLocal": {
+    "message": "로컬"
+  },
+  "dlProgressLostCopy": {
+    "message": "Astra Deck가 로컬 다운로더와의 연결을 잃었습니다. 복구하려면 \"다운로더 복구\"를 선택하세요."
+  },
+  "dlProgressLostTitle": {
+    "message": "다운로더와의 연결이 끊어졌습니다"
+  },
+  "dlProgressLostToast": {
+    "message": "로컬 다운로더와의 연결을 잃었습니다."
+  },
+  "dlProgressPreparing": {
+    "message": "다운로드 준비 중…"
+  },
+  "dlProgressQueue": {
+    "message": "대기열"
+  },
+  "dlProgressReady": {
+    "message": "준비"
+  },
+  "dlProgressReconnectingCopy": {
+    "message": "로컬 다운로더에 일시적인 문제 발생 — 자동으로 재시도 중."
+  },
+  "dlProgressSkippedDefault": {
+    "message": "이미 다운로드됨 — 건너뜀."
+  },
+  "dlProgressStateAlreadyDownloaded": {
+    "message": "이미 다운로드됨"
+  },
+  "dlProgressStateComplete": {
+    "message": "완료"
+  },
+  "dlProgressStateDownloading": {
+    "message": "다운로드 중"
+  },
+  "dlProgressStateError": {
+    "message": "오류"
+  },
+  "dlProgressStateFailed": {
+    "message": "실패"
+  },
+  "dlProgressStateFinishing": {
+    "message": "완료 중"
+  },
+  "dlProgressStateLost": {
+    "message": "연결 끊김"
+  },
+  "dlProgressStateNeedsAttention": {
+    "message": "주의 필요"
+  },
+  "dlProgressStatePreparing": {
+    "message": "준비 중"
+  },
+  "dlProgressStateReconnecting": {
+    "message": "재연결 중"
+  },
+  "dlProgressStateSkipped": {
+    "message": "건너뜀"
+  },
+  "dlProgressWaiting": {
+    "message": "대기 중"
+  },
+  "dlProgressWrappingUp": {
+    "message": "마무리 중"
+  },
+  "dlRepairAria": {
+    "message": "로컬 다운로더 복구 단계 열기"
+  },
+  "dlRepairBtn": {
+    "message": "다운로더 복구"
+  },
+  "emptyNoMatch": {
+    "message": "일치하는 빠른 토글 없음"
+  },
+  "emptyNoMatchHint": {
+    "message": "필터를 지우고 모든 빠른 컨트롤을 다시 보세요."
+  },
+  "emptyNoToggles": {
+    "message": "사용 가능한 빠른 토글 없음"
+  },
+  "emptyNoTogglesHint": {
+    "message": "팝업이 현재 빠른 컨트롤을 로드할 수 없습니다."
+  },
+  "enabledLabel": {
+    "message": "활성화됨"
+  },
+  "exportBtn": {
+    "message": "내보내기"
+  },
+  "extActionTitle": {
+    "message": "Astra Deck",
+    "description": "Tooltip text for the toolbar action button."
+  },
+  "extDescription": {
+    "message": "YouTube를 위한 프리미엄 시청 페이지 사용자 지정, 분할 레이아웃, 콘텐츠 제어 및 로컬 다운로드.",
+    "description": "The extension description shown in the browser's extension management page."
+  },
+  "extName": {
+    "message": "Astra Deck",
+    "description": "The extension name displayed in the browser UI."
+  },
+  "filterTogglesLabel": {
+    "message": "빠른 토글 필터"
+  },
+  "filterTogglesPlaceholder": {
+    "message": "토글 필터…"
+  },
+  "groupQuickControls": {
+    "message": "빠른 컨트롤"
+  },
+  "healthClearAria": {
+    "message": "진단 로그 지우기"
+  },
+  "healthClearBtn": {
+    "message": "지우기"
+  },
+  "healthCopyAria": {
+    "message": "진단 세부 정보 복사"
+  },
+  "healthCopyBtn": {
+    "message": "복사"
+  },
+  "healthEventPlural": {
+    "message": "이벤트"
+  },
+  "healthEventSingular": {
+    "message": "이벤트"
+  },
+  "healthFallbackPrefix": {
+    "message": "TrustedTypes 폴백 활성"
+  },
+  "healthTitle": {
+    "message": "진단"
+  },
+  "importBtn": {
+    "message": "가져오기"
+  },
+  "languageAuto": {
+    "message": "자동 (브라우저 기본값)"
+  },
+  "languageDe": {
+    "message": "Deutsch (독일어)"
+  },
+  "languageEn": {
+    "message": "영어"
+  },
+  "languageEs": {
+    "message": "Español (스페인어)"
+  },
+  "languageFr": {
+    "message": "Français (프랑스어)"
+  },
+  "languageIt": {
+    "message": "Italiano (이탈리아어)"
+  },
+  "languageJa": {
+    "message": "日本語 (일본어)"
+  },
+  "languageKo": {
+    "message": "한국어"
+  },
+  "languagePtBr": {
+    "message": "Português (브라질 포르투갈어)"
+  },
+  "languageRu": {
+    "message": "Русский (러시아어)"
+  },
+  "languageSelectLabel": {
+    "message": "표시 언어"
+  },
+  "languageTitle": {
+    "message": "표시 언어"
+  },
+  "languageZhCn": {
+    "message": "简体中文 (간체 중국어)"
+  },
+  "loadingState": {
+    "message": "로드 중"
+  },
+  "openFullSettings": {
+    "message": "전체 설정 열기"
+  },
+  "openYouTube": {
+    "message": "YouTube 열기"
+  },
+  "panelCloseAria": {
+    "message": "설정 닫기"
+  },
+  "panelCloseTitle": {
+    "message": "닫기 (Esc)"
+  },
+  "panelIntro": {
+    "message": "페이지를 떠나지 않고 YouTube 컨트롤을 실시간으로 검색, 조정 및 적용합니다."
+  },
+  "panelLiveApplyBadge": {
+    "message": "실시간 적용"
+  },
+  "panelSearchAria": {
+    "message": "설정 검색"
+  },
+  "panelSearchClearAria": {
+    "message": "설정 검색 지우기"
+  },
+  "panelSearchClearTitle": {
+    "message": "검색 지우기"
+  },
+  "panelSearchPlaceholder": {
+    "message": "설정 검색…"
+  },
+  "panelSidebarAria": {
+    "message": "설정 카테고리"
+  },
+  "panelTitle": {
+    "message": "설정"
+  },
+  "playerDownloadAria": {
+    "message": "비디오 다운로드"
+  },
+  "playerDownloadTitle": {
+    "message": "비디오 다운로드"
+  },
+  "playerGearAriaTpl": {
+    "message": "Open … settings"
+  },
+  "playerGearTitleTpl": {
+    "message": "… Settings"
+  },
+  "popupTitle": {
+    "message": "Astra Deck"
+  },
+  "qtGroup_Feed_Cleanup": {
+    "message": "피드 정리"
+  },
+  "qtGroup_Focus": {
+    "message": "집중"
+  },
+  "qtGroup_Playback": {
+    "message": "재생"
+  },
+  "qtGroup_Utilities": {
+    "message": "유틸리티"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "시청 흐름"
+  },
+  "qt_autoTheaterMode_desc": {
+    "message": "기본 시어터 보기"
+  },
+  "qt_autoTheaterMode_name": {
+    "message": "자동 시어터"
+  },
+  "qt_blueLightFilter_desc": {
+    "message": "따뜻한 색상"
+  },
+  "qt_blueLightFilter_name": {
+    "message": "블루라이트 필터"
+  },
+  "qt_cleanShareUrls_desc": {
+    "message": "추적 매개변수 제거"
+  },
+  "qt_cleanShareUrls_name": {
+    "message": "깨끗한 URL"
+  },
+  "qt_commentSearch_desc": {
+    "message": "시청 페이지에서 댓글 필터"
+  },
+  "qt_commentSearch_name": {
+    "message": "댓글 검색"
+  },
+  "qt_deArrow_desc": {
+    "message": "더 나은 제목과 썸네일"
+  },
+  "qt_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "qt_debugMode_desc": {
+    "message": "상세 콘솔 로깅"
+  },
+  "qt_debugMode_name": {
+    "message": "디버그 모드"
+  },
+  "qt_digitalWellbeing_desc": {
+    "message": "휴식 알림 + 일일 한도"
+  },
+  "qt_digitalWellbeing_name": {
+    "message": "디지털 웰빙"
+  },
+  "qt_disableAutoplayNext_desc": {
+    "message": "다음으로 자동 진행 중지"
+  },
+  "qt_disableAutoplayNext_name": {
+    "message": "자동재생 없음"
+  },
+  "qt_disableInfiniteScroll_desc": {
+    "message": "무한 스크롤 중지"
+  },
+  "qt_disableInfiniteScroll_name": {
+    "message": "스크롤 제한"
+  },
+  "qt_hideRelatedVideos_desc": {
+    "message": "시청 시 관련 패널 없음"
+  },
+  "qt_hideRelatedVideos_name": {
+    "message": "관련 동영상 숨기기"
+  },
+  "qt_miniPlayerBar_desc": {
+    "message": "스크롤 시 플로팅 바"
+  },
+  "qt_miniPlayerBar_name": {
+    "message": "미니 플레이어 바"
+  },
+  "qt_persistentSpeed_desc": {
+    "message": "재생 속도 기억"
+  },
+  "qt_persistentSpeed_name": {
+    "message": "지속적인 속도"
+  },
+  "qt_removeAllShorts_desc": {
+    "message": "피드에서 Shorts 제거"
+  },
+  "qt_removeAllShorts_name": {
+    "message": "Shorts 숨기기"
+  },
+  "qt_sponsorBlock_desc": {
+    "message": "스폰서 구간 건너뛰기"
+  },
+  "qt_sponsorBlock_name": {
+    "message": "SponsorBlock"
+  },
+  "qt_transcriptViewer_desc": {
+    "message": "클릭 가능한 대본 + 내보내기"
+  },
+  "qt_transcriptViewer_name": {
+    "message": "대본 사이드바"
+  },
+  "quickTogglesAria": {
+    "message": "빠른 토글"
+  },
+  "quickTogglesEyebrow": {
+    "message": "빠른 토글"
+  },
+  "resetAllMessage": {
+    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
+  },
+  "resetAllTitle": {
+    "message": "모든 로컬 데이터를 재설정하시겠습니까?"
+  },
+  "resetBtn": {
+    "message": "재설정"
+  },
+  "resultsAllAvailableTpl": {
+    "message": "… quick controls are available in this popup"
+  },
+  "resultsMatchTpl": {
+    "message": "… of … … match this filter"
+  },
+  "resultsMatching": {
+    "message": "일치"
+  },
+  "speedBtnAriaTpl": {
+    "message": "Default playback speed …. Click to change."
+  },
+  "speedBtnTitleTpl": {
+    "message": "Default playback speed: … — applies to every video"
+  },
+  "speedPopupAria": {
+    "message": "기본 재생 속도"
+  },
+  "speedPopupHeader": {
+    "message": "기본 속도"
+  },
+  "speedPopupSub": {
+    "message": "변경될 때까지 모든 비디오에 적용됩니다."
+  },
+  "statBlocked": {
+    "message": "차단됨"
+  },
+  "statBookmarks": {
+    "message": "북마크"
+  },
+  "statHidden": {
+    "message": "숨김"
+  },
+  "statKeys": {
+    "message": "키"
+  },
+  "statStorage": {
+    "message": "스토리지"
+  },
+  "statusAllDataCleared": {
+    "message": "모든 데이터가 지워졌습니다."
+  },
+  "statusBackupExported": {
+    "message": "백업이 내보내졌습니다."
+  },
+  "statusBackupImported": {
+    "message": "백업이 가져와졌습니다."
+  },
+  "statusClipboardUnavailable": {
+    "message": "클립보드 사용 불가 — 브라우저 콘솔을 확인하세요."
+  },
+  "statusDiagClearFail": {
+    "message": "로그를 지울 수 없습니다"
+  },
+  "statusDiagCleared": {
+    "message": "진단 로그가 지워졌습니다."
+  },
+  "statusDiagCopied": {
+    "message": "진단이 클립보드에 복사되었습니다."
+  },
+  "statusExportFail": {
+    "message": "내보내기 실패"
+  },
+  "statusImportFail": {
+    "message": "가져오기 실패"
+  },
+  "statusOpenWorkspaceFail": {
+    "message": "전체 작업 공간을 열 수 없습니다. 다시 시도하세요."
+  },
+  "statusQuickCtrlLoadFail": {
+    "message": "빠른 컨트롤을 로드할 수 없습니다. 팝업을 다시 열어보세요."
+  },
+  "statusResetFail": {
+    "message": "재설정 실패"
+  },
+  "statusStorageReadFail": {
+    "message": "스토리지 읽기 실패"
+  },
+  "storageStatsAriaLabel": {
+    "message": "스토리지 통계"
+  },
+  "toastDlCmdCopied": {
+    "message": "대체 설치 명령이 복사되었습니다. 다운로드한 설치 파일을 실행할 수 없는 경우에만 사용하세요."
+  },
+  "toastDlInProgress": {
+    "message": "다운로드가 이미 진행 중입니다."
+  },
+  "toastDlInstallPrompt": {
+    "message": "다운로드를 활성화하려면 로컬 다운로더를 설치하세요."
+  },
+  "toastDlReady": {
+    "message": "로컬 다운로더가 준비되었습니다."
+  },
+  "toastDlRequestFailed": {
+    "message": "로컬 다운로더 요청 실패."
+  },
+  "toastDlRunning": {
+    "message": "Astra Downloader가 실행 중입니다!"
+  },
+  "toastDlStarted": {
+    "message": "Astra Downloader가 시작되었습니다!"
+  },
+  "toastDlStarting": {
+    "message": "Astra Downloader 시작 중…"
+  },
+  "toastDlStopped": {
+    "message": "로컬 다운로더가 중지되었습니다. 다시 시작 중…"
+  },
+  "toggleControlCenterDesc": {
+    "message": "현재 YouTube 탭에서 Astra Deck 제어 센터 토글",
+    "description": "Description for the keyboard command that opens the Astra Deck control center."
+  },
+  "toggleStateOff": {
+    "message": "비활성화됨"
+  },
+  "toggleStateOffLower": {
+    "message": "비활성화됨"
+  },
+  "toggleStateOn": {
+    "message": "활성화됨"
+  },
+  "toggleStateOnLower": {
+    "message": "활성화됨"
+  },
+  "toggleUpdateFailTpl": {
+    "message": "Couldn't update …. Try again."
+  },
+  "workspaceEyebrow": {
+    "message": "설정 작업 공간"
+  },
+  "workspaceSupport": {
+    "message": "변경 사항은 열려 있는 YouTube 탭과 자동으로 동기화됩니다."
+  },
+  "workspaceTitle": {
+    "message": "제어 및 로컬 데이터"
+  }
+}
