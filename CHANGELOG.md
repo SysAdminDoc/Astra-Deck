@@ -4,6 +4,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.21.1] - Style the language dropdown - 2026-05-10
+
+### Fixed
+- **Language dropdown was effectively invisible** in v3.21.0. The
+  new `<select id="languageSelect">` shipped without any CSS for
+  `.language-section`, `.language-row`, or the select itself, so
+  the bare `<select>` rendered as a near-invisible system control
+  against the dark popup background. Added a card frame matching
+  `.quick-toggles-section` and a custom dark-themed select with
+  the same flame accent colors as the rest of the popup.
+
+---
+
 ## [3.21.0] - Simplified Chinese + i18n foundation - 2026-05-10
 
 Resolves [#1](https://github.com/SysAdminDoc/Astra-Deck/issues/1).
