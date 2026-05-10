@@ -446,7 +446,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.20.6';
+    const YTKIT_VERSION = '3.20.7';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2139,6 +2139,24 @@ return response;
                     eta.textContent = 'Ready';
                     setProgressState('success', 'Complete', 'The local downloader finished successfully.');
                     setTimeout(() => panel.remove(), 4000);
+                    return;
+                }
+                if (data.status === 'skipped') {
+                    // Server reports the URL was already in the download
+                    // archive and yt-dlp skipped it. No file landed; tell
+                    // the user how to re-download instead of leaving them
+                    // staring at a "downloading" spinner that never ends.
+                    stopPolling();
+                    const skipReason = data.error || 'Already downloaded — skipped.';
+                    fill.style.width = '100%';
+                    fill.classList.remove('is-error');
+                    title.textContent = skipReason;
+                    pct.textContent = 'Skipped';
+                    spd.textContent = '';
+                    eta.textContent = '';
+                    setProgressState('warning', 'Already Downloaded', skipReason);
+                    showToast(skipReason, '#f59e0b', { duration: 8 });
+                    setTimeout(() => panel.remove(), 8000);
                     return;
                 }
                 if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
