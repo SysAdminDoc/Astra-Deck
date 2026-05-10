@@ -7,6 +7,7 @@ First run auto-downloads yt-dlp + ffmpeg. No separate installer needed.
 """
 
 import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil, traceback, hmac
+import queue
 from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse
@@ -73,7 +74,7 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.2.2"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit) but older clients ignore unknown
@@ -102,7 +103,11 @@ FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/f
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
 
 DEFAULT_CONFIG = {
-    "DownloadPath": str(Path.home() / "Videos" / "YouTube"),
+    # v1.2.2: default to the profile's Videos folder directly (was Videos/YouTube
+    # subfolder). Premiere/Resolve/FCP users typically import straight out of
+    # the system Videos folder; the YouTube subfolder added a step everyone
+    # had to manually delete or change.
+    "DownloadPath": str(Path.home() / "Videos"),
     "AudioDownloadPath": "",
     "ServerPort": SERVER_PORT,
     "ServerToken": "",
@@ -1450,6 +1455,57 @@ class Download:
             "format": self.format, "quality": self.quality,
         }
 
+# ══════════════════════════════════════════════════════════════
+# v1.2.2: cross-thread native folder picker
+# ══════════════════════════════════════════════════════════════
+# Flask handlers run on waitress worker threads; Qt widgets are
+# GUI-thread only. The extension popup's "Change" button needs to
+# trigger a native folder dialog so users don't have to manually
+# type a Windows path. Worker threads enqueue requests; a QTimer on
+# the GUI thread pumps them through QFileDialog and returns results
+# via per-request response queues. 150 ms tick is invisible to the
+# user (HTTP request -> dialog appears within one frame).
+
+_folder_pick_q = queue.Queue()
+_folder_picker_service = None  # set in main() once QApplication exists
+
+
+class FolderPickerService(QObject):
+    """Bridges Flask worker threads to the GUI thread's QFileDialog."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start(150)
+
+    def _tick(self):
+        try:
+            req = _folder_pick_q.get_nowait()
+        except queue.Empty:
+            return
+        response_q = req['response']
+        try:
+            initial = req.get('initial') or str(Path.home() / "Videos")
+            dlg = QFileDialog(None, "Choose download folder", initial)
+            dlg.setFileMode(QFileDialog.FileMode.Directory)
+            dlg.setOption(QFileDialog.Option.ShowDirsOnly, True)
+            dlg.setOption(QFileDialog.Option.DontResolveSymlinks, True)
+            # Tray-only mode means there's no parent window to anchor the
+            # dialog to; force it on top so the user actually sees it.
+            dlg.setWindowFlags(dlg.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+            dlg.activateWindow()
+            dlg.raise_()
+            if dlg.exec() == QFileDialog.DialogCode.Accepted:
+                paths = dlg.selectedFiles()
+                response_q.put({'path': paths[0] if paths else None,
+                                'cancelled': not bool(paths)})
+            else:
+                response_q.put({'path': None, 'cancelled': True})
+        except Exception as e:
+            response_q.put({'error': str(e)})
+
+
 class DownloadManager(QObject):
     progress_updated = pyqtSignal()
     download_completed = pyqtSignal(str)
@@ -2004,11 +2060,39 @@ def create_api(config, dl_manager, history):
     def get_config():
         if not check_auth():
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
-        c = config.data
+        c = dict(config.data)
         c['videoFormats'] = ['mp4', 'mkv', 'webm']
         c['audioFormats'] = ['mp3', 'm4a', 'opus', 'flac', 'wav']
         c['qualities'] = ['best', '2160', '1440', '1080', '720', '480']
+        # v1.2.2: expose camelCase aliases for the path keys so the extension
+        # can use the conventional JS casing. Capital-case keys remain for
+        # backward compatibility with older extension builds.
+        c['downloadPath'] = c.get('DownloadPath', '')
+        c['audioDownloadPath'] = c.get('AudioDownloadPath', '')
         return cors_response(c)
+
+    @api.route('/pick-folder', methods=['POST'])
+    def pick_folder():
+        """v1.2.2: pop a native QFileDialog and return the selected path.
+
+        The extension popup's "Change" button calls this so users don't
+        have to manually type a Windows path. Blocks until the dialog is
+        accepted or cancelled (up to 120 s); the dialog runs on the GUI
+        thread via FolderPickerService.
+        """
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        if _folder_picker_service is None:
+            return cors_response({"error": "Folder picker is not available."}, 503)
+        body = request.get_json(silent=True) or {}
+        initial = clean_text(body.get('initial'), '', 1024)
+        response_q = queue.Queue(maxsize=1)
+        _folder_pick_q.put({'initial': initial, 'response': response_q})
+        try:
+            result = response_q.get(timeout=120)
+        except queue.Empty:
+            return cors_response({"error": "Folder picker timed out — was the dialog left open?"}, 504)
+        return cors_response(result)
 
     @api.route('/cancel/<dl_id>', methods=['DELETE'])
     def cancel(dl_id):
@@ -3888,6 +3972,11 @@ def main():
     config = Config()
     history = History()
     dl_manager = DownloadManager(config, history)
+
+    # v1.2.2: GUI-thread folder picker bridge for /pick-folder requests.
+    # Module-scoped reference keeps the QTimer alive for the app lifetime.
+    global _folder_picker_service
+    _folder_picker_service = FolderPickerService()
 
     start_min = start_minimized or config.get("StartMinimized", False)
     window = MainWindow(config, dl_manager, history, start_minimized=start_min)
