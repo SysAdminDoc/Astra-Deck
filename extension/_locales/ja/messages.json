@@ -1,0 +1,651 @@
+{
+  "brandName": {
+    "message": "Astra Deck"
+  },
+  "clearFilterAria": {
+    "message": "クイックトグルフィルターをクリア"
+  },
+  "clearFilterBtn": {
+    "message": "フィルターをクリア"
+  },
+  "clearLogMessage": {
+    "message": "これにより、拡張機能ストレージから記録されたすべての診断イベントが削除されます。"
+  },
+  "clearLogTitle": {
+    "message": "診断ログをクリアしますか？"
+  },
+  "closeBtnAria": {
+    "message": "閉じる"
+  },
+  "confirmCancel": {
+    "message": "キャンセル"
+  },
+  "confirmContinue": {
+    "message": "続行"
+  },
+  "confirmDestructiveEyebrow": {
+    "message": "破壊的な操作"
+  },
+  "confirmEyebrow": {
+    "message": "確認"
+  },
+  "contextNoteAnyTab": {
+    "message": "クイックトグルは YouTube タブが開かれた時点で同期されます。"
+  },
+  "contextNoteInlinePanel": {
+    "message": "このタブでページ内ワークスペースを開くには「完全な設定を開く」をクリックします。"
+  },
+  "contextNoteLaunch": {
+    "message": "完全な設定は視聴可能な YouTube タブのページ内ワークスペースにあります。"
+  },
+  "contextStateAnyTab": {
+    "message": "任意のタブ"
+  },
+  "contextStateAriaLabel": {
+    "message": "タブコンテキスト"
+  },
+  "contextStateLocal": {
+    "message": "ローカル"
+  },
+  "contextStateYouTube": {
+    "message": "YouTube"
+  },
+  "controlPlural": {
+    "message": "コントロール"
+  },
+  "controlSingular": {
+    "message": "コントロール"
+  },
+  "dataMgmtAria": {
+    "message": "データ管理"
+  },
+  "dlPopupAria": {
+    "message": "ダウンロードオプション"
+  },
+  "dlPopupChange": {
+    "message": "変更"
+  },
+  "dlPopupChangeAria": {
+    "message": "ダウンロードフォルダを選択"
+  },
+  "dlPopupCtaAudio": {
+    "message": "音声をダウンロード"
+  },
+  "dlPopupCtaAudioAriaTpl": {
+    "message": "Download audio as …"
+  },
+  "dlPopupCtaVideo": {
+    "message": "動画をダウンロード"
+  },
+  "dlPopupCtaVideoAriaTpl": {
+    "message": "Download video as … at …"
+  },
+  "dlPopupDefault": {
+    "message": "デフォルト"
+  },
+  "dlPopupDownloaderOffline": {
+    "message": "ダウンローダーが実行されていません"
+  },
+  "dlPopupFormat": {
+    "message": "フォーマット"
+  },
+  "dlPopupLoading": {
+    "message": "読み込み中…"
+  },
+  "dlPopupPickerUnavailable": {
+    "message": "フォルダ選択ツールが利用できません"
+  },
+  "dlPopupPicking": {
+    "message": "選択中…"
+  },
+  "dlPopupQuality": {
+    "message": "画質"
+  },
+  "dlPopupReset": {
+    "message": "リセット"
+  },
+  "dlPopupResetAria": {
+    "message": "デフォルトのダウンロードフォルダにリセット"
+  },
+  "dlPopupSaveTo": {
+    "message": "保存先"
+  },
+  "dlPopupTabAudioOnly": {
+    "message": "音声のみ"
+  },
+  "dlPopupTabVideo": {
+    "message": "動画"
+  },
+  "dlPopupTitle": {
+    "message": "ダウンロードオプション"
+  },
+  "dlPopupTypeAria": {
+    "message": "ダウンロードタイプ"
+  },
+  "dlProgressActiveEtaTpl": {
+    "message": "…% complete. … remaining."
+  },
+  "dlProgressActiveTpl": {
+    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+  },
+  "dlProgressAriaAudio": {
+    "message": "音声ダウンロードの進捗"
+  },
+  "dlProgressAriaVideo": {
+    "message": "動画ダウンロードの進捗"
+  },
+  "dlProgressBadgeAudio": {
+    "message": "音声ダウンロード"
+  },
+  "dlProgressBadgeVideo": {
+    "message": "動画ダウンロード"
+  },
+  "dlProgressCompleteCopy": {
+    "message": "ローカルダウンローダーは正常に完了しました。"
+  },
+  "dlProgressConnectAudio": {
+    "message": "ローカル音声ダウンローダーに接続中。"
+  },
+  "dlProgressConnectVideo": {
+    "message": "ローカル動画ダウンローダーに接続中。"
+  },
+  "dlProgressDismissAria": {
+    "message": "ダウンロード進捗を閉じる"
+  },
+  "dlProgressEtaPrefix": {
+    "message": "ETA"
+  },
+  "dlProgressFailureDefault": {
+    "message": "ローカルダウンローダー失敗"
+  },
+  "dlProgressInProgress": {
+    "message": "進行中"
+  },
+  "dlProgressLocal": {
+    "message": "ローカル"
+  },
+  "dlProgressLostCopy": {
+    "message": "Astra Deck はローカルダウンローダーとの通信を失いました。「ダウンローダーを修復」を選択して復旧してください。"
+  },
+  "dlProgressLostTitle": {
+    "message": "ダウンローダーへの接続喪失"
+  },
+  "dlProgressLostToast": {
+    "message": "ローカルダウンローダーとの通信を失いました。"
+  },
+  "dlProgressPreparing": {
+    "message": "ダウンロードの準備中…"
+  },
+  "dlProgressQueue": {
+    "message": "キュー"
+  },
+  "dlProgressReady": {
+    "message": "準備完了"
+  },
+  "dlProgressReconnectingCopy": {
+    "message": "ローカルダウンローダーで一時的な問題 — 自動的に再試行中。"
+  },
+  "dlProgressSkippedDefault": {
+    "message": "すでにダウンロード済み — スキップしました。"
+  },
+  "dlProgressStateAlreadyDownloaded": {
+    "message": "すでにダウンロード済み"
+  },
+  "dlProgressStateComplete": {
+    "message": "完了"
+  },
+  "dlProgressStateDownloading": {
+    "message": "ダウンロード中"
+  },
+  "dlProgressStateError": {
+    "message": "エラー"
+  },
+  "dlProgressStateFailed": {
+    "message": "失敗"
+  },
+  "dlProgressStateFinishing": {
+    "message": "完了処理中"
+  },
+  "dlProgressStateLost": {
+    "message": "接続喪失"
+  },
+  "dlProgressStateNeedsAttention": {
+    "message": "注意が必要"
+  },
+  "dlProgressStatePreparing": {
+    "message": "準備中"
+  },
+  "dlProgressStateReconnecting": {
+    "message": "再接続中"
+  },
+  "dlProgressStateSkipped": {
+    "message": "スキップ"
+  },
+  "dlProgressWaiting": {
+    "message": "待機中"
+  },
+  "dlProgressWrappingUp": {
+    "message": "完了処理中"
+  },
+  "dlRepairAria": {
+    "message": "ローカルダウンローダー修復手順を開く"
+  },
+  "dlRepairBtn": {
+    "message": "ダウンローダーを修復"
+  },
+  "emptyNoMatch": {
+    "message": "一致するクイックトグルなし"
+  },
+  "emptyNoMatchHint": {
+    "message": "フィルターをクリアしてすべてのクイックコントロールを再度表示します。"
+  },
+  "emptyNoToggles": {
+    "message": "利用可能なクイックトグルなし"
+  },
+  "emptyNoTogglesHint": {
+    "message": "ポップアップは現在クイックコントロールを読み込めませんでした。"
+  },
+  "enabledLabel": {
+    "message": "有効"
+  },
+  "exportBtn": {
+    "message": "エクスポート"
+  },
+  "extActionTitle": {
+    "message": "Astra Deck",
+    "description": "Tooltip text for the toolbar action button."
+  },
+  "extDescription": {
+    "message": "YouTube 用のプレミアム視聴ページカスタマイズ、分割レイアウト、コンテンツ制御、ローカルダウンロード。",
+    "description": "The extension description shown in the browser's extension management page."
+  },
+  "extName": {
+    "message": "Astra Deck",
+    "description": "The extension name displayed in the browser UI."
+  },
+  "filterTogglesLabel": {
+    "message": "クイックトグルをフィルター"
+  },
+  "filterTogglesPlaceholder": {
+    "message": "トグルをフィルター…"
+  },
+  "groupQuickControls": {
+    "message": "クイックコントロール"
+  },
+  "healthClearAria": {
+    "message": "診断ログをクリア"
+  },
+  "healthClearBtn": {
+    "message": "クリア"
+  },
+  "healthCopyAria": {
+    "message": "診断詳細をコピー"
+  },
+  "healthCopyBtn": {
+    "message": "コピー"
+  },
+  "healthEventPlural": {
+    "message": "イベント"
+  },
+  "healthEventSingular": {
+    "message": "イベント"
+  },
+  "healthFallbackPrefix": {
+    "message": "TrustedTypes フォールバック有効"
+  },
+  "healthTitle": {
+    "message": "診断"
+  },
+  "importBtn": {
+    "message": "インポート"
+  },
+  "languageAuto": {
+    "message": "自動（ブラウザの既定）"
+  },
+  "languageDe": {
+    "message": "Deutsch (ドイツ語)"
+  },
+  "languageEn": {
+    "message": "英語"
+  },
+  "languageEs": {
+    "message": "Español (スペイン語)"
+  },
+  "languageFr": {
+    "message": "Français (フランス語)"
+  },
+  "languageIt": {
+    "message": "Italiano (イタリア語)"
+  },
+  "languageJa": {
+    "message": "日本語"
+  },
+  "languageKo": {
+    "message": "한국어 (韓国語)"
+  },
+  "languagePtBr": {
+    "message": "Português (ブラジルポルトガル語)"
+  },
+  "languageRu": {
+    "message": "Русский (ロシア語)"
+  },
+  "languageSelectLabel": {
+    "message": "表示言語"
+  },
+  "languageTitle": {
+    "message": "表示言語"
+  },
+  "languageZhCn": {
+    "message": "简体中文 (簡体字中国語)"
+  },
+  "loadingState": {
+    "message": "読み込み中"
+  },
+  "openFullSettings": {
+    "message": "完全な設定を開く"
+  },
+  "openYouTube": {
+    "message": "YouTube を開く"
+  },
+  "panelCloseAria": {
+    "message": "設定を閉じる"
+  },
+  "panelCloseTitle": {
+    "message": "閉じる (Esc)"
+  },
+  "panelIntro": {
+    "message": "ページを離れることなく YouTube コントロールをライブで検索、調整、適用します。"
+  },
+  "panelLiveApplyBadge": {
+    "message": "ライブ適用"
+  },
+  "panelSearchAria": {
+    "message": "設定を検索"
+  },
+  "panelSearchClearAria": {
+    "message": "設定検索をクリア"
+  },
+  "panelSearchClearTitle": {
+    "message": "検索をクリア"
+  },
+  "panelSearchPlaceholder": {
+    "message": "設定を検索…"
+  },
+  "panelSidebarAria": {
+    "message": "設定カテゴリ"
+  },
+  "panelTitle": {
+    "message": "設定"
+  },
+  "playerDownloadAria": {
+    "message": "動画をダウンロード"
+  },
+  "playerDownloadTitle": {
+    "message": "動画をダウンロード"
+  },
+  "playerGearAriaTpl": {
+    "message": "Open … settings"
+  },
+  "playerGearTitleTpl": {
+    "message": "… Settings"
+  },
+  "popupTitle": {
+    "message": "Astra Deck"
+  },
+  "qtGroup_Feed_Cleanup": {
+    "message": "フィードクリーンアップ"
+  },
+  "qtGroup_Focus": {
+    "message": "フォーカス"
+  },
+  "qtGroup_Playback": {
+    "message": "再生"
+  },
+  "qtGroup_Utilities": {
+    "message": "ユーティリティ"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "視聴フロー"
+  },
+  "qt_autoTheaterMode_desc": {
+    "message": "デフォルトでシアター表示"
+  },
+  "qt_autoTheaterMode_name": {
+    "message": "自動シアター"
+  },
+  "qt_blueLightFilter_desc": {
+    "message": "暖かい色"
+  },
+  "qt_blueLightFilter_name": {
+    "message": "ブルーライトフィルター"
+  },
+  "qt_cleanShareUrls_desc": {
+    "message": "トラッキングパラメータを削除"
+  },
+  "qt_cleanShareUrls_name": {
+    "message": "クリーンな URL"
+  },
+  "qt_commentSearch_desc": {
+    "message": "視聴ページでコメントをフィルター"
+  },
+  "qt_commentSearch_name": {
+    "message": "コメント検索"
+  },
+  "qt_deArrow_desc": {
+    "message": "より良いタイトルとサムネイル"
+  },
+  "qt_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "qt_debugMode_desc": {
+    "message": "詳細なコンソールログ"
+  },
+  "qt_debugMode_name": {
+    "message": "デバッグモード"
+  },
+  "qt_digitalWellbeing_desc": {
+    "message": "休憩リマインダー + 日次上限"
+  },
+  "qt_digitalWellbeing_name": {
+    "message": "デジタルウェルビーイング"
+  },
+  "qt_disableAutoplayNext_desc": {
+    "message": "次への自動進行を停止"
+  },
+  "qt_disableAutoplayNext_name": {
+    "message": "自動再生なし"
+  },
+  "qt_disableInfiniteScroll_desc": {
+    "message": "無限スクロールを停止"
+  },
+  "qt_disableInfiniteScroll_name": {
+    "message": "スクロール制限"
+  },
+  "qt_hideRelatedVideos_desc": {
+    "message": "視聴時に関連パネルなし"
+  },
+  "qt_hideRelatedVideos_name": {
+    "message": "関連を非表示"
+  },
+  "qt_miniPlayerBar_desc": {
+    "message": "スクロール時のフローティングバー"
+  },
+  "qt_miniPlayerBar_name": {
+    "message": "ミニプレーヤーバー"
+  },
+  "qt_persistentSpeed_desc": {
+    "message": "再生速度を記憶"
+  },
+  "qt_persistentSpeed_name": {
+    "message": "持続的な速度"
+  },
+  "qt_removeAllShorts_desc": {
+    "message": "フィードから Shorts を削除"
+  },
+  "qt_removeAllShorts_name": {
+    "message": "Shorts を非表示"
+  },
+  "qt_sponsorBlock_desc": {
+    "message": "スポンサーセグメントをスキップ"
+  },
+  "qt_sponsorBlock_name": {
+    "message": "SponsorBlock"
+  },
+  "qt_transcriptViewer_desc": {
+    "message": "クリック可能なトランスクリプト + エクスポート"
+  },
+  "qt_transcriptViewer_name": {
+    "message": "トランスクリプトサイドバー"
+  },
+  "quickTogglesAria": {
+    "message": "クイックトグル"
+  },
+  "quickTogglesEyebrow": {
+    "message": "クイックトグル"
+  },
+  "resetAllMessage": {
+    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
+  },
+  "resetAllTitle": {
+    "message": "すべてのローカルデータをリセットしますか？"
+  },
+  "resetBtn": {
+    "message": "リセット"
+  },
+  "resultsAllAvailableTpl": {
+    "message": "… quick controls are available in this popup"
+  },
+  "resultsMatchTpl": {
+    "message": "… of … … match this filter"
+  },
+  "resultsMatching": {
+    "message": "一致"
+  },
+  "speedBtnAriaTpl": {
+    "message": "Default playback speed …. Click to change."
+  },
+  "speedBtnTitleTpl": {
+    "message": "Default playback speed: … — applies to every video"
+  },
+  "speedPopupAria": {
+    "message": "デフォルト再生速度"
+  },
+  "speedPopupHeader": {
+    "message": "デフォルト速度"
+  },
+  "speedPopupSub": {
+    "message": "変更されるまで、すべての動画に適用されます。"
+  },
+  "statBlocked": {
+    "message": "ブロック"
+  },
+  "statBookmarks": {
+    "message": "ブックマーク"
+  },
+  "statHidden": {
+    "message": "非表示"
+  },
+  "statKeys": {
+    "message": "キー"
+  },
+  "statStorage": {
+    "message": "ストレージ"
+  },
+  "statusAllDataCleared": {
+    "message": "すべてのデータをクリアしました。"
+  },
+  "statusBackupExported": {
+    "message": "バックアップをエクスポートしました。"
+  },
+  "statusBackupImported": {
+    "message": "バックアップをインポートしました。"
+  },
+  "statusClipboardUnavailable": {
+    "message": "クリップボードが利用できません — ブラウザコンソールを参照。"
+  },
+  "statusDiagClearFail": {
+    "message": "ログをクリアできませんでした"
+  },
+  "statusDiagCleared": {
+    "message": "診断ログをクリアしました。"
+  },
+  "statusDiagCopied": {
+    "message": "診断をクリップボードにコピーしました。"
+  },
+  "statusExportFail": {
+    "message": "エクスポート失敗"
+  },
+  "statusImportFail": {
+    "message": "インポート失敗"
+  },
+  "statusOpenWorkspaceFail": {
+    "message": "完全なワークスペースを開けませんでした。再試行してください。"
+  },
+  "statusQuickCtrlLoadFail": {
+    "message": "クイックコントロールを読み込めませんでした。ポップアップを再度開いてください。"
+  },
+  "statusResetFail": {
+    "message": "リセット失敗"
+  },
+  "statusStorageReadFail": {
+    "message": "ストレージ読み取り失敗"
+  },
+  "storageStatsAriaLabel": {
+    "message": "ストレージ統計"
+  },
+  "toastDlCmdCopied": {
+    "message": "フォールバックインストールコマンドをコピーしました。ダウンロードしたセットアップファイルを実行できない場合のみ使用してください。"
+  },
+  "toastDlInProgress": {
+    "message": "ダウンロードはすでに進行中です。"
+  },
+  "toastDlInstallPrompt": {
+    "message": "ダウンロードを有効にするにはローカルダウンローダーをインストールしてください。"
+  },
+  "toastDlReady": {
+    "message": "ローカルダウンローダーは準備完了です。"
+  },
+  "toastDlRequestFailed": {
+    "message": "ローカルダウンローダーのリクエストが失敗しました。"
+  },
+  "toastDlRunning": {
+    "message": "Astra Downloader は実行中です！"
+  },
+  "toastDlStarted": {
+    "message": "Astra Downloader が起動しました！"
+  },
+  "toastDlStarting": {
+    "message": "Astra Downloader を起動中…"
+  },
+  "toastDlStopped": {
+    "message": "ローカルダウンローダーが停止しました。再起動中…"
+  },
+  "toggleControlCenterDesc": {
+    "message": "現在の YouTube タブで Astra Deck コントロールセンターを切り替える",
+    "description": "Description for the keyboard command that opens the Astra Deck control center."
+  },
+  "toggleStateOff": {
+    "message": "無効"
+  },
+  "toggleStateOffLower": {
+    "message": "無効"
+  },
+  "toggleStateOn": {
+    "message": "有効"
+  },
+  "toggleStateOnLower": {
+    "message": "有効"
+  },
+  "toggleUpdateFailTpl": {
+    "message": "Couldn't update …. Try again."
+  },
+  "workspaceEyebrow": {
+    "message": "設定ワークスペース"
+  },
+  "workspaceSupport": {
+    "message": "変更は開いている YouTube タブに自動的に同期されます。"
+  },
+  "workspaceTitle": {
+    "message": "コントロールとローカルデータ"
+  }
+}
