@@ -4,6 +4,18 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.20.8] - Re-downloads always run - 2026-05-10
+
+Pairs with Astra Downloader v1.3.0. Same URL, click 100 times, get
+100 downloads — the archive lock is gone.
+
+### Removed
+- `skipped` status path is gone since the server no longer emits it
+  (no archive = nothing to skip). The handler stays in place
+  defensively but is unreachable on the supported downloader.
+
+---
+
 ## [3.20.7] - Surface skipped re-downloads - 2026-05-10
 
 Pairs with Astra Downloader v1.2.3. The download progress panel now
@@ -542,6 +554,34 @@ block at the end of the features array for easy isolation.
   links (already covered by Astra Deck's `quickLinkMenu`), tab view
   (covered by `watchPageTabs`), and the colored transcript buttons
   (subsumed into the single `transcriptAiHandoff` selector-driven design).
+
+---
+
+## Astra Downloader [1.3.0] - Re-downloads always run
+
+Removes the download-archive lock entirely. Same URL, click 100
+times, get 100 downloads. Resolves the broader UX failure where the
+archive feature silently blocked re-downloads — the v1.2.3 "surface
+skipped re-downloads" patch made the failure visible, but the
+underlying request ("just download it again, don't lock me out") is
+better served by removing the lock.
+
+### Removed
+- `--download-archive` argv branch from `_run_download`.
+- `DownloadArchive` config key (DEFAULT_CONFIG, sanitizer tuple, save
+  path).
+- `cfg_archive` checkbox from the Settings tab.
+- v1.2.3 archive-skip detection and the `skipped` post-loop branch.
+- `archive.txt` is unlinked on first launch of v1.3.0 so it doesn't
+  hang around in `%LOCALAPPDATA%\AstraDownloader`.
+
+### Added
+- `--force-overwrites` to yt-dlp argv. Without it, yt-dlp refuses to
+  overwrite an existing output file and prints "[download] Title.mp4
+  has already been downloaded" — same UX failure as the archive lock.
+- `NoArchiveLockTests`: pins the invariants (no `DownloadArchive`
+  key, no `--download-archive` argv, `--force-overwrites` present)
+  so the lock can't be silently re-introduced.
 
 ---
 
