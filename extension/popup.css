@@ -664,34 +664,22 @@ button:focus-visible {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Language section ── */
-/* Sits between data management and quick toggles. Mirrors the
-   .quick-toggles-section card framing so the popup reads as a single
-   stacked column of cards. */
+/* ── Inline language selector ── */
+/* Sits inside .actions-row's .button-row alongside Export / Import.
+   Keeps the same visual weight as the export/import buttons so the
+   row reads as one tight cluster of data-management controls. */
 
-.language-section {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.015);
-  overflow: hidden;
-}
-
-.language-row {
-  display: flex;
+.language-inline {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px 12px;
+  margin: 0;
 }
 
 #languageSelect {
-  flex: 1 1 auto;
   appearance: none;
   -webkit-appearance: none;
-  height: 34px;
-  padding: 0 32px 0 12px;
+  height: 32px;
+  padding: 0 28px 0 10px;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
   background-color: rgba(8, 11, 16, 0.74);
@@ -699,16 +687,20 @@ button:focus-visible {
     linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.62) 50%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.62) 50%, transparent 50%);
   background-position:
-    calc(100% - 16px) 50%,
-    calc(100% - 11px) 50%;
+    calc(100% - 12px) 50%,
+    calc(100% - 8px) 50%;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
   color: var(--text-primary);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   outline: none;
+  max-width: 140px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
