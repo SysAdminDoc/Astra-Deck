@@ -84,6 +84,84 @@
         return;
     }
 
+    // ── i18n helper (Phase A) ──
+    // Resolves user-facing strings via chrome.i18n when running as an
+    // extension. Falls back to the inline English literal so:
+    //   - the source stays readable in code review (each call site shows
+    //     what the string is *supposed* to say, in English)
+    //   - the userscript build (no chrome.i18n) keeps working
+    //   - any missing locale key resolves to English instead of going
+    //     blank
+    // The build-time validator at scripts/check-i18n.js ensures every
+    // chrome.i18n.getMessage() reference (which this wraps) has a matching
+    // key in extension/_locales/en/messages.json.
+    //
+    // Optional manual locale override: writes to chrome.storage.local under
+    // `_localeOverride` (set via the popup language dropdown). Override is
+    // resolved via the bundled extension/_locales/<override>/messages.json
+    // fetched once and cached. Falls back to chrome.i18n when no override.
+    const _i18n = {
+        override: null,           // populated lazily from storage
+        overrideMap: null,        // { key: messageString } once loaded
+        overrideLocale: null,
+        ready: false,
+        loading: null,
+    };
+
+    async function _loadLocaleOverride() {
+        if (_i18n.loading) return _i18n.loading;
+        _i18n.loading = (async () => {
+            try {
+                const stored = await storageRead('_localeOverride');
+                const locale = (typeof stored === 'string' && stored.trim()) ? stored.trim() : '';
+                if (!locale || locale === 'auto') {
+                    _i18n.override = null;
+                    _i18n.overrideMap = null;
+                    _i18n.overrideLocale = null;
+                    _i18n.ready = true;
+                    return;
+                }
+                if (typeof chrome === 'undefined' || !chrome?.runtime?.getURL) {
+                    _i18n.ready = true;
+                    return;
+                }
+                const url = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`locale ${locale} not bundled`);
+                const json = await resp.json();
+                const flat = {};
+                for (const [k, v] of Object.entries(json)) {
+                    if (v && typeof v === 'object' && typeof v.message === 'string') flat[k] = v.message;
+                }
+                _i18n.override = locale;
+                _i18n.overrideMap = flat;
+                _i18n.overrideLocale = locale;
+                _i18n.ready = true;
+            } catch (_) {
+                _i18n.override = null;
+                _i18n.overrideMap = null;
+                _i18n.ready = true;
+            }
+        })();
+        return _i18n.loading;
+    }
+    // Kick off override load early; t() uses chrome.i18n until it resolves.
+    _loadLocaleOverride();
+
+    function t(key, fallback) {
+        try {
+            if (_i18n.overrideMap && Object.prototype.hasOwnProperty.call(_i18n.overrideMap, key)) {
+                const m = _i18n.overrideMap[key];
+                if (m) return m;
+            }
+            if (typeof chrome !== 'undefined' && chrome?.i18n?.getMessage) {
+                const m = chrome.i18n.getMessage(key);
+                if (m) return m;
+            }
+        } catch (_) { /* reason: i18n is best-effort, never fail UI on it */ }
+        return (fallback != null) ? fallback : key;
+    }
+
     function sendRuntimeMessage(message) {
         return new Promise((resolve, reject) => {
             if (!hasExtensionContext()) {
@@ -446,7 +524,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.20.9';
+    const YTKIT_VERSION = '3.21.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2060,7 +2138,9 @@ return response;
         panel.setAttribute('role', 'status');
         panel.setAttribute('aria-live', 'polite');
         panel.setAttribute('aria-atomic', 'true');
-        panel.setAttribute('aria-label', `${audioOnly ? 'Audio' : 'Video'} download progress`);
+        panel.setAttribute('aria-label', audioOnly
+            ? t('dlProgressAriaAudio', 'Audio download progress')
+            : t('dlProgressAriaVideo', 'Video download progress'));
 
         if (!document.getElementById('ytkit-dl-anim')) {
             const s = document.createElement('style');
@@ -2075,29 +2155,31 @@ return response;
         header.className = 'ytkit-dl-progress__header';
         const badge = document.createElement('span');
         badge.className = 'ytkit-dl-progress__badge';
-        badge.textContent = `${audioOnly ? 'Audio' : 'Video'} Download`;
+        badge.textContent = audioOnly
+            ? t('dlProgressBadgeAudio', 'Audio Download')
+            : t('dlProgressBadgeVideo', 'Video Download');
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'ytkit-dl-progress__close';
-        closeBtn.setAttribute('aria-label', 'Dismiss download progress');
+        closeBtn.setAttribute('aria-label', t('dlProgressDismissAria', 'Dismiss download progress'));
         closeBtn.textContent = '\u2715';
         header.appendChild(badge);
         header.appendChild(closeBtn);
 
         const title = document.createElement('div');
         title.className = 'ytkit-dl-progress__title';
-        title.textContent = 'Preparing download…';
+        title.textContent = t('dlProgressPreparing', 'Preparing download…');
 
         const statusRow = document.createElement('div');
         statusRow.className = 'ytkit-dl-progress__status';
         const statePill = document.createElement('span');
         statePill.className = 'ytkit-dl-progress__state';
-        statePill.textContent = 'Preparing';
+        statePill.textContent = t('dlProgressStatePreparing', 'Preparing');
         const statusCopy = document.createElement('span');
         statusCopy.className = 'ytkit-dl-progress__status-copy';
         statusCopy.textContent = audioOnly
-            ? 'Connecting to the local audio downloader.'
-            : 'Connecting to the local video downloader.';
+            ? t('dlProgressConnectAudio', 'Connecting to the local audio downloader.')
+            : t('dlProgressConnectVideo', 'Connecting to the local video downloader.');
         statusRow.appendChild(statePill);
         statusRow.appendChild(statusCopy);
 
@@ -2114,10 +2196,10 @@ return response;
         pct.textContent = '0%';
         const spd = document.createElement('span');
         spd.className = 'ytkit-dl-progress__stat';
-        spd.textContent = 'Waiting';
+        spd.textContent = t('dlProgressWaiting', 'Waiting');
         const eta = document.createElement('span');
         eta.className = 'ytkit-dl-progress__stat';
-        eta.textContent = 'Queue';
+        eta.textContent = t('dlProgressQueue', 'Queue');
         meta.appendChild(pct);
         meta.appendChild(spd);
         meta.appendChild(eta);
@@ -2128,8 +2210,8 @@ return response;
         const repairBtn = document.createElement('button');
         repairBtn.type = 'button';
         repairBtn.className = 'ytkit-dl-progress__action';
-        repairBtn.textContent = 'Repair downloader';
-        repairBtn.setAttribute('aria-label', 'Open local downloader repair steps');
+        repairBtn.textContent = t('dlRepairBtn', 'Repair downloader');
+        repairBtn.setAttribute('aria-label', t('dlRepairAria', 'Open local downloader repair steps'));
         repairBtn.addEventListener('click', () => MediaDLManager.showInstallPrompt('retry'));
         actions.appendChild(repairBtn);
 
@@ -2141,10 +2223,10 @@ return response;
         };
         setProgressState(
             'pending',
-            'Preparing',
+            t('dlProgressStatePreparing', 'Preparing'),
             audioOnly
-                ? 'Connecting to the local audio downloader.'
-                : 'Connecting to the local video downloader.'
+                ? t('dlProgressConnectAudio', 'Connecting to the local audio downloader.')
+                : t('dlProgressConnectVideo', 'Connecting to the local video downloader.')
         );
 
         panel.appendChild(header);
@@ -2200,14 +2282,14 @@ return response;
                 const p = Math.min(data.progress || 0, 100);
                 fill.style.width = p + '%';
                 pct.textContent = p.toFixed(1) + '%';
-                spd.textContent = data.speed || 'Local';
-                eta.textContent = data.eta ? 'ETA ' + data.eta : (p >= 99 ? 'Wrapping up' : 'In progress');
+                spd.textContent = data.speed || t('dlProgressLocal', 'Local');
+                eta.textContent = data.eta ? t('dlProgressEtaPrefix', 'ETA') + ' ' + data.eta : (p >= 99 ? t('dlProgressWrappingUp', 'Wrapping up') : t('dlProgressInProgress', 'In progress'));
                 setProgressState(
                     'active',
-                    data.status === 'processing' ? 'Finishing' : 'Downloading',
+                    data.status === 'processing' ? t('dlProgressStateFinishing', 'Finishing') : t('dlProgressStateDownloading', 'Downloading'),
                     data.eta
-                        ? `${p.toFixed(1)}% complete. ${data.eta} remaining.`
-                        : `${p.toFixed(1)}% complete. Stay on YouTube while the local downloader finishes.`
+                        ? t('dlProgressActiveEtaTpl', `${p.toFixed(1)}% complete. ${data.eta} remaining.`).replace('{pct}', p.toFixed(1)).replace('{eta}', data.eta)
+                        : t('dlProgressActiveTpl', `${p.toFixed(1)}% complete. Stay on YouTube while the local downloader finishes.`).replace('{pct}', p.toFixed(1))
                 );
 
                 if (data.status === 'done' || data.status === 'complete') {
@@ -2217,8 +2299,8 @@ return response;
                     fill.classList.add('is-success');
                     pct.textContent = '100%';
                     spd.textContent = '';
-                    eta.textContent = 'Ready';
-                    setProgressState('success', 'Complete', 'The local downloader finished successfully.');
+                    eta.textContent = t('dlProgressReady', 'Ready');
+                    setProgressState('success', t('dlProgressStateComplete', 'Complete'), t('dlProgressCompleteCopy', 'The local downloader finished successfully.'));
                     setTimeout(() => panel.remove(), 4000);
                     return;
                 }
@@ -2228,29 +2310,29 @@ return response;
                     // the user how to re-download instead of leaving them
                     // staring at a "downloading" spinner that never ends.
                     stopPolling();
-                    const skipReason = data.error || 'Already downloaded — skipped.';
+                    const skipReason = data.error || t('dlProgressSkippedDefault', 'Already downloaded — skipped.');
                     fill.style.width = '100%';
                     fill.classList.remove('is-error');
                     title.textContent = skipReason;
-                    pct.textContent = 'Skipped';
+                    pct.textContent = t('dlProgressStateSkipped', 'Skipped');
                     spd.textContent = '';
                     eta.textContent = '';
-                    setProgressState('warning', 'Already Downloaded', skipReason);
+                    setProgressState('warning', t('dlProgressStateAlreadyDownloaded', 'Already Downloaded'), skipReason);
                     showToast(skipReason, '#f59e0b', { duration: 8 });
                     setTimeout(() => panel.remove(), 8000);
                     return;
                 }
                 if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                     stopPolling();
-                    const failureReason = data.error || 'Local downloader failed';
+                    const failureReason = data.error || t('dlProgressFailureDefault', 'Local downloader failed');
                     fill.classList.remove('is-success');
                     fill.classList.add('is-error');
                     title.textContent = failureReason;
-                    pct.textContent = 'Failed';
+                    pct.textContent = t('dlProgressStateFailed', 'Failed');
                     spd.textContent = '';
                     eta.textContent = '';
                     const needsRepair = /cookie|yt-dlp|unauthorized|local downloader/i.test(failureReason);
-                    setProgressState('error', 'Needs Attention', failureReason, needsRepair);
+                    setProgressState('error', t('dlProgressStateNeedsAttention', 'Needs Attention'), failureReason, needsRepair);
                     showToast(failureReason, '#ef4444', { duration: 6 });
                     if (needsRepair) {
                         MediaDLManager.showInstallPrompt('retry');
@@ -2267,19 +2349,19 @@ return response;
                     stopPolling();
                     fill.classList.remove('is-success');
                     fill.classList.add('is-error');
-                    title.textContent = 'Connection to downloader lost';
-                    pct.textContent = 'Error';
+                    title.textContent = t('dlProgressLostTitle', 'Connection to downloader lost');
+                    pct.textContent = t('dlProgressStateError', 'Error');
                     spd.textContent = '';
                     eta.textContent = '';
-                    setProgressState('error', 'Connection Lost', 'Astra Deck lost contact with the local downloader. Choose Repair downloader to recover.', true);
-                    showToast('Lost contact with the local downloader.', '#ef4444', { duration: 5 });
+                    setProgressState('error', t('dlProgressStateLost', 'Connection Lost'), t('dlProgressLostCopy', 'Astra Deck lost contact with the local downloader. Choose Repair downloader to recover.'), true);
+                    showToast(t('dlProgressLostToast', 'Lost contact with the local downloader.'), '#ef4444', { duration: 5 });
                     return;
                 }
                 // Transient error — surface a gentle status update but keep polling.
                 setProgressState(
                     'active',
-                    'Reconnecting',
-                    'Momentary hiccup with the local downloader — retrying automatically.'
+                    t('dlProgressStateReconnecting', 'Reconnecting'),
+                    t('dlProgressReconnectingCopy', 'Momentary hiccup with the local downloader — retrying automatically.')
                 );
             }
             if (!stopped && panel.isConnected) {
@@ -2382,14 +2464,14 @@ return response;
             }
             this._autoStartAttempted = true;
             DebugManager.log('MediaDL', 'Attempting auto-start via mediadl:// protocol…');
-            showToast('Starting Astra Downloader…', '#3b82f6', { duration: 4 });
+            showToast(t('toastDlStarting', 'Starting Astra Downloader…'), '#3b82f6', { duration: 4 });
             openProtocol('mediadl://start');
             // Poll for server readiness
             for (let i = 0; i < retries; i++) {
                 await new Promise(r => setTimeout(r, 1500));
                 const result = await this.check(true);
                 if (result.ok) {
-                    showToast('Astra Downloader started!', '#22c55e', { duration: 2 });
+                    showToast(t('toastDlStarted', 'Astra Downloader started!'), '#22c55e', { duration: 2 });
                     return result;
                 }
             }
@@ -2564,7 +2646,7 @@ return response;
                     this.resetAutoStart();
                     const result = await this.tryAutoStart(5);
                     if (result.ok) {
-                        showToast('Astra Downloader is running!', '#22c55e', { duration: 3 });
+                        showToast(t('toastDlRunning', 'Astra Downloader is running!'), '#22c55e', { duration: 3 });
                         prompt.remove();
                     } else {
                         retryBtn.setAttribute('aria-busy', 'false');
@@ -2601,7 +2683,7 @@ return response;
                 if (copied) {
                     setPromptButtonState(dlBtn, 'Command copied', 'success');
                     setPromptNote('Fallback command copied. Use it in PowerShell only if the setup file cannot run.', 'success');
-                    showToast('Fallback install command copied. Use it only if you cannot run the downloaded setup file.', '#3b82f6', { duration: 6 });
+                    showToast(t('toastDlCmdCopied', 'Fallback install command copied. Use it only if you cannot run the downloaded setup file.'), '#3b82f6', { duration: 6 });
                     setTimeout(() => { setPromptButtonState(dlBtn, 'Copy fallback command'); }, 3500);
                 } else {
                     void openExternalUrl(this.INSTALLER_URL).catch(() => {});
@@ -2618,7 +2700,7 @@ return response;
                 this.resetAutoStart();
                 const result = await this.tryAutoStart(5);
                 if (result.ok) {
-                    showToast('Local downloader is ready.', '#22c55e', { duration: 4 });
+                    showToast(t('toastDlReady', 'Local downloader is ready.'), '#22c55e', { duration: 4 });
                     prompt.remove();
                 } else {
                     recheckBtn.setAttribute('aria-busy', 'false');
@@ -2690,7 +2772,7 @@ return response;
 
     async function ytKitDownload(videoUrl, audioOnly, opts = {}) {
         if (_downloadInProgress) {
-            showToast('A download is already in progress.', '#f59e0b', { duration: 3 });
+            showToast(t('toastDlInProgress', 'A download is already in progress.'), '#f59e0b', { duration: 3 });
             return;
         }
         _downloadInProgress = true;
@@ -2703,7 +2785,7 @@ return response;
         }
         if (!mdl.ok) {
             DebugManager.log('Download', 'Local yt-dlp server unavailable');
-            showToast('Install the local downloader to enable downloads.', '#f59e0b', { duration: 4 });
+            showToast(t('toastDlInstallPrompt', 'Install the local downloader to enable downloads.'), '#f59e0b', { duration: 4 });
             if (!storageRead('ytkit_mediadl_prompt_dismissed', false)) {
                 MediaDLManager.showInstallPrompt(MediaDLManager._autoStartAttempted ? 'retry' : 'install');
             }
@@ -2717,7 +2799,7 @@ return response;
             let finalError = e;
             if (_isDownloaderConnectionError(e)) {
                 DebugManager.log('Download', 'Local downloader request failed; attempting one server restart');
-                showToast('Local downloader stopped. Starting it again…', '#3b82f6', { duration: 4 });
+                showToast(t('toastDlStopped', 'Local downloader stopped. Starting it again…'), '#3b82f6', { duration: 4 });
                 MediaDLManager.resetAutoStart();
                 const restarted = await MediaDLManager.tryAutoStart(5);
                 if (restarted.ok) {
@@ -2730,7 +2812,7 @@ return response;
                 }
             }
             DebugManager.log('Download', `MediaDL download failed: ${finalError.message}`);
-            showToast('Local downloader request failed.', '#ef4444', { duration: 4 });
+            showToast(t('toastDlRequestFailed', 'Local downloader request failed.'), '#ef4444', { duration: 4 });
             MediaDLManager.showInstallPrompt('retry');
         } finally {
             _downloadInProgress = false;
@@ -2845,16 +2927,16 @@ return response;
         const popup = document.createElement('div');
         popup.className = 'ytkit-speed-popup';
         popup.setAttribute('role', 'menu');
-        popup.setAttribute('aria-label', 'Default playback speed');
+        popup.setAttribute('aria-label', t('speedPopupAria', 'Default playback speed'));
 
         const header = document.createElement('div');
         header.className = 'ytkit-speed-popup__header';
-        header.textContent = 'Default speed';
+        header.textContent = t('speedPopupHeader', 'Default speed');
         popup.appendChild(header);
 
         const sub = document.createElement('div');
         sub.className = 'ytkit-speed-popup__sub';
-        sub.textContent = 'Applies to every video until changed.';
+        sub.textContent = t('speedPopupSub', 'Applies to every video until changed.');
         popup.appendChild(sub);
 
         const grid = document.createElement('div');
@@ -2953,30 +3035,30 @@ return response;
             const isAudio = selectedMode === 'audio';
             const format = isAudio ? selectedAudioFormat : selectedVideoFormat;
             const quality = QUALITY_OPTIONS.find(q => q.value === selectedQuality)?.label || selectedQuality;
-            dlBtn.textContent = isAudio ? 'Download audio' : 'Download video';
+            dlBtn.textContent = isAudio ? t('dlPopupCtaAudio', 'Download audio') : t('dlPopupCtaVideo', 'Download video');
             dlBtn.setAttribute(
                 'aria-label',
                 isAudio
-                    ? `Download audio as ${format.toUpperCase()}`
-                    : `Download video as ${format.toUpperCase()} at ${quality}`
+                    ? t('dlPopupCtaAudioAriaTpl', `Download audio as ${format.toUpperCase()}`).replace('{format}', format.toUpperCase())
+                    : t('dlPopupCtaVideoAriaTpl', `Download video as ${format.toUpperCase()} at ${quality}`).replace('{format}', format.toUpperCase()).replace('{quality}', quality)
             );
         };
 
         const popup = document.createElement('div');
         popup.className = 'ytkit-dl-popup';
         popup.setAttribute('role', 'dialog');
-        popup.setAttribute('aria-label', 'Download options');
+        popup.setAttribute('aria-label', t('dlPopupAria', 'Download options'));
 
         // ── Header ──
         const header = document.createElement('div');
         header.className = 'ytkit-dl-popup__header';
         const title = document.createElement('span');
         title.className = 'ytkit-dl-popup__title';
-        title.textContent = 'Download options';
+        title.textContent = t('dlPopupTitle', 'Download options');
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.className = 'ytkit-dl-popup__close';
-        closeBtn.setAttribute('aria-label', 'Close');
+        closeBtn.setAttribute('aria-label', t('closeBtnAria', 'Close'));
         closeBtn.textContent = '\u2715';
         closeBtn.addEventListener('click', _closeDlPopup);
         header.appendChild(title);
@@ -2987,19 +3069,19 @@ return response;
         const tabs = document.createElement('div');
         tabs.className = 'ytkit-dl-popup__tabs';
         tabs.setAttribute('role', 'tablist');
-        tabs.setAttribute('aria-label', 'Download type');
+        tabs.setAttribute('aria-label', t('dlPopupTypeAria', 'Download type'));
         const vidTab = document.createElement('button');
         vidTab.type = 'button';
         vidTab.className = 'ytkit-dl-popup__tab is-active';
         vidTab.setAttribute('role', 'tab');
         vidTab.setAttribute('aria-selected', 'true');
-        vidTab.textContent = 'Video';
+        vidTab.textContent = t('dlPopupTabVideo', 'Video');
         const audTab = document.createElement('button');
         audTab.type = 'button';
         audTab.className = 'ytkit-dl-popup__tab';
         audTab.setAttribute('role', 'tab');
         audTab.setAttribute('aria-selected', 'false');
-        audTab.textContent = 'Audio only';
+        audTab.textContent = t('dlPopupTabAudioOnly', 'Audio only');
 
         const updateTabs = () => {
             vidTab.classList.toggle('is-active', selectedMode === 'video');
@@ -3059,10 +3141,10 @@ return response;
             return row;
         };
 
-        const videoFormatRow = makeChipRow('Format', VIDEO_FORMATS, selectedVideoFormat, v => { selectedVideoFormat = v; });
-        const audioFormatRow = makeChipRow('Format', AUDIO_FORMATS, selectedAudioFormat, v => { selectedAudioFormat = v; });
+        const videoFormatRow = makeChipRow(t('dlPopupFormat', 'Format'), VIDEO_FORMATS, selectedVideoFormat, v => { selectedVideoFormat = v; });
+        const audioFormatRow = makeChipRow(t('dlPopupFormat', 'Format'), AUDIO_FORMATS, selectedAudioFormat, v => { selectedAudioFormat = v; });
         audioFormatRow.hidden = true;
-        const qualityRow = makeChipRow('Quality', QUALITY_OPTIONS, selectedQuality, v => { selectedQuality = v; });
+        const qualityRow = makeChipRow(t('dlPopupQuality', 'Quality'), QUALITY_OPTIONS, selectedQuality, v => { selectedQuality = v; });
 
         body.appendChild(videoFormatRow);
         body.appendChild(audioFormatRow);
@@ -3079,7 +3161,7 @@ return response;
         const dirLabel = document.createElement('div');
         dirLabel.className = 'ytkit-dl-popup__label';
         dirLabel.id = 'ytkit-dl-popup-save-to-label';
-        dirLabel.textContent = 'Save to';
+        dirLabel.textContent = t('dlPopupSaveTo', 'Save to');
         dirRow.appendChild(dirLabel);
         const dirWrap = document.createElement('div');
         dirWrap.className = 'ytkit-dl-popup__dir-wrap';
@@ -3087,23 +3169,23 @@ return response;
         dirWrap.setAttribute('aria-labelledby', dirLabel.id);
         const dirDisplay = document.createElement('span');
         dirDisplay.className = 'ytkit-dl-popup__dir-path';
-        dirDisplay.textContent = 'Loading…';
+        dirDisplay.textContent = t('dlPopupLoading', 'Loading…');
         let serverDefaultPath = '';
         const dirToggle = document.createElement('button');
         dirToggle.type = 'button';
         dirToggle.className = 'ytkit-dl-popup__dir-btn';
-        dirToggle.textContent = 'Change';
-        dirToggle.setAttribute('aria-label', 'Choose a download folder');
+        dirToggle.textContent = t('dlPopupChange', 'Change');
+        dirToggle.setAttribute('aria-label', t('dlPopupChangeAria', 'Choose a download folder'));
         const setDirState = (path, isCustom) => {
             customDir = isCustom ? (path || '') : '';
-            dirDisplay.textContent = path || 'Default';
+            dirDisplay.textContent = path || t('dlPopupDefault', 'Default');
             dirDisplay.title = path || '';
             if (isCustom) {
-                dirToggle.textContent = 'Reset';
-                dirToggle.setAttribute('aria-label', 'Reset to default download folder');
+                dirToggle.textContent = t('dlPopupReset', 'Reset');
+                dirToggle.setAttribute('aria-label', t('dlPopupResetAria', 'Reset to default download folder'));
             } else {
-                dirToggle.textContent = 'Change';
-                dirToggle.setAttribute('aria-label', 'Choose a download folder');
+                dirToggle.textContent = t('dlPopupChange', 'Change');
+                dirToggle.setAttribute('aria-label', t('dlPopupChangeAria', 'Choose a download folder'));
             }
         };
         dirToggle.addEventListener('click', async () => {
@@ -3113,12 +3195,12 @@ return response;
                 return;
             }
             const prevLabel = dirToggle.textContent;
-            dirToggle.textContent = 'Picking…';
+            dirToggle.textContent = t('dlPopupPicking', 'Picking…');
             dirToggle.disabled = true;
             try {
                 const mdl = await MediaDLManager.check();
                 if (!mdl.ok) {
-                    dirDisplay.textContent = 'Downloader not running';
+                    dirDisplay.textContent = t('dlPopupDownloaderOffline', 'Downloader not running');
                     return;
                 }
                 const { data } = await extensionFetchJson({
@@ -3138,10 +3220,10 @@ return response;
                 }
                 // Cancelled: keep prior state silently.
             } catch (_) {
-                dirDisplay.textContent = 'Folder picker unavailable';
+                dirDisplay.textContent = t('dlPopupPickerUnavailable', 'Folder picker unavailable');
             } finally {
                 dirToggle.disabled = false;
-                if (dirToggle.textContent === 'Picking…') dirToggle.textContent = prevLabel;
+                if (dirToggle.textContent === t('dlPopupPicking', 'Picking…')) dirToggle.textContent = prevLabel;
             }
         });
         dirWrap.appendChild(dirDisplay);
@@ -3215,7 +3297,7 @@ return response;
         (async () => {
             const mdl = await MediaDLManager.check();
             if (!mdl.ok) {
-                if (dirDisplay.isConnected) dirDisplay.textContent = 'Downloader not running';
+                if (dirDisplay.isConnected) dirDisplay.textContent = t('dlPopupDownloaderOffline', 'Downloader not running');
                 return;
             }
             const cfg = await _fetchServerConfig(mdl.token);
@@ -3225,7 +3307,7 @@ return response;
                 dirDisplay.textContent = path;
                 dirDisplay.title = path;
             } else if (!path && dirDisplay.isConnected) {
-                dirDisplay.textContent = 'Default';
+                dirDisplay.textContent = t('dlPopupDefault', 'Default');
             }
         })();
     }
@@ -7363,8 +7445,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const dlBtn = document.createElement('button');
                     dlBtn.type = 'button';
                     dlBtn.className = 'ytp-button ytkit-player-btn ytkit-po-dl';
-                    dlBtn.title = 'Download Video';
-                    dlBtn.setAttribute('aria-label', 'Download video');
+                    dlBtn.title = t('playerDownloadTitle', 'Download Video');
+                    dlBtn.setAttribute('aria-label', t('playerDownloadAria', 'Download video'));
                     const dlIcon = ICONS.download();
                     dlIcon.setAttribute('aria-hidden', 'true');
                     dlBtn.appendChild(dlIcon);
@@ -7388,9 +7470,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
                 const _syncSpeedBtnLabel = () => {
                     const v = parseFloat(appState?.settings?.persistentSpeedValue) || 1;
-                    speedBtn.textContent = _formatSpeedLabel(v);
-                    speedBtn.title = `Default playback speed: ${_formatSpeedLabel(v)} — applies to every video`;
-                    speedBtn.setAttribute('aria-label', `Default playback speed ${_formatSpeedLabel(v)}. Click to change.`);
+                    const lbl = _formatSpeedLabel(v);
+                    speedBtn.textContent = lbl;
+                    speedBtn.title = t('speedBtnTitleTpl', `Default playback speed: ${lbl} — applies to every video`).replace('{speed}', lbl);
+                    speedBtn.setAttribute('aria-label', t('speedBtnAriaTpl', `Default playback speed ${lbl}. Click to change.`).replace('{speed}', lbl));
                 };
                 _syncSpeedBtnLabel();
                 speedBtn.addEventListener('click', (e) => {
@@ -7403,8 +7486,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const gearBtn = document.createElement('button');
                 gearBtn.type = 'button';
                 gearBtn.className = 'ytp-button ytkit-player-btn ytkit-po-gear';
-                gearBtn.title = `${BRAND.name} Settings`;
-                gearBtn.setAttribute('aria-label', `Open ${BRAND.name} settings`);
+                gearBtn.title = t('playerGearTitleTpl', `${BRAND.name} Settings`).replace('{brand}', BRAND.name);
+                gearBtn.setAttribute('aria-label', t('playerGearAriaTpl', `Open ${BRAND.name} settings`).replace('{brand}', BRAND.name));
                 gearBtn.setAttribute('aria-haspopup', 'dialog');
                 const gearIcon = ICONS.settings();
                 gearIcon.setAttribute('aria-hidden', 'true');
@@ -28537,7 +28620,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const title = document.createElement('h1');
         title.className = 'ytkit-title';
         title.id = 'ytkit-panel-title';
-        title.textContent = 'Settings';
+        title.textContent = t('panelTitle', 'Settings');
 
         const eyebrow = document.createElement('div');
         eyebrow.className = 'ytkit-eyebrow';
@@ -28545,13 +28628,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const brandIntro = document.createElement('p');
         brandIntro.className = 'ytkit-brand-intro';
-        brandIntro.textContent = 'Search, tune, and apply YouTube controls live without leaving the page.';
+        brandIntro.textContent = t('panelIntro', 'Search, tune, and apply YouTube controls live without leaving the page.');
 
         const brandBadges = document.createElement('div');
         brandBadges.className = 'ytkit-brand-badges';
         [
             `v${YTKIT_VERSION}`,
-            'Live apply',
+            t('panelLiveApplyBadge', 'Live apply'),
             SETTINGS_SHORTCUTS.label
         ].forEach((label) => {
             const badge = document.createElement('span');
@@ -28573,8 +28656,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const closeBtn = document.createElement('button');
         closeBtn.className = 'ytkit-close';
         closeBtn.type = 'button';
-        closeBtn.title = 'Close (Esc)';
-        closeBtn.setAttribute('aria-label', 'Close settings');
+        closeBtn.title = t('panelCloseTitle', 'Close (Esc)');
+        closeBtn.setAttribute('aria-label', t('panelCloseAria', 'Close settings'));
         closeBtn.appendChild(ICONS.close());
         closeBtn.onclick = () => setSettingsPanelOpen(false);
 
@@ -28588,7 +28671,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // Sidebar
         const sidebar = document.createElement('nav');
         sidebar.className = 'ytkit-sidebar';
-        sidebar.setAttribute('aria-label', 'Settings categories');
+        sidebar.setAttribute('aria-label', t('panelSidebarAria', 'Settings categories'));
 
         const sidebarTop = document.createElement('div');
         sidebarTop.className = 'ytkit-sidebar-top';
@@ -28604,13 +28687,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.className = 'ytkit-search-input';
-        searchInput.placeholder = 'Search settings…';
+        searchInput.placeholder = t('panelSearchPlaceholder', 'Search settings…');
         searchInput.id = 'ytkit-search';
         searchInput.name = 'settingsSearch';
         searchInput.autocomplete = 'off';
         searchInput.spellcheck = false;
         searchInput.setAttribute('enterkeyhint', 'search');
-        searchInput.setAttribute('aria-label', 'Search settings');
+        searchInput.setAttribute('aria-label', t('panelSearchAria', 'Search settings'));
         const searchIcon = ICONS.search();
         searchIcon.setAttribute('class', 'ytkit-search-icon');
         searchIcon.setAttribute('aria-hidden', 'true');
@@ -28621,8 +28704,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         searchClearBtn.className = 'ytkit-search-clear';
         searchClearBtn.id = 'ytkit-search-clear';
         searchClearBtn.hidden = true;
-        searchClearBtn.title = 'Clear search';
-        searchClearBtn.setAttribute('aria-label', 'Clear settings search');
+        searchClearBtn.title = t('panelSearchClearTitle', 'Clear search');
+        searchClearBtn.setAttribute('aria-label', t('panelSearchClearAria', 'Clear settings search'));
         searchClearBtn.appendChild(ICONS.close());
         const searchMeta = document.createElement('span');
         searchMeta.className = 'ytkit-search-meta';
@@ -30121,7 +30204,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             if (copied) {
                                 dlBtn.textContent = 'Command copied';
                                 text.textContent = 'Fallback command copied. Use it only if the setup file cannot run.';
-                                showToast('Fallback install command copied. Use it only if you cannot run the downloaded setup file.', '#3b82f6', { duration: 6 });
+                                showToast(t('toastDlCmdCopied', 'Fallback install command copied. Use it only if you cannot run the downloaded setup file.'), '#3b82f6', { duration: 6 });
                                 setTimeout(() => { dlBtn.textContent = 'Copy command'; }, 3000);
                             } else {
                                 void openExternalUrl(MediaDLManager.INSTALLER_URL).catch(() => {});
