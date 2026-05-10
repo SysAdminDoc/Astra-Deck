@@ -74,7 +74,7 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.2.3"
+APP_VERSION = "1.3.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit) but older clients ignore unknown
@@ -97,6 +97,10 @@ CRASH_LOG_PATH = INSTALL_DIR / 'crash.log'
 YTDLP_PATH = INSTALL_DIR / 'yt-dlp.exe'
 FFMPEG_PATH = INSTALL_DIR / 'ffmpeg.exe'
 ICON_PATH = INSTALL_DIR / 'AstraDownloader.ico'
+# v1.3.0: archive.txt path retained only so first-run on this build can
+# delete the leftover file. The download-archive feature itself has
+# been removed — re-downloads now always run.
+ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
 
 YTDLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
@@ -119,7 +123,6 @@ DEFAULT_CONFIG = {
     "SponsorBlock": False,
     "SponsorBlockAction": "remove",
     "ConcurrentFragments": 4,
-    "DownloadArchive": True,
     "AutoUpdateYtDlp": True,
     "RateLimit": "",
     "Proxy": "",
@@ -763,7 +766,7 @@ def sanitize_config(raw):
     token = clean_text(data.get("ServerToken"), "", 128)
     data["ServerToken"] = token if re.fullmatch(r'[A-Za-z0-9_\-]{16,128}', token) else uuid.uuid4().hex
     for key in ("EmbedMetadata", "EmbedThumbnail", "EmbedChapters", "EmbedSubs",
-                "SponsorBlock", "DownloadArchive", "AutoUpdateYtDlp",
+                "SponsorBlock", "AutoUpdateYtDlp",
                 "StartMinimized", "CloseToTray"):
         data[key] = coerce_bool(data.get(key), DEFAULT_CONFIG[key])
     data["SubLangs"] = normalize_sublangs(data.get("SubLangs"))
@@ -1634,8 +1637,12 @@ class DownloadManager(QObject):
         if self.config.get("SponsorBlock"):
             action = 'mark' if self.config.get("SponsorBlockAction") == 'mark' else 'remove'
             args += [f'--sponsorblock-{action}', 'all']
-        if self.config.get("DownloadArchive"):
-            args += ['--download-archive', str(ARCHIVE_PATH)]
+        # v1.3.0: --force-overwrites lets the user re-download the same URL
+        # repeatedly. Without it, yt-dlp refuses to overwrite an existing
+        # output file and prints "[download] Title.mp4 has already been
+        # downloaded" — same UX failure mode as the now-removed
+        # --download-archive feature.
+        args.append('--force-overwrites')
         rate = str(self.config.get("RateLimit", "")).strip().upper()
         if rate and re.match(r'^\d+[KMG]?$', rate):
             args += ['--limit-rate', rate]
@@ -1731,25 +1738,6 @@ class DownloadManager(QObject):
                 elif '[ExtractAudio]' in line or '[extract]' in line:
                     dl.status = "extracting"
                     self.progress_updated.emit()
-                elif ('has already been recorded in the archive' in line
-                      or 'already been downloaded' in line):
-                    # v1.2.3: yt-dlp's actual --download-archive skip line is
-                    # "[download] <id>: has already been recorded in the archive"
-                    # (the older "already been downloaded" string only fires
-                    # when the file is already present on disk without an
-                    # archive entry — both should surface the same way).
-                    # Previously neither pattern matched the archive case, so
-                    # the post-loop returncode==0 fallback flipped status to
-                    # "complete" with an empty filename — looked identical to
-                    # a real successful download.
-                    dl.progress = 100
-                    dl.status = "skipped"
-                    dl.error = (
-                        "Already in download archive — re-download skipped. "
-                        "Disable Download Archive in Settings or clear "
-                        "archive.txt to allow re-downloading."
-                    )
-                    self.progress_updated.emit()
 
                 # Filename detection
                 m = re.search(r'\[Merger\] Merging formats into "(.+)"', line)
@@ -1765,8 +1753,6 @@ class DownloadManager(QObject):
             if dl.status != "complete":
                 if dl.status == "cancelled":
                     dl.error = dl.error or "Cancelled by user."
-                elif dl.status == "skipped":
-                    pass  # Set above with a user-facing message; keep terminal.
                 elif proc.returncode == 0 or dl.progress >= 99:
                     dl.status = "complete"
                     dl.progress = 100
@@ -3048,13 +3034,11 @@ class MainWindow(QMainWindow):
         beh_l.setSpacing(8)
         self.cfg_autoupdate = QCheckBox("Update yt-dlp automatically when the server starts")
         self.cfg_autoupdate.setChecked(self.config.get("AutoUpdateYtDlp", True))
-        self.cfg_archive = QCheckBox("Skip videos already recorded in the download archive")
-        self.cfg_archive.setChecked(self.config.get("DownloadArchive", True))
         self.cfg_closetotray = QCheckBox("Close to the system tray instead of quitting")
         self.cfg_closetotray.setChecked(self.config.get("CloseToTray", True))
         self.cfg_startmin = QCheckBox("Start minimized to the tray")
         self.cfg_startmin.setChecked(self.config.get("StartMinimized", False))
-        for w in [self.cfg_autoupdate, self.cfg_archive, self.cfg_closetotray, self.cfg_startmin]:
+        for w in [self.cfg_autoupdate, self.cfg_closetotray, self.cfg_startmin]:
             beh_l.addWidget(w)
         layout.addWidget(beh_card)
 
@@ -3660,7 +3644,6 @@ class MainWindow(QMainWindow):
         self.config.set("RateLimit", rate)
         self.config.set("Proxy", proxy)
         self.config.set("AutoUpdateYtDlp", self.cfg_autoupdate.isChecked())
-        self.config.set("DownloadArchive", self.cfg_archive.isChecked())
         self.config.set("CloseToTray", self.cfg_closetotray.isChecked())
         self.config.set("StartMinimized", self.cfg_startmin.isChecked())
         self.config.save()
@@ -3994,6 +3977,14 @@ def main():
     # Module-scoped reference keeps the QTimer alive for the app lifetime.
     global _folder_picker_service
     _folder_picker_service = FolderPickerService()
+
+    # v1.3.0: archive feature is gone — sweep the leftover archive.txt
+    # so it isn't visible in INSTALL_DIR after the upgrade.
+    try:
+        if ARCHIVE_PATH.exists():
+            ARCHIVE_PATH.unlink()
+    except OSError:
+        pass
 
     start_min = start_minimized or config.get("StartMinimized", False)
     window = MainWindow(config, dl_manager, history, start_minimized=start_min)
