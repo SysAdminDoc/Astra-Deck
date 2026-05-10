@@ -1,18 +1,630 @@
 {
-  "extName": {
-    "message": "Astra Deck",
-    "description": "The extension name displayed in the browser UI."
+  "brandName": {
+    "message": "Astra Deck"
   },
-  "extDescription": {
-    "message": "Premium watch-page customization, split layouts, content controls, and local downloads for YouTube.",
-    "description": "The extension description shown in the browser's extension management page."
+  "clearFilterAria": {
+    "message": "Clear quick toggle filter"
+  },
+  "clearFilterBtn": {
+    "message": "Clear Filter"
+  },
+  "clearLogMessage": {
+    "message": "This removes all recorded diagnostic events from extension storage."
+  },
+  "clearLogTitle": {
+    "message": "Clear diagnostic log?"
+  },
+  "closeBtnAria": {
+    "message": "Close"
+  },
+  "confirmCancel": {
+    "message": "Cancel"
+  },
+  "confirmContinue": {
+    "message": "Continue"
+  },
+  "confirmDestructiveEyebrow": {
+    "message": "Destructive action"
+  },
+  "confirmEyebrow": {
+    "message": "Confirm"
+  },
+  "contextNoteAnyTab": {
+    "message": "Quick toggles sync once a YouTube tab is open."
+  },
+  "contextNoteInlinePanel": {
+    "message": "Click Open Full Settings to launch the in-page workspace on this tab."
+  },
+  "contextNoteLaunch": {
+    "message": "Full settings live in the in-page workspace on watchable YouTube tabs."
+  },
+  "contextStateAnyTab": {
+    "message": "Any Tab"
+  },
+  "contextStateAriaLabel": {
+    "message": "Tab context"
+  },
+  "contextStateLocal": {
+    "message": "Local"
+  },
+  "contextStateYouTube": {
+    "message": "YouTube"
+  },
+  "controlPlural": {
+    "message": "controls"
+  },
+  "controlSingular": {
+    "message": "control"
+  },
+  "dataMgmtAria": {
+    "message": "Data management"
+  },
+  "dlPopupAria": {
+    "message": "Download options"
+  },
+  "dlPopupChange": {
+    "message": "Change"
+  },
+  "dlPopupChangeAria": {
+    "message": "Choose a download folder"
+  },
+  "dlPopupCtaAudio": {
+    "message": "Download audio"
+  },
+  "dlPopupCtaAudioAriaTpl": {
+    "message": "Download audio as …"
+  },
+  "dlPopupCtaVideo": {
+    "message": "Download video"
+  },
+  "dlPopupCtaVideoAriaTpl": {
+    "message": "Download video as … at …"
+  },
+  "dlPopupDefault": {
+    "message": "Default"
+  },
+  "dlPopupDownloaderOffline": {
+    "message": "Downloader not running"
+  },
+  "dlPopupFormat": {
+    "message": "Format"
+  },
+  "dlPopupLoading": {
+    "message": "Loading…"
+  },
+  "dlPopupPickerUnavailable": {
+    "message": "Folder picker unavailable"
+  },
+  "dlPopupPicking": {
+    "message": "Picking…"
+  },
+  "dlPopupQuality": {
+    "message": "Quality"
+  },
+  "dlPopupReset": {
+    "message": "Reset"
+  },
+  "dlPopupResetAria": {
+    "message": "Reset to default download folder"
+  },
+  "dlPopupSaveTo": {
+    "message": "Save to"
+  },
+  "dlPopupTabAudioOnly": {
+    "message": "Audio only"
+  },
+  "dlPopupTabVideo": {
+    "message": "Video"
+  },
+  "dlPopupTitle": {
+    "message": "Download options"
+  },
+  "dlPopupTypeAria": {
+    "message": "Download type"
+  },
+  "dlProgressActiveEtaTpl": {
+    "message": "…% complete. … remaining."
+  },
+  "dlProgressActiveTpl": {
+    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+  },
+  "dlProgressAriaAudio": {
+    "message": "Audio download progress"
+  },
+  "dlProgressAriaVideo": {
+    "message": "Video download progress"
+  },
+  "dlProgressBadgeAudio": {
+    "message": "Audio Download"
+  },
+  "dlProgressBadgeVideo": {
+    "message": "Video Download"
+  },
+  "dlProgressCompleteCopy": {
+    "message": "The local downloader finished successfully."
+  },
+  "dlProgressConnectAudio": {
+    "message": "Connecting to the local audio downloader."
+  },
+  "dlProgressConnectVideo": {
+    "message": "Connecting to the local video downloader."
+  },
+  "dlProgressDismissAria": {
+    "message": "Dismiss download progress"
+  },
+  "dlProgressEtaPrefix": {
+    "message": "ETA"
+  },
+  "dlProgressFailureDefault": {
+    "message": "Local downloader failed"
+  },
+  "dlProgressInProgress": {
+    "message": "In progress"
+  },
+  "dlProgressLocal": {
+    "message": "Local"
+  },
+  "dlProgressLostCopy": {
+    "message": "Astra Deck lost contact with the local downloader. Choose Repair downloader to recover."
+  },
+  "dlProgressLostTitle": {
+    "message": "Connection to downloader lost"
+  },
+  "dlProgressLostToast": {
+    "message": "Lost contact with the local downloader."
+  },
+  "dlProgressPreparing": {
+    "message": "Preparing download…"
+  },
+  "dlProgressQueue": {
+    "message": "Queue"
+  },
+  "dlProgressReady": {
+    "message": "Ready"
+  },
+  "dlProgressReconnectingCopy": {
+    "message": "Momentary hiccup with the local downloader — retrying automatically."
+  },
+  "dlProgressSkippedDefault": {
+    "message": "Already downloaded — skipped."
+  },
+  "dlProgressStateAlreadyDownloaded": {
+    "message": "Already Downloaded"
+  },
+  "dlProgressStateComplete": {
+    "message": "Complete"
+  },
+  "dlProgressStateDownloading": {
+    "message": "Downloading"
+  },
+  "dlProgressStateError": {
+    "message": "Error"
+  },
+  "dlProgressStateFailed": {
+    "message": "Failed"
+  },
+  "dlProgressStateFinishing": {
+    "message": "Finishing"
+  },
+  "dlProgressStateLost": {
+    "message": "Connection Lost"
+  },
+  "dlProgressStateNeedsAttention": {
+    "message": "Needs Attention"
+  },
+  "dlProgressStatePreparing": {
+    "message": "Preparing"
+  },
+  "dlProgressStateReconnecting": {
+    "message": "Reconnecting"
+  },
+  "dlProgressStateSkipped": {
+    "message": "Skipped"
+  },
+  "dlProgressWaiting": {
+    "message": "Waiting"
+  },
+  "dlProgressWrappingUp": {
+    "message": "Wrapping up"
+  },
+  "dlRepairAria": {
+    "message": "Open local downloader repair steps"
+  },
+  "dlRepairBtn": {
+    "message": "Repair downloader"
+  },
+  "emptyNoMatch": {
+    "message": "No quick toggles match"
+  },
+  "emptyNoMatchHint": {
+    "message": "Clear the filter to see every quick control again."
+  },
+  "emptyNoToggles": {
+    "message": "No quick toggles available"
+  },
+  "emptyNoTogglesHint": {
+    "message": "The popup could not load any quick controls right now."
+  },
+  "enabledLabel": {
+    "message": "enabled"
+  },
+  "exportBtn": {
+    "message": "Export"
   },
   "extActionTitle": {
     "message": "Astra Deck",
     "description": "Tooltip text for the toolbar action button."
   },
+  "extDescription": {
+    "message": "Premium watch-page customization, split layouts, content controls, and local downloads for YouTube.",
+    "description": "The extension description shown in the browser's extension management page."
+  },
+  "extName": {
+    "message": "Astra Deck",
+    "description": "The extension name displayed in the browser UI."
+  },
+  "filterTogglesLabel": {
+    "message": "Filter quick toggles"
+  },
+  "filterTogglesPlaceholder": {
+    "message": "Filter toggles…"
+  },
+  "groupQuickControls": {
+    "message": "Quick Controls"
+  },
+  "healthClearAria": {
+    "message": "Clear diagnostic log"
+  },
+  "healthClearBtn": {
+    "message": "Clear"
+  },
+  "healthCopyAria": {
+    "message": "Copy diagnostic details"
+  },
+  "healthCopyBtn": {
+    "message": "Copy"
+  },
+  "healthEventPlural": {
+    "message": "events"
+  },
+  "healthEventSingular": {
+    "message": "event"
+  },
+  "healthFallbackPrefix": {
+    "message": "TrustedTypes fallback active"
+  },
+  "healthTitle": {
+    "message": "Diagnostics"
+  },
+  "importBtn": {
+    "message": "Import"
+  },
+  "languageAuto": {
+    "message": "Auto (browser default)"
+  },
+  "languageEn": {
+    "message": "English"
+  },
+  "languageEyebrow": {
+    "message": "Language"
+  },
+  "languageSelectLabel": {
+    "message": "Display language"
+  },
+  "languageTitle": {
+    "message": "Display language"
+  },
+  "languageZhCn": {
+    "message": "简体中文 (Simplified Chinese)"
+  },
+  "loadingState": {
+    "message": "Loading"
+  },
+  "openFullSettings": {
+    "message": "Open Full Settings"
+  },
+  "openYouTube": {
+    "message": "Open YouTube"
+  },
+  "panelCloseAria": {
+    "message": "Close settings"
+  },
+  "panelCloseTitle": {
+    "message": "Close (Esc)"
+  },
+  "panelIntro": {
+    "message": "Search, tune, and apply YouTube controls live without leaving the page."
+  },
+  "panelLiveApplyBadge": {
+    "message": "Live apply"
+  },
+  "panelSearchAria": {
+    "message": "Search settings"
+  },
+  "panelSearchClearAria": {
+    "message": "Clear settings search"
+  },
+  "panelSearchClearTitle": {
+    "message": "Clear search"
+  },
+  "panelSearchPlaceholder": {
+    "message": "Search settings…"
+  },
+  "panelSidebarAria": {
+    "message": "Settings categories"
+  },
+  "panelTitle": {
+    "message": "Settings"
+  },
+  "playerDownloadAria": {
+    "message": "Download video"
+  },
+  "playerDownloadTitle": {
+    "message": "Download Video"
+  },
+  "playerGearAriaTpl": {
+    "message": "Open … settings"
+  },
+  "playerGearTitleTpl": {
+    "message": "… Settings"
+  },
+  "popupTitle": {
+    "message": "Astra Deck"
+  },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Feed Cleanup"
+  },
+  "qtGroup_Focus": {
+    "message": "Focus"
+  },
+  "qtGroup_Playback": {
+    "message": "Playback"
+  },
+  "qtGroup_Utilities": {
+    "message": "Utilities"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Watch Flow"
+  },
+  "qt_autoTheaterMode_desc": {
+    "message": "Default to theater view"
+  },
+  "qt_autoTheaterMode_name": {
+    "message": "Auto Theater"
+  },
+  "qt_blueLightFilter_desc": {
+    "message": "Warmer colors"
+  },
+  "qt_blueLightFilter_name": {
+    "message": "Blue-Light Filter"
+  },
+  "qt_cleanShareUrls_desc": {
+    "message": "Strip tracking params"
+  },
+  "qt_cleanShareUrls_name": {
+    "message": "Clean URLs"
+  },
+  "qt_commentSearch_desc": {
+    "message": "Filter comments on watch pages"
+  },
+  "qt_commentSearch_name": {
+    "message": "Comment Search"
+  },
+  "qt_deArrow_desc": {
+    "message": "Better titles & thumbnails"
+  },
+  "qt_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "qt_debugMode_desc": {
+    "message": "Verbose console logging"
+  },
+  "qt_debugMode_name": {
+    "message": "Debug Mode"
+  },
+  "qt_digitalWellbeing_desc": {
+    "message": "Break reminders + daily cap"
+  },
+  "qt_digitalWellbeing_name": {
+    "message": "Digital Wellbeing"
+  },
+  "qt_disableAutoplayNext_desc": {
+    "message": "Stop auto-advance to next"
+  },
+  "qt_disableAutoplayNext_name": {
+    "message": "No Autoplay"
+  },
+  "qt_disableInfiniteScroll_desc": {
+    "message": "Stop infinite scroll"
+  },
+  "qt_disableInfiniteScroll_name": {
+    "message": "Cap Scroll"
+  },
+  "qt_hideRelatedVideos_desc": {
+    "message": "No related panel on watch"
+  },
+  "qt_hideRelatedVideos_name": {
+    "message": "Hide Related"
+  },
+  "qt_miniPlayerBar_desc": {
+    "message": "Floating bar on scroll"
+  },
+  "qt_miniPlayerBar_name": {
+    "message": "Mini Player Bar"
+  },
+  "qt_persistentSpeed_desc": {
+    "message": "Remember playback rate"
+  },
+  "qt_persistentSpeed_name": {
+    "message": "Persistent Speed"
+  },
+  "qt_removeAllShorts_desc": {
+    "message": "Remove Shorts from feeds"
+  },
+  "qt_removeAllShorts_name": {
+    "message": "Hide Shorts"
+  },
+  "qt_sponsorBlock_desc": {
+    "message": "Skip sponsored segments"
+  },
+  "qt_sponsorBlock_name": {
+    "message": "SponsorBlock"
+  },
+  "qt_transcriptViewer_desc": {
+    "message": "Clickable transcript + export"
+  },
+  "qt_transcriptViewer_name": {
+    "message": "Transcript Sidebar"
+  },
+  "quickTogglesAria": {
+    "message": "Quick toggles"
+  },
+  "quickTogglesEyebrow": {
+    "message": "Quick toggles"
+  },
+  "resetAllMessage": {
+    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
+  },
+  "resetAllTitle": {
+    "message": "Reset all local data?"
+  },
+  "resetBtn": {
+    "message": "Reset"
+  },
+  "resultsAllAvailableTpl": {
+    "message": "… quick controls are available in this popup"
+  },
+  "resultsMatchTpl": {
+    "message": "… of … … match this filter"
+  },
+  "resultsMatching": {
+    "message": "matching"
+  },
+  "speedBtnAriaTpl": {
+    "message": "Default playback speed …. Click to change."
+  },
+  "speedBtnTitleTpl": {
+    "message": "Default playback speed: … — applies to every video"
+  },
+  "speedPopupAria": {
+    "message": "Default playback speed"
+  },
+  "speedPopupHeader": {
+    "message": "Default speed"
+  },
+  "speedPopupSub": {
+    "message": "Applies to every video until changed."
+  },
+  "statBlocked": {
+    "message": "Blocked"
+  },
+  "statBookmarks": {
+    "message": "Bookmarks"
+  },
+  "statHidden": {
+    "message": "Hidden"
+  },
+  "statKeys": {
+    "message": "Keys"
+  },
+  "statStorage": {
+    "message": "Storage"
+  },
+  "statusAllDataCleared": {
+    "message": "All data cleared."
+  },
+  "statusBackupExported": {
+    "message": "Backup exported."
+  },
+  "statusBackupImported": {
+    "message": "Backup imported."
+  },
+  "statusClipboardUnavailable": {
+    "message": "Clipboard unavailable — see browser console."
+  },
+  "statusDiagClearFail": {
+    "message": "Could not clear log"
+  },
+  "statusDiagCleared": {
+    "message": "Diagnostic log cleared."
+  },
+  "statusDiagCopied": {
+    "message": "Diagnostic copied to clipboard."
+  },
+  "statusExportFail": {
+    "message": "Export failed"
+  },
+  "statusImportFail": {
+    "message": "Import failed"
+  },
+  "statusOpenWorkspaceFail": {
+    "message": "Could not open the full workspace. Try again."
+  },
+  "statusQuickCtrlLoadFail": {
+    "message": "Quick controls could not be loaded. Try reopening the popup."
+  },
+  "statusResetFail": {
+    "message": "Reset failed"
+  },
+  "statusStorageReadFail": {
+    "message": "Storage read failed"
+  },
+  "storageStatsAriaLabel": {
+    "message": "Storage statistics"
+  },
+  "toastDlCmdCopied": {
+    "message": "Fallback install command copied. Use it only if you cannot run the downloaded setup file."
+  },
+  "toastDlInProgress": {
+    "message": "A download is already in progress."
+  },
+  "toastDlInstallPrompt": {
+    "message": "Install the local downloader to enable downloads."
+  },
+  "toastDlReady": {
+    "message": "Local downloader is ready."
+  },
+  "toastDlRequestFailed": {
+    "message": "Local downloader request failed."
+  },
+  "toastDlRunning": {
+    "message": "Astra Downloader is running!"
+  },
+  "toastDlStarted": {
+    "message": "Astra Downloader started!"
+  },
+  "toastDlStarting": {
+    "message": "Starting Astra Downloader…"
+  },
+  "toastDlStopped": {
+    "message": "Local downloader stopped. Starting it again…"
+  },
   "toggleControlCenterDesc": {
     "message": "Toggle the Astra Deck control center on the current YouTube tab",
     "description": "Description for the keyboard command that opens the Astra Deck control center."
+  },
+  "toggleStateOff": {
+    "message": "Disabled"
+  },
+  "toggleStateOffLower": {
+    "message": "disabled"
+  },
+  "toggleStateOn": {
+    "message": "Enabled"
+  },
+  "toggleStateOnLower": {
+    "message": "enabled"
+  },
+  "toggleUpdateFailTpl": {
+    "message": "Couldn't update …. Try again."
+  },
+  "workspaceEyebrow": {
+    "message": "Settings workspace"
+  },
+  "workspaceSupport": {
+    "message": "Changes sync to open YouTube tabs automatically."
+  },
+  "workspaceTitle": {
+    "message": "Controls and local data"
   }
 }

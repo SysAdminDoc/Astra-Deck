@@ -67,6 +67,91 @@ function createGroupIcon(groupName) {
     return svg;
 }
 
+// ── i18n (Phase A) ──
+// Resolves user-facing strings via chrome.i18n by default. A manual
+// override (popup language dropdown) writes to chrome.storage.local
+// `_localeOverride`; when set, we fetch that locale's bundled
+// messages.json once and serve from it. English literals stay inline
+// at every call site as the fallback so the source remains
+// self-documenting and the userscript build (no chrome.i18n) keeps
+// working.
+const I18N = { override: null, map: null, ready: false };
+
+async function initI18n() {
+    try {
+        const items = await new Promise((resolve) =>
+            chrome.storage.local.get(['_localeOverride'], (i) => resolve(i || {})));
+        const locale = (items._localeOverride || '').trim();
+        if (!locale || locale === 'auto') { I18N.ready = true; return; }
+        const url = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
+        const resp = await fetch(url);
+        if (!resp.ok) { I18N.ready = true; return; }
+        const json = await resp.json();
+        const flat = {};
+        for (const [k, v] of Object.entries(json)) {
+            if (v && typeof v === 'object' && typeof v.message === 'string') flat[k] = v.message;
+        }
+        I18N.override = locale;
+        I18N.map = flat;
+        I18N.ready = true;
+    } catch (_) { I18N.ready = true; }
+}
+
+function t(key, fallback) {
+    try {
+        if (I18N.map && Object.prototype.hasOwnProperty.call(I18N.map, key)) {
+            const m = I18N.map[key];
+            if (m) return m;
+        }
+        if (chrome?.i18n?.getMessage) {
+            const m = chrome.i18n.getMessage(key);
+            if (m) return m;
+        }
+    } catch (_) { /* reason: i18n is best-effort */ }
+    return (fallback != null) ? fallback : key;
+}
+
+function initLanguageDropdown() {
+    const sel = document.getElementById('languageSelect');
+    if (!sel) return;
+    sel.value = I18N.override || 'auto';
+    sel.addEventListener('change', async () => {
+        const locale = sel.value || 'auto';
+        try {
+            await new Promise((resolve) =>
+                chrome.storage.local.set({ _localeOverride: locale }, resolve));
+        } catch (_) { /* reason: storage best-effort */ }
+        // Reload the popup so every cached string reflects the new locale.
+        // Cheaper than re-rendering every dynamic surface manually, and
+        // matches user expectation when changing app language.
+        location.reload();
+    });
+}
+
+function applyI18n(root = document) {
+    // Walk every element with data-i18n* attributes and populate text /
+    // title / aria-label / placeholder. Falls back to the existing inline
+    // text so an element without a translated key still reads English.
+    root.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (!key) return;
+        const fallback = el.textContent;
+        const v = t(key, fallback);
+        if (v !== fallback) el.textContent = v;
+    });
+    const ATTR_KEYS = ['title', 'placeholder', 'aria-label'];
+    ATTR_KEYS.forEach((attr) => {
+        const dataAttr = `data-i18n-attr-${attr}`;
+        root.querySelectorAll(`[${dataAttr}]`).forEach((el) => {
+            const key = el.getAttribute(dataAttr);
+            if (!key) return;
+            const fallback = el.getAttribute(attr) || '';
+            const v = t(key, fallback);
+            if (v !== fallback) el.setAttribute(attr, v);
+        });
+    });
+}
+
 const BRAND_NAME = 'Astra Deck';
 const SETTINGS_STORAGE_KEY = 'ytSuiteSettings';
 const PANEL_OPEN_MESSAGE = 'YTKIT_OPEN_PANEL';
@@ -415,24 +500,24 @@ function getTabContext(tab) {
     const url = tab?.url || '';
     if (isSupportedInlinePanelUrl(url)) {
         return {
-            label: 'YouTube',
-            note: 'Click Open Full Settings to launch the in-page workspace on this tab.',
-            openLabel: 'Open Full Settings',
+            label: t('contextStateYouTube', 'YouTube'),
+            note: t('contextNoteInlinePanel', 'Click Open Full Settings to launch the in-page workspace on this tab.'),
+            openLabel: t('openFullSettings', 'Open Full Settings'),
             mode: 'inline-panel'
         };
     }
     if (isAnyYouTubeUrl(url)) {
         return {
-            label: 'YouTube',
-            note: 'Full settings live in the in-page workspace on watchable YouTube tabs.',
-            openLabel: 'Open YouTube',
+            label: t('contextStateYouTube', 'YouTube'),
+            note: t('contextNoteLaunch', 'Full settings live in the in-page workspace on watchable YouTube tabs.'),
+            openLabel: t('openYouTube', 'Open YouTube'),
             mode: 'launch'
         };
     }
     return {
-        label: 'Any Tab',
-        note: 'Quick toggles sync once a YouTube tab is open.',
-        openLabel: 'Open YouTube',
+        label: t('contextStateAnyTab', 'Any Tab'),
+        note: t('contextNoteAnyTab', 'Quick toggles sync once a YouTube tab is open.'),
+        openLabel: t('openYouTube', 'Open YouTube'),
         mode: 'launch'
     };
 }
@@ -545,21 +630,25 @@ function updateSearchState() {
 
 function updateResultsState(totalCount, visibleCount, filter) {
     const normalizedFilter = (filter || '').trim();
-    const totalLabel = `${totalCount} ${totalCount === 1 ? 'control' : 'controls'}`;
+    const controlsWord = totalCount === 1 ? t('controlSingular', 'control') : t('controlPlural', 'controls');
+    const totalLabel = `${totalCount} ${controlsWord}`;
     if (!normalizedFilter) {
         resultsState.textContent = totalLabel;
-        resultsState.title = `${totalCount} quick controls are available in this popup`;
+        resultsState.title = t('resultsAllAvailableTpl', `${totalCount} quick controls are available in this popup`).replace('{count}', String(totalCount));
         return;
     }
-    resultsState.textContent = `${visibleCount} matching`;
-    resultsState.title = `${visibleCount} of ${totalCount} ${totalCount === 1 ? 'control' : 'controls'} match this filter`;
+    resultsState.textContent = `${visibleCount} ${t('resultsMatching', 'matching')}`;
+    resultsState.title = t('resultsMatchTpl', `${visibleCount} of ${totalCount} ${controlsWord} match this filter`)
+        .replace('{visible}', String(visibleCount))
+        .replace('{total}', String(totalCount))
+        .replace('{controls}', controlsWord);
 }
 
 // ── Toggle render ──
 
 function renderLoading() {
     list.textContent = '';
-    resultsState.textContent = 'Loading';
+    resultsState.textContent = t('loadingState', 'Loading');
     resultsState.removeAttribute('title');
     for (let index = 0; index < 5; index += 1) {
         const skeleton = document.createElement('div');
@@ -582,19 +671,21 @@ function renderEmpty(filter) {
     empty.className = 'empty';
     const title = document.createElement('span');
     title.className = 'empty-title';
-    title.textContent = filter ? 'No quick toggles match' : 'No quick toggles available';
+    title.textContent = filter
+        ? t('emptyNoMatch', 'No quick toggles match')
+        : t('emptyNoToggles', 'No quick toggles available');
     const copy = document.createElement('span');
     copy.className = 'empty-copy';
     copy.textContent = filter
-        ? 'Clear the filter to see every quick control again.'
-        : 'The popup could not load any quick controls right now.';
+        ? t('emptyNoMatchHint', 'Clear the filter to see every quick control again.')
+        : t('emptyNoTogglesHint', 'The popup could not load any quick controls right now.');
     empty.appendChild(title);
     empty.appendChild(copy);
     if (filter) {
         const action = document.createElement('button');
         action.type = 'button';
         action.className = 'empty-action';
-        action.textContent = 'Clear Filter';
+        action.textContent = t('clearFilterBtn', 'Clear Filter');
         action.addEventListener('click', () => {
             q.value = '';
             updateSearchState();
@@ -633,13 +724,21 @@ async function broadcast(key, value) {
 function render(settings, filter) {
     const term = (filter || '').toLowerCase().trim();
     const totalCount = QUICK_TOGGLES.length;
-    const items = QUICK_TOGGLES.filter((t) =>
-        !term
-            || t.name.toLowerCase().includes(term)
-            || t.desc.toLowerCase().includes(term)
-            || t.key.toLowerCase().includes(term)
-            || t.group.toLowerCase().includes(term)
-    );
+    const items = QUICK_TOGGLES.filter((item) => {
+        if (!term) return true;
+        // Match against both the source English text AND the translated
+        // text so a user filtering in either language finds the toggle.
+        const tName = t(`qt_${item.key}_name`, item.name);
+        const tDesc = t(`qt_${item.key}_desc`, item.desc);
+        const tGroup = t(`qtGroup_${item.group.replace(/\W+/g, '_')}`, item.group);
+        return item.name.toLowerCase().includes(term)
+            || item.desc.toLowerCase().includes(term)
+            || item.key.toLowerCase().includes(term)
+            || item.group.toLowerCase().includes(term)
+            || tName.toLowerCase().includes(term)
+            || tDesc.toLowerCase().includes(term)
+            || tGroup.toLowerCase().includes(term);
+    });
     list.textContent = '';
     updateSummary(settings);
     updateSearchState();
@@ -651,7 +750,7 @@ function render(settings, filter) {
 
     const groupedItems = new Map();
     for (const item of items) {
-        const groupName = item.group || 'Quick Controls';
+        const groupName = item.group || t('groupQuickControls', 'Quick Controls');
         if (!groupedItems.has(groupName)) groupedItems.set(groupName, []);
         groupedItems.get(groupName).push(item);
     }
@@ -675,7 +774,7 @@ function render(settings, filter) {
         const groupTitle = document.createElement('h3');
         groupTitle.className = 'toggle-group-title';
         groupTitle.id = sectionId;
-        groupTitle.textContent = groupName;
+        groupTitle.textContent = t(`qtGroup_${groupName.replace(/\W+/g, '_')}`, groupName);
         groupTitleWrap.appendChild(groupTitle);
 
         const groupCount = document.createElement('span');
@@ -686,24 +785,27 @@ function render(settings, filter) {
         groupHead.appendChild(groupCount);
         section.appendChild(groupHead);
 
-        for (const t of groupItems) {
-            const on = Boolean(settings[t.key]);
+        for (const item of groupItems) {
+            const on = Boolean(settings[item.key]);
+            const tName = t(`qt_${item.key}_name`, item.name);
+            const tDesc = t(`qt_${item.key}_desc`, item.desc);
+            const stateLabel = on ? t('toggleStateOn', 'Enabled') : t('toggleStateOff', 'Disabled');
             const row = document.createElement('button');
             row.type = 'button';
             row.className = 'toggle' + (on ? ' on' : '');
-            row.dataset.key = t.key;
+            row.dataset.key = item.key;
             row.setAttribute('role', 'switch');
             row.setAttribute('aria-checked', String(on));
-            row.setAttribute('aria-label', `${t.name}. ${t.desc}. ${on ? 'Enabled' : 'Disabled'}.`);
+            row.setAttribute('aria-label', `${tName}. ${tDesc}. ${stateLabel}.`);
 
             const label = document.createElement('div');
             label.className = 'label';
             const name = document.createElement('div');
             name.className = 'name';
-            name.textContent = t.name;
+            name.textContent = tName;
             const desc = document.createElement('div');
             desc.className = 'desc';
-            desc.textContent = t.desc;
+            desc.textContent = tDesc;
             label.appendChild(name);
             label.appendChild(desc);
 
@@ -715,14 +817,14 @@ function render(settings, filter) {
             row.addEventListener('click', async () => {
                 row.disabled = true;
                 try {
-                    const next = !Boolean(popupState.settings[t.key]);
-                    await writeSetting(t.key, next);
+                    const next = !Boolean(popupState.settings[item.key]);
+                    await writeSetting(item.key, next);
                     render(popupState.settings, q.value);
-                    void broadcast(t.key, next);
-                    showStatus(`${t.name} ${next ? 'enabled' : 'disabled'}.`, 'success');
+                    void broadcast(item.key, next);
+                    showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
                 } catch (error) {
                     console.warn('[Astra Deck popup] Failed to toggle setting:', error);
-                    showStatus(`Couldn't update ${t.name}. Try again.`, 'error', 4200);
+                    showStatus(t('toggleUpdateFailTpl', `Couldn't update ${tName}. Try again.`).replace('{name}', tName), 'error', 4200);
                 } finally {
                     row.disabled = false;
                 }
@@ -789,7 +891,7 @@ async function renderStorageInfo() {
         statBlocked.textContent = '0';
         statBookmarks.textContent = '0';
         renderHealthBanner(null);
-        showStatus('Storage read failed: ' + error.message, 'error', 4200);
+        showStatus(t('statusStorageReadFail', 'Storage read failed') + ': ' + error.message, 'error', 4200);
     }
 }
 
@@ -801,9 +903,10 @@ function renderHealthBanner(diagnostics) {
         healthCopyPayload = '';
         return;
     }
-    const countLabel = tt.count === 1 ? '1 event' : tt.count + ' events';
+    const eventWord = tt.count === 1 ? t('healthEventSingular', 'event') : t('healthEventPlural', 'events');
+    const countLabel = tt.count + ' ' + eventWord;
     // Message was already URL-redacted at the ytkit.js capture site.
-    healthDetail.textContent = 'TrustedTypes fallback active — ' + countLabel + '. ' + tt.latestMessage;
+    healthDetail.textContent = t('healthFallbackPrefix', 'TrustedTypes fallback active') + ' — ' + countLabel + '. ' + tt.latestMessage;
     healthBanner.hidden = false;
     const tsText = tt.latestTs ? new Date(tt.latestTs).toISOString() : 'unknown-time';
     healthCopyPayload =
@@ -818,9 +921,9 @@ if (healthCopyBtn) {
         if (!healthCopyPayload) return;
         try {
             await navigator.clipboard.writeText(healthCopyPayload);
-            showStatus('Diagnostic copied to clipboard.', 'ok', 2400);
+            showStatus(t('statusDiagCopied', 'Diagnostic copied to clipboard.'), 'ok', 2400);
         } catch (_) {
-            showStatus('Clipboard unavailable — see browser console.', 'error', 3600);
+            showStatus(t('statusClipboardUnavailable', 'Clipboard unavailable — see browser console.'), 'error', 3600);
             console.error('[Astra Deck popup] health-copy payload:\n' + healthCopyPayload);
         }
     });
@@ -828,10 +931,10 @@ if (healthCopyBtn) {
 
 async function clearDiagnosticLog() {
     const confirmed = await confirmAction({
-        eyebrow: 'Confirm',
-        title: 'Clear diagnostic log?',
-        message: 'This removes all recorded diagnostic events from extension storage.',
-        confirmLabel: 'Clear',
+        eyebrow: t('confirmEyebrow', 'Confirm'),
+        title: t('clearLogTitle', 'Clear diagnostic log?'),
+        message: t('clearLogMessage', 'This removes all recorded diagnostic events from extension storage.'),
+        confirmLabel: t('healthClearBtn', 'Clear'),
         tone: 'default'
     });
     if (!confirmed) return;
@@ -844,9 +947,9 @@ async function clearDiagnosticLog() {
         delete settings._errors;
         await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
         renderHealthBanner(null);
-        showStatus('Diagnostic log cleared.', 'success', 2400);
+        showStatus(t('statusDiagCleared', 'Diagnostic log cleared.'), 'success', 2400);
     } catch (error) {
-        showStatus('Could not clear log: ' + error.message, 'error', 4200);
+        showStatus(t('statusDiagClearFail', 'Could not clear log') + ': ' + error.message, 'error', 4200);
     }
 }
 
@@ -970,13 +1073,16 @@ function buildExportData(allStorage) {
 // ── Confirmation dialog ──
 
 function confirmAction({
-    eyebrow = 'Confirm',
+    eyebrow,
     title,
     message,
-    confirmLabel = 'Continue',
-    cancelLabel = 'Cancel',
+    confirmLabel,
+    cancelLabel,
     tone = 'default'
 }) {
+    if (eyebrow == null) eyebrow = t('confirmEyebrow', 'Confirm');
+    if (confirmLabel == null) confirmLabel = t('confirmContinue', 'Continue');
+    if (cancelLabel == null) cancelLabel = t('confirmCancel', 'Cancel');
     const shell = $('#confirm-shell');
     const dialog = $('#confirm-dialog');
     const eyebrowEl = $('#confirm-eyebrow');
@@ -1052,9 +1158,9 @@ async function exportSettings() {
             a.click();
         }
         setTimeout(() => URL.revokeObjectURL(url), 60000);
-        showStatus('Backup exported.', 'success');
+        showStatus(t('statusBackupExported', 'Backup exported.'), 'success');
     } catch (error) {
-        showStatus('Export failed: ' + error.message, 'error', 4200);
+        showStatus(t('statusExportFail', 'Export failed') + ': ' + error.message, 'error', 4200);
     } finally {
         exportButton.removeAttribute('aria-busy');
         exportButton.disabled = false;
@@ -1113,9 +1219,9 @@ async function importSettings(file) {
         for (const key of Object.keys(writes[STORAGE_KEYS.settings] || {})) {
             void broadcast(key, writes[STORAGE_KEYS.settings][key]);
         }
-        showStatus('Backup imported.', 'success');
+        showStatus(t('statusBackupImported', 'Backup imported.'), 'success');
     } catch (error) {
-        showStatus('Import failed: ' + error.message, 'error', 4200);
+        showStatus(t('statusImportFail', 'Import failed') + ': ' + error.message, 'error', 4200);
     } finally {
         importFileInput.value = '';
         importButton.removeAttribute('aria-busy');
@@ -1125,10 +1231,10 @@ async function importSettings(file) {
 
 async function resetAllData() {
     const confirmed = await confirmAction({
-        eyebrow: 'Destructive action',
-        title: 'Reset all local data?',
-        message: `This clears ${BRAND_NAME} settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage.`,
-        confirmLabel: 'Reset',
+        eyebrow: t('confirmDestructiveEyebrow', 'Destructive action'),
+        title: t('resetAllTitle', 'Reset all local data?'),
+        message: t('resetAllMessage', `This clears ${BRAND_NAME} settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage.`).replace('{brand}', BRAND_NAME),
+        confirmLabel: t('resetBtn', 'Reset'),
         tone: 'danger'
     });
     if (!confirmed) return;
@@ -1140,9 +1246,9 @@ async function resetAllData() {
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
-        showStatus('All data cleared.', 'success');
+        showStatus(t('statusAllDataCleared', 'All data cleared.'), 'success');
     } catch (error) {
-        showStatus('Reset failed: ' + error.message, 'error', 4200);
+        showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);
     } finally {
         resetButton.removeAttribute('aria-busy');
         resetButton.disabled = false;
@@ -1185,6 +1291,10 @@ function installWheelScrolling() {
 // ── Bootstrap ──
 
 (async () => {
+    await initI18n();
+    applyI18n();
+    initLanguageDropdown();
+
     installWheelScrolling();
     installPopupFocusManagement();
     renderLoading();
@@ -1204,7 +1314,7 @@ function installWheelScrolling() {
     } catch (error) {
         console.warn('[Astra Deck popup] Failed to load settings:', error);
         render({}, '');
-        showStatus('Quick controls could not be loaded. Try reopening the popup.', 'error', 5000);
+        showStatus(t('statusQuickCtrlLoadFail', 'Quick controls could not be loaded. Try reopening the popup.'), 'error', 5000);
     }
     focusInitialPopupControl();
 
@@ -1266,7 +1376,7 @@ function installWheelScrolling() {
             window.close();
         } catch (error) {
             console.warn('[Astra Deck popup] Failed to open the full workspace:', error);
-            showStatus('Could not open the full workspace. Try again.', 'error', 4200);
+            showStatus(t('statusOpenWorkspaceFail', 'Could not open the full workspace. Try again.'), 'error', 4200);
         }
     });
 

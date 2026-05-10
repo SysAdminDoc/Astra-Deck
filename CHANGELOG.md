@@ -4,6 +4,61 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [3.21.0] - Simplified Chinese + i18n foundation - 2026-05-10
+
+Resolves [#1](https://github.com/SysAdminDoc/Astra-Deck/issues/1).
+Adds Simplified Chinese as a first-class display language and lays
+the foundation for further locales by routing every high-traffic UI
+string through `chrome.i18n.getMessage()` with an inline English
+fallback.
+
+### Added
+- **Simplified Chinese (`zh_CN`) locale.** 208 translated keys
+  cover the popup, the in-page settings panel header + sidebar +
+  search, the download options popup, the download progress panel
+  (every state — preparing / downloading / merging / complete /
+  skipped / failed / lost), the speed-control popup, the player
+  chrome buttons, and every quick-toggle name + description in the
+  popup. Brand names ("Astra Deck", "Astra Downloader", "DeArrow",
+  "SponsorBlock") and technical formats ("MP4", "M4A", "VP9") stay
+  in English by convention.
+- **Language dropdown in the popup.** New "Display language"
+  section between data management and quick toggles: Auto (browser
+  default) / English / 简体中文. Selection writes
+  `_localeOverride` to `chrome.storage.local`; the popup reloads to
+  apply, and the in-page UI picks up the override on next page
+  navigation.
+- **`t(key, fallback)` helper** in both `extension/popup.js` and
+  `extension/ytkit.js`. Resolves the manual locale override first,
+  falls back to `chrome.i18n.getMessage(key)`, then to the inline
+  English literal so the source remains self-documenting and the
+  userscript build (no `chrome.i18n`) keeps working.
+- **`scripts/extract-i18n-keys.js`** — extractor that walks the
+  source for `t('key', 'fallback')` references and HTML
+  `data-i18n` attributes, emitting a normalized `messages.json`
+  shape. Used to bootstrap the en locale and as the contract for
+  future locale additions.
+
+### Changed
+- **`popup.html` strings now declarative via `data-i18n`.** Every
+  static label, button, placeholder, and aria-label carries a
+  `data-i18n="key"` (or `data-i18n-attr-X="key"`) attribute that
+  `applyI18n()` resolves on popup boot.
+- **`extension/_locales/en/messages.json` rebuilt to 208 keys** (was
+  4). Manifest keys (extName, extDescription, extActionTitle,
+  toggleControlCenterDesc) preserved with their `description`
+  fields; everything else regenerated from the source.
+
+### Coverage scope
+This pass covers ~208 keys across the most user-visible surfaces:
+popup, settings panel chrome, download UI, player chrome, and the
+quick-toggle catalog. The 150+ feature-definition entries in
+`ytkit.js` (each feature's name + description as shown in the
+settings panel body) are still hardcoded English — those will
+migrate in a follow-up Phase A.2 to keep this PR reviewable.
+
+---
+
 ## [3.20.9] - Player speed control - 2026-05-10
 
 ### Added
