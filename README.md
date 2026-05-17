@@ -5,14 +5,14 @@
 <h1 align="center">Astra Deck</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.20.5-ff4e45?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.22.0-ff4e45?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/manifest-V3-blue?style=flat-square" alt="Manifest V3">
   <img src="https://img.shields.io/badge/YouTube-Desktop-ff0000?style=flat-square&logo=youtube&logoColor=white" alt="YouTube">
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 150+ features — theater split, DeArrow, downloads with format/quality controls, transcript viewer, video/channel hiding, and deep playback customization.
+  Premium YouTube enhancement extension for Chrome and Firefox with 150+ features — theater split, DeArrow, downloads with format/quality controls, transcript viewer, video/channel hiding, deep playback customization, player speed control chip, reaction spammer (opt-in), and 10 bundled UI locales.
 </p>
 
 <p align="center">
@@ -95,6 +95,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Custom Progress Bar Color (color picker) | Off |
 | Remaining Time Display / Time in Tab Title | Off |
 | A-B Loop / Fine Speed Control / Persistent Speed / Per-Channel Speed | Off |
+| Speed Control Chip (in-chrome popup: 0.25× → 3×, 10 presets) | On |
 | Codec Selector (H.264/VP9/AV1) / Force Standard FPS | Off |
 | Video Screenshot / Video Zoom (Ctrl+scroll, up to 5x) | Off |
 | Cinema Ambient Glow / Nyan Cat Progress Bar | Off |
@@ -162,6 +163,7 @@ Astra Downloader's `/health` endpoint will surface `poTokenProvider: { ok, port,
 | Configurable element hiding (header, emoji, super chats, polls, etc.) | On |
 | Chat Keyword Filter | Off |
 | Adaptive Live Layout | Off |
+| Reaction Spammer — opt-in floating panel, randomized emoji loop (500 ms floor) | Off |
 
 ### Automation & Behavior
 
@@ -251,7 +253,34 @@ document_idle
 - Response body capped at 10 MB, fetch timeout capped at 60s
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
 - Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs
-- Explicit CSP: `script-src 'self'; object-src 'self'`
+- Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented host_permissions (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
+
+---
+
+## Languages
+
+Astra Deck ships with 10 bundled UI locales:
+
+| Code | Language |
+|------|----------|
+| `en` | English (default) |
+| `de` | Deutsch |
+| `es` | Español |
+| `fr` | Français |
+| `it` | Italiano |
+| `ja` | 日本語 |
+| `ko` | 한국어 |
+| `pt_BR` | Português (Brasil) |
+| `ru` | Русский |
+| `zh_CN` | 简体中文 |
+
+The popup language dropdown's "Auto (browser default)" option shows the
+detected language inline. The selection writes
+`chrome.storage.local._localeOverride`; the in-page YouTube workspace
+picks up the override on next page navigation. Feature-definition entries
+(150+ name + description pairs) inside `ytkit.js` are still hardcoded
+English — community translations welcome via PR against
+`extension/_locales/<lang>/messages.json`.
 
 ---
 
