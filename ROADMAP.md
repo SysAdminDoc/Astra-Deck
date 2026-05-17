@@ -735,10 +735,15 @@ relative to a focused half-day unless noted.
   no native high-contrast mode. Audit popup color tokens against
   Windows High Contrast Mode + Forced Colors Media Query
   (`@media (forced-colors: active)`). [src-mdn-forced-colors]
-- **L14** Screen-reader smoke checklist in CONTRIBUTING — NVDA / JAWS
-  / VoiceOver one-page bring-up doc so future contributors can re-run
-  the a11y baseline. NVDA is 65.6% share per WebAIM 2024 — minimum test
-  target. [src-webaim-sr]
+- **L14** ~~Screen-reader smoke checklist in CONTRIBUTING~~ —
+  **Completed.** New `docs/screen-reader-smoke.md` covers setup
+  (NVDA 2025.3 / JAWS 2026 / VoiceOver macOS 14+), popup checklist
+  (dialog semantics + tab wrap + Escape + button labels + health
+  banner Copy/Save/Clear + language picker + quick toggles), in-page
+  checklist (NX5 SB/DeArrow announcements + NX8 audio notice + N3
+  reaction-spammer warning), settings panel, toast quality,
+  known-limitations register, and bug-report template. NVDA is the
+  minimum required target per WebAIM 2024. [src-webaim-sr]
 
 ### i18n / l10n
 
@@ -762,12 +767,14 @@ relative to a focused half-day unless noted.
   surface new versions in-extension and link to the latest release.
   Pairs with the AMO-listed Firefox path (NX4 covers the Firefox half).
   [src-cws-update]
-- **L19** CWS submission checklist documented in CONTRIBUTING — the
-  CWS review backlog April 2026 means submissions take weeks;
-  `downloads` + `cookies` + `tabs` + `webRequest` permissions trigger
-  heightened scrutiny + mandatory privacy-policy declarations using
-  Google's standardized vocabulary. Capture the submission protocol so
-  a future maintainer can follow it. [src-cws-policies]
+- **L19** ~~CWS submission checklist documented in CONTRIBUTING~~ —
+  **Completed.** New `docs/cws-submission-checklist.md` covers
+  manifest preflight, privacy-policy categories (Google's
+  standardized vocabulary applied to Astra Deck's specific
+  permissions surface), submission preflight, per-permission
+  justifications for every entry in the manifest, post-submission
+  process, anti-pattern catalog ("will always get rejected"), and an
+  AMO submission delta section. [src-cws-policies]
 
 ### Testing
 
