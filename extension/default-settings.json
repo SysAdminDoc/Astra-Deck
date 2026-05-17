@@ -321,5 +321,6 @@
   "transcriptAiTarget": "notebooklm",
   "audioTrackLanguage": false,
   "preferredAudioLang": "en",
-  "notifyAutoDubbedAudio": false
+  "notifyAutoDubbedAudio": false,
+  "sleepTimer": false
 }
