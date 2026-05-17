@@ -432,6 +432,24 @@ list-view as an intermediate state, fix the selector chain.
 
 ### NX8. YouTube Anti-Translate — auto-dubbed audio + auto-translated titles
 
+- **Status:** Completed (scoped). `antiTranslate` extended to cover
+  watch-page descriptions: reads
+  `ytInitialPlayerResponse.videoDetails.shortDescription` and restores
+  it onto `#description-inline-expander` /
+  `ytd-text-inline-expander` / `#description` text wrappers when they
+  diverge. Heuristic length guard avoids false positives on
+  rolling-out videos with empty descriptions. Feature name updated to
+  "Anti-Translate (Original Titles + Descriptions)" so users know the
+  new scope.
+  For the auto-dubbed audio half: a new `notifyAutoDubbedAudio`
+  feature (off by default) surfaces a one-time amber toast + aria-live
+  announcement when YouTube auto-selects a non-original audio track,
+  telling the user they can manually pick Original in the player
+  settings. We don't auto-switch — the same constraint that gates
+  `audioTrackLanguage` (native menu restarts playback) applies here.
+  Storage-size deltas: UI prefs 7701 → 7731, typical local 173981 →
+  174011.
+
 Astra-Deck has `antiTranslate` (Wave 1) but the third-party "YouTube
 Anti Translate" extension surfaces three distinct controls: disable
 auto-translated titles, disable auto-dubbed audio, disable

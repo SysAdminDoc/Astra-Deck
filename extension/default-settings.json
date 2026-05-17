@@ -320,5 +320,6 @@
   "transcriptAiHandoff": false,
   "transcriptAiTarget": "notebooklm",
   "audioTrackLanguage": false,
-  "preferredAudioLang": "en"
+  "preferredAudioLang": "en",
+  "notifyAutoDubbedAudio": false
 }
