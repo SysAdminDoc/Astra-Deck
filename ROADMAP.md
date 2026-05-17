@@ -671,11 +671,12 @@ relative to a focused half-day unless noted.
   extension toggle may be OFF for fresh installs on Chrome 138+. We
   don't use the API ourselves, but Astra-Deck's userscript companion
   routes through Tampermonkey/Violentmonkey which DOES. [src-chrome-userscripts]
-- **L3** Firefox 148 Document PiP behind-flag verification — Astra-
-  Deck's `popOutPlayer` uses `documentPictureInPicture`
-  (`ytkit.js:19190`), which is gated behind `dom.documentpip.enabled`
-  in Firefox 148 beta. Add detection and a Firefox-specific "enable
-  `about:config` flag" callout if unavailable. [src-doc-pip]
+- **L3** ~~Firefox 148 Document PiP behind-flag verification.~~
+  **Completed.** Firefox UA detection in `popOutPlayer._activate()`;
+  on Firefox + PiP-failed, the toast text now reads "PiP unavailable
+  on Firefox. Enable dom.documentpip.enabled in about:config (Firefox
+  148+)." with an 8 s duration. Generic browsers keep the prior
+  "PiP not supported" text. [src-doc-pip]
 - **L4** Firefox MV2 + blocking-webRequest path for ad blocking —
   Mozilla committed to keeping MV2 + blocking webRequest in Firefox
   indefinitely. Optional `manifest.firefox.json` MV2 companion would

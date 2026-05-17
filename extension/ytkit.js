@@ -19345,7 +19345,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             async _activate() {
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) { showToast('No video found', '#ef4444'); return; }
-                // Try Document PiP API first (Chrome 116+)
+                // v3.23.0 (L3): Firefox 148 ships `documentPictureInPicture`
+                // behind the `dom.documentpip.enabled` about:config flag
+                // (Beta-only at the time of writing). The capability check
+                // below catches both "Safari, no support at all" and
+                // "Firefox 148 with the flag still off" and falls through
+                // to the legacy `video.requestPictureInPicture()` path. If
+                // BOTH paths are unavailable, surface a Firefox-specific
+                // hint so the user knows the toggle exists.
+                // Refs: https://bugzilla.mozilla.org/show_bug.cgi?id=1858562
+                const isFirefox = typeof navigator !== 'undefined' && /\bFirefox\/(\d+)/.test(navigator.userAgent || '');
+                // Try Document PiP API first (Chrome 116+, Firefox 148+ with flag)
                 if ('documentPictureInPicture' in window) {
                     try {
                         this._pipWindow = await window.documentPictureInPicture.requestWindow({
@@ -19411,7 +19421,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     video.addEventListener('leavepictureinpicture', () => { window.__ytkit_videoPopped = false; }, { once: true });
                     showToast('Picture-in-Picture active', '#22c55e');
                 } catch(e) {
-                    showToast('PiP not supported', '#ef4444');
+                    // v3.23.0 (L3): more helpful failure message for
+                    // Firefox-148 users — Document PiP exists behind
+                    // dom.documentpip.enabled and standard PiP is also
+                    // gated on some Firefox builds. Tell them where to
+                    // flip the flag instead of the opaque generic.
+                    if (isFirefox) {
+                        showToast(
+                            'PiP unavailable on Firefox. Enable dom.documentpip.enabled in about:config (Firefox 148+).',
+                            '#ef4444',
+                            { duration: 8 },
+                        );
+                    } else {
+                        showToast('PiP not supported', '#ef4444');
+                    }
                 }
             },
 
