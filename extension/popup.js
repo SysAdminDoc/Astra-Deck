@@ -274,6 +274,7 @@ const statBookmarks = $('#stat-bookmarks');
 const healthBanner = $('#health-banner');
 const healthDetail = $('#health-detail');
 const healthCopyBtn = $('#health-copy-btn');
+const healthSaveBtn = $('#health-save-btn');
 const healthClearBtn = $('#health-clear-btn');
 // Captured so the Copy button can drop the full diagnostic payload on the
 // clipboard without rebuilding it from DOM text.
@@ -948,6 +949,60 @@ if (healthCopyBtn) {
         } catch (_) {
             showStatus(t('statusClipboardUnavailable', 'Clipboard unavailable — see browser console.'), 'error', 3600);
             console.error('[Astra Deck popup] health-copy payload:\n' + healthCopyPayload);
+        }
+    });
+}
+
+// v3.23.0 (L9): Save the full DiagnosticLog ring buffer as a JSON file.
+// The Copy button drops a compact summary on the clipboard; Save lets
+// the user attach the raw structured payload to a bug report. Uses
+// chrome.downloads.download when available so the file lands in the
+// user's Downloads folder even after the popup closes; falls back to
+// an a[download] click for Firefox builds without downloads permission.
+if (healthSaveBtn) {
+    healthSaveBtn.addEventListener('click', async () => {
+        try {
+            const items = await storageGet([SETTINGS_STORAGE_KEY]);
+            const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
+                ? items[SETTINGS_STORAGE_KEY]
+                : {};
+            const errors = Array.isArray(settings._errors) ? settings._errors : [];
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                extensionVersion: manifestVersion,
+                userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
+                errors,
+            };
+            const json = JSON.stringify(payload, null, 2);
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `astra-deck-diagnostics-${stamp}.json`;
+            const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+            if (typeof chrome !== 'undefined' && chrome.downloads?.download) {
+                await new Promise((resolve, reject) => {
+                    chrome.downloads.download(
+                        { url: dataUrl, filename, saveAs: true },
+                        (id) => {
+                            if (chrome.runtime.lastError || !id) {
+                                reject(new Error(chrome.runtime.lastError?.message || 'download failed'));
+                            } else {
+                                resolve(id);
+                            }
+                        },
+                    );
+                });
+                showStatus(t('statusDiagSaved', 'Diagnostic log saved.'), 'ok', 2400);
+            } else {
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                showStatus(t('statusDiagSaved', 'Diagnostic log saved.'), 'ok', 2400);
+            }
+        } catch (e) {
+            showStatus(t('statusDiagSaveFail', 'Could not save log') + ': ' + e.message, 'error', 3600);
+            console.error('[Astra Deck popup] diag save failed:', e);
         }
     });
 }
