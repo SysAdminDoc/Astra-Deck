@@ -121,6 +121,59 @@ const CRITICAL_SELECTORS = [
     'yt-attributed-string',
 ];
 
+// v3.23.0 N6: "Liquid glass" player chrome redesign — rollout watchlist.
+//
+// YouTube began rolling out a redesigned video player in late 2025 with a
+// "liquid glass" aesthetic: pill-shaped action container in the chrome,
+// no dim-on-pause, smaller double-tap-to-skip animation, dynamic like
+// animations, threaded comments, simplified Watch Later flow.
+// See: https://9to5google.com/2025/10/14/youtube-video-player-redesign-more/
+//      https://www.techspot.com/news/109892-youtube-modernizes-video-player...
+//
+// The audit can't promote any of these to CRITICAL_SELECTORS yet — the
+// `mhtml/` reference captures are pre-redesign and the upstream CSS class
+// names are not publicly documented. The list below names the surfaces
+// Astra-Deck features touch that are MOST likely to break on the new
+// chrome; before the next release that ships post-rollout the maintainer
+// must:
+//
+//   1. Capture a fresh MHTML on a watch page that has the new chrome
+//      enabled (toggle via the per-channel Lab opt-in or wait for full
+//      rollout, then File → Save Page As → MHTML in Chrome).
+//   2. `npm run build:fixtures` to regenerate tokens.
+//   3. For each surface below, identify the new selector and promote it
+//      to CRITICAL_SELECTORS (keep the old one too during the transition
+//      window so users on the legacy chrome don't regress).
+//   4. Document selector deltas in HARDENING.md H21.
+//
+// This array exists as a documentation anchor + a future-test surface;
+// it doesn't drive assertions today.
+const LIQUID_GLASS_WATCHLIST = [
+    // Action container (formerly individual ytp-* buttons, now a pill).
+    // Likely new wrapper: `ytp-action-pill`, `ytp-actions-container`, or
+    // similar. Affects: download/PiP/speed buttons we inject into chrome.
+    'ytp-action-pill (placeholder)',
+    // Pause overlay — no longer dims; if we relied on the `ytp-paused-mode`
+    // class for our overlay timing we need a new signal.
+    'ytp-paused-mode (legacy)',
+    // Threaded comments — the new comment-shape rollout extends the
+    // ytd-comment-view-model that's already in CRITICAL_SELECTORS but may
+    // introduce a `ytd-comment-thread-replies-renderer` rename.
+    'ytd-comment-thread-replies-renderer (placeholder)',
+    // Dynamic like animation host. May affect creator-comment-highlight
+    // and any per-like CSS we inject.
+    'ytd-like-button-renderer (legacy)',
+];
+
+test('liquid-glass watchlist exists as a transition-period anchor (informational)', () => {
+    // This test is a documentation hook, not an assertion of state. It
+    // ensures the watchlist array is non-empty so future maintainers see
+    // the audit deferment in CI output. Promote items here to
+    // CRITICAL_SELECTORS once fresh MHTML captures land.
+    assert.ok(LIQUID_GLASS_WATCHLIST.length >= 1,
+        'LIQUID_GLASS_WATCHLIST must document at least one transition selector');
+});
+
 test('selector fixtures exist and contain a non-trivial token set', () => {
     for (const [label, file] of Object.entries(FIXTURES)) {
         const tokens = loadTokens(file);
