@@ -549,6 +549,18 @@ response that varies by session, and pin `flask>=3.1.3` in
 
 ### NX12. Per-area regression-test fixtures (carried L4)
 
+- **Status:** Partial — modularization seed shipped. New structure:
+  `tests/helpers/source.js` (shared `sources`, `config`, and
+  `extractFeatureBlock(source, featureId)` helper); `tests/features/
+  dearrow.test.js`, `sponsorblock.test.js`, `theater-split.test.js`.
+  `package.json` `test` script extended to glob both
+  `tests/*.test.js` and `tests/features/*.test.js`. Each new file
+  pins one sanity test + one or two area-specific invariants without
+  duplicating logic already in `hardening.test.js`. Existing tests
+  stay in `hardening.test.js`; future maintenance moves them over
+  incrementally so the monolith shrinks naturally. Test count 158 →
+  170.
+
 Migrate `extension/ytkit.js` (~38.6 K LOC) to per-area test fixtures
 so the monolith can be audited per-feature without re-scanning every
 line. Modularization sub-step, not a full split. Start with three
