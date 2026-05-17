@@ -21,6 +21,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Security
 
+- **Cache-control hardening on Astra Downloader responses (NX11, HARDENING H22).**
+  CVE-2026-27205 (Flask session cache leak) is structurally inapplicable
+  since we don't use Flask sessions — but every `cors_response` now emits
+  `Cache-Control: no-store` and `Vary: Cookie` defensively so a future
+  session-bearing variant can't inherit a stale cache entry. Flask
+  pinned to `>=3.1.3,<4` in requirements.txt for the same reason. Two
+  new regressions in `test_astra_downloader.py::CorsHeaderTests`.
 - **CSP `connect-src` allowlist on extension pages (N5, HARDENING H20).**
   Previously `script-src 'self'; object-src 'self'` only. A compromised
   content-script or a careless future contributor wiring popup.js to
