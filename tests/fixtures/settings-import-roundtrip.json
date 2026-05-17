@@ -1,5 +1,5 @@
 {
-  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 6.",
+  "description": "Known-shape settings profile imports for every schema before SETTINGS_VERSION 7.",
   "profiles": [
     {
       "schemaVersion": 1,
@@ -104,6 +104,26 @@
         "safeUnknownKey": "custom-v5"
       },
       "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup"]
+    },
+    {
+      "schemaVersion": 6,
+      "settings": {
+        "_settingsVersion": 6,
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "reactionSpammer": true,
+        "downloadOptionsPopup": false,
+        "safeUnknownKey": "custom-v6"
+      },
+      "expected": {
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
+        "reactionSpammer": false,
+        "_reactionSpammerAck": false,
+        "downloadOptionsPopup": false,
+        "safeUnknownKey": "custom-v6"
+      },
+      "absent": []
     }
   ]
 }

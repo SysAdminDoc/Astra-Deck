@@ -3579,7 +3579,12 @@ return response;
             autoExpandComments: true,
             hideLiveChatEngagement: true,
             premiumLiveChat: true,
-            reactionSpammer: true,
+            reactionSpammer: false,
+            // v3.23.0 N3: one-shot acknowledgement that the user has seen
+            // the "YouTube may rate-limit rapid reactions" notice on the
+            // first reaction-spammer launcher click. Tracked so the toast
+            // doesn't re-fire on every page load forever.
+            _reactionSpammerAck: false,
             hidePaidPromotionWatch: true,
             hideChannelJoinButton: true,
             hideFundraiser: true,
@@ -3846,7 +3851,7 @@ return response;
         },
 
         // Settings versioning and migration
-        SETTINGS_VERSION: 6,
+        SETTINGS_VERSION: 7,
 
         _migrations: {
             // v1 -> v2: Renamed/restructured settings in 2.1.2
@@ -3880,6 +3885,26 @@ return response;
                 delete s.preferredQuality;
                 delete s.useEnhancedBitrate;
                 delete s.hideQualityPopup;
+                return s;
+            },
+            7: (s) => {
+                // v3.23.0 N3: Reaction Spammer was introduced default-ON in
+                // v3.22.0 (one week before this migration). The feature
+                // posts emoji reactions to live chat at a user-set
+                // interval; YouTube's automated-behavior heuristics could
+                // rate-limit or flag accounts. Force-reset to OFF on
+                // migration so every user explicitly opts in.
+                //
+                // We can't reliably distinguish "user explicitly toggled
+                // true" from "default-merge populated true" given how
+                // short the v3.22.0 window was — force-reset is the
+                // conservative choice. Users who want the feature
+                // re-enable in one click; the launcher then shows the
+                // one-time "YouTube may rate-limit" toast.
+                s.reactionSpammer = false;
+                // Reset the ack so the first re-enable surfaces the
+                // warning. Existing v6 profiles never had this key.
+                s._reactionSpammerAck = false;
                 return s;
             },
         },
@@ -14014,6 +14039,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return Math.min(max, Math.max(min, n));
             },
 
+            // v3.23.0 N3: 500 ms floor on the spam interval. Faster than
+            // ~2 Hz risks YouTube's automated-behavior heuristics flagging
+            // the account. The upper bound stays at 60 s.
+            _INTERVAL_MIN_MS: 500,
+            _INTERVAL_MAX_MS: 60000,
+
             _loadState() {
                 const saved = storageReadJSON(this._storageKey, {});
                 const pos = isPlainObject(saved?.pos) ? saved.pos : {};
@@ -14021,7 +14052,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     selected: Array.isArray(saved?.selected)
                         ? saved.selected.filter(value => typeof value === 'string')
                         : [...this._defaults.selected],
-                    intervalMs: this._clampNumber(saved?.intervalMs, this._defaults.intervalMs, 50, 60000),
+                    intervalMs: this._clampNumber(
+                        saved?.intervalMs,
+                        this._defaults.intervalMs,
+                        this._INTERVAL_MIN_MS,
+                        this._INTERVAL_MAX_MS,
+                    ),
                     pos: {
                         x: this._clampNumber(pos.x, this._defaults.pos.x, 0, 10000),
                         y: this._clampNumber(pos.y, this._defaults.pos.y, 0, 10000)
@@ -14260,6 +14296,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._panel.focus?.();
                     this._renderList();
                     setTimeout(() => this._renderList(), 180);
+                }
+                // v3.23.0 N3: one-shot warning toast the first time the
+                // user opens the reaction spammer per profile. The flag is
+                // persisted in settings so it doesn't re-fire on every
+                // panel open.
+                this._maybeShowFirstUseWarning();
+            },
+
+            _maybeShowFirstUseWarning() {
+                try {
+                    if (appState?.settings?._reactionSpammerAck) return;
+                    showToast(
+                        'Reaction Spammer: YouTube may rate-limit or flag rapid reactions. Use at your own risk.',
+                        '#f59e0b',
+                        { duration: 10 },
+                    );
+                    appState.settings._reactionSpammerAck = true;
+                    storageWriteJSON('ytSuiteSettings', appState.settings);
+                } catch (e) {
+                    // reason: the warning toast must never break the panel
+                    // opening; storage write failures stay silent.
+                    DebugManager?.log?.('ReactionSpammer', `ack-write skipped: ${e?.message || e}`);
                 }
             },
 

@@ -150,6 +150,17 @@ unblocks downstream work.
 
 ### N3. Reaction-spammer: default OFF, add cooldown floor + soft cap
 
+- **Status:** Completed. `extension/default-settings.json` flips to
+  `reactionSpammer: false` + `_reactionSpammerAck: false`;
+  `SETTINGS_VERSION` 6 → 7 with migration 7 force-resetting both keys (we
+  cannot distinguish "user explicitly opted in" from "default-merge
+  populated true" given the one-week v3.22.0 window, so force-reset is the
+  conservative choice); `_INTERVAL_MIN_MS` 500 ms in
+  `extension/ytkit.js`; same floor in `YT_Reaction_Spammer.user.js` v0.3.0
+  via `MIN_INTERVAL_MS`; one-shot warning toast on first launcher open
+  via `_maybeShowFirstUseWarning`; round-trip fixtures cover v1-v6; four
+  regressions in `tests/hardening.test.js`; storage-size test deltas
+  adjusted (UI prefs 7672 → 7701 bytes, typical local 173952 → 173981).
 - **Severity:** Real UX/safety regression. The reaction spammer ships
   default-ON in v3.22.0 (`default-settings.json` line 53:
   `"reactionSpammer": true`). The feature blasts emoji reactions at a

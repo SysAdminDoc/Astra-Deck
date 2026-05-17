@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         YT Reaction Spammer
 // @namespace    https://github.com/SysAdminDoc/yt-reaction-spammer
-// @version      0.2.0
-// @description  Pick which YouTube live-chat reactions to spam; fires them in a random sequence at a chosen interval.
+// @version      0.3.0
+// @description  Pick which YouTube live-chat reactions to spam; fires them in a random sequence at a chosen interval (minimum 500 ms).
 // @author       SysAdminDoc
 // @match        https://www.youtube.com/live_chat*
 // @match        https://studio.youtube.com/live_chat*
@@ -16,6 +16,12 @@
   const PANEL_ID  = 'yt-reaction-spammer-panel';
   const STORAGE   = 'yt-reaction-spammer-state-v1';
 
+  // v0.3.0 (N3): 500 ms floor on the spam interval. Faster than ~2 Hz risks
+  // YouTube's automated-behavior heuristics flagging the account. The upper
+  // bound stays at 60 s.
+  const MIN_INTERVAL_MS = 500;
+  const MAX_INTERVAL_MS = 60000;
+
   const defaults = {
     selected:   [],
     intervalMs: 600,
@@ -23,10 +29,18 @@
     collapsed:  false,
   };
 
+  const clampInterval = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return defaults.intervalMs;
+    return Math.min(MAX_INTERVAL_MS, Math.max(MIN_INTERVAL_MS, n));
+  };
+
   const load = () => {
     try {
       const raw = localStorage.getItem(STORAGE);
-      return raw ? { ...defaults, ...JSON.parse(raw) } : { ...defaults };
+      const merged = raw ? { ...defaults, ...JSON.parse(raw) } : { ...defaults };
+      merged.intervalMs = clampInterval(merged.intervalMs);
+      return merged;
     } catch { return { ...defaults }; }
   };
   const save = () => {
@@ -152,7 +166,7 @@
       }
       const pick = choices[Math.floor(Math.random() * choices.length)];
       clickReaction(pick);
-      timer = setTimeout(tick, Math.max(50, state.intervalMs));
+      timer = setTimeout(tick, clampInterval(state.intervalMs));
     };
     tick();
   };
@@ -244,7 +258,8 @@
     intervalLbl.textContent = 'Interval (ms):';
     intervalEl = document.createElement('input');
     intervalEl.type = 'number';
-    intervalEl.min = '50';
+    intervalEl.min = String(MIN_INTERVAL_MS);
+    intervalEl.max = String(MAX_INTERVAL_MS);
     intervalEl.step = '50';
     intervalEl.value = String(state.intervalMs);
     css(intervalEl, `
@@ -253,8 +268,7 @@
       padding:3px 6px; font:inherit;
     `);
     intervalEl.onchange = () => {
-      const v = parseInt(intervalEl.value, 10);
-      state.intervalMs = isNaN(v) ? 600 : Math.max(50, v);
+      state.intervalMs = clampInterval(intervalEl.value);
       intervalEl.value = String(state.intervalMs);
       save();
     };
