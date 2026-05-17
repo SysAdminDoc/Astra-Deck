@@ -425,6 +425,16 @@ one-time smoke test on first run that runs `ffmpeg -protocols | grep
 
 ### NX11. Astra Downloader: Flask cache-control hardening (CVE-2026-27205)
 
+- **Status:** Completed. CVE structurally inapplicable (no
+  `flask.session` usage anywhere — bearer-token auth only); pin
+  `flask>=3.1.3,<4` lands defensively in `requirements.txt`. Every
+  `cors_response` now emits `Cache-Control: no-store` and composes
+  `Vary: Cookie` alongside the existing `Vary: Origin` so a future
+  session-bearing variant doesn't ride a stale intermediary cache.
+  Two regressions in `test_astra_downloader.py::CorsHeaderTests` pin
+  the header presence in both the X-MDL-Client and extension-Origin
+  paths. `HARDENING.md` H22 documents the rationale.
+
 Flask ≤3.1.2 leaks session data via cache when `in` operator is used
 on session keys without read/modify. Astra Downloader uses Flask 3.x;
 audit session-touching endpoints, ensure `Vary: Cookie` is set on any

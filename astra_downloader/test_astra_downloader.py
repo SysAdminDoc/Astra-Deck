@@ -587,6 +587,39 @@ class CorsHeaderTests(unittest.TestCase):
         resp = api.test_client().get("/health", headers={"X-MDL-Client": "MediaDL"})
         self.assertEqual(resp.headers.get("Access-Control-Max-Age"), str(ad.CORS_MAX_AGE_SECONDS))
 
+    def test_response_disables_intermediary_caching(self):
+        # v1.4.0 NX11: defense-in-depth against intermediary caching of
+        # auth-bearing responses (CVE-2026-27205 class). Every cors_response
+        # must declare Cache-Control: no-store and Vary: Cookie so a future
+        # session-bearing variant can't ride on a stale cache entry.
+        token = "n" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().get("/health", headers={"X-MDL-Client": "MediaDL"})
+        self.assertEqual(resp.headers.get("Cache-Control"), "no-store")
+        vary = resp.headers.get("Vary", "")
+        self.assertIn("Cookie", vary)
+
+    def test_response_disables_caching_on_extension_origin_too(self):
+        # The Origin-allow path adds "Vary: Origin"; the no-store + Cookie
+        # token must compose with it, not overwrite it.
+        token = "p" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().get(
+            "/health",
+            headers={
+                "X-MDL-Client": "MediaDL",
+                "Origin": "chrome-extension://abcdefghijklmnop",
+            },
+        )
+        self.assertEqual(resp.headers.get("Cache-Control"), "no-store")
+        vary = resp.headers.get("Vary", "")
+        self.assertIn("Cookie", vary)
+        self.assertIn("Origin", vary)
+
 
 class HealthAdditionsTests(unittest.TestCase):
     """v1.2.0 additions to /health schema — version strings + rate-limit policy."""

@@ -3,6 +3,34 @@
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
 > H20 onward covers v3.23.0 (Pass 19).
 
+## H22 — Astra Downloader response cache-control hardening (v3.23.0, NX11)
+
+**CVE class.** CVE-2026-27205 — Flask ≤3.1.2 leaks session data via cache
+when the `in` operator is used on session keys without read/modify (the
+`Vary: Cookie` header isn't auto-added). Confirmed structurally
+inapplicable to Astra Downloader (no `from flask import session`,
+authentication is the X-Auth-Token bearer model only). The pin remains
+defensive: a future feature that *does* use Flask sessions inherits a
+non-vulnerable baseline.
+
+**Defense-in-depth change.** Every `cors_response` now emits:
+
+- `Cache-Control: no-store` — strongest no-cache directive. Auth-bearing
+  responses (`/health` with token) must never be cached by intermediaries.
+- `Vary: Cookie` (composed alongside the existing `Vary: Origin` when
+  applicable) — signal cookies vary the response so any future session-
+  bearing variant doesn't ride a stale entry.
+
+**Files.** `astra_downloader/astra_downloader.py` (`cors_response`
+helper), `astra_downloader/requirements.txt` (`flask>=3.1.3,<4`).
+
+**Test pin.** Two new tests in
+`astra_downloader/test_astra_downloader.py::CorsHeaderTests` cover the
+header presence in both the X-MDL-Client probe path and the extension-
+Origin path.
+
+---
+
 ## H21 — YouTube "liquid glass" player chrome redesign audit (v3.23.0, N6)
 
 **Status: deferred / partial.** This pass documents the rollout window but
