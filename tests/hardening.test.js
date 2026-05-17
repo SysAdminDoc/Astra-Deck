@@ -1623,3 +1623,78 @@ test('npm run audit:a11y reports no popup a11y issues', () => {
     assert.equal(result.status, 0,
         'npm run audit:a11y must pass — all buttons must be labeled, dialog semantics must be present');
 });
+
+// ── v3.23.0 N3: Reaction Spammer default-OFF + cooldown floor ──
+
+test('reactionSpammer defaults to false in both ytkit.js source and the generated catalog', () => {
+    // Brand-new feature; opt-in only. YouTube's automated-behavior heuristics
+    // could rate-limit or flag accounts on rapid emoji reactions, so the
+    // default must NOT enrol every user without consent.
+    const defaultSettings = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'default-settings.json'),
+        'utf8',
+    ));
+    assert.equal(defaultSettings.reactionSpammer, false,
+        'default-settings.json must default reactionSpammer to false');
+    assert.equal(defaultSettings._reactionSpammerAck, false,
+        'default-settings.json must default _reactionSpammerAck to false');
+
+    // Pin the source-side default too, so the generator can never produce
+    // true again. A regex slice is sufficient — we're locking the literal.
+    assert.match(
+        ytkitSource,
+        /reactionSpammer:\s*false,/,
+        'ytkit.js defaults must declare reactionSpammer: false',
+    );
+});
+
+test('SETTINGS_VERSION is 7 and migration 7 force-resets reactionSpammer to false', () => {
+    assert.match(
+        ytkitSource,
+        /SETTINGS_VERSION:\s*7,/,
+        'ytkit.js settingsManager must declare SETTINGS_VERSION: 7',
+    );
+    // The v7 migration must reset reactionSpammer to false and reset the
+    // ack flag so the warning toast re-fires on the next opt-in.
+    const migrationStart = ytkitSource.indexOf('7: (s) =>');
+    assert.ok(migrationStart > -1, 'migration 7 must exist');
+    const migrationBlock = ytkitSource.slice(migrationStart, migrationStart + 1500);
+    assert.match(migrationBlock, /s\.reactionSpammer\s*=\s*false/,
+        'migration 7 must explicitly reset reactionSpammer to false');
+    assert.match(migrationBlock, /s\._reactionSpammerAck\s*=\s*false/,
+        'migration 7 must reset _reactionSpammerAck to false');
+});
+
+test('reaction spammer panel interval is clamped to a 500 ms minimum floor', () => {
+    // Rapid reactions risk YouTube account flagging; the 50 ms floor that
+    // shipped in v3.22.0 was too aggressive. Pin the floor at 500 ms.
+    assert.match(
+        ytkitSource,
+        /_INTERVAL_MIN_MS:\s*500,/,
+        'ytkit.js reaction-spammer feature must declare _INTERVAL_MIN_MS: 500',
+    );
+    // The userscript companion clamps the same floor — pin its constant too.
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YT_Reaction_Spammer.user.js'),
+        'utf8',
+    );
+    assert.match(
+        userscriptSource,
+        /const\s+MIN_INTERVAL_MS\s*=\s*500;/,
+        'YT_Reaction_Spammer.user.js must declare MIN_INTERVAL_MS = 500',
+    );
+});
+
+test('reaction spammer panel surfaces a one-shot rate-limit warning toast on first open', () => {
+    // First-time launcher click warns the user about YouTube's heuristics;
+    // _reactionSpammerAck is persisted so the toast doesn't re-fire forever.
+    const toastStart = ytkitSource.indexOf('_maybeShowFirstUseWarning');
+    assert.ok(toastStart > -1, 'reaction spammer must expose _maybeShowFirstUseWarning');
+    const block = ytkitSource.slice(toastStart, toastStart + 1500);
+    assert.match(block, /_reactionSpammerAck/,
+        'first-use warning must read appState.settings._reactionSpammerAck');
+    assert.match(block, /showToast\(/,
+        'first-use warning must call showToast');
+    assert.match(block, /rate-limit|rate\s*limit/i,
+        'first-use warning message must mention rate-limiting');
+});

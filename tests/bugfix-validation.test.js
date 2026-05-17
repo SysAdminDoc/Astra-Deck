@@ -290,7 +290,11 @@ test('reaction spammer restores styled live chat reactions and ports the userscr
     const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
 
-    assert.equal(defaults.reactionSpammer, true, 'reaction spammer should be enabled by default');
+    // v3.23.0 N3: reaction spammer is opt-in only (default OFF). Brand-new
+    // feature whose runtime risks YouTube account flagging; we require an
+    // explicit user toggle. The previous assertion is inverted to pin the
+    // new default.
+    assert.equal(defaults.reactionSpammer, false, 'reaction spammer must default to OFF (N3)');
     assert.ok(!defaults.hiddenChatElements.includes('reactions'),
         'default live chat cleanup should not hide the native reactions control');
 
