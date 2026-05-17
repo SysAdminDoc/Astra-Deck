@@ -905,6 +905,81 @@ class PoTokenProviderTests(unittest.TestCase):
         self.assertTrue(seen_paths[0].endswith('/ping'))
 
 
+# v1.4.0 (NX10): ffmpeg capabilities audit.
+class FfmpegCapabilitiesTests(unittest.TestCase):
+    def setUp(self):
+        ad.reset_ffmpeg_capabilities_cache()
+
+    def tearDown(self):
+        ad.reset_ffmpeg_capabilities_cache()
+
+    def test_parse_ffmpeg_major_extracts_integer_from_canonical_release(self):
+        self.assertEqual(ad.parse_ffmpeg_major('8.1.1'), 8)
+        self.assertEqual(ad.parse_ffmpeg_major('7.0-static'), 7)
+        self.assertEqual(ad.parse_ffmpeg_major('6.1.1-essentials_build'), 6)
+
+    def test_parse_ffmpeg_major_returns_none_on_unparseable(self):
+        # ffmpeg-master nightly / git builds report N-NNNNN-gXXXXXXX; not a
+        # version we can interpret. None lets the caller degrade gracefully.
+        for value in ('', None, 'N-118574-gabc1234', 'not-a-version'):
+            with self.subTest(value=value):
+                self.assertIsNone(ad.parse_ffmpeg_major(value))
+
+    def test_check_ffmpeg_capabilities_treats_unparseable_as_unknown(self):
+        # Monkeypatch get_ffmpeg_version to a snapshot-style string. The
+        # audit must not return current=false in that case — snapshot
+        # builds are intentionally non-numeric and we shouldn't alarm.
+        original = ad.get_ffmpeg_version
+        ad.get_ffmpeg_version = lambda *a, **k: 'N-118574-gabc1234'
+        try:
+            result = ad.check_ffmpeg_capabilities(force=True)
+        finally:
+            ad.get_ffmpeg_version = original
+        self.assertIsNone(result['majorVersion'])
+        self.assertIsNone(result['current'])
+        self.assertIn('not detected', result['message'].lower() + ' ' +
+                      'or snapshot' if 'snapshot' not in result['message'].lower() else result['message'])
+
+    def test_check_ffmpeg_capabilities_marks_current_when_at_or_above_floor(self):
+        original = ad.get_ffmpeg_version
+        ad.get_ffmpeg_version = lambda *a, **k: '8.1.1'
+        try:
+            result = ad.check_ffmpeg_capabilities(force=True)
+        finally:
+            ad.get_ffmpeg_version = original
+        self.assertEqual(result['majorVersion'], 8)
+        self.assertTrue(result['current'])
+        self.assertIn('meets', result['message'])
+
+    def test_check_ffmpeg_capabilities_marks_stale_below_floor(self):
+        original = ad.get_ffmpeg_version
+        ad.get_ffmpeg_version = lambda *a, **k: '5.1.2'
+        try:
+            result = ad.check_ffmpeg_capabilities(force=True)
+        finally:
+            ad.get_ffmpeg_version = original
+        self.assertEqual(result['majorVersion'], 5)
+        self.assertFalse(result['current'])
+        self.assertIn('below', result['message'])
+
+    def test_health_endpoint_exposes_ffmpeg_capabilities(self):
+        # Pin the wire contract — the extension popup will key off
+        # /health.ffmpegCapabilities.current to render the stale-ffmpeg
+        # pill.
+        config = FakeConfig({"ServerToken": "z" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().get(
+            "/health", headers={"X-MDL-Client": "MediaDL"},
+        )
+        body = resp.get_json()
+        self.assertIn('ffmpegCapabilities', body)
+        caps = body['ffmpegCapabilities']
+        self.assertIsInstance(caps, dict)
+        for key in ('majorVersion', 'current', 'message'):
+            self.assertIn(key, caps)
+
+
 class HealthPoTokenSurfaceTests(unittest.TestCase):
     def setUp(self):
         ad.reset_po_token_provider_cache()
