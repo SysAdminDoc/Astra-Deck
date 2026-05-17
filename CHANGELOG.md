@@ -6,6 +6,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed (extension)
+
+- **Reaction Spammer is opt-in now (N3).** The feature was introduced
+  default-ON in v3.22.0; rapid emoji reactions risk YouTube's automated-
+  behavior heuristics flagging the account. The migration v6 → v7 force-
+  resets `reactionSpammer` to `false` for everyone (we can't reliably
+  distinguish "user explicitly opted in" from "default-merge populated
+  true" given the one-week v3.22.0 window). Users who want the feature
+  re-enable in one click; the first launcher opening then surfaces a
+  one-shot amber toast: "Reaction Spammer: YouTube may rate-limit or
+  flag rapid reactions. Use at your own risk." The ack is persisted in
+  `appState.settings._reactionSpammerAck` so the toast doesn't re-fire.
+- **Reaction Spammer interval floor raised to 500 ms (N3).** Previous
+  minimum was 50 ms — well under the rate at which YouTube's panel
+  observer would flag rapid synthesis. Both the extension feature and
+  the standalone `YT_Reaction_Spammer.user.js` userscript (bumped to
+  v0.3.0) clamp at 500 ms. The settings panel input's `min` attribute
+  reflects the floor too.
+- **`SETTINGS_VERSION` bumped to 7** with a new migration 7 entry. Round-
+  trip fixture coverage in `tests/fixtures/settings-import-roundtrip.json`
+  extended to include a v6 profile alongside v1-v5.
+
 ### Changed (Astra Downloader v1.4.0)
 
 - **SABR-aware format selection (N2).** YouTube's `web` client increasingly
