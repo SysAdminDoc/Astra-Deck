@@ -219,6 +219,11 @@ unblocks downstream work.
 
 ### N5. CSP `connect-src` allowlist on extension pages
 
+- **Status:** Completed. `extension/manifest.json` CSP extended with the
+  full host_permissions allowlist (3 AI providers, SponsorBlock, 6
+  downloader fallback ports, Ollama); positive + negative regression in
+  `tests/hardening.test.js`; `HARDENING.md` H20 logs the wire contract
+  and rationale.
 - **Severity:** Defense-in-depth gap. The current
   `extension/manifest.json#content_security_policy.extension_pages` is
   `script-src 'self'; object-src 'self';` — no `connect-src` directive.
