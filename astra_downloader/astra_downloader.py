@@ -12,6 +12,23 @@ from pathlib import Path
 from datetime import datetime
 from urllib.parse import urlparse
 
+# v1.4.0 (NX9): yt-dlp dropped Python 3.9 in release 2025.10.22. Astra
+# Downloader's bundled yt-dlp.exe is auto-updated, so a Python 3.9 host
+# would still run via subprocess shellout — but `pip install
+# -r requirements.txt` increasingly pulls 3.10-only wheels (waitress 3.x,
+# requests 2.32+). Hard-fail at module load with a clear message so the
+# bootstrap path's auto-pip strategies don't silently install
+# incompatible wheels.
+_MIN_PYTHON = (3, 10)
+if sys.version_info < _MIN_PYTHON:
+    sys.stderr.write(
+        f"[Astra Downloader] Python {_MIN_PYTHON[0]}.{_MIN_PYTHON[1]}+ "
+        f"required (you're on "
+        f"{sys.version_info.major}.{sys.version_info.minor}). yt-dlp "
+        f"dropped Python 3.9 support in 2025.10.22.\n"
+    )
+    sys.exit(1)
+
 # ── Bootstrap: auto-install dependencies ──
 def _bootstrap():
     """Install required packages before importing them."""

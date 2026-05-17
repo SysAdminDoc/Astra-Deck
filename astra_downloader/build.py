@@ -9,6 +9,21 @@ import subprocess
 import sys
 from pathlib import Path
 
+# v1.4.0 (NX9): yt-dlp dropped Python 3.9 support in release 2025.10.22.
+# Astra Downloader auto-downloads the latest yt-dlp.exe at first run, so a
+# Python 3.9 host would shell out fine to the bundled yt-dlp binary, but
+# anyone running `python astra_downloader.py` directly (dev / source) needs
+# 3.10+. Hard-fail early with a clear message rather than yielding a
+# cryptic ImportError downstream when the bootstrap path hits a newer
+# wheel.
+MIN_PYTHON = (3, 10)
+if sys.version_info < MIN_PYTHON:
+    raise SystemExit(
+        f"Astra Downloader requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ "
+        f"(yt-dlp dropped 3.9 in 2025.10.22). "
+        f"You're on {sys.version_info.major}.{sys.version_info.minor}."
+    )
+
 HERE = Path(__file__).parent.resolve()
 ROOT = HERE.parent
 SCRIPT = HERE / "astra_downloader.py"
