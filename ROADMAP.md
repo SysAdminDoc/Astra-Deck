@@ -653,12 +653,19 @@ relative to a focused half-day unless noted.
 
 ### Platform compliance & correctness
 
-- **L1** Tampermonkey #2673 workaround — adopt the `Navigation API`
+- **L1** ~~Tampermonkey #2673 workaround — adopt the `Navigation API`
   (`navigation.addEventListener('navigate', ...)`) in the userscript
   build for SPA-reload self-detection, with the existing
-  `yt-navigate-finish` listener as fallback. Closes the upstream "won't
-  fix" with no charter conflict (it's correctness, not features).
-  [src-tampermonkey-2673] [src-navigation-api]
+  `yt-navigate-finish` listener as fallback.~~
+  **Completed.** `extension/core/navigation.js` now attaches a
+  `window.navigation.addEventListener('navigate', ...)` listener
+  alongside the existing yt-navigate-finish / yt-page-data-updated /
+  popstate chain, gated behind `typeof window.navigation?.addEventListener
+  === 'function'` so older browsers fall back to the prior surface.
+  `attachNavigationApi()` + `detachNavigationApi()` symmetric paths
+  hook into `ensureNavigateListener()` + `stopNavigateListener()`.
+  The userscript build will pick up the change on next
+  `sync-userscript.js` run. [src-tampermonkey-2673] [src-navigation-api]
 - **L2** Chrome 138 `chrome.userScripts` toggle UX update — README
   install instructions need a one-line callout that the new per-
   extension toggle may be OFF for fresh installs on Chrome 138+. We
