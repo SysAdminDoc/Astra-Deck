@@ -508,7 +508,32 @@ MV3 extension content script).
 
 ### NX15. Repo bloat audit (defer-blocked items)
 
-The repo ships:
+- **Status:** Partially completed (conservative pass). Removed two
+  clear bloat items:
+  - `AstraDownloader.exe` (~46 MB at repo root) — release artifact
+    built by `astra_downloader/build.py`; doesn't belong in the source
+    tree. Added explicit `AstraDownloader.exe` line to `.gitignore`
+    so a stray build doesn't get re-committed by accident.
+  - `Install-YTYT.ps1` (~32 KB) — legacy YTYT-Downloader v4.1.0
+    installer; references `ytdl-server.ps1` / `ytdl-worker.ps1` which
+    no longer exist. The current install path is the bundled
+    `AstraDownloader.exe` (built locally + attached to GH Releases).
+    Only references remaining in the repo are inside `archive/`
+    legacy userscripts, which is the right place for them.
+
+  Deferred (require maintainer judgment — not pure mechanical cleanup):
+  - `archive/` (~15 historical userscript versions, ~3 MB total) —
+    intentional historical reference. Pruning to last 3 majors would
+    save ~70% of the directory but loses the version-by-version
+    install-instruction archaeology those files preserve.
+    Maintainer call.
+  - `mhtml/` reference captures — already covered by the global
+    `*.mhtml` gitignore rule. The directory may exist locally but
+    its contents are never committed.
+  - `logo.png`, `AstraDownloader.ico` at repo root — referenced by
+    README + downloader bootstrap (`ICON_URL`). Keep.
+
+The repo previously shipped:
 
 - `AstraDownloader.exe` (46 MB binary) committed at repo root.
 - `archive/` with userscript versions v0.1.0 through v2.1.0

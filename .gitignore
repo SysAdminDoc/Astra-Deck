@@ -5,6 +5,11 @@ build/
 *.bak
 comments.png
 YTKit-v1.2.0.user.js
+
+# v3.23.0 NX15: AstraDownloader.exe is a release artifact built by
+# astra_downloader/build.py — it does not belong in the source tree.
+# Build locally then attach it to the GitHub Release.
+AstraDownloader.exe
 CLAUDE.md
 CODEX-CHANGELOG.md
 CODEX_CHANGELOG.md
