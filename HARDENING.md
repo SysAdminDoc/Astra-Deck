@@ -3,6 +3,24 @@
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
 > H20 onward covers v3.23.0 (Pass 19).
 
+## H23 — Subscriptions list-view removal — audit-only (v3.23.0, NX7)
+
+**Trigger.** YouTube removed list-view from Subscriptions in Feb 2026,
+breaking the `flow=2` URL-param workaround that some third-party
+extensions used to force list rendering.
+
+**Audit result.** Astra Deck's `subscriptionsGrid` feature (`ytkit.js:4848`
++ rule block at `ytkit.js:7126`) does NOT depend on `flow=2` or the
+list-view DOM shape. It exclusively re-styles
+`ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer`
+and tweaks the `--ytd-rich-grid-items-per-row` CSS token. The removal
+is invisible to the feature.
+
+**No code change.** Documented here so future audits don't re-raise
+the regression risk.
+
+---
+
 ## H22 — Astra Downloader response cache-control hardening (v3.23.0, NX11)
 
 **CVE class.** CVE-2026-27205 — Flask ≤3.1.2 leaks session data via cache

@@ -346,6 +346,14 @@ each watched video. [src-dearrow]
 
 ### NX3. Firefox-Android XPI smoke test (carried from prior NX2)
 
+- **Status:** Blocked on device access. Requires a physical
+  Firefox-Android 128+ install of the current XPI; the maintainer's
+  manual smoke would surface one of three outcomes: "works as-is" /
+  "fails on API X" / "fails fundamentally — desktop-only." Until that
+  pass runs, README's Compatibility table keeps the "Mobile browsers:
+  Not supported" line as the conservative stance. No code change
+  available from this side.
+
 Firefox 128+ Android ships full MV3. Astra-Deck has never been tested
 there. Outcome is one of: "works as-is" / "fails on API X — feature
 toggle / shim required" / "fails fundamentally — document as desktop-
@@ -353,6 +361,15 @@ only." Either way, README gains a definitive support-matrix entry.
 [src-fx-mv3] [src-fx-android]
 
 ### NX4. Mozilla AMO unlisted listing for the Firefox XPI (carried NX5)
+
+- **Status:** Blocked on Mozilla developer account credentials. The
+  submission flow at https://addons.mozilla.org/developers/ requires
+  the maintainer to upload the XPI under their AMO publisher
+  identity. Once submitted unlisted, Mozilla returns a signed XPI
+  inside the 2-4 week review window. The repo-side prep is already
+  done (the XPI is built and self-signed via `ytkit.pem` in
+  `build-extension.js`); only the submission step requires
+  maintainer action.
 
 Self-distribution requires AMO signing for stable auto-update across
 Firefox releases. Submit `unlisted`; 2–4 week review window. Charter-
@@ -395,6 +412,17 @@ schedules. Pairs cleanly with the recent ESLint v9 → v10 EOL warning
 (Aug 2026) [src-eslint-10]. [src-dependabot]
 
 ### NX7. YouTube Subscriptions list-view removal — verify Subs Grid still works
+
+- **Status:** Completed (audit-only — no code change needed). Reviewed
+  `subscriptionsGrid` at `extension/ytkit.js:4848` + the related rule
+  block at line 7126. The feature exclusively re-styles
+  `ytd-browse[page-subtype="subscriptions"] #contents.ytd-rich-grid-renderer`
+  (and the dense-grid `--ytd-rich-grid-items-per-row` token at line
+  7147). It never depends on `flow=2` URL params or the list-view DOM
+  shape — only the grid renderer's columns and item widths. The Feb
+  2026 list-view removal doesn't affect the feature; subscribers see
+  the same dense-grid restyle they did before. No code change.
+  Documented in HARDENING.md H23 below for the audit trail.
 
 YouTube removed list-view from Subscriptions in Feb 2026, breaking the
 `flow=2` URL workaround. Astra-Deck's `subscriptionsGrid` feature needs
