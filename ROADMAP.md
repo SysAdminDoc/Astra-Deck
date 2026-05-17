@@ -417,6 +417,19 @@ build (`build.py` + bootstrap path) must reflect this. Update
 
 ### NX10. Astra Downloader: ffmpeg 8.1.1 bundling + HLS handler smoke
 
+- **Status:** Completed (scoped to capability audit; full HLS-handler
+  invocation test deferred since yt-dlp owns the ffmpeg call path).
+  `check_ffmpeg_capabilities()` + `parse_ffmpeg_major()` audit the
+  bundled ffmpeg's major version with a `_FFMPEG_MIN_MAJOR = 7` floor.
+  Snapshot/git builds (non-numeric versions) return `current=None`
+  rather than false-alarming. Cached for an hour; result surfaced on
+  `/health.ffmpegCapabilities` so the extension popup can render a
+  "ffmpeg looks stale" pill. 5 new regressions in
+  `test_astra_downloader.py::FfmpegCapabilitiesTests`. `FFMPEG_URL`
+  remains pinned to `yt-dlp/FFmpeg-Builds/releases/download/latest/...`
+  which currently resolves to ffmpeg 8.x; the audit catches drift if
+  that ever changes.
+
 FFmpeg 8.1.1 (Mar 2026) removed the legacy HLS protocol handler. Astra
 Downloader bundles ffmpeg via the yt-dlp ffmpeg-builds URL. Pin to
 ffmpeg-master-latest with explicit version check on bootstrap; add a

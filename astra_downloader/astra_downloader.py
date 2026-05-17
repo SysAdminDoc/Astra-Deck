@@ -652,6 +652,92 @@ def get_ffmpeg_version(force=False):
     return cache['value']
 
 
+# v1.4.0 (NX10): ffmpeg 8.0 dropped OpenSSL <=1.1.0; 8.1.1 removed the
+# legacy HLS protocol handler (HLS is still supported via the demuxer
+# path that yt-dlp typically uses, but the old `hls://` URL form is
+# gone). Both releases also flipped TLS peer-cert verification ON by
+# default. We don't read ffmpeg's capabilities directly anywhere — yt-dlp
+# handles invocation — but we can audit ffmpeg's reported major version
+# at bootstrap and warn if it's stale. The check runs once per Astra
+# Downloader launch (cached) and the result lands on /health.
+_FFMPEG_MIN_MAJOR = 7  # ffmpeg 8.x is current as of 2026; 7.x is the
+                       # acceptable floor (covers most distros' bundles
+                       # without forcing immediate refresh).
+_ffmpeg_capabilities_cache = {'value': None, 'checked_at': 0.0}
+_FFMPEG_CAPABILITIES_TTL_SECONDS = 3600
+
+
+def parse_ffmpeg_major(version_string):
+    """Extract the integer major version from an ffmpeg `-version` line.
+
+    Handles the common shapes:
+      ``ffmpeg version 8.1.1 …``  -> 8
+      ``ffmpeg version N-118574-gabc1234 …``  (git build) -> None
+      ``ffmpeg version 7.0-static …`` -> 7
+
+    Returns None when the version string can't be parsed cleanly, so
+    callers can degrade gracefully (no false alarms on git/snapshot
+    builds whose version is intentionally non-numeric).
+    """
+    if not version_string:
+        return None
+    m = re.match(r'(\d+)\.', str(version_string))
+    if not m:
+        return None
+    try:
+        return int(m.group(1))
+    except (TypeError, ValueError):
+        return None
+
+
+def check_ffmpeg_capabilities(force=False):
+    """One-shot bootstrap audit of the bundled ffmpeg.
+
+    Returns a dict ``{majorVersion: int|None, current: bool, message: str}``
+    suitable for the /health endpoint. Cached for an hour so subsequent
+    polls are cheap; force=True bypasses the cache (used after a re-pull
+    of ffmpeg.exe).
+    """
+    cache = _ffmpeg_capabilities_cache
+    now = time.time()
+    if not force and cache['value'] and (now - cache['checked_at']) < _FFMPEG_CAPABILITIES_TTL_SECONDS:
+        return cache['value']
+    version = get_ffmpeg_version()
+    major = parse_ffmpeg_major(version)
+    if major is None:
+        # No ffmpeg installed yet, or a git/snapshot build whose version
+        # is non-numeric. Treat as "current = unknown" rather than
+        # "stale" to avoid false alarms during first-run bootstrap.
+        result = {
+            'majorVersion': None,
+            'current': None,
+            'message': 'ffmpeg version not detected (first-run bootstrap or snapshot build)',
+        }
+    else:
+        current = major >= _FFMPEG_MIN_MAJOR
+        if current:
+            message = f'ffmpeg {major}.x meets the {_FFMPEG_MIN_MAJOR}+ floor'
+        else:
+            message = (
+                f'ffmpeg {major}.x is below the {_FFMPEG_MIN_MAJOR}+ floor; '
+                f'consider re-downloading via the bundled bootstrap'
+            )
+        result = {
+            'majorVersion': major,
+            'current': current,
+            'message': message,
+        }
+    cache['value'] = result
+    cache['checked_at'] = now
+    return result
+
+
+def reset_ffmpeg_capabilities_cache():
+    """Test hook + post-ffmpeg-refresh re-check trigger."""
+    _ffmpeg_capabilities_cache['value'] = None
+    _ffmpeg_capabilities_cache['checked_at'] = 0.0
+
+
 # ── v1.2.0: throttled yt-dlp auto-update helpers ──
 _YTDLP_UPDATE_INTERVAL_HOURS = 24
 
@@ -2146,6 +2232,11 @@ def create_api(config, dl_manager, history):
             # detected" pill. null = not running / unreachable; an object
             # with {ok, port, version} = running.
             "poTokenProvider": probe_po_token_provider(),
+            # v1.4.0 (NX10): bundled ffmpeg freshness audit. The extension
+            # popup can surface a "ffmpeg looks stale (X.x); update via
+            # the Repair panel" pill when current=false. null = first-run
+            # bootstrap before ffmpeg is on disk.
+            "ffmpegCapabilities": check_ffmpeg_capabilities(),
             "rateLimit": {
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
