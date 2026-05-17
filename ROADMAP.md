@@ -370,6 +370,13 @@ by DeArrow" closes a high-value a11y gap with a few lines of code.
 
 ### NX6. Dependabot config (carried L3)
 
+- **Status:** Completed. `.github/dependabot.yml` covers npm
+  (extension), pip (astra_downloader), and github-actions (release
+  workflow). Weekly cadence for npm/pip, monthly for GHA. Major
+  version updates are ignored for the four upper-bound-pinned Python
+  deps (PyQt6/flask/requests/waitress), ESLint, and crx3 — matches the
+  existing `requirements.txt` ceiling policy.
+
 We already run `npm audit --omit=dev` on every release; Dependabot
 moves it earlier and adds Python `requirements.txt` tracking. Single
 file `.github/dependabot.yml` with `package-ecosystem: npm` + `pip`
