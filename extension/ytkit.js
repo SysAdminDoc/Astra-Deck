@@ -3913,6 +3913,9 @@ return response;
             // happening so they can manually pick "Original" in
             // Settings → Audio Track. Off by default.
             notifyAutoDubbedAudio: false,
+            // v3.23.0 (L23): NewPipe-style sleep timer. Off by default;
+            // user opens via the in-chrome moon button + a prompt.
+            sleepTimer: false,
         },
 
         // Settings versioning and migration
@@ -18534,6 +18537,156 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
 
         // ─── v3.2.0 Wave 2: Complex & Differentiating ───
+
+        // v3.23.0 (L23): NewPipe-style sleep timer. One toggle + a numeric
+        // input (1-180 min) + a status chip in the player chrome that
+        // counts down and pauses playback at zero. Cheap, contained,
+        // never auto-actions outside the scoped pause call.
+        {
+            id: 'sleepTimer',
+            name: 'Sleep Timer',
+            description: 'Pause playback after a configurable number of minutes. NewPipe-style. The chip in the player chrome counts down + offers a Cancel + a +5 min top-up.',
+            group: 'Video Player',
+            icon: 'moon',
+            pages: [PageTypes.WATCH],
+            _chip: null,
+            _interval: null,
+            _endsAt: 0,
+            _injectTimer: null,
+            _scheduleInject(delay = 1800) {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = setTimeout(() => {
+                    this._injectTimer = null;
+                    this._inject();
+                }, delay);
+            },
+            _formatRemaining(ms) {
+                const total = Math.max(0, Math.ceil(ms / 1000));
+                const m = Math.floor(total / 60);
+                const s = String(total % 60).padStart(2, '0');
+                return `${m}:${s}`;
+            },
+            _tick() {
+                if (!this._chip) return;
+                const remaining = this._endsAt - Date.now();
+                if (remaining <= 0) {
+                    this._stop();
+                    const video = getMainVideoElement();
+                    if (video && !video.paused) {
+                        try { video.pause(); } catch (_) { /* reason: best-effort pause */ }
+                    }
+                    announceA11y('Sleep timer elapsed — playback paused.');
+                    showToast('Sleep timer elapsed — playback paused.', '#22c55e', { duration: 4 });
+                    return;
+                }
+                this._chip.querySelector('.sleep-time').textContent = this._formatRemaining(remaining);
+            },
+            _start(minutes) {
+                this._stop();
+                const span = Math.max(1, Math.min(180, Number(minutes) || 0));
+                this._endsAt = Date.now() + span * 60 * 1000;
+                this._interval = setInterval(() => this._tick(), 1000);
+                this._renderChip();
+                announceA11y(`Sleep timer set for ${span} minutes.`);
+            },
+            _extend(minutes) {
+                if (!this._interval) return;
+                const span = Math.max(1, Math.min(60, Number(minutes) || 5));
+                this._endsAt += span * 60 * 1000;
+                this._tick();
+                announceA11y(`Sleep timer extended by ${span} minutes.`);
+            },
+            _stop() {
+                if (this._interval) {
+                    clearInterval(this._interval);
+                    this._interval = null;
+                }
+                this._endsAt = 0;
+                if (this._chip) {
+                    this._chip.remove();
+                    this._chip = null;
+                }
+            },
+            _renderChip() {
+                if (this._chip) this._chip.remove();
+                const player = document.querySelector('.ytp-chrome-bottom');
+                if (!player) return;
+                const chip = document.createElement('div');
+                chip.className = 'ytkit-sleep-timer-chip';
+                chip.style.cssText = 'position:absolute;right:12px;bottom:64px;background:rgba(20,20,28,0.92);color:#cdd6f4;padding:6px 10px;border-radius:8px;font:12px/1.2 system-ui;display:flex;align-items:center;gap:8px;z-index:2147483640;backdrop-filter:blur(8px);';
+                chip.setAttribute('role', 'status');
+                chip.setAttribute('aria-live', 'polite');
+
+                const label = document.createElement('span');
+                label.textContent = 'Sleep:';
+                const time = document.createElement('span');
+                time.className = 'sleep-time';
+                time.style.cssText = 'font-variant-numeric:tabular-nums;font-weight:600;';
+                time.textContent = this._formatRemaining(this._endsAt - Date.now());
+
+                const plus = document.createElement('button');
+                plus.type = 'button';
+                plus.textContent = '+5';
+                plus.title = 'Add 5 minutes';
+                plus.setAttribute('aria-label', 'Add 5 minutes to sleep timer');
+                plus.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#cdd6f4;padding:2px 6px;cursor:pointer;font:11px system-ui;';
+                plus.addEventListener('click', () => this._extend(5));
+
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = 'Cancel';
+                cancel.title = 'Cancel sleep timer';
+                cancel.setAttribute('aria-label', 'Cancel sleep timer');
+                cancel.style.cssText = plus.style.cssText;
+                cancel.addEventListener('click', () => {
+                    this._stop();
+                    announceA11y('Sleep timer cancelled.');
+                });
+
+                chip.append(label, time, plus, cancel);
+                player.appendChild(chip);
+                this._chip = chip;
+            },
+            _inject() {
+                // Surface a "Set sleep timer" launcher button in the YT
+                // settings menu adjacent area — actually, simpler: render
+                // a single button on the right side of the player chrome
+                // when no timer is active. The chip from _renderChip
+                // replaces it when a timer is set.
+                if (this._interval) return;
+                const controls = document.querySelector('.ytp-right-controls');
+                if (!controls || controls.querySelector('.ytkit-sleep-launcher')) return;
+                const btn = document.createElement('button');
+                btn.className = 'ytp-button ytkit-player-btn ytkit-sleep-launcher';
+                btn.title = 'Sleep timer';
+                btn.setAttribute('aria-label', 'Set sleep timer');
+                TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>');
+                btn.addEventListener('click', () => {
+                    const raw = prompt('Sleep timer — minutes (1-180):', '30');
+                    if (raw === null) return;
+                    const n = Number(raw);
+                    if (!Number.isFinite(n) || n < 1 || n > 180) {
+                        showToast('Enter 1-180 minutes.', '#ef4444', { duration: 4 });
+                        return;
+                    }
+                    this._start(n);
+                });
+                controls.insertBefore(btn, controls.firstChild);
+            },
+            init() {
+                this._scheduleInject(2000);
+                addNavigateRule('sleepTimer', () => {
+                    this._scheduleInject(2000);
+                });
+            },
+            destroy() {
+                if (this._injectTimer) clearTimeout(this._injectTimer);
+                this._injectTimer = null;
+                this._stop();
+                removeNavigateRule('sleepTimer');
+                document.querySelectorAll('.ytkit-sleep-launcher').forEach(el => el.remove());
+            }
+        },
 
         {
             id: 'abLoop',

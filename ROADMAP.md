@@ -795,8 +795,14 @@ relative to a focused half-day unless noted.
   YT extension on r/chrome_extensions per competitor research. Mass-
   add/cut/paste/delete across playlists. Bounded to playlist pages;
   reuses existing `playlistEnhancer` machinery. [src-multiselect]
-- **L23** Sleep timer ("stop playback in N min") — NewPipe staple,
-  one-toggle feature, zero dependency overhead. [src-newpipe]
+- **L23** ~~Sleep timer ("stop playback in N min")~~ — **Completed.**
+  NewPipe-style. Moon-icon launcher in the player chrome opens a
+  prompt (1-180 min); on accept, a status chip appears
+  `position:absolute` above the chrome counting down (tabular-nums
+  + label + +5/Cancel buttons). At zero, `video.pause()` plus an
+  aria-live announcement plus a toast. Off by default. Sources +
+  setting in `default-settings.json`; storage byte deltas 7731 →
+  7750 (ui) / 174011 → 174030 (typical). [src-newpipe]
 - **L24** Per-channel volume memory — Magic Actions / ImprovedTube
   ship this; complements existing `rememberVolume` feature with per-
   channel granularity (using StorageManager + channel-handle key,
