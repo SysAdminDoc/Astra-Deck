@@ -313,6 +313,30 @@ gated on Now-tier work.
 
 ### NX1. SponsorBlock v6+ feature pass-through
 
+- **Status:** Partial — research / scoping only. Three sub-items
+  surveyed; only the third (Hook/Greetings category) is a clean
+  drop-in. The other two require maintainer judgment on the UI
+  surface before code lands.
+  - **Channel Skip Profiles (SB v6.0).** SB ships this in the
+    SponsorBlock extension's own UI. Astra Deck integrates only the
+    hash-prefix `/api/skipSegments` endpoint — not SB's UI. Pass-
+    through requires either (a) opening a popup that proxies SB's
+    profile config UI as an iframe, or (b) re-implementing the
+    per-channel-override storage on our side and forwarding it on
+    every fetch. Both are non-trivial UI calls — maintainer decision
+    on which path before code.
+  - **OR operator + advanced expressions (SB v6.1).** Same
+    constraint: SB's evaluator runs on their UI, not our fetch
+    layer. Forwarding the expression string into our fetch is a
+    one-line addition; surfacing the textarea editor + the docs link
+    is the maintainer-facing piece.
+  - **Hook/Greetings category.** Verified `_getEnabledCategories`
+    iterates `appState.settings.sbCat_*` keys; adding
+    `sbCat_hookgreetings: false` to defaults + a settings entry is
+    mechanical, deferring until the v6.x category split is fully
+    documented upstream (the SB wiki currently lists Hook/Greetings
+    as a sub-property of preview/recap, not a top-level category).
+
 Astra-Deck integrates SponsorBlock as a category-skip layer but does
 not surface SB v6.0 features that have shipped in 2025–2026.
 [src-sb-releases]
@@ -332,6 +356,18 @@ not surface SB v6.0 features that have shipped in 2025–2026.
   numbers still increment correctly per-category.
 
 ### NX2. DeArrow "Casual Mode" + thumbnail-submission flow surfaces
+
+- **Status:** Partial — research / scoping only. DeArrow v2.3.6
+  introduced Casual Mode as an opt-in per-category toggle with vote
+  feedback. The upstream `/api/branding/{hash}` endpoint Astra Deck
+  consumes hasn't surfaced a wire-level "casual" gating flag yet (the
+  feature is implemented client-side in DeArrow's own UI). Until
+  that lands, Astra Deck's only viable integration is the
+  submission-shortcut piece: a context-menu item that opens DeArrow's
+  web submission UI pre-populated with the current videoId. That's a
+  20-line addition; deferred so it lands alongside NX1's UI decisions
+  (both are DeArrow/SB extension proxies and benefit from a unified
+  surface).
 
 DeArrow v2.3.6 (April 2026) ships Casual Mode — keep original titles
 where they're descriptive, vote per-category on title-fit, channel
