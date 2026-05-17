@@ -403,6 +403,13 @@ most-asked-for given the 2026 rollout of AI-dubbed YouTube content.
 
 ### NX9. Astra Downloader: declare `python_requires>=3.10`
 
+- **Status:** Completed. Module-load hard-fail in
+  `astra_downloader/astra_downloader.py` (`_MIN_PYTHON = (3, 10)`) so a
+  3.9 host gets a clear stderr message instead of an opaque ImportError
+  from a 3.10-only wheel later in bootstrap. Same guard in `build.py`.
+  `requirements.txt` carries an explanatory comment block at the top
+  documenting the floor + the upper-major-pin policy.
+
 yt-dlp dropped Python 3.9 support in 2025.10.22. Astra Downloader's
 build (`build.py` + bootstrap path) must reflect this. Update
 `pyproject.toml` (if present) or `requirements.txt` comment, and
