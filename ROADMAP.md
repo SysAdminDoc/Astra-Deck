@@ -254,6 +254,16 @@ unblocks downstream work.
 
 ### N6. YouTube "liquid glass" player redesign — selector audit
 
+- **Status:** Partial — research + scaffolding only. The pass can't capture
+  fresh MHTML of the new chrome from this environment, so the concrete
+  selector promotion (acceptance criteria 1–3) is pending a maintainer
+  browser session. What landed: a `LIQUID_GLASS_WATCHLIST` placeholder
+  array in `tests/selector-regression.test.js` (informational, asserts
+  only its non-emptiness), an extended comment in `CRITICAL_SELECTORS`
+  documenting the transition-window semantics (keep old + new both), and
+  `HARDENING.md` H21 with the rollout context, list of affected
+  Astra-Deck features, and a six-step next-action checklist for the
+  maintainer.
 - **Severity:** Real platform-drift; rollout has begun globally and
   every observer reports the new chrome (pill action container, smaller
   skip animation, no-dim-on-pause). Astra-Deck has many feature
