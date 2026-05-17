@@ -703,9 +703,16 @@ relative to a focused half-day unless noted.
 
 ### Observability
 
-- **L9** Diagnostic-log export from popup — already partially shipped
-  (Copy button). Add "Save as JSON file" alongside Copy via
-  `chrome.downloads.download`. [src-loc-popup-clear]
+- **L9** ~~Diagnostic-log export from popup~~ — **Completed.**
+  New Save button alongside Copy + Clear in the popup health banner.
+  Reads `ytSuiteSettings._errors`, builds a structured payload with
+  `exportedAt` + `extensionVersion` + `userAgent` + raw `errors`
+  array, and writes via `chrome.downloads.download` (with `saveAs:
+  true`) when available, falling back to an `a[download]` click for
+  Firefox builds without downloads permission. Filename includes an
+  ISO timestamp (`astra-deck-diagnostics-2026-...json`). Five new
+  i18n keys cover the button label + aria-label + success/failure
+  status messages (en only; other locales fall through). [src-loc-popup-clear]
 - **L10** Telemetry-free crash badge — popup shows a small badge if
   `_errors` count > N in last 24 h. Currently popup surfaces only
   TrustedTypes-tagged failures (H4). Extend the filter to all

@@ -284,6 +284,18 @@
   "healthCopyBtn": {
     "message": "Copy"
   },
+  "healthSaveAria": {
+    "message": "Save diagnostic log as JSON"
+  },
+  "healthSaveBtn": {
+    "message": "Save"
+  },
+  "statusDiagSaved": {
+    "message": "Diagnostic log saved."
+  },
+  "statusDiagSaveFail": {
+    "message": "Could not save log"
+  },
   "healthEventPlural": {
     "message": "events"
   },
