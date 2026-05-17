@@ -6,6 +6,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Documentation
+
+- **Doc + version drift sweep (N4).** README version badge bumped to
+  v3.22.0; intro names speed control + reaction spammer + 10 locales;
+  new "Languages" section with the bundled locale table; feature tables
+  add Speed Control Chip + Reaction Spammer rows. Security line reflects
+  the new CSP `connect-src` allowlist. CONTRIBUTING.md "YTKit" → "Astra
+  Deck" globally; project-structure block rewritten (retired options
+  page, new `_locales/` directory, scripts inventory, standalone
+  userscripts). HARDENING.md header rewritten to cover the full v3.14 →
+  v3.23 window with H1–H19 prior-pass preamble and Pass 19 (H20/H21)
+  landing now.
+
 ### Security
 
 - **CSP `connect-src` allowlist on extension pages (N5, HARDENING H20).**
