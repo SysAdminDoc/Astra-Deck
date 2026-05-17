@@ -1,6 +1,6 @@
-# Contributing to YTKit
+# Contributing to Astra Deck
 
-Thanks for your interest in contributing to YTKit! This guide will help you get started.
+Thanks for your interest in contributing to Astra Deck! This guide will help you get started.
 
 ## Getting Started
 
@@ -8,24 +8,40 @@ Thanks for your interest in contributing to YTKit! This guide will help you get 
 2. **Clone** your fork locally
 3. Use **Node 22+** (`.nvmrc` is included for `nvm use`)
 4. Run `npm ci`
-5. If you are testing the userscript build, install [Tampermonkey](https://www.tampermonkey.net/) (Chrome) or [Violentmonkey](https://violentmonkey.github.io/) (Firefox)
+5. If you are testing the userscript build, install [Tampermonkey](https://www.tampermonkey.net/) (Chrome) or [Violentmonkey](https://violentmonkey.github.io/) (Firefox). Note: Chrome 138+ moved the "Allow User Scripts" toggle to a per-extension control; fresh Tampermonkey installs default OFF and must be enabled manually under `chrome://extensions` → Tampermonkey → Details
 
 ## Project Structure
 
 ```
 Astra-Deck/
   extension/           # MV3 extension source
-    core/              # Shared runtime utilities
-    ytkit.js           # Main feature/content-script runtime
-    ytkit-main.js      # MAIN-world bridge
-    background.js      # Service worker
-    options.*          # Options UI
-    popup.*            # Toolbar popup UI
+    core/              # Shared runtime utilities (env, storage, styles, url,
+                       #   page, navigation, player)
+    _locales/          # WebExtension i18n catalogues (10 bundled locales)
+    ytkit.js           # Main feature/content-script runtime (ISOLATED world)
+    ytkit-main.js      # MAIN-world bridge (codec filter, quality forcer)
+    background.js      # Service worker (fetch proxy, downloads, broadcasts)
+    popup.*            # Toolbar popup UI (only extension surface;
+                       #   options.html / options.js retired in v3.19.0)
+    manifest.json      # MV3 manifest
+    default-settings.json  # Auto-generated catalogue (don't hand-edit)
+    settings-meta.json     # Auto-generated SETTINGS_VERSION pin
+  astra_downloader/    # Local Python/Flask + PyQt6 yt-dlp companion
   build-extension.js   # Canonical packager for Chrome/Firefox/userscript artifacts
-  tests/               # Focused Node-based verification
-  YTKit.user.js        # Repo-tracked userscript source
+  tests/               # Focused Node-based verification (npm test)
+  scripts/             # check-versions, check-i18n, audit-storage,
+                       #   audit-popup-a11y, check-contrast,
+                       #   build-selector-fixtures, generate-locales,
+                       #   extract-i18n-keys, custom ESLint rules
+  YTKit.user.js        # Repo-tracked userscript source (legacy filename
+                       #   preserved for stable @updateURL on existing
+                       #   installs; built from extension/ytkit.js by
+                       #   sync-userscript.js)
+  YT_Reaction_Spammer.user.js  # Standalone live-chat reaction spammer
+  theater-split.user.js        # Standalone theater split userscript
   CHANGELOG.md         # Public version history
-  CODEX-CHANGELOG.md   # Agent repair ledger / handoff trail
+  HARDENING.md         # Cumulative hardening audit log
+  ROADMAP.md           # Working roadmap (Now / Next / Later)
 ```
 
 ## Architecture
@@ -92,7 +108,7 @@ npm run build
 Use the [Bug Report template](https://github.com/SysAdminDoc/Astra-Deck/issues/new?template=bug_report.md) and include:
 - Browser + version
 - Userscript manager + version
-- YTKit version
+- Astra Deck version
 - Steps to reproduce
 - Console errors (F12 > Console)
 
