@@ -1,0 +1,78 @@
+# Dependabot configuration for Astra Deck.
+# Refs:
+#   https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Scope notes:
+#   * We pin Node engines at >=22 (per package.json). Dependabot proposes
+#     bumps; CI's `npm test` + `npm run check` gates catch regressions
+#     before merge.
+#   * `astra_downloader/requirements.txt` carries upper-major pins
+#     (PyQt6<7, flask<4, requests<3, waitress<4) so Dependabot can't
+#     silently land a major bump.
+#   * GitHub Actions check covers the release workflow's pinned action
+#     versions (actions/checkout, actions/setup-node, actions/upload-artifact).
+#   * Weekly cadence keeps the noise floor manageable; the maintainer can
+#     bump to daily if a CVE wave warrants.
+version: 2
+updates:
+  # ── JavaScript / Node — extension build pipeline ─────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # ESLint v9 reaches EOL Aug 2026; we pin 10.x. Allow Dependabot to
+    # propose patch + minor bumps inside the major, never major.
+    ignore:
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "crx3"
+        update-types: ["version-update:semver-major"]
+
+  # ── Python — Astra Downloader companion ───────────────────────────────
+  - package-ecosystem: "pip"
+    directory: "/astra_downloader"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "downloader"
+    commit-message:
+      prefix: "deps(downloader)"
+    # requirements.txt upper-bounds (PyQt6<7, flask<4, requests<3,
+    # waitress<4) already block major churn. Dependabot only proposes
+    # minor/patch inside those.
+    ignore:
+      - dependency-name: "PyQt6"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "flask"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "requests"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "waitress"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions — release workflow pinning ─────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci(deps)"
