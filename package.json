@@ -22,7 +22,7 @@
     "lint": "eslint extension/background.js",
     "audit:a11y": "node scripts/audit-popup-a11y.js",
     "audit:contrast": "node scripts/check-contrast.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js tests/features/*.test.js"
   },
   "dependencies": {
     "crx3": "^2.0.0"
