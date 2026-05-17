@@ -257,6 +257,28 @@ document_idle
 
 ---
 
+## Reaction Spammer
+
+The optional Reaction Spammer feature lets you pick a set of YouTube
+live-chat reactions and fire them in a randomized loop at a chosen
+interval. It ships in two forms:
+
+- **Bundled** in the MV3 extension as a Live Chat feature toggle —
+  surfaces a floating launcher on `live_chat` pages.
+- **Standalone** as `YT_Reaction_Spammer.user.js`, a Tampermonkey /
+  Violentmonkey userscript with no extension dependency.
+
+**Default: OFF, opt-in only.** Rapid synthetic reactions could trigger
+YouTube's automated-behavior heuristics and result in account rate-
+limiting or flagging. The first time you open the launcher per profile,
+an amber toast surfaces this warning. The minimum interval is clamped
+to 500 ms in both the extension and the standalone userscript — faster
+than ~2 Hz is unsafe.
+
+Use at your own risk.
+
+---
+
 ## Languages
 
 Astra Deck ships with 10 bundled UI locales:
