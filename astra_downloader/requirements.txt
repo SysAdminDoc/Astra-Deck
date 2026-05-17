@@ -1,3 +1,11 @@
+# Astra Downloader Python dependency pins.
+#
+# Floor: Python 3.10 (yt-dlp dropped 3.9 in release 2025.10.22).
+# Hard-failed at runtime in astra_downloader.py module load.
+#
+# Upper bounds are per-package — prevents Dependabot or a fresh
+# pip resolve from silently landing PyQt7/Flask4/requests3/waitress4
+# without a deliberate migration pass.
 PyQt6>=6.6.0,<7
 flask>=3.0.0,<4
 requests>=2.31.0,<3
