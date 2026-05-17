@@ -492,6 +492,15 @@ leaked. Pairs with the heightened CWS / AMO scrutiny on `downloads` +
 
 ### NX14. Reaction-spammer: surface in-feature warning + docs
 
+- **Status:** Completed. Dedicated "Reaction Spammer" section in
+  README.md between the Languages and main feature tables. Explains
+  the two surfaces (bundled extension feature + standalone
+  `YT_Reaction_Spammer.user.js`), the default-OFF stance, the rate-
+  limit warning (and that the first-launcher-open toast surfaces it
+  in-product), and the 500 ms interval floor enforced both sides.
+  The in-feature toast (N3) is the runtime equivalent of this
+  callout.
+
 After N3 lands the default-OFF + cooldown floor, add a paragraph to
 README explaining the feature, its risk profile ("YouTube may rate-
 limit"), and that it's a userscript companion (not bundled into the
