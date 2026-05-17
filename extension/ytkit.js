@@ -3906,6 +3906,13 @@ return response;
             transcriptAiTarget: 'notebooklm',   // 'notebooklm' | 'chatgpt' | 'claude' | 'gemini' | 'perplexity'
             audioTrackLanguage: false,
             preferredAudioLang: 'en',           // BCP-47 primary subtag
+            // v3.23.0 (NX8): surface a one-time notice when YouTube
+            // serves an AI-dubbed audio track. Doesn't auto-switch
+            // (the native menu restarts playback per the
+            // audioTrackLanguage notice) — just tells the user it's
+            // happening so they can manually pick "Original" in
+            // Settings → Audio Track. Off by default.
+            notifyAutoDubbedAudio: false,
         },
 
         // Settings versioning and migration
@@ -18401,8 +18408,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         {
             id: 'antiTranslate',
-            name: 'Anti-Translate (Original Titles)',
-            description: 'Prevent YouTube from auto-translating video titles and descriptions to your language',
+            name: 'Anti-Translate (Original Titles + Descriptions)',
+            description: 'Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page.',
             group: 'Content',
             icon: 'languages',
             _processTimer: null,
@@ -18436,6 +18443,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             watchTitle.setAttribute('ytkit-antitranslate', '1');
                         }
                     } catch {}
+                }
+                // v3.23.0 (NX8): Watch page DESCRIPTION un-translate.
+                // YouTube auto-translates the description into the user's
+                // browser locale via the same mechanism that translates the
+                // title. The original description lives in
+                // `ytInitialPlayerResponse.videoDetails.shortDescription`.
+                // The displayed description is rendered into
+                // `#description-inline-expander` (collapsed) and
+                // `ytd-text-inline-expander` (expanded). Both contain a
+                // `<yt-attributed-string>` or `<yt-formatted-string>` for
+                // the actual text.
+                try {
+                    const pr = _rw.ytInitialPlayerResponse;
+                    const originalDesc = pr?.videoDetails?.shortDescription;
+                    if (originalDesc) {
+                        const descTargets = document.querySelectorAll(
+                            '#description-inline-expander yt-attributed-string:not([ytkit-antitranslate]), ' +
+                            'ytd-text-inline-expander yt-attributed-string:not([ytkit-antitranslate]), ' +
+                            '#description yt-formatted-string:not([ytkit-antitranslate])'
+                        );
+                        descTargets.forEach(el => {
+                            const displayed = el.textContent.trim();
+                            // Heuristic: if the displayed text doesn't
+                            // contain a long-enough substring of the
+                            // original, YouTube has translated it. Skip
+                            // identical (already original) and very-short
+                            // descriptions to avoid false positives on
+                            // empty rollouts.
+                            if (displayed && displayed !== originalDesc.trim() && originalDesc.length > 40) {
+                                el.textContent = originalDesc;
+                                el.setAttribute('ytkit-antitranslate', '1');
+                            }
+                        });
+                    }
+                } catch (_) {
+                    // reason: best-effort un-translate; never break the page
                 }
             },
 
@@ -27798,6 +27841,67 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove(); this._btn = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._navRule = null;
+            }
+        },
+        {
+            // v3.23.0 (NX8): one-time notice when a non-original audio
+            // track is auto-selected by YouTube. We don't auto-switch
+            // (the API call restarts playback per the audioTrackLanguage
+            // notice). Surfaces a toast + announces via aria-live when
+            // detected, persisted per video so it doesn't re-fire on
+            // SPA nav back to the same video.
+            id: 'notifyAutoDubbedAudio',
+            name: 'Notify on AI-dubbed audio',
+            description: 'Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings.',
+            group: 'Video Player',
+            icon: 'volume-2',
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _seenVideos: null,
+            _checkTimer: null,
+            _check() {
+                try {
+                    const player = getMoviePlayerElement();
+                    if (!player || typeof player.getAudioTrack !== 'function') return;
+                    const track = player.getAudioTrack();
+                    if (!track || typeof track !== 'object') return;
+                    const id = String(track.id || '');
+                    const displayName = String(track.name || track.displayName || '');
+                    // YouTube tags the original track with `.4` or with
+                    // displayName containing "original"; auto-dubbed
+                    // tracks typically include "(dubbed)" or "AI" hints.
+                    const isOriginal = /\.4(?=\.|$)/.test(id) || /original/i.test(displayName);
+                    if (isOriginal) return;
+                    const videoId = getVideoId();
+                    if (!videoId || this._seenVideos.has(videoId)) return;
+                    this._seenVideos.add(videoId);
+                    const label = displayName || 'an AI-dubbed track';
+                    showToast(
+                        `Audio: YouTube selected ${label}. Switch to Original in the player settings if preferred.`,
+                        '#f59e0b',
+                        { duration: 8 },
+                    );
+                    announceA11y(`Audio track is ${label}; the original track may be available in the player settings.`);
+                } catch (e) {
+                    DebugManager?.log?.('NotifyAutoDubbed', `check skipped: ${e?.message || e}`);
+                }
+            },
+            init() {
+                this._seenVideos = new Set();
+                this._navRule = () => {
+                    if (this._checkTimer) clearTimeout(this._checkTimer);
+                    // Player API isn't ready until ~2 s after navigate.
+                    this._checkTimer = setTimeout(() => this._check(), 2500);
+                };
+                addNavigateRule('notifyAutoDubbedAudio', this._navRule);
+                this._navRule();
+            },
+            destroy() {
+                if (this._checkTimer) clearTimeout(this._checkTimer);
+                this._checkTimer = null;
+                removeNavigateRule('notifyAutoDubbedAudio');
+                this._navRule = null;
+                this._seenVideos = null;
             }
         },
         {
