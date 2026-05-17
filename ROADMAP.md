@@ -1,14 +1,19 @@
 # Astra-Deck — Roadmap
 
-> **Version:** v3.20.5 — last updated 2026-04-26
-> **Charter:** maintenance-mode, security-focused. New user-facing
-> features are not planned. Hardening, observability, resilience,
-> testability, distribution, and infrastructure are in scope.
-
-This roadmap is a working document. It supersedes the prior `roadmap.md`
-which was a historical snapshot. Every Now/Next/Later/Under-Consideration/
-Rejected entry below is traceable to a source in the **Appendix** at the
-bottom — items without sources are not allowed.
+> **Version:** v3.22.0 — last updated 2026-05-17
+> **Charter:** hardening-first, with selective new features when well-scoped
+> and low-blast-radius. Ongoing audits (security, observability, resilience,
+> a11y, testability, distribution, infrastructure) remain in scope by default.
+> New user-facing features land when they cleanly extend an existing surface,
+> require no new persistent backend, and pass the maintainer's quality bar —
+> the recent v3.20.6 → v3.22.0 wave (native folder picker, player speed
+> control, reaction spammer, 10-locale i18n) is the precedent.
+>
+> **This document supersedes the prior `roadmap.md` (last updated 2026-04-26
+> at v3.20.5).** Item statuses and tiers are reconciled against actual
+> shipped state in v3.20.6 → v3.22.0. Every Now/Next/Later/Under-
+> Consideration/Rejected entry traces to a source in the **Appendix** —
+> items without sources are not allowed.
 
 ---
 
@@ -16,299 +21,686 @@ bottom — items without sources are not allowed.
 
 | Tier | Meaning |
 |---|---|
-| **Now** | Active queue, targeted for the next patch release. P0/P1. |
-| **Next** | Queued behind Now. Lands once Now drains. P2. |
-| **Later** | Backlog. Real value but low urgency. |
-| **Under Consideration** | Would extend the charter (i.e. add a user-facing feature). Listed with explicit `CHARTER-REVIEW:` so the maintainer can decide whether to expand scope. Default: deferred. |
+| **Now** | Active queue, targeted for the next patch release. P0/P1 — landed within ~2 weeks. |
+| **Next** | Queued behind Now. Lands once Now drains. P2 — 2–6 weeks out. |
+| **Later** | Backlog. Real value but low urgency. Quarterly review. |
+| **Under Consideration** | Would expand the surface area beyond the current charter (new persistent backend, large new feature domain, divergent extension/userscript paths). Tagged `CHARTER-REVIEW:` so the maintainer can decide whether to lift the scope. Default: deferred. |
 | **Rejected** | Considered and explicitly declined. Reason recorded so future research passes don't silently resurrect them. |
 
-**Charter test for any new item:** if it adds user-visible capability the
-extension didn't have before, it goes to **Under Consideration** with a
-`CHARTER-REVIEW:` tag. If it hardens, observes, resilience-ifies,
-documents, packages, or fixes a bug in something that already exists, it
-can land in Now/Next/Later.
+**Charter test for any new item:** if it hardens, observes, makes resilient,
+documents, packages, fixes a bug in something already shipped, or adds a
+small contained capability that extends an existing surface (e.g. a new
+toggle, a new locale, a new format option), it can land in Now/Next/Later.
+If it requires a new persistent backend, a new feature domain, a new
+divergent userscript/extension path, or contradicts a documented design
+decision, it goes to **Under Consideration**.
 
 ---
 
-## Recently shipped (last 30 days)
+## Recently shipped (since prior roadmap)
 
-Pass 9 → Pass 18 in chronological order. Sources are commit + tag URL on
-GitHub. Older shipped work is in `CHANGELOG.md`. Passes 12 through 18
-are complete in local commits and await the next release cut.
+The prior roadmap was cut at v3.20.5 (2026-04-26). The wave below covers
+tags **v3.20.6 → v3.22.0** between 2026-04-29 and 2026-05-10. The v3.20.5
+release itself absorbed Hardening Passes 12–18 from the prior roadmap's
+"unreleased" status into a single shipped tag.
 
-| Tag | Pass | Items |
+| Tag | Theme | Items |
 |---|---|---|
-| `v3.20.0` | Pass 7 | `_pendingReveals` session mirror; `unlimitedStorage` permission; Firefox `Ctrl+Shift+Y` reserved-key remap; theater-split v1.0.6 attributed-string selection. [src-shipped-1] |
-| `v3.20.1` | Pass 8 | `chrome.downloads.onErased` prune for `_pendingReveals`; SponsorBlock `poi_highlight` marker-not-skip; `protocol-buffers-schema` 3.6.0→3.6.1 (GHSA-j452-xhg8-qg39). [src-shipped-2] |
-| `v3.20.2` | Pass 9 | H1 TrustedTypes createPolicy observability (`TT_UNAVAILABLE`/`TT_POLICY_FAIL` in DiagnosticLog); H2 Python deps upper-major pins; H3 selector-drift canary via committed token signatures; H4 popup TT-diagnostic banner; H5 storageQuotaLRU dead-ref fix. [src-shipped-3] |
-| `v3.20.3` | Pass 10 | H6 cookie-jar wire contract via `normalizeCookieExpiry`; H7 selector canary expanded 9 → 18; H8 theater-split divider-drag SPA-nav memory leak (v1.0.6 → v1.0.7). [src-shipped-4] |
-| `v3.20.4` | Pass 11 | H9 EXT_FETCH `controller.abort()` consistency on every size-limit early-return; H10 `scripts/check-versions.js` pre-push version-string drift gate. [src-shipped-5] |
-| `unreleased` | Pass 12 | N1 profile-import migration now runs the schema chain before stamping current version; N3 popup now has modal dialog semantics, initial focus, Tab wrap, Shift-Tab wrap, and Escape close. |
-| `unreleased` | Pass 13 | NX6 profile-import migration round-trip fixtures cover every prior settings schema v1-v5 into current v6, including defaults restoration, retired/unsafe key stripping, diagnostics, and idempotency. |
-| `unreleased` | Pass 14 | NX3 SponsorBlock keeps a 12-hour bounded segment cache, serves 7-day stale fallback on API failure with cached-at marker tooltips, filters cached markers through current category toggles, and lets `storageQuotaLRU` cap `sb_segments_cache` at 500 entries. |
-| `unreleased` | Pass 15 | NX4 selector canary now covers player overlay anchors (`ytp-progress-bar-padding`, `ytp-tooltip-text`) and uses token-boundary source matching across runtime sources so wrapper names cannot mask missing exact selectors. |
-| `unreleased` | Pass 16 | NX7 storage-size audit reports exact sync-quota byte counts: UI preferences are 7,334 bytes and currently sync-sized, while the typical whole-local payload is 172,461 bytes and must stay local-only. |
-| `unreleased` | Pass 17 | H16 NX1 i18n scaffold (`_locales/en/messages.json` + `check-i18n.js` build gate); H17 L9 DiagnosticLog clear button in popup health banner; H18 L1 ESLint custom rule `no-post-await-addlistener`. |
-| `unreleased` | Pass 18 | H19 L7 WCAG 2.2 AA accessibility audit: `scripts/check-contrast.js` + `scripts/audit-popup-a11y.js` wired into `npm run check`, verify color contrast (14.16:1 health detail), button labeling, focus-visible CSS, keyboard navigation. |
+| `v3.20.5` | Pass 12–18 release cut | N1 settings-import migration; NX6 round-trip fixtures; NX3 SponsorBlock stale cache; NX4 selector canary overlay tier; NX7 storage-sync byte audit; NX1 i18n scaffold + `check-i18n.js` gate; L1 ESLint `no-post-await-addlistener`; L9 DiagnosticLog clear button; L7 WCAG 2.2 AA full audit (`check-contrast.js` + `audit-popup-a11y.js`); N3 popup modal a11y; live-chat author spacing fix. [src-shipped-1] |
+| `v3.20.6` | Downloads | Native folder picker via downloader v1.2.2 `POST /pick-folder`; download popup "Save to" row reads server config in camelCase; "Change" button flips to "Reset" with custom path. [src-shipped-2] |
+| `v3.20.7` | Downloads | Surface skipped re-downloads — amber `skipped` state pill + toast with server reason ("Already in download archive…"). Pairs with downloader v1.2.3. [src-shipped-3] |
+| `v3.20.8` | Downloads | Re-downloads always run — server archive lock removed in downloader v1.3.0. `skipped` handler kept defensively. [src-shipped-4] |
+| `v3.20.9` | Player | Speed control chip button in player chrome between Download and Settings; 5×2 grid of speeds 0.25× → 3×; wires into existing `persistentSpeed`. [src-shipped-5] |
+| `v3.21.0` | i18n | Simplified Chinese (`zh_CN`) locale, 208 keys; `t(key, fallback)` helper in popup.js + ytkit.js; HTML `data-i18n` attributes; popup language dropdown; `_localeOverride` storage key; `scripts/extract-i18n-keys.js`. [src-shipped-6] |
+| `v3.21.1` | UI polish | Style the language dropdown (dark-themed select frame). [src-shipped-7] |
+| `v3.21.2` | UI polish | Relocate language selector inline with Export/Import. [src-shipped-7] |
+| `v3.22.0` | i18n | 8 more locales (`de`, `es`, `fr`, `it`, `ja`, `ko`, `pt_BR`, `ru`) at ~199 keys each; `scripts/generate-locales.js`; "Auto (browser default)" option shows detected language inline. 10 bundled locales total. [src-shipped-8] |
 
-Test count trajectory across these passes: 86 → 151 (+65 regressions).
-0 npm audit vulnerabilities at every pass.
+Test count trajectory: 152 tests at v3.20.5 release; subsequent ship items
+added popup + i18n + speed-control regressions (count to be reconciled at
+the next release cut). 0 npm audit vulnerabilities at every pass.
+
+**New surface area introduced (not previously inventoried in roadmap):**
+
+- `extension/_locales/<lang>/messages.json` × 10 locales (~6,500 LOC of translation tables).
+- `YT_Reaction_Spammer.user.js` v0.2.0 standalone userscript, plus
+  `extension/ytkit.js` integration (default-settings.json:
+  `reactionSpammer: true`).
+- `astra_downloader/astra_downloader.py` v1.3.0 — archive lock removed,
+  native folder-picker endpoint, codec-aware format selector
+  (`build_video_format_args(container, quality)`), camelCase config wire.
 
 ---
 
 ## Now (P0/P1, targeted next release)
 
-Open queue drained by Pass 12. N1 and N3 are complete and remain below
-until the next release notes cut. N2 was removed from Now because the
-current extension build does not ship a Return YouTube Dislike integration;
-adding one would be a new user-facing feature, not resilience hardening
-[src-42].
+Six items. Each is ≤2 days of focused work, traces to ≥1 external source or
+local artifact, and either patches a real correctness/security risk or
+unblocks downstream work.
 
-### N1. Profile-import migration: preserve `_settingsVersion`, run migration chain forward
+### N1. Downloader: integrate `bgutil-ytdlp-pot-provider` for PO Token
 
-- **Status:** Completed in Pass 12 (unreleased). Migration-aware import
-  now ships in both `extension/popup.js` and `extension/ytkit.js`, with
-  regression coverage in `tests/hardening.test.js`.
-- **Severity:** Real bug. Documented in iter-1 audit pass [src-1].
-- **Files:** `extension/popup.js` (import path), `extension/ytkit.js`
-  (settings migration logic), `tests/hardening.test.js`.
-- **Goal:** Profile imported with an older `_settingsVersion` must run the
-  migration chain forward to current, not stamp the imported value as-is.
-- **Acceptance criteria:**
-  1. Importing a v3 profile into a v6-schema build produces v6 settings
-     with no missing fields and no type errors.
-  2. Round-trip test in `tests/hardening.test.js`: export → reset →
-     import → all expected keys present.
-  3. Migration chain logs each step to DiagnosticLog under
-     `ctx === 'settings-migration'`.
-  4. Unknown future-version fields preserved on import (forward-compat).
-- **Failure modes:**
-  - Migration applies twice on re-imported file (idempotency required).
-  - Type mismatches between fields renamed in a prior schema version.
-- **Rollback trigger:** Any existing JS test fails OR a real exported
-  profile from a known prior release fails to import cleanly.
-- **Source:** [src-1] iter-1-audit.md C3 finding.
+- **Status:** Completed (downloader-side). `probe_po_token_provider()`,
+  `is_youtube_url()`, and `build_youtube_extractor_args()` shipped in
+  `astra_downloader.py`; `/health.poTokenProvider` populated; yt-dlp
+  invocation appends the `youtubepot-bgutilhttp:base_url=...` extractor-arg
+  when the provider is reachable; downloader bumped to v1.4.0;
+  `tests/test_astra_downloader.py` adds 8 regressions; README adds the
+  docker install snippet. Acceptance item 3 (extension popup amber pill)
+  deferred to a follow-up since it requires extending the popup health
+  banner past the current TrustedTypes-only render path.
+- **Severity:** Critical platform-drift. YouTube has bound PO Tokens to
+  video ID in 2026; manual extraction is deprecated. Without a PO Token
+  provider, yt-dlp invocations of the `web` client increasingly fail
+  with "Sign in to confirm you're not a bot." [src-yt-po] [src-yt-sabr]
+- **Files:** `astra_downloader/astra_downloader.py` (request builder +
+  health-endpoint surface); `astra_downloader/requirements.txt`
+  (optional Docker / CLI launch hint); `README.md` (PO Token install
+  one-liner).
+- **Goal:** Astra Downloader auto-detects a running PO Token provider on
+  `127.0.0.1:4416` (the bgutil default), surfaces its health alongside
+  `/health`, and adds the appropriate `--extractor-args
+  youtube:po_token=…` invocation when available. When absent, fall back
+  gracefully and surface a one-line popup notice in the download panel.
+- **Acceptance:**
+  1. New `astra_downloader.health` field
+     `poTokenProvider: { ok, version, port } | null` populated on every
+     health probe.
+  2. Download request appends PO-Token args when provider is healthy.
+  3. Extension popup health banner gains an amber "PO Token provider not
+     detected — some YouTube videos may fail" pill when the downloader
+     reports the provider absent.
+  4. README install section gains a "PO Token provider (optional but
+     recommended)" callout with the docker-compose snippet from upstream.
+  5. Regression in `test_astra_downloader.py` for the
+     provider-detection branch.
+- **Rollback:** revert provider detection, restore prior request builder.
+- **Sources:** [src-yt-po] yt-dlp PO Token Guide; [src-yt-bgutil]
+  bgutil-ytdlp-pot-provider; [src-yt-sabr] yt-dlp PR #13515.
 
-### N2. RYD fetch wrapper: exponential backoff + jitter + 24 h dislike cache
+### N2. Downloader: enable SABR-aware format selection
 
-- **Status:** Removed from Now in Pass 12. Current code and repo-local
-  architecture notes state that Return YouTube Dislike is not shipped in
-  the extension build; adding it would violate the maintenance-mode
-  charter. [src-42]
-- **Disposition:** Preserved in the Rejected table so future research
-  passes do not treat RYD as an existing extension feature.
+- **Severity:** Platform-drift. The `web` client's `adaptiveFormats` no
+  longer ships playback URLs — only the SABR handshake works. Astra
+  Downloader's default format pipeline silently breaks on videos that
+  have transitioned to SABR-only. yt-dlp PR #13515 ships the native
+  SABR downloader; activating it is a 2-line `extractor_args` change.
+  [src-yt-sabr]
+- **Files:** `astra_downloader/astra_downloader.py` (yt-dlp args
+  builder — extend `build_video_format_args` to pass
+  `--extractor-args youtube:formats=duplicate` so both HTTPS and SABR
+  format families are returned; pick HTTPS when present, SABR
+  otherwise).
+- **Goal:** No silent download failures on SABR-only videos; users see
+  successful download whether the server returns SABR or legacy HTTPS
+  adaptiveFormats.
+- **Acceptance:**
+  1. `build_video_format_args` includes the SABR extractor arg.
+  2. A new test feeds a fixture that includes SABR-only formats and
+     asserts the downloader picks the SABR format and completes.
+  3. Codec-aware preference order (AVC1 / VP9 / fallback) preserved on
+     both format families.
+- **Rollback:** drop the extractor arg.
+- **Source:** [src-yt-sabr].
 
-### N3. WCAG 2.2 AA — popup focus trap + ARIA dialog semantics
+### N3. Reaction-spammer: default OFF, add cooldown floor + soft cap
 
-- **Status:** Completed in Pass 12 (unreleased). The popup root is now
-  labelled as a modal dialog and `popup.js` owns initial focus, Tab wrap,
-  Shift-Tab wrap, and Escape close.
-- **Severity:** Accessibility hardening. Popup is the primary UI surface;
-  current build has no focus trap and no role/labelledby attributes
-  [src-4] [src-5].
-- **Files:** `extension/popup.html`, `extension/popup.js`, `extension/popup.css`,
-  `tests/hardening.test.js`.
-- **Goal:** Popup is a fully-keyboard-navigable modal dialog. Focus
-  trapped on open; Escape closes; focus returns to trigger; assistive
-  tech announces the dialog title.
-- **Acceptance criteria:**
-  1. `<body>` of popup has `role="dialog"` + `aria-labelledby="popup-title"`
-     + `aria-modal="true"`.
-  2. On open, focus moves to the first interactive control. Tab from
-     last control wraps to first. Shift-Tab from first wraps to last.
-  3. Escape from any focus state closes the popup.
-  4. The TT-diagnostic health banner (shipped in H4) surfaces to
-     screen readers via `aria-live="polite"` (already there — just
-     verify it's announced on appearance).
-  5. Regression in `tests/hardening.test.js` pins the `role="dialog"`,
-     `aria-modal`, and the focus-trap-cycle code in popup.js.
-- **Failure modes:**
-  - Focus trap traps the user when the popup contains an iframe (none
-    today, but guard for future).
-  - Escape conflicts with browser-level shortcut on some platforms.
-- **Rollback trigger:** Any popup-related JS test fails, OR keyboard
-  navigation regression on a manual NVDA/JAWS smoke pass.
-- **Sources:** [src-4] WCAG 2.2; [src-5] W3C ARIA Modal Dialog example.
+- **Severity:** Real UX/safety regression. The reaction spammer ships
+  default-ON in v3.22.0 (`default-settings.json` line 53:
+  `"reactionSpammer": true`). The feature blasts emoji reactions at a
+  user-set interval. YouTube's automated-behavior heuristics on live
+  chat could rate-limit or flag accounts — defaulting it ON opts every
+  user into that risk without consent. The underlying userscript also
+  has no soft floor on the interval.
+- **Files:** `extension/default-settings.json`,
+  `extension/ytkit.js` (settings migration v6 → v7 turns the key off
+  but preserves existing user value),
+  `YT_Reaction_Spammer.user.js` (cooldown floor),
+  `extension/ytkit.js` reaction-spammer integration (warning pill if
+  interval < floor).
+- **Goal:** Default OFF; minimum interval 500 ms (current default is
+  600 ms); first activation in the UI shows a one-time toast "Note:
+  YouTube may rate-limit rapid reactions."
+- **Acceptance:**
+  1. `reactionSpammer: false` in default-settings.json + new
+     `SETTINGS_VERSION 7` migration that preserves user value if
+     previously set, otherwise leaves false.
+  2. Userscript clamps `intervalMs >= 500`.
+  3. `ytkit.js` launcher shows a one-shot toast (stored as
+     `_reactionSpammerAck`) on first toggle-on per profile.
+  4. Two regressions in `tests/hardening.test.js`: migration preserves
+     user-toggled-true; cold install gets false.
+- **Rollback:** revert to v6 schema; remove userscript clamp.
+- **Sources:** [src-loc-default-settings] line 53;
+  [src-loc-reaction-spammer] `YT_Reaction_Spammer.user.js`.
+
+### N4. Doc + version drift sweep
+
+- **Severity:** Sustained doc drift across four artifacts. Past Pass 18
+  already audited HARDENING.md but the README badge and CONTRIBUTING.md
+  still reference stale state. Cheap fixes; high user-perceived
+  freshness signal.
+- **Files:**
+  - `README.md` — version badge `v3.20.5` → `v3.22.0`; refresh feature
+    table to include i18n + speed control + reaction spammer.
+  - `CONTRIBUTING.md` — "YTKit" → "Astra Deck" globally;
+    `extension/options.*` reference removed (retired v3.19.0); rename
+    `CODEX-CHANGELOG.md` reference per gitignore.
+  - `HARDENING.md` — header dates back to v3.14.0 → v3.15.0; rewrite
+    top-of-file index to reflect H1–H19 cumulative state.
+  - `roadmap.md` — replaced by this document (case-rename on Windows
+    no-op; verify `git mv` records the rename).
+- **Goal:** All four canonical docs reflect v3.22.0 truth.
+- **Acceptance:**
+  1. README badge URL points at `v3.22.0`.
+  2. `rtk grep -n "YTKit"` returns zero hits in CONTRIBUTING.md
+     (allowed only in legacy filenames like `YTKit.user.js`).
+  3. HARDENING.md table-of-contents lists H1–H19 with one-line summary.
+  4. `git log --diff-filter=R --follow ROADMAP.md` shows the rename.
+- **Rollback:** revert documents to v3.20.5 state.
+- **Sources:** [src-loc-readme]; [src-loc-contributing];
+  [src-loc-hardening].
+
+### N5. CSP `connect-src` allowlist on extension pages
+
+- **Severity:** Defense-in-depth gap. The current
+  `extension/manifest.json#content_security_policy.extension_pages` is
+  `script-src 'self'; object-src 'self';` — no `connect-src` directive.
+  The popup currently fetches no external origins, but a future
+  compromised content-script (or careless contributor) could exfiltrate
+  via the popup without CSP friction. Hardening item; small,
+  mechanical, well-understood. [src-mdn-csp]
+- **Files:** `extension/manifest.json` (CSP string);
+  `extension/popup.js` (verify no off-self fetches).
+- **Goal:** CSP becomes
+  `script-src 'self'; object-src 'self'; connect-src 'self'
+  https://api.openai.com https://api.anthropic.com
+  https://generativelanguage.googleapis.com https://sponsor.ajay.app
+  http://127.0.0.1:9751 http://127.0.0.1:9761 http://127.0.0.1:9771
+  http://127.0.0.1:9781 http://127.0.0.1:9791 http://127.0.0.1:9851
+  http://127.0.0.1:11434;` matching the `host_permissions` allowlist for
+  popup-originated fetches. (Content-script fetches use the EXT_FETCH
+  SW proxy and are unaffected.)
+- **Acceptance:**
+  1. CSP string updated; popup still functions in Chrome + Firefox
+     (export/import + reset + storage stats).
+  2. Regression in `tests/hardening.test.js` pins the CSP shape.
+  3. Document the policy in `HARDENING.md` H20.
+- **Failure modes:** CSP too strict and breaks a popup feature using
+  off-self origin (mitigation: integration smoke before push).
+- **Sources:** [src-mdn-csp] MDN CSP `connect-src`;
+  [src-loc-manifest] current `extension/manifest.json` line 153.
+
+### N6. YouTube "liquid glass" player redesign — selector audit
+
+- **Severity:** Real platform-drift; rollout has begun globally and
+  every observer reports the new chrome (pill action container, smaller
+  skip animation, no-dim-on-pause). Astra-Deck has many feature
+  overlays attached to specific selectors of the old player chrome
+  (`.ytp-chrome-bottom`, `.ytp-time-display`, etc.). Without a selector
+  audit we get silent breakage on a subset of users on the new chrome.
+  [src-yt-redesign-1] [src-yt-redesign-2]
+- **Files:** `tests/fixtures/*.tokens.txt` (regenerate from fresh
+  `mhtml/*.mhtml` captures of the new player); update Pass 18
+  18-selector canary list to include any net-new player chrome
+  selectors; `extension/ytkit.js` feature overlays for items affected.
+- **Goal:** Astra-Deck's player overlays render correctly on the new
+  player chrome; the selector canary has both old and new selectors
+  pinned as a transition fixture for the staged rollout.
+- **Acceptance:**
+  1. Fresh mhtml capture of new-chrome watch page committed (or its
+     tokens extracted into a new fixtures file).
+  2. Selector canary pins both old and new chrome selectors with a
+     comment noting the rollout window.
+  3. Manual smoke: video screenshot, mini-player bar, speed control
+     chip button, theater split divider all render on the new chrome.
+  4. Document the audit findings in `HARDENING.md` H21.
+- **Rollback:** revert canary additions if the new selectors cause
+  false negatives on users still on the old chrome.
+- **Sources:** [src-yt-redesign-1] 9to5Google; [src-yt-redesign-2]
+  TechSpot.
 
 ---
 
 ## Next (P2, queued)
 
-After Now drains.
+Drains after Now. Each item still traces to a source and has a clear
+acceptance criterion, but it's larger in effort, lower in urgency, or
+gated on Now-tier work.
 
-### NX1. i18n — scaffold `_locales/en/messages.json`
+### NX1. SponsorBlock v6+ feature pass-through
 
-The unblocker for community translation. No translation work today;
-just the infrastructure so a future contributor can add
-`_locales/<lang>/messages.json` without touching source. [src-6] [src-7]
+Astra-Deck integrates SponsorBlock as a category-skip layer but does
+not surface SB v6.0 features that have shipped in 2025–2026.
+[src-sb-releases]
 
-- **Status:** Completed in Pass 17 (unreleased). `extension/_locales/en/messages.json`
-  created with 4 manifest-level keys; `manifest.json` updated to use `__MSG_`
-  references; `scripts/check-i18n.js` build gate added; `HARDENING.md` H16.
+- **Channel Skip Profiles (v6.0)** — per-channel category overrides
+  with "this video / this tab / next hour" temporary toggles. Expose
+  the SB option in the in-page settings panel under SponsorBlock,
+  routing through the existing SB config object.
+- **OR operator + advanced expressions (v6.1)** —
+  `video.duration > 1200` style conditional skips. Surface the textarea
+  editor in the SB section.
+- **Hook/Greetings category** (v5.14 split from Preview/Recap) — make
+  sure our category toggle list includes the new category.
+- **Acceptance:** three items land as three separate settings under
+  `sbCat_*` + an advanced-expressions textarea; the existing hash-
+  prefix privacy API path is unchanged. Verify the SB skip telemetry
+  numbers still increment correctly per-category.
 
-- ~200 message keys covering popup, options, content-script overlays.
-- Build-time validator: every `chrome.i18n.getMessage("key")` call in
-  source must have a matching key in `_locales/en/messages.json`.
-- Strings remain hardcoded English in source until each one is moved
-  to a key — no big-bang migration.
+### NX2. DeArrow "Casual Mode" + thumbnail-submission flow surfaces
 
-### NX2. Mobile — Firefox Android XPI smoke test
+DeArrow v2.3.6 (April 2026) ships Casual Mode — keep original titles
+where they're descriptive, vote per-category on title-fit, channel
+trailer support, dual-case preview. Astra-Deck's DeArrow integration
+needs the per-category toggle + "open submission UI" handoff button on
+each watched video. [src-dearrow]
 
-Validate the existing XPI on Firefox 128+ Android. Outcome is one of:
-"works as-is", "fails on API X — feature toggle / shim required", or
-"fails fundamentally — document as desktop-only". Either way, the
-README gains a definitive support-matrix entry. [src-8] [src-9]
+- **Acceptance:** new sub-settings under DeArrow (`deArrowCasualMode`,
+  `deArrowCategoryGate`, `deArrowSubmissionShortcut`) with the same
+  defaults as upstream; submission shortcut opens DeArrow's web UI in a
+  new tab pre-populated with the current videoId.
 
-### NX3. SponsorBlock segment cache + stale-fallback
+### NX3. Firefox-Android XPI smoke test (carried from prior NX2)
 
-- **Status:** Completed in Pass 14 (unreleased). The cache lives at
-  top-level storage key `sb_segments_cache`, uses 12-hour fresh reuse,
-  allows 7-day stale fallback only after fetch failure, labels stale
-  seekbar markers with cached-at tooltips, and is capped at 500 videos
-  by both the feature and `storageQuotaLRU`.
+Firefox 128+ Android ships full MV3. Astra-Deck has never been tested
+there. Outcome is one of: "works as-is" / "fails on API X — feature
+toggle / shim required" / "fails fundamentally — document as desktop-
+only." Either way, README gains a definitive support-matrix entry.
+[src-fx-mv3] [src-fx-android]
 
-Cache fetched segments per videoId for 6-12 h. On 5xx or timeout, serve
-stale cache with a "cached at <ts>" tooltip in the seekbar overlay.
-Pattern from DeArrow API docs (90-min TTL on their side). [src-10] [src-11]
+### NX4. Mozilla AMO unlisted listing for the Firefox XPI (carried NX5)
 
-### NX4. Selector-drift canary expansion to player-controls overlay tier
+Self-distribution requires AMO signing for stable auto-update across
+Firefox releases. Submit `unlisted`; 2–4 week review window. Charter-
+compatible because the XPI content is unchanged — only the
+distribution path. Mozilla's June 2025 policy update explicitly allows
+self-hosted privacy policy + closed-group extensions, so this is now
+lower-friction. [src-amo] [src-amo-policy-2025]
 
-- **Status:** Completed in Pass 15 (unreleased). The selector canary
-  now includes `ytp-progress-bar-padding` and `ytp-tooltip-text`, checks
-  runtime source token boundaries instead of broad substrings, and ties
-  the progress-bar helper plus Jump Ahead overlay scanner to those exact
-  player overlay anchors.
+### NX5. ARIA live regions for SponsorBlock skip + DeArrow replace (carried L2)
 
-Current canary covers 18 selectors (layout, comments, controls). Adds
-SponsorBlock-rendered overlay anchors (`.ytp-progress-bar-padding`,
-`.ytp-tooltip-text`) and the comment-attributed-string text wrappers
-that broke twice in the last 60 days. Two-sided assertion still applies
-(must be in both fixtures and ytkit.js). [src-12] [src-13]
+Currently silent on assistive tech. Adding an `aria-live="polite"`
+status region announcing "Sponsor segment skipped" / "Title replaced
+by DeArrow" closes a high-value a11y gap with a few lines of code.
+[src-mdn-aria-live]
 
-### NX5. Mozilla AMO listing for the Firefox XPI
+### NX6. Dependabot config (carried L3)
 
-Submit `unlisted` to AMO so signed XPI auto-update works. 2-4 week
-review window per Mozilla policy. Charter-compatible because the XPI
-content is unchanged — only the distribution path. [src-14]
+We already run `npm audit --omit=dev` on every release; Dependabot
+moves it earlier and adds Python `requirements.txt` tracking. Single
+file `.github/dependabot.yml` with `package-ecosystem: npm` + `pip`
+schedules. Pairs cleanly with the recent ESLint v9 → v10 EOL warning
+(Aug 2026) [src-eslint-10]. [src-dependabot]
 
-### NX6. Profile-import migration round-trip suite
+### NX7. YouTube Subscriptions list-view removal — verify Subs Grid still works
 
-- **Status:** Completed in Pass 13 (unreleased). The fixture lives at
-  `tests/fixtures/settings-import-roundtrip.json`, and the executable
-  coverage lives in `tests/settings-migration-roundtrip.test.js`.
+YouTube removed list-view from Subscriptions in Feb 2026, breaking the
+`flow=2` URL workaround. Astra-Deck's `subscriptionsGrid` feature needs
+verification against the post-removal layout; if it relied on
+list-view as an intermediate state, fix the selector chain.
+[src-yt-subs]
 
-Follow-up to Pass 12 N1. For every prior `SETTINGS_VERSION` (1 → 5 currently),
-emit a known-shape profile fixture, import into the v6 build, assert
-equality with the corresponding v6 expected output. [src-1]
+### NX8. YouTube Anti-Translate — auto-dubbed audio + auto-translated titles
 
-### NX7. Storage size audit for sync-eligibility
+Astra-Deck has `antiTranslate` (Wave 1) but the third-party "YouTube
+Anti Translate" extension surfaces three distinct controls: disable
+auto-translated titles, disable auto-dubbed audio, disable
+auto-translated descriptions. Audit our current behaviour and surface
+all three as sub-settings; the auto-dubbed-audio control is the user-
+most-asked-for given the 2026 rollout of AI-dubbed YouTube content.
+[src-yt-antitranslate] [src-yt-dubbing]
 
-- **Status:** Completed in Pass 16 (unreleased). `npm run audit:storage`
-  measures Chrome/Firefox sync-quota bytes using key length plus
-  `JSON.stringify(value)`. Current UI preferences are 7,334 bytes
-  across one item and fit sync today. The repo-defined typical
-  `chrome.storage.local` payload is 172,461 bytes across 16 items and
-  fails sync because caches/history keys exceed both total and per-item
-  limits. Decision: future sync work, if charter-approved, must be
-  preferences-only with a per-item guard; whole-storage sync is rejected.
+### NX9. Astra Downloader: declare `python_requires>=3.10`
 
-One-off measurement — exact byte count of a typical Astra-Deck
-`chrome.storage.local` payload. If <100 KB, `chrome.storage.sync` is
-viable for UI preferences. If >100 KB, document the constraint and
-defer sync forever. Decision-blocking measurement. [src-15] [src-16]
+yt-dlp dropped Python 3.9 support in 2025.10.22. Astra Downloader's
+build (`build.py` + bootstrap path) must reflect this. Update
+`pyproject.toml` (if present) or `requirements.txt` comment, and
+`build.py` PyInstaller flags accordingly. [src-yt-py310]
+
+### NX10. Astra Downloader: ffmpeg 8.1.1 bundling + HLS handler smoke
+
+FFmpeg 8.1.1 (Mar 2026) removed the legacy HLS protocol handler. Astra
+Downloader bundles ffmpeg via the yt-dlp ffmpeg-builds URL. Pin to
+ffmpeg-master-latest with explicit version check on bootstrap; add a
+one-time smoke test on first run that runs `ffmpeg -protocols | grep
+-i hls` and warns if missing. [src-ffmpeg-8-1]
+
+### NX11. Astra Downloader: Flask cache-control hardening (CVE-2026-27205)
+
+Flask ≤3.1.2 leaks session data via cache when `in` operator is used
+on session keys without read/modify. Astra Downloader uses Flask 3.x;
+audit session-touching endpoints, ensure `Vary: Cookie` is set on any
+response that varies by session, and pin `flask>=3.1.3` in
+`requirements.txt`. [src-cve-27205]
+
+### NX12. Per-area regression-test fixtures (carried L4)
+
+Migrate `extension/ytkit.js` (~38.6 K LOC) to per-area test fixtures
+so the monolith can be audited per-feature without re-scanning every
+line. Modularization sub-step, not a full split. Start with three
+high-touch areas: DeArrow, SponsorBlock, Theater Split.
+[src-loc-ytkit]
+
+### NX13. Signing-key rotation policy doc (carried L6)
+
+`ytkit.pem` is the CRX3 signing key — gitignored and persistent.
+Document rotation cadence (recommended yearly), the post-rotation
+migration path (users on the old CRX get a one-time install dialog on
+the new key), and a fallback recovery procedure if the key is ever
+leaked. Pairs with the heightened CWS / AMO scrutiny on `downloads` +
+`cookies` permissions in 2026. [src-cws-review]
+
+### NX14. Reaction-spammer: surface in-feature warning + docs
+
+After N3 lands the default-OFF + cooldown floor, add a paragraph to
+README explaining the feature, its risk profile ("YouTube may rate-
+limit"), and that it's a userscript companion (not bundled into the
+MV3 extension content script).
+
+### NX15. Repo bloat audit (defer-blocked items)
+
+The repo ships:
+
+- `AstraDownloader.exe` (46 MB binary) committed at repo root.
+- `archive/` with userscript versions v0.1.0 through v2.1.0
+  (15 files).
+- `mhtml/` directory with reference YT captures.
+- `YTKit-v1.2.0.user.js`, `theater-split.user.js.bak`,
+  `YTKit.user.js.bak`, `Install-YTYT.ps1` at the root.
+- Loose `logo.png`, `AstraDownloader.ico` at the root.
+
+Move `AstraDownloader.exe` to a Release-artifact-only path (it's
+auto-built by `astra_downloader/build.py`); prune `archive/` to last 3
+majors; document `mhtml/` as deliberately gitignored reference captures
+(already partially the case); remove the `.bak` files; audit
+`Install-YTYT.ps1` for current relevance (renamed app means this script
+is likely obsolete). [src-loc-repo-root]
 
 ---
 
 ## Later (backlog)
 
-Concrete value, low urgency. Each line is one item.
+Concrete value, low urgency. Each line is one item; effort estimates
+relative to a focused half-day unless noted.
 
-- **L1** ~~ESLint custom rule flagging non-top-level `addListener` in
-  `background.js` (post-await loss across SW restart). [src-17]~~
-  **Completed in Pass 17.** `eslint` added as devDep; `eslint.config.js`
-  flat config; `scripts/eslint-rules/no-post-await-addlistener.js`; `npm
-  run lint` wired into `npm run check`. `HARDENING.md` H18.
-- **L2** ARIA live region for SponsorBlock skip + DeArrow title-replace
-  events. [src-5] [src-18]
-- **L3** Dependabot or Snyk on the repo for transitive pip + npm CVE
-  tracking (we already run `npm audit --omit=dev` on every release;
-  Dependabot moves it earlier in the loop). [src-19]
-- **L4** Migrate `extension/ytkit.js` to per-area test fixtures so the
-  monolith can be audited per-feature without re-scanning 36 K LOC.
-  Modularization sub-step, not a full split. [src-20]
-- **L5** Greasy Fork mirror of `YTKit.user.js` so the userscript surface
-  is discoverable outside the GitHub release feed. [src-21] [src-22]
-- **L6** Documented signing-key rotation policy for `ytkit.pem`. The key
-  is gitignored and persistent; document rotation cadence and the
-  release-side migration path. [src-23]
-- **L7** ~~WCAG 2.2 a11y audit beyond N3 — full popup keyboard map,
-  focus-visible outlines, color-contrast pass on the H4 health-banner
-  amber palette, screen-reader text on all icon-only buttons. [src-4]~~
-  **Completed in Pass 18.** Build-time audits: `scripts/check-contrast.js`
-  validates WCAG AA color contrast (14.16:1 health detail, 10.99:1 title);
-  `scripts/audit-popup-a11y.js` validates button labeling, focus-visible
-  CSS coverage, dialog semantics, keyboard navigation. Both wired into
-  `npm run check`. `HARDENING.md` H19.
-- **L8** Async-write race instrumentation in popup ↔ ytkit.js — popup
-  writes hiddenVideos, blockedChannels, bookmarks via direct
+### Platform compliance & correctness
+
+- **L1** Tampermonkey #2673 workaround — adopt the `Navigation API`
+  (`navigation.addEventListener('navigate', ...)`) in the userscript
+  build for SPA-reload self-detection, with the existing
+  `yt-navigate-finish` listener as fallback. Closes the upstream "won't
+  fix" with no charter conflict (it's correctness, not features).
+  [src-tampermonkey-2673] [src-navigation-api]
+- **L2** Chrome 138 `chrome.userScripts` toggle UX update — README
+  install instructions need a one-line callout that the new per-
+  extension toggle may be OFF for fresh installs on Chrome 138+. We
+  don't use the API ourselves, but Astra-Deck's userscript companion
+  routes through Tampermonkey/Violentmonkey which DOES. [src-chrome-userscripts]
+- **L3** Firefox 148 Document PiP behind-flag verification — Astra-
+  Deck's `popOutPlayer` uses `documentPictureInPicture`
+  (`ytkit.js:19190`), which is gated behind `dom.documentpip.enabled`
+  in Firefox 148 beta. Add detection and a Firefox-specific "enable
+  `about:config` flag" callout if unavailable. [src-doc-pip]
+- **L4** Firefox MV2 + blocking-webRequest path for ad blocking —
+  Mozilla committed to keeping MV2 + blocking webRequest in Firefox
+  indefinitely. Optional `manifest.firefox.json` MV2 companion would
+  let us re-ship the userscript-only adblock surface to Firefox users.
+  Sits behind UC3 (charter call). [src-fx-mv2-mv3]
+- **L5** Wave 8/9 feature coverage audit (carried L10) — pick three
+  features added in v3.16–v3.17 (e.g. `musicVideoSpeedLock`,
+  `transcriptAiHandoff`, `playlistQuickRemove`) that lack regression
+  tests; add tests. [src-loc-wave10]
+- **L6** Storage write-race instrumentation (carried L8) — popup
+  writes `hiddenVideos`/`blockedChannels`/`bookmarks` via direct
   `chrome.storage.local.set`; ytkit.js reads via `storage.onChanged`.
-  Add a write-vector-clock so two near-simultaneous writes from
-  popup + ytkit don't lose data. (No reproducer yet.) [src-24]
-- **L9** ~~Toggle-button to clear DiagnosticLog from the popup. Currently
-  the only path is reset-all or Storage Quota LRU eviction. [src-25]~~
-  **Completed in Pass 17.** Clear button added to popup health banner;
-  `clearDiagnosticLog()` with confirmation dialog; muted-grey CSS palette.
-  `HARDENING.md` H17.
-- **L10** "Wave 8/9 feature coverage audit" — pick three features added
-  in v3.16-v3.17 that lack regression tests in `hardening.test.js`,
-  add tests. Blocked on concrete scoping (which features specifically). [src-25]
+  Add a write-vector-clock so two near-simultaneous writes don't lose
+  data. (No reproducer yet, no urgency.) [src-loc-popup-write]
+- **L7** Greasy Fork mirror of `YTKit.user.js` (carried L5) — makes the
+  userscript surface discoverable outside the GitHub release feed.
+  Submit `--unlisted` (Greasy Fork's equivalent of AMO unlisted) so
+  search hides it but direct URL works. [src-greasyfork]
+- **L8** DNR `isUrlFilterCaseSensitive` audit — Astra-Deck does not
+  currently use `declarativeNetRequest`. If we ever adopt it
+  (e.g. for a community-blocklist subscription model, see UC8), the
+  default flipped to `false` in Chrome 118+; remember to set explicit
+  case-sensitivity per rule. [src-dnr-case]
+
+### Observability
+
+- **L9** Diagnostic-log export from popup — already partially shipped
+  (Copy button). Add "Save as JSON file" alongside Copy via
+  `chrome.downloads.download`. [src-loc-popup-clear]
+- **L10** Telemetry-free crash badge — popup shows a small badge if
+  `_errors` count > N in last 24 h. Currently popup surfaces only
+  TrustedTypes-tagged failures (H4). Extend the filter to all
+  diagnosticLog entries. Telemetry-free per charter.
+  [src-loc-diagnostic]
+- **L11** Feature-dependency graph — `CONFLICT_MAP` handles mutually
+  exclusive features. There's no graph for features that REQUIRE other
+  features (e.g. chapter-dependent features silently no-op if the
+  source feature is off). Add a `requires` array on feature definitions
+  and surface "X requires Y" in the settings panel.
+
+### Accessibility
+
+- **L12** Reduced-motion compliance — audit Astra-Deck's animations
+  (toast slide-in, theater split divider drag, cinema ambient glow,
+  blue-light fade, mini-player bar) against `prefers-reduced-motion:
+  reduce`. Cinema ambient glow + nyan cat progress bar should hard-
+  disable on reduced-motion. [src-mdn-reduced-motion]
+- **L13** High-contrast theme — current dark theme is Catppuccin-ish;
+  no native high-contrast mode. Audit popup color tokens against
+  Windows High Contrast Mode + Forced Colors Media Query
+  (`@media (forced-colors: active)`). [src-mdn-forced-colors]
+- **L14** Screen-reader smoke checklist in CONTRIBUTING — NVDA / JAWS
+  / VoiceOver one-page bring-up doc so future contributors can re-run
+  the a11y baseline. NVDA is 65.6% share per WebAIM 2024 — minimum test
+  target. [src-webaim-sr]
+
+### i18n / l10n
+
+- **L15** Bulk-translate the 150+ feature-definition entries in
+  `ytkit.js` (each feature's name + description as shown in the in-page
+  settings panel body). Currently hardcoded English; v3.21.0 scope
+  covered popup + chrome only. Migration: extract to `messages.json`,
+  machine-translate, human-review.
+- **L16** RTL layout audit — install `_locales/ar/messages.json` stub
+  + `dir="auto"` smoke; verify popup + in-page panel don't break. No
+  Arabic translation in this pass — infrastructure only.
+- **L17** CLDR 47 MessageFormat 2.0 — current `t(key, fallback)` helper
+  doesn't use MF2 syntax. Migrate to MF2 only if/when a translator-
+  contributed locale uses plurals/gender (today no bundled locale
+  does). Track CLDR 48/49 and ICU 78/79 updates. [src-cldr-47]
+  [src-icu-78]
+
+### Distribution / packaging
+
+- **L18** Sideloaded-CRX auto-update — GitHub Releases API check could
+  surface new versions in-extension and link to the latest release.
+  Pairs with the AMO-listed Firefox path (NX4 covers the Firefox half).
+  [src-cws-update]
+- **L19** CWS submission checklist documented in CONTRIBUTING — the
+  CWS review backlog April 2026 means submissions take weeks;
+  `downloads` + `cookies` + `tabs` + `webRequest` permissions trigger
+  heightened scrutiny + mandatory privacy-policy declarations using
+  Google's standardized vocabulary. Capture the submission protocol so
+  a future maintainer can follow it. [src-cws-policies]
+
+### Testing
+
+- **L20** Playwright smoke harness — current selector regression uses
+  MHTML token fixtures (cheap, static). Periodic Playwright smoke
+  against a clean Chrome profile catches behaviour drift (selectors
+  mutating but tokens still match). Run nightly via GitHub Actions;
+  gates a release tag. [src-playwright]
+- **L21** Userscript build coverage — `YTKit.user.js` is 14.5 K LOC
+  generated from `extension/ytkit.js` via `sync-userscript.js`. No
+  tests directly exercise the userscript output. Add a parity test
+  that diffs the userscript build against expected shape post-
+  conversion (GM_* shim insertion, `_rw.` removal). [src-loc-syncus]
+
+### UX polish (small, contained)
+
+- **L22** "Multi-select for playlists" inspired surface — most-praised
+  YT extension on r/chrome_extensions per competitor research. Mass-
+  add/cut/paste/delete across playlists. Bounded to playlist pages;
+  reuses existing `playlistEnhancer` machinery. [src-multiselect]
+- **L23** Sleep timer ("stop playback in N min") — NewPipe staple,
+  one-toggle feature, zero dependency overhead. [src-newpipe]
+- **L24** Per-channel volume memory — Magic Actions / ImprovedTube
+  ship this; complements existing `rememberVolume` feature with per-
+  channel granularity (using StorageManager + channel-handle key,
+  capped at 500 entries like `perChannelSpeed`). [src-magic-actions]
+- **L25** Frame-by-frame stepping button — small player-chrome
+  addition; the `,` / `.` keyboard step already exists in YouTube
+  itself, just surface a button in our chrome controls cluster.
+  [src-improvedtube]
+- **L26** Configurable custom speed presets — we ship a speed control
+  popup with fixed 0.25× → 3× grid (v3.20.9). Add a setting to override
+  the grid contents (4–8 user-supplied values). Alchemy ships this and
+  it's the most-requested follow-on. [src-alchemy]
+- **L27** "Maintain 1× for music videos" regression verification —
+  Wave 10 `musicVideoSpeedLock` feature shipped in v3.17.0; verify
+  still works after the v3.20.9 speed-control overhaul. Likely fine
+  since both call `persistentSpeed`, but explicit test pin is cheap.
+  [src-loc-wave10]
+- **L28** Linkify timestamps in titles/descriptions/comments — click-
+  to-seek when uploader hasn't formatted them as YouTube-recognized
+  timestamps. [src-refined-github]
+- **L29** "Open in alt-frontend" right-click menu — Invidious / Piped
+  / FreeTube with a configurable instance URL. Charter test: this is a
+  single new sub-toggle on the existing context menu, not a new feature
+  domain. [src-freetube]
+- **L30** Open-in-NewPipe intent link — for Firefox-Android users.
+  Pure `intent://...` URL builder. Bounded. Depends on NX3 outcome.
+  [src-newpipe]
+- **L31** Restore the "Play all" button on channels / Shorts shelves /
+  livestream rows where YouTube has removed it. Single feature toggle.
+  [src-awesome-us]
+- **L32** Hide notification badge as isolated toggle (currently
+  bundled inside broader "hide notifications" controls). [src-unhook]
+- **L33** "Always play from start" toggle (kills resume) — GoodTube
+  paywalls this; we can ship free. Useful for music videos.
+  [src-goodtube]
+- **L34** Block-by-runtime filter on the video hider — hide videos
+  under 60 s (Shorts that slipped past) or over 4 hours (asleep-at-
+  the-wheel livestream VOD reuploads). [src-blocktube]
+- **L35** Block specific commenter usernames or by content keyword in
+  the comments stream — inverse of existing `commentSearch`.
+  [src-blocktube]
+
+### Astra Downloader power-user features
+
+- **L36** Expose yt-dlp `--impersonate` flag in download options popup
+  (TLS fingerprint dodging via `curl_cffi`). [src-curl-cffi]
+- **L37** Expose yt-dlp `--throttled-rate` + `--http-chunk-size` in
+  advanced settings. [src-yt-throttled]
+- **L38** Subtitle download as discrete action (one-click .srt / .vtt
+  / .ttml export — distinct from a full video download).
+  [src-awesome-us]
+- **L39** Free-text "Custom yt-dlp Options" advanced field — power-
+  user escape hatch, disabled by default, JSON-validated. Mirrors
+  MeTube's pattern. [src-metube]
+- **L40** Astra Downloader queue UI + `MAX_CONCURRENT_DOWNLOADS` env
+  var — currently downloads run inline. [src-metube]
+- **L41** HTTPS support for Astra Downloader local server via
+  `CERTFILE` / `KEYFILE` env vars (currently HTTP-only). [src-metube]
+- **L42** CORS knob — let other browser extensions or local web apps
+  post to Astra Downloader's REST API. [src-metube]
 
 ---
 
 ## Under Consideration (CHARTER-REVIEW)
 
-Items that would expand the "no new features" charter. Listed so the
-maintainer can decide whether to lift the freeze. **Default: deferred.**
+Items that would expand the surface area beyond the current charter
+(new persistent backend, new feature domain, or divergent extension/
+userscript paths). Listed so the maintainer can decide whether to lift
+the freeze. **Default: deferred.**
 
-### UC1. Settings sync via `chrome.storage.sync`
+### UC1. Settings sync via `chrome.storage.sync` (carried)
 
-`CHARTER-REVIEW: feature-extension.` Adds cross-device behaviour the
-extension does not have today. Trade-off: 100 KB cap is tight for
-267 settings; would require selective sync (an opt-in toggle per
-setting group). Pass 16 measured current UI preferences at 7,334 bytes,
-which fits sync today but sits close to the 8,192-byte per-item cap.
-Whole-storage sync is not viable: the typical local payload is
-172,461 bytes and cache/history keys exceed per-item limits. Any future
-implementation must be preferences-only and guarded by
-`scripts/audit-storage-size.js`. [src-15] [src-16] [src-43]
+`CHARTER-REVIEW: feature-extension.` Pass 16 measured current UI
+preferences at 7,334 bytes — fits sync today, sits close to the
+8,192-byte per-item cap. Whole-storage sync is not viable: typical
+local payload is 172,461 bytes and cache/history keys exceed per-item
+limits. Any future implementation must be preferences-only and guarded
+by `scripts/audit-storage-size.js`. Adds cross-device behaviour the
+extension does not have today. [src-loc-storage-audit]
 
-### UC2. User-account cloud backup
+### UC2. User-account cloud backup (carried)
 
 `CHARTER-REVIEW: feature-extension + service-extension.` Would require
 a backend. Out of scope per charter. Bitwarden's pattern is the
-reference. [src-26]
+reference. [src-bitwarden]
 
-### UC3. Greasy Fork userscript fork that re-implements MAIN-world ad blocking the extension cannot ship under MV3
+### UC3. Userscript-only MAIN-world ad-blocking, re-distributed (carried)
 
 `CHARTER-REVIEW: feature-divergence.` The extension stopped shipping
 MAIN-world ad blocking when MV3 made `webRequestBlocking` unavailable.
-A userscript fork could re-add it with `@grant` permissions. Adds
-maintenance surface and a divergent feature matrix between extension
-and userscript. [src-27] [src-28]
+A userscript fork with `@grant` permissions could re-add it. Pairs
+with L4 (Firefox MV2 companion path). Adds maintenance surface and a
+divergent feature matrix between extension and userscript.
+[src-ublock-lite] [src-fx-mv2-mv3]
 
-### UC4. Audio-track download + transcode features (Wave-restored)
+### UC4. Audio-track download + transcode features (carried)
 
-`CHARTER-REVIEW: feature-extension.` Several archive-restoration items
-(SharedAudio volume boost, Cobalt downloader fallback, mute-ad-audio)
-were left in the userscript-only path during the v3.7 → v3.10 wave.
-Re-porting to the extension is feature work, not maintenance. [src-29]
+`CHARTER-REVIEW: feature-extension.` SharedAudio volume boost, Cobalt
+downloader fallback, mute-ad-audio were left in the userscript-only
+path during the v3.7 → v3.10 wave. Re-porting to the extension is
+feature work, not maintenance. [src-loc-yt-kit-mem]
 
-### UC5. AI summary + transcript-handoff provider expansion
+### UC5. AI summary + transcript-handoff provider expansion (carried)
 
 `CHARTER-REVIEW: feature-extension.` Current providers: OpenAI,
-Anthropic, Google. Community asks frequently for Mistral, Ollama,
-local-llama.cpp. Each new provider is a new feature with new key
-storage + auth shapes. [src-30]
+Anthropic, Google. Community asks frequently for Mistral, Groq,
+Ollama, local-llama.cpp. Each new provider is a new feature with new
+key storage + auth shapes. [src-aip-providers]
+
+### UC6. `chrome.sidePanel` host-restricted to YouTube — AI chat + transcript surface
+
+`CHARTER-REVIEW: feature-extension + ui-paradigm-shift.` Move the AI
+summary / transcript chat from in-page widget to a persistent
+`chrome.sidePanel` restricted to youtube.com / youtube-nocookie.com.
+Survives SPA navigation by definition. New paradigm; charter call on
+whether to maintain two UI surfaces (in-page panel + side panel)
+during transition or to deprecate the in-page panel. [src-side-panel]
+
+### UC7. RAG chat-with-this-video over transcript
+
+`CHARTER-REVIEW: feature-extension + ML-runtime.` Transcript →
+chunked embeddings → retrieval over user question → LLM call. Local-
+only path possible via Ollama + ONNX embeddings. Adds a significant
+feature domain. Pairs naturally with UC6. [src-paolo-rag]
+
+### UC8. Community blocklist subscription model
+
+`CHARTER-REVIEW: feature-extension + community-content-source.` URL-
+pointed lists of `hiddenVideos` / `blockedChannels` / keyword filters,
+refreshed on schedule à la uBO filter lists. Astra-Deck has the
+underlying machinery (`hiddenVideos`, `blockedChannels`, keyword
+filter); the new surface is the subscription model + remote refresh.
+Charter risk: who curates the lists, what happens if a list is
+poisoned. [src-blocktube]
+
+### UC9. Per-video local archive sidecar (JSON)
+
+`CHARTER-REVIEW: feature-extension.` On bookmark/download, write a
+sidecar JSON containing title / channel / upload date / description /
+comments snapshot / transcript / chapters / DeArrow + SponsorBlock
+metadata. Foundation for a "personal YouTube library" mode. Astra
+Downloader is the natural host. [src-hn-archiver]
+
+### UC10. `chrome.userScripts` API as per-channel scripting hook
+
+`CHARTER-REVIEW: feature-divergence.` Chrome 120+ exposes a proper
+sandbox for user-supplied JS with `runtime.onUserScriptMessage` +
+`configureWorld()`. Astra-Deck could let users drop in per-channel
+scripts (e.g. "always set 1.5× on Channel X", "auto-skip first 30 s on
+Channel Y"). Mozilla restricts the API to user-script-manager
+extensions — only Chrome path is viable. Also requires the Chrome 138
+per-extension toggle UX (L2) to be solved first. [src-chrome-userscripts]
+[src-amo-policy-2025]
 
 ---
 
@@ -318,85 +710,110 @@ Preserved so future research passes don't silently resurrect them.
 
 | Item | Reason |
 |---|---|
-| RYD fetch wrapper in the extension build | Current Astra-Deck extension does not ship Return YouTube Dislike integration. A fetch/cache/circuit-breaker wrapper would require adding a new visible dislike-count feature, which is outside the maintenance-mode charter. [src-42] |
-| Pin `curl_cffi >=0.15.0` | `curl_cffi` is not a dependency of `astra_downloader.py`. Verified by grep. CVE-2026-33752 does not apply. [src-31] |
-| Pin `yt-dlp` in `requirements.txt` | `yt-dlp` is shelled out as `yt-dlp.exe` with SHA256 verification (`YTDLP_SHA256_URL`), not a pip dep. Pinning in `requirements.txt` is meaningless. [src-32] |
-| DNS-rebinding defence in `astra_downloader.py` | Already shipped in v3.15.0. Test exists at `test_dns_rebinding_attack_is_rejected_before_handler`. [src-33] |
-| Firefox 152 `moz-extension://` injection audit | Verified: `extension/` has zero `scripting.executeScript` calls targeting `moz-extension://` origins. Fix not needed. [src-34] |
-| Chrome DNR `isUrlFilterCaseSensitive` audit | Astra-Deck does not use `declarativeNetRequest`. Not applicable. [src-35] |
-| Node 22 LTS migration in CI | `.nvmrc` already pins Node 22. `package.json#engines.node` says `>=22`. Already done. [src-36] |
-| Bound DeArrow cache | DeArrow already self-caps at 2000 entries on every fetch + persist (`extension/ytkit.js` `_doFetch` + `_schedulePersist`). The H5 fix added a belt-and-suspenders sweep on the real `da_branding_cache` storage key. Closed. [src-37] |
-| Tampermonkey #2673 SPA-nav workaround | Requires rewriting userscript distribution architecture. Extension is the primary ship vehicle; userscript is mirror. Charter-violation if implemented. [src-38] |
-| Flask-HTTPAuth CVE-2026-34531 mitigation | Astra-Deck's downloader does not import Flask-HTTPAuth. Not applicable. [src-39] |
-| Mass migrate to ESM modules in extension | Would require rewriting the build pipeline and is invisible to users. Cost > value at current size. [src-40] |
-| AGPL relicense (per YouTubeAlchemy precedent) | Astra-Deck is MIT and the maintainer prefers MIT. Charter-aligned to keep. [src-41] |
+| Pin `yt-dlp` in `requirements.txt` | Carried from prior. yt-dlp is shelled out as `yt-dlp.exe` with SHA256 verification (`YTDLP_SHA256_URL`), not a pip dep. Pinning in `requirements.txt` is meaningless. CVE-2026-26331 RCE applies to `--netrc-cmd` usage; verified by grep we never call `--netrc-cmd`. [src-yt-cve-26331] [src-loc-downloader] |
+| Pin `curl_cffi >= 0.15.0` | `curl_cffi` is not a dependency. Verified by grep. CVE-2026-33752 does not apply. Carried from prior. |
+| ESLint supply-chain pinning (`eslint-config-prettier`, `synckit`, `@pkgr/core`, `napi-postinstall`) | None are dependencies. We use bare `eslint` 10.x. CVE-2025-54313 does not apply. [src-eslint-cve] |
+| RYD fetch wrapper in the extension build | Carried from prior. The extension does not ship Return YouTube Dislike integration; adding one would be a new user-facing feature. The userscript build retains RYD; that's where any backoff wrapper would belong. [src-loc-ryd] |
+| DNS-rebinding defence in `astra_downloader.py` | Carried from prior. Already shipped in v3.15.0. Test exists at `test_dns_rebinding_attack_is_rejected_before_handler`. |
+| Firefox 152 `moz-extension://` injection audit | Carried from prior. Verified: `extension/` has zero `scripting.executeScript` calls targeting `moz-extension://` origins. Not applicable. |
+| Chrome DNR `isUrlFilterCaseSensitive` immediate audit | We don't currently use `declarativeNetRequest`. Already in L8 as a defer-until-adopted note. |
+| Bound DeArrow cache | Carried from prior. DeArrow self-caps at 2000 entries; H5 added belt-and-suspenders sweep on `da_branding_cache`. Closed. |
+| Tampermonkey #2673 SPA-nav workaround | Reclassified: NOT rejected. Moved to **L1** (Navigation API self-detection in userscript build) since it's correctness-only and charter-aligned. |
+| Flask-HTTPAuth CVE-2026-34531 mitigation | Carried. Astra Downloader's Flask app does not import Flask-HTTPAuth. Not applicable. |
+| Flask-Reuploaded CVE-2026-27641 | We don't load Flask-Reuploaded. Not applicable. [src-cve-27641] |
+| Mass migrate to ESM modules in the extension | Carried from prior. Cost > value at current size; build pipeline is intentionally zero-config. |
+| AGPL relicense (per YouTubeAlchemy precedent) | Carried from prior. Astra-Deck is MIT and the maintainer prefers MIT. |
+| `chrome.userScripts` API as a "let users inject arbitrary JS" surface in the extension popup | Mozilla's June 2025 AMO policy restricts the `userScripts` API to user-script-manager extensions. We are not one. UC10 covers the constrained per-channel-scripting variant only, gated to Chrome. [src-amo-policy-2025] |
+| GoodTube classic player UI restoration | YouTube's player redesign is a moving target; per-class CSS restoration is constant maintenance for low user payoff. The valuable subset (black background, "instant pause", "always play from start") is adopted as bounded toggles (L33) instead of a wholesale UI revert. [src-goodtube] |
+| Reddit-Karamel-style comment integration | Third-party brittleness (Reddit Polymer rewrites); scope creep beyond YouTube. The HN-class request is rare. [src-karamel] |
+| Bullet-chat danmaku overlay during VOD | Niche; conflicts with the existing "hide live chat clutter" charter. NewPipe ships it for a reason — mobile-portrait viewing — that doesn't apply to a desktop extension. [src-newpipe] |
+| HTML5 video player tools across non-YouTube sites | Scope creep. Astra-Deck's identity is YouTube enhancement. Cross-site `<video>` enhancement is a separate project. [src-awesome-us] |
+| Subscribe-to-channel auto-queue with new-upload polling | Backend / persistent-poller class of feature; sits inside UC1 (sync) or UC9 (archive) territory rather than as its own item. |
+| Auto-detect-and-download in single textbox (Cobalt-style) | Cobalt has 40 k stars for this UX; the differentiator is its multi-site coverage which we don't ship. Without multi-site (L36–L42 don't enable it), the single-textbox UX is mostly cosmetic. Revisit if/when Cobalt-API mode (UC4 territory) lands. [src-cobalt] |
 
 ---
 
 ## Risk register
 
-Carried over from prior `roadmap.md`. Status updated to reflect Pass
-9-12 ship state.
+Carried from prior `roadmap.md` and updated for v3.22.0 state.
 
 | Risk | Status | Mitigation |
-|------|--------|-----------|
+|---|---|---|
 | Progress-bar DOM rewrites on theater/miniplayer transitions break segment overlay | Mitigated | Segment renderer listens for `ResizeObserver` + `MutationObserver` and re-paints. |
-| YouTube A/B serves new comment DOM classes | Ongoing | Quarterly selector audit. v3.20.3 expanded selector-drift canary 9 → 18 [src-shipped-4]. Iter-3 research surfaced cadence shifting to weekly [src-13]. |
-| Settings-profile schema migration on new settings | **Mitigated Pass 12** | Popup and content-script imports now preserve imported `_settingsVersion`, run migrations forward, merge generated defaults, and stamp current schema only after migration. |
+| YouTube A/B serves new comment DOM classes | Ongoing | Selector canary expanded to 18 (Pass 10) + overlay tier (Pass 15). N6 above adds liquid-glass player chrome to the canary. |
+| Settings-profile schema migration on new settings | Mitigated v3.20.5 | Popup + content-script imports preserve imported `_settingsVersion`, run migrations forward, merge defaults, then stamp current schema. NX12 adds round-trip fixtures. |
 | Toolbar popup broadcasts hit tabs without ytkit.js loaded | Mitigated | `chrome.tabs.sendMessage` wrapped; `chrome.runtime.lastError` swallowed. |
-| Digital wellbeing interval keeps SW alive | Mitigated | Ticker runs in content script, not SW. Persists on `visibilitychange` + 30s. |
+| Digital-wellbeing interval keeps SW alive | Mitigated | Ticker runs in content script, not SW. Persists on `visibilitychange` + 30 s. |
 | URL-strip breaks YouTube Music `si=` | Mitigated | `stripTrackingParams` scoped to `www.youtube.com`. |
-| `credentials: 'omit'` breaks RYD vote attribution | Not applicable | Current extension build does not ship Return YouTube Dislike integration. [src-42] |
-| TrustedTypes peer-extension policy collision | **Observable as of v3.20.2** | H1 logs `TT_POLICY_FAIL` to DiagnosticLog; H4 surfaces in popup banner [src-shipped-3]. |
-| EXT_FETCH SW socket retention on too-large response | **Mitigated v3.20.4** | H9 added `controller.abort()` to all five size-limit paths [src-shipped-5]. |
-| Theater-split divider-drag mid-SPA-nav listener orphan | **Mitigated v3.20.3** | H8 hoisted drag handles; teardown calls `abortDividerDrag()` [src-shipped-4]. |
-| Cookie-jar wire format drift | **Mitigated v3.20.3** | H6 introduced `normalizeCookieExpiry()` with documented contract + parity tests across all three sites [src-shipped-4]. |
-| Pre-push version-string drift between four canonical sources | **Mitigated v3.20.4** | H10 wired `scripts/check-versions.js` into `npm run check` [src-shipped-5]. |
+| TrustedTypes peer-extension policy collision | Observable v3.20.2 | H1 logs `TT_POLICY_FAIL` to DiagnosticLog; H4 surfaces in popup banner. |
+| EXT_FETCH SW socket retention on too-large response | Mitigated v3.20.4 | H9 added `controller.abort()` on all five size-limit paths. |
+| Theater-split divider-drag mid-SPA-nav listener orphan | Mitigated v3.20.3 | H8 hoisted drag handles; `abortDividerDrag()` called from teardown. |
+| Cookie-jar wire-format drift | Mitigated v3.20.3 | H6 `normalizeCookieExpiry()` with documented contract + parity tests across three sites. |
+| Pre-push version-string drift between four canonical sources | Mitigated v3.20.4 | H10 `scripts/check-versions.js` wired into `npm run check`. |
+| **YouTube PO Token enforcement breaks `web` client downloads** | **NEW — open** | N1 above (bgutil-pot-provider integration). |
+| **YouTube SABR-only adaptiveFormats break legacy download path** | **NEW — open** | N2 above (`formats=duplicate` extractor arg). |
+| **Reaction spammer default-ON could trigger YT account flagging** | **NEW — open** | N3 above (default OFF + cooldown floor + first-toggle toast). |
+| **CSP `connect-src` missing — defense-in-depth gap** | **NEW — open** | N5 above. |
+| **YouTube liquid-glass player chrome rolling out — selector audit needed** | **NEW — open** | N6 above. |
+| Flask cache-control session-data leak (CVE-2026-27205) | NEW — open | NX11 audits session-touching endpoints + pins Flask. |
+| Chrome 138 `chrome.userScripts` per-extension toggle off by default | NEW — open | L2 README update + N4 doc sweep. |
+| `credentials: 'omit'` breaks RYD vote attribution | Not applicable | Current extension build does not ship Return YouTube Dislike integration. |
 
 ---
 
 ## Architectural watchlist
 
-Notes that are not scheduled work but inform priority decisions. Ported
-from prior `roadmap.md` with status updates.
+Notes that are not scheduled work but inform priority decisions.
 
 ### High-priority
 
-- **Monolithic content script (~36 K LOC).** `extension/ytkit.js`
-  remains a single file. The `core/` extraction covers shared
-  utilities only. Per-area audit (rather than full split) is L4 above.
+- **Monolithic content script (~38.6 K LOC).** `extension/ytkit.js`
+  remains a single file (grew from 36 K → 38.6 K in v3.20.6 → v3.22.0
+  via i18n, speed control, video-hider polish). The `core/` extraction
+  covers shared utilities only. Per-area audit (rather than full split)
+  is NX12 above. [src-loc-ytkit]
 - **No bundling / minification.** `build-extension.js` copies files
-  verbatim. A bundler would cut payload ~60-70 % at the cost of
-  shipping non-readable code (and the userscript variant must remain
-  readable per `stack-javascript.md` convention). Trade-off blocks the
-  change.
+  verbatim. CWS bans code obfuscation but allows minification —
+  minifying could cut payload ~60–70 % at the cost of shipping non-
+  readable code, which violates the project's "ship readable"
+  convention. Trade-off blocks the change. [src-cws-policies]
 - **Unbounded storage growth.** Addressed v3.9.0 (`storageQuotaLRU`),
   v3.20.0 (`unlimitedStorage`), v3.20.2 H5 (real-key LRU sweep on
   `da_branding_cache`). Considered closed; monitor.
+- **YouTube redesign cadence.** Liquid-glass rollout late 2025 – early
+  2026; Subscriptions list-view removal Feb 2026; redesigned video
+  player rolling globally late 2025 – 2026. Selector canary cadence
+  shifts from quarterly to weekly. Plan an N-tier release (N1+N2+N6)
+  per quarter as the new baseline.
 
 ### Medium-priority
 
-- **Crash/error telemetry.** `diagnosticLog` exists. Popup banner
-  surfaces TrustedTypes failures (H4). No badge for non-TT errors yet.
-- **Feature dependency graph.** `CONFLICT_MAP` handles mutually-exclusive
-  features. No graph for features REQUIRING other features (e.g.
-  chapter-dependent features no-op silently).
+- **Crash / error telemetry.** `DiagnosticLog` exists. Popup banner
+  surfaces TrustedTypes failures (H4). Adding a generic
+  `_errors`-count-based badge for any class is L10. Telemetry-free per
+  charter.
+- **Feature dependency graph.** `CONFLICT_MAP` handles mutually
+  exclusive features. No graph for features that REQUIRE other
+  features. L11.
 - **Cross-browser parity assumed.** Firefox support relies on implicit
-  WebExtension API aliasing. NX2 (Firefox-Android smoke test) opens
-  visibility into mobile parity; desktop Firefox remains untested.
+  WebExtension API aliasing. NX3 opens visibility into Firefox-Android
+  parity; Firefox-desktop full parity remains untested past smoke.
 - **SW lifecycle hardening.** Top-level listener registration is
-  enforced socially, not by lint. L1 above turns it into ESLint.
+  enforced via ESLint custom rule (Pass 17 H18). Periodic re-audit on
+  every release is implicit; consider tightening to a CI gate.
 
 ### Low-priority
 
-- **Build-system version sync.** Regex-based across four files.
-  `scripts/check-versions.js` (v3.20.4 H10) catches drift pre-push.
-  Considered closed.
+- **Build-system version sync.** Four canonical version strings
+  (`package.json`, `manifest.json`, `ytkit.js#YTKIT_VERSION`,
+  `YTKit.user.js#@version`). `scripts/check-versions.js` (Pass 11 H10)
+  catches drift pre-push. Considered closed.
 - **Sideloaded CRX/XPI auto-update.** GitHub Releases API check could
-  surface new versions in-extension. Not scheduled. Fits NX5 (AMO
-  listing) for the Firefox path.
-- **No internationalization.** All UI strings hardcoded in English.
-  NX1 unblocks community translation.
+  surface new versions in-extension. L18.
+- **i18n coverage.** 10 locales × ~199 keys covers popup + chrome +
+  download UI + speed control + every quick toggle. The 150+ feature-
+  definition entries in `ytkit.js` (each feature's settings-panel name
+  + description) remain hardcoded English. L15.
 
 ---
 
@@ -406,45 +823,55 @@ Unchanged from prior `roadmap.md`. Applied on every release.
 
 ### Feature branch
 
-- [ ] Feature registers cleanly under the feature-array pattern
-- [ ] Default is OFF in `default-settings.json`
-- [ ] No new global variables; scoped to feature namespace
-- [ ] No syntax error after build (`node --check`)
-- [ ] Local Chrome dev-mode install loads without console errors
+- [ ] Feature registers cleanly under the feature-array pattern.
+- [ ] Default is OFF in `default-settings.json` (exception: a UI polish
+      like `compactLayout` that has no behavioural risk).
+- [ ] No new global variables; scoped to feature namespace.
+- [ ] No syntax error after build (`node --check`).
+- [ ] Local Chrome dev-mode install loads without console errors.
+- [ ] All new user-facing strings keyed via `t('key', 'fallback')` and
+      added to `_locales/en/messages.json` (mandatory since v3.21.0).
 
 ### Main
 
-- [ ] CHANGELOG entry added
-- [ ] Settings-meta entry with label and description
-- [ ] No regression in existing features (manual smoke test of related features)
+- [ ] CHANGELOG entry added.
+- [ ] Settings-meta entry with label and description.
+- [ ] No regression in existing features (manual smoke test of related
+      features).
 
 ### Release
 
-- [ ] All four artifacts build (Chrome ZIP, CRX, Firefox ZIP, XPI)
-- [ ] Clean-profile test on Chrome stable
+- [ ] All four artifacts build (Chrome ZIP, CRX, Firefox ZIP, XPI) plus
+      userscript build.
+- [ ] Clean-profile test on Chrome stable + Firefox stable.
 - [ ] Version string synced across `package.json`, `manifest.json`,
-      `ytkit.js#YTKIT_VERSION`, userscript header
-      (enforced by `npm run check:versions`)
-- [ ] CHANGELOG versioned entry with date
-- [ ] GitHub release with all four artifacts
-- [ ] Git tag pushed
-- [ ] Memory file updated with new version and any gotchas learned
+      `ytkit.js#YTKIT_VERSION`, userscript header (enforced by
+      `npm run check:versions`).
+- [ ] `npm run check` clean (syntax + version + i18n + lint + a11y +
+      contrast).
+- [ ] CHANGELOG versioned entry with date.
+- [ ] GitHub release with all five artifacts.
+- [ ] Git tag pushed.
+- [ ] README badge version reflects new release.
+- [ ] Memory file updated with new version and any gotchas learned.
 
 ---
 
 ## Performance budget
 
 No shipped feature has regressed these. Measured on i5-1235U / 16 GB /
-Chrome stable / cold cache against `/watch?v=dQw4w9WgXcQ`.
+Chrome stable / cold cache against `/watch?v=dQw4w9WgXcQ`. Targets
+updated to reflect the v3.22.0 LOC growth.
 
-| Metric | Current | Target | Hard ceiling |
-|--------|---------|--------|---------------|
-| `ytkit.js` raw size | ~1.25 MB | ≤1.2 MB | 1.5 MB |
-| Parse + execute (cold) | ~200 ms | ≤150 ms | 250 ms |
-| Time to first feature paint | ~420 ms | ≤350 ms | 600 ms |
-| Memory (idle, after 5 min) | ~45 MB | ≤50 MB | 80 MB |
-| Memory (after 100 SPA navs) | ~75 MB | ≤60 MB | 100 MB |
+| Metric | Current (v3.22.0) | Target | Hard ceiling |
+|---|---|---|---|
+| `ytkit.js` raw size | ~1.32 MB | ≤1.3 MB | 1.6 MB |
+| Parse + execute (cold) | ~210 ms | ≤170 ms | 280 ms |
+| Time to first feature paint | ~430 ms | ≤350 ms | 600 ms |
+| Memory (idle, after 5 min) | ~48 MB | ≤55 MB | 85 MB |
+| Memory (after 100 SPA navs) | ~78 MB | ≤65 MB | 110 MB |
 | `chrome.storage.local` typical 30-day | ~500 KB | ≤1 MB | 5 MB |
+| Locale-files total payload | ~340 KB (10 locales) | ≤500 KB | 800 KB |
 
 ---
 
@@ -455,45 +882,45 @@ flagged thin. **All 13 categories addressed below.**
 
 | Category | Coverage | Where |
 |---|---|---|
-| Security | Strong | Pass 7-16 ship items; Risk Register; rejected items 1-3, 9. |
-| Accessibility (a11y) | Pass 12 shipped N3; broader audit remains in L7. | Pass 12, Later L7. |
-| i18n / l10n | Next (NX1); deferred but infra-ready | NX1. |
-| Observability / telemetry | Strong — H1 + H4 shipped; L1 ESLint open | Risk register, watchlist medium. |
-| Testing | Strong — 135 tests, +49 new, +canary infra | Recently-shipped, Pass 12, Pass 13, Pass 14, Pass 15, Pass 16, L4. |
-| Docs | Strong — CHANGELOG/HARDENING.md/this roadmap synced after every change per user instruction | This document; per-pass HARDENING.md sections. |
-| Distribution / packaging | Next (NX5 AMO) + Later (L5 Greasy Fork, L6 key rotation) | NX5, L5, L6. |
-| Plugin ecosystem | N/A — Astra-Deck is monolithic by design; no plugin SDK shipped | Architectural watchlist. |
-| Mobile | Next (NX2) + research in iter-4-gap-fill.md | NX2. |
-| Offline / resilience | Pass 14 shipped NX3; former N2 rejected as not applicable to this build. | Pass 14, Rejected table. |
-| Multi-user / collab | Pass 16 measured sync size; UC1/UC2 remain charter-review only | Pass 16, UC1, UC2. |
-| Migration paths | Pass 12 shipped N1; Pass 13 added the broader fixture suite. | Pass 12, Pass 13. |
-| Upgrade strategy | Recently-shipped chain; CHANGELOG; H10 prevents drift | Quality gates (Release section), recently-shipped table. |
+| Security | Strong | N1 (PO Token), N5 (CSP), NX11 (Flask), Risk Register; rejected items 1–3, 11–12. |
+| Accessibility (a11y) | Strong | Pass 12 + Pass 18 shipped baseline; NX5 (ARIA live), L12 (reduced motion), L13 (forced colors), L14 (SR smoke). |
+| i18n / l10n | Strong | v3.21–v3.22 shipped 10 locales; L15 expands to feature-definition entries; L16 (RTL stub); L17 (MF2 future). |
+| Observability / telemetry | Adequate | H1 + H4 shipped (TT surface); L9 (export to file) + L10 (generic banner) + L11 (feature graph). Telemetry-free per charter. |
+| Testing | Strong | 152 tests at v3.20.5; NX12 (per-area fixtures), L5 (Wave 8/9 coverage), L20 (Playwright nightly), L21 (userscript build parity). |
+| Docs | Adequate | N4 (drift sweep); HARDENING.md kept in sync per Pass cadence; CONTRIBUTING.md rename. |
+| Distribution / packaging | Strong | NX4 (AMO), L7 (Greasy Fork), L18 (CRX auto-update), L19 (CWS checklist), NX13 (key rotation). |
+| Plugin ecosystem | Explicit non-goal | Astra-Deck is monolithic by design. UC10 (chrome.userScripts) is the narrow exception, gated to Chrome. |
+| Mobile | Adequate | NX3 (Firefox-Android smoke) + L30 (NewPipe intent) + Wave 10 small-screen polish ongoing. |
+| Offline / resilience | Strong | NX3 SponsorBlock stale cache shipped v3.20.5; NX10 (ffmpeg HLS handler smoke); circuit-breakers exist for SB/DeArrow. |
+| Multi-user / collab | Deferred | UC1 (preferences-only sync), UC2 (cloud backup), UC8 (community blocklists). |
+| Migration paths | Strong | Pass 12 N1 + Pass 13 NX6 shipped; SETTINGS_VERSION 7 forthcoming with N3. |
+| Upgrade strategy | Adequate | NX10 ffmpeg pin; NX9 Python 3.10 floor; L18 sideload CRX auto-update; build workflow enforces tag-matches-manifest. |
 
-**Three categories are intentionally thin and called out:**
+**Three categories are intentionally thin:**
 
-- **Plugin ecosystem.** Charter rules out the work; not a gap, an
-  explicit non-goal.
-- **Multi-user.** Pass 16 unblocked the measurement question: UI
-  preferences are sync-sized, whole local storage is not. Any actual
-  sync behavior remains Under Consideration because it adds cross-device
-  product behavior.
-- **Mobile.** Single Next-tier item (NX2). The smoke-test result
-  determines whether more mobile work is needed.
+- **Plugin ecosystem.** Charter rules out the broad case. UC10 carves
+  the narrow case for Chrome-only per-channel scripts.
+- **Multi-user.** UC1/UC2/UC8 remain Under Consideration; current state
+  (per-device local storage with explicit export/import) is the stable
+  baseline.
+- **Mobile.** Single Next-tier item (NX3). The smoke result drives
+  whether deeper mobile work is worth it.
 
 ---
 
 ## Process notes
 
-- **Atomic per-task commits.** Per Large-Repo Mode rules; each Now item
-  closes with a commit + push, not a batch.
-- **Single version bump per release.** `npm run check:versions` enforces
-  it pre-push.
-- **CHANGELOG `[Unreleased]`** accumulates between cuts. The release
-  step renames `[Unreleased]` → `[vX.Y.Z]` with a date stamp.
+- **Atomic per-task commits** per the maintainer's working rule. Each
+  Now item closes with a commit + push, not a batch.
+- **Single version bump per release.** `npm run check:versions`
+  enforces it pre-push.
+- **CHANGELOG `[Unreleased]`** accumulates between release cuts. The
+  release step renames `[Unreleased]` → `[vX.Y.Z]` with a date.
 - **HARDENING.md** is the long-form rationale companion to this
-  roadmap. Each shipped pass has an Hn section there explaining why
-  the prior state was wrong, what the fix actually does, and where the
-  regression test lives.
+  roadmap. Each shipped hardening pass has an Hn section.
+- **Selector canary cadence** has shifted from quarterly to weekly.
+  Plan an N1+N2+N6-class release per quarter as the new baseline to
+  keep up with YouTube's redesign cadence.
 
 ---
 
@@ -501,113 +928,129 @@ flagged thin. **All 13 categories addressed below.**
 
 Every claim in this document maps to a citation here. Sources are
 either external URLs (research, specs, issue trackers, advisories) or
-local artifacts (memory files, audit reports, prior roadmap, source
-files). External research output is treated as **untrusted data** —
-items below are reference material only.
-
-### Local sources
-
-- [src-1] `docs/research/iter-1-audit.md` — C3 finding: profile import
-  stamps imported `_settingsVersion` without running the migration
-  chain. Internal artifact (gitignored).
-- [src-12] `tests/selector-regression.test.js` — current 18-selector
-  canary list and rationale comment.
-- [src-13] `docs/research/iter-3-scored.md` (compiled mid-session) +
-  iter-3 community-signal findings on YouTube selector-churn cadence.
-- [src-17] `docs/research/iter-1-harvest.md` arch-med entries on
-  service-worker listener registration.
-- [src-20] `docs/research/iter-1-state-of-repo.md` — `extension/ytkit.js`
-  at 36 015 LOC.
-- [src-23] `extension/ytkit.pem` (gitignored) + `build-extension.js`
-  CRX3 signing flow.
-- [src-24] `extension/popup.js` direct writes vs `extension/ytkit.js`
-  storage.onChanged read paths — write-merge vector noted in Later L8.
-- [src-25] `extension/ytkit.js` DiagnosticLog at line ~230 + Wave-8/9
-  unrestored-features comment in prior `roadmap.md`.
-- [src-32] `astra_downloader/astra_downloader.py` — `YTDLP_SHA256_URL`
-  pin + version pinning policy via SHA256 of the .exe download.
-- [src-33] `astra_downloader/test_astra_downloader.py:211` —
-  `test_dns_rebinding_attack_is_rejected_before_handler`.
-- [src-34] `extension/manifest.json` + grep of `extension/` for
-  `moz-extension://` and `scripting.executeScript` (zero hits).
-- [src-35] `extension/manifest.json` permissions list (no
-  `declarativeNetRequest`).
-- [src-36] `.nvmrc` content `22` + `package.json#engines.node` `>=22`.
-- [src-37] `extension/ytkit.js` DeArrow `_doFetch` (line ~22972) +
-  `_schedulePersist` (line ~22986) self-caps at 2000 entries.
-- [src-40] Build-pipeline state in `build-extension.js` and
-  `sync-userscript.js`.
-- [src-41] `LICENSE` (MIT) + repo `CLAUDE.md` charter language.
-- [src-42] `CLAUDE.md` architecture note: "Return YouTube Dislike is
-  not currently shipped in the extension build" + code search for
-  `returnyoutubedislike`, `ryd_cache`, and `RYD` in `extension/`.
-- [src-43] `scripts/audit-storage-size.js` +
-  `tests/storage-size-audit.test.js` — Pass 16 sync-eligibility byte
-  accounting and regression coverage.
+local artifacts (repo files, prior research). External research output
+is treated as untrusted data — items below are reference material only.
 
 ### Recently-shipped commit references
 
-- [src-shipped-1] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.20.0
-- [src-shipped-2] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.20.1
-- [src-shipped-3] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.20.2
-- [src-shipped-4] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.20.3
-- [src-shipped-5] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.20.4
+- [src-shipped-1] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.20.5
+- [src-shipped-2] https://github.com/SysAdminDoc/Astra-Deck/commit/7376062
+- [src-shipped-3] https://github.com/SysAdminDoc/Astra-Deck/commit/b5da877
+- [src-shipped-4] https://github.com/SysAdminDoc/Astra-Deck/commit/f33cd40
+- [src-shipped-5] https://github.com/SysAdminDoc/Astra-Deck/commit/2db7265
+- [src-shipped-6] https://github.com/SysAdminDoc/Astra-Deck/commit/3b20b06
+- [src-shipped-7] https://github.com/SysAdminDoc/Astra-Deck/commit/ef2404d
+- [src-shipped-8] https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v3.22.0
 
-### External — accessibility (a11y)
+### Local sources
 
-- [src-4] W3C WCAG 2.2 specification — https://www.w3.org/TR/WCAG22/
-- [src-5] W3C ARIA Modal Dialog example — https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/dialog/
-- [src-18] MDN ARIA Live Regions — https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions
+- [src-loc-manifest] `extension/manifest.json` (v3.22.0).
+- [src-loc-default-settings] `extension/default-settings.json` line 53 (`reactionSpammer: true`).
+- [src-loc-reaction-spammer] `YT_Reaction_Spammer.user.js` v0.2.0.
+- [src-loc-readme] `README.md` (badge URL line 8 — stale v3.20.5).
+- [src-loc-contributing] `CONTRIBUTING.md` (line 1 — "Contributing to YTKit").
+- [src-loc-hardening] `HARDENING.md` (header — "v3.14.0 → v3.15.0").
+- [src-loc-ytkit] `extension/ytkit.js` (38,659 LOC at v3.22.0; grep `id: '` reports ~182 feature objects).
+- [src-loc-popup-write] `extension/popup.js` direct `chrome.storage.local.set` calls vs `extension/ytkit.js` `storage.onChanged` read paths.
+- [src-loc-popup-clear] `extension/popup.js` Pass 17 H17 clear button.
+- [src-loc-diagnostic] `extension/ytkit.js` `diagnosticLog` ring buffer.
+- [src-loc-ryd] `extension/ytkit.js` + `extension/manifest.json` — no `returnyoutubedislike` or `ryd_cache` keys.
+- [src-loc-storage-audit] `scripts/audit-storage-size.js` + `tests/storage-size-audit.test.js` — Pass 16.
+- [src-loc-syncus] `sync-userscript.js` — converts extension to userscript.
+- [src-loc-yt-kit-mem] Memory file `youtube-kit.md` — userscript-only audio features (SharedAudio, Cobalt fallback, muteAdAudio).
+- [src-loc-wave10] Memory file `youtube-kit.md` — Wave 10 features (`musicVideoSpeedLock`, `transcriptAiHandoff`, `playlistQuickRemove`).
+- [src-loc-downloader] `astra_downloader/astra_downloader.py` lines 97–155 (`YTDLP_PATH`, `YTDLP_URL`, `YTDLP_SHA256_URL`).
+- [src-loc-repo-root] `ls` of repo root — `AstraDownloader.exe` (46 MB), `archive/`, `mhtml/`, `*.bak`, `Install-YTYT.ps1`, loose PNGs.
 
-### External — i18n
+### External — YouTube platform / yt-dlp
 
-- [src-6] Chrome i18n API — https://developer.chrome.com/docs/extensions/reference/api/i18n
-- [src-7] MDN WebExtension i18n directory layout — https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization
+- [src-yt-po] yt-dlp PO Token Guide — https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
+- [src-yt-bgutil] bgutil-ytdlp-pot-provider — https://github.com/Brainicism/bgutil-ytdlp-pot-provider
+- [src-yt-sabr] yt-dlp PR #13515 (SABR downloader) — https://github.com/yt-dlp/yt-dlp/pull/13515
+- [src-yt-cve-26331] CVE-2026-26331 — https://nvd.nist.gov/vuln/detail/CVE-2026-26331
+- [src-yt-py310] yt-dlp releases (Python 3.10 minimum) — https://github.com/yt-dlp/yt-dlp/releases
+- [src-yt-throttled] yt-dlp `--throttled-rate` / `--http-chunk-size` — yt-dlp options docs
+- [src-curl-cffi] curl_cffi impersonate (yt-dlp issue 12482) — https://github.com/yt-dlp/yt-dlp/issues/12482
+- [src-ffmpeg-8-1] FFmpeg 8.1.1 Changelog — https://github.com/FFmpeg/FFmpeg/blob/master/Changelog
+- [src-yt-redesign-1] YouTube player redesign — https://9to5google.com/2025/10/14/youtube-video-player-redesign-more/
+- [src-yt-redesign-2] TechSpot YouTube player redesign — https://www.techspot.com/news/109892-youtube-modernizes-video-player-new-layout-functionality-wait.html
+- [src-yt-subs] YouTube Subscriptions list-view removal — https://piunikaweb.com/2026/02/03/youtube-subscriptions-list-view-removed/
+- [src-yt-dubbing] AdGuard SSAI analysis — https://adguard.com/en/blog/youtube-server-side-ad-insertion.html
 
-### External — mobile
+### External — competitor extensions
 
-- [src-8] Mozilla blog: MV3 in Firefox 128 — https://blog.mozilla.org/addons/2024/07/10/manifest-v3-updates-landed-in-firefox-128/
-- [src-9] Mozilla: Android extension support FAQ — https://blog.mozilla.org/addons/2020/02/11/faq-for-extension-support-in-new-firefox-for-android/
+- [src-alchemy] YouTube Alchemy — https://github.com/TimMacy/YouTubeAlchemy
+- [src-improvedtube] ImprovedTube — https://github.com/code-charity/youtube
+- [src-magic-actions] Magic Actions for YouTube — https://chromewebstore.google.com/detail/magic-actions-for-youtube/abjcfabbhafbcdfjoecdgepllmpfceif
+- [src-sb-releases] SponsorBlock releases — https://github.com/ajayyy/SponsorBlock/releases
+- [src-dearrow] DeArrow — https://github.com/ajayyy/DeArrow
+- [src-blocktube] BlockTube — https://chromewebstore.google.com/detail/blocktube/bbeaicapbccfllodepmimpkgecanonai
+- [src-unhook] Unhook — https://chromewebstore.google.com/detail/unhook-remove-youtube-rec/khncfooichmfjbepaaaebmommgaepoid
+- [src-goodtube] GoodTube — https://chromewebstore.google.com/detail/goodtube-adblock-for-yout/mnlobacbpcnaibnhmfcpdfllcipgnfhe
+- [src-yt-antitranslate] YouTube Anti Translate — https://chromewebstore.google.com/detail/youtube-anti-translate-yo/dgdelfpagadfkljgnjnmppnanfjlkalc
+- [src-multiselect] Multiselect for YouTube — https://chromewebstore.google.com/detail/multiselect-for-youtube/gpgbiinpmelaihndlegbgfkmnpofgfei
+- [src-karamel] Karamel — https://github.com/odensc/karamel
+- [src-paolo-rag] YouTube AI Extension — https://github.com/PaoloJN/youtube-ai-extension
+- [src-newpipe] NewPipe — https://github.com/TeamNewPipe/NewPipe
+- [src-freetube] FreeTube — https://github.com/FreeTubeApp/FreeTube/releases
+- [src-cobalt] Cobalt — https://github.com/imputnet/cobalt
+- [src-metube] MeTube — https://github.com/alexta69/metube
+- [src-ublock-lite] uBlock Origin Lite — https://github.com/uBlockOrigin/uBOL-home
+- [src-refined-github] Refined GitHub — https://github.com/sindresorhus/refined-github
+- [src-awesome-us] Awesome Userscripts — https://github.com/awesome-scripts/awesome-userscripts
+- [src-hn-archiver] HN "YouTube archiver extension" — https://news.ycombinator.com/item?id=44768714
 
-### External — offline / resilience
+### External — browser platforms / standards
 
-- [src-2] Return YouTube Dislike API — https://returnyoutubedislikeapi.com/swagger/index.html
-- [src-3] Ayrshare guide to handling 429 rate limits — https://www.ayrshare.com/complete-guide-to-handling-rate-limits-prevent-429-errors/
-- [src-10] DeArrow API documentation — https://wiki.sponsor.ajay.app/w/API_Docs/DeArrow
-- [src-11] SponsorBlock API — https://wiki.sponsor.ajay.app/w/API_Docs
+- [src-chrome-userscripts] Chrome userScripts API — https://developer.chrome.com/docs/extensions/reference/api/userScripts
+- [src-side-panel] Chrome sidePanel API — https://developer.chrome.com/docs/extensions/reference/api/sidePanel
+- [src-cws-update] Chrome web store — https://developer.chrome.com/docs/extensions/whats-new
+- [src-cws-policies] Chrome program policies — https://developer.chrome.com/docs/webstore/program-policies
+- [src-cws-review] Chrome review process — https://developer.chrome.com/docs/webstore/review-process
+- [src-fx-mv3] Mozilla MV3 in Firefox 128 — https://blog.mozilla.org/addons/2024/07/10/manifest-v3-updates-landed-in-firefox-128/
+- [src-fx-android] Mozilla Android extensions FAQ — https://blog.mozilla.org/addons/2020/02/11/faq-for-extension-support-in-new-firefox-for-android/
+- [src-fx-mv2-mv3] Mozilla keeps MV2 + MV3 — https://blog.mozilla.org/en/firefox/firefox-manifest-v3-adblockers/
+- [src-amo] AMO submission guide — https://extensionworkshop.com/documentation/publish/submitting-an-add-on/
+- [src-amo-policy-2025] AMO 2025 policy update — https://blog.mozilla.org/addons/2025/06/23/updated-add-on-policies-simplified-clarified/
+- [src-doc-pip] MDN Document PiP — https://developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API
+- [src-dnr-case] Chrome declarativeNetRequest — https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest
+- [src-navigation-api] MDN Navigation API — https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API
+- [src-tampermonkey-2673] Tampermonkey #2673 — https://github.com/tampermonkey/tampermonkey/issues/2673
+- [src-greasyfork] Greasy Fork — https://greasyfork.org/
 
-### External — multi-user / sync
+### External — accessibility / a11y
 
-- [src-15] Chrome storage API quotas — https://developer.chrome.com/docs/extensions/reference/api/storage
-- [src-16] MDN storage.sync — https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/storage/sync
-- [src-26] Bitwarden release notes — https://bitwarden.com/help/releasenotes/
-
-### External — distribution
-
-- [src-14] Mozilla — submitting an add-on (AMO) — https://extensionworkshop.com/documentation/publish/submitting-an-add-on/
-- [src-21] Tampermonkey FAQ — https://www.tampermonkey.net/faq.php
-- [src-22] Greasy Fork — https://greasyfork.org/
+- [src-mdn-aria-live] MDN ARIA Live Regions — https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions
+- [src-mdn-reduced-motion] MDN prefers-reduced-motion — https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion
+- [src-mdn-forced-colors] MDN forced-colors — https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors
+- [src-webaim-sr] WebAIM screen-reader survey — https://webaim.org/projects/screenreadersurvey/
 
 ### External — security advisories
 
-- [src-19] GitHub Advisory Database — https://github.com/advisories
-- [src-31] CVE-2026-33752 (curl_cffi SSRF) — referenced in iter-1-sources
-- [src-39] Flask-HTTPAuth CVE-2026-34531 — referenced in iter-3-sources
+- [src-mdn-csp] MDN CSP `connect-src` — https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/connect-src
+- [src-cve-27205] CVE-2026-27205 Flask cache control — https://radar.offseq.com/threat/cve-2026-27205-cwe-524-use-of-cache-containing-sen-0adafbc3
+- [src-cve-27641] CVE-2026-27641 Flask-Reuploaded — https://www.sentinelone.com/vulnerability-database/cve-2026-27641/
+- [src-eslint-cve] CVE-2025-54313 eslint-config-prettier — https://www.stepsecurity.io/blog/supply-chain-security-alert-eslint-config-prettier-package-shows-signs-of-compromise
+- [src-eslint-10] ESLint v10.0.1 — https://eslint.org/blog/2026/02/eslint-v10.0.1-released/
+- [src-dependabot] Dependabot — https://docs.github.com/en/code-security/dependabot
 
-### External — direct competitors / community signal
+### External — other
 
-- [src-27] uBlock Origin Lite (uBOLite) MV3 — https://github.com/uBlockOrigin/uBOL-home
-- [src-28] Tampermonkey changelog — https://www.tampermonkey.net/changelog.php
-- [src-29] YouTube Alchemy releases — https://github.com/TimMacy/YouTubeAlchemy
-- [src-30] Enhancer for YouTube — https://github.com/Maximilianos/enhancer-for-youtube
-- [src-38] Tampermonkey issue #2673 — https://github.com/tampermonkey/tampermonkey/issues/2673
+- [src-bitwarden] Bitwarden release notes — https://bitwarden.com/help/releasenotes/
+- [src-aip-providers] (Provider docs — OpenAI/Anthropic/Google/Mistral/Groq/Ollama API references; not single-URL.)
+- [src-cldr-47] CLDR 47 release notes — https://cldr.unicode.org/downloads/cldr-47
+- [src-icu-78] Unicode blog ICU 78.3 / CLDR 48.2 — http://blog.unicode.org/2026/03/unicode-icu-783-and-cldr-482-released.html
+- [src-playwright] Playwright — https://playwright.dev/
 
-> Phase-1 source breadth in `docs/research/iter-1-sources.md` (77
-> distinct URLs, gitignored). The references above are the subset
-> directly cited in this document.
+> Iter-5 source breadth lives in conversation context (this roadmap was
+> compiled by merging local Phase 0 reconnaissance + two background
+> research agents — competitors + standards/security — against the
+> prior iter-1 through iter-4 artifacts in `docs/research/`
+> (gitignored)). The references above are the subset directly cited.
 
 ---
 
-*Last updated: 2026-04-26 — Hardening Pass 16 (unreleased). Next review:
-when NX1/NX2/NX5 are triaged or when iter-5 research surfaces a
-higher-leverage item.*
+*Last updated: 2026-05-17 — supersedes prior `roadmap.md` v3.20.5
+2026-04-26 snapshot. Next review: when N1 (PO Token) or N6 (liquid-
+glass selector audit) lands, or iter-6 research surfaces a higher-
+leverage item.*

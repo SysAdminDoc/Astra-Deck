@@ -727,5 +727,169 @@ class VideoFormatSelectorTests(unittest.TestCase):
         self.assertNotIn('[height<=', sel)
 
 
+# v1.4.0 (N1): PO Token provider detection + extractor-args wiring.
+class PoTokenProviderTests(unittest.TestCase):
+    def setUp(self):
+        ad.reset_po_token_provider_cache()
+
+    def tearDown(self):
+        ad.reset_po_token_provider_cache()
+
+    def test_is_youtube_url_matches_canonical_hosts(self):
+        for url in (
+            "https://www.youtube.com/watch?v=abc",
+            "https://youtube.com/watch?v=abc",
+            "https://m.youtube.com/watch?v=abc",
+            "https://youtu.be/abc",
+            "https://www.youtube-nocookie.com/embed/abc",
+            "http://youtube.com/",
+        ):
+            with self.subTest(url=url):
+                self.assertTrue(ad.is_youtube_url(url))
+
+    def test_is_youtube_url_rejects_non_youtube(self):
+        for url in (
+            "",
+            None,
+            "https://example.com/watch?v=abc",
+            "https://fake-youtube.com.evil.example/",
+            "https://youtubevideos.example.com/",
+            "ftp://youtube.com/",
+            "javascript:alert(1)",
+        ):
+            with self.subTest(url=url):
+                self.assertFalse(ad.is_youtube_url(url))
+
+    def test_build_youtube_extractor_args_empty_for_non_youtube(self):
+        # Non-YouTube URLs must never receive the bgutil extractor-arg so
+        # the helper stays safe to splat unconditionally in _run_download.
+        for url in ("https://example.com/v/1", "https://vimeo.com/1"):
+            self.assertEqual(
+                ad.build_youtube_extractor_args(
+                    url,
+                    po_token_provider={'ok': True, 'port': 4416, 'version': None},
+                ),
+                [],
+            )
+
+    def test_build_youtube_extractor_args_empty_when_provider_absent(self):
+        # On YouTube URLs with no provider, the helper still returns [] for
+        # N1 alone — N2 will start always-returning the formats=duplicate
+        # arg regardless of provider state. Pinning current behaviour so
+        # the N2 commit's diff is visible in the test churn.
+        self.assertEqual(
+            ad.build_youtube_extractor_args("https://www.youtube.com/watch?v=abc"),
+            [],
+        )
+        self.assertEqual(
+            ad.build_youtube_extractor_args(
+                "https://www.youtube.com/watch?v=abc",
+                po_token_provider=None,
+            ),
+            [],
+        )
+        self.assertEqual(
+            ad.build_youtube_extractor_args(
+                "https://www.youtube.com/watch?v=abc",
+                po_token_provider={'ok': False},
+            ),
+            [],
+        )
+
+    def test_build_youtube_extractor_args_routes_bgutil_when_provider_ok(self):
+        args = ad.build_youtube_extractor_args(
+            "https://www.youtube.com/watch?v=abc",
+            po_token_provider={'ok': True, 'port': 4416, 'version': '1.2.3'},
+        )
+        self.assertIn('--extractor-args', args)
+        # The bgutil extractor-arg target the plugin reads — written as
+        # ``youtubepot-bgutilhttp:base_url=...`` per upstream docs. The plugin
+        # itself is a user-installed yt-dlp plugin; we only point it at the
+        # HTTP server.
+        bgutil = next((a for a in args if a.startswith('youtubepot-bgutilhttp:')), None)
+        self.assertIsNotNone(bgutil)
+        self.assertIn('http://127.0.0.1:4416', bgutil)
+
+    def test_probe_caches_negative_result(self):
+        # The probe MUST cache None too — otherwise every download retries
+        # the probe over the network, blocking startup behind 1 s timeouts.
+        calls = []
+        original_get = ad.http_requests.get
+
+        def fake_get(url, **kwargs):
+            calls.append(url)
+            raise Exception("not running")
+
+        ad.http_requests.get = fake_get
+        try:
+            self.assertIsNone(ad.probe_po_token_provider(force=True))
+            self.assertIsNone(ad.probe_po_token_provider())
+            # Two requests on the first force call (one per probe path), zero
+            # on the cached call.
+            self.assertGreater(len(calls), 0)
+            cached_count = len(calls)
+            ad.probe_po_token_provider()
+            self.assertEqual(len(calls), cached_count)
+        finally:
+            ad.http_requests.get = original_get
+
+    def test_probe_uses_ping_endpoint_first(self):
+        # /ping is the documented liveness check. The fallback to / exists
+        # only for older provider builds, so /ping must be tried first.
+        seen_paths = []
+        original_get = ad.http_requests.get
+
+        class FakeResp:
+            ok = True
+            headers = {'content-type': 'application/json'}
+            status_code = 200
+
+            def json(self):
+                return {'version': '2.0.0'}
+
+        def fake_get(url, **kwargs):
+            seen_paths.append(url)
+            return FakeResp()
+
+        ad.http_requests.get = fake_get
+        try:
+            result = ad.probe_po_token_provider(force=True)
+        finally:
+            ad.http_requests.get = original_get
+        self.assertIsNotNone(result)
+        self.assertEqual(result['port'], 4416)
+        self.assertEqual(result['version'], '2.0.0')
+        self.assertTrue(seen_paths[0].endswith('/ping'))
+
+
+class HealthPoTokenSurfaceTests(unittest.TestCase):
+    def setUp(self):
+        ad.reset_po_token_provider_cache()
+
+    def tearDown(self):
+        ad.reset_po_token_provider_cache()
+
+    def test_health_includes_po_token_provider_field_null_when_absent(self):
+        # The extension popup keys the amber "PO Token provider not detected"
+        # pill off this exact field shape. Pin it so the wire contract is
+        # explicit.
+        config = FakeConfig({"ServerToken": "f" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+
+        # Force the probe to return None without hitting the network.
+        original_get = ad.http_requests.get
+        ad.http_requests.get = lambda *a, **k: (_ for _ in ()).throw(Exception("offline"))
+        try:
+            resp = api.test_client().get(
+                "/health", headers={"X-MDL-Client": "MediaDL"},
+            )
+        finally:
+            ad.http_requests.get = original_get
+        body = resp.get_json()
+        self.assertIn("poTokenProvider", body)
+        self.assertIsNone(body["poTokenProvider"])
+
+
 if __name__ == "__main__":
     unittest.main()
