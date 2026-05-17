@@ -120,6 +120,11 @@ unblocks downstream work.
 
 ### N2. Downloader: enable SABR-aware format selection
 
+- **Status:** Completed. `build_youtube_extractor_args()` now always emits
+  `--extractor-args youtube:formats=duplicate` for YouTube URLs regardless
+  of PO Token provider state; the codec-aware `-f` cascade in
+  `build_video_format_args` picks HTTPS when present, SABR otherwise.
+  Three additional regressions in `tests/test_astra_downloader.py`.
 - **Severity:** Platform-drift. The `web` client's `adaptiveFormats` no
   longer ships playback URLs — only the SABR handshake works. Astra
   Downloader's default format pipeline silently breaks on videos that
