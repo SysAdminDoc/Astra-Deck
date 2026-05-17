@@ -3,6 +3,70 @@
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
 > H20 onward covers v3.23.0 (Pass 19).
 
+## H21 — YouTube "liquid glass" player chrome redesign audit (v3.23.0, N6)
+
+**Status: deferred / partial.** This pass documents the rollout window but
+cannot promote concrete selectors until a fresh MHTML capture lands. The
+roadmap N6 acceptance criteria 1-3 (fresh capture, canary additions, manual
+smoke) require the maintainer at a browser running the new chrome.
+
+**What rolled out (public signal).** Late 2025 → early 2026, YouTube began
+serving a redesigned video player with the following user-visible changes:
+
+- Pill-shaped action container in the chrome (replaces the individual
+  inline `ytp-*` buttons cluster).
+- No dim on pause (the `ytp-paused-mode` overlay dimming is gone).
+- Smaller double-tap-to-skip animation.
+- Dynamic like animations.
+- Threaded comments.
+- Simplified Watch Later flow.
+
+Refs:
+- https://9to5google.com/2025/10/14/youtube-video-player-redesign-more/
+- https://www.techspot.com/news/109892-youtube-modernizes-video-player-new-layout-functionality-wait.html
+- https://www.engadget.com/entertainment/youtube/youtube-rolls-out-its-redesigned-video-player-globally-174609883.html
+
+**Astra-Deck features touching the affected surfaces.**
+
+- `popOutPlayer`, `pipButton`, `fullscreenOnDoubleClick` — inject into the
+  chrome cluster.
+- v3.20.9 player speed control chip — sits between Download and Settings.
+- Theater split divider — relies on `ytp-chrome-bottom` for transition
+  timing.
+- Cinema Ambient Glow — samples player canvas; `ytp-paused-mode` was a
+  signal for fade-out timing.
+- Creator-Comment-Highlight + Premium Live Chat — comment-DOM rewrites
+  may extend the `ytd-comment-view-model` shape with new sub-renderers.
+
+**What this pass landed.**
+
+- `tests/selector-regression.test.js` gains a `LIQUID_GLASS_WATCHLIST`
+  array naming the surfaces most likely to break, with a documentation
+  test that asserts the list stays non-empty during the transition
+  window. Items here are placeholders — promote them to
+  `CRITICAL_SELECTORS` once fresh MHTML captures + the build:fixtures
+  regen confirm the new class names.
+- Comment in `CRITICAL_SELECTORS` documenting the rollout window
+  semantics (keep the old + new selector both during the transition so
+  users on the legacy chrome don't regress).
+
+**What's pending (concrete next-action checklist).**
+
+1. Capture a watch-page MHTML on a profile served the new chrome
+   (`File → Save Page As → MHTML` in Chrome stable).
+2. Save under `mhtml/yt-watch-liquid-glass.mhtml` (gitignored alongside
+   existing mhtml captures).
+3. `npm run build:fixtures` to regenerate
+   `tests/fixtures/yt-watch.tokens.txt`.
+4. Grep the new tokens for the surfaces in `LIQUID_GLASS_WATCHLIST` and
+   identify the real class names. Promote concrete winners to
+   `CRITICAL_SELECTORS` (keep legacy + new both).
+5. Manual smoke: screenshot, mini-player bar, speed control chip,
+   theater split divider all render on the new chrome.
+6. Update this section with the concrete deltas.
+
+---
+
 ## H20 — CSP `connect-src` allowlist on extension pages (v3.23.0, N5)
 
 **Why this is a real issue.** The extension's CSP previously declared only
