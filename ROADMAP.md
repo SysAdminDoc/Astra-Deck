@@ -192,6 +192,18 @@ unblocks downstream work.
 
 ### N4. Doc + version drift sweep
 
+- **Status:** Completed. README badge v3.20.5 → v3.22.0; README intro
+  paragraph names player speed control, reaction spammer (opt-in), and
+  10 locales; new "Languages" section lists the bundled locales table;
+  Security section's CSP line reflects the new `connect-src` allowlist;
+  feature tables add Speed Control Chip + Reaction Spammer rows.
+  CONTRIBUTING.md "YTKit" → "Astra Deck" replace-all; project-structure
+  block rewritten to reflect retired options page, new `_locales/`
+  directory, scripts directory contents, and the standalone userscripts.
+  HARDENING.md header rewritten to "v3.14.0 → v3.23.0" with cumulative
+  Pass 19 (H20-H21) preamble noting H1-H19 covered prior passes.
+  `roadmap.md` was already superseded by `ROADMAP.md` in the iter-5
+  commit.
 - **Severity:** Sustained doc drift across four artifacts. Past Pass 18
   already audited HARDENING.md but the README badge and CONTRIBUTING.md
   still reference stale state. Cheap fixes; high user-perceived
