@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Changed (Astra Downloader v1.4.0)
+
+- **SABR-aware format selection (N2).** YouTube's `web` client increasingly
+  returns SABR-only `adaptiveFormats` without HTTPS playback URLs in 2026.
+  Astra Downloader now passes `youtube:formats=duplicate` on every YouTube
+  download so yt-dlp returns both format families and the codec-aware
+  selector in `build_video_format_args` picks HTTPS when present, SABR
+  otherwise. No silent breakage on SABR-only videos. Unconditional for
+  YouTube URLs; no-op elsewhere.
+
 ### Added (Astra Downloader v1.4.0)
 
 - **PO Token provider detection (N1).** Astra Downloader auto-detects a

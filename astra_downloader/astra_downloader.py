@@ -593,18 +593,24 @@ def build_youtube_extractor_args(url, po_token_provider=None):
 
     The args returned cover two distinct concerns:
 
-    1. PO Token plugin routing (N1) — when a bgutil-ytdlp-pot-provider HTTP
+    1. SABR-aware format duplication (N2) — YouTube's ``web`` client no
+       longer ships playback URLs in ``adaptiveFormats`` for an increasing
+       share of videos; the SABR (UMP protobuf) handshake is the only path.
+       ``youtube:formats=duplicate`` asks yt-dlp to return both the HTTPS
+       and SABR format families when present. The format selector in
+       ``build_video_format_args`` then picks HTTPS by codec when offered
+       and falls through to SABR otherwise. Always emitted for YouTube
+       URLs regardless of provider state — it's a pure read on the
+       extractor and harmless when no SABR format exists.
+
+    2. PO Token plugin routing (N1) — when a bgutil-ytdlp-pot-provider HTTP
        server is reachable, point the bgutil plugin at it via
        ``youtubepot-bgutilhttp:base_url=...``. If the user has not installed
        the yt-dlp plugin itself, the arg is harmlessly ignored.
-
-    2. SABR-aware format duplication (N2, future commit) — request that
-       yt-dlp return both HTTPS and SABR format families for the web client
-       so the format selector can pick HTTPS when present.
     """
     if not is_youtube_url(url):
         return []
-    args = []
+    args = ['--extractor-args', 'youtube:formats=duplicate']
     if po_token_provider and po_token_provider.get('ok'):
         port = po_token_provider.get('port') or PO_TOKEN_PROVIDER_PORT
         args += [

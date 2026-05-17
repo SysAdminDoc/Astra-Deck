@@ -761,8 +761,8 @@ class PoTokenProviderTests(unittest.TestCase):
                 self.assertFalse(ad.is_youtube_url(url))
 
     def test_build_youtube_extractor_args_empty_for_non_youtube(self):
-        # Non-YouTube URLs must never receive the bgutil extractor-arg so
-        # the helper stays safe to splat unconditionally in _run_download.
+        # Non-YouTube URLs must never receive YouTube-specific extractor args
+        # so the helper stays safe to splat unconditionally in _run_download.
         for url in ("https://example.com/v/1", "https://vimeo.com/1"):
             self.assertEqual(
                 ad.build_youtube_extractor_args(
@@ -772,29 +772,41 @@ class PoTokenProviderTests(unittest.TestCase):
                 [],
             )
 
-    def test_build_youtube_extractor_args_empty_when_provider_absent(self):
-        # On YouTube URLs with no provider, the helper still returns [] for
-        # N1 alone — N2 will start always-returning the formats=duplicate
-        # arg regardless of provider state. Pinning current behaviour so
-        # the N2 commit's diff is visible in the test churn.
-        self.assertEqual(
-            ad.build_youtube_extractor_args("https://www.youtube.com/watch?v=abc"),
-            [],
+    def test_build_youtube_extractor_args_always_includes_sabr_formats_duplicate(self):
+        # N2: SABR-only adaptiveFormats silently break downloads on the
+        # 2026 web client. ``youtube:formats=duplicate`` asks yt-dlp to
+        # return both HTTPS and SABR families. Must be emitted whether or
+        # not a PO Token provider is reachable, because SABR is a read-time
+        # concern, not a token-mediated one.
+        without_provider = ad.build_youtube_extractor_args(
+            "https://www.youtube.com/watch?v=abc",
         )
-        self.assertEqual(
-            ad.build_youtube_extractor_args(
-                "https://www.youtube.com/watch?v=abc",
-                po_token_provider=None,
-            ),
-            [],
+        with_provider = ad.build_youtube_extractor_args(
+            "https://www.youtube.com/watch?v=abc",
+            po_token_provider={'ok': True, 'port': 4416, 'version': '1.2.3'},
         )
-        self.assertEqual(
-            ad.build_youtube_extractor_args(
-                "https://www.youtube.com/watch?v=abc",
-                po_token_provider={'ok': False},
-            ),
-            [],
-        )
+        for label, args in (("no-provider", without_provider),
+                            ("with-provider", with_provider)):
+            with self.subTest(label=label):
+                self.assertIn('youtube:formats=duplicate', args)
+                # Must be paired with --extractor-args so yt-dlp parses it.
+                idx = args.index('youtube:formats=duplicate')
+                self.assertEqual(args[idx - 1], '--extractor-args')
+
+    def test_build_youtube_extractor_args_includes_only_sabr_when_provider_absent(self):
+        # Validates that PO token routing is gated on provider availability
+        # while SABR is unconditional. Prevents future regressions where
+        # somebody short-circuits the helper to return [] on provider miss.
+        for absent in (None, {'ok': False}, {}):
+            with self.subTest(provider=absent):
+                args = ad.build_youtube_extractor_args(
+                    "https://www.youtube.com/watch?v=abc",
+                    po_token_provider=absent,
+                )
+                self.assertIn('youtube:formats=duplicate', args)
+                self.assertFalse(any(
+                    a.startswith('youtubepot-bgutilhttp:') for a in args
+                ))
 
     def test_build_youtube_extractor_args_routes_bgutil_when_provider_ok(self):
         args = ad.build_youtube_extractor_args(
@@ -802,13 +814,11 @@ class PoTokenProviderTests(unittest.TestCase):
             po_token_provider={'ok': True, 'port': 4416, 'version': '1.2.3'},
         )
         self.assertIn('--extractor-args', args)
-        # The bgutil extractor-arg target the plugin reads — written as
-        # ``youtubepot-bgutilhttp:base_url=...`` per upstream docs. The plugin
-        # itself is a user-installed yt-dlp plugin; we only point it at the
-        # HTTP server.
         bgutil = next((a for a in args if a.startswith('youtubepot-bgutilhttp:')), None)
         self.assertIsNotNone(bgutil)
         self.assertIn('http://127.0.0.1:4416', bgutil)
+        # SABR arg still present alongside provider routing.
+        self.assertIn('youtube:formats=duplicate', args)
 
     def test_probe_caches_negative_result(self):
         # The probe MUST cache None too — otherwise every download retries
