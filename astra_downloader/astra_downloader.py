@@ -2101,6 +2101,21 @@ def create_api(config, dl_manager, history):
         # v1.2.0: cache preflight for 10 minutes. Multi-video downloads
         # previously re-negotiated OPTIONS on every POST /download.
         resp.headers["Access-Control-Max-Age"] = str(CORS_MAX_AGE_SECONDS)
+        # v1.4.0 (NX11): Defense-in-depth against intermediary caching of
+        # auth-bearing responses. CVE-2026-27205 specifically targets
+        # Flask session cookies via the `in` operator; Astra Downloader
+        # doesn't use Flask sessions (X-Auth-Token bearer model only),
+        # so the CVE is structurally inapplicable — but the same class
+        # of leak applies to any auth-bearing response cached by an
+        # intermediary. `no-store` is the strongest no-cache directive
+        # and is the right default for a local REST API that serves
+        # tokenized payloads. Also signal `Vary: Cookie` so any future
+        # cookie-bearing variant cannot land without explicit review.
+        resp.headers["Cache-Control"] = "no-store"
+        existing_vary = resp.headers.get("Vary", "")
+        vary_tokens = {v.strip() for v in existing_vary.split(",") if v.strip()}
+        vary_tokens.add("Cookie")
+        resp.headers["Vary"] = ", ".join(sorted(vary_tokens))
         if extra_headers:
             for k, v in extra_headers.items():
                 resp.headers[k] = v
