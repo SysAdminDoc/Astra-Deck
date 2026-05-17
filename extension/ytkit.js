@@ -2006,6 +2006,64 @@ return response;
     }
 
     // Global toast notification function with optional action button(s)
+    // v3.23.0 (NX5): off-screen aria-live region for assistive-tech
+    // announcements of player events that have no visible toast.
+    // SponsorBlock skips and DeArrow title replacements are the
+    // initial customers; the region is a polite live region so it
+    // doesn't interrupt the screen-reader's current utterance, just
+    // queues behind it.
+    //
+    // The region is a single element reused across announcements.
+    // Each announcement updates its textContent; screen readers
+    // observe the mutation and read the new content.
+    //
+    // To re-trigger the same message twice (e.g. consecutive skips
+    // of the same category), we briefly clear and then set the new
+    // text — otherwise the screen reader treats no-change as no
+    // announcement.
+    let _a11yLiveRegion = null;
+    let _a11yClearTimer = null;
+    function announceA11y(message) {
+        if (!message || typeof message !== 'string') return;
+        try {
+            if (!_a11yLiveRegion || !document.body.contains(_a11yLiveRegion)) {
+                _a11yLiveRegion = document.createElement('div');
+                _a11yLiveRegion.setAttribute('role', 'status');
+                _a11yLiveRegion.setAttribute('aria-live', 'polite');
+                _a11yLiveRegion.setAttribute('aria-atomic', 'true');
+                _a11yLiveRegion.className = 'ytkit-a11y-live-region';
+                // Off-screen but still in the accessibility tree.
+                // `display: none` and `visibility: hidden` hide from
+                // SR too; using clip + position is the standard SR-only
+                // pattern.
+                _a11yLiveRegion.style.cssText = [
+                    'position:absolute',
+                    'width:1px',
+                    'height:1px',
+                    'padding:0',
+                    'margin:-1px',
+                    'overflow:hidden',
+                    'clip:rect(0 0 0 0)',
+                    'white-space:nowrap',
+                    'border:0',
+                ].join(';');
+                document.body.appendChild(_a11yLiveRegion);
+            }
+            // Clear then set so consecutive identical messages still
+            // fire. The clear/set pair must straddle a frame so the
+            // mutation observer in the AT picks both up.
+            _a11yLiveRegion.textContent = '';
+            if (_a11yClearTimer) clearTimeout(_a11yClearTimer);
+            _a11yClearTimer = setTimeout(() => {
+                if (_a11yLiveRegion) _a11yLiveRegion.textContent = message;
+            }, 50);
+        } catch (e) {
+            // reason: a11y announcements must never break the host
+            // feature. Storage-quota or DOM-attach failures fall silent.
+            DebugManager?.log?.('A11y', `announce skipped: ${e?.message || e}`);
+        }
+    }
+
     function showToast(message, color = '#22c55e', options = {}) {
         const existingToast = document.querySelector('.ytkit-global-toast');
         if (existingToast) dismissToast(existingToast, true);
@@ -24946,7 +25004,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (currentTime >= start && currentTime < end - 0.3) {
                         video.currentTime = end;
                         DebugManager.log('SponsorBlock', `Skipped ${seg.category}: ${start.toFixed(1)}s -> ${end.toFixed(1)}s`);
-                        // Skip notification removed — toasts over the video are distracting
+                        // Skip notification removed — toasts over the video are distracting.
+                        // v3.23.0 (NX5): announce via aria-live so screen-reader
+                        // users know a skip happened without a visible toast.
+                        // The polite live region queues the message; categories
+                        // are human-friendly via the SB label map but fall back
+                        // to the raw category id.
+                        try {
+                            const labels = {
+                                sponsor: 'sponsor',
+                                selfpromo: 'self promotion',
+                                interaction: 'interaction reminder',
+                                intro: 'intro',
+                                outro: 'outro',
+                                preview: 'preview or recap',
+                                music_offtopic: 'non-music section',
+                                filler: 'filler tangent',
+                            };
+                            const label = labels[seg.category] || seg.category.replace(/_/g, ' ');
+                            announceA11y(`Skipped ${label} segment.`);
+                        } catch (_) {
+                            // reason: announcement is best-effort
+                        }
                         // Reschedule after skip to handle next segment
                         this._scheduleNextSkip();
                         return;
@@ -25266,6 +25345,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 titleEl.style.display = 'none';
                                 titleEl.dataset.daProcessed = '1';
                                 titleEl.parentNode.insertBefore(clone, titleEl);
+                                // v3.23.0 (NX5): announce ONLY the watch-page
+                                // primary-title replacement so the screen-reader
+                                // user knows the title they're about to hear has
+                                // been overridden. Grid-thumbnail replacements
+                                // are skipped to avoid spam.
+                                try {
+                                    if (isWatchPagePath() && titleEl.closest('ytd-watch-metadata, #title.ytd-watch-metadata')) {
+                                        announceA11y(`Title replaced by DeArrow: ${formatted}`);
+                                    }
+                                } catch (_) {
+                                    // reason: a11y announce is best-effort
+                                }
                             } else if (fallback) {
                                 const original = titleEl.textContent.trim();
                                 const formatted = this._formatTitle(original, format);

@@ -363,6 +363,17 @@ lower-friction. [src-amo] [src-amo-policy-2025]
 
 ### NX5. ARIA live regions for SponsorBlock skip + DeArrow replace (carried L2)
 
+- **Status:** Completed. New shared `announceA11y(message)` helper near
+  `showToast` creates a single off-screen `aria-live="polite"` region
+  with `role="status"` + `aria-atomic="true"` and re-uses it across
+  announcements. SponsorBlock `_checkSkip` calls it with a human-
+  friendly category label ("Skipped sponsor segment.", "Skipped intro
+  segment.", etc.); DeArrow watch-page primary-title replacement
+  announces "Title replaced by DeArrow: ..." gated on
+  `isWatchPagePath()` and a `ytd-watch-metadata` ancestor check so the
+  home-grid thumbnail processing never spams the screen reader. Three
+  regressions in `tests/hardening.test.js`.
+
 Currently silent on assistive tech. Adding an `aria-live="polite"`
 status region announcing "Sponsor segment skipped" / "Title replaced
 by DeArrow" closes a high-value a11y gap with a few lines of code.

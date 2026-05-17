@@ -1624,6 +1624,53 @@ test('npm run audit:a11y reports no popup a11y issues', () => {
         'npm run audit:a11y must pass — all buttons must be labeled, dialog semantics must be present');
 });
 
+// ── v3.23.0 NX5: ARIA live region for SponsorBlock skip + DeArrow replace ──
+
+test('announceA11y helper exists and uses a polite live region', () => {
+    // The helper must declare a `role="status"` aria-live="polite"
+    // region so screen readers queue the message rather than
+    // interrupt. Aria-atomic ensures the full message reads.
+    assert.match(ytkitSource, /function\s+announceA11y\s*\(/,
+        'announceA11y helper must exist');
+    const start = ytkitSource.indexOf('function announceA11y');
+    const block = ytkitSource.slice(start, start + 2000);
+    assert.match(block, /aria-live['"]?\s*,\s*['"]polite['"]/,
+        'announceA11y must use aria-live=polite');
+    assert.match(block, /role['"]?\s*,\s*['"]status['"]/,
+        'announceA11y must use role=status');
+    assert.match(block, /aria-atomic/,
+        'announceA11y must use aria-atomic so the full message is announced');
+});
+
+test('sponsorBlock skip announces via aria-live and never via a toast', () => {
+    // Toasts over the video were removed in an earlier pass as
+    // distracting. The aria-live announcement replaces that signal
+    // for assistive-tech users only — sighted users see no change.
+    const skipStart = ytkitSource.indexOf('_checkSkip()');
+    assert.ok(skipStart > -1, '_checkSkip method must exist');
+    const block = ytkitSource.slice(skipStart, skipStart + 3000);
+    assert.match(block, /announceA11y\(/,
+        '_checkSkip must announce skips via announceA11y for SR users');
+    // SB skips must NOT call showToast inside _checkSkip — that would
+    // regress the v3.20.x decision to remove distracting toasts.
+    const showToastCount = (block.match(/showToast\(/g) || []).length;
+    assert.equal(showToastCount, 0,
+        '_checkSkip must not call showToast — toasts over the video were intentionally removed');
+});
+
+test('DeArrow watch-page title replacement announces via aria-live', () => {
+    // Only the watch-page primary title gets announced — grid thumbnails
+    // would spam the screen reader. Pin both the announcement and the
+    // gating condition.
+    const deArrowStart = ytkitSource.indexOf('Show original title on hover if setting enabled');
+    assert.ok(deArrowStart > -1, 'DeArrow primary-title block must exist');
+    const block = ytkitSource.slice(deArrowStart, deArrowStart + 1500);
+    assert.match(block, /announceA11y\(/,
+        'DeArrow watch-page replacement must announce via announceA11y');
+    assert.match(block, /isWatchPagePath\(\)/,
+        'DeArrow announcement must be gated on isWatchPagePath() to avoid grid spam');
+});
+
 // ── v3.23.0 N5: CSP connect-src allowlist on extension pages ──
 
 test('extension manifest CSP scopes connect-src to documented host_permissions', () => {
