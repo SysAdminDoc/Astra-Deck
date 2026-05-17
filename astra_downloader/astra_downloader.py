@@ -74,10 +74,11 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
-# (ytDlpVersion, ffmpegVersion, rateLimit) but older clients ignore unknown
+# (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
+# for bgutil-ytdlp-pot-provider availability. Older clients ignore unknown
 # keys, so the major version stays at 2 (additive, backward-compatible).
 SERVICE_API_VERSION = 2
 SERVER_PORT = 9751
@@ -158,6 +159,21 @@ FFMPEG_SHA256_URL = FFMPEG_URL + ".sha256"
 # registration is skipped on subsequent launches at the same version.
 INTEGRATIONS_STAMP_KEY = r'Software\Classes\AstraDownloader'
 INTEGRATIONS_STAMP_VALUE = 'IntegrationsVersion'
+
+# v1.4.0 (N1): bgutil-ytdlp-pot-provider integration.
+# YouTube binds PO tokens per video in 2026; manual extraction is deprecated.
+# Without a PO Token provider, yt-dlp's `web` client increasingly fails with
+# "Sign in to confirm you're not a bot." Astra Downloader detects the
+# upstream provider's HTTP server on its default port and surfaces availability
+# both in /health (for the extension banner) and in the yt-dlp invocation
+# (via the youtubepot-bgutilhttp extractor-arg). The plugin itself is
+# installed by the user via pip/docker; we only consume the HTTP endpoint.
+# Refs:
+#   https://github.com/Brainicism/bgutil-ytdlp-pot-provider
+#   https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide
+PO_TOKEN_PROVIDER_PORT = 4416
+PO_TOKEN_PROVIDER_PROBE_TIMEOUT = 1.0
+_PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
@@ -491,6 +507,111 @@ def get_ytdlp_version(force=False):
         cache['value'] = version[:32]
     cache['checked_at'] = now
     return cache['value']
+
+
+# v1.4.0 (N1): cached probe for bgutil-ytdlp-pot-provider.
+# Caches for 30 s so the /health endpoint stays cheap under polling but a
+# user starting the provider mid-session sees it surfaced within half a
+# minute. Returns None when unreachable so the call site can branch
+# clearly. The cache cell is shared across threads — the 30 s TTL races
+# benignly (two probes in flight is fine).
+_po_token_provider_cache = {'value': None, 'checked_at': 0.0}
+_PO_TOKEN_PROVIDER_CACHE_LOCK = threading.Lock()
+
+_YOUTUBE_HOST_RE = re.compile(
+    r'^https?://(?:[^/]+\.)?(?:youtube\.com|youtu\.be|youtube-nocookie\.com)(?:/|$|\?)',
+    re.IGNORECASE,
+)
+
+
+def is_youtube_url(url):
+    """True when ``url`` points at a YouTube property (watch / share / nocookie)."""
+    return bool(_YOUTUBE_HOST_RE.match(url or ''))
+
+
+def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT):
+    """Best-effort detection of a running bgutil-ytdlp-pot-provider.
+
+    Returns ``{'ok': True, 'port': int, 'version': str | None}`` when the
+    provider's HTTP server responds on ``127.0.0.1:4416``, ``None`` otherwise.
+    Cached for 30 s. The probe uses a tight timeout so a stale firewall hold
+    can't gum up health polling.
+
+    The provider's ``/ping`` endpoint is the documented liveness check; older
+    builds expose ``/`` instead. We accept either as long as the body parses
+    as JSON or the status is 2xx — false positives are harmless because the
+    actual PO-token call is yt-dlp's responsibility.
+    """
+    with _PO_TOKEN_PROVIDER_CACHE_LOCK:
+        cache = _po_token_provider_cache
+        now = time.time()
+        if not force and (now - cache['checked_at']) < _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS:
+            return cache['value']
+        result = None
+        for path in ('/ping', '/'):
+            try:
+                r = http_requests.get(
+                    f'http://127.0.0.1:{PO_TOKEN_PROVIDER_PORT}{path}',
+                    timeout=timeout,
+                )
+            except Exception:
+                continue
+            if not getattr(r, 'ok', False):
+                continue
+            version = None
+            try:
+                payload = r.json()
+            except ValueError:
+                payload = None
+            if isinstance(payload, dict):
+                raw = payload.get('version') or payload.get('plugin_version')
+                if raw is not None:
+                    version = str(raw)[:32]
+            result = {
+                'ok': True,
+                'port': PO_TOKEN_PROVIDER_PORT,
+                'version': version,
+            }
+            break
+        cache['value'] = result
+        cache['checked_at'] = now
+        return result
+
+
+def reset_po_token_provider_cache():
+    """Test hook + manual recheck path — clears the cached probe result."""
+    with _PO_TOKEN_PROVIDER_CACHE_LOCK:
+        _po_token_provider_cache['value'] = None
+        _po_token_provider_cache['checked_at'] = 0.0
+
+
+def build_youtube_extractor_args(url, po_token_provider=None):
+    """Return yt-dlp ``--extractor-args`` pairs for YouTube URLs.
+
+    For non-YouTube URLs returns an empty list so the helper is safe to
+    splat unconditionally.
+
+    The args returned cover two distinct concerns:
+
+    1. PO Token plugin routing (N1) — when a bgutil-ytdlp-pot-provider HTTP
+       server is reachable, point the bgutil plugin at it via
+       ``youtubepot-bgutilhttp:base_url=...``. If the user has not installed
+       the yt-dlp plugin itself, the arg is harmlessly ignored.
+
+    2. SABR-aware format duplication (N2, future commit) — request that
+       yt-dlp return both HTTPS and SABR format families for the web client
+       so the format selector can pick HTTPS when present.
+    """
+    if not is_youtube_url(url):
+        return []
+    args = []
+    if po_token_provider and po_token_provider.get('ok'):
+        port = po_token_provider.get('port') or PO_TOKEN_PROVIDER_PORT
+        args += [
+            '--extractor-args',
+            f'youtubepot-bgutilhttp:base_url=http://127.0.0.1:{port}',
+        ]
+    return args
 
 
 def get_ffmpeg_version(force=False):
@@ -1663,6 +1784,16 @@ class DownloadManager(QObject):
         else:
             args += build_video_format_args(dl.format, dl.quality)
 
+        # v1.4.0 (N1): YouTube extractor-args — PO Token routing when the
+        # bgutil-ytdlp-pot-provider HTTP server is reachable. No-op on
+        # non-YouTube URLs and silently absent when the provider isn't
+        # running (the user-facing surface for that absence is the popup
+        # health banner driven by /health.poTokenProvider).
+        args += build_youtube_extractor_args(
+            dl.url,
+            po_token_provider=probe_po_token_provider(),
+        )
+
         args.append(dl.url)
 
         try:
@@ -1972,6 +2103,11 @@ def create_api(config, dl_manager, history):
             # "yt-dlp 2026.04.01" in the repair panel + warn on stale binaries.
             "ytDlpVersion": get_ytdlp_version(),
             "ffmpegVersion": get_ffmpeg_version(),
+            # v1.4.0 (N1): surface bgutil-ytdlp-pot-provider health so the
+            # extension popup can render an amber "PO Token provider not
+            # detected" pill. null = not running / unreachable; an object
+            # with {ok, port, version} = running.
+            "poTokenProvider": probe_po_token_provider(),
             "rateLimit": {
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,

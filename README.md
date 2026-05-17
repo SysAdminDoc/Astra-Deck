@@ -127,6 +127,24 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 
 > Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service.
 
+### PO Token provider (optional but recommended)
+
+YouTube binds PO tokens to video IDs in 2026; without a provider, the `web` client increasingly fails with "Sign in to confirm you're not a bot" on a subset of videos. Astra Downloader auto-detects a [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) HTTP server on `127.0.0.1:4416` and routes yt-dlp through it when available.
+
+Quickest setup (Docker):
+
+```bash
+docker run --name bgutil-provider -d --restart unless-stopped -p 4416:4416 brainicism/bgutil-ytdlp-pot-provider
+```
+
+Then install the yt-dlp plugin so `yt-dlp.exe` knows to consult the provider:
+
+```bash
+pip install bgutil-ytdlp-pot-provider
+```
+
+Astra Downloader's `/health` endpoint will surface `poTokenProvider: { ok, port, version }` once the server is reachable. If absent, downloads still work on most videos — the provider is opt-in hardening, not a hard requirement.
+
 ### Comments
 
 | Feature | Default |

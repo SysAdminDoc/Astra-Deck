@@ -4,6 +4,23 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ---
 
+## [Unreleased]
+
+### Added (Astra Downloader v1.4.0)
+
+- **PO Token provider detection (N1).** Astra Downloader auto-detects a
+  running [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider)
+  HTTP server on `127.0.0.1:4416`, surfaces its health in `/health.poTokenProvider`,
+  and routes yt-dlp through it via the `youtubepot-bgutilhttp:base_url=...`
+  extractor-arg. The provider is opt-in — when absent, downloads still work
+  on most videos, but increasingly fail with "Sign in to confirm you're not
+  a bot" on the 2026 web client as YouTube binds PO tokens per video.
+  README includes a docker-compose snippet for one-line setup. Detection is
+  cached for 30 s; the extension popup pill that surfaces the absence ships
+  in a follow-up.
+
+---
+
 ## [3.22.0] - 8 more languages + auto-detect surfaces - 2026-05-10
 
 ### Added
