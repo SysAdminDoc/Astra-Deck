@@ -1624,6 +1624,49 @@ test('npm run audit:a11y reports no popup a11y issues', () => {
         'npm run audit:a11y must pass — all buttons must be labeled, dialog semantics must be present');
 });
 
+// ── v3.23.0 N5: CSP connect-src allowlist on extension pages ──
+
+test('extension manifest CSP scopes connect-src to documented host_permissions', () => {
+    // Defense-in-depth: a compromised content-script (or a careless future
+    // contributor wiring popup.js to off-self origins) should hit CSP
+    // friction rather than exfiltrate freely. The allowlist mirrors the
+    // manifest host_permissions for popup-originated fetches.
+    const manifestSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8',
+    );
+    const manifest = JSON.parse(manifestSource);
+    const csp = manifest.content_security_policy?.extension_pages || '';
+
+    assert.match(csp, /script-src\s+'self'/,
+        'CSP must keep script-src self-only');
+    assert.match(csp, /object-src\s+'self'/,
+        'CSP must keep object-src self-only');
+    assert.match(csp, /connect-src\s+'self'/,
+        'CSP must declare a connect-src directive starting with self');
+
+    // Required origins that popup.js or the legitimate AI/SponsorBlock /
+    // localhost downloader flows may legitimately fetch.
+    const requiredOrigins = [
+        'https://api.openai.com',
+        'https://api.anthropic.com',
+        'https://generativelanguage.googleapis.com',
+        'https://sponsor.ajay.app',
+        'http://127.0.0.1:9751',
+        'http://127.0.0.1:11434',
+    ];
+    for (const origin of requiredOrigins) {
+        assert.ok(
+            csp.includes(origin),
+            `connect-src must include ${origin} so the corresponding host_permission stays usable from extension pages`,
+        );
+    }
+
+    // Negative assertion: connect-src must NOT be a wildcard.
+    assert.ok(!/connect-src[^;]*\*\s*[;'"]/.test(csp),
+        'connect-src must not be a wildcard — defeats the purpose');
+});
+
 // ── v3.23.0 N3: Reaction Spammer default-OFF + cooldown floor ──
 
 test('reactionSpammer defaults to false in both ytkit.js source and the generated catalog', () => {
