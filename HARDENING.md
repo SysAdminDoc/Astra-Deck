@@ -1,4 +1,36 @@
-# Astra Deck — Hardening Audit (v3.14.0 → v3.15.0)
+# Astra Deck — Hardening Audit (v3.14.0 → v3.23.0)
+
+> Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
+> H20 onward covers v3.23.0 (Pass 19).
+
+## H20 — CSP `connect-src` allowlist on extension pages (v3.23.0, N5)
+
+**Why this is a real issue.** The extension's CSP previously declared only
+`script-src 'self'; object-src 'self'`. A compromised content-script (XSS via
+peer extension, or a future careless contributor wiring popup.js to off-self
+origins) could exfiltrate freely from extension pages — CSP wouldn't catch it.
+The fix is mechanical: add a `connect-src` directive matching the documented
+host_permissions so legitimate flows keep working but anything off-allowlist
+hits CSP.
+
+**Wire contract.** The allowlist contains:
+
+- `'self'` — extension pages legitimately call same-origin endpoints.
+- `https://api.openai.com`, `https://api.anthropic.com`,
+  `https://generativelanguage.googleapis.com` — AI summary / transcript-handoff
+  providers (BYO key).
+- `https://sponsor.ajay.app` — SponsorBlock + DeArrow hash-prefix API.
+- `http://127.0.0.1:9751` and the documented fallback ports
+  (`9761`/`9771`/`9781`/`9791`/`9851`) — Astra Downloader local probe.
+- `http://127.0.0.1:11434` — local Ollama API for AI summary.
+
+**Negative assertion.** No wildcards. `tests/hardening.test.js` pins the
+CSP shape with explicit asserts both for required allowlist entries and for
+the absence of `*`.
+
+---
+
+
 
 Deep engineering audit of the Astra Deck MV3 extension (Chrome + Firefox) and
 companion Tampermonkey userscript. Findings are split into **real issues**

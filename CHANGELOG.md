@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Security
+
+- **CSP `connect-src` allowlist on extension pages (N5, HARDENING H20).**
+  Previously `script-src 'self'; object-src 'self'` only. A compromised
+  content-script or a careless future contributor wiring popup.js to
+  off-self origins could exfiltrate without CSP friction. The new
+  `connect-src` declares the documented host_permissions explicitly:
+  `'self'`, the three AI providers (OpenAI / Anthropic / Google),
+  SponsorBlock, the six Astra Downloader fallback ports, and the local
+  Ollama port. No wildcards.
+
 ### Changed (extension)
 
 - **Reaction Spammer is opt-in now (N3).** The feature was introduced

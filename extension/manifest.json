@@ -151,7 +151,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://sponsor.ajay.app http://127.0.0.1:9751 http://127.0.0.1:9761 http://127.0.0.1:9771 http://127.0.0.1:9781 http://127.0.0.1:9791 http://127.0.0.1:9851 http://127.0.0.1:11434"
   },
   "commands": {
     "toggle-control-center": {
