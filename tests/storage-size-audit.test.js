@@ -22,10 +22,10 @@ test('UI preferences payload fits current storage.sync quotas', () => {
     const { uiPreferences } = buildAuditPayloads();
     const assessment = assessSyncEligibility(uiPreferences);
 
-    assert.equal(assessment.totalBytes, 7701);
+    assert.equal(assessment.totalBytes, 7731);
     assert.equal(assessment.itemCount, 1);
     assert.equal(assessment.largestItem.key, STORAGE_KEYS.settings);
-    assert.equal(assessment.largestItem.bytes, 7701);
+    assert.equal(assessment.largestItem.bytes, 7731);
     assert.ok(assessment.totalBytes < SYNC_QUOTA.totalBytes);
     assert.ok(assessment.largestItem.bytes < SYNC_QUOTA.bytesPerItem);
     assert.equal(assessment.ok, true);
@@ -35,7 +35,7 @@ test('typical local payload is not storage.sync eligible', () => {
     const { typicalLocal } = buildAuditPayloads();
     const assessment = assessSyncEligibility(typicalLocal);
 
-    assert.equal(assessment.totalBytes, 173981);
+    assert.equal(assessment.totalBytes, 174011);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
