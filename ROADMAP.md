@@ -464,6 +464,14 @@ high-touch areas: DeArrow, SponsorBlock, Theater Split.
 
 ### NX13. Signing-key rotation policy doc (carried L6)
 
+- **Status:** Completed. `docs/signing-keys.md` ships the policy:
+  what `ytkit.pem` signs, why rotation matters, annual cadence with
+  same-day rotation on leak, key generation procedure with extension-
+  ID computation snippet, pre/rotation-day/post-rotation migration
+  protocol, recovery procedure for both leak and loss, storage
+  policy (never CI secret, never unencrypted cloud), CWS/AMO
+  publication-path note, and the HARDENING.md audit-trail format.
+
 `ytkit.pem` is the CRX3 signing key — gitignored and persistent.
 Document rotation cadence (recommended yearly), the post-rotation
 migration path (users on the old CRX get a one-time install dialog on
