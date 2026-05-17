@@ -666,11 +666,12 @@ relative to a focused half-day unless noted.
   hook into `ensureNavigateListener()` + `stopNavigateListener()`.
   The userscript build will pick up the change on next
   `sync-userscript.js` run. [src-tampermonkey-2673] [src-navigation-api]
-- **L2** Chrome 138 `chrome.userScripts` toggle UX update — README
-  install instructions need a one-line callout that the new per-
-  extension toggle may be OFF for fresh installs on Chrome 138+. We
-  don't use the API ourselves, but Astra-Deck's userscript companion
-  routes through Tampermonkey/Violentmonkey which DOES. [src-chrome-userscripts]
+- **L2** ~~Chrome 138 `chrome.userScripts` toggle UX update~~ —
+  **Completed in N4.** `CONTRIBUTING.md` step 5 now reads
+  "Chrome 138+ moved the 'Allow User Scripts' toggle to a per-
+  extension control; fresh Tampermonkey installs default OFF and
+  must be enabled manually under `chrome://extensions` → Tampermonkey
+  → Details." [src-chrome-userscripts]
 - **L3** ~~Firefox 148 Document PiP behind-flag verification.~~
   **Completed.** Firefox UA detection in `popOutPlayer._activate()`;
   on Firefox + PiP-failed, the toast text now reads "PiP unavailable
@@ -678,28 +679,36 @@ relative to a focused half-day unless noted.
   148+)." with an 8 s duration. Generic browsers keep the prior
   "PiP not supported" text. [src-doc-pip]
 - **L4** Firefox MV2 + blocking-webRequest path for ad blocking —
-  Mozilla committed to keeping MV2 + blocking webRequest in Firefox
-  indefinitely. Optional `manifest.firefox.json` MV2 companion would
-  let us re-ship the userscript-only adblock surface to Firefox users.
-  Sits behind UC3 (charter call). [src-fx-mv2-mv3]
-- **L5** Wave 8/9 feature coverage audit (carried L10) — pick three
-  features added in v3.16–v3.17 (e.g. `musicVideoSpeedLock`,
-  `transcriptAiHandoff`, `playlistQuickRemove`) that lack regression
-  tests; add tests. [src-loc-wave10]
-- **L6** Storage write-race instrumentation (carried L8) — popup
-  writes `hiddenVideos`/`blockedChannels`/`bookmarks` via direct
-  `chrome.storage.local.set`; ytkit.js reads via `storage.onChanged`.
-  Add a write-vector-clock so two near-simultaneous writes don't lose
-  data. (No reproducer yet, no urgency.) [src-loc-popup-write]
-- **L7** Greasy Fork mirror of `YTKit.user.js` (carried L5) — makes the
-  userscript surface discoverable outside the GitHub release feed.
-  Submit `--unlisted` (Greasy Fork's equivalent of AMO unlisted) so
-  search hides it but direct URL works. [src-greasyfork]
-- **L8** DNR `isUrlFilterCaseSensitive` audit — Astra-Deck does not
-  currently use `declarativeNetRequest`. If we ever adopt it
-  (e.g. for a community-blocklist subscription model, see UC8), the
-  default flipped to `false` in Chrome 118+; remember to set explicit
-  case-sensitivity per rule. [src-dnr-case]
+  **Deferred behind UC3 (CHARTER-REVIEW).** Mozilla committed to
+  keeping MV2 + blocking webRequest in Firefox indefinitely. Optional
+  `manifest.firefox.json` MV2 companion would let us re-ship the
+  userscript-only adblock surface to Firefox users. Code path is
+  understood but UC3 must be approved first because it creates a
+  divergent feature matrix between Chrome (MV3, no adblock) and
+  Firefox (MV2 companion, adblock). [src-fx-mv2-mv3]
+- **L5** Wave 8/9 feature coverage audit — **Status: scoping
+  needed.** Pick three features added in v3.16–v3.17 that lack
+  regression tests; add tests. Candidate trio: `musicVideoSpeedLock`,
+  `transcriptAiHandoff`, `playlistQuickRemove`. The NX12 per-area
+  fixtures directory (`tests/features/`) is the right home for new
+  tests; future maintainer pass writes them. [src-loc-wave10]
+- **L6** Storage write-race instrumentation — **Deferred (no
+  reproducer).** popup writes `hiddenVideos`/`blockedChannels`/
+  `bookmarks` via direct `chrome.storage.local.set`; ytkit.js reads
+  via `storage.onChanged`. A write-vector-clock would catch
+  near-simultaneous writes losing data — but no user has reported
+  data loss in the wild, so the instrumentation is preventative.
+  Revisit when a reproducer surfaces. [src-loc-popup-write]
+- **L7** Greasy Fork mirror of `YTKit.user.js` — **Blocked on Greasy
+  Fork account credentials.** Submit `--unlisted` to mirror the
+  userscript outside the GitHub release feed. Code change none;
+  just the publishing step. Maintainer action. [src-greasyfork]
+- **L8** DNR `isUrlFilterCaseSensitive` audit — **N/A today.**
+  Astra-Deck does not use `declarativeNetRequest`. If UC8 (community
+  blocklist subscription) ever lands, the default flipped to `false`
+  in Chrome 118+; remember to set explicit case-sensitivity per rule.
+  Status pinned here so a future DNR adopter doesn't have to
+  rediscover the gotcha. [src-dnr-case]
 
 ### Observability
 
@@ -713,28 +722,36 @@ relative to a focused half-day unless noted.
   ISO timestamp (`astra-deck-diagnostics-2026-...json`). Five new
   i18n keys cover the button label + aria-label + success/failure
   status messages (en only; other locales fall through). [src-loc-popup-clear]
-- **L10** Telemetry-free crash badge — popup shows a small badge if
-  `_errors` count > N in last 24 h. Currently popup surfaces only
-  TrustedTypes-tagged failures (H4). Extend the filter to all
-  diagnosticLog entries. Telemetry-free per charter.
-  [src-loc-diagnostic]
-- **L11** Feature-dependency graph — `CONFLICT_MAP` handles mutually
-  exclusive features. There's no graph for features that REQUIRE other
-  features (e.g. chapter-dependent features silently no-op if the
-  source feature is off). Add a `requires` array on feature definitions
-  and surface "X requires Y" in the settings panel.
+- **L10** Telemetry-free crash badge — **Deferred (small but
+  cross-cutting).** popup shows a small badge if `_errors` count
+  > N in last 24 h. Currently popup surfaces only TrustedTypes-
+  tagged failures (H4). Extending the filter to all diagnosticLog
+  entries requires touching `renderHealthBanner`'s tt-only filter
+  in a way that doesn't regress the existing TT-specific copy
+  payload format. Worth a focused pass. [src-loc-diagnostic]
+- **L11** Feature-dependency graph — **Deferred (design call).**
+  `CONFLICT_MAP` handles mutually exclusive features. There's no
+  graph for features that REQUIRE other features. Adding a
+  `requires` array on feature definitions plus settings-panel
+  "X requires Y" rendering is straightforward; the design question
+  is whether to ALSO auto-enable the parent when the child is
+  toggled on, or to just surface the warning. Maintainer call.
 
 ### Accessibility
 
-- **L12** Reduced-motion compliance — audit Astra-Deck's animations
-  (toast slide-in, theater split divider drag, cinema ambient glow,
-  blue-light fade, mini-player bar) against `prefers-reduced-motion:
-  reduce`. Cinema ambient glow + nyan cat progress bar should hard-
-  disable on reduced-motion. [src-mdn-reduced-motion]
-- **L13** High-contrast theme — current dark theme is Catppuccin-ish;
-  no native high-contrast mode. Audit popup color tokens against
-  Windows High Contrast Mode + Forced Colors Media Query
-  (`@media (forced-colors: active)`). [src-mdn-forced-colors]
+- **L12** Reduced-motion compliance — **Deferred (focused CSS pass
+  needed).** Audit Astra-Deck's animations (toast slide-in, theater
+  split divider drag, cinema ambient glow, blue-light fade, mini-
+  player bar, NEW: sleep-timer chip transitions, NEW: speed control
+  chip) against `prefers-reduced-motion: reduce`. Cinema ambient
+  glow + nyan cat progress bar should hard-disable on reduced-
+  motion. The list of touched surfaces grew with L23; the audit
+  itself is the same scope. [src-mdn-reduced-motion]
+- **L13** High-contrast theme — **Deferred (focused CSS pass
+  needed).** Current dark theme is Catppuccin-ish; no native high-
+  contrast mode. Audit popup color tokens against Windows High
+  Contrast Mode + Forced Colors Media Query (`@media (forced-
+  colors: active)`). [src-mdn-forced-colors]
 - **L14** ~~Screen-reader smoke checklist in CONTRIBUTING~~ —
   **Completed.** New `docs/screen-reader-smoke.md` covers setup
   (NVDA 2025.3 / JAWS 2026 / VoiceOver macOS 14+), popup checklist
@@ -748,25 +765,33 @@ relative to a focused half-day unless noted.
 ### i18n / l10n
 
 - **L15** Bulk-translate the 150+ feature-definition entries in
-  `ytkit.js` (each feature's name + description as shown in the in-page
-  settings panel body). Currently hardcoded English; v3.21.0 scope
-  covered popup + chrome only. Migration: extract to `messages.json`,
-  machine-translate, human-review.
-- **L16** RTL layout audit — install `_locales/ar/messages.json` stub
-  + `dir="auto"` smoke; verify popup + in-page panel don't break. No
-  Arabic translation in this pass — infrastructure only.
-- **L17** CLDR 47 MessageFormat 2.0 — current `t(key, fallback)` helper
-  doesn't use MF2 syntax. Migrate to MF2 only if/when a translator-
-  contributed locale uses plurals/gender (today no bundled locale
-  does). Track CLDR 48/49 and ICU 78/79 updates. [src-cldr-47]
-  [src-icu-78]
+  `ytkit.js` — **Deferred (large; 150 × 10 = 1500 translations).**
+  Each feature's name + description still hardcoded English; v3.21.0
+  scope covered popup + chrome only. Migration: extract to
+  `messages.json`, machine-translate, human-review per locale. The
+  v3.22.0 `scripts/generate-locales.js` infrastructure makes the
+  extraction step trivial; the review step is the work. Schedule a
+  dedicated localization pass.
+- **L16** RTL layout audit — **Deferred (small; infrastructure
+  ready).** All popup + in-page DOM has `dir="auto"` via the
+  popup.html `<body>` and the in-page wrappers, so an Arabic stub
+  in `_locales/ar/messages.json` would already inherit the right
+  direction. The work is the audit pass + screenshot capture, not
+  code.
+- **L17** CLDR 47 MessageFormat 2.0 — **Deferred (no current
+  need).** Current `t(key, fallback)` helper doesn't use MF2 syntax.
+  Migrate to MF2 only if/when a translator-contributed locale uses
+  plurals/gender (today no bundled locale does). Track CLDR 48/49
+  and ICU 78/79 updates upstream. [src-cldr-47] [src-icu-78]
 
 ### Distribution / packaging
 
-- **L18** Sideloaded-CRX auto-update — GitHub Releases API check could
-  surface new versions in-extension and link to the latest release.
-  Pairs with the AMO-listed Firefox path (NX4 covers the Firefox half).
-  [src-cws-update]
+- **L18** Sideloaded-CRX auto-update — **Deferred (medium scope).**
+  A background poll of `https://api.github.com/repos/SysAdminDoc/
+  Astra-Deck/releases/latest` (rate-limit-aware) compared to the
+  current version, with a popup banner offering the download link
+  on a delta. Charter-aligned (no telemetry, just polling our own
+  repo). Pairs with NX4's AMO path for the Firefox side. [src-cws-update]
 - **L19** ~~CWS submission checklist documented in CONTRIBUTING~~ —
   **Completed.** New `docs/cws-submission-checklist.md` covers
   manifest preflight, privacy-policy categories (Google's
@@ -778,23 +803,28 @@ relative to a focused half-day unless noted.
 
 ### Testing
 
-- **L20** Playwright smoke harness — current selector regression uses
-  MHTML token fixtures (cheap, static). Periodic Playwright smoke
-  against a clean Chrome profile catches behaviour drift (selectors
-  mutating but tokens still match). Run nightly via GitHub Actions;
-  gates a release tag. [src-playwright]
-- **L21** Userscript build coverage — `YTKit.user.js` is 14.5 K LOC
-  generated from `extension/ytkit.js` via `sync-userscript.js`. No
-  tests directly exercise the userscript output. Add a parity test
-  that diffs the userscript build against expected shape post-
-  conversion (GM_* shim insertion, `_rw.` removal). [src-loc-syncus]
+- **L20** Playwright smoke harness — **Deferred (significant
+  infrastructure).** Periodic Playwright smoke against a clean
+  Chrome profile catches behaviour drift the static MHTML fixtures
+  miss. Need: GitHub Actions runner with Chrome + a known-good
+  YouTube test video, headless mode for CI, retry logic for YT's
+  rate-limiting on signed-out sessions. Estimated 2 days to ship
+  the baseline. [src-playwright]
+- **L21** Userscript build coverage — **Partial: `tests/userscript-
+  parity.test.js` already pins basic shape invariants.** A
+  full diff-based test against an expected post-conversion snapshot
+  would catch silent regressions in `sync-userscript.js`. The
+  existing test covers GM_* shim presence + match guards + watch-
+  page routing; extending to a snapshot diff is medium scope.
+  [src-loc-syncus]
 
 ### UX polish (small, contained)
 
-- **L22** "Multi-select for playlists" inspired surface — most-praised
-  YT extension on r/chrome_extensions per competitor research. Mass-
-  add/cut/paste/delete across playlists. Bounded to playlist pages;
-  reuses existing `playlistEnhancer` machinery. [src-multiselect]
+- **L22** "Multi-select for playlists" — **Deferred (medium UX
+  scope).** Mass add/cut/paste/delete across playlists. Bounded to
+  playlist pages; reuses existing `playlistEnhancer` machinery.
+  Most-praised YT extension on r/chrome_extensions per competitor
+  research. [src-multiselect]
 - **L23** ~~Sleep timer ("stop playback in N min")~~ — **Completed.**
   NewPipe-style. Moon-icon launcher in the player chrome opens a
   prompt (1-180 min); on accept, a status chip appears
@@ -803,66 +833,89 @@ relative to a focused half-day unless noted.
   aria-live announcement plus a toast. Off by default. Sources +
   setting in `default-settings.json`; storage byte deltas 7731 →
   7750 (ui) / 174011 → 174030 (typical). [src-newpipe]
-- **L24** Per-channel volume memory — Magic Actions / ImprovedTube
-  ship this; complements existing `rememberVolume` feature with per-
-  channel granularity (using StorageManager + channel-handle key,
-  capped at 500 entries like `perChannelSpeed`). [src-magic-actions]
-- **L25** Frame-by-frame stepping button — small player-chrome
-  addition; the `,` / `.` keyboard step already exists in YouTube
-  itself, just surface a button in our chrome controls cluster.
+- **L24** Per-channel volume memory — **Deferred (small).** Adds
+  `channel-volume` StorageManager key, capped at 500 entries like
+  `perChannelSpeed`. Reads on `loadedmetadata`, writes on
+  `volumechange`. [src-magic-actions]
+- **L25** Frame-by-frame stepping button — **Deferred (small).** YT's
+  `,` / `.` keyboard step exists; just surface a chrome button.
   [src-improvedtube]
-- **L26** Configurable custom speed presets — we ship a speed control
-  popup with fixed 0.25× → 3× grid (v3.20.9). Add a setting to override
-  the grid contents (4–8 user-supplied values). Alchemy ships this and
-  it's the most-requested follow-on. [src-alchemy]
-- **L27** "Maintain 1× for music videos" regression verification —
-  Wave 10 `musicVideoSpeedLock` feature shipped in v3.17.0; verify
-  still works after the v3.20.9 speed-control overhaul. Likely fine
-  since both call `persistentSpeed`, but explicit test pin is cheap.
-  [src-loc-wave10]
-- **L28** Linkify timestamps in titles/descriptions/comments — click-
-  to-seek when uploader hasn't formatted them as YouTube-recognized
-  timestamps. [src-refined-github]
-- **L29** "Open in alt-frontend" right-click menu — Invidious / Piped
-  / FreeTube with a configurable instance URL. Charter test: this is a
-  single new sub-toggle on the existing context menu, not a new feature
-  domain. [src-freetube]
-- **L30** Open-in-NewPipe intent link — for Firefox-Android users.
-  Pure `intent://...` URL builder. Bounded. Depends on NX3 outcome.
+- **L26** Configurable custom speed presets — **Deferred (small).**
+  Override the fixed 0.25× → 3× grid in the speed-control popup with
+  4-8 user-supplied values. Pairs with the L23 / v3.20.9 chip work.
+  [src-alchemy]
+- **L27** `musicVideoSpeedLock` regression verification — **Deferred
+  (test pin).** Wave 10 feature shipped v3.17.0; v3.20.9 speed-
+  control overhaul both call `persistentSpeed` so likely unbroken,
+  but an explicit regression in `tests/features/` would catch
+  silent regressions. Wire into NX12's `tests/features/`
+  directory. [src-loc-wave10]
+- **L28** Linkify timestamps in titles/descriptions/comments —
+  **Deferred (medium).** Regex `\d+:\d{2}(?::\d{2})?` over text
+  nodes; wrap in `<a>` with `href="?t=…s"` semantics. Watch for
+  TrustedTypes when generating links. [src-refined-github]
+- **L29** "Open in alt-frontend" context-menu — **Deferred (small).**
+  Single new sub-toggle on the right-click menu. Configurable
+  instance URL via settings textarea. [src-freetube]
+- **L30** Open-in-NewPipe intent link — **Deferred (small).**
+  `intent://...` URL builder. Depends on NX3 outcome (mobile smoke).
   [src-newpipe]
-- **L31** Restore the "Play all" button on channels / Shorts shelves /
-  livestream rows where YouTube has removed it. Single feature toggle.
-  [src-awesome-us]
-- **L32** Hide notification badge as isolated toggle (currently
-  bundled inside broader "hide notifications" controls). [src-unhook]
-- **L33** "Always play from start" toggle (kills resume) — GoodTube
-  paywalls this; we can ship free. Useful for music videos.
-  [src-goodtube]
-- **L34** Block-by-runtime filter on the video hider — hide videos
-  under 60 s (Shorts that slipped past) or over 4 hours (asleep-at-
-  the-wheel livestream VOD reuploads). [src-blocktube]
-- **L35** Block specific commenter usernames or by content keyword in
-  the comments stream — inverse of existing `commentSearch`.
-  [src-blocktube]
+- **L31** Restore "Play all" button — **Deferred (small).** Single
+  feature toggle. Surfaces button on channels / Shorts shelves /
+  livestream rows where YouTube removed it. [src-awesome-us]
+- **L32** Hide notification badge isolated toggle — **Deferred
+  (CSS).** Single CSS rule on `.ytd-notification-topbar-button-
+  renderer .badge` or equivalent. [src-unhook]
+- **L33** "Always play from start" toggle — **Deferred (small).**
+  Forces `video.currentTime = 0` on `loadedmetadata`. Useful for
+  music videos. [src-goodtube]
+- **L34** Block-by-runtime filter on video hider — **Deferred
+  (small).** Add `hideUnder60s` / `hideOver4h` numeric thresholds
+  to the existing video-hider machinery. Hides Shorts that slipped
+  past + reupload livestream VODs. [src-blocktube]
+- **L35** Block commenter usernames + by keyword — **Deferred
+  (medium).** Inverse of existing `commentSearch`. New
+  `blockedCommenters` array + comment-stream filter. [src-blocktube]
 
 ### Astra Downloader power-user features
 
-- **L36** Expose yt-dlp `--impersonate` flag in download options popup
-  (TLS fingerprint dodging via `curl_cffi`). [src-curl-cffi]
-- **L37** Expose yt-dlp `--throttled-rate` + `--http-chunk-size` in
-  advanced settings. [src-yt-throttled]
-- **L38** Subtitle download as discrete action (one-click .srt / .vtt
-  / .ttml export — distinct from a full video download).
-  [src-awesome-us]
-- **L39** Free-text "Custom yt-dlp Options" advanced field — power-
-  user escape hatch, disabled by default, JSON-validated. Mirrors
-  MeTube's pattern. [src-metube]
-- **L40** Astra Downloader queue UI + `MAX_CONCURRENT_DOWNLOADS` env
-  var — currently downloads run inline. [src-metube]
-- **L41** HTTPS support for Astra Downloader local server via
-  `CERTFILE` / `KEYFILE` env vars (currently HTTP-only). [src-metube]
-- **L42** CORS knob — let other browser extensions or local web apps
-  post to Astra Downloader's REST API. [src-metube]
+> **Cohort note.** L36–L42 all live inside `astra_downloader.py`
+> alongside the existing yt-dlp arg builder (`_run_download` line
+> ~1605) and the Flask routes. Each is independently small but they
+> share the same Python module, so a single focused downloader-pass
+> commit landing several together would be efficient. Status:
+> deferred to a future downloader-features pass.
+
+- **L36** Expose yt-dlp `--impersonate` flag — **Deferred.** TLS
+  fingerprint dodging via `curl_cffi`. Adds a dropdown to the
+  download options popup with the documented impersonation
+  targets. [src-curl-cffi]
+- **L37** Expose yt-dlp `--throttled-rate` + `--http-chunk-size` —
+  **Deferred.** Pure yt-dlp arg pass-through, no new logic.
+  [src-yt-throttled]
+- **L38** Subtitle download as discrete action — **Deferred.**
+  One-click .srt / .vtt / .ttml export distinct from a full
+  download. Currently subtitles only land via `--embed-subs` on a
+  video download. [src-awesome-us]
+- **L39** Free-text "Custom yt-dlp Options" advanced field —
+  **Deferred.** Power-user escape hatch, disabled by default,
+  JSON-validated. Mirrors MeTube's pattern. Security audit
+  required: free-form options can pass `--exec` and similar.
+  [src-metube]
+- **L40** Astra Downloader queue UI + `MAX_CONCURRENT_DOWNLOADS` —
+  **Partial.** `MAX_CONCURRENT = 3` already in
+  `astra_downloader.py`; the env-var override + dedicated queue UI
+  panel is the deferred part. Currently downloads run inline up to
+  the cap. [src-metube]
+- **L41** HTTPS support via `CERTFILE` / `KEYFILE` — **Deferred.**
+  waitress supports HTTPS via `url_scheme='https'` + an external
+  TLS terminator; or self-signed cert generated at first run.
+  Currently HTTP-only. [src-metube]
+- **L42** CORS knob — **Partial.** `cors_response` already
+  composes `Vary: Cookie` (NX11) and `Origin` (existing).
+  Permitting arbitrary extension Origins beyond the documented
+  Astra Deck IDs is the deferred work; a config-toggle adding a
+  trusted-origin allowlist is the right surface. [src-metube]
 
 ---
 
