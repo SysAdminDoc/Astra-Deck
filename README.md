@@ -25,15 +25,18 @@
 
 ### Chrome / Edge / Brave
 
-**Option A — CRX sideload:**
-1. Download `astra-deck-chrome-v*.crx` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
-2. Open `chrome://extensions/`, enable **Developer mode**
-3. Drag and drop the `.crx` file onto the page
+**Option A — Load unpacked from ZIP:**
+1. Download `astra-deck-chrome-v*.zip` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+2. Extract it to a permanent folder
+3. Open `chrome://extensions/`, enable **Developer mode**
+4. Click **Load unpacked** and select the extracted folder
 
-**Option B — Unpacked:**
+**Option B — Local folder:**
 1. Download or clone the `extension/` folder
 2. Open `chrome://extensions/`, enable **Developer mode**
 3. Click **Load unpacked** and select the `extension/` folder
+
+The CRX is still attached for enterprise or tooling flows, but modern Chromium blocks normal drag-and-drop installs from self-hosted CRX files.
 
 ### Firefox
 
@@ -210,7 +213,7 @@ Toggle individual elements on/off through the settings panel:
 
 ## Settings Panel
 
-Click the gear icon in the YouTube masthead or player controls, or press **Ctrl+Shift+Y**.
+Click the gear icon in the YouTube masthead or player controls, or use the toolbar popup's **Open Full Settings** action.
 
 - Searchable sidebar with categorized feature groups
 - Toggle switches with instant apply
@@ -219,7 +222,7 @@ Click the gear icon in the YouTube masthead or player controls, or press **Ctrl+
 - Export / Import / Reset
 - Conflict detection (auto-disables conflicting features with toast notification)
 
-The extension also has a standalone **Options Page** (`chrome://extensions` > Astra Deck > Details > Extension options) with storage stats, backup/restore, and a full settings editor modal.
+The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, export/import/reset, diagnostics, and language selection.
 
 ---
 

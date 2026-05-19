@@ -30,13 +30,13 @@
     "message": "Confirm"
   },
   "contextNoteAnyTab": {
-    "message": "Quick toggles sync once a YouTube tab is open."
+    "message": "Quick toggles are saved now and sync when YouTube is open."
   },
   "contextNoteInlinePanel": {
-    "message": "Click Open Full Settings to launch the in-page workspace on this tab."
+    "message": "Open the full workspace on this tab; quick toggles apply immediately."
   },
   "contextNoteLaunch": {
-    "message": "Full settings live in the in-page workspace on watchable YouTube tabs."
+    "message": "Open a watchable YouTube tab to use the full in-page workspace."
   },
   "contextStateAnyTab": {
     "message": "Any Tab"
@@ -420,91 +420,91 @@
     "message": "Watch Flow"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Default to theater view"
+    "message": "Open videos in theater view"
   },
   "qt_autoTheaterMode_name": {
     "message": "Auto Theater"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Warmer colors"
+    "message": "Warm the player for late viewing"
   },
   "qt_blueLightFilter_name": {
     "message": "Blue-Light Filter"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Strip tracking params"
+    "message": "Remove tracking from share links"
   },
   "qt_cleanShareUrls_name": {
     "message": "Clean URLs"
   },
   "qt_commentSearch_desc": {
-    "message": "Filter comments on watch pages"
+    "message": "Filter watch-page comments inline"
   },
   "qt_commentSearch_name": {
     "message": "Comment Search"
   },
   "qt_deArrow_desc": {
-    "message": "Better titles & thumbnails"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Verbose console logging"
+    "message": "Record detailed local diagnostics"
   },
   "qt_debugMode_name": {
     "message": "Debug Mode"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Break reminders + daily cap"
+    "message": "Track breaks and daily viewing"
   },
   "qt_digitalWellbeing_name": {
     "message": "Digital Wellbeing"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Stop auto-advance to next"
+    "message": "Stop the next video from starting"
   },
   "qt_disableAutoplayNext_name": {
     "message": "No Autoplay"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Stop infinite scroll"
+    "message": "Stop endless feed loading"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "Cap Scroll"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "No related panel on watch"
+    "message": "Clear the watch-page side rail"
   },
   "qt_hideRelatedVideos_name": {
     "message": "Hide Related"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Floating bar on scroll"
+    "message": "Keep controls visible while scrolling"
   },
   "qt_miniPlayerBar_name": {
     "message": "Mini Player Bar"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Remember playback rate"
+    "message": "Keep playback speed consistent"
   },
   "qt_persistentSpeed_name": {
     "message": "Persistent Speed"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Remove Shorts from feeds"
+    "message": "Remove Shorts shelves and links"
   },
   "qt_removeAllShorts_name": {
     "message": "Hide Shorts"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Skip sponsored segments"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Clickable transcript + export"
+    "message": "Read, jump, and export captions"
   },
   "qt_transcriptViewer_name": {
     "message": "Transcript Sidebar"
@@ -655,9 +655,9 @@
     "message": "Settings workspace"
   },
   "workspaceSupport": {
-    "message": "Changes sync to open YouTube tabs automatically."
+    "message": "Quick toggles save immediately and sync to YouTube."
   },
   "workspaceTitle": {
-    "message": "Controls and local data"
+    "message": "Controls and backups"
   }
 }

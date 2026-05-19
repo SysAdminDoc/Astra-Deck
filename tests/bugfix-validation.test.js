@@ -1129,10 +1129,10 @@ test('watchPageRestyle gives native service popups the premium comment-card trea
         'watchPageRestyle should target both standard and live-chat native popup hosts');
     assert.ok(block.includes('#contentWrapper:has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer))'),
         'watchPageRestyle should target native YouTube service and navigation popup wrappers');
-    assert.ok(block.includes('border-radius: 18px !important;'),
-        'watchPageRestyle should give native service popups a rounded premium surface');
-    assert.ok(block.includes('backdrop-filter: blur(18px) saturate(1.08) !important;'),
-        'watchPageRestyle should add a layered glass treatment to native service popups');
+    assert.ok(block.includes('border-radius: 12px !important;'),
+        'watchPageRestyle should give native service popups a refined rectangular premium surface');
+    assert.ok(block.includes('backdrop-filter: none;'),
+        'watchPageRestyle should avoid blur-heavy injected popup compositing');
     assert.ok(block.includes(':is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer).iron-selected'),
         'watchPageRestyle should style the active popup row state');
     assert.ok(block.includes('margin-right: 10px !important;'),
@@ -1179,8 +1179,8 @@ test('chatStyleComments styles creator-heart tooltips to match the premium comme
     const block = source.slice(start, end);
     assert.ok(block.includes('tp-yt-paper-tooltip.ytd-creator-heart-renderer #tooltip'),
         'chatStyleComments should target the creator-heart tooltip body');
-    assert.ok(block.includes('backdrop-filter: blur(12px) saturate(1.08) !important;'),
-        'chatStyleComments should give the creator-heart tooltip the same premium glass finish');
+    assert.ok(block.includes('backdrop-filter: none;'),
+        'chatStyleComments should keep creator-heart tooltips premium without blur-heavy compositing');
     assert.ok(block.includes('rgba(255, 228, 232, 0.96)'),
         'chatStyleComments should tint the creator-heart tooltip copy to match the heart accent');
 });
