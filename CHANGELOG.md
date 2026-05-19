@@ -49,6 +49,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed (extension)
 
+- **Feature lifecycle registry bridge.** Existing feature startup,
+  live-chat startup, popup live-toggle messages, settings-panel toggles,
+  config reinitializers, conflict disables, external storage updates,
+  and SPA page transitions now route through shared lifecycle wrappers.
+  Every live feature is registered as a core-registry adapter that
+  delegates to the existing `init()` / `destroy()` methods while
+  publishing a `ytkit.featureHealth()` debug snapshot.
 - **Premium UI polish pass.** Toolbar popup copy is clearer and more
   trust-oriented, quick-toggle descriptions now explain outcomes instead
   of implementation, diagnostic actions reliably surface success feedback,

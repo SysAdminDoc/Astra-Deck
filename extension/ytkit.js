@@ -17,6 +17,8 @@
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,
+        getRegisteredFeature,
+        getFeatureHealthSnapshot,
         getUrlParam,
         getUrlSearchParams,
         getVideoId,
@@ -30,9 +32,11 @@
         isTopLevelFrame,
         PageTypes,
         preloadExtensionState,
+        registerFeature,
         removeMutationRule,
         removeNavigateRule,
         removeScopedMutationRule,
+        setFeatureHealth,
         shouldBuildPrimaryUI,
         storageRead,
         storageReadJSON,
@@ -56,6 +60,8 @@
         !getMainVideoElement ||
         !getMoviePlayerElement ||
         !getPlayerProgressBar ||
+        !getRegisteredFeature ||
+        !getFeatureHealthSnapshot ||
         !getUrlParam ||
         !getUrlSearchParams ||
         !getVideoId ||
@@ -68,10 +74,12 @@
         !isTopLevelFrame ||
         !isWatchPagePath ||
         !preloadExtensionState ||
+        !registerFeature ||
         !PageTypes ||
         !removeMutationRule ||
         !removeNavigateRule ||
         !removeScopedMutationRule ||
+        !setFeatureHealth ||
         !shouldBuildPrimaryUI ||
         !storageRead ||
         !storageReadJSON ||
@@ -4354,11 +4362,53 @@ return response;
         return !!feature && !feature._arrayKey && !feature.type && !isRetiredCommentFeature(feature);
     }
 
-    function safeDestroyFeature(feature, source = 'runtime') {
-        if (!feature?._initialized) return;
+    function updateFeatureHealth(feature, status, source = 'runtime', error = null) {
+        if (!feature?.id) return;
+        try {
+            setFeatureHealth(feature.id, {
+                status,
+                source,
+                name: feature.name || feature.id,
+                category: feature.group || null,
+                settingKey: getFeatureSettingKey(feature),
+                initialized: !!feature._initialized,
+                lastError: error ? String(error?.message || error) : null
+            });
+        } catch (healthError) {
+            DebugManager.log('Runtime', `Feature health update failed for "${feature.id}": ${healthError.message}`);
+        }
+    }
+
+    function initFeatureLifecycle(feature, source = 'runtime') {
+        if (!feature || feature._arrayKey) return false;
+        try {
+            feature.init?.();
+            feature._initialized = true;
+            updateFeatureHealth(feature, 'initialized', source);
+            return true;
+        } catch (error) {
+            updateFeatureHealth(feature, 'init-error', source, error);
+            throw error;
+        }
+    }
+
+    function destroyFeatureLifecycle(feature, source = 'runtime') {
+        if (!feature || feature._arrayKey) return false;
         try {
             feature.destroy?.();
             feature._initialized = false;
+            updateFeatureHealth(feature, 'destroyed', source);
+            return true;
+        } catch (error) {
+            updateFeatureHealth(feature, 'destroy-error', source, error);
+            throw error;
+        }
+    }
+
+    function safeDestroyFeature(feature, source = 'runtime') {
+        if (!feature?._initialized) return;
+        try {
+            destroyFeatureLifecycle(feature, source);
         } catch (error) {
             console.warn(`[YTKit] Feature destroy failed during ${source}:`, feature.id, error);
             DebugManager.log('Runtime', `Destroy failed for "${feature.id}" during ${source}: ${error.message}`);
@@ -4368,8 +4418,7 @@ return response;
     function safeInitFeature(feature, source = 'runtime') {
         if (!feature || feature._initialized) return;
         try {
-            feature.init?.();
-            feature._initialized = true;
+            initFeatureLifecycle(feature, source);
         } catch (error) {
             console.warn(`[YTKit] Feature init failed during ${source}:`, feature.id, error);
             DebugManager.log('Runtime', `Init failed for "${feature.id}" during ${source}: ${error.message}`);
@@ -4683,12 +4732,10 @@ return response;
                                     if (typeof shouldFeatureBeActive === 'function'
                                         ? shouldFeatureBeActive(feat, appState.settings)
                                         : true) {
-                                        feat.init();
-                                        feat._initialized = true;
+                                        initFeatureLifecycle(feat, 'message');
                                     }
                                 } else if (!value && typeof feat.destroy === 'function') {
-                                    feat.destroy();
-                                    feat._initialized = false;
+                                    destroyFeatureLifecycle(feat, 'message');
                                 }
                             } catch (e) { console.warn('[YTKit] live toggle failed for', key, e); }
                         }
@@ -28146,6 +28193,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         return featureIndex.get(featureId);
     }
 
+    function registerRuntimeFeature(feature) {
+        if (!feature?.id || feature._arrayKey || isRetiredCommentFeature(feature)) return;
+        try {
+            if (!getRegisteredFeature(feature.id)) {
+                registerFeature({
+                    id: feature.id,
+                    name: feature.name || feature.id,
+                    category: feature.group || null,
+                    type: feature.type || 'toggle',
+                    settingKey: getFeatureSettingKey(feature),
+                    pages: feature.pages || null,
+                    source: 'ytkit',
+                    feature,
+                    init: () => initFeatureLifecycle(feature, 'registry'),
+                    destroy: () => destroyFeatureLifecycle(feature, 'registry')
+                });
+            }
+            updateFeatureHealth(feature, 'registered', 'registry');
+        } catch (error) {
+            DebugManager.log('Registry', `Registration failed for "${feature.id}": ${error.message}`);
+        }
+    }
+
+    function registerRuntimeFeatures() {
+        liveFeatureList.forEach(registerRuntimeFeature);
+    }
+
+    registerRuntimeFeatures();
+
     //  SECTION 3: HELPERS
 
     function applyBotFilter() {
@@ -31411,11 +31487,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // Re-init parent feature to apply changes
                     const parentFeature = getFeatureById(feature.parentId);
                     if (parentFeature) {
-                        try { parentFeature.destroy?.(); parentFeature._initialized = false; } catch(err) {
+                        try { destroyFeatureLifecycle(parentFeature, 'array-toggle'); } catch(err) {
                             DebugManager.log('Toggle', `Array parent destroy failed for "${parentFeature.id}": ${err.message}`);
                         }
                         if (appState.settings[parentFeature.id] !== false) {
-                            try { parentFeature.init?.(); parentFeature._initialized = true; } catch(err) {
+                            try { initFeatureLifecycle(parentFeature, 'array-toggle'); } catch(err) {
                                 DebugManager.log('Toggle', `Array parent init failed for "${parentFeature.id}": ${err.message}`);
                             }
                         }
@@ -31434,7 +31510,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 appState.settings[cid] = false;
                                 settingsManager.save(appState.settings);
                                 if (cf?._initialized) {
-                                    try { cf.destroy?.(); cf._initialized = false; } catch(err) {
+                                    try { destroyFeatureLifecycle(cf, 'conflict'); } catch(err) {
                                         DebugManager.log('Conflict', `Destroy failed for "${cid}": ${err.message}`);
                                     }
                                 }
@@ -31458,12 +31534,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (isEnabled) {
                             // Reset crash counter on manual toggle-on
                             delete _featureCrashCounts[featureId]; _persistCrashCounts();
-                            try { feature.init?.(); feature._initialized = true; } catch(err) {
+                            try { initFeatureLifecycle(feature, 'toggle'); } catch(err) {
                                 console.error(`[YTKit] Error initializing "${featureId}":`, err);
                                 DebugManager.log('Toggle', `Init failed for "${featureId}": ${err.message}`);
                             }
                         } else {
-                            try { feature.destroy?.(); feature._initialized = false; } catch(err) {
+                            try { destroyFeatureLifecycle(feature, 'toggle'); } catch(err) {
                                 console.error(`[YTKit] Error destroying "${featureId}":`, err);
                                 DebugManager.log('Toggle', `Destroy failed for "${featureId}": ${err.message}`);
                             }
@@ -31474,10 +31550,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (feature?.isSubFeature && feature.parentId) {
                         const parentFeature = getFeatureById(feature.parentId);
                         if (parentFeature && appState.settings[parentFeature.id] !== false) {
-                            try { parentFeature.destroy?.(); parentFeature._initialized = false; } catch(err) {
+                            try { destroyFeatureLifecycle(parentFeature, 'sub-feature-toggle'); } catch(err) {
                                 DebugManager.log('Toggle', `Parent destroy failed for "${parentFeature.id}": ${err.message}`);
                             }
-                            try { parentFeature.init?.(); parentFeature._initialized = true; } catch(err) {
+                            try { initFeatureLifecycle(parentFeature, 'sub-feature-toggle'); } catch(err) {
                                 DebugManager.log('Toggle', `Parent init failed for "${parentFeature.id}": ${err.message}`);
                             }
                         }
@@ -31534,10 +31610,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (_textareaReinitTimer) clearTimeout(_textareaReinitTimer);
                     _textareaReinitTimer = setTimeout(() => {
                         _textareaReinitTimer = null;
-                        try { feature.destroy?.(); } catch (e) {
+                        try { destroyFeatureLifecycle(feature, 'SettingsPanel'); } catch (e) {
                             DebugManager.log('SettingsPanel', `destroy failed for ${feature.id}: ${e.message}`);
                         }
-                        try { feature.init?.(); } catch (e) {
+                        try { initFeatureLifecycle(feature, 'SettingsPanel'); } catch (e) {
                             DebugManager.log('SettingsPanel', `re-init failed for ${feature.id}: ${e.message}`);
                         }
                     }, 600);
@@ -31560,10 +31636,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Reinitialize the feature to apply changes immediately
                 if (feature) {
                     if (typeof feature.destroy === 'function') {
-                        try { feature.destroy(); feature._initialized = false; } catch (e) { /* ignore */ }
+                        try { destroyFeatureLifecycle(feature, 'select'); } catch (e) { /* ignore */ }
                     }
                     if (typeof feature.init === 'function') {
-                        try { feature.init(); feature._initialized = true; } catch (e) { console.warn('[YTKit] Feature reinit error:', e); }
+                        try { initFeatureLifecycle(feature, 'select'); } catch (e) { console.warn('[YTKit] Feature reinit error:', e); }
                     }
                 }
 
@@ -31584,10 +31660,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (_rangeReinitTimer) clearTimeout(_rangeReinitTimer);
                     _rangeReinitTimer = setTimeout(() => {
                         _rangeReinitTimer = null;
-                        try { feature.destroy?.(); feature._initialized = false; } catch(err) {
+                        try { destroyFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Destroy failed for "${featureId}": ${err.message}`);
                         }
-                        try { feature.init?.(); feature._initialized = true; } catch(err) {
+                        try { initFeatureLifecycle(feature, 'Range'); } catch(err) {
                             DebugManager.log('Range', `Init failed for "${featureId}": ${err.message}`);
                         }
                     }, 300);
@@ -31603,10 +31679,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 appState.settings[settingKey] = e.target.value;
                 settingsManager.save(appState.settings);
                 if (feature) {
-                    try { feature.destroy?.(); feature._initialized = false; } catch(err) {
+                    try { destroyFeatureLifecycle(feature, 'Color'); } catch(err) {
                         DebugManager.log('Color', `Destroy failed for "${featureId}": ${err.message}`);
                     }
-                    try { feature.init?.(); feature._initialized = true; } catch(err) {
+                    try { initFeatureLifecycle(feature, 'Color'); } catch(err) {
                         DebugManager.log('Color', `Init failed for "${featureId}": ${err.message}`);
                     }
                 }
@@ -32882,7 +32958,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 if (f._arrayKey) return;
                 const isEnabled = appState.settings[f.id];
                 if (!isEnabled) return;
-                try { f.init?.(); f._initialized = true; } catch(e) {
+                try { initFeatureLifecycle(f, 'live-chat'); } catch(e) {
                     console.warn('[YTKit Chat] Feature init error:', f.id, e);
                 }
             });
@@ -38919,6 +38995,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             get settings() { return appState.settings; },
             features: liveFeatureList,
             allFeatures: features,
+            featureHealth() { return getFeatureHealthSnapshot(); },
             version: YTKIT_VERSION,
         };
 
@@ -38965,7 +39042,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                     DebugManager.log('Init', `Skipping "${f.id}" — crashed ${MAX_FEATURE_CRASHES}+ times`);
                     return;
                 }
-                try { f.init?.(); f._initialized = true; if (_featureCrashCounts[f.id]) { delete _featureCrashCounts[f.id]; _persistCrashCounts(); } } catch(err) {
+                try { initFeatureLifecycle(f, 'startup'); if (_featureCrashCounts[f.id]) { delete _featureCrashCounts[f.id]; _persistCrashCounts(); } } catch(err) {
                     _featureCrashCounts[f.id] = (_featureCrashCounts[f.id] || 0) + 1;
                     _persistCrashCounts();
                     console.error(`[YTKit] Error initializing "${f.id}" (crash ${_featureCrashCounts[f.id]}/${MAX_FEATURE_CRASHES}):`, err);
@@ -39051,8 +39128,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                     if (!wasActive && shouldBeActiveNow && !f._initialized) {
                         if ((_featureCrashCounts[f.id] || 0) >= MAX_FEATURE_CRASHES) return;
                         try {
-                            f.init?.();
-                            f._initialized = true;
+                            initFeatureLifecycle(f, 'navigation');
                             if (_featureCrashCounts[f.id]) {
                                 delete _featureCrashCounts[f.id];
                                 _persistCrashCounts();
@@ -39064,8 +39140,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                         }
                     } else if (wasActive && !shouldBeActiveNow && f._initialized) {
                         try {
-                            f.destroy?.();
-                            f._initialized = false;
+                            destroyFeatureLifecycle(f, 'navigation');
                         } catch (err) {
                             DebugManager.log('Navigation', `Destroy failed for "${f.id}": ${err.message}`);
                         }
