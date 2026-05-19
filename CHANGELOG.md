@@ -24,6 +24,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   category cleanup buckets, category destroy orchestration, and category
   health rollups. `ytkit.categoryHealth()` reports feature counts,
   initialized counts, cleanup counts, and status totals by category.
+- **Safe-store and full-GitHub profile model.** Settings now normalize
+  profile-mode defaults on load, save, and import. Named local profile
+  saves stay full-fidelity, while profile exports can explicitly emit a
+  store-safe payload or a full GitHub payload with declared metadata.
+  Safe-store exports exclude secrets, custom code, downloader/AI provider
+  details, and other local-only fields through an allowlisted snapshot;
+  `settingsProfiles.exportSafeStoreJson()`,
+  `settingsProfiles.exportGithubFullJson()`, and
+  `settingsProfiles.profileModel()` expose the contract for future UI.
 
 ### Documentation
 
@@ -65,6 +74,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Every live feature is registered as a core-registry adapter that
   delegates to the existing `init()` / `destroy()` methods while
   publishing a `ytkit.featureHealth()` debug snapshot.
+- **Storage sync audit now measures safe profiles separately.**
+  `npm run audit:storage` now reports a safe-store profile sync candidate
+  separately from the full UI-preferences payload. The safe-store payload
+  currently measures 3.4 KB and passes Chrome `storage.sync` item limits;
+  full settings are 8.6 KB and remain local-only by default.
 - **Premium UI polish pass.** Toolbar popup copy is clearer and more
   trust-oriented, quick-toggle descriptions now explain outcomes instead
   of implementation, diagnostic actions reliably surface success feedback,
