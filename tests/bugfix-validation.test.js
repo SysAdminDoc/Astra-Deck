@@ -390,6 +390,24 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should run on Home by default');
     assert.equal(defaults.hideVideosScopeSubscriptions, true,
         'video hider should run on Subscriptions by default');
+    assert.equal(defaults.hideVideosLowViewFilter, false,
+        'video hider should leave low-view filtering opt-in by default');
+    assert.equal(defaults.hideVideosLowViewThreshold, 1000,
+        'video hider should ship a conservative low-view default threshold');
+    assert.equal(defaults.hideVideosHideLive, false,
+        'video hider should leave live-stream filtering opt-in by default');
+    assert.equal(defaults.hideVideosHideUpcoming, false,
+        'video hider should leave upcoming-premiere filtering opt-in by default');
+    assert.equal(defaults.hideVideosHideMixes, false,
+        'video hider should leave mix filtering opt-in by default');
+    assert.equal(defaults.hideVideosHidePlaylists, false,
+        'video hider should leave playlist filtering opt-in by default');
+    assert.equal(defaults.hideVideosHideMovies, false,
+        'video hider should leave movie filtering opt-in by default');
+    assert.equal(defaults.hideVideosHideAutoDubbed, false,
+        'video hider should leave auto-dubbed filtering opt-in by default');
+    assert.equal(defaults.hideVideosWatchedRatio, 0,
+        'video hider should leave watched-ratio filtering disabled by default');
     assert.ok(block.includes('_restoreHiddenVideosOnPage()'),
         'video hider should include a restore-on-page action');
     assert.ok(block.includes('_removeHiddenVideosOnPage()'),
@@ -410,6 +428,16 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         'video hider should centralize hide-versus-remove behavior');
     assert.ok(block.includes('_isScopeEnabledForPath'),
         'video hider should support per-surface scope controls');
+    assert.ok(block.includes('_normalizeBlockedChannels(channels)')
+        && block.includes('_isChannelBlocked(channelInfo)')
+        && block.includes('_addBlockedChannel(channelInfo)')
+        && source.includes('getBlockedChannelIdentityKeys(record)'),
+        'video hider should normalize channel block records and match ID-first with fallbacks');
+    assert.ok(block.includes('_extractVideoMetadata(element)')
+        && block.includes('_matchesMetadataFilters(element')
+        && block.includes('hideVideosLowViewFilter')
+        && block.includes('hideVideosWatchedRatio'),
+        'video hider should expose metadata-based content filters');
     assert.ok(block.includes('hideVideosRemoveHiddenCards'),
         'video hider should expose the remove-hidden-cards setting');
     assert.ok(block.includes('hideVideosShowQuickHideButton'),
@@ -438,8 +466,11 @@ test('video hider exposes split hide-all and restore-page controls', () => {
         && source.includes('Restore & Allow')
         && source.includes('Hidden Card Behavior')
         && source.includes('Thumbnail Controls')
-        && source.includes('Run On'),
-        'video hider settings should expose manual list editing, allowlist, behavior, controls, and scope sections');
+        && source.includes('Run On')
+        && source.includes('Content Type Filters')
+        && source.includes('Low-View Threshold')
+        && source.includes('Hide Watched Ratio'),
+        'video hider settings should expose manual list editing, allowlist, behavior, controls, scope, and content-type sections');
 });
 
 test('studio comments preserve native text selection on watch pages', () => {
