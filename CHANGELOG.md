@@ -6,6 +6,44 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.30.0] - Research Workspace
+
+Closes the v3.30.0 roadmap minus the "Markdown/JSON/SRT/VTT export
+consolidation" line, which was already shipped under transcript export
+buttons in prior releases. Existing `timestampBookmarks` already
+covers timestamp notes + highlights; this release adds the
+three missing surfaces.
+
+### Added (extension)
+
+- **Local AI Summary (`localAiSummary`).** Uses Chrome's built-in
+  Summarizer API (`window.Summarizer` or `window.ai.summarizer`) when
+  available. Adds a "Local Summary" button next to the existing AI
+  Summary surface. Never falls through to a remote provider — when
+  the API isn't exposed, surfaces an explicit modal explaining the
+  origin trial path instead. Transcript pulled via the existing
+  `aiVideoSummary._fetchTranscriptText` helper with an engagement-
+  panel fallback.
+- **Spaced Review Export (`researchSpacedReview`).** Exports your
+  timestamp bookmarks as a SuperMemo / Anki-friendly CSV
+  (front | back | tags). Front is the bookmark note (or timestamp);
+  back is a `[mm:ss](https://youtu.be/<id>?t=<s>)` deep link; tags
+  include `astra-deck` and the video ID. CSV escaper double-quotes
+  embedded quotes per RFC 4180.
+- **Transcript Search Index (`researchTranscriptIndex`).** Indexes
+  every visited video's transcript into IndexedDB (`ytkit-transcript-
+  index`, store `transcripts`, keyed by `videoId`). Exposes
+  `window.__ytkitSearchTranscripts(query)` (returns up to 200 hits)
+  and `window.__ytkitClearTranscriptIndex()` for the settings panel.
+  No network calls; transcripts read from the engagement panel only.
+
+### Tests
+
+- 3 new regression tests covering local-AI no-network guarantee (no
+  fetch/XHR in the `_summarize()` path), CSV escaping per RFC 4180,
+  and IndexedDB schema (DB name, store keyPath, hit cap). 222/222 JS
+  tests pass.
+
 ## [3.29.0] - Subscription Manager
 
 Closes the entire roadmap v3.29.0 — local groups, sort modes, group

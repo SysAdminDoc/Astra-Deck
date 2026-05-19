@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.29.0';
+    const YTKIT_VERSION = '3.30.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4382,6 +4382,10 @@ return response;
             subscriptionSortMode: 'default',           // 'default' | 'date-desc' | 'duration-asc' | 'unwatched' | 'new-since-last-visit'
             subscriptionShowNewSinceLastVisit: true,
             subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
+            // v3.30.0 — Research workspace
+            localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
+            researchSpacedReview: false,               // Export bookmarks as a SuperMemo-style CSV
+            researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -31040,6 +31044,335 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._activeGroupId = '';
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  LOCAL AI SUMMARY — Chrome built-in ai.summarizer when available
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'localAiSummary',
+            name: 'Local AI Summary (browser built-in)',
+            description: 'Use Chrome\u2019s built-in Summarizer API when available. Falls back to a clear "not available" message — never silently routes to a remote provider. Adds a "Local Summary" button next to the existing AI Summary button.',
+            group: 'Research',
+            icon: 'sparkles',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _navRule: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-local-ai-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(124,58,237,0.32);background:rgba(124,58,237,0.12);color:#e9d5ff;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-local-ai-btn:hover{background:rgba(124,58,237,0.22);}
+                    .ytkit-local-ai-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9100;background:rgba(0,0,0,0.5);}
+                    .ytkit-local-ai-modal__body{max-width:640px;max-height:80vh;overflow:auto;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;}
+                    .ytkit-local-ai-modal__body h4{margin:0 0 12px;}
+                    .ytkit-local-ai-modal__body pre{white-space:pre-wrap;font:13px/1.5 system-ui;}
+                    .ytkit-local-ai-modal__close{margin-top:12px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;}
+                `, 'local-ai');
+            },
+
+            _hasApi() {
+                // Chrome built-in Summarizer API (origin trial / 132+):
+                // https://developer.chrome.com/docs/ai/built-in-apis
+                return typeof window.Summarizer !== 'undefined'
+                    || (typeof window.ai !== 'undefined' && typeof window.ai.summarizer !== 'undefined');
+            },
+
+            async _fetchTranscript() {
+                // Reuse the transcript fetch path used by aiVideoSummary if available.
+                const f = getFeatureById('aiVideoSummary');
+                if (f?._fetchTranscriptText) {
+                    try { return await f._fetchTranscriptText(); }
+                    catch (e) { DebugManager.log('LocalAI', `Transcript fetch failed: ${e.message}`); }
+                }
+                // Light fallback: read the engagement-panel transcript text.
+                const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
+                return Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ');
+            },
+
+            async _summarize() {
+                if (!this._hasApi()) {
+                    this._renderModal('Local Summarizer not available', 'Chrome\u2019s built-in Summarizer API isn\u2019t exposed in this browser. Enable it via the Origin Trial or use the existing BYO-key AI Summary feature instead.');
+                    return;
+                }
+                this._renderModal('Local Summarizer', 'Loading transcript and running the local model\u2026');
+                try {
+                    const transcript = await this._fetchTranscript();
+                    if (!transcript || transcript.length < 50) {
+                        this._renderModal('Local Summarizer', 'No transcript available for this video.');
+                        return;
+                    }
+                    const factory = window.Summarizer || window.ai?.summarizer;
+                    const summarizer = await factory.create?.({ type: 'tldr', length: 'medium', format: 'plain-text' });
+                    if (!summarizer) throw new Error('Summarizer factory returned no instance');
+                    const result = await summarizer.summarize(transcript.slice(0, 4000));
+                    this._renderModal('Local Summary', String(result || '(no output)'));
+                    summarizer.destroy?.();
+                } catch (e) {
+                    DebugManager.log('LocalAI', `Summarize failed: ${e.message}`);
+                    this._renderModal('Local Summarizer error', `The browser\u2019s local model returned an error: ${e.message}`);
+                }
+            },
+
+            _renderModal(title, body) {
+                document.querySelector('.ytkit-local-ai-modal')?.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'ytkit-local-ai-modal';
+                const inner = document.createElement('div');
+                inner.className = 'ytkit-local-ai-modal__body';
+                const h = document.createElement('h4');
+                h.textContent = title;
+                inner.appendChild(h);
+                const pre = document.createElement('pre');
+                pre.textContent = body;
+                inner.appendChild(pre);
+                const close = document.createElement('button');
+                close.className = 'ytkit-local-ai-modal__close';
+                close.type = 'button';
+                close.textContent = 'Close';
+                close.addEventListener('click', () => overlay.remove());
+                inner.appendChild(close);
+                overlay.appendChild(inner);
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+                document.body.appendChild(overlay);
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                // Try to live next to the existing AI summary button, fallback to ytp-right-controls.
+                const anchor = document.querySelector('.ytkit-ai-summary-btn, .ytp-right-controls .ytkit-player-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-local-ai-btn')) return;
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-local-ai-btn';
+                this._btn.textContent = 'Local Summary';
+                this._btn.title = this._hasApi()
+                    ? 'Summarize this video using your browser\u2019s built-in AI model.'
+                    : 'Chrome built-in Summarizer not detected — click to learn how to enable it.';
+                this._btn.addEventListener('click', () => this._summarize());
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-btn').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  SPACED REVIEW EXPORT — bookmarks → SuperMemo-style CSV
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'researchSpacedReview',
+            name: 'Spaced Review Export',
+            description: 'Export your timestamp bookmarks as a SuperMemo / Anki-friendly CSV (front | back | tags). Front is the bookmark note (or timestamp), back is the video title plus a deep link to the timestamp.',
+            group: 'Research',
+            icon: 'graduation-cap',
+            pages: [PageTypes.WATCH],
+            _btn: null,
+            _navRule: null,
+
+            _readBookmarks() {
+                try { return storageReadJSON?.('ytkit-bookmarks', {}) || {}; }
+                catch { return {}; }
+            },
+
+            _csvEscape(value) {
+                const s = String(value == null ? '' : value);
+                if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+                return s;
+            },
+
+            _exportCsv() {
+                const all = this._readBookmarks();
+                const rows = [['front', 'back', 'tags']];
+                let count = 0;
+                for (const [videoId, entries] of Object.entries(all)) {
+                    if (!Array.isArray(entries)) continue;
+                    for (const entry of entries) {
+                        const time = Number(entry?.time) || 0;
+                        const note = String(entry?.note || '').trim() || `@ ${this._formatTime(time)}`;
+                        const link = `https://youtu.be/${videoId}?t=${Math.floor(time)}`;
+                        rows.push([
+                            this._csvEscape(note),
+                            this._csvEscape(`[${this._formatTime(time)}](${link})`),
+                            this._csvEscape(`astra-deck;${videoId}`)
+                        ]);
+                        count++;
+                    }
+                }
+                if (count === 0) {
+                    if (typeof showToast === 'function') showToast('No timestamp bookmarks to export.', '#6b7280');
+                    return;
+                }
+                const csv = rows.map(r => r.join(',')).join('\r\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `astra-deck-bookmarks-${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                if (typeof showToast === 'function') showToast(`Exported ${count} bookmarks`, '#22c55e');
+            },
+
+            _formatTime(s) {
+                const total = Math.max(0, Math.floor(Number(s) || 0));
+                const h = Math.floor(total / 3600);
+                const m = Math.floor((total % 3600) / 60);
+                const sec = total % 60;
+                return (h ? `${h}:` : '') + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('ytd-watch-metadata #title, ytd-watch-metadata h1');
+                if (!anchor || anchor.querySelector('.ytkit-spaced-export-btn')) return;
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-spaced-export-btn ytkit-local-ai-btn';
+                this._btn.style.marginLeft = '8px';
+                this._btn.textContent = 'Export bookmarks (CSV)';
+                this._btn.addEventListener('click', () => this._exportCsv());
+                anchor.appendChild(this._btn);
+            },
+
+            init() {
+                this._navRule = () => { setTimeout(() => this._attach(), 1800); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                document.querySelectorAll('.ytkit-spaced-export-btn').forEach(el => el.remove());
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  TRANSCRIPT SEARCH INDEX — IndexedDB-backed cross-video search
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'researchTranscriptIndex',
+            name: 'Transcript Search Index',
+            description: 'Indexes the transcript of every video you open into a local IndexedDB. Adds a global "Search Transcripts" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry.',
+            group: 'Research',
+            icon: 'search',
+            pages: [PageTypes.WATCH],
+            _DB_NAME: 'ytkit-transcript-index',
+            _DB_STORE: 'transcripts',
+            _DB_VERSION: 1,
+            _navRule: null,
+            _ingested: null,
+
+            _openDb() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(this._DB_NAME, this._DB_VERSION);
+                    req.onupgradeneeded = () => {
+                        const db = req.result;
+                        if (!db.objectStoreNames.contains(this._DB_STORE)) {
+                            db.createObjectStore(this._DB_STORE, { keyPath: 'videoId' });
+                        }
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            },
+
+            async _put(record) {
+                const db = await this._openDb();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(this._DB_STORE, 'readwrite');
+                    tx.objectStore(this._DB_STORE).put(record);
+                    tx.oncomplete = () => { db.close(); resolve(); };
+                    tx.onerror = () => { db.close(); reject(tx.error); };
+                });
+            },
+
+            async _search(query) {
+                if (!query || query.length < 3) return [];
+                const db = await this._openDb();
+                const q = String(query).toLowerCase();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this._DB_STORE, 'readonly');
+                    const store = tx.objectStore(this._DB_STORE);
+                    const req = store.openCursor();
+                    const hits = [];
+                    req.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (!cursor) { db.close(); resolve(hits); return; }
+                        const { videoId, title, text } = cursor.value || {};
+                        if (text && text.toLowerCase().includes(q)) hits.push({ videoId, title, text });
+                        if (hits.length >= 200) { db.close(); resolve(hits); return; }
+                        cursor.continue();
+                    };
+                    req.onerror = () => { db.close(); resolve(hits); };
+                });
+            },
+
+            async _clear() {
+                try {
+                    const db = await this._openDb();
+                    await new Promise((resolve) => {
+                        const tx = db.transaction(this._DB_STORE, 'readwrite');
+                        tx.objectStore(this._DB_STORE).clear();
+                        tx.oncomplete = () => { db.close(); resolve(); };
+                        tx.onerror = () => { db.close(); resolve(); };
+                    });
+                    if (typeof showToast === 'function') showToast('Transcript index cleared.', '#22c55e');
+                } catch (e) {
+                    DebugManager.log('TranscriptIndex', `Clear failed: ${e.message}`);
+                }
+            },
+
+            async _ingestCurrent() {
+                if (!isWatchPagePath()) return;
+                const videoId = getVideoId?.();
+                if (!videoId || this._ingested === videoId) return;
+                this._ingested = videoId;
+                try {
+                    const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
+                    if (!segs.length) return;
+                    const text = Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ').slice(0, 200_000);
+                    if (text.length < 100) return;
+                    const title = document.querySelector('ytd-watch-metadata #title, ytd-watch-metadata h1')?.textContent?.trim()?.slice(0, 200) || '';
+                    await this._put({ videoId, title, text, indexedAt: Date.now() });
+                } catch (e) {
+                    DebugManager.log('TranscriptIndex', `Ingest failed: ${e.message}`);
+                }
+            },
+
+            init() {
+                this._ingested = null;
+                this._navRule = () => { setTimeout(() => this._ingestCurrent(), 4000); };
+                addNavigateRule(this.id, this._navRule);
+                // Expose a global search helper so popup / debug surfaces can call it.
+                window.__ytkitSearchTranscripts = (q) => this._search(q);
+                window.__ytkitClearTranscriptIndex = () => this._clear();
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._ingested = null;
+                if (window.__ytkitSearchTranscripts) delete window.__ytkitSearchTranscripts;
+                if (window.__ytkitClearTranscriptIndex) delete window.__ytkitClearTranscriptIndex;
             }
         },
 
