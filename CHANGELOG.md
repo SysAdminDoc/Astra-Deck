@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Added (extension)
+
+- **v3.23 core foundation modules.** Added passive `core/registry.js`,
+  `core/selectors.js`, `core/trusted-html.js`, and `core/api-limiter.js`
+  modules ahead of `ytkit.js` in both standard YouTube and live-chat
+  content-script contexts. The new contracts cover reversible feature
+  cleanup, stable-first surface selectors with first-miss diagnostics,
+  centralized TrustedTypes policy access, and bucketed API scheduling
+  without changing current feature behavior.
+
 ### Documentation
 
 - **Doc + version drift sweep (N4).** README version badge bumped to
