@@ -6,6 +6,56 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.1.0] - Deferred-Item Follow-Ups
+
+Picks up the two deferred items called out in the v4.0.0 milestone:
+DeArrow channel override UI and the per-context quality matrix.
+
+### Added (extension)
+
+- **DeArrow channel overrides honored in the runtime
+  (`deArrowChannelOverrides`).** Each card has its channel ID
+  extracted; if `overrides[channelId].mode` is `'off'` or `'original'`,
+  the runtime stamps `data-da-override` on the card and skips both
+  title and thumbnail replacement before any API call fires. `mode
+  === 'dearrow'` is the default — no override row in the data model
+  is required.
+- **DeArrow per-channel override chip (`deArrowChannelOverridesPanel`).**
+  Adds a chip next to the channel name on the watch page. Click
+  cycles `DeArrow → Original → Off → DeArrow`. Toast feedback per
+  click; chip color tracks the active mode (purple = DeArrow,
+  amber = Original, gray = Off). Re-running DeArrow on the current
+  page is forced after every write so the new mode takes effect
+  without a page reload.
+- **Per-context quality matrix (`qualityProfileMatrix`).** Detects
+  normal / theater / fullscreen / background / embed transitions via
+  `fullscreenchange`, `visibilitychange`, and a `MutationObserver`
+  scoped to `ytd-watch-flexy[theater]`. Writes the active context to
+  `data-ytkit-quality-context` on `<html>` and the resolved quality
+  string to `data-ytkit-quality-target`. Five new per-context
+  settings (`qualityDefaultNormal` / `Theater` / `Fullscreen` /
+  `Background` / `Embed`) default to `inherit`.
+- **MAIN-world bridge reads `data-ytkit-quality-target`.** New
+  `applyContextQuality()` block in `ytkit-main.js` listens to the
+  attribute mutation, `loadedmetadata`, and `yt-navigate-finish` —
+  calls `movie_player.setPlaybackQualityRange(target, target)` when
+  a non-empty target is present. Idempotent via the
+  `vid:ctx:target` key.
+
+### Changed (extension)
+
+- **`deArrow._processPage()` short-circuits on per-channel overrides
+  before the API call.** Prevents wasted `_fetchBranding` requests
+  for channels the user has explicitly excluded.
+
+### Tests
+
+- 5 new regression tests: override-then-fetch ordering, cycle order
+  (`dearrow → original → off → dearrow`), per-context attribute
+  publishing surface (fullscreenchange + visibilitychange + theater-
+  attribute observer), destroy cleanup of both data attributes, and
+  the MAIN-world bridge attribute filter. 240/240 JS tests pass.
+
 ## [4.0.0] - Beats Every Competitor — Milestone Release
 
 Astra Deck v4.0.0 is the milestone marker for the v3.25 → v3.33 push.
