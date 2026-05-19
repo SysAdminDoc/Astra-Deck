@@ -4,21 +4,21 @@
 // standalone options page.
 
 const QUICK_TOGGLES = [
-    { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts from feeds' },
-    { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'No related panel on watch' },
-    { key: 'disableInfiniteScroll',  group: 'Feed Cleanup',      name: 'Cap Scroll',             desc: 'Stop infinite scroll' },
-    { key: 'sponsorBlock',           group: 'Watch Flow',        name: 'SponsorBlock',           desc: 'Skip sponsored segments' },
-    { key: 'deArrow',                group: 'Watch Flow',        name: 'DeArrow',                desc: 'Better titles & thumbnails' },
-    { key: 'commentSearch',          group: 'Watch Flow',        name: 'Comment Search',         desc: 'Filter comments on watch pages' },
-    { key: 'disableAutoplayNext',    group: 'Playback',          name: 'No Autoplay',            desc: 'Stop auto-advance to next' },
-    { key: 'persistentSpeed',        group: 'Playback',          name: 'Persistent Speed',       desc: 'Remember playback rate' },
-    { key: 'autoTheaterMode',        group: 'Playback',          name: 'Auto Theater',           desc: 'Default to theater view' },
-    { key: 'blueLightFilter',        group: 'Focus',             name: 'Blue-Light Filter',      desc: 'Warmer colors' },
-    { key: 'miniPlayerBar',          group: 'Focus',             name: 'Mini Player Bar',        desc: 'Floating bar on scroll' },
-    { key: 'digitalWellbeing',       group: 'Focus',             name: 'Digital Wellbeing',      desc: 'Break reminders + daily cap' },
-    { key: 'cleanShareUrls',         group: 'Utilities',         name: 'Clean URLs',             desc: 'Strip tracking params' },
-    { key: 'transcriptViewer',       group: 'Utilities',         name: 'Transcript Sidebar',     desc: 'Clickable transcript + export' },
-    { key: 'debugMode',              group: 'Utilities',         name: 'Debug Mode',             desc: 'Verbose console logging' },
+    { key: 'removeAllShorts',        group: 'Feed Cleanup',      name: 'Hide Shorts',            desc: 'Remove Shorts shelves and links' },
+    { key: 'hideRelatedVideos',      group: 'Feed Cleanup',      name: 'Hide Related',           desc: 'Clear the watch-page side rail' },
+    { key: 'disableInfiniteScroll',  group: 'Feed Cleanup',      name: 'Cap Scroll',             desc: 'Stop endless feed loading' },
+    { key: 'sponsorBlock',           group: 'Watch Flow',        name: 'SponsorBlock',           desc: 'Skip crowd-marked sponsor segments' },
+    { key: 'deArrow',                group: 'Watch Flow',        name: 'DeArrow',                desc: 'Replace clickbait titles and thumbnails' },
+    { key: 'commentSearch',          group: 'Watch Flow',        name: 'Comment Search',         desc: 'Filter watch-page comments inline' },
+    { key: 'disableAutoplayNext',    group: 'Playback',          name: 'No Autoplay',            desc: 'Stop the next video from starting' },
+    { key: 'persistentSpeed',        group: 'Playback',          name: 'Persistent Speed',       desc: 'Keep playback speed consistent' },
+    { key: 'autoTheaterMode',        group: 'Playback',          name: 'Auto Theater',           desc: 'Open videos in theater view' },
+    { key: 'blueLightFilter',        group: 'Focus',             name: 'Blue-Light Filter',      desc: 'Warm the player for late viewing' },
+    { key: 'miniPlayerBar',          group: 'Focus',             name: 'Mini Player Bar',        desc: 'Keep controls visible while scrolling' },
+    { key: 'digitalWellbeing',       group: 'Focus',             name: 'Digital Wellbeing',      desc: 'Track breaks and daily viewing' },
+    { key: 'cleanShareUrls',         group: 'Utilities',         name: 'Clean URLs',             desc: 'Remove tracking from share links' },
+    { key: 'transcriptViewer',       group: 'Utilities',         name: 'Transcript Sidebar',     desc: 'Read, jump, and export captions' },
+    { key: 'debugMode',              group: 'Utilities',         name: 'Debug Mode',             desc: 'Record detailed local diagnostics' },
 ];
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -525,7 +525,7 @@ function getTabContext(tab) {
     if (isSupportedInlinePanelUrl(url)) {
         return {
             label: t('contextStateYouTube', 'YouTube'),
-            note: t('contextNoteInlinePanel', 'Click Open Full Settings to launch the in-page workspace on this tab.'),
+            note: t('contextNoteInlinePanel', 'Open the full workspace on this tab; quick toggles apply immediately.'),
             openLabel: t('openFullSettings', 'Open Full Settings'),
             mode: 'inline-panel'
         };
@@ -533,14 +533,14 @@ function getTabContext(tab) {
     if (isAnyYouTubeUrl(url)) {
         return {
             label: t('contextStateYouTube', 'YouTube'),
-            note: t('contextNoteLaunch', 'Full settings live in the in-page workspace on watchable YouTube tabs.'),
+            note: t('contextNoteLaunch', 'Open a watchable YouTube tab to use the full in-page workspace.'),
             openLabel: t('openYouTube', 'Open YouTube'),
             mode: 'launch'
         };
     }
     return {
         label: t('contextStateAnyTab', 'Any Tab'),
-        note: t('contextNoteAnyTab', 'Quick toggles sync once a YouTube tab is open.'),
+        note: t('contextNoteAnyTab', 'Quick toggles are saved now and sync when YouTube is open.'),
         openLabel: t('openYouTube', 'Open YouTube'),
         mode: 'launch'
     };
@@ -557,6 +557,7 @@ function updateContext(tab) {
 // ── Status banner ──
 
 function showStatus(message = '', type = 'info', durationMs = 2800) {
+    const normalizedType = type === 'ok' ? 'success' : type;
     if (popupState.statusTimer) {
         clearTimeout(popupState.statusTimer);
         popupState.statusTimer = null;
@@ -567,7 +568,7 @@ function showStatus(message = '', type = 'info', durationMs = 2800) {
         return;
     }
     statusBanner.textContent = message;
-    statusBanner.className = `status ${type}`;
+    statusBanner.className = `status ${normalizedType}`;
     if (durationMs > 0) {
         popupState.statusTimer = setTimeout(() => {
             statusBanner.textContent = '';

@@ -56,10 +56,10 @@
   /* ── Radii ── */
   --radius-xs: 8px;
   --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 22px;
-  --radius-pill: 999px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
+  --radius-pill: 10px;
 
   /* ── Elevation ── */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
@@ -169,7 +169,7 @@ body {
 .brand-name {
   font-size: var(--fs-md);
   font-weight: 800;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   line-height: 1.1;
 }
 
@@ -295,7 +295,7 @@ body {
   font-size: 16px;
   line-height: 1.15;
   font-weight: 850;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .workspace-copy p {
@@ -340,7 +340,7 @@ body {
   font-size: 15px;
   font-weight: 850;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -386,7 +386,7 @@ body {
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(255, 169, 58, 0.16);
   color: #ffb84d;
   font-weight: 900;
@@ -483,7 +483,7 @@ body {
   font: inherit;
   font-size: var(--fs-sm);
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   cursor: pointer;
   box-shadow:
     var(--shadow-primary),
@@ -560,7 +560,7 @@ button {
   font: inherit;
   font-size: var(--fs-xs);
   font-weight: 700;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   cursor: pointer;
   transition:
     border-color var(--dur-quick) var(--ease-out),
@@ -766,7 +766,7 @@ button:focus-visible {
   color: var(--text-secondary);
   font-size: var(--fs-xs);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
@@ -1012,7 +1012,7 @@ button:focus-visible {
 .toggle .name {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1160,7 +1160,7 @@ button:focus-visible {
   color: var(--text-primary);
   font-size: var(--fs-sm);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .empty-copy {
@@ -1278,7 +1278,7 @@ button:focus-visible {
   font-size: 15px;
   line-height: 1.2;
   font-weight: 850;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .confirm-copy {
