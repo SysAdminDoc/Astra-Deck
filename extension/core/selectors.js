@@ -385,14 +385,33 @@
 
         if (typeof core.waitForElement === 'function') {
             let cancel = null;
+            let timeoutHandle = null;
             const promise = new Promise((resolve) => {
                 cancel = core.waitForElement(selector, (element) => {
+                    if (timeoutHandle != null) {
+                        clearTimeout(timeoutHandle);
+                        timeoutHandle = null;
+                    }
                     options.onFound?.(element);
                     resolve(element);
                 }, timeout);
-                setTimeout(() => resolve(null), timeout);
+                // Belt-and-suspenders timeout — `core.waitForElement` already
+                // accepts a timeout, but bugs in its cleanup path used to leak
+                // observers. We clear our own timer when the element resolves
+                // so a found element doesn't fire a no-op resolve(null) later.
+                timeoutHandle = setTimeout(() => {
+                    timeoutHandle = null;
+                    cancel?.();
+                    resolve(null);
+                }, timeout);
             });
-            promise.cancel = () => cancel?.();
+            promise.cancel = () => {
+                if (timeoutHandle != null) {
+                    clearTimeout(timeoutHandle);
+                    timeoutHandle = null;
+                }
+                cancel?.();
+            };
             return promise;
         }
 
