@@ -1788,3 +1788,154 @@ test('reaction spammer panel surfaces a one-shot rate-limit warning toast on fir
     assert.match(block, /rate-limit|rate\s*limit/i,
         'first-use warning message must mention rate-limiting');
 });
+
+// ── v3.25.0 P1: Predicate sandbox safety invariants ──
+
+test('PredicateSandbox uses no eval / Function / with anywhere on its path', () => {
+    // The sandbox is Option C from docs/predicate-sandbox-investigation.md —
+    // expression-only AST walker. If `eval(`, `new Function(`, or `with (`
+    // appear inside the PredicateSandbox IIFE the safety promise is broken.
+    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
+    assert.ok(start > -1, 'PredicateSandbox IIFE must exist in ytkit.js');
+    // The IIFE ends at the matching '})()' followed by ';'. We bound the
+    // search by 20 KB which is comfortably larger than the implementation.
+    const block = ytkitSource.slice(start, start + 20000);
+    assert.ok(!/\beval\s*\(/.test(block),
+        'PredicateSandbox must not call eval()');
+    assert.ok(!/new\s+Function\s*\(/.test(block),
+        'PredicateSandbox must not use new Function()');
+    assert.ok(!/\bwith\s*\(/.test(block),
+        'PredicateSandbox must not use with()');
+});
+
+test('PredicateSandbox enforces ReDoS guard on user-supplied match/test patterns', () => {
+    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
+    const block = ytkitSource.slice(start, start + 20000);
+    assert.match(block, /hasUnsafeQuantifiers/,
+        'PredicateSandbox must expose a ReDoS guard helper');
+    assert.match(block, /nested quantifiers \(ReDoS risk\)/,
+        'PredicateSandbox must reject regex patterns with nested quantifiers');
+});
+
+test('PredicateSandbox compile returns ok:false with error position on parse failure', () => {
+    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
+    const block = ytkitSource.slice(start, start + 20000);
+    assert.match(block, /ok:\s*false[\s,]*error/,
+        'compile() must return an { ok:false, error, position } shape on failure');
+    assert.match(block, /position:\s*e instanceof PredicateError/,
+        'compile() must surface PredicateError positions to the caller');
+});
+
+test('PredicateSandbox runtime budget + circuit breaker auto-disable', () => {
+    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
+    const block = ytkitSource.slice(start, start + 20000);
+    assert.match(block, /BUDGET_MS\s*=\s*5/,
+        'Per-card budget must be 5 ms');
+    assert.match(block, /ERROR_CIRCUIT\s*=\s*10/,
+        'Circuit must open after 10 consecutive errors');
+    assert.match(block, /circuitOpen\s*=\s*true/,
+        'circuitOpen flag must be flipped when the budget or error gate trips');
+});
+
+test('videoHider integrates predicate evaluator between metadata and duration checks', () => {
+    const idx = ytkitSource.indexOf('_getPredicateEvaluator()');
+    assert.ok(idx > -1, 'videoHider must call _getPredicateEvaluator');
+    const ctxIdx = ytkitSource.indexOf('_buildPredicateCtx(');
+    assert.ok(ctxIdx > -1, 'videoHider must build a ctx surface for the predicate');
+    // The ctx must be frozen at the call site per the investigation doc.
+    const buildSig = ytkitSource.indexOf('_buildPredicateCtx(element, videoId, channelInfo)');
+    assert.ok(buildSig > -1, '_buildPredicateCtx must accept (element, videoId, channelInfo)');
+    const buildBlock = ytkitSource.slice(buildSig, buildSig + 4000);
+    assert.match(buildBlock, /Object\.freeze\(ctx\)/,
+        '_buildPredicateCtx must return a frozen ctx object');
+});
+
+// ── v3.25.0 P1: Comment filter manager invariants ──
+
+test('commentFilterManager rejects ReDoS regex inputs at compile time', () => {
+    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
+    assert.ok(start > -1, 'commentFilterManager feature must exist');
+    const block = ytkitSource.slice(start, start + 6000);
+    assert.match(block, /Regex rejected: nested quantifiers \(ReDoS risk\)/,
+        'commentFilterManager must log the ReDoS rejection reason');
+    assert.match(block, /\(adjacent \|\| groupInner\)/,
+        'commentFilterManager must check both adjacent and group-inner nested quantifiers');
+});
+
+test('commentFilterManager processes mutation addedNodes only, never full-document scans on tick', () => {
+    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
+    const block = ytkitSource.slice(start, start + 6000);
+    // The mutation rule callback must loop addedNodes only — not call
+    // querySelectorAll on document.
+    assert.match(block, /addMutationRule\(this\.id/,
+        'commentFilterManager must register a mutation rule');
+    const mutBlock = block.slice(block.indexOf('addMutationRule'));
+    assert.ok(!/document\.querySelectorAll/.test(mutBlock.slice(0, 800)),
+        'commentFilterManager mutation rule must not call document.querySelectorAll on every tick');
+    assert.match(mutBlock, /m\.addedNodes/,
+        'commentFilterManager mutation rule must process addedNodes only');
+});
+
+test('commentFilterManager destroy() restores hidden threads and clears compiled rule cache', () => {
+    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
+    const block = ytkitSource.slice(start, start + 8000);
+    const destroyIdx = block.indexOf('destroy()');
+    assert.ok(destroyIdx > -1, 'commentFilterManager must define destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /data-ytkit-comment-filter-hidden="1"/,
+        'destroy() must unhide previously hidden threads');
+    assert.match(destroyBlock, /this\._compiledRules\s*=\s*null/,
+        'destroy() must clear the compiled rules cache');
+});
+
+// ── v3.25.0 P1: Bulk card actions invariants ──
+
+test('bulkCardActions delegates hide/allow to videoHider rather than duplicating storage', () => {
+    const start = ytkitSource.indexOf("id: 'bulkCardActions'");
+    assert.ok(start > -1, 'bulkCardActions feature must exist');
+    const block = ytkitSource.slice(start, start + 16000);
+    assert.match(block, /getFeatureById\('hideVideosFromHome'\)/,
+        'bulkCardActions must reuse the videoHider feature for storage');
+    assert.match(block, /vh\?\._addHiddenVideos/,
+        'bulkCardActions must defer to videoHider._addHiddenVideos');
+    assert.match(block, /vh\?\._addAllowedVideos/,
+        'bulkCardActions must defer to videoHider._addAllowedVideos');
+});
+
+test('bulkCardActions destroy() removes its toggle button, action bar, and document click listener', () => {
+    const start = ytkitSource.indexOf("id: 'bulkCardActions'");
+    const block = ytkitSource.slice(start, start + 16000);
+    const destroyIdx = block.indexOf('destroy()');
+    assert.ok(destroyIdx > -1, 'bulkCardActions must define destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /removeEventListener\('click'/,
+        'destroy() must remove the document click listener');
+    assert.match(destroyBlock, /_toggleBtn\?\.remove\(\)/,
+        'destroy() must remove the toggle button');
+    assert.match(destroyBlock, /_actionBar\?\.remove\(\)/,
+        'destroy() must remove the action bar');
+});
+
+// ── v3.25.0 P1: Feed Triage profile invariants ──
+
+test('feedTriageProfile backs up prior values before applying the recipe', () => {
+    const start = ytkitSource.indexOf("id: 'feedTriageProfile'");
+    assert.ok(start > -1, 'feedTriageProfile feature must exist');
+    const block = ytkitSource.slice(start, start + 6000);
+    assert.match(block, /_RECIPE:\s*\{/,
+        'feedTriageProfile must declare a recipe object');
+    assert.match(block, /_BACKUP_KEY:\s*'ytkit-feed-triage-backup'/,
+        'feedTriageProfile must persist a backup under a stable storage key');
+    assert.match(block, /backup\[key\]\s*=\s*appState\.settings\[key\]/,
+        'feedTriageProfile must snapshot current settings before mutating them');
+});
+
+test('feedTriageProfile destroy() restores prior values from the backup snapshot', () => {
+    const start = ytkitSource.indexOf("id: 'feedTriageProfile'");
+    const block = ytkitSource.slice(start, start + 6000);
+    const destroyIdx = block.indexOf('destroy()');
+    assert.ok(destroyIdx > -1, 'feedTriageProfile must define destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 800);
+    assert.match(destroyBlock, /this\._restore\(\)/,
+        'destroy() must call _restore() when a backup is present');
+});
