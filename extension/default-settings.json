@@ -395,6 +395,8 @@
   "subscriptionSortMode": "default",
   "subscriptionShowNewSinceLastVisit": true,
   "subscriptionLastVisitData": {},
+  "subscriptionAiTags": false,
+  "subscriptionAiTagData": {},
   "localAiSummary": false,
   "researchSpacedReview": false,
   "researchTranscriptIndex": false,

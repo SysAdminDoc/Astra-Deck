@@ -6,6 +6,44 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.3.0] - AI Tags For Subscription Groups
+
+Closes the last concrete deferred item from the v4.0.0 milestone:
+optional AI tags for `subscriptionGroups`, riding on the same Chrome
+built-in Summarizer used by `localAiSummary` (v3.30). No remote
+fall-through; if the API isn't exposed the user gets an explicit
+"enable the Chrome AI origin trial" message.
+
+### Added (extension)
+
+- **`subscriptionAiTags`** master toggle. Default off — gates the
+  whole AI-tag surface so the chip behaves identically to v4.2.0
+  when not in use.
+- **`subscriptionAiTagData`** local-only storage:
+  `{ groupId: { tags: string[], generatedAt: ms } }`. Tags
+  sanitized to lowercase, alphanumerics + hyphens + spaces only, max
+  24 chars each, capped at 8 per group to bound storage.
+- **Shift+click on a group chip regenerates AI tags.** Reads up to
+  40 visible card titles for channels in the group, hands them to
+  `window.Summarizer` / `window.ai.summarizer` with a single
+  `key-points`/`short` summarizer instance, parses the comma/newline-
+  separated output, and persists the resulting tag list. The chip
+  label appends the first three tags inline (`Group (N) · tag1 tag2
+  tag3`); full set lives in the chip tooltip.
+
+### Changed (extension)
+
+- **Group chips show their stored AI tags inline** when present so
+  users don't need to open a tooltip to see the topic at a glance.
+  Tooltip explains the shift+click affordance for regeneration.
+
+### Tests
+
+- 3 new regression tests: Chrome built-in Summarizer factory check
+  (no fetch / no extensionFetchJson on the AI path), persistence
+  shape (`generatedAt` timestamp + 8-tag cap), and chip render +
+  shift+click gate. 246/246 JS tests pass.
+
 ## [4.2.0] - Subscription Popularity + Transcript Search UI
 
 Picks up two more deferred items from the v4.0.0 milestone: the

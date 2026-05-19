@@ -2192,7 +2192,7 @@ test('monetizationIndicator paints exactly one pill and removes it on destroy', 
 test('subscriptionGroups keys by channel ID and survives SPA navigation', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
-    const block = ytkitSource.slice(start, start + 22000);
+    const block = ytkitSource.slice(start, start + 36000);
     assert.match(block, /_GROUPS_KEY: 'subscriptionGroupData'/,
         'must persist groups to subscriptionGroupData');
     assert.match(block, /a\[href\*="\/channel\/"]/,
@@ -2205,7 +2205,7 @@ test('subscriptionGroups keys by channel ID and survives SPA navigation', () => 
 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 22000);
+    const block = ytkitSource.slice(start, start + 30000);
     assert.match(block, /schemaVersion:\s*1/,
         'export payload must declare schemaVersion 1');
     assert.match(block, /astra-deck-subscription-groups-/,
@@ -2219,7 +2219,7 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 22000);
+    const block = ytkitSource.slice(start, start + 30000);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
@@ -2232,7 +2232,7 @@ test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and 
 
 test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 22000);
+    const block = ytkitSource.slice(start, start + 30000);
     assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
@@ -2543,7 +2543,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
 
 test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 22000);
+    const block = ytkitSource.slice(start, start + 30000);
     assert.match(block, /_parseCompactViewCount/,
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
@@ -2583,4 +2583,45 @@ test('researchTranscriptSearchPanel destroy() removes the button, panel, and sty
         'destroy() must close the panel');
     assert.match(destroyBlock, /_styleElement\?\.remove\(\)/,
         'destroy() must remove the injected style tag');
+});
+
+// ── v4.3.0 P1: AI tags for subscription groups ──
+
+test('subscriptionAiTags uses Chrome built-in Summarizer and never falls through to remote', () => {
+    const start = ytkitSource.indexOf('_generateAiTagsForGroup');
+    assert.ok(start > -1, 'subscriptionGroups must declare _generateAiTagsForGroup()');
+    const block = ytkitSource.slice(start, start + 5000);
+    assert.match(block, /window\.Summarizer/,
+        'must check for the top-level Summarizer factory');
+    assert.match(block, /window\.ai\?\.summarizer/,
+        'must fall back to window.ai.summarizer');
+    assert.match(block, /Local Summarizer not available/,
+        'must surface an explicit not-available message — never silent fallthrough');
+    // The bulk-tag path must NOT call fetch / XHR / extensionFetchJson.
+    assert.ok(!/fetch\(/.test(block),
+        '_generateAiTagsForGroup must not call fetch() — local-only path');
+    assert.ok(!/extensionFetchJson/.test(block),
+        '_generateAiTagsForGroup must not route through the background fetch proxy');
+});
+
+test('subscriptionAiTags persists generated tags into subscriptionAiTagData per group', () => {
+    const start = ytkitSource.indexOf('_generateAiTagsForGroup');
+    const block = ytkitSource.slice(start, start + 5000);
+    assert.match(block, /_writeAiTagData/,
+        'must persist tags through the writer helper');
+    assert.match(block, /generatedAt:\s*Date\.now\(\)/,
+        'each tag record must carry a generatedAt timestamp');
+    assert.match(block, /\.slice\(0,\s*8\)/,
+        'must cap tags at 8 per group to keep storage bounded');
+});
+
+test('subscriptionAiTags renders chip suffix and binds shift+click for regeneration', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 30000);
+    assert.match(block, /aiTagData\[id\]\?\.tags\?\.length/,
+        'chip render must check for stored tags');
+    assert.match(block, /Shift\+click to regenerate/,
+        'chip title must explain the shift+click regen affordance');
+    assert.match(block, /e\.shiftKey && appState\?\.settings\?\.subscriptionAiTags/,
+        'click handler must gate regeneration on shift+click AND the subscriptionAiTags toggle');
 });

@@ -1022,7 +1022,7 @@ Acceptance:
 Features:
 
 - [x] PocketTube-grade local groups.
-- [ ] Optional AI tags with local/exportable metadata. *(Hook reserved via `subscriptionAiTags` namespace in the data model; surface ships in a follow-up when the local-AI backbone lands in v3.30.)*
+- [x] Optional AI tags with local/exportable metadata. *(Shipped in v4.3.0: `subscriptionAiTags` toggle + `subscriptionAiTagData` storage. Shift+click any group chip regenerates tags via Chrome's built-in Summarizer — no remote fall-through.)*
 - [x] Sort subscriptions by date, duration, popularity, unwatched, new since last visit. *(All five modes ship: duration / unwatched / new-since-last-visit / date-desc / popular. The popular mode shipped in v4.2.0 — reads view count from card metadata text and sorts descending.)*
 - [x] Guide/sidebar group section. *(Ships as a toolbar atop the subscriptions feed — same data shape can drive a guide-level injection in a follow-up without changing storage.)*
 - [x] Group export/import.

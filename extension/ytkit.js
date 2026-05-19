@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.2.0';
+    const YTKIT_VERSION = '4.3.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4392,6 +4392,8 @@ return response;
             subscriptionSortMode: 'default',           // 'default' | 'date-desc' | 'duration-asc' | 'unwatched' | 'new-since-last-visit' | 'popular'
             subscriptionShowNewSinceLastVisit: true,
             subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
+            subscriptionAiTags: false,                 // Master toggle for AI-generated group tags
+            subscriptionAiTagData: {},                 // { groupId: { tags: string[], generatedAt: ms } }
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
             researchSpacedReview: false,               // Export bookmarks as a SuperMemo-style CSV
@@ -31200,6 +31202,74 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 cards.forEach(card => container.appendChild(card));
             },
 
+            _readAiTagData() {
+                const data = appState?.settings?.subscriptionAiTagData;
+                return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+            },
+
+            _writeAiTagData(next) {
+                appState.settings.subscriptionAiTagData = next;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', `AI tag save failed: ${e.message}`); }
+            },
+
+            async _generateAiTagsForGroup(groupId) {
+                if (!appState?.settings?.subscriptionAiTags) {
+                    if (typeof showToast === 'function') showToast('Enable "AI Tags For Subscription Groups" first.', '#f59e0b');
+                    return;
+                }
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group) return;
+                // Reuse Chrome's built-in Summarizer when available — same
+                // never-fall-through-to-remote contract as localAiSummary.
+                const factory = window.Summarizer || window.ai?.summarizer;
+                if (!factory?.create) {
+                    if (typeof showToast === 'function') showToast('Local Summarizer not available; enable the Chrome AI origin trial.', '#f59e0b');
+                    return;
+                }
+                if (typeof showToast === 'function') showToast(`Generating tags for "${group.name || groupId}"\u2026`, '#7c3aed', { duration: 6 });
+                // Gather titles from the rendered subscription feed cards for
+                // channels in this group. Title-only — never transcripts here.
+                const allowed = new Set(group.channelIds);
+                const titles = [];
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const id = this._extractChannelIdFromCard(card);
+                    if (!id || !allowed.has(id)) return;
+                    const t = (card.querySelector('#video-title, [id="video-title"]')?.textContent || '').trim();
+                    if (t) titles.push(t);
+                });
+                if (!titles.length) {
+                    if (typeof showToast === 'function') showToast('No matching cards rendered yet — scroll the feed and try again.', '#f59e0b');
+                    return;
+                }
+                const summary = titles.slice(0, 40).join('\n');
+                let tags = [];
+                try {
+                    const summarizer = await factory.create({ type: 'key-points', length: 'short', format: 'plain-text' });
+                    const output = await summarizer.summarize(`Suggest 5 single-word topic tags (lowercase, comma-separated) for this list of YouTube titles:\n\n${summary}`);
+                    summarizer.destroy?.();
+                    tags = String(output || '')
+                        .replace(/^[\s\S]*?(?=\b)/, '')
+                        .split(/[,\n]/)
+                        .map(s => s.trim().toLowerCase().replace(/[^a-z0-9\- ]+/g, ''))
+                        .filter(s => s && s.length <= 24)
+                        .slice(0, 8);
+                } catch (e) {
+                    DebugManager.log('SubGroups', `AI tag generation failed: ${e.message}`);
+                    if (typeof showToast === 'function') showToast(`Tag generation failed: ${e.message}`, '#ef4444');
+                    return;
+                }
+                if (!tags.length) {
+                    if (typeof showToast === 'function') showToast('Summarizer returned no usable tags.', '#f59e0b');
+                    return;
+                }
+                const next = { ...this._readAiTagData(), [groupId]: { tags, generatedAt: Date.now() } };
+                this._writeAiTagData(next);
+                if (typeof showToast === 'function') showToast(`Tagged "${group.name || groupId}": ${tags.join(', ')}`, '#22c55e', { duration: 6 });
+                this._renderToolbar();
+            },
+
             _renderToolbar() {
                 const target = document.querySelector('ytd-rich-grid-renderer, ytd-section-list-renderer');
                 if (!target || !target.parentElement) return;
@@ -31225,14 +31295,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 bar.appendChild(allChip);
 
+                const aiTagData = this._readAiTagData();
                 for (const [id, group] of Object.entries(groups)) {
                     const chip = document.createElement('button');
                     chip.type = 'button';
                     chip.className = 'ytkit-sub-group-chip';
                     chip.dataset.active = this._activeGroupId === id ? '1' : '0';
                     chip.style.borderColor = group.color || '#7c3aed';
-                    chip.textContent = `${group.name || id} (${group.channelIds?.length || 0})`;
-                    chip.addEventListener('click', () => {
+                    const tagSuffix = aiTagData[id]?.tags?.length ? ` · ${aiTagData[id].tags.slice(0, 3).join(' ')}` : '';
+                    chip.textContent = `${group.name || id} (${group.channelIds?.length || 0})${tagSuffix}`;
+                    if (aiTagData[id]?.tags?.length) {
+                        chip.title = `AI tags: ${aiTagData[id].tags.join(', ')} · Shift+click to regenerate`;
+                    } else if (appState?.settings?.subscriptionAiTags) {
+                        chip.title = 'Shift+click to generate AI tags';
+                    }
+                    chip.addEventListener('click', (e) => {
+                        if (e.shiftKey && appState?.settings?.subscriptionAiTags) {
+                            e.preventDefault();
+                            this._generateAiTagsForGroup(id);
+                            return;
+                        }
                         this._activeGroupId = this._activeGroupId === id ? '' : id;
                         this._renderToolbar();
                         this._applyGroupFilter();
