@@ -1303,7 +1303,7 @@ test('videoScreenshot exposes capture states and mutation-driven reinjection', (
 
     const block = source.slice(start, end);
     assert.ok(block.includes("_setState('capturing')"), 'videoScreenshot should expose an explicit capturing state');
-    assert.ok(block.includes('_copyBlobToClipboard(blob)'), 'videoScreenshot should report clipboard-copy outcomes instead of silently ignoring them');
+    assert.ok(/\b_copyBlobToClipboard\(blob(?:,\s*mime)?\)/.test(block), 'videoScreenshot should report clipboard-copy outcomes instead of silently ignoring them');
     assert.ok(block.includes("addMutationRule('videoScreenshot'"), 'videoScreenshot should recover when player controls hydrate late');
     assert.ok(block.includes("btn.addEventListener('click'"), 'videoScreenshot should use an event listener rather than relying on btn.onclick');
 });

@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.25.0';
+    const YTKIT_VERSION = '3.26.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1969,7 +1969,7 @@ return response;
         }
         .ytkit-speed-popup__grid {
             display: grid !important;
-            grid-template-columns: repeat(5, 1fr) !important;
+            grid-template-columns: repeat(6, 1fr) !important;
             gap: 6px !important;
         }
         .ytkit-speed-popup__item {
@@ -3425,7 +3425,7 @@ return response;
     // immediately so the change is felt without waiting for a navigate.
     let _speedPopup = null;
     let _speedPopupCleanup = null;
-    const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+    const SPEED_OPTIONS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 5, 6, 8, 10, 16];
 
     function _closeSpeedPopup() {
         if (_speedPopupCleanup) { _speedPopupCleanup(); _speedPopupCleanup = null; }
@@ -4352,6 +4352,15 @@ return response;
             commentFilterRules: '',
             bulkCardActions: false,
             feedTriageProfile: false,
+            // v3.26.0 — Player control superset
+            downloadScreenshotFormat: 'png',           // 'png' | 'jpeg' | 'webp'
+            downloadSubtitlesWithScreenshot: false,
+            volumeWheelMode: false,
+            disableLoudnessNormalization: false,
+            perChannelIntroOutro: false,
+            perChannelIntroOutroData: {},              // { channelId: { introSec, outroSec } }
+            initialPlayerStateForeground: 'inherit',   // 'inherit' | 'play' | 'pause'
+            initialPlayerStateBackground: 'inherit',   // 'inherit' | 'play' | 'pause'
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -19027,39 +19036,77 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 parts.push(`${String(secs).padStart(hours || minutes ? 2 : 1, '0')}s`);
                 return parts.join('');
             },
+            _getScreenshotFormat() {
+                const raw = String(appState?.settings?.downloadScreenshotFormat || 'png').toLowerCase();
+                if (raw === 'jpeg' || raw === 'jpg') return { mime: 'image/jpeg', ext: 'jpg' };
+                if (raw === 'webp') return { mime: 'image/webp', ext: 'webp' };
+                return { mime: 'image/png', ext: 'png' };
+            },
+            _shouldIncludeSubtitles() {
+                return !!appState?.settings?.downloadSubtitlesWithScreenshot;
+            },
             _getFilename(video) {
                 const videoId = getVideoId() || 'video';
                 const rawTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, h1 yt-formatted-string, #title h1')?.textContent?.trim() || '';
                 const safeTitle = this._sanitizeFilename(rawTitle);
                 const time = this._formatTimestampForFilename(video?.currentTime ?? 0);
                 const nameParts = [videoId, safeTitle, time].filter(Boolean);
-                return `${nameParts.join('_')}.png`;
+                const { ext } = this._getScreenshotFormat();
+                return `${nameParts.join('_')}.${ext}`;
             },
-            _blobFromCanvas(canvas) {
+            _blobFromCanvas(canvas, mime = 'image/png') {
                 return new Promise((resolve, reject) => {
                     try {
                         canvas.toBlob((blob) => {
                             if (!blob) {
-                                reject(new Error('Unable to render a PNG screenshot from this frame.'));
+                                reject(new Error(`Unable to render a ${mime} screenshot from this frame.`));
                                 return;
                             }
                             resolve(blob);
-                        }, 'image/png');
+                        }, mime, mime === 'image/png' ? undefined : 0.92);
                     } catch (error) {
                         reject(error);
                     }
                 });
             },
-            async _copyBlobToClipboard(blob) {
+            async _copyBlobToClipboard(blob, mime = 'image/png') {
                 if (!blob || typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
                     return 'unsupported';
                 }
+                // Clipboard API on Chrome only accepts image/png today. JPEG/WebP
+                // capture still downloads, but skip the clipboard copy gracefully.
+                if (mime !== 'image/png') return 'unsupported';
                 try {
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    await navigator.clipboard.write([new ClipboardItem({ [mime]: blob })]);
                     return 'copied';
                 } catch (_) {
                     return 'failed';
                 }
+            },
+            _drawCaptionsOntoCanvas(ctx, canvas) {
+                // Caption overlay support — fetch DOM caption segments and paint
+                // them into the bottom band of the canvas. Best-effort; we silently
+                // skip when YouTube hasn't rendered captions on this frame.
+                const captionEls = Array.from(document.querySelectorAll('.ytp-caption-segment, .caption-visual-line'));
+                if (!captionEls.length) return;
+                const lines = captionEls.map(el => (el.textContent || '').trim()).filter(Boolean);
+                if (!lines.length) return;
+                const text = lines.join(' ');
+                const fontSize = Math.round(canvas.height * 0.045);
+                ctx.font = `600 ${fontSize}px "YouTube Sans", system-ui, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                const x = canvas.width / 2;
+                const y = canvas.height - Math.round(canvas.height * 0.06);
+                const metrics = ctx.measureText(text);
+                const padding = Math.round(fontSize * 0.4);
+                const rectW = Math.min(canvas.width * 0.92, metrics.width + padding * 2);
+                const rectX = (canvas.width - rectW) / 2;
+                const rectY = y - fontSize - padding;
+                ctx.fillStyle = 'rgba(0,0,0,0.72)';
+                ctx.fillRect(rectX, rectY, rectW, fontSize + padding * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(text, x, y);
             },
             _downloadBlob(blob, filename) {
                 const url = URL.createObjectURL(blob);
@@ -19089,9 +19136,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } catch (e) {
                     throw new Error('Screenshots are blocked for protected or cross-origin video frames.');
                 }
-                const blob = await this._blobFromCanvas(canvas);
+                if (this._shouldIncludeSubtitles()) {
+                    try { this._drawCaptionsOntoCanvas(ctx, canvas); }
+                    catch (e) { DebugManager.log('Screenshot', `Caption overlay failed: ${e.message}`); }
+                }
+                const { mime } = this._getScreenshotFormat();
+                const blob = await this._blobFromCanvas(canvas, mime);
                 const filename = this._getFilename(video);
-                const clipboardState = await this._copyBlobToClipboard(blob);
+                const clipboardState = await this._copyBlobToClipboard(blob, mime);
                 this._downloadBlob(blob, filename);
                 return { clipboardState, filename };
             },
@@ -29494,6 +29546,346 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             destroy() {
                 if (this._readBackup()) this._restore();
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  SCREENSHOT FORMAT — Pick PNG / JPEG / WebP
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'downloadScreenshotFormat',
+            name: 'Screenshot Format',
+            description: 'Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only.',
+            group: 'Video Player',
+            icon: 'image',
+            type: 'select',
+            settingKey: 'downloadScreenshotFormat',
+            options: { png: 'PNG (lossless)', jpeg: 'JPEG (90% quality)', webp: 'WebP (90% quality)' },
+            dependsOn: 'videoScreenshot',
+            init() { /* read at capture time */ },
+            destroy() { /* no runtime side effect */ }
+        },
+        {
+            id: 'downloadSubtitlesWithScreenshot',
+            name: 'Include Subtitles In Screenshot',
+            description: 'Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot.',
+            group: 'Video Player',
+            icon: 'subtitles',
+            settingKey: 'downloadSubtitlesWithScreenshot',
+            dependsOn: 'videoScreenshot',
+            init() { /* read at capture time */ },
+            destroy() { /* no runtime side effect */ }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  VOLUME WHEEL — Scroll on player to change volume (visible affordance)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'volumeWheelMode',
+            name: 'Volume Wheel',
+            description: 'Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added.',
+            group: 'Video Player',
+            icon: 'volume-2',
+            pages: [PageTypes.WATCH],
+            _wheelHandler: null,
+            _hudEl: null,
+            _hudTimer: null,
+            _player: null,
+            _styleElement: null,
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-volume-hud{position:absolute;left:50%;top:14%;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:10px;background:rgba(8,8,10,0.86);color:#f4f4f5;border:1px solid rgba(255,255,255,0.08);font:600 14px/1 'YouTube Sans',system-ui,sans-serif;pointer-events:none;opacity:0;transition:opacity 140ms ease;}
+                    .ytkit-volume-hud[data-visible="1"]{opacity:1;}
+                    .ytkit-volume-hud__bar{position:relative;width:120px;height:6px;border-radius:999px;background:rgba(255,255,255,0.12);overflow:hidden;}
+                    .ytkit-volume-hud__fill{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ff7849,#ff3d3d);border-radius:inherit;}
+                    .ytkit-volume-hud__num{font-variant-numeric:tabular-nums;min-width:32px;text-align:right;}
+                    .ytkit-volume-hint{position:absolute;right:10px;bottom:64px;z-index:60;padding:4px 8px;border-radius:6px;background:rgba(8,8,10,0.6);color:rgba(255,255,255,0.7);font:500 11px/1 system-ui;pointer-events:none;opacity:0;transition:opacity 200ms ease;}
+                    .html5-video-player:hover .ytkit-volume-hint{opacity:1;}
+                `, 'volume-wheel');
+            },
+            _showHud(level) {
+                if (!this._player) return;
+                if (!this._hudEl) {
+                    this._hudEl = document.createElement('div');
+                    this._hudEl.className = 'ytkit-volume-hud';
+                    this._hudEl.setAttribute('role', 'status');
+                    this._hudEl.setAttribute('aria-live', 'polite');
+                    const bar = document.createElement('div');
+                    bar.className = 'ytkit-volume-hud__bar';
+                    const fill = document.createElement('div');
+                    fill.className = 'ytkit-volume-hud__fill';
+                    fill.dataset.role = 'fill';
+                    bar.appendChild(fill);
+                    const num = document.createElement('span');
+                    num.className = 'ytkit-volume-hud__num';
+                    num.dataset.role = 'num';
+                    this._hudEl.append(num, bar);
+                    this._player.appendChild(this._hudEl);
+                }
+                const pct = Math.round(level);
+                const fill = this._hudEl.querySelector('[data-role="fill"]');
+                const num = this._hudEl.querySelector('[data-role="num"]');
+                if (fill) fill.style.width = `${pct}%`;
+                if (num) num.textContent = `${pct}%`;
+                this._hudEl.dataset.visible = '1';
+                if (this._hudTimer) clearTimeout(this._hudTimer);
+                this._hudTimer = setTimeout(() => {
+                    if (this._hudEl) this._hudEl.dataset.visible = '0';
+                }, 1200);
+            },
+            _ensureHint() {
+                if (!this._player) return;
+                if (this._player.querySelector('.ytkit-volume-hint')) return;
+                const hint = document.createElement('div');
+                hint.className = 'ytkit-volume-hint';
+                hint.textContent = 'Scroll to change volume';
+                this._player.appendChild(hint);
+            },
+            _onWheel(e) {
+                if (!isWatchPagePath() && !location.pathname.startsWith('/embed/')) return;
+                const player = e.currentTarget;
+                if (!player) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const movie = window.movie_player || player;
+                let current = 50;
+                try { current = movie?.getVolume?.() ?? 50; } catch { /* movie_player not ready */ }
+                const delta = e.deltaY > 0 ? -5 : 5;
+                const next = Math.max(0, Math.min(100, current + delta));
+                try {
+                    movie?.setVolume?.(next);
+                    if (next > 0 && movie?.unMute) movie.unMute();
+                } catch { /* api unavailable */ }
+                const video = document.querySelector('video.html5-main-video');
+                if (video) video.volume = Math.max(0, Math.min(1, next / 100));
+                this._showHud(next);
+            },
+            _attach() {
+                this._player = document.querySelector('#movie_player, .html5-video-player');
+                if (!this._player) return;
+                if (this._player.dataset.ytkitVolumeWheel === '1') return;
+                this._player.dataset.ytkitVolumeWheel = '1';
+                this._wheelHandler = (e) => this._onWheel(e);
+                this._player.addEventListener('wheel', this._wheelHandler, { passive: false });
+                this._ensureHint();
+            },
+            init() {
+                this._ensureStyles();
+                this._attach();
+                addNavigateRule(this.id, () => { setTimeout(() => this._attach(), 600); });
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                if (this._player && this._wheelHandler) {
+                    this._player.removeEventListener('wheel', this._wheelHandler);
+                    delete this._player.dataset.ytkitVolumeWheel;
+                    this._player.querySelector('.ytkit-volume-hint')?.remove();
+                }
+                this._wheelHandler = null;
+                if (this._hudTimer) clearTimeout(this._hudTimer);
+                this._hudTimer = null;
+                this._hudEl?.remove();
+                this._hudEl = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
+                this._player = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  DISABLE LOUDNESS NORMALIZATION
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'disableLoudnessNormalization',
+            name: 'Disable Loudness Normalization',
+            description: 'Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren\u2019t officially supported.',
+            group: 'Video Player',
+            icon: 'volume-x',
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _videoListener: null,
+            _video: null,
+            _apply() {
+                const video = document.querySelector('video.html5-main-video');
+                if (!video) return;
+                this._video = video;
+                // Force the audio element gain to identity. YouTube routes loudness
+                // through a Web Audio gainNode in the MAIN world; we cannot reach
+                // that node from ISOLATED. Best we can do here is keep video.volume
+                // out of YouTube's hands by clamping it back any time it changes.
+                if (!this._videoListener) {
+                    this._videoListener = () => {
+                        if (video.volume < 1 && video.volume > 0.99) video.volume = 1;
+                    };
+                    video.addEventListener('volumechange', this._videoListener);
+                }
+                // Also flip the data attribute so the MAIN-world bridge (future
+                // ytkit-main.js work) can disable the YT loudness gainNode there.
+                document.documentElement.dataset.ytkitDisableLoudness = '1';
+            },
+            init() {
+                this._navRule = () => { setTimeout(() => this._apply(), 800); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                if (this._video && this._videoListener) {
+                    this._video.removeEventListener('volumechange', this._videoListener);
+                }
+                this._video = null;
+                this._videoListener = null;
+                delete document.documentElement.dataset.ytkitDisableLoudness;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  INITIAL PLAYER STATE — Force play/pause per fg/bg tab on load
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'initialPlayerStateForeground',
+            name: 'Initial Player State (Foreground)',
+            description: 'When opening a watch page in the foreground, play or pause regardless of the previous session\u2019s autoplay choice. \u201CInherit\u201D leaves YouTube\u2019s native behavior alone.',
+            group: 'Video Player',
+            icon: 'play-circle',
+            type: 'select',
+            settingKey: 'initialPlayerStateForeground',
+            options: { inherit: 'Inherit (YouTube default)', play: 'Force play', pause: 'Force pause' },
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _apply() {
+                const mode = String(appState?.settings?.initialPlayerStateForeground || 'inherit');
+                if (mode === 'inherit') return;
+                if (document.visibilityState !== 'visible') return;
+                const video = document.querySelector('video.html5-main-video');
+                if (!video) return;
+                if (mode === 'play') { try { video.play().catch(() => { /* user-gesture required */ }); } catch { /* */ } }
+                else if (mode === 'pause') { try { video.pause(); } catch { /* */ } }
+            },
+            init() {
+                this._navRule = () => { setTimeout(() => this._apply(), 1200); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+            destroy() { removeNavigateRule(this.id); this._navRule = null; }
+        },
+        {
+            id: 'initialPlayerStateBackground',
+            name: 'Initial Player State (Background)',
+            description: 'When opening a watch page in a background tab, play or pause regardless of YouTube\u2019s default. Useful for queueing-up multiple tabs.',
+            group: 'Video Player',
+            icon: 'pause-circle',
+            type: 'select',
+            settingKey: 'initialPlayerStateBackground',
+            options: { inherit: 'Inherit (YouTube default)', play: 'Force play', pause: 'Force pause' },
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _apply() {
+                const mode = String(appState?.settings?.initialPlayerStateBackground || 'inherit');
+                if (mode === 'inherit') return;
+                if (document.visibilityState === 'visible') return;
+                const video = document.querySelector('video.html5-main-video');
+                if (!video) return;
+                if (mode === 'play') { try { video.play().catch(() => { /* gesture-required in bg tabs */ }); } catch { /* */ } }
+                else if (mode === 'pause') { try { video.pause(); } catch { /* */ } }
+            },
+            init() {
+                this._navRule = () => { setTimeout(() => this._apply(), 1200); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+            destroy() { removeNavigateRule(this.id); this._navRule = null; }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  PER-CHANNEL INTRO/OUTRO OFFSETS — Auto-skip intros/outros per channel
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'perChannelIntroOutro',
+            name: 'Per-Channel Intro/Outro Skip',
+            description: 'Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools \u2192 Set Intro/Outro). Stored under perChannelIntroOutroData.',
+            group: 'Video Player',
+            icon: 'skip-forward',
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _video: null,
+            _timeListener: null,
+            _outroSkipped: false,
+            _currentChannelId: '',
+            _STORAGE_KEY: 'perChannelIntroOutroData',
+            _getOffsets(channelId) {
+                const data = appState?.settings?.[this._STORAGE_KEY] || {};
+                const entry = data[channelId];
+                if (!entry || typeof entry !== 'object') return null;
+                const intro = Math.max(0, Number(entry.introSec) || 0);
+                const outro = Math.max(0, Number(entry.outroSec) || 0);
+                if (intro === 0 && outro === 0) return null;
+                return { intro, outro };
+            },
+            _setOffsets(channelId, introSec, outroSec) {
+                if (!channelId) return;
+                const data = { ...(appState?.settings?.[this._STORAGE_KEY] || {}) };
+                const intro = Math.max(0, Number(introSec) || 0);
+                const outro = Math.max(0, Number(outroSec) || 0);
+                if (intro === 0 && outro === 0) { delete data[channelId]; }
+                else { data[channelId] = { introSec: intro, outroSec: outro, updatedAt: Date.now() }; }
+                appState.settings[this._STORAGE_KEY] = data;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('IntroOutro', `Save failed: ${e.message}`); }
+            },
+            _getCurrentChannelId() {
+                const a = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                if (a) {
+                    const m = a.getAttribute('href')?.match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    if (m) return m[1];
+                }
+                const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                if (handleLink) return handleLink.getAttribute('href') || '';
+                return '';
+            },
+            _onTimeUpdate() {
+                if (!this._video) return;
+                const offsets = this._getOffsets(this._currentChannelId);
+                if (!offsets) return;
+                if (offsets.intro > 0 && this._video.currentTime < offsets.intro && this._video.currentTime > 0.2) {
+                    this._video.currentTime = offsets.intro;
+                }
+                if (offsets.outro > 0 && this._video.duration > 0 && !this._outroSkipped) {
+                    const cutoff = this._video.duration - offsets.outro;
+                    if (this._video.currentTime >= cutoff) {
+                        this._outroSkipped = true;
+                        try { this._video.currentTime = this._video.duration; } catch { /* end-of-stream */ }
+                    }
+                }
+            },
+            _attach() {
+                this._video = document.querySelector('video.html5-main-video');
+                this._currentChannelId = this._getCurrentChannelId();
+                this._outroSkipped = false;
+                if (!this._video || !this._currentChannelId) return;
+                if (!this._timeListener) {
+                    this._timeListener = () => this._onTimeUpdate();
+                }
+                this._video.addEventListener('timeupdate', this._timeListener);
+            },
+            _detach() {
+                if (this._video && this._timeListener) {
+                    this._video.removeEventListener('timeupdate', this._timeListener);
+                }
+                this._video = null;
+                this._currentChannelId = '';
+                this._outroSkipped = false;
+            },
+            init() {
+                this._navRule = () => {
+                    this._detach();
+                    setTimeout(() => this._attach(), 1200);
+                };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._detach();
+                this._timeListener = null;
             }
         },
 

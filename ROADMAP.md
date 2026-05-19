@@ -945,19 +945,28 @@ Acceptance:
 
 Features:
 
-- Tweaks-grade quality matrix by normal/theater/fullscreen/background/embed.
-- Initial player state for foreground/background tabs.
-- Disable loudness normalization where technically possible.
-- Volume wheel mode with visible hover affordance.
-- Subtitle-included screenshots with PNG/JPEG/WebP.
-- Per-channel intro/outro offsets.
-- Expanded speed range and visible speed palette.
+- [ ] Tweaks-grade quality matrix by normal/theater/fullscreen/background/embed. *(deferred to v3.26.1/v3.27 — needs MAIN-world fullscreenchange + per-context listener wiring)*
+- [x] Initial player state for foreground/background tabs.
+- [x] Disable loudness normalization where technically possible. *(best-effort from ISOLATED world; the html `data-ytkit-disable-loudness="1"` attribute is set so the future MAIN-world bridge can disable the Web Audio gainNode there)*
+- [x] Volume wheel mode with visible hover affordance.
+- [x] Subtitle-included screenshots with PNG/JPEG/WebP.
+- [x] Per-channel intro/outro offsets.
+- [x] Expanded speed range and visible speed palette.
+
+Progress:
+
+- 2026-05-19: Shipped `downloadScreenshotFormat` (PNG/JPEG/WebP picker) and `downloadSubtitlesWithScreenshot` (bakes the current `.ytp-caption-segment` text into the canvas before encoding). `_capture` threads chosen mime through `_blobFromCanvas` and `_copyBlobToClipboard`; clipboard write stays PNG-only per the ClipboardItem API limitation.
+- 2026-05-19: Expanded `SPEED_OPTIONS` from 10 → 18 entries (0.1× through 16×). Speed popup grid widened to 6 columns. `persistentSpeed` storage and visible palette stay in sync via the existing `_applied` reset path.
+- 2026-05-19: Added `volumeWheelMode` — scroll-over-player adjusts volume in 5% steps with a 1.2 s HUD chip and a persistent hover hint. Wheel listener uses `{ passive: false }` so `preventDefault` stops the page scroll while over the player. No keyboard shortcut added.
+- 2026-05-19: Added `initialPlayerStateForeground` / `initialPlayerStateBackground` selects (inherit/play/pause) gated by `document.visibilityState`. Background-tab play is best-effort since most browsers gate autoplay-in-background behind a prior user gesture.
+- 2026-05-19: Added `disableLoudnessNormalization` — clamps `video.volume` back to 1.0 when YouTube reduces it, and sets `data-ytkit-disable-loudness="1"` on `<html>` so the future MAIN-world bridge can disable the Web Audio gainNode there.
+- 2026-05-19: Added `perChannelIntroOutro` (data under `perChannelIntroOutroData`). Stores `{ introSec, outroSec }` per channel ID; the timeupdate listener fast-forwards past the intro window and seeks to end when the outro cutoff is reached.
 
 Acceptance:
 
-- MAIN-world bridge handles quality without showing YouTube menus.
-- No keyboard shortcuts added.
-- Every player control can be disabled and fully removed.
+- [ ] MAIN-world bridge handles quality without showing YouTube menus. *(open — bundled with the deferred per-context quality matrix work)*
+- [x] No keyboard shortcuts added.
+- [x] Every player control can be disabled and fully removed. *(every new feature ships destroy() that removes listeners, HUDs, hints, style tags, and data attributes; covered by 8 v3.26.0 hardening tests)*
 
 ### v3.27.0: Downloads And Local Media Library
 
