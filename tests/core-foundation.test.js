@@ -171,6 +171,88 @@ test('surface selectors prefer stable selectors and emit first-miss diagnostics'
     assert.deepEqual(events.map((event) => event.detail.selector), ['bad[', '.missing']);
 });
 
+test('surface selector map promotes roadmap surfaces with stable-first fallback chains', () => {
+    const core = loadFoundation();
+    const requiredSurfaces = [
+        'appShell',
+        'nav',
+        'search',
+        'leftNav',
+        'feed',
+        'feedCard',
+        'thumbnail',
+        'shortsShelf',
+        'watch',
+        'relatedSidebar',
+        'player',
+        'mainVideo',
+        'playerChrome',
+        'playerSettings',
+        'comments',
+        'commentComposer',
+        'engagementPanels',
+        'profile',
+        'notifications',
+        'liveChatFrame',
+        'liveChat',
+        'liveChatPlaceholder'
+    ];
+
+    for (const surface of requiredSurfaces) {
+        const entry = core.getSurfaceSelectorEntry(surface);
+        assert.ok(entry, `${surface} should have a promoted selector-map entry`);
+        assert.ok(entry.stable.length >= 1, `${surface} should define at least one stable selector`);
+        assert.ok(entry.fallback.length >= 1, `${surface} should define at least one fallback selector`);
+        assert.deepEqual(
+            entry.selectors.slice(0, entry.stable.length),
+            entry.stable,
+            `${surface} should try stable selectors before fallbacks`
+        );
+    }
+
+    assert.ok(core.SurfaceSelectorMap.feed.highChurn, 'feed should be marked high churn');
+    assert.ok(core.SurfaceSelectorMap.liveChat.needsFreshCapture, 'live chat should require a fresh capture');
+    assert.ok(core.getSurfaceSelectorChain('playerChrome').includes('.ytp-delhi-modern'),
+        'player chrome chain should include new-player transition selectors');
+});
+
+test('selector health snapshot tracks hits, misses, errors, and exports JSON', () => {
+    const events = [];
+    const core = loadFoundation({
+        dispatchEvent(event) {
+            events.push(event);
+        }
+    });
+    const feed = { id: 'feed' };
+    const root = {
+        querySelector(selector) {
+            if (selector === 'bad[') throw new Error('invalid selector');
+            if (selector === 'ytd-browse ytd-rich-grid-renderer') return feed;
+            return null;
+        },
+        querySelectorAll(selector) {
+            if (selector === 'ytd-notification-topbar-button-renderer') return [{ id: 'bell' }];
+            return [];
+        }
+    };
+
+    assert.equal(core.findSurfaceElement('feed', { root }), feed);
+    assert.equal(core.findSurfaceElement(['bad['], { root }), null);
+    assert.equal(core.findSurfaceElements('notifications', { root }).length, 1);
+
+    const snapshot = core.getSelectorHealthSnapshot();
+    const feedHealth = snapshot.find((entry) => entry.surface === 'feed');
+    const notificationHealth = snapshot.find((entry) => entry.surface === 'notifications');
+    const customHealth = snapshot.find((entry) => entry.surface === 'custom');
+
+    assert.equal(feedHealth.hitCount, 1);
+    assert.equal(notificationHealth.hitCount, 1);
+    assert.equal(customHealth, undefined, 'custom one-off selectors should not pollute surface-map reports');
+    assert.equal(events.length, 1);
+    assert.equal(events[0].detail.selector, 'bad[');
+    assert.equal(JSON.parse(core.exportSelectorHealth()).schemaVersion, 1);
+});
+
 test('trusted html helper centralizes TrustedTypes policy creation', () => {
     const createdPolicies = [];
     const core = loadFoundation({
