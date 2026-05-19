@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.22.0';
+    const YTKIT_VERSION = '3.25.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1479,6 +1479,324 @@ return response;
         enable()  { this._enabled = true; storageWrite('ytkit_debug', true); },
         disable() { this._enabled = false; storageWrite('ytkit_debug', false); }
     };
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  PREDICATE SANDBOX — Expression-only filter predicates (Option C)
+    //  See docs/predicate-sandbox-investigation.md for the threat model.
+    //  No eval, no Function, no with. The body parses into an AST of
+    //  comparisons/logical-ops/literal/ctx-access/method-call only.
+    //  ctx is frozen at the call site. Evaluator returns boolean or
+    //  throws PredicateError (caught by the caller, never propagated).
+    // ═══════════════════════════════════════════════════════════════════
+    class PredicateError extends Error {
+        constructor(message, position = -1) {
+            super(message);
+            this.name = 'PredicateError';
+            this.position = position;
+        }
+    }
+    const PredicateSandbox = (() => {
+        const ALLOWED_METHODS = new Set(['includes', 'startsWith', 'endsWith', 'match', 'test']);
+        const STRING_METHODS = new Set(['includes', 'startsWith', 'endsWith', 'match']);
+        const REGEX_METHODS = new Set(['test']);
+        // ReDoS guard — same shape videoHider uses for keyword regex.
+        function hasUnsafeQuantifiers(pattern) {
+            const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pattern);
+            const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pattern);
+            return adjacent || groupInner;
+        }
+
+        // ── Tokenizer ──
+        function tokenize(src) {
+            const tokens = [];
+            let i = 0;
+            const len = src.length;
+            while (i < len) {
+                const ch = src[i];
+                if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') { i++; continue; }
+                // Skip // and /* */ comments (not regex; regex must be quoted as string).
+                if (ch === '/' && src[i + 1] === '/') {
+                    while (i < len && src[i] !== '\n') i++;
+                    continue;
+                }
+                if (ch === '/' && src[i + 1] === '*') {
+                    i += 2;
+                    while (i < len && !(src[i] === '*' && src[i + 1] === '/')) i++;
+                    i += 2;
+                    continue;
+                }
+                if (ch === '(' || ch === ')' || ch === ',' || ch === '.') {
+                    tokens.push({ type: ch, value: ch, pos: i });
+                    i++; continue;
+                }
+                if (ch === '&' && src[i + 1] === '&') { tokens.push({ type: 'op', value: '&&', pos: i }); i += 2; continue; }
+                if (ch === '|' && src[i + 1] === '|') { tokens.push({ type: 'op', value: '||', pos: i }); i += 2; continue; }
+                if (ch === '!') {
+                    if (src[i + 1] === '=' && src[i + 2] === '=') { tokens.push({ type: 'op', value: '!==', pos: i }); i += 3; continue; }
+                    tokens.push({ type: 'op', value: '!', pos: i }); i++; continue;
+                }
+                if (ch === '=' && src[i + 1] === '=' && src[i + 2] === '=') { tokens.push({ type: 'op', value: '===', pos: i }); i += 3; continue; }
+                if (ch === '<' && src[i + 1] === '=') { tokens.push({ type: 'op', value: '<=', pos: i }); i += 2; continue; }
+                if (ch === '>' && src[i + 1] === '=') { tokens.push({ type: 'op', value: '>=', pos: i }); i += 2; continue; }
+                if (ch === '<') { tokens.push({ type: 'op', value: '<', pos: i }); i++; continue; }
+                if (ch === '>') { tokens.push({ type: 'op', value: '>', pos: i }); i++; continue; }
+                if (ch === '"' || ch === "'") {
+                    const quote = ch;
+                    const startPos = i;
+                    i++;
+                    let value = '';
+                    while (i < len && src[i] !== quote) {
+                        if (src[i] === '\\' && i + 1 < len) {
+                            const next = src[i + 1];
+                            const map = { n: '\n', t: '\t', r: '\r', '\\': '\\', "'": "'", '"': '"' };
+                            value += map[next] != null ? map[next] : next;
+                            i += 2; continue;
+                        }
+                        value += src[i]; i++;
+                    }
+                    if (i >= len) throw new PredicateError('Unterminated string literal', startPos);
+                    i++;
+                    tokens.push({ type: 'string', value, pos: startPos });
+                    continue;
+                }
+                if (ch >= '0' && ch <= '9') {
+                    const startPos = i;
+                    let num = '';
+                    while (i < len && /[0-9.]/.test(src[i])) { num += src[i]; i++; }
+                    tokens.push({ type: 'number', value: Number(num), pos: startPos });
+                    continue;
+                }
+                if (/[a-zA-Z_$]/.test(ch)) {
+                    const startPos = i;
+                    let id = '';
+                    while (i < len && /[a-zA-Z0-9_$]/.test(src[i])) { id += src[i]; i++; }
+                    if (id === 'true' || id === 'false') tokens.push({ type: 'bool', value: id === 'true', pos: startPos });
+                    else if (id === 'null') tokens.push({ type: 'null', value: null, pos: startPos });
+                    else tokens.push({ type: 'ident', value: id, pos: startPos });
+                    continue;
+                }
+                throw new PredicateError(`Unexpected character "${ch}"`, i);
+            }
+            return tokens;
+        }
+
+        // ── Parser (recursive descent) ──
+        function parse(src) {
+            const tokens = tokenize(src);
+            let pos = 0;
+            const peek = () => tokens[pos];
+            const eat = (type, value) => {
+                const t = tokens[pos];
+                if (!t || t.type !== type || (value != null && t.value !== value)) {
+                    const got = t ? `${t.type}(${t.value})` : 'end of input';
+                    const want = value != null ? `${type}(${value})` : type;
+                    throw new PredicateError(`Expected ${want}, got ${got}`, t ? t.pos : src.length);
+                }
+                pos++;
+                return t;
+            };
+            function parseOr() {
+                let left = parseAnd();
+                while (peek()?.type === 'op' && peek().value === '||') {
+                    eat('op', '||');
+                    left = { kind: 'logical', op: '||', left, right: parseAnd() };
+                }
+                return left;
+            }
+            function parseAnd() {
+                let left = parseNot();
+                while (peek()?.type === 'op' && peek().value === '&&') {
+                    eat('op', '&&');
+                    left = { kind: 'logical', op: '&&', left, right: parseNot() };
+                }
+                return left;
+            }
+            function parseNot() {
+                if (peek()?.type === 'op' && peek().value === '!') {
+                    eat('op', '!');
+                    return { kind: 'unary', op: '!', operand: parseNot() };
+                }
+                return parseCmp();
+            }
+            function parseCmp() {
+                const left = parseValue();
+                const t = peek();
+                if (t?.type === 'op' && ['===', '!==', '<', '<=', '>', '>='].includes(t.value)) {
+                    eat('op', t.value);
+                    const right = parseValue();
+                    return { kind: 'cmp', op: t.value, left, right };
+                }
+                return left;
+            }
+            function parseValue() {
+                const t = peek();
+                if (!t) throw new PredicateError('Unexpected end of input', src.length);
+                if (t.type === '(') {
+                    eat('(');
+                    const inner = parseOr();
+                    eat(')');
+                    return inner;
+                }
+                if (t.type === 'number' || t.type === 'string' || t.type === 'bool' || t.type === 'null') {
+                    pos++;
+                    return { kind: 'literal', value: t.value };
+                }
+                if (t.type === 'ident') {
+                    if (t.value !== 'ctx') throw new PredicateError(`Only "ctx" is allowed, got "${t.value}"`, t.pos);
+                    pos++;
+                    const path = [];
+                    while (peek()?.type === '.') {
+                        eat('.');
+                        const ident = eat('ident');
+                        path.push(ident.value);
+                    }
+                    if (path.length === 0) throw new PredicateError('ctx requires at least one property access', t.pos);
+                    if (peek()?.type === '(') {
+                        const method = path.pop();
+                        if (!ALLOWED_METHODS.has(method)) {
+                            throw new PredicateError(`Method "${method}" not allowed`, t.pos);
+                        }
+                        eat('(');
+                        const args = [];
+                        if (peek()?.type !== ')') {
+                            args.push(parseValue());
+                            while (peek()?.type === ',') { eat(','); args.push(parseValue()); }
+                            if (args.length > 2) throw new PredicateError(`Method "${method}" takes 1-2 args`, t.pos);
+                        }
+                        eat(')');
+                        if (method === 'match' || method === 'test') {
+                            // First arg must be a literal string we can ReDoS-screen at parse time.
+                            const patternArg = args[0];
+                            if (!patternArg || patternArg.kind !== 'literal' || typeof patternArg.value !== 'string') {
+                                throw new PredicateError(`${method}() needs a string literal pattern`, t.pos);
+                            }
+                            if (hasUnsafeQuantifiers(patternArg.value)) {
+                                throw new PredicateError(`${method}() pattern rejected: nested quantifiers (ReDoS risk)`, t.pos);
+                            }
+                            try { new RegExp(patternArg.value, args[1]?.value || ''); }
+                            catch (e) { throw new PredicateError(`Invalid regex: ${e.message}`, t.pos); }
+                        }
+                        return { kind: 'method', target: path, method, args };
+                    }
+                    return { kind: 'access', path };
+                }
+                throw new PredicateError(`Unexpected token "${t.value}"`, t.pos);
+            }
+            const ast = parseOr();
+            if (pos !== tokens.length) {
+                const remaining = tokens[pos];
+                throw new PredicateError(`Unexpected trailing token "${remaining.value}"`, remaining.pos);
+            }
+            return ast;
+        }
+
+        function readPath(ctx, path, posInfo) {
+            let cursor = ctx;
+            for (const seg of path) {
+                if (cursor == null) return undefined;
+                if (!Object.prototype.hasOwnProperty.call(cursor, seg)) {
+                    throw new PredicateError(`ctx.${path.join('.')} is not a known field`, posInfo);
+                }
+                cursor = cursor[seg];
+            }
+            return cursor;
+        }
+
+        function evaluate(node, ctx) {
+            switch (node.kind) {
+                case 'literal': return node.value;
+                case 'logical':
+                    if (node.op === '&&') return !!evaluate(node.left, ctx) && !!evaluate(node.right, ctx);
+                    return !!evaluate(node.left, ctx) || !!evaluate(node.right, ctx);
+                case 'unary': return !evaluate(node.operand, ctx);
+                case 'cmp': {
+                    const a = evaluate(node.left, ctx);
+                    const b = evaluate(node.right, ctx);
+                    switch (node.op) {
+                        case '===': return a === b;
+                        case '!==': return a !== b;
+                        case '<': return a < b;
+                        case '<=': return a <= b;
+                        case '>': return a > b;
+                        case '>=': return a >= b;
+                    }
+                    return false;
+                }
+                case 'access': return readPath(ctx, node.path, -1);
+                case 'method': {
+                    const target = readPath(ctx, node.target, -1);
+                    if (target == null) return false;
+                    const args = node.args.map(a => evaluate(a, ctx));
+                    if (node.method === 'test') {
+                        if (typeof target !== 'string') return false;
+                        try {
+                            const re = new RegExp(args[0], args[1] || '');
+                            return re.test(target);
+                        } catch { return false; }
+                    }
+                    if (node.method === 'match') {
+                        if (typeof target !== 'string') return false;
+                        try {
+                            const re = new RegExp(args[0], args[1] || '');
+                            return re.test(target);
+                        } catch { return false; }
+                    }
+                    if (STRING_METHODS.has(node.method) && typeof target === 'string') {
+                        return target[node.method](args[0]);
+                    }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function compile(source) {
+            if (typeof source !== 'string') return { ok: false, error: 'Predicate must be a string', position: 0 };
+            const trimmed = source.trim();
+            if (!trimmed) return { ok: false, error: 'Predicate is empty', position: 0 };
+            if (trimmed.length > 20000) return { ok: false, error: 'Predicate too long', position: 20000 };
+            try {
+                const ast = parse(trimmed);
+                let consecutiveErrors = 0;
+                const BUDGET_MS = 5;
+                const ERROR_CIRCUIT = 10;
+                let circuitOpen = false;
+                const evaluator = (rawCtx) => {
+                    if (circuitOpen) return false;
+                    const ctx = Object.isFrozen(rawCtx) ? rawCtx : Object.freeze({ ...rawCtx });
+                    const start = performance.now();
+                    try {
+                        const result = !!evaluate(ast, ctx);
+                        if (performance.now() - start > BUDGET_MS) {
+                            DebugManager.log('Predicate', 'Eval exceeded 5ms budget; auto-disabled for route');
+                            circuitOpen = true;
+                            return false;
+                        }
+                        consecutiveErrors = 0;
+                        return result;
+                    } catch (e) {
+                        consecutiveErrors++;
+                        DebugManager.log('Predicate', `Eval error: ${e.message}`);
+                        if (consecutiveErrors >= ERROR_CIRCUIT) {
+                            circuitOpen = true;
+                            DebugManager.log('Predicate', 'Circuit opened after 10 consecutive errors; auto-disabled');
+                        }
+                        return false;
+                    }
+                };
+                evaluator.reset = () => { circuitOpen = false; consecutiveErrors = 0; };
+                return { ok: true, evaluator, ast };
+            } catch (e) {
+                return {
+                    ok: false,
+                    error: e instanceof PredicateError ? e.message : String(e),
+                    position: e instanceof PredicateError ? e.position : -1
+                };
+            }
+        }
+
+        return { compile, PredicateError };
+    })();
 
     // Sync effective codec preference to MAIN world via data attribute bridge.
     // Called by forceH264 and codecSelector features when they init/destroy.
@@ -4029,6 +4347,11 @@ return response;
             ],
             advancedLocalPredicate: false,
             advancedLocalPredicateCode: '',
+            // v3.25.0 — Content filtering superset (Phase 2 completion)
+            commentFilterManager: false,
+            commentFilterRules: '',
+            bulkCardActions: false,
+            feedTriageProfile: false,
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -16369,12 +16692,66 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 delete element.dataset.ytkitFilterReason;
 
+                if (appState.settings.advancedLocalPredicate) {
+                    const evaluator = this._getPredicateEvaluator();
+                    if (evaluator) {
+                        const ctx = this._buildPredicateCtx(element, videoId, channelInfo);
+                        if (evaluator(ctx)) {
+                            element.dataset.ytkitFilterReason = 'predicate';
+                            return true;
+                        }
+                    }
+                }
+
                 const minDuration = (appState.settings.hideVideosDurationFilter || 0) * 60;
                 if (minDuration > 0) {
                     const duration = this._extractDuration(element);
                     if (duration > 0 && duration < minDuration) return true;
                 }
                 return false;
+            },
+
+            _getPredicateEvaluator() {
+                const code = appState.settings.advancedLocalPredicateCode || '';
+                if (!code.trim()) return null;
+                if (this._predicateCache?.source === code) return this._predicateCache.evaluator;
+                const compiled = PredicateSandbox.compile(code);
+                if (!compiled.ok) {
+                    DebugManager.log('Predicate', `Compile failed: ${compiled.error} (pos ${compiled.position})`);
+                    this._predicateCache = { source: code, evaluator: null, error: compiled.error };
+                    return null;
+                }
+                this._predicateCache = { source: code, evaluator: compiled.evaluator, error: null };
+                return compiled.evaluator;
+            },
+
+            _buildPredicateCtx(element, videoId, channelInfo) {
+                const metadata = this._extractVideoMetadata(element);
+                const path = window.location.pathname;
+                let page = 'other';
+                if (path === '/' || path === '') page = 'home';
+                else if (path.startsWith('/feed/subscriptions')) page = 'subscriptions';
+                else if (path.startsWith('/results')) page = 'search';
+                else if (path.startsWith('/watch')) page = 'watch';
+                else if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/') || path.startsWith('/user/')) page = 'channel';
+                const ctx = {
+                    videoId: videoId || '',
+                    channelId: channelInfo?.id || '',
+                    channelHandle: channelInfo?.handle || '',
+                    title: (metadata?.title || '').toLowerCase(),
+                    channelName: (channelInfo?.name || '').toLowerCase(),
+                    durationSec: this._extractDuration(element) || 0,
+                    viewCount: metadata?.views || 0,
+                    ageDays: 0,
+                    isLive: !!metadata?.isLive,
+                    isUpcoming: !!metadata?.isUpcoming,
+                    isShort: false,
+                    isMix: !!metadata?.isMix,
+                    isMembersOnly: false,
+                    isAutoDubbed: !!metadata?.isAutoDubbed,
+                    page
+                };
+                return Object.freeze(ctx);
             },
 
             _processVideoElement(element) {
@@ -28674,6 +29051,449 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule('audioTrackLanguage');
                 this._navRule = null;
                 this._noticeLogged = false;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  COMMENT FILTER — BlockTube-grade comment hiding by author/keyword
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'commentFilterManager',
+            name: 'Comment Filter',
+            description: 'Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded).',
+            group: 'Comments',
+            icon: 'filter',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _styleObserver: null,
+            _hiddenCount: 0,
+            _compiledRules: null,
+            _compiledRulesSource: '',
+            _lastRulesHash: '',
+
+            _compileRules() {
+                const raw = (appState.settings.commentFilterRules || '').trim();
+                if (raw === this._compiledRulesSource && this._compiledRules) return this._compiledRules;
+                this._compiledRulesSource = raw;
+                if (!raw) { this._compiledRules = { plain: [], deny: [], allow: [], regexes: [] }; return this._compiledRules; }
+                const compiled = { plain: [], deny: [], allow: [], regexes: [] };
+                for (const rawRule of raw.split(/\r?\n|,/)) {
+                    const rule = rawRule.trim();
+                    if (!rule) continue;
+                    if (rule.startsWith('/')) {
+                        const m = rule.match(/^\/(.+)\/([gimsuy]*)$/);
+                        if (!m) continue;
+                        const pat = m[1];
+                        const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
+                        const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
+                        if (adjacent || groupInner) {
+                            DebugManager.log('CommentFilter', 'Regex rejected: nested quantifiers (ReDoS risk)');
+                            continue;
+                        }
+                        try { compiled.regexes.push(new RegExp(m[1], m[2])); }
+                        catch (e) { DebugManager.log('CommentFilter', 'Invalid regex', e.message); }
+                    } else if (rule.startsWith('!')) {
+                        compiled.allow.push(rule.slice(1).toLowerCase());
+                    } else if (rule.startsWith('@')) {
+                        compiled.deny.push({ kind: 'author', value: rule.slice(1).toLowerCase() });
+                    } else {
+                        compiled.deny.push({ kind: 'text', value: rule.toLowerCase() });
+                    }
+                }
+                this._compiledRules = compiled;
+                return compiled;
+            },
+
+            _shouldHideThread(thread) {
+                const rules = this._compileRules();
+                if (!rules.plain.length && !rules.deny.length && !rules.regexes.length) return false;
+                const author = (thread.querySelector('#author-text, a#author-text, #header-author #author-text')?.textContent || '').trim().toLowerCase();
+                const body = (thread.querySelector('#content-text, ytd-expander #content-text')?.textContent || '').trim().toLowerCase();
+                if (rules.allow.length && rules.allow.some(a => body.includes(a) || author.includes(a))) return false;
+                for (const deny of rules.deny) {
+                    if (deny.kind === 'author' && author.includes(deny.value)) return true;
+                    if (deny.kind === 'text' && body.includes(deny.value)) return true;
+                }
+                for (const re of rules.regexes) {
+                    try { if (re.test(body) || re.test(author)) return true; }
+                    catch { /* eval error — skip */ }
+                }
+                return false;
+            },
+
+            _processThread(thread) {
+                if (!(thread instanceof HTMLElement)) return;
+                if (thread.dataset.ytkitCommentFilterChecked === this._lastRulesHash) return;
+                thread.dataset.ytkitCommentFilterChecked = this._lastRulesHash;
+                const hide = this._shouldHideThread(thread);
+                if (hide) {
+                    if (thread.dataset.ytkitCommentFilterHidden !== '1') {
+                        thread.dataset.ytkitCommentFilterHidden = '1';
+                        thread.dataset.ytkitCommentFilterDisplay = thread.style.display || '';
+                        thread.style.display = 'none';
+                        this._hiddenCount++;
+                    }
+                } else if (thread.dataset.ytkitCommentFilterHidden === '1') {
+                    thread.style.display = thread.dataset.ytkitCommentFilterDisplay || '';
+                    delete thread.dataset.ytkitCommentFilterHidden;
+                    delete thread.dataset.ytkitCommentFilterDisplay;
+                    this._hiddenCount = Math.max(0, this._hiddenCount - 1);
+                }
+            },
+
+            _scanAll() {
+                this._lastRulesHash = String(this._compiledRulesSource);
+                this._hiddenCount = 0;
+                const comments = document.querySelector('ytd-comments#comments');
+                if (!comments) return;
+                comments.querySelectorAll('ytd-comment-thread-renderer').forEach(t => this._processThread(t));
+            },
+
+            init() {
+                if (!isWatchPagePath()) return;
+                this._compiledRules = null;
+                this._compiledRulesSource = '';
+                this._lastRulesHash = '';
+                this._scanAll();
+                addMutationRule(this.id, (mutations) => {
+                    for (const m of mutations) {
+                        if (m.type !== 'childList') continue;
+                        for (const node of m.addedNodes) {
+                            if (node.nodeType !== 1) continue;
+                            if (node.matches?.('ytd-comment-thread-renderer')) this._processThread(node);
+                            else node.querySelectorAll?.('ytd-comment-thread-renderer').forEach(t => this._processThread(t));
+                        }
+                    }
+                });
+                addNavigateRule(this.id, () => {
+                    setTimeout(() => isWatchPagePath() && this._scanAll(), 800);
+                });
+            },
+
+            destroy() {
+                removeMutationRule(this.id);
+                removeNavigateRule(this.id);
+                document.querySelectorAll('ytd-comment-thread-renderer[data-ytkit-comment-filter-hidden="1"]').forEach(t => {
+                    t.style.display = t.dataset.ytkitCommentFilterDisplay || '';
+                    delete t.dataset.ytkitCommentFilterHidden;
+                    delete t.dataset.ytkitCommentFilterDisplay;
+                    delete t.dataset.ytkitCommentFilterChecked;
+                });
+                this._compiledRules = null;
+                this._compiledRulesSource = '';
+                this._hiddenCount = 0;
+            }
+        },
+        {
+            id: 'commentFilterRules',
+            name: 'Comment Filter Rules',
+            description: 'One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded).',
+            group: 'Comments',
+            icon: 'filter',
+            type: 'textarea',
+            settingKey: 'commentFilterRules',
+            dependsOn: 'commentFilterManager',
+            init() {
+                const f = getFeatureById('commentFilterManager');
+                if (f?._initialized) f._scanAll();
+            },
+            destroy() { /* textarea — no runtime side effects of its own */ }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  BULK CARD ACTIONS — Multi-select for feed cards
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'bulkCardActions',
+            name: 'Bulk Card Actions',
+            description: 'Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting.',
+            group: 'Content',
+            icon: 'check-square',
+            pages: [PageTypes.HOME, PageTypes.SUBSCRIPTIONS, PageTypes.SEARCH, PageTypes.CHANNEL],
+            _styleElement: null,
+            _selectMode: false,
+            _selected: null,
+            _toggleBtn: null,
+            _actionBar: null,
+            _clickHandler: null,
+
+            _injectStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-bulk-toggle{position:fixed;right:16px;bottom:16px;z-index:9000;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:#1f1f24;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+                    .ytkit-bulk-toggle[data-active="1"]{background:#7c3aed;border-color:#a78bfa;}
+                    .ytkit-bulk-bar{position:fixed;right:16px;bottom:64px;z-index:9000;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:#0f0f10;color:#f4f4f5;border:1px solid #3f3f46;font:600 12px/1 'YouTube Sans',system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+                    .ytkit-bulk-bar button{padding:8px 10px;border-radius:6px;border:1px solid #3f3f46;background:#1f1f24;color:#f4f4f5;cursor:pointer;font:inherit;}
+                    .ytkit-bulk-bar button:hover{background:#27272a;}
+                    .ytkit-bulk-bar .ytkit-bulk-count{padding:0 6px;color:#a78bfa;}
+                    body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer,
+                    body[data-ytkit-bulk-select="1"] ytd-video-renderer,
+                    body[data-ytkit-bulk-select="1"] ytd-grid-video-renderer,
+                    body[data-ytkit-bulk-select="1"] ytd-compact-video-renderer{outline:2px dashed transparent;outline-offset:-4px;cursor:pointer;}
+                    body[data-ytkit-bulk-select="1"] ytd-rich-item-renderer:hover,
+                    body[data-ytkit-bulk-select="1"] ytd-video-renderer:hover{outline-color:#a78bfa;}
+                    body[data-ytkit-bulk-select="1"] [data-ytkit-bulk-selected="1"]{outline-color:#7c3aed!important;background:rgba(124,58,237,.12);}
+                `, 'bulk-card-actions');
+            },
+
+            _extractVideoIdFromCard(card) {
+                const a = card.querySelector('a[href*="/watch"], a[href*="/shorts"]');
+                if (!a) return '';
+                try {
+                    const url = new URL(a.href, location.href);
+                    const v = url.searchParams.get('v');
+                    if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+                    const seg = url.pathname.split('/').filter(Boolean);
+                    if (seg[0] === 'shorts' && /^[A-Za-z0-9_-]{11}$/.test(seg[1] || '')) return seg[1];
+                } catch { /* invalid url */ }
+                return '';
+            },
+
+            _findActionBar() {
+                if (this._actionBar?.isConnected) return this._actionBar;
+                this._actionBar = document.createElement('div');
+                this._actionBar.className = 'ytkit-bulk-bar';
+                this._actionBar.setAttribute('role', 'toolbar');
+                this._actionBar.setAttribute('aria-label', 'Bulk card actions');
+                const count = document.createElement('span');
+                count.className = 'ytkit-bulk-count';
+                count.dataset.role = 'count';
+                count.textContent = '0 selected';
+                const hideBtn = document.createElement('button');
+                hideBtn.type = 'button';
+                hideBtn.textContent = 'Hide';
+                hideBtn.addEventListener('click', () => this._bulkHide());
+                const allowBtn = document.createElement('button');
+                allowBtn.type = 'button';
+                allowBtn.textContent = 'Allow';
+                allowBtn.addEventListener('click', () => this._bulkAllow());
+                const copyBtn = document.createElement('button');
+                copyBtn.type = 'button';
+                copyBtn.textContent = 'Copy URLs';
+                copyBtn.addEventListener('click', () => this._bulkCopy());
+                const clearBtn = document.createElement('button');
+                clearBtn.type = 'button';
+                clearBtn.textContent = 'Clear';
+                clearBtn.addEventListener('click', () => this._clearSelection());
+                this._actionBar.append(count, hideBtn, allowBtn, copyBtn, clearBtn);
+                document.body.appendChild(this._actionBar);
+                this._actionBar.hidden = true;
+                return this._actionBar;
+            },
+
+            _renderActionBar() {
+                if (!this._actionBar?.isConnected) return;
+                this._actionBar.hidden = !this._selectMode;
+                if (!this._selectMode) return;
+                const count = this._actionBar.querySelector('[data-role="count"]');
+                if (count) count.textContent = `${this._selected?.size || 0} selected`;
+            },
+
+            _findCard(target) {
+                if (!(target instanceof Element)) return null;
+                return target.closest('ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
+            },
+
+            _toggleCardSelection(card) {
+                if (!card) return;
+                if (!this._selected) this._selected = new Map();
+                const id = this._extractVideoIdFromCard(card);
+                if (!id) return;
+                if (this._selected.has(id)) {
+                    this._selected.delete(id);
+                    delete card.dataset.ytkitBulkSelected;
+                } else {
+                    this._selected.set(id, card);
+                    card.dataset.ytkitBulkSelected = '1';
+                }
+                this._renderActionBar();
+            },
+
+            _clearSelection() {
+                if (!this._selected) return;
+                for (const [, card] of this._selected) delete card.dataset.ytkitBulkSelected;
+                this._selected.clear();
+                this._renderActionBar();
+            },
+
+            _bulkHide() {
+                if (!this._selected?.size) return;
+                const vh = getFeatureById('hideVideosFromHome');
+                if (!vh?._addHiddenVideos) return;
+                const ids = Array.from(this._selected.keys());
+                vh._addHiddenVideos(ids);
+                for (const [, card] of this._selected) {
+                    delete card.dataset.ytkitBulkSelected;
+                    card.classList.add('ytkit-video-hidden');
+                }
+                this._selected.clear();
+                this._renderActionBar();
+                if (typeof showToast === 'function') showToast(`Hidden ${ids.length} video${ids.length === 1 ? '' : 's'}`, '#22c55e');
+                vh._processAllVideos?.();
+            },
+
+            _bulkAllow() {
+                if (!this._selected?.size) return;
+                const vh = getFeatureById('hideVideosFromHome');
+                if (!vh?._addAllowedVideos) return;
+                const ids = Array.from(this._selected.keys());
+                vh._addAllowedVideos(ids, { force: true });
+                vh._removeHiddenVideos?.(ids);
+                for (const [, card] of this._selected) {
+                    delete card.dataset.ytkitBulkSelected;
+                    card.classList.remove('ytkit-video-hidden');
+                }
+                this._selected.clear();
+                this._renderActionBar();
+                if (typeof showToast === 'function') showToast(`Allowed ${ids.length} video${ids.length === 1 ? '' : 's'}`, '#22c55e');
+                vh._processAllVideos?.();
+            },
+
+            _bulkCopy() {
+                if (!this._selected?.size) return;
+                const urls = Array.from(this._selected.keys()).map(id => `https://www.youtube.com/watch?v=${id}`).join('\n');
+                if (navigator.clipboard?.writeText) {
+                    navigator.clipboard.writeText(urls).then(
+                        () => typeof showToast === 'function' && showToast(`Copied ${this._selected.size} URLs`, '#22c55e'),
+                        () => typeof showToast === 'function' && showToast('Copy failed', '#ef4444')
+                    );
+                }
+            },
+
+            _enterSelectMode() {
+                this._selectMode = true;
+                document.body.dataset.ytkitBulkSelect = '1';
+                if (this._toggleBtn) this._toggleBtn.dataset.active = '1';
+                this._findActionBar();
+                this._renderActionBar();
+            },
+
+            _exitSelectMode() {
+                this._selectMode = false;
+                delete document.body.dataset.ytkitBulkSelect;
+                if (this._toggleBtn) this._toggleBtn.dataset.active = '0';
+                this._clearSelection();
+                if (this._actionBar) this._actionBar.hidden = true;
+            },
+
+            _toggleSelectMode() {
+                if (this._selectMode) this._exitSelectMode();
+                else this._enterSelectMode();
+            },
+
+            init() {
+                this._injectStyles();
+                this._selected = new Map();
+                this._toggleBtn = document.createElement('button');
+                this._toggleBtn.type = 'button';
+                this._toggleBtn.className = 'ytkit-bulk-toggle';
+                this._toggleBtn.dataset.active = '0';
+                this._toggleBtn.textContent = 'Bulk Select';
+                this._toggleBtn.addEventListener('click', () => this._toggleSelectMode());
+                document.body.appendChild(this._toggleBtn);
+
+                this._clickHandler = (e) => {
+                    if (!this._selectMode) return;
+                    const card = this._findCard(e.target);
+                    if (!card) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this._toggleCardSelection(card);
+                };
+                document.addEventListener('click', this._clickHandler, true);
+            },
+
+            destroy() {
+                this._exitSelectMode();
+                if (this._clickHandler) document.removeEventListener('click', this._clickHandler, true);
+                this._clickHandler = null;
+                this._toggleBtn?.remove();
+                this._toggleBtn = null;
+                this._actionBar?.remove();
+                this._actionBar = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
+                this._selected = null;
+                this._selectMode = false;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  FEED TRIAGE PROFILE — One-click curated filter recipe
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'feedTriageProfile',
+            name: 'Feed Triage Profile',
+            description: 'Flip on a curated focus recipe: hides Shorts, live streams, upcoming premieres, mixes, watched videos, and AI Summary. Toggling off restores prior values.',
+            group: 'Content',
+            icon: 'shield-check',
+            _backup: null,
+
+            _RECIPE: {
+                removeAllShorts: true,
+                redirectShorts: true,
+                hideVideosHideLive: true,
+                hideVideosHideUpcoming: true,
+                hideVideosHideMixes: true,
+                hideVideosHideMovies: true,
+                hideVideosHideAutoDubbed: true,
+                hideWatchedVideos: true,
+                hideAiSummary: true,
+                hideJumpAheadButton: true,
+                hideMerchShelf: true,
+                hideRelatedVideos: false,
+                disableInfiniteScroll: true,
+                autoDismissStillWatching: true,
+                hideNotificationBadge: false
+            },
+
+            _BACKUP_KEY: 'ytkit-feed-triage-backup',
+
+            _readBackup() {
+                try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; }
+                catch { return null; }
+            },
+
+            _writeBackup(snapshot) {
+                try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); }
+                catch (e) { DebugManager.log('FeedTriage', `Backup write failed: ${e.message}`); }
+            },
+
+            _clearBackup() {
+                try { storageWriteJSON?.(this._BACKUP_KEY, null); }
+                catch { /* ignore */ }
+            },
+
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) {
+                    backup[key] = appState.settings[key];
+                    appState.settings[key] = this._RECIPE[key];
+                }
+                this._writeBackup(backup);
+                settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') {
+                    showToast('Feed Triage applied. Toggle off to restore your previous filter settings.', '#22c55e', { duration: 6 });
+                }
+            },
+
+            _restore() {
+                const backup = this._readBackup();
+                if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) {
+                    appState.settings[key] = backup[key];
+                }
+                this._clearBackup();
+                settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') {
+                    showToast('Feed Triage off. Previous filter values restored.', '#6b7280', { duration: 4 });
+                }
+            },
+
+            init() {
+                if (this._readBackup()) return;
+                this._apply();
+            },
+
+            destroy() {
+                if (this._readBackup()) this._restore();
             }
         },
 
