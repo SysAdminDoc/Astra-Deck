@@ -15,6 +15,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   cleanup, stable-first surface selectors with first-miss diagnostics,
   centralized TrustedTypes policy access, and bucketed API scheduling
   without changing current feature behavior.
+- **Registry-backed settings schema.** The core feature registry can now
+  generate a settings schema from registered feature metadata plus
+  `settingsManager.defaults`, including default-only and internal keys.
+  The debug API exposes it as `ytkit.settingsSchema()` for future
+  settings-panel and import/export work.
 
 ### Documentation
 

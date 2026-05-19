@@ -55,6 +55,78 @@
             return Array.from(health.values(), (entry) => ({ ...entry }));
         }
 
+        function getValueType(value) {
+            if (Array.isArray(value)) return 'array';
+            if (value === null) return 'null';
+            return typeof value;
+        }
+
+        function getControlType(feature, defaultValue) {
+            if (feature?.type) return feature.type;
+            const valueType = getValueType(defaultValue);
+            if (valueType === 'boolean') return 'toggle';
+            if (valueType === 'number') return 'range';
+            if (valueType === 'string') return 'text';
+            if (valueType === 'array') return 'list';
+            if (valueType === 'object') return 'json';
+            return 'value';
+        }
+
+        function createSchemaEntry(feature, defaultSource, options = {}) {
+            const key = normalizeId(feature?.settingKey || feature?.id || options.key);
+            if (!key) return null;
+            const hasDefault = Object.prototype.hasOwnProperty.call(defaultSource, key);
+            const defaultValue = hasDefault ? defaultSource[key] : undefined;
+            return {
+                key,
+                featureId: feature?.id || null,
+                name: feature?.name || options.name || key,
+                category: feature?.category || feature?.group || options.category || null,
+                control: getControlType(feature, defaultValue),
+                valueType: getValueType(defaultValue),
+                defaultValue,
+                hasDefault,
+                pages: Array.isArray(feature?.pages) ? [...feature.pages] : null,
+                dependsOn: feature?.dependsOn || null,
+                parentId: feature?.parentId || null,
+                isSubFeature: !!feature?.isSubFeature,
+                source: feature?.source || options.source || 'registry'
+            };
+        }
+
+        function createSettingsSchema(defaults = {}, options = {}) {
+            const defaultSource = defaults && typeof defaults === 'object' && !Array.isArray(defaults)
+                ? defaults
+                : {};
+            const seenKeys = new Set();
+            const entries = [];
+
+            for (const feature of features.values()) {
+                const entry = createSchemaEntry(feature, defaultSource);
+                if (!entry) continue;
+                seenKeys.add(entry.key);
+                entries.push(entry);
+            }
+
+            for (const key of Object.keys(defaultSource)) {
+                if (seenKeys.has(key)) continue;
+                const entry = createSchemaEntry(null, defaultSource, {
+                    key,
+                    name: key,
+                    category: key.startsWith('_') ? 'Internal' : 'Uncatalogued',
+                    source: 'defaults'
+                });
+                if (entry) entries.push(entry);
+            }
+
+            return {
+                settingsVersion: Number.isFinite(options.settingsVersion) ? options.settingsVersion : null,
+                featureCount: features.size,
+                entryCount: entries.length,
+                entries
+            };
+        }
+
         function register(feature, registerOptions = {}) {
             const id = assertFeature(feature);
             if (features.has(id) && !registerOptions.replace) {
@@ -175,6 +247,7 @@
             setHealth,
             getHealth,
             getHealthSnapshot,
+            createSettingsSchema,
             clear
         });
     }
@@ -192,6 +265,7 @@
         destroyRegisteredFeature: featureRegistry.destroy,
         setFeatureHealth: featureRegistry.setHealth,
         getFeatureHealth: featureRegistry.getHealth,
-        getFeatureHealthSnapshot: featureRegistry.getHealthSnapshot
+        getFeatureHealthSnapshot: featureRegistry.getHealthSnapshot,
+        generateSettingsSchema: featureRegistry.createSettingsSchema
     });
 })();

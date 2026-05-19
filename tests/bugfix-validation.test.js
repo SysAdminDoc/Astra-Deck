@@ -1326,6 +1326,7 @@ test('guard block checks all destructured core functions', () => {
         'registerFeature',
         'setFeatureHealth',
         'getFeatureHealthSnapshot',
+        'generateSettingsSchema',
     ];
 
     const guardBlock = source.substring(
@@ -1359,6 +1360,24 @@ test('ytkit feature lifecycle is bridged through the core registry', () => {
         'lifecycle changes should update registry feature health');
     assert.ok(source.includes("featureHealth() { return getFeatureHealthSnapshot(); }"),
         'debug API should expose registry health snapshots');
+    assert.ok(source.includes('settingsSchema() {'),
+        'debug API should expose the registry-generated settings schema');
+    assert.ok(source.includes('return generateSettingsSchema(settingsManager.defaults'),
+        'settings schema should be generated from registry metadata plus defaults');
+
+    const directLifecycleSnippets = [
+        'feat.init?.(); feat._initialized = true',
+        'feat.destroy?.(); feat._initialized = false',
+        'f.init?.(); f._initialized = true',
+        'f.destroy?.(); f._initialized = false',
+        'feature.init?.(); feature._initialized = true',
+        'feature.destroy?.(); feature._initialized = false',
+        'parentFeature.init?.(); parentFeature._initialized = true',
+        'parentFeature.destroy?.(); parentFeature._initialized = false'
+    ];
+    for (const snippet of directLifecycleSnippets) {
+        assert.ok(!source.includes(snippet), `direct feature lifecycle snippet should use registry helpers: ${snippet}`);
+    }
 });
 
 test('MediaDL probe rejects legacy localhost services without Astra health identity', () => {
