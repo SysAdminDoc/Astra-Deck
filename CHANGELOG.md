@@ -6,6 +6,37 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.2.0] - Subscription Popularity + Transcript Search UI
+
+Picks up two more deferred items from the v4.0.0 milestone: the
+popularity sort for the subscription feed and a visible search UI on
+top of the local IndexedDB transcript index.
+
+### Added (extension)
+
+- **Popularity sort for `subscriptionGroups`.** New
+  `_parseCompactViewCount(text)` helper plus a `'popular'` branch in
+  `_applySort` reads each card's `#metadata-line` / `aria-label`,
+  parses K / M / B suffixes, and sorts by descending view count. The
+  sort `<select>` now offers "Most popular (views)" as a fifth option.
+- **`researchTranscriptSearchPanel`.** Adds a "Search transcripts"
+  button next to the player's download button. Opens a fixed
+  glass-surface panel with: a debounced search input (300 ms),
+  per-result deep link (`target="_blank"`, `rel="noopener
+  noreferrer"`) with title + 160-char excerpt around the matched
+  phrase, footer Close button, and a danger-styled "Clear local
+  index" button. All search/clear calls go through the existing
+  `window.__ytkitSearchTranscripts` / `__ytkitClearTranscriptIndex`
+  helpers — no new storage code path.
+
+### Tests
+
+- 4 new regression tests covering popularity-sort view-count parsing
+  + inverted score, helper-function reuse (panel doesn't open its
+  own DB connection), off-state messaging when the parent index is
+  off, and destroy cleanup of button + panel + style tag.
+  243/243 JS tests pass.
+
 ## [4.1.0] - Deferred-Item Follow-Ups
 
 Picks up the two deferred items called out in the v4.0.0 milestone:

@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.1.0';
+    const YTKIT_VERSION = '4.2.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4389,13 +4389,14 @@ return response;
             // v3.29.0 — Subscription manager
             subscriptionGroups: false,                 // Master toggle for groups + sort surface
             subscriptionGroupData: {},                 // { groupId: { name, color, channelIds[], updatedAt } }
-            subscriptionSortMode: 'default',           // 'default' | 'date-desc' | 'duration-asc' | 'unwatched' | 'new-since-last-visit'
+            subscriptionSortMode: 'default',           // 'default' | 'date-desc' | 'duration-asc' | 'unwatched' | 'new-since-last-visit' | 'popular'
             subscriptionShowNewSinceLastVisit: true,
             subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
             researchSpacedReview: false,               // Export bookmarks as a SuperMemo-style CSV
             researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
+            researchTranscriptSearchPanel: false,      // Adds a watch-page button that opens a search UI on the index
             // v3.31.0 — Accessibility, mobile, low power
             reducedMotion: false,                      // Stronger reduced-motion overrides than the browser default
             forcedColorsSupport: false,                // Windows High Contrast / forced-colors media handling
@@ -31148,6 +31149,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._writeLastVisit(lastVisit);
             },
 
+            _parseCompactViewCount(text) {
+                const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
+                if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
+                const match = raw.match(/(\d+(?:[,.]\d+)?)\s*([kmb])?\s*(?:views?|watching)/i);
+                if (!match) return 0;
+                const number = parseFloat(match[1].replace(',', '.'));
+                if (!Number.isFinite(number)) return 0;
+                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[match[2]?.toLowerCase()] || 1;
+                return Math.round(number * scale);
+            },
+
             _applySort() {
                 const mode = String(appState?.settings?.subscriptionSortMode || 'default');
                 if (mode === 'default') return;
@@ -31173,6 +31185,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const channelId = this._extractChannelIdFromCard(card);
                         const lv = this._readLastVisit();
                         return lv[channelId] ? 1 : 0;  // unknown channels first
+                    }
+                    if (mode === 'popular') {
+                        // v3.29 deferred: heuristic popularity = view count desc.
+                        // Reads the card's metadata-line text; falls back to 0
+                        // when YouTube hasn't hydrated the count yet.
+                        const meta = card.querySelector('#metadata-line, ytd-video-meta-block, [aria-label*="view"]');
+                        const views = this._parseCompactViewCount(`${meta?.textContent || ''} ${meta?.getAttribute?.('aria-label') || ''}`);
+                        return -views;  // higher view count → lower score → earlier in DOM
                     }
                     return 0;
                 };
@@ -31243,7 +31263,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ['default', 'YouTube default'],
                     ['duration-asc', 'Shortest first'],
                     ['unwatched', 'Unwatched first'],
-                    ['new-since-last-visit', 'New since last visit']
+                    ['new-since-last-visit', 'New since last visit'],
+                    ['popular', 'Most popular (views)']
                 ]) {
                     const opt = document.createElement('option');
                     opt.value = v; opt.textContent = label;
@@ -31645,6 +31666,171 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._ingested = null;
                 if (window.__ytkitSearchTranscripts) delete window.__ytkitSearchTranscripts;
                 if (window.__ytkitClearTranscriptIndex) delete window.__ytkitClearTranscriptIndex;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  TRANSCRIPT SEARCH PANEL — Visible UI on top of researchTranscriptIndex
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'researchTranscriptSearchPanel',
+            name: 'Transcript Search Panel',
+            description: 'Adds a "Search transcripts" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off.',
+            group: 'Research',
+            icon: 'search',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _panel: null,
+            _navRule: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-transcript-search-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(124,58,237,0.32);background:rgba(124,58,237,0.12);color:#e9d5ff;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-transcript-search-btn:hover{background:rgba(124,58,237,0.22);}
+                    .ytkit-transcript-search-panel{position:fixed;right:24px;top:80px;z-index:9000;width:520px;max-height:65vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
+                    .ytkit-transcript-search-panel h4{margin:0 0 8px;font-size:14px;font-weight:700;color:#fafafa;}
+                    .ytkit-transcript-search-panel input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;}
+                    .ytkit-transcript-search-panel ul{list-style:none;margin:10px 0 0;padding:0;}
+                    .ytkit-transcript-search-panel li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+                    .ytkit-transcript-search-panel li a{color:#a78bfa;text-decoration:none;font-weight:600;}
+                    .ytkit-transcript-search-panel li a:hover{text-decoration:underline;}
+                    .ytkit-transcript-search-panel .meta{display:block;margin-top:3px;font-size:11px;color:rgba(255,255,255,0.55);}
+                    .ytkit-transcript-search-panel__footer{margin-top:12px;display:flex;justify-content:space-between;gap:8px;}
+                    .ytkit-transcript-search-panel__footer button{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px system-ui;cursor:pointer;}
+                    .ytkit-transcript-search-panel__footer button:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-transcript-search-panel__footer button[data-danger="1"]{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.36);color:#fecaca;}
+                `, 'transcript-search-panel');
+            },
+
+            _excerpt(text, query) {
+                const q = String(query || '').toLowerCase();
+                if (!q || !text) return '';
+                const i = text.toLowerCase().indexOf(q);
+                if (i < 0) return text.slice(0, 160) + '…';
+                const start = Math.max(0, i - 60);
+                const end = Math.min(text.length, i + q.length + 100);
+                return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+            },
+
+            async _renderResults(query) {
+                if (!this._panel) return;
+                const ul = this._panel.querySelector('ul');
+                if (!ul) return;
+                ul.replaceChildren();
+                if (!query || query.length < 3) {
+                    const li = document.createElement('li');
+                    li.textContent = 'Type at least 3 characters to search.';
+                    li.style.color = 'rgba(255,255,255,0.6)';
+                    ul.appendChild(li);
+                    return;
+                }
+                if (typeof window.__ytkitSearchTranscripts !== 'function') {
+                    const li = document.createElement('li');
+                    li.textContent = 'Transcript Search Index is off — enable it first.';
+                    li.style.color = '#f59e0b';
+                    ul.appendChild(li);
+                    return;
+                }
+                const hits = await window.__ytkitSearchTranscripts(query);
+                if (!hits?.length) {
+                    const li = document.createElement('li');
+                    li.textContent = `No transcripts matched "${query}".`;
+                    li.style.color = 'rgba(255,255,255,0.6)';
+                    ul.appendChild(li);
+                    return;
+                }
+                for (const hit of hits.slice(0, 50)) {
+                    const li = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = `https://youtu.be/${hit.videoId}`;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.textContent = hit.title || hit.videoId;
+                    li.appendChild(link);
+                    const meta = document.createElement('span');
+                    meta.className = 'meta';
+                    meta.textContent = this._excerpt(hit.text || '', query);
+                    li.appendChild(meta);
+                    ul.appendChild(li);
+                }
+            },
+
+            _renderPanel() {
+                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-transcript-search-panel';
+                panel.setAttribute('role', 'dialog');
+                const h = document.createElement('h4');
+                h.textContent = 'Search local transcript index';
+                panel.appendChild(h);
+                const input = document.createElement('input');
+                input.type = 'search';
+                input.placeholder = 'Find phrases across every video you\u2019ve visited\u2026';
+                input.setAttribute('aria-label', 'Search transcript index');
+                let timer = null;
+                input.addEventListener('input', () => {
+                    if (timer) clearTimeout(timer);
+                    timer = setTimeout(() => this._renderResults(input.value.trim()), 300);
+                });
+                panel.appendChild(input);
+                const ul = document.createElement('ul');
+                panel.appendChild(ul);
+                const footer = document.createElement('div');
+                footer.className = 'ytkit-transcript-search-panel__footer';
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.textContent = 'Close';
+                closeBtn.addEventListener('click', () => { panel.remove(); this._panel = null; });
+                const clearBtn = document.createElement('button');
+                clearBtn.type = 'button';
+                clearBtn.dataset.danger = '1';
+                clearBtn.textContent = 'Clear local index';
+                clearBtn.addEventListener('click', async () => {
+                    if (typeof window.__ytkitClearTranscriptIndex === 'function') {
+                        await window.__ytkitClearTranscriptIndex();
+                        this._renderResults(input.value.trim());
+                    } else {
+                        if (typeof showToast === 'function') showToast('Transcript Search Index is off — enable it first.', '#f59e0b');
+                    }
+                });
+                footer.append(closeBtn, clearBtn);
+                panel.appendChild(footer);
+                document.body.appendChild(panel);
+                this._panel = panel;
+                setTimeout(() => input.focus(), 50);
+                this._renderResults('');
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-download-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-transcript-search-btn')) return;
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-transcript-search-btn';
+                this._btn.textContent = 'Search transcripts';
+                this._btn.addEventListener('click', () => this._renderPanel());
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                this._panel?.remove();
+                this._panel = null;
+                document.querySelectorAll('.ytkit-transcript-search-btn').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
             }
         },
         // ═══════════════════════════════════════════════════════════════════

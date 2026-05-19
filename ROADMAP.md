@@ -1023,7 +1023,7 @@ Features:
 
 - [x] PocketTube-grade local groups.
 - [ ] Optional AI tags with local/exportable metadata. *(Hook reserved via `subscriptionAiTags` namespace in the data model; surface ships in a follow-up when the local-AI backbone lands in v3.30.)*
-- [x] Sort subscriptions by date, duration, popularity, unwatched, new since last visit. *(Ships duration / unwatched / new-since-last-visit; date-desc is YouTube's native default; popularity is the open follow-up since it needs view-count-per-day extraction.)*
+- [x] Sort subscriptions by date, duration, popularity, unwatched, new since last visit. *(All five modes ship: duration / unwatched / new-since-last-visit / date-desc / popular. The popular mode shipped in v4.2.0 — reads view count from card metadata text and sorts descending.)*
 - [x] Guide/sidebar group section. *(Ships as a toolbar atop the subscriptions feed — same data shape can drive a guide-level injection in a follow-up without changing storage.)*
 - [x] Group export/import.
 
