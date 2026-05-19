@@ -2052,3 +2052,70 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
     assert.match(destroyBlock, /delete document\.documentElement\.dataset\.ytkitDisableLoudness/,
         'destroy() must clear the html data attribute');
 });
+
+// ── v3.27.0 P1: Downloads & local media library invariants ──
+
+test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg pills', () => {
+    const start = ytkitSource.indexOf("id: 'downloadHealthPanel'");
+    assert.ok(start > -1, 'downloadHealthPanel must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/health'/,
+        'must query the local /health endpoint');
+    assert.match(block, /setInterval\(\(\) => this\._render\(\),\s*30000\)/,
+        'must poll every 30 s');
+    assert.match(block, /poTokenProvider/, 'must surface PO Token state');
+    assert.match(block, /ytDlpVersion/, 'must surface yt-dlp version');
+    assert.match(block, /ffmpegCapabilities/, 'must surface ffmpeg freshness');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
+    assert.match(destroyBlock, /clearInterval\(this\._pollTimer\)/,
+        'destroy() must stop the poll timer');
+});
+
+test('downloadStreamLinksPanel reads ytInitialPlayerResponse and supports adaptive + combined formats', () => {
+    const start = ytkitSource.indexOf("id: 'downloadStreamLinksPanel'");
+    assert.ok(start > -1, 'downloadStreamLinksPanel must exist');
+    const block = ytkitSource.slice(start, start + 12000);
+    assert.match(block, /ytInitialPlayerResponse/,
+        'must parse ytInitialPlayerResponse from script tags');
+    assert.match(block, /streamingData\?\.adaptiveFormats/,
+        'must extract adaptiveFormats');
+    assert.match(block, /streamingData\?\.formats/,
+        'must extract legacy combined formats');
+    assert.match(block, /'SABR-only'/,
+        'must render a SABR-only label when f.url is missing');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /_btn\?\.remove\(\)/,
+        'destroy() must remove the toolbar button');
+    assert.match(destroyBlock, /_panel\?\.remove\(\)/,
+        'destroy() must remove the panel');
+});
+
+test('downloadCobaltFallback gates on github-full profile and only fires when downloader is offline', () => {
+    const start = ytkitSource.indexOf("id: 'downloadCobaltFallback'");
+    assert.ok(start > -1, 'downloadCobaltFallback must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /mode === 'github-full'/,
+        'must gate on github-full profile mode');
+    assert.match(block, /if \(mdl\?\.ok\)/,
+        'must check Astra Downloader status before falling back to cobalt');
+    assert.match(block, /downloadCobaltInstance/,
+        'must read the configured cobalt instance URL');
+    assert.match(block, /'_blank',\s*'noopener,noreferrer'/,
+        'must open the returned media URL with noopener+noreferrer');
+});
+
+test('downloadHistoryPanel reads /history with auth + limit=50 and shows offline state', () => {
+    const start = ytkitSource.indexOf("id: 'downloadHistoryPanel'");
+    assert.ok(start > -1, 'downloadHistoryPanel must exist');
+    const block = ytkitSource.slice(start, start + 10000);
+    assert.match(block, /\/history\?limit=50/,
+        'must request a bounded history slice');
+    assert.match(block, /'X-MDL-Client': 'MediaDL'/,
+        'must send the MediaDL client header');
+    assert.match(block, /'Bearer ' \+ \(status\.token \|\| ''\)/,
+        'must forward the local downloader token');
+    assert.match(block, /Astra Downloader unreachable\./,
+        'must render an explicit offline state, not a blank panel');
+});

@@ -6,6 +6,61 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.27.0] - Downloads & Local Media Library
+
+Adds the four extension-side standalone items from roadmap v3.27.0.
+PO Token / SABR health surfacing rides on Astra Downloader's existing
+`/health.poTokenProvider` / `/health.ffmpegCapabilities` fields (shipped
+in downloader v1.4.0); no downloader changes required for this release.
+
+### Added (extension)
+
+- **Downloader Health Pills (`downloadHealthPanel`).** When on, renders
+  a chip strip next to the player's download button with yt-dlp
+  version, ffmpeg freshness (with amber pill when current=false), and
+  PO Token provider state (green=live, amber=not running, red=
+  unreachable). Polls `MediaDLManager.baseUrl() + '/health'` every 30 s
+  with the existing `X-MDL-Client: MediaDL` + bearer token. Destroy
+  removes the chip strip, clears the poll timer, and removes the style
+  tag.
+- **Stream Links Panel (`downloadStreamLinksPanel`).** Advanced /
+  power-user surface. Parses `ytInitialPlayerResponse` from inline
+  script tags, lists combined (legacy) + adaptive formats with mime
+  type and quality label, and offers a per-row "Copy URL" button.
+  SABR-only formats render as a disabled "SABR-only" pill so the user
+  knows why no URL is offered. Empty state explains the
+  `youtube:formats=duplicate` path Astra Downloader uses to bypass
+  SABR.
+- **Cobalt Fallback (`downloadCobaltFallback`).** GitHub-full profile
+  only — `getProfileExportMode(...) === 'github-full'` is checked on
+  every invocation. Default off. When triggered (button next to the
+  download button) and Astra Downloader is unreachable, POSTs the
+  current URL to the configured cobalt instance
+  (`downloadCobaltInstance`, default `https://api.cobalt.tools/api/json`)
+  and opens the returned media URL in a new tab with
+  `noopener,noreferrer`. If Astra Downloader is reachable, the
+  fallback is skipped with a toast.
+- **Download History Panel (`downloadHistoryPanel`).** Adds a
+  "History" button next to the player's download button. Renders the
+  last 50 completed downloads from the local `/history?limit=50`
+  endpoint. Shows an explicit "Astra Downloader unreachable" state
+  when the local downloader isn't up; doesn't fall through to a blank
+  panel.
+
+### Changed (extension)
+
+- **`MediaDLManager` plus the new download surfaces share the same
+  bearer + X-MDL-Client header pattern** so future endpoints can be
+  added without re-deriving the auth contract.
+
+### Tests
+
+- 4 new regression tests covering health-pill polling cadence + field
+  surface, stream-links adaptive/combined extraction + SABR-only
+  rendering, Cobalt fallback profile gate + downloader-offline check +
+  noopener target, and history panel auth + bounded limit. 210/210 JS
+  tests pass.
+
 ## [3.26.0] - Player Control Superset
 
 Closes six of the seven items in roadmap v3.26.0 (the Tweaks-grade

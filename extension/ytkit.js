@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.26.0';
+    const YTKIT_VERSION = '3.27.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4361,6 +4361,12 @@ return response;
             perChannelIntroOutroData: {},              // { channelId: { introSec, outroSec } }
             initialPlayerStateForeground: 'inherit',   // 'inherit' | 'play' | 'pause'
             initialPlayerStateBackground: 'inherit',   // 'inherit' | 'play' | 'pause'
+            // v3.27.0 — Downloads & local media library
+            downloadHistoryPanel: false,
+            downloadHealthPanel: false,                // Surfaces poTokenProvider / yt-dlp / ffmpeg health pills
+            downloadStreamLinksPanel: false,           // Reads adaptiveFormats from ytInitialPlayerResponse
+            downloadCobaltFallback: false,             // GitHub-full profile only; default off
+            downloadCobaltInstance: 'https://api.cobalt.tools/api/json',
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -29886,6 +29892,494 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._navRule = null;
                 this._detach();
                 this._timeListener = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  DOWNLOAD HEALTH PANEL — Pills for poTokenProvider, yt-dlp, ffmpeg
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'downloadHealthPanel',
+            name: 'Downloader Health Pills',
+            description: 'Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage.',
+            group: 'Downloads',
+            icon: 'activity',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _container: null,
+            _pollTimer: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-download-health{display:inline-flex;gap:6px;align-items:center;margin-left:8px;font:600 11px/1 system-ui;}
+                    .ytkit-download-health__pill{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);border:1px solid rgba(255,255,255,0.08);font-variant-numeric:tabular-nums;}
+                    .ytkit-download-health__pill[data-tone="ok"]{background:rgba(34,197,94,0.12);color:#bbf7d0;border-color:rgba(34,197,94,0.32);}
+                    .ytkit-download-health__pill[data-tone="warn"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
+                    .ytkit-download-health__pill[data-tone="err"]{background:rgba(239,68,68,0.14);color:#fecaca;border-color:rgba(239,68,68,0.36);}
+                `, 'download-health');
+            },
+
+            async _fetchHealth() {
+                try {
+                    const status = await MediaDLManager.check();
+                    if (!status?.ok) return null;
+                    const { data } = await extensionFetchJson({
+                        method: 'GET',
+                        url: MediaDLManager.baseUrl() + '/health',
+                        headers: { 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') }
+                    });
+                    return data || null;
+                } catch (e) {
+                    DebugManager.log('DownloadHealth', `Fetch failed: ${e.message}`);
+                    return null;
+                }
+            },
+
+            _renderPill(label, value, tone) {
+                const pill = document.createElement('span');
+                pill.className = 'ytkit-download-health__pill';
+                pill.dataset.tone = tone;
+                pill.textContent = `${label}: ${value}`;
+                return pill;
+            },
+
+            async _render() {
+                const data = await this._fetchHealth();
+                if (!this._container?.isConnected) return;
+                this._container.replaceChildren();
+                if (!data) {
+                    this._container.appendChild(this._renderPill('Downloader', 'offline', 'warn'));
+                    return;
+                }
+                if (data.ytDlpVersion) {
+                    this._container.appendChild(this._renderPill('yt-dlp', String(data.ytDlpVersion), 'ok'));
+                }
+                if (data.ffmpegCapabilities) {
+                    const cap = data.ffmpegCapabilities;
+                    const tone = cap.current === false ? 'warn' : 'ok';
+                    this._container.appendChild(this._renderPill('ffmpeg', cap.version || 'unknown', tone));
+                }
+                const po = data.poTokenProvider;
+                if (po === null || po === undefined) {
+                    this._container.appendChild(this._renderPill('PO Token', 'not running', 'warn'));
+                } else if (po && po.ok) {
+                    this._container.appendChild(this._renderPill('PO Token', 'live', 'ok'));
+                } else {
+                    this._container.appendChild(this._renderPill('PO Token', 'unreachable', 'err'));
+                }
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-download-btn, .ytp-right-controls .ytkit-download-btn');
+                if (!anchor) return;
+                if (anchor.nextElementSibling?.classList?.contains('ytkit-download-health')) {
+                    this._container = anchor.nextElementSibling;
+                    return;
+                }
+                this._container = document.createElement('span');
+                this._container.className = 'ytkit-download-health';
+                this._container.setAttribute('role', 'status');
+                anchor.insertAdjacentElement('afterend', this._container);
+            },
+
+            init() {
+                this._ensureStyles();
+                addNavigateRule(this.id, () => {
+                    setTimeout(() => { this._attach(); this._render(); }, 1500);
+                });
+                this._attach();
+                this._render();
+                this._pollTimer = setInterval(() => this._render(), 30000);
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                if (this._pollTimer) clearInterval(this._pollTimer);
+                this._pollTimer = null;
+                this._container?.remove();
+                this._container = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  STREAM LINKS PANEL — Adaptive format URLs (advanced)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'downloadStreamLinksPanel',
+            name: 'Stream Links Panel',
+            description: 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off.',
+            group: 'Downloads',
+            icon: 'link',
+            pages: [PageTypes.WATCH],
+            _btn: null,
+            _panel: null,
+            _styleElement: null,
+            _navTimer: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-stream-links-btn{display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-stream-links-btn:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-stream-links-panel{position:fixed;right:24px;top:80px;z-index:9000;width:480px;max-height:60vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
+                    .ytkit-stream-links-panel h4{margin:0 0 8px;font-size:13px;font-weight:700;color:#fafafa;}
+                    .ytkit-stream-links-panel ul{margin:0 0 12px;padding:0;list-style:none;}
+                    .ytkit-stream-links-panel li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-variant-numeric:tabular-nums;font-size:12px;}
+                    .ytkit-stream-links-panel button{padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:600 11px/1 system-ui;cursor:pointer;}
+                    .ytkit-stream-links-panel button:hover{background:rgba(255,255,255,0.12);}
+                    .ytkit-stream-links-panel__close{position:absolute;top:8px;right:8px;}
+                    .ytkit-stream-links-panel__warn{color:#fbbf24;font-size:11px;margin-top:8px;}
+                `, 'stream-links-panel');
+            },
+
+            _parsePlayerResponse() {
+                const scripts = document.querySelectorAll('script:not([src])');
+                for (const s of scripts) {
+                    const t = s.textContent;
+                    if (!t || !t.includes('ytInitialPlayerResponse')) continue;
+                    const m = t.match(/ytInitialPlayerResponse\s*=\s*(\{[\s\S]*?\});\s*(?:var |window\.|$)/);
+                    if (!m) continue;
+                    try { return JSON.parse(m[1]); }
+                    catch { /* try next script tag */ }
+                }
+                return null;
+            },
+
+            _extractFormats() {
+                const data = this._parsePlayerResponse();
+                const formats = data?.streamingData?.formats || [];
+                const adaptive = data?.streamingData?.adaptiveFormats || [];
+                return { formats, adaptive };
+            },
+
+            _formatLabel(f) {
+                const mime = String(f.mimeType || '').split(';')[0];
+                if (f.qualityLabel) return `${f.qualityLabel} ${mime}`;
+                if (f.audioQuality) return `audio (${f.audioQuality.replace('AUDIO_QUALITY_', '').toLowerCase()}) ${mime}`;
+                return mime || 'unknown';
+            },
+
+            _renderPanel() {
+                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                const { formats, adaptive } = this._extractFormats();
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-stream-links-panel';
+                panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', 'Stream Links');
+
+                const heading = document.createElement('h4');
+                heading.textContent = 'Stream Links';
+                panel.appendChild(heading);
+
+                const close = document.createElement('button');
+                close.className = 'ytkit-stream-links-panel__close';
+                close.type = 'button';
+                close.textContent = 'Close';
+                close.addEventListener('click', () => { panel.remove(); this._panel = null; });
+                panel.appendChild(close);
+
+                const renderList = (title, list) => {
+                    if (!list?.length) return;
+                    const h = document.createElement('h4');
+                    h.textContent = title + ` (${list.length})`;
+                    panel.appendChild(h);
+                    const ul = document.createElement('ul');
+                    for (const f of list) {
+                        const li = document.createElement('li');
+                        const label = document.createElement('span');
+                        label.textContent = this._formatLabel(f);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = f.url ? 'Copy URL' : 'SABR-only';
+                        btn.disabled = !f.url;
+                        if (f.url) {
+                            btn.addEventListener('click', () => {
+                                navigator.clipboard?.writeText(f.url).then(
+                                    () => typeof showToast === 'function' && showToast('Stream URL copied', '#22c55e'),
+                                    () => typeof showToast === 'function' && showToast('Copy failed', '#ef4444')
+                                );
+                            });
+                        }
+                        li.append(label, btn);
+                        ul.appendChild(li);
+                    }
+                    panel.appendChild(ul);
+                };
+
+                if (!formats.length && !adaptive.length) {
+                    const empty = document.createElement('div');
+                    empty.textContent = 'No stream URLs parsed. YouTube may have served SABR-only formats — Astra Downloader handles these via youtube:formats=duplicate.';
+                    panel.appendChild(empty);
+                } else {
+                    renderList('Combined (legacy)', formats);
+                    renderList('Adaptive', adaptive);
+                }
+                const warn = document.createElement('div');
+                warn.className = 'ytkit-stream-links-panel__warn';
+                warn.textContent = 'URLs are short-lived and may not work in your browser. Use Astra Downloader or hand off to yt-dlp/VLC instead.';
+                panel.appendChild(warn);
+
+                document.body.appendChild(panel);
+                this._panel = panel;
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-download-btn');
+                if (!anchor) return;
+                if (anchor.parentElement?.querySelector('.ytkit-stream-links-btn')) {
+                    this._btn = anchor.parentElement.querySelector('.ytkit-stream-links-btn');
+                    return;
+                }
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-stream-links-btn';
+                this._btn.textContent = 'Stream Links';
+                this._btn.title = 'Show adaptive format URLs';
+                this._btn.addEventListener('click', () => this._renderPanel());
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._ensureStyles();
+                addNavigateRule(this.id, () => {
+                    if (this._navTimer) clearTimeout(this._navTimer);
+                    this._navTimer = setTimeout(() => this._attach(), 1500);
+                });
+                this._attach();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                if (this._navTimer) clearTimeout(this._navTimer);
+                this._navTimer = null;
+                this._btn?.remove();
+                this._btn = null;
+                this._panel?.remove();
+                this._panel = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  COBALT FALLBACK — GitHub-full profile only, default off
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'downloadCobaltFallback',
+            name: 'Cobalt Fallback (GitHub profile)',
+            description: 'When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab.',
+            group: 'Downloads',
+            icon: 'download-cloud',
+            pages: [PageTypes.WATCH],
+            _hooked: false,
+
+            _isAllowed() {
+                // Default to safe-store posture if profile model unavailable.
+                const mode = (typeof getProfileExportMode === 'function')
+                    ? getProfileExportMode(appState?.settings || {})
+                    : 'safe-store';
+                return mode === 'github-full';
+            },
+
+            async _trigger() {
+                if (!this._isAllowed()) {
+                    if (typeof showToast === 'function') showToast('Cobalt fallback is only enabled in the GitHub/full profile.', '#f59e0b');
+                    return;
+                }
+                const mdl = await MediaDLManager.check();
+                if (mdl?.ok) {
+                    if (typeof showToast === 'function') showToast('Astra Downloader is running; fallback skipped.', '#6b7280');
+                    return;
+                }
+                const url = location.href;
+                const instance = (appState?.settings?.downloadCobaltInstance || 'https://api.cobalt.tools/api/json').trim();
+                try {
+                    const { data } = await extensionFetchJson({
+                        method: 'POST',
+                        url: instance,
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify({ url })
+                    });
+                    if (data?.status === 'redirect' || data?.status === 'stream' || data?.status === 'tunnel') {
+                        const mediaUrl = data.url || data.tunnel || data.stream;
+                        if (mediaUrl) {
+                            window.open(mediaUrl, '_blank', 'noopener,noreferrer');
+                            if (typeof showToast === 'function') showToast('Cobalt fallback: opened media URL in new tab.', '#22c55e');
+                            return;
+                        }
+                    }
+                    if (data?.status === 'error' || data?.text) {
+                        throw new Error(data.text || data.error || 'Cobalt rejected the request');
+                    }
+                    throw new Error('Cobalt returned no usable media URL');
+                } catch (e) {
+                    DebugManager.log('CobaltFallback', `Failed: ${e.message}`);
+                    if (typeof showToast === 'function') showToast(`Cobalt fallback failed: ${e.message}`, '#ef4444', { duration: 6 });
+                }
+            },
+
+            init() {
+                // Wire a small button next to the existing download button.
+                addNavigateRule(this.id, () => {
+                    setTimeout(() => {
+                        if (!isWatchPagePath()) return;
+                        const anchor = document.querySelector('.ytkit-download-btn');
+                        if (!anchor || anchor.parentElement?.querySelector('.ytkit-cobalt-fallback-btn')) return;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'ytkit-cobalt-fallback-btn ytkit-stream-links-btn';
+                        btn.textContent = 'Cobalt';
+                        btn.title = 'Try cobalt.tools when Astra Downloader is offline';
+                        btn.addEventListener('click', () => this._trigger());
+                        anchor.insertAdjacentElement('afterend', btn);
+                    }, 1500);
+                });
+                this._hooked = true;
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                document.querySelectorAll('.ytkit-cobalt-fallback-btn').forEach(b => b.remove());
+                this._hooked = false;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  DOWNLOAD HISTORY PANEL — Last N completed downloads
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'downloadHistoryPanel',
+            name: 'Download History Panel',
+            description: 'Adds a "History" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.',
+            group: 'Downloads',
+            icon: 'history',
+            pages: [PageTypes.WATCH],
+            _btn: null,
+            _panel: null,
+            _styleElement: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-dl-history-panel{position:fixed;right:24px;top:80px;z-index:9000;width:560px;max-height:60vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
+                    .ytkit-dl-history-panel h4{margin:0 0 8px;font-size:13px;font-weight:700;color:#fafafa;}
+                    .ytkit-dl-history-panel ul{margin:0;padding:0;list-style:none;}
+                    .ytkit-dl-history-panel li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;}
+                    .ytkit-dl-history-panel .meta{color:rgba(255,255,255,0.55);font-size:11px;font-variant-numeric:tabular-nums;}
+                    .ytkit-dl-history-panel__empty{color:rgba(255,255,255,0.6);font-style:italic;}
+                    .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-dl-history-btn:hover{background:rgba(255,255,255,0.1);}
+                `, 'dl-history-panel');
+            },
+
+            async _fetchHistory() {
+                try {
+                    const status = await MediaDLManager.check();
+                    if (!status?.ok) return null;
+                    const { data } = await extensionFetchJson({
+                        method: 'GET',
+                        url: MediaDLManager.baseUrl() + '/history?limit=50',
+                        headers: { 'X-MDL-Client': 'MediaDL', Authorization: 'Bearer ' + (status.token || '') }
+                    });
+                    return data?.history || [];
+                } catch (e) {
+                    DebugManager.log('DownloadHistory', `Fetch failed: ${e.message}`);
+                    return null;
+                }
+            },
+
+            async _open() {
+                if (this._panel) { this._panel.remove(); this._panel = null; return; }
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-dl-history-panel';
+                panel.setAttribute('role', 'dialog');
+                const h = document.createElement('h4');
+                h.textContent = 'Recent Downloads';
+                panel.appendChild(h);
+                const placeholder = document.createElement('div');
+                placeholder.className = 'ytkit-dl-history-panel__empty';
+                placeholder.textContent = 'Loading…';
+                panel.appendChild(placeholder);
+                document.body.appendChild(panel);
+                this._panel = panel;
+
+                const history = await this._fetchHistory();
+                if (!this._panel) return;
+                panel.replaceChildren();
+                const heading = document.createElement('h4');
+                heading.textContent = 'Recent Downloads';
+                panel.appendChild(heading);
+
+                if (!history) {
+                    const err = document.createElement('div');
+                    err.className = 'ytkit-dl-history-panel__empty';
+                    err.textContent = 'Astra Downloader unreachable. Start the local downloader and try again.';
+                    panel.appendChild(err);
+                } else if (!history.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-dl-history-panel__empty';
+                    empty.textContent = 'No completed downloads yet.';
+                    panel.appendChild(empty);
+                } else {
+                    const ul = document.createElement('ul');
+                    for (const entry of history.slice().reverse()) {
+                        const li = document.createElement('li');
+                        const title = document.createElement('div');
+                        title.textContent = entry.title || entry.filename || entry.url || 'Untitled';
+                        const meta = document.createElement('div');
+                        meta.className = 'meta';
+                        const parts = [];
+                        if (entry.format) parts.push(entry.format);
+                        if (entry.quality) parts.push(entry.quality);
+                        if (entry.completedAt || entry.timestamp) {
+                            try {
+                                const ts = new Date(entry.completedAt || entry.timestamp);
+                                parts.push(ts.toLocaleString());
+                            } catch { /* invalid date */ }
+                        }
+                        meta.textContent = parts.join(' \u2022 ');
+                        li.append(title, meta);
+                        ul.appendChild(li);
+                    }
+                    panel.appendChild(ul);
+                }
+
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.style.cssText = 'position:absolute;top:8px;right:8px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;';
+                close.textContent = 'Close';
+                close.addEventListener('click', () => { panel.remove(); this._panel = null; });
+                panel.appendChild(close);
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-download-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-dl-history-btn')) return;
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-dl-history-btn';
+                this._btn.textContent = 'History';
+                this._btn.title = 'View recent downloads';
+                this._btn.addEventListener('click', () => this._open());
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._ensureStyles();
+                addNavigateRule(this.id, () => { setTimeout(() => this._attach(), 1500); });
+                this._attach();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._btn?.remove();
+                this._btn = null;
+                this._panel?.remove();
+                this._panel = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
             }
         },
 
