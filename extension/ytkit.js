@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.32.0';
+    const YTKIT_VERSION = '3.33.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4399,6 +4399,12 @@ return response;
             classicLayoutProfile: 'modern',            // 'modern' | 'classic-2020' | 'classic-2016'
             newPlayerUiRestore: false,                 // Control Panel-style restoration of older player chrome
             tokenThemeBridge: false,                   // Maps Astra accent into --yt-sys-color-* tokens
+            // v3.33.0 — Integrations & interop
+            openInAlternativeFrontend: false,          // FreeTube / Invidious / Piped open-in buttons
+            alternativeFrontendInstance: 'https://yewtu.be', // User-configurable Invidious/Piped instance
+            vlcMpvHandoff: false,                      // ytvlc:// / ytmpv:// protocol buttons; GitHub-full only
+            astraContextMenu: false,                   // Right-click menu items on the player + cards
+            youtubeMusicCompat: false,                 // Apply select features on music.youtube.com
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -31832,6 +31838,261 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             init() { this._apply(); },
             destroy() { this._styleElement?.remove(); this._styleElement = null; }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  OPEN IN ALTERNATIVE FRONTEND — FreeTube / Invidious / Piped
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'openInAlternativeFrontend',
+            name: 'Open In Alternative Frontend',
+            description: 'Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting.',
+            group: 'Integrations',
+            icon: 'external-link',
+            pages: [PageTypes.WATCH],
+            _btn: null,
+            _navRule: null,
+
+            _instance() {
+                return String(appState?.settings?.alternativeFrontendInstance || 'https://yewtu.be').replace(/\/$/, '');
+            },
+
+            _alternativeUrl() {
+                const id = getVideoId?.();
+                if (!id) return '';
+                return `${this._instance()}/watch?v=${encodeURIComponent(id)}`;
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-download-btn, .ytp-right-controls .ytkit-player-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-alt-frontend-btn')) return;
+                this._btn = document.createElement('a');
+                this._btn.className = 'ytkit-alt-frontend-btn ytkit-stream-links-btn';
+                this._btn.rel = 'noopener noreferrer';
+                this._btn.target = '_blank';
+                this._btn.textContent = 'Open externally';
+                this._btn.addEventListener('click', (e) => {
+                    const url = this._alternativeUrl();
+                    if (!url) { e.preventDefault(); return; }
+                    this._btn.href = url;
+                });
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                document.querySelectorAll('.ytkit-alt-frontend-btn').forEach(el => el.remove());
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  VLC/MPV HANDOFF — Protocol-handler buttons (GitHub-full only)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'vlcMpvHandoff',
+            name: 'VLC / MPV Stream Handoff',
+            description: 'GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off.',
+            group: 'Integrations',
+            icon: 'cast',
+            pages: [PageTypes.WATCH],
+            _vlcBtn: null,
+            _mpvBtn: null,
+            _navRule: null,
+
+            _isAllowed() {
+                const mode = (typeof getProfileExportMode === 'function')
+                    ? getProfileExportMode(appState?.settings || {})
+                    : 'safe-store';
+                return mode === 'github-full';
+            },
+
+            _handoff(scheme) {
+                const id = getVideoId?.();
+                if (!id) return;
+                const url = `${scheme}://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+                // Use an anchor + click — never window.location to keep page navigation
+                // intact when the protocol handler isn't registered.
+                const a = document.createElement('a');
+                a.href = url;
+                a.rel = 'noopener noreferrer';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => a.remove(), 500);
+                if (typeof showToast === 'function') {
+                    showToast(`${scheme.toUpperCase()} handoff fired. If nothing opened, register the handler on your OS first.`, '#7c3aed', { duration: 6 });
+                }
+            },
+
+            _attach() {
+                if (!this._isAllowed()) return;
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-download-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-vlc-btn')) return;
+                this._vlcBtn = document.createElement('button');
+                this._vlcBtn.type = 'button';
+                this._vlcBtn.className = 'ytkit-vlc-btn ytkit-stream-links-btn';
+                this._vlcBtn.textContent = 'VLC';
+                this._vlcBtn.addEventListener('click', () => this._handoff('ytvlc'));
+                anchor.insertAdjacentElement('afterend', this._vlcBtn);
+                this._mpvBtn = document.createElement('button');
+                this._mpvBtn.type = 'button';
+                this._mpvBtn.className = 'ytkit-mpv-btn ytkit-stream-links-btn';
+                this._mpvBtn.textContent = 'MPV';
+                this._mpvBtn.addEventListener('click', () => this._handoff('ytmpv'));
+                this._vlcBtn.insertAdjacentElement('afterend', this._mpvBtn);
+            },
+
+            init() {
+                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                document.querySelectorAll('.ytkit-vlc-btn, .ytkit-mpv-btn').forEach(el => el.remove());
+                this._vlcBtn = null;
+                this._mpvBtn = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  ASTRA CONTEXT MENU — Right-click items on the player and cards
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'astraContextMenu',
+            name: 'Astra Context Menu',
+            description: 'Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click.',
+            group: 'Integrations',
+            icon: 'menu',
+            _menuEl: null,
+            _styleElement: null,
+            _contextHandler: null,
+            _docClickHandler: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-context-menu{position:fixed;z-index:9200;min-width:200px;padding:6px;border-radius:8px;background:#0f0f10;border:1px solid #3f3f46;box-shadow:0 12px 32px rgba(0,0,0,.55);font:13px/1.4 system-ui;color:#e5e7eb;}
+                    .ytkit-context-menu button{display:flex;width:100%;padding:6px 10px;border:none;background:transparent;color:inherit;font:inherit;text-align:left;border-radius:6px;cursor:pointer;}
+                    .ytkit-context-menu button:hover{background:rgba(255,255,255,0.1);}
+                `, 'astra-context-menu');
+            },
+
+            _hideMenu() {
+                this._menuEl?.remove();
+                this._menuEl = null;
+            },
+
+            _showMenu(x, y, items) {
+                this._hideMenu();
+                const menu = document.createElement('div');
+                menu.className = 'ytkit-context-menu';
+                menu.style.left = `${x}px`;
+                menu.style.top = `${y}px`;
+                menu.setAttribute('role', 'menu');
+                items.forEach(({ label, action }) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = label;
+                    btn.setAttribute('role', 'menuitem');
+                    btn.addEventListener('click', () => { this._hideMenu(); action(); });
+                    menu.appendChild(btn);
+                });
+                document.body.appendChild(menu);
+                this._menuEl = menu;
+                // Reposition if off-screen.
+                const rect = menu.getBoundingClientRect();
+                if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 8}px`;
+                if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+            },
+
+            _onContext(e) {
+                const card = e.target.closest('ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer');
+                const player = e.target.closest('#movie_player, .html5-video-player');
+                if (!card && !player) return;
+                e.preventDefault();
+                const items = [];
+                if (player) {
+                    const id = getVideoId?.() || '';
+                    items.push({ label: 'Copy video URL', action: () => navigator.clipboard?.writeText(`https://youtu.be/${id}`) });
+                    items.push({ label: 'Copy timestamp link', action: () => {
+                        const video = document.querySelector('video.html5-main-video');
+                        const t = Math.floor(video?.currentTime || 0);
+                        navigator.clipboard?.writeText(`https://youtu.be/${id}?t=${t}`);
+                    }});
+                    items.push({ label: 'Open transcript', action: () => {
+                        document.querySelector('button[aria-label*="transcript" i]')?.click();
+                    }});
+                }
+                if (card) {
+                    items.push({ label: 'Hide this channel', action: () => {
+                        const vh = getFeatureById('hideVideosFromHome');
+                        const info = vh?._extractChannelInfo?.(card);
+                        if (info) vh._blockChannel?.(info, card);
+                    }});
+                    items.push({ label: 'Copy card URL', action: () => {
+                        const link = card.querySelector('a[href*="/watch"]');
+                        if (link) navigator.clipboard?.writeText(link.href);
+                    }});
+                }
+                if (items.length) this._showMenu(e.clientX, e.clientY, items);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._contextHandler = (e) => this._onContext(e);
+                this._docClickHandler = () => this._hideMenu();
+                document.addEventListener('contextmenu', this._contextHandler, true);
+                document.addEventListener('click', this._docClickHandler, true);
+            },
+
+            destroy() {
+                if (this._contextHandler) document.removeEventListener('contextmenu', this._contextHandler, true);
+                if (this._docClickHandler) document.removeEventListener('click', this._docClickHandler, true);
+                this._contextHandler = null;
+                this._docClickHandler = null;
+                this._hideMenu();
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  YOUTUBE MUSIC COMPAT — Apply select features on music.youtube.com
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'youtubeMusicCompat',
+            name: 'YouTube Music Compatibility',
+            description: 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.',
+            group: 'Integrations',
+            icon: 'music',
+            _styleElement: null,
+            init() {
+                if (!location.hostname.includes('music.youtube.com')) return;
+                this._styleElement = injectStyle(`
+                    ytmusic-app, ytmusic-app-layout {
+                        background: var(--yt-sys-color-baseline--base-background, #0f0f0f) !important;
+                    }
+                    /* Reuse the rectangularize hook on YT Music buttons. */
+                    ytmusic-pill-shape-renderer,
+                    yt-button-shape {
+                        border-radius: 8px !important;
+                    }
+                `, 'youtube-music-compat');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
         },
 
     ];

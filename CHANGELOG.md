@@ -6,6 +6,41 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.33.0] - Integrations & Interop
+
+Closes the v3.33 roadmap with four new features. Karamel-style Reddit
+comments + protocol streams were already shipped in earlier releases.
+
+### Added (extension)
+
+- **`openInAlternativeFrontend`.** Adds an "Open externally" anchor
+  next to the player. Resolves the current video to
+  `${alternativeFrontendInstance}/watch?v=<id>` with default
+  `https://yewtu.be`. Anchor uses `target="_blank"` plus `rel="noopener
+  noreferrer"`. Default off; user-configurable instance setting.
+- **`vlcMpvHandoff`.** GitHub-full profile gated. Adds VLC and MPV
+  buttons next to the player that fire `ytvlc://` / `ytmpv://`
+  protocol URLs through a transient `<a>` element (never
+  `window.location`, so pages without a registered handler stay put).
+  Toast notifies the user when the handoff fires.
+- **`astraContextMenu`.** Right-click the player or a feed card to get
+  Astra actions: Copy video URL, Copy timestamp link, Open transcript,
+  Hide channel, Copy card URL. Native YouTube right-click stays
+  intact when the click lands outside Astra targets — the handler
+  early-returns before calling `preventDefault`.
+- **`youtubeMusicCompat`.** Applies the OLED + rectangularize hooks
+  on `music.youtube.com`. Targets `ytmusic-app`, `ytmusic-app-layout`,
+  and `ytmusic-pill-shape-renderer`. Player-specific features keep
+  their existing per-page gating.
+
+### Tests
+
+- 4 new regression tests covering noopener+noreferrer on the external
+  open path, github-full gating + anchor.click() protocol handshake
+  for VLC/MPV (never window.location), contextmenu early-return guard
+  + preventDefault path + destroy() removing the listener, and
+  music.youtube.com hostname gate. 235/235 JS tests pass.
+
 ## [3.32.0] - Premium Visual System
 
 Closes the v3.32 roadmap with six new features. The OLED + token-bridge

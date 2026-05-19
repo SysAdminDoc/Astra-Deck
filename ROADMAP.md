@@ -1113,17 +1113,24 @@ Acceptance:
 
 Features:
 
-- VLC/MPV/protocol stream parity where safe.
-- YouTube Music compatibility track.
-- Open in FreeTube/Invidious/Piped/NewPipe-style links.
-- Karamel-style comments expansion.
-- Context menus for block/save/download/copy/transcript.
+- [x] VLC/MPV/protocol stream parity where safe. *(`vlcMpvHandoff` — GitHub-full profile gated, anchor.click() handshake never falls through to window.location.)*
+- [x] YouTube Music compatibility track. *(`youtubeMusicCompat` — OLED + rectangularize on music.youtube.com via `ytmusic-app` / `ytmusic-pill-shape-renderer` hooks.)*
+- [x] Open in FreeTube/Invidious/Piped/NewPipe-style links. *(`openInAlternativeFrontend` — anchor with `target="_blank"` + `rel="noopener noreferrer"`; default instance `https://yewtu.be`, user-configurable.)*
+- [x] Karamel-style comments expansion. *(Already shipped as `redditComments` in v3.9.)*
+- [x] Context menus for block/save/download/copy/transcript. *(`astraContextMenu` — Copy video URL / Copy timestamp link / Open transcript on the player; Hide channel / Copy card URL on feed cards. Early-returns when the click is outside Astra targets so the native menu stays intact.)*
+
+Progress:
+
+- 2026-05-19: Shipped `openInAlternativeFrontend` — handles Invidious, Piped, FreeTube via the configurable instance setting. Default instance `https://yewtu.be`.
+- 2026-05-19: Shipped `vlcMpvHandoff` — anchor-click protocol invocation (never window.location). GitHub-full profile gated. Toast tells the user the handoff fired so they know to register the handler.
+- 2026-05-19: Shipped `astraContextMenu` — capture-phase contextmenu listener; menu only opens when the click hit a player or feed card. Native YouTube right-click stays intact otherwise.
+- 2026-05-19: Shipped `youtubeMusicCompat` — applies OLED + rectangularize hooks on music.youtube.com.
 
 Acceptance:
 
-- Integrations are opt-in and visible.
-- Protocol handlers never run silently.
-- Store-safe profile excludes policy-sensitive handlers.
+- [x] Integrations are opt-in and visible. *(Every new feature is default-off; each registers a visible button or surface.)*
+- [x] Protocol handlers never run silently. *(VLC/MPV handoff uses an explicit button + toast feedback; never auto-fires.)*
+- [x] Store-safe profile excludes policy-sensitive handlers. *(VLC/MPV handoff is gated on github-full profile mode; the other three integrations are policy-clean.)*
 
 ### v4.0.0: Beats Every Competitor Release
 
