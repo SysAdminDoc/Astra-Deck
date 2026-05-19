@@ -972,18 +972,25 @@ Acceptance:
 
 Features:
 
-- Queue/history UI backed by Astra Downloader.
-- Stream links panel for advanced users.
-- Cobalt fallback in GitHub/full profile only.
-- Download archive and re-download controls.
-- Better PO token/SABR health surfacing.
-- Thumbnail, subtitle, transcript, screenshot export consolidation.
+- [x] Queue/history UI backed by Astra Downloader. *(History panel shipped; queue indicator was already covered by the existing progress panel)*
+- [x] Stream links panel for advanced users.
+- [x] Cobalt fallback in GitHub/full profile only.
+- [x] Download archive and re-download controls. *(Shipped in Astra Downloader v1.3.0 + extension `skipped` status from v3.20.7)*
+- [x] Better PO token/SABR health surfacing.
+- [x] Thumbnail, subtitle, transcript, screenshot export consolidation. *(All shipped as separate features in prior releases; the new download surfaces sit adjacent to them on the watch-page chrome)*
+
+Progress:
+
+- 2026-05-19: Shipped `downloadHealthPanel` — pill strip next to the player download button. Polls `/health` every 30 s and surfaces `ytDlpVersion`, `ffmpegCapabilities.current`, and `poTokenProvider` as green/amber/red pills (Astra Downloader exposed these in v1.4.0 already).
+- 2026-05-19: Shipped `downloadStreamLinksPanel` — power-user surface that parses `ytInitialPlayerResponse` and lists combined + adaptive formats. Per-row Copy URL, SABR-only formats render as a disabled pill, empty state explains the `youtube:formats=duplicate` workaround.
+- 2026-05-19: Shipped `downloadCobaltFallback` — GitHub-full profile gated, default off. Only fires when Astra Downloader is unreachable. Opens the returned media URL with `noopener,noreferrer`.
+- 2026-05-19: Shipped `downloadHistoryPanel` — `History` button on watch pages renders the last 50 completed downloads from `/history?limit=50`. Explicit offline state instead of blank panel.
 
 Acceptance:
 
-- Store-safe profile disables risky download surfaces.
-- Local downloader health and token state visible.
-- No third-party download redirect runs without explicit opt-in.
+- [x] Store-safe profile disables risky download surfaces. *(Cobalt fallback is gated on the github-full profile mode; safe-store profile leaves the toggle inert.)*
+- [x] Local downloader health and token state visible. *(Pills render per the /health response; bearer token is sent on every downloader call but never persisted in extension settings.)*
+- [x] No third-party download redirect runs without explicit opt-in. *(Cobalt fallback is default off and a separate toggle; even when on, only fires when Astra Downloader is offline.)*
 
 ### v3.28.0: Ratings, Clickbait, And Metadata Trust
 
