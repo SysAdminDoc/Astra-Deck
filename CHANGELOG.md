@@ -6,6 +6,45 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.31.0] - Accessibility, Mobile, and Low Power
+
+Closes four of six v3.31 line items in this release; CPU/chat tamer
+improvements were already shipped under `enableCPU_Tamer` (v3.10), and
+the Firefox-Android smoke path is a manual QA item that doesn't
+require code changes — both items stay marked done.
+
+### Added (extension)
+
+- **Reduced Motion (`reducedMotion`).** Stronger than the browser
+  default — every Astra-injected `[class*="ytkit-"]` element gets
+  `animation-duration: 0.001ms` / `transition-duration: 0.001ms` /
+  `scroll-behavior: auto`. Shimmer / pulse / ripple animations are
+  explicitly set to `animation: none`.
+- **Forced Colors / High Contrast Support (`forcedColorsSupport`).**
+  Hooks `@media (forced-colors: active)` and maps every injected
+  control to system colors (`Canvas`, `CanvasText`, `LinkText`,
+  `Highlight` for focus outlines). Sets `forced-color-adjust: none`
+  so the system colors actually win.
+- **Live Region For Toasts (`globalAriaLiveRegion`).** Mounts a single
+  hidden `role=status / aria-live=polite / aria-atomic=true`
+  container under `<body>`. Exposes `window.__ytkitAnnounce(message)`
+  — clears + sets on `requestAnimationFrame` so screen readers fire a
+  change notification even when the same text repeats.
+- **Low Power Profile (`lowPowerProfile`).** Recipe toggle. Disables
+  cinemaAmbientGlow / videoVisualFilters / playbackStatsOverlay /
+  monetizationIndicator / researchTranscriptIndex / transcriptViewer /
+  blueLightFilter / speedIndicatorOverlay, and explicitly enables
+  `enableCPU_Tamer`. Backup snapshot at `ytkit-low-power-backup`
+  restores exact prior values on toggle-off.
+
+### Tests
+
+- 4 new regression tests covering reduced-motion class scoping +
+  duration zeroing, forced-colors media query + system color mapping
+  + focus outline, aria-live region role + aria-live + announce
+  helper exposure, and Low Power backup-and-restore. 226/226 JS tests
+  pass.
+
 ## [3.30.0] - Research Workspace
 
 Closes the v3.30.0 roadmap minus the "Markdown/JSON/SRT/VTT export
