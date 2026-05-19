@@ -71,6 +71,49 @@ test('feature registry registers, tracks health, and runs cleanup in reverse ord
     assert.equal(registry.getHealth('demo-feature').status, 'destroyed');
 });
 
+test('feature registry generates a settings schema from registered metadata and defaults', () => {
+    const core = loadFoundation();
+    const registry = core.createFeatureRegistry();
+    registry.register({
+        id: 'qualityMode',
+        name: 'Quality Mode',
+        category: 'Player',
+        type: 'select',
+        settingKey: 'qualityMode',
+        pages: ['watch'],
+        dependsOn: 'playerTools',
+        source: 'ytkit'
+    });
+
+    const schema = registry.createSettingsSchema({
+        qualityMode: 'best',
+        diagnosticLog: false,
+        _errors: []
+    }, { settingsVersion: 7 });
+
+    assert.equal(schema.settingsVersion, 7);
+    assert.equal(schema.featureCount, 1);
+    assert.equal(schema.entryCount, 3);
+    const qualityEntry = JSON.parse(JSON.stringify(schema.entries.find((entry) => entry.key === 'qualityMode')));
+    assert.deepEqual(qualityEntry, {
+        key: 'qualityMode',
+        featureId: 'qualityMode',
+        name: 'Quality Mode',
+        category: 'Player',
+        control: 'select',
+        valueType: 'string',
+        defaultValue: 'best',
+        hasDefault: true,
+        pages: ['watch'],
+        dependsOn: 'playerTools',
+        parentId: null,
+        isSubFeature: false,
+        source: 'ytkit'
+    });
+    assert.equal(schema.entries.find((entry) => entry.key === 'diagnosticLog').control, 'toggle');
+    assert.equal(schema.entries.find((entry) => entry.key === '_errors').category, 'Internal');
+});
+
 test('surface selectors prefer stable selectors and emit first-miss diagnostics', () => {
     const events = [];
     const core = loadFoundation({
