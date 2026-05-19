@@ -876,7 +876,7 @@ Features:
 - [x] Wrap current feature init/destroy into registry entries without changing behavior.
 - [x] Introduce settings schema generator from registry.
 - [x] Add category-level cleanup registry and feature health state.
-- [ ] Add "safe store profile" vs "full GitHub profile" setting model.
+- [x] Add "safe store profile" vs "full GitHub profile" setting model.
 
 Progress:
 
@@ -884,6 +884,7 @@ Progress:
 - 2026-05-19: Bridged live feature startup, live-chat startup, popup setting messages, settings-panel toggles, config reinitializers, external storage updates, conflict disables, and SPA page transitions through shared lifecycle helpers. Each live feature is registered with a registry adapter that delegates to the existing `init()` and `destroy()` methods while recording health snapshots.
 - 2026-05-19: Added a registry-backed settings schema generator. The schema combines registered feature metadata with `settingsManager.defaults`, covers default-only/internal keys, and is exposed through `ytkit.settingsSchema()` for future settings-panel and import/export work.
 - 2026-05-19: Added category cleanup buckets, category destroy orchestration, and category health snapshots. `ytkit.categoryHealth()` now summarizes feature counts, initialized counts, cleanup counts, and status totals by category.
+- 2026-05-19: Added the safe-store vs full-GitHub profile model. Settings now normalize profile-mode defaults on load, save, and import; local named profile saves remain full-fidelity; explicit safe-store and full-GitHub export payloads declare their mode, profile model, filtered snapshots, and secret/code exclusion behavior. The storage-size audit now proves the safe-store profile payload fits `storage.sync` while full local settings remain local-only.
 
 Acceptance:
 

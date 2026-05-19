@@ -3866,6 +3866,26 @@ return response;
             dwWatchTimeToday: { date: '', seconds: 0 },
             _profiles: {},                   // { profileName: { settingKey: value, ... } }
             _activeProfile: 'default',
+            privacyDataFlowPanel: false,
+            safeStoreProfile: true,
+            githubFullProfile: false,
+            syncSafePrefs: true,
+            syncSafePrefsAllowlist: [
+                'hideCreateButton', 'hideVoiceSearch', 'logoToSubscriptions', 'widenSearchBar',
+                'squareSearchBar', 'squareAvatars', 'subscriptionsGrid', 'homepageGridAlign',
+                'styledFilterChips', 'hideSidebar', 'uiStyle', 'compactLayout', 'thinScrollbar',
+                'watchPageRestyle', 'removeAllShorts', 'redirectShorts', 'disablePlayOnHover',
+                'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
+                'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
+                'videosPerRow', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+                'hiddenActionButtonsManager', 'hiddenActionButtons', 'hiddenPlayerControlsManager',
+                'hiddenPlayerControls', 'hiddenWatchElementsManager', 'hiddenWatchElements',
+                'sponsorBlock', 'sbCat_sponsor', 'sbCat_intro', 'sbCat_outro',
+                'sbCat_selfpromo', 'sbCat_interaction', 'sbCat_music_offtopic',
+                'sbCat_preview', 'sbCat_filler', 'sbCat_poi_highlight'
+            ],
+            advancedLocalPredicate: false,
+            advancedLocalPredicateCode: '',
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -4043,11 +4063,11 @@ return response;
 
         _prepareImportedSettings(settings) {
             const migrated = this._sanitize(this._migrate(this._sanitize(settings), 'profile-import'));
-            return this._sanitize({
+            return this._normalizeProfileModel(this._sanitize({
                 ...this.defaults,
                 ...migrated,
                 _settingsVersion: this.SETTINGS_VERSION
-            });
+            }));
         },
 
         _sanitize(settings = {}) {
@@ -4059,6 +4079,37 @@ return response;
                 }
             }
             return sanitized;
+        },
+
+        _normalizeProfileModel(settings = {}) {
+            const defaults = this.defaults || {};
+            const next = isPlainObject(settings) ? { ...settings } : {};
+            const knownKeys = new Set(Object.keys(defaults));
+            const fallback = Array.isArray(defaults.syncSafePrefsAllowlist)
+                ? defaults.syncSafePrefsAllowlist.filter((key) => typeof key === 'string')
+                : [];
+            const source = Array.isArray(next.syncSafePrefsAllowlist)
+                ? next.syncSafePrefsAllowlist
+                : fallback;
+            const seen = new Set();
+            const allowlist = [];
+            for (const rawKey of source) {
+                const key = String(rawKey || '').trim();
+                if (!key || seen.has(key) || !isSafeObjectKey(key) || !knownKeys.has(key)) continue;
+                seen.add(key);
+                allowlist.push(key);
+            }
+            next.syncSafePrefsAllowlist = allowlist.length ? allowlist : fallback;
+            next.syncSafePrefs = next.syncSafePrefs !== false;
+            next.githubFullProfile = !!next.githubFullProfile;
+            next.safeStoreProfile = next.githubFullProfile ? false : next.safeStoreProfile !== false;
+            if (!next.safeStoreProfile && !next.githubFullProfile) next.safeStoreProfile = true;
+            next.privacyDataFlowPanel = !!next.privacyDataFlowPanel;
+            next.advancedLocalPredicate = !!next.advancedLocalPredicate;
+            next.advancedLocalPredicateCode = typeof next.advancedLocalPredicateCode === 'string'
+                ? next.advancedLocalPredicateCode.slice(0, 20000)
+                : '';
+            return next;
         },
 
         load() {
@@ -4080,7 +4131,7 @@ return response;
             const storedVersion = savedSettings._settingsVersion;
             const rawSettingsSnapshot = this._sanitize(savedSettings);
             savedSettings = this._sanitize(this._migrate(savedSettings));
-            const merged = this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: this.SETTINGS_VERSION });
+            const merged = this._normalizeProfileModel(this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: this.SETTINGS_VERSION }));
             let shouldPersistMerged = storedVersion !== this.SETTINGS_VERSION
                 || JSON.stringify(rawSettingsSnapshot) !== JSON.stringify(savedSettings);
             if (
@@ -4099,7 +4150,7 @@ return response;
         },
 
         save(settings) {
-            StorageManager.set(STORAGE_KEYS.settings, this._sanitize(settings));
+            StorageManager.set(STORAGE_KEYS.settings, this._sanitize(this._normalizeProfileModel(settings)));
             StorageManager.set(LEGACY_STORAGE_KEYS.sidebarOrder, null);
         },
         getFirstRunStatus() {
@@ -4223,6 +4274,146 @@ return response;
             }
         }
     };
+
+    function normalizeProfileMode(mode) {
+        const value = String(mode || '').trim().toLowerCase().replace(/_/g, '-');
+        if (value === 'local') return 'local';
+        if (value === 'github' || value === 'full' || value === 'github-full') return 'github-full';
+        return 'safe-store';
+    }
+
+    function getDefaultSyncSafePrefsAllowlist(defaults = settingsManager.defaults) {
+        return Array.isArray(defaults?.syncSafePrefsAllowlist)
+            ? defaults.syncSafePrefsAllowlist.filter((key) => typeof key === 'string')
+            : [];
+    }
+
+    function sanitizeProfileAllowlist(value, defaults = settingsManager.defaults) {
+        const knownKeys = new Set(Object.keys(defaults || {}));
+        const fallback = getDefaultSyncSafePrefsAllowlist(defaults);
+        const source = Array.isArray(value) ? value : fallback;
+        const seen = new Set();
+        const next = [];
+        for (const rawKey of source) {
+            const key = String(rawKey || '').trim();
+            if (!key || seen.has(key) || !isSafeObjectKey(key) || !knownKeys.has(key)) continue;
+            seen.add(key);
+            next.push(key);
+        }
+        return next.length ? next : fallback;
+    }
+
+    function normalizeProfileModelSettings(settings = {}, defaults = settingsManager.defaults) {
+        const next = isPlainObject(settings) ? { ...settings } : {};
+        next.syncSafePrefsAllowlist = sanitizeProfileAllowlist(next.syncSafePrefsAllowlist, defaults);
+        next.syncSafePrefs = next.syncSafePrefs !== false;
+        next.githubFullProfile = !!next.githubFullProfile;
+        next.safeStoreProfile = next.githubFullProfile ? false : next.safeStoreProfile !== false;
+        if (!next.safeStoreProfile && !next.githubFullProfile) next.safeStoreProfile = true;
+        next.privacyDataFlowPanel = !!next.privacyDataFlowPanel;
+        next.advancedLocalPredicate = !!next.advancedLocalPredicate;
+        next.advancedLocalPredicateCode = typeof next.advancedLocalPredicateCode === 'string'
+            ? next.advancedLocalPredicateCode.slice(0, 20000)
+            : '';
+        return next;
+    }
+
+    function getProfileExportMode(settings = appState.settings || {}) {
+        const normalized = normalizeProfileModelSettings(settings);
+        return normalized.githubFullProfile ? 'github-full' : 'safe-store';
+    }
+
+    function getProfileModel(settings = appState.settings || {}, mode = null) {
+        const normalized = normalizeProfileModelSettings(settings);
+        const resolvedMode = mode ? normalizeProfileMode(mode) : getProfileExportMode(normalized);
+        const fullProfile = resolvedMode === 'github-full';
+        return {
+            mode: resolvedMode,
+            safeStoreProfile: resolvedMode === 'safe-store' ? true : normalized.safeStoreProfile,
+            githubFullProfile: fullProfile,
+            syncSafePrefs: normalized.syncSafePrefs,
+            syncSafePrefsAllowlist: [...normalized.syncSafePrefsAllowlist],
+            advancedLocalPredicate: normalized.advancedLocalPredicate,
+            includesAdvancedLocalPredicateCode: fullProfile && normalized.advancedLocalPredicate && !!normalized.advancedLocalPredicateCode
+        };
+    }
+
+    function getProfileInternalKeys() {
+        return new Set([
+            '_profiles',
+            '_activeProfile',
+            '_settingsVersion',
+            '_errors',
+            '_reactionSpammerAck',
+            'dwWatchTimeToday'
+        ]);
+    }
+
+    function getProfileSecretKeys() {
+        return new Set([
+            'aiSummaryApiKey'
+        ]);
+    }
+
+    function getSafeStoreExcludedKeys() {
+        return new Set([
+            'customCssCode',
+            'advancedLocalPredicateCode',
+            'quickLinkItems',
+            'aiSummaryEndpoint',
+            'aiSummaryModel',
+            'aiSummaryProvider',
+            'downloadQuality',
+            'downloadVideoFormat',
+            'downloadAudioFormat'
+        ]);
+    }
+
+    function cloneProfileValue(value) {
+        if (value === undefined) return undefined;
+        if (value === null || typeof value !== 'object') return value;
+        try {
+            return JSON.parse(JSON.stringify(value));
+        } catch (_) {
+            return undefined;
+        }
+    }
+
+    function shouldIncludeSettingInProfile(key, value, mode, sourceSettings = appState.settings || {}) {
+        if (!isSafeObjectKey(key)) return false;
+        if (getProfileInternalKeys().has(key) || getProfileSecretKeys().has(key)) return false;
+        const normalizedMode = normalizeProfileMode(mode);
+        if (normalizedMode === 'local') return true;
+        if (normalizedMode === 'github-full') return true;
+        const normalizedSettings = normalizeProfileModelSettings(sourceSettings);
+        if (!normalizedSettings.syncSafePrefs) return false;
+        if (getSafeStoreExcludedKeys().has(key)) return false;
+        if (String(key).startsWith('_')) return false;
+        return normalizedSettings.syncSafePrefsAllowlist.includes(key)
+            || ['safeStoreProfile', 'githubFullProfile', 'syncSafePrefs', 'syncSafePrefsAllowlist', 'privacyDataFlowPanel'].includes(key);
+    }
+
+    function createSettingsProfileSnapshot(settings = appState.settings || {}, options = {}) {
+        const mode = normalizeProfileMode(options.mode || 'local');
+        const sourceSettings = options.sourceSettings || settings;
+        const normalized = normalizeProfileModelSettings(settings);
+        const snapshot = {};
+        for (const [key, value] of Object.entries(normalized)) {
+            if (!shouldIncludeSettingInProfile(key, value, mode, sourceSettings)) continue;
+            const cloned = cloneProfileValue(value);
+            if (cloned !== undefined) snapshot[key] = cloned;
+        }
+        if (mode === 'safe-store') {
+            snapshot.safeStoreProfile = true;
+            snapshot.githubFullProfile = false;
+            snapshot.syncSafePrefs = normalized.syncSafePrefs;
+            snapshot.syncSafePrefsAllowlist = [...normalized.syncSafePrefsAllowlist];
+        } else if (mode === 'github-full') {
+            snapshot.safeStoreProfile = false;
+            snapshot.githubFullProfile = true;
+        }
+        return snapshot;
+    }
 
     // ── DOM Element Cache — invalidated on SPA navigation ──
     const _elCache = new Map();
@@ -25739,15 +25930,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _activeName() { return appState.settings._activeProfile || 'default'; },
 
-            _snapshot() {
-                // Capture all user-facing settings, excluding internal profile state and version
-                const snap = {};
-                const skip = new Set(['_profiles', '_activeProfile', '_settingsVersion', 'dwWatchTimeToday', '_errors']);
-                for (const [k, v] of Object.entries(appState.settings)) {
-                    if (skip.has(k)) continue;
-                    snap[k] = v;
+            _profileMode(mode) {
+                return normalizeProfileMode(mode || getProfileExportMode(appState.settings));
+            },
+
+            _snapshot(mode = 'local') {
+                return createSettingsProfileSnapshot(appState.settings, {
+                    mode,
+                    sourceSettings: appState.settings
+                });
+            },
+
+            _profilesForMode(mode = this._profileMode()) {
+                const resolvedMode = this._profileMode(mode);
+                const sourceProfiles = this._profiles();
+                if (resolvedMode === 'local') return sourceProfiles;
+                const projected = {};
+                for (const [name, snapshot] of Object.entries(sourceProfiles)) {
+                    if (!isPlainObject(snapshot)) continue;
+                    projected[name] = createSettingsProfileSnapshot(snapshot, {
+                        mode: resolvedMode,
+                        sourceSettings: appState.settings
+                    });
                 }
-                return snap;
+                return projected;
             },
 
             save(name) {
@@ -25755,7 +25961,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 name = name.trim();
                 if (!name) return false;
                 const profiles = { ...this._profiles() };
-                profiles[name] = this._snapshot();
+                profiles[name] = this._snapshot('local');
                 appState.settings._profiles = profiles;
                 appState.settings._activeProfile = name;
                 settingsManager.save(appState.settings);
@@ -25791,15 +25997,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return true;
             },
 
-            exportJson() {
+            exportJson(mode = this._profileMode()) {
+                const resolvedMode = this._profileMode(mode);
                 const payload = {
-                    schemaVersion: 1,
+                    schemaVersion: 2,
                     exportedAt: new Date().toISOString(),
+                    profileMode: resolvedMode,
+                    profileModel: getProfileModel(appState.settings, resolvedMode),
                     activeProfile: this._activeName(),
-                    profiles: this._profiles(),
-                    currentSnapshot: this._snapshot(),
+                    profiles: this._profilesForMode(resolvedMode),
+                    currentSnapshot: this._snapshot(resolvedMode),
                 };
                 return JSON.stringify(payload, null, 2);
+            },
+
+            exportSafeStoreJson() {
+                return this.exportJson('safe-store');
+            },
+
+            exportGithubFullJson() {
+                return this.exportJson('github-full');
+            },
+
+            profileModel() {
+                return getProfileModel(appState.settings);
             },
 
             importJson(text) {

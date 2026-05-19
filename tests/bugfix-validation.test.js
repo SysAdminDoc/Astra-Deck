@@ -1383,6 +1383,34 @@ test('ytkit feature lifecycle is bridged through the core registry', () => {
     }
 });
 
+test('settings profiles expose safe store and full GitHub profile models', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const defaults = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'));
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    assert.equal(defaults.safeStoreProfile, true, 'safe store profile mode should default on');
+    assert.equal(defaults.githubFullProfile, false, 'full GitHub profile mode should be opt-in');
+    assert.equal(defaults.syncSafePrefs, true, 'safe preference sync should default on');
+    assert.ok(Array.isArray(defaults.syncSafePrefsAllowlist) && defaults.syncSafePrefsAllowlist.includes('colorTheme'),
+        'safe profile allowlist should include shareable visual preferences');
+    assert.equal(defaults.advancedLocalPredicate, false, 'advanced local predicates must default off');
+    assert.equal(defaults.advancedLocalPredicateCode, '', 'advanced local predicate code must default empty');
+
+    assert.ok(source.includes('function createSettingsProfileSnapshot('),
+        'profile snapshot creation should be centralized');
+    assert.ok(source.includes("'aiSummaryApiKey'"),
+        'API keys must be excluded from every profile mode');
+    assert.ok(source.includes("'advancedLocalPredicateCode'"),
+        'advanced local code should be explicitly modeled as unsafe for store profiles');
+    assert.ok(source.includes('exportSafeStoreJson()'),
+        'settingsProfiles should expose an explicit safe-store export');
+    assert.ok(source.includes('exportGithubFullJson()'),
+        'settingsProfiles should expose an explicit full GitHub export');
+    assert.ok(source.includes('profileMode: resolvedMode'),
+        'profile export payload should declare which profile model produced it');
+});
+
 test('MediaDL probe rejects legacy localhost services without Astra health identity', () => {
     const fs = require('fs');
     const path = require('path');
