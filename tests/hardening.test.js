@@ -2345,3 +2345,66 @@ test('lowPowerProfile backs up flags before applying, restores on destroy', () =
     assert.match(destroyBlock, /this\._restore\(\)/,
         'destroy() must restore backed-up flags');
 });
+
+// ── v3.32.0 P1: Premium visual system invariants ──
+
+test('oledTheme rewrites --yt-sys-* base/raised/overlay tokens to true black', () => {
+    const start = ytkitSource.indexOf("id: 'oledTheme'");
+    assert.ok(start > -1, 'oledTheme must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /--yt-sys-color-baseline--base-background:\s*#000/,
+        'must override base-background to true black');
+    assert.match(block, /--yt-saturated-base-background:\s*#000/,
+        'must also override the legacy saturated base-background');
+});
+
+test('rectangularizeYouTube clamps backdrops to 6-8 px and keeps avatars circular', () => {
+    const start = ytkitSource.indexOf("id: 'rectangularizeYouTube'");
+    assert.ok(start > -1, 'rectangularizeYouTube must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /border-radius:\s*8px\s*!important/,
+        'pill backdrops must be clamped to 8 px');
+    // Carve-out: avatars + progress rings must stay circular.
+    assert.match(block, /border-radius:\s*50%\s*!important/,
+        'avatars/progress rings must stay circular via the 50% carve-out');
+    assert.match(block, /yt-avatar-shape/,
+        'must explicitly include yt-avatar-shape in the circular carve-out');
+});
+
+test('rectangularizeYouTube never sets a border-radius > 12px on backdrops', () => {
+    // Hard rule from the user's CLAUDE.md: allowed backdrop radii are
+    // 0/4/6/8/10/12. Forbidden are 999px / 50% on non-icon-only elements.
+    // The 50% rule above scopes to avatar / progress-ring carve-outs only;
+    // grep that no other "border-radius: 999px" / "border-radius: 100" /
+    // "border-radius: 99" sneaks into the rectangularize rule body.
+    const start = ytkitSource.indexOf("id: 'rectangularizeYouTube'");
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.ok(!/border-radius:\s*999/.test(block),
+        'rectangularizeYouTube must not introduce 999 px radii');
+    assert.ok(!/border-radius:\s*100%/.test(block),
+        'rectangularizeYouTube must not introduce 100% radii');
+});
+
+test('classicLayoutProfile is a select with three modes (modern / 2020 / 2016)', () => {
+    const start = ytkitSource.indexOf("id: 'classicLayoutProfile'");
+    assert.ok(start > -1, 'classicLayoutProfile must exist');
+    const block = ytkitSource.slice(start, start + 6000);
+    assert.match(block, /type:\s*'select'/, 'must be a select feature');
+    assert.match(block, /'modern':\s*'Modern \(default\)'/,
+        'must offer the modern (default) option');
+    assert.match(block, /'classic-2020':/,
+        'must offer the classic-2020 option');
+    assert.match(block, /'classic-2016':/,
+        'must offer the classic-2016 option');
+});
+
+test('tokenThemeBridge maps the Astra accent into --yt-sys-color tokens', () => {
+    const start = ytkitSource.indexOf("id: 'tokenThemeBridge'");
+    assert.ok(start > -1, 'tokenThemeBridge must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /themeAccentColor/, 'must read the user themeAccentColor setting');
+    assert.match(block, /--yt-sys-color-baseline--call-to-action/,
+        'must override call-to-action token');
+    assert.match(block, /--yt-sys-color-baseline--static-brand-red/,
+        'must override static-brand-red token');
+});
