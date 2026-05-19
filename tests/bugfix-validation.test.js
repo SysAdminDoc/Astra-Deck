@@ -1323,6 +1323,9 @@ test('guard block checks all destructured core functions', () => {
         'isLiveChatFrame',
         'storageReadJSON',
         'storageWriteJSON',
+        'registerFeature',
+        'setFeatureHealth',
+        'getFeatureHealthSnapshot',
     ];
 
     const guardBlock = source.substring(
@@ -1333,6 +1336,29 @@ test('guard block checks all destructured core functions', () => {
     for (const fn of mustGuard) {
         assert.ok(guardBlock.includes(`!${fn}`), `guard block must check for ${fn}`);
     }
+});
+
+test('ytkit feature lifecycle is bridged through the core registry', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    assert.ok(source.includes('function registerRuntimeFeature(feature)'),
+        'ytkit.js should register live features with the core feature registry');
+    assert.ok(source.includes('registerRuntimeFeatures();'),
+        'runtime features should be registered before bootstrap initializes them');
+    assert.ok(source.includes("init: () => initFeatureLifecycle(feature, 'registry')"),
+        'registry entries should wrap feature init through the shared lifecycle helper');
+    assert.ok(source.includes("destroy: () => destroyFeatureLifecycle(feature, 'registry')"),
+        'registry entries should wrap feature destroy through the shared lifecycle helper');
+    assert.ok(source.includes('function initFeatureLifecycle(feature, source ='),
+        'feature init should have one shared lifecycle path');
+    assert.ok(source.includes('function destroyFeatureLifecycle(feature, source ='),
+        'feature destroy should have one shared lifecycle path');
+    assert.ok(source.includes('setFeatureHealth(feature.id'),
+        'lifecycle changes should update registry feature health');
+    assert.ok(source.includes("featureHealth() { return getFeatureHealthSnapshot(); }"),
+        'debug API should expose registry health snapshots');
 });
 
 test('MediaDL probe rejects legacy localhost services without Astra health identity', () => {
