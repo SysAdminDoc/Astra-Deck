@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.31.0';
+    const YTKIT_VERSION = '3.32.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4392,6 +4392,13 @@ return response;
             globalAriaLiveRegion: false,               // Mounts a single role=status live region for all toasts
             lowPowerProfile: false,                    // Throttles intervals/observers when on battery-saver
             lowPowerProfileBackup: null,               // Backup of pre-applied flags
+            // v3.32.0 — Premium visual system
+            oledTheme: false,                          // True OLED black via --yt-sys-* token bridge
+            denseMode: false,                          // Global density scale on Astra surfaces
+            rectangularizeYouTube: false,              // Forces 4-12px radii everywhere (no pill backdrops, ever)
+            classicLayoutProfile: 'modern',            // 'modern' | 'classic-2020' | 'classic-2016'
+            newPlayerUiRestore: false,                 // Control Panel-style restoration of older player chrome
+            tokenThemeBridge: false,                   // Maps Astra accent into --yt-sys-color-* tokens
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -31588,6 +31595,243 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._readBackup()) this._restore();
             }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  OLED THEME — True black via --yt-sys-* token bridge
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'oledTheme',
+            name: 'OLED Theme',
+            description: 'True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube\'s native theme switches because we hook the tokens themselves, not the surface classes.',
+            group: 'Theming',
+            icon: 'moon',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    html[dark], html:not([light]), html[system-icons] {
+                        --yt-sys-color-baseline--base-background: #000 !important;
+                        --yt-sys-color-baseline--raised-background: #050505 !important;
+                        --yt-sys-color-baseline--overlay-background: #0a0a0a !important;
+                        --yt-sys-color-baseline--overlay-background-heavy: #050505 !important;
+                        --yt-saturated-base-background: #000 !important;
+                        --yt-saturated-raised-background: #050505 !important;
+                        --yt-saturated-overlay-background: #0a0a0a !important;
+                        --ytd-searchbox-legacy-button-color: #0d0d0d !important;
+                        --yt-spec-base-background: #000 !important;
+                        --yt-spec-raised-background: #050505 !important;
+                        --yt-spec-menu-background: #0a0a0a !important;
+                        background: #000 !important;
+                    }
+                    ytd-app, ytd-page-manager, body { background: #000 !important; }
+                `, 'oled-theme');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  DENSE MODE — Global density scale for Astra surfaces
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'denseMode',
+            name: 'Dense Mode',
+            description: 'Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube\'s native layout — only our own panels, chips, pills, and toolbars.',
+            group: 'Theming',
+            icon: 'rows-3',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    .ytkit-sub-toolbar,
+                    .ytkit-bulk-bar,
+                    .ytkit-stream-links-panel,
+                    .ytkit-dl-history-panel,
+                    .ytkit-local-ai-modal__body {
+                        padding: 8px 10px !important;
+                        gap: 6px !important;
+                    }
+                    .ytkit-sub-toolbar button,
+                    .ytkit-sub-toolbar select,
+                    .ytkit-bulk-bar button,
+                    .ytkit-stream-links-btn,
+                    .ytkit-dl-history-btn,
+                    .ytkit-local-ai-btn,
+                    .ytkit-cobalt-fallback-btn {
+                        padding: 4px 8px !important;
+                        font-size: 11.5px !important;
+                    }
+                    .ytkit-sub-group-chip,
+                    .ytkit-ryd-pill,
+                    .ytkit-download-health__pill,
+                    .ytkit-monet-pill {
+                        padding: 2px 7px !important;
+                        font-size: 10.5px !important;
+                    }
+                    .ytkit-stream-links-panel li,
+                    .ytkit-dl-history-panel li {
+                        padding: 4px 0 !important;
+                    }
+                `, 'dense-mode');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  RECTANGULARIZE — Forces 4-12 px radii everywhere (no pill backdrops)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'rectangularizeYouTube',
+            name: 'Rectangularize UI',
+            description: 'Strips YouTube\'s pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular.',
+            group: 'Theming',
+            icon: 'square',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    /* Strip pill backdrops on chips, buttons, badges. Allowed: 0/4/6/8/10/12 px. */
+                    yt-button-shape,
+                    yt-chip-cloud-chip-renderer,
+                    yt-chip-cloud-chip-renderer .yt-chip-cloud-chip-renderer,
+                    button.yt-spec-button-shape-next,
+                    .yt-spec-button-shape-next,
+                    ytd-button-renderer,
+                    ytd-toggle-button-renderer,
+                    yt-icon-badge-shape,
+                    yt-tab-shape,
+                    ytd-pivot-bar-item-renderer {
+                        border-radius: 8px !important;
+                    }
+                    /* Live chat & engagement-panel pill backdrops too */
+                    yt-live-chat-button-renderer,
+                    yt-live-chat-icon-button-renderer,
+                    ytd-engagement-panel-section-list-renderer button {
+                        border-radius: 6px !important;
+                    }
+                    /* Carve out: keep avatars + circular indicators round. */
+                    yt-img-shadow#avatar,
+                    #avatar,
+                    yt-avatar-shape,
+                    yt-decorated-avatar-view-model,
+                    .ytp-progress-ring,
+                    .ytp-spinner,
+                    yt-icon-badge-shape[overlay-style="LIVE"] {
+                        border-radius: 50% !important;
+                    }
+                `, 'rectangularize');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  CLASSIC LAYOUT PROFILE — Modern / Classic 2020 / Classic 2016
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'classicLayoutProfile',
+            name: 'Layout Profile',
+            description: 'Pick a layout profile. Modern keeps YouTube\'s 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions.',
+            group: 'Theming',
+            icon: 'layout',
+            type: 'select',
+            settingKey: 'classicLayoutProfile',
+            options: { 'modern': 'Modern (default)', 'classic-2020': 'Classic 2020', 'classic-2016': 'Classic 2016' },
+            _styleElement: null,
+            _apply(profile) {
+                this._styleElement?.remove();
+                this._styleElement = null;
+                if (profile === 'modern') return;
+                let css = '';
+                if (profile === 'classic-2020') {
+                    css = `
+                        ytd-masthead { --ytd-masthead-height: 56px !important; min-height: 56px !important; }
+                        ytd-rich-grid-renderer { --ytd-rich-grid-item-margin: 8px !important; }
+                        ytd-rich-item-renderer { padding: 0 4px !important; }
+                        ytd-watch-flexy { --ytd-watch-flexy-sidebar-width: 380px !important; }
+                    `;
+                } else if (profile === 'classic-2016') {
+                    css = `
+                        ytd-masthead { --ytd-masthead-height: 50px !important; min-height: 50px !important; }
+                        ytd-rich-grid-renderer { --ytd-rich-grid-item-margin: 6px !important; }
+                        ytd-rich-item-renderer { padding: 0 3px !important; }
+                        ytd-watch-flexy { --ytd-watch-flexy-sidebar-width: 426px !important; }
+                        /* Subtle bigger thumbnail per the older 2016 watch page */
+                        #player.ytd-watch-flexy { max-width: 854px !important; }
+                    `;
+                }
+                if (css) this._styleElement = injectStyle(css, 'classic-layout');
+            },
+            init() {
+                this._apply(String(appState?.settings?.classicLayoutProfile || 'modern'));
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  NEW PLAYER UI RESTORE — Control Panel-style chrome restoration
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'newPlayerUiRestore',
+            name: 'Restore Classic Player Chrome',
+            description: 'Hides YouTube\'s new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls.',
+            group: 'Theming',
+            icon: 'play',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    .ytp-delhi-modern,
+                    .ytp-overflow-panel-button,
+                    .ytp-delhi-modern-fullscreen-action {
+                        display: none !important;
+                    }
+                    .ytp-progress-bar-container {
+                        height: 3px !important;
+                    }
+                    .ytp-progress-bar {
+                        border-radius: 0 !important;
+                    }
+                    .ytp-play-progress {
+                        border-radius: 0 !important;
+                    }
+                    .ytp-chrome-bottom .ytp-chrome-controls {
+                        padding-bottom: 8px !important;
+                    }
+                `, 'new-player-ui-restore');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  TOKEN THEME BRIDGE — Maps Astra accent into --yt-sys-* tokens
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'tokenThemeBridge',
+            name: 'Native Token Theme Bridge',
+            description: 'Pipes the user\'s themeAccentColor into YouTube\'s native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface.',
+            group: 'Theming',
+            icon: 'palette',
+            _styleElement: null,
+            _apply() {
+                this._styleElement?.remove();
+                const accent = String(appState?.settings?.themeAccentColor || '#ff6b4a');
+                this._styleElement = injectStyle(`
+                    html, html[dark], html:not([light]) {
+                        --yt-sys-color-baseline--call-to-action: ${accent} !important;
+                        --yt-sys-color-baseline--static-brand-red: ${accent} !important;
+                        --yt-spec-call-to-action: ${accent} !important;
+                        --yt-spec-static-brand-red: ${accent} !important;
+                        --yt-spec-brand-button-background: ${accent} !important;
+                    }
+                `, 'token-theme-bridge');
+            },
+            init() { this._apply(); },
+            destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
 
     ];

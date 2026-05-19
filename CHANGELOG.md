@@ -6,6 +6,51 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.32.0] - Premium Visual System
+
+Closes the v3.32 roadmap with six new features. The OLED + token-bridge
+combo means dark surfaces survive YouTube native theme reshuffles
+because we hook the tokens themselves, not surface classes.
+
+### Added (extension)
+
+- **`oledTheme`** — rewrites `--yt-sys-color-baseline--base-background`,
+  `--raised-background`, `--overlay-background-heavy` plus the legacy
+  `--yt-saturated-*` set to true black `#000`. Survives YouTube's
+  native theme switches because the token bridge runs even after the
+  surface classes change.
+- **`denseMode`** — global density scale on Astra-injected surfaces
+  (toolbars / chips / pills / panels). Does not change YouTube's
+  native layout — only our own controls.
+- **`rectangularizeYouTube`** — strips YouTube's pill / stadium /
+  fully-rounded backdrops. Clamps `yt-button-shape`, `yt-chip-cloud-
+  chip-renderer`, `yt-spec-button-shape-next`, `ytd-button-renderer`,
+  `ytd-toggle-button-renderer`, `yt-icon-badge-shape`, `yt-tab-shape`,
+  `ytd-pivot-bar-item-renderer` to 8 px. Avatars / progress rings
+  stay circular via an explicit 50% carve-out.
+- **`classicLayoutProfile`** — three-mode select: `modern` (default),
+  `classic-2020` (56 px masthead + 8 px rich-grid margin + 380 px
+  sidebar), `classic-2016` (50 px masthead + 6 px rich-grid margin +
+  426 px sidebar + 854 px watch-page max width).
+- **`newPlayerUiRestore`** — Control Panel-style restoration. Hides
+  `.ytp-delhi-modern`, `.ytp-overflow-panel-button`, `.ytp-delhi-modern-
+  fullscreen-action`. Tightens the progress bar to 3 px and removes
+  the rounded progress-fill radius.
+- **`tokenThemeBridge`** — pipes the user's `themeAccentColor` into
+  `--yt-sys-color-baseline--call-to-action`, `--static-brand-red`,
+  `--yt-spec-call-to-action`, `--yt-spec-static-brand-red`,
+  `--yt-spec-brand-button-background`. Native badges and primary
+  buttons follow the Astra accent without per-surface restyling.
+
+### Tests
+
+- 5 new regression tests covering OLED token rewrites (both `--yt-sys-*`
+  and legacy `--yt-saturated-*`), rectangularize backdrop clamping +
+  circular carve-out + no 999 px / 100% radii (matches the user's
+  "no pill backdrops" hard rule), classic-layout three-mode surface,
+  and token-theme-bridge accent → `--yt-sys-color-*` propagation.
+  231/231 JS tests pass.
+
 ## [3.31.0] - Accessibility, Mobile, and Low Power
 
 Closes four of six v3.31 line items in this release; CPU/chat tamer
