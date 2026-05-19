@@ -945,7 +945,7 @@ Acceptance:
 
 Features:
 
-- [ ] Tweaks-grade quality matrix by normal/theater/fullscreen/background/embed. *(deferred to v3.26.1/v3.27 — needs MAIN-world fullscreenchange + per-context listener wiring)*
+- [x] Tweaks-grade quality matrix by normal/theater/fullscreen/background/embed. *(Shipped in v4.1.0: `qualityProfileMatrix` detects context via fullscreenchange/visibilitychange/theater-attribute observer; MAIN-world bridge consumes `data-ytkit-quality-target` and calls `setPlaybackQualityRange`.)*
 - [x] Initial player state for foreground/background tabs.
 - [x] Disable loudness normalization where technically possible. *(best-effort from ISOLATED world; the html `data-ytkit-disable-loudness="1"` attribute is set so the future MAIN-world bridge can disable the Web Audio gainNode there)*
 - [x] Volume wheel mode with visible hover affordance.
@@ -964,7 +964,7 @@ Progress:
 
 Acceptance:
 
-- [ ] MAIN-world bridge handles quality without showing YouTube menus. *(open — bundled with the deferred per-context quality matrix work)*
+- [x] MAIN-world bridge handles quality without showing YouTube menus. *(Shipped in v4.1.0 via `ytkit-main.js#applyContextQuality` reading `data-ytkit-quality-target` and calling `movie_player.setPlaybackQualityRange`.)*
 - [x] No keyboard shortcuts added.
 - [x] Every player control can be disabled and fully removed. *(every new feature ships destroy() that removes listeners, HUDs, hints, style tags, and data attributes; covered by 8 v3.26.0 hardening tests)*
 
@@ -998,7 +998,7 @@ Features:
 
 - [x] Return YouTube Dislike with cache/rate limiter.
 - [x] Dislike/like ratio on watch and cards.
-- [ ] DeArrow channel override UI. *(Data model seeded as `deArrowChannelOverrides`; settings-panel surface deferred to a follow-up.)*
+- [x] DeArrow channel override UI. *(Shipped in v4.1.0: watch-page chip cycles DeArrow → Original → Off; runtime short-circuits `_fetchBranding` for overridden channels.)*
 - [x] Anti-translate feed/watch/audio/transcript expansion. *(Feed/watch shipped in earlier `antiTranslate` work; v3.28 adds the audio track and transcript surfaces via `antiTranslateAudioTrack` and `antiTranslateTranscript`.)*
 - [x] Monetization/ad indicator panel if data is safely detectable.
 

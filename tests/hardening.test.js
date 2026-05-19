@@ -2464,3 +2464,77 @@ test('youtubeMusicCompat only runs on music.youtube.com', () => {
     assert.match(block, /location\.hostname\.includes\('music\.youtube\.com'\)/,
         'must early-return on non-music hostnames');
 });
+
+// ── v4.1.0 P1: Deferred-item follow-ups (DeArrow channel override + per-context quality) ──
+
+test('deArrow honors per-channel override before fetching branding', () => {
+    const idx = ytkitSource.indexOf('_channelOverrideMode(el)');
+    assert.ok(idx > -1, 'deArrow must declare _channelOverrideMode()');
+    // The override check must run BEFORE _fetchBranding so we don't waste an
+    // API request on overridden channels.
+    const block = ytkitSource.slice(idx, idx + 4000);
+    assert.match(block, /deArrowChannelOverrides/,
+        'must read deArrowChannelOverrides setting');
+    const procIdx = ytkitSource.indexOf('async _processPage()');
+    const procBlock = ytkitSource.slice(procIdx, procIdx + 4000);
+    const overrideCheckPos = procBlock.indexOf('_channelOverrideMode(el)');
+    const brandFetchPos = procBlock.indexOf('this._fetchBranding(videoId)');
+    assert.ok(overrideCheckPos > -1 && brandFetchPos > -1,
+        '_processPage must both check the override and call _fetchBranding');
+    assert.ok(overrideCheckPos < brandFetchPos,
+        'override check must run BEFORE _fetchBranding to short-circuit the API call');
+});
+
+test('deArrowChannelOverridesPanel cycles dearrow → original → off → dearrow', () => {
+    const start = ytkitSource.indexOf("id: 'deArrowChannelOverridesPanel'");
+    assert.ok(start > -1, 'deArrowChannelOverridesPanel must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    const cycleIdx = block.indexOf('_cycleMode(current)');
+    assert.ok(cycleIdx > -1, 'must declare _cycleMode()');
+    const cycleBlock = block.slice(cycleIdx, cycleIdx + 600);
+    assert.match(cycleBlock, /current === 'dearrow'/, 'must transition from dearrow');
+    assert.match(cycleBlock, /current === 'original'/, 'must transition from original');
+    assert.match(cycleBlock, /return 'dearrow'/, 'must wrap back to dearrow');
+});
+
+test('qualityProfileMatrix publishes data-ytkit-quality-context on every context change', () => {
+    const start = ytkitSource.indexOf("id: 'qualityProfileMatrix'");
+    assert.ok(start > -1, 'qualityProfileMatrix must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /document\.documentElement\.setAttribute\('data-ytkit-quality-context'/,
+        'must write the context to <html data-ytkit-quality-context>');
+    assert.match(block, /data-ytkit-quality-target/,
+        'must publish the resolved quality target too');
+    assert.match(block, /fullscreenchange/,
+        'must listen for fullscreenchange');
+    assert.match(block, /visibilitychange/,
+        'must listen for visibilitychange (background ↔ foreground)');
+    assert.match(block, /attributeFilter:\s*\['theater'\]/,
+        'must observe ytd-watch-flexy[theater] for theater-mode transitions');
+});
+
+test('qualityProfileMatrix destroy() removes both data attributes', () => {
+    const start = ytkitSource.indexOf("id: 'qualityProfileMatrix'");
+    const block = ytkitSource.slice(start, start + 8000);
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /removeAttribute\('data-ytkit-quality-context'\)/,
+        'destroy() must remove data-ytkit-quality-context');
+    assert.match(destroyBlock, /removeAttribute\('data-ytkit-quality-target'\)/,
+        'destroy() must remove data-ytkit-quality-target');
+    assert.match(destroyBlock, /document\.removeEventListener\('fullscreenchange'/,
+        'destroy() must remove the fullscreenchange listener');
+});
+
+test('MAIN-world bridge applies per-context quality when data-ytkit-quality-target is set', () => {
+    const mainSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
+        'utf8'
+    );
+    assert.match(mainSource, /applyContextQuality/,
+        'ytkit-main.js must declare an applyContextQuality function');
+    assert.match(mainSource, /data-ytkit-quality-target/,
+        'ytkit-main.js must read the per-context quality target attribute');
+    assert.match(mainSource, /attributeFilter:\s*\['data-ytkit-quality-target',\s*'data-ytkit-quality-context'\]/,
+        'ytkit-main.js must observe both quality data attributes');
+});

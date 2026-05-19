@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.0.0';
+    const YTKIT_VERSION = '4.1.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4373,6 +4373,16 @@ return response;
             returnDislikeCacheHours: 24,
             returnDislikeShowRatio: true,
             deArrowChannelOverrides: {},               // { channelId: { mode: 'off' | 'original' | 'dearrow' } }
+            deArrowChannelOverridesPanel: false,       // Watch-page button to set the override for the current channel
+            // v3.26.0 deferred → v4.1.0: per-context quality matrix scaffold
+            // Data model only. The MAIN-world bridge listens to data-ytkit-quality-context
+            // and switches active quality. Default 'inherit' means "no override".
+            qualityProfileMatrix: false,               // Master toggle for the per-context override layer
+            qualityDefaultNormal: 'inherit',           // 'inherit' | 'auto' | 'hd1080' | 'hd720' | 'large' | 'medium' | 'small'
+            qualityDefaultTheater: 'inherit',
+            qualityDefaultFullscreen: 'inherit',
+            qualityDefaultBackground: 'inherit',
+            qualityDefaultEmbed: 'inherit',
             antiTranslateAudioTrack: false,            // Force original audio track on every video
             antiTranslateTranscript: false,            // Force original-language transcript view
             monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
@@ -26520,6 +26530,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 return title;
             },
+            _channelOverrideMode(el) {
+                const overrides = appState?.settings?.deArrowChannelOverrides;
+                if (!overrides || typeof overrides !== 'object') return null;
+                const link = el?.querySelector?.('a[href*="/channel/"], a[href*="/@"]');
+                if (!link) return null;
+                const href = link.getAttribute('href') || '';
+                const idMatch = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
+                const channelId = idMatch ? idMatch[1] : (href.match(/^\/@([A-Za-z0-9._-]+)/)?.[0] || '');
+                if (!channelId) return null;
+                const entry = overrides[channelId];
+                return entry && typeof entry === 'object' ? entry.mode || null : null;
+            },
             async _processPage() {
                 const gen = this._generation;
                 const replaceTitles = appState.settings.daReplaceTitles;
@@ -26535,6 +26557,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const url = new URL(link.href, location.origin);
                     const videoId = url.searchParams.get('v');
                     if (!videoId) continue;
+                    // v3.28 deferred → v4.0+: honor per-channel override.
+                    // 'off'      → skip title + thumb replacement entirely for this card
+                    // 'original' → also skip (channel author wants original metadata)
+                    // 'dearrow'  → fall through to normal DeArrow path
+                    const overrideMode = this._channelOverrideMode(el);
+                    if (overrideMode === 'off' || overrideMode === 'original') {
+                        el.dataset.daOverride = overrideMode;
+                        continue;
+                    }
                     const branding = await this._fetchBranding(videoId);
                     if (!branding || gen !== this._generation) continue;
                     if (replaceTitles) {
@@ -30737,6 +30768,228 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pillEl?.remove();
                 this._pillEl = null;
                 document.querySelectorAll('.ytkit-monet-pill').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  QUALITY PROFILE MATRIX — Per-context quality override (scaffold)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'qualityProfileMatrix',
+            name: 'Per-Context Quality',
+            description: 'Set different default qualities for normal / theater / fullscreen / background / embed contexts. ISOLATED-world detects the context and writes data-ytkit-quality-context on <html>; the MAIN-world bridge re-applies the matching quality via movie_player.setPlaybackQualityRange().',
+            group: 'Video Player',
+            icon: 'monitor',
+            pages: [PageTypes.WATCH],
+            _fsHandler: null,
+            _visHandler: null,
+            _navRule: null,
+            _lastContext: '',
+
+            _isTheaterMode() {
+                return !!document.querySelector('ytd-watch-flexy[theater]');
+            },
+
+            _isFullscreen() {
+                return !!document.fullscreenElement;
+            },
+
+            _isBackground() {
+                return document.visibilityState !== 'visible';
+            },
+
+            _isEmbed() {
+                return location.pathname.startsWith('/embed/');
+            },
+
+            _resolveContext() {
+                if (this._isEmbed()) return 'embed';
+                if (this._isFullscreen()) return 'fullscreen';
+                if (this._isBackground()) return 'background';
+                if (this._isTheaterMode()) return 'theater';
+                return 'normal';
+            },
+
+            _resolvedQuality(context) {
+                const map = {
+                    normal: appState?.settings?.qualityDefaultNormal,
+                    theater: appState?.settings?.qualityDefaultTheater,
+                    fullscreen: appState?.settings?.qualityDefaultFullscreen,
+                    background: appState?.settings?.qualityDefaultBackground,
+                    embed: appState?.settings?.qualityDefaultEmbed
+                };
+                return String(map[context] || 'inherit');
+            },
+
+            _publishContext() {
+                const context = this._resolveContext();
+                if (context === this._lastContext) return;
+                this._lastContext = context;
+                const quality = this._resolvedQuality(context);
+                document.documentElement.setAttribute('data-ytkit-quality-context', context);
+                if (quality === 'inherit') {
+                    document.documentElement.removeAttribute('data-ytkit-quality-target');
+                    return;
+                }
+                document.documentElement.setAttribute('data-ytkit-quality-target', quality);
+                // MAIN-world bridge (ytkit-main.js future work) listens for the
+                // attribute change and calls movie_player.setPlaybackQualityRange.
+                // For ISOLATED-world fallback, we also dispatch a CustomEvent so
+                // any future in-page reader can wake up immediately.
+                window.dispatchEvent(new CustomEvent('ytkit-quality-context', {
+                    detail: { context, quality }
+                }));
+            },
+
+            init() {
+                this._fsHandler = () => this._publishContext();
+                this._visHandler = () => this._publishContext();
+                document.addEventListener('fullscreenchange', this._fsHandler);
+                document.addEventListener('visibilitychange', this._visHandler);
+                this._navRule = () => { setTimeout(() => this._publishContext(), 600); };
+                addNavigateRule(this.id, this._navRule);
+                // Theater toggles flip an attribute on ytd-watch-flexy; poll the
+                // attribute via MutationObserver scoped to the watch host.
+                this._observer = new MutationObserver(() => this._publishContext());
+                const host = document.querySelector('ytd-watch-flexy');
+                if (host) this._observer.observe(host, { attributes: true, attributeFilter: ['theater'] });
+                this._publishContext();
+            },
+
+            destroy() {
+                if (this._fsHandler) document.removeEventListener('fullscreenchange', this._fsHandler);
+                if (this._visHandler) document.removeEventListener('visibilitychange', this._visHandler);
+                removeNavigateRule(this.id);
+                this._observer?.disconnect();
+                this._observer = null;
+                this._fsHandler = null;
+                this._visHandler = null;
+                this._navRule = null;
+                document.documentElement.removeAttribute('data-ytkit-quality-context');
+                document.documentElement.removeAttribute('data-ytkit-quality-target');
+                this._lastContext = '';
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  DEARROW CHANNEL OVERRIDES PANEL — Per-channel mode chip
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'deArrowChannelOverridesPanel',
+            name: 'DeArrow Per-Channel Overrides',
+            description: 'Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID.',
+            group: 'Content',
+            icon: 'user-cog',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _navRule: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-da-channel-chip{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 8px;border-radius:6px;background:rgba(124,58,237,0.14);color:#e9d5ff;border:1px solid rgba(124,58,237,0.32);font:600 11px/1 system-ui;letter-spacing:.02em;cursor:pointer;}
+                    .ytkit-da-channel-chip:hover{background:rgba(124,58,237,0.24);}
+                    .ytkit-da-channel-chip[data-mode="off"]{background:rgba(115,115,115,0.18);color:#d4d4d4;border-color:rgba(115,115,115,0.4);}
+                    .ytkit-da-channel-chip[data-mode="original"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
+                `, 'da-channel-chip');
+            },
+
+            _currentChannelId() {
+                const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                if (link) {
+                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    if (m) return m[1];
+                }
+                const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                if (handleLink) return handleLink.getAttribute('href') || '';
+                return '';
+            },
+
+            _readMode(channelId) {
+                const overrides = appState?.settings?.deArrowChannelOverrides;
+                if (!overrides || typeof overrides !== 'object') return 'dearrow';
+                const entry = overrides[channelId];
+                return entry?.mode || 'dearrow';
+            },
+
+            _writeMode(channelId, mode) {
+                if (!channelId) return;
+                const overrides = { ...(appState?.settings?.deArrowChannelOverrides || {}) };
+                if (mode === 'dearrow') { delete overrides[channelId]; }
+                else { overrides[channelId] = { mode, updatedAt: Date.now() }; }
+                appState.settings.deArrowChannelOverrides = overrides;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('DeArrowOverride', `Save failed: ${e.message}`); }
+                // Force DeArrow to re-process this page with the new override.
+                const dearrow = getFeatureById('deArrow');
+                if (dearrow?._initialized) {
+                    try {
+                        document.querySelectorAll('[data-da-processed]').forEach(el => {
+                            delete el.dataset.daProcessed;
+                            delete el.dataset.daOverride;
+                        });
+                        dearrow._processPage?.();
+                    } catch (e) { DebugManager.log('DeArrowOverride', `Re-process failed: ${e.message}`); }
+                }
+            },
+
+            _cycleMode(current) {
+                if (current === 'dearrow') return 'original';
+                if (current === 'original') return 'off';
+                return 'dearrow';
+            },
+
+            _renderChip() {
+                if (!isWatchPagePath()) return;
+                const channelId = this._currentChannelId();
+                if (!channelId) return;
+                const host = document.querySelector('ytd-video-owner-renderer #upload-info, ytd-video-owner-renderer #container, ytd-channel-name');
+                if (!host || host.querySelector('.ytkit-da-channel-chip')) {
+                    // Re-render text when channel switches mid-SPA-navigation.
+                    const existing = host?.querySelector('.ytkit-da-channel-chip');
+                    if (existing) {
+                        const mode = this._readMode(channelId);
+                        existing.dataset.mode = mode;
+                        existing.textContent = `DeArrow: ${mode}`;
+                    }
+                    return;
+                }
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'ytkit-da-channel-chip';
+                const mode = this._readMode(channelId);
+                chip.dataset.mode = mode;
+                chip.textContent = `DeArrow: ${mode}`;
+                chip.title = 'Click to cycle DeArrow mode for this channel (DeArrow / Original / Off)';
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = this._currentChannelId();
+                    if (!id) return;
+                    const next = this._cycleMode(this._readMode(id));
+                    this._writeMode(id, next);
+                    chip.dataset.mode = next;
+                    chip.textContent = `DeArrow: ${next}`;
+                    if (typeof showToast === 'function') showToast(`DeArrow override set to "${next}" for this channel.`, '#7c3aed');
+                });
+                host.appendChild(chip);
+                this._btn = chip;
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._renderChip(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                document.querySelectorAll('.ytkit-da-channel-chip').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
             }
