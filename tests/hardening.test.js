@@ -2408,3 +2408,59 @@ test('tokenThemeBridge maps the Astra accent into --yt-sys-color tokens', () => 
     assert.match(block, /--yt-sys-color-baseline--static-brand-red/,
         'must override static-brand-red token');
 });
+
+// ── v3.33.0 P1: Integrations & interop invariants ──
+
+test('openInAlternativeFrontend opens externally with noopener+noreferrer', () => {
+    const start = ytkitSource.indexOf("id: 'openInAlternativeFrontend'");
+    assert.ok(start > -1, 'openInAlternativeFrontend must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /rel\s*=\s*'noopener noreferrer'/,
+        'anchor must set rel=noopener noreferrer');
+    assert.match(block, /target\s*=\s*'_blank'/,
+        'anchor must target _blank');
+    assert.match(block, /alternativeFrontendInstance/,
+        'must read the user-configurable instance setting');
+});
+
+test('vlcMpvHandoff is github-full profile gated and never runs binaries directly', () => {
+    const start = ytkitSource.indexOf("id: 'vlcMpvHandoff'");
+    assert.ok(start > -1, 'vlcMpvHandoff must exist');
+    const block = ytkitSource.slice(start, start + 5000);
+    assert.match(block, /mode === 'github-full'/,
+        'must gate on github-full profile mode');
+    assert.match(block, /ytvlc/,
+        'must wire the ytvlc protocol');
+    assert.match(block, /ytmpv/,
+        'must wire the ytmpv protocol');
+    // Hard rule: protocol handshake must go through an anchor click, never
+    // window.location, so that pages without a registered handler stay put.
+    assert.match(block, /document\.createElement\('a'\)/,
+        'must use a transient anchor element for the protocol click');
+    assert.match(block, /a\.click\(\)/,
+        'must trigger the protocol via anchor.click()');
+});
+
+test('astraContextMenu adds a contextmenu listener but never blocks the native menu unconditionally', () => {
+    const start = ytkitSource.indexOf("id: 'astraContextMenu'");
+    assert.ok(start > -1, 'astraContextMenu must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    // preventDefault only fires when the click landed on a player or feed card.
+    // (We assert the guard pattern, not the absence of preventDefault.)
+    assert.match(block, /if \(!card && !player\) return;/,
+        'context handler must early-return when the click is outside Astra targets');
+    assert.match(block, /e\.preventDefault\(\)/,
+        'must call preventDefault when an Astra target is hit');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /removeEventListener\('contextmenu'/,
+        'destroy() must remove the contextmenu listener');
+});
+
+test('youtubeMusicCompat only runs on music.youtube.com', () => {
+    const start = ytkitSource.indexOf("id: 'youtubeMusicCompat'");
+    assert.ok(start > -1, 'youtubeMusicCompat must exist');
+    const block = ytkitSource.slice(start, start + 3000);
+    assert.match(block, /location\.hostname\.includes\('music\.youtube\.com'\)/,
+        'must early-return on non-music hostnames');
+});

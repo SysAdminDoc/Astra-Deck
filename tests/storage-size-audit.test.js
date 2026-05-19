@@ -35,7 +35,7 @@ test('typical local payload is not storage.sync eligible', () => {
     const { typicalLocal } = buildAuditPayloads();
     const assessment = assessSyncEligibility(typicalLocal);
 
-    assert.equal(assessment.totalBytes, 177266);
+    assert.equal(assessment.totalBytes, 177423);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -56,7 +56,7 @@ test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
     assert.match(report, /Safe-store profile sync candidate: viable \(5\.4 KB/);
-    assert.match(report, /Full UI preferences payload: not viable for sync \(10\.7 KB/);
-    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.1 KB/);
+    assert.match(report, /Full UI preferences payload: not viable for sync \(10\.9 KB/);
+    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.3 KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });
