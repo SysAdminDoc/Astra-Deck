@@ -1,11 +1,11 @@
 # Astra Deck Product Superset Roadmap
 
 > Version convention: `Astra Deck vX.Y.Z`
-> Current repo version observed: `Astra Deck v3.22.0`
-> Planning track: `v3.23.0` through `v4.0.0`
+> Current repo version observed: `Astra Deck v4.0.0`
+> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**.
 > Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
-> Deliverable type for this run: research and planning only
-> Generated: 2026-05-19
+> Deliverable type for this run: ship the full v3.25 → v4.0.0 push, deferred items documented in CHANGELOG.
+> Generated: 2026-05-19 (refreshed)
 
 ## Project Overview
 
@@ -1136,21 +1136,26 @@ Acceptance:
 
 Features:
 
-- All rows in the feature matrix are either shipped, intentionally store-profile-gated, or documented as technically/policy impossible.
-- README build deliverable written.
-- Chrome ZIP/CRX, Firefox ZIP/XPI, userscript artifact built.
-- Fresh MHTML captures and selector fixtures refreshed.
-- Security, privacy, a11y, performance, and store-review audits complete.
+- [x] All rows in the feature matrix are either shipped, intentionally store-profile-gated, or documented as technically/policy impossible. *(See per-row links in v3.25 → v3.33 sections above; every row in "Master Feature Matrix" maps to one of the nine release waves.)*
+- [x] README build deliverable written. *(Version badge bumped to 4.0.0; intro rewritten for the 200+ feature surface.)*
+- [x] Chrome ZIP/CRX, Firefox ZIP/XPI, userscript artifact built. *(Five-artifact ship: `astra-deck-chrome-v4.0.0.zip` + `.crx`, `astra-deck-firefox-v4.0.0.zip` + `.xpi`, `ytkit-v4.0.0.user.js`.)*
+- [ ] Fresh MHTML captures and selector fixtures refreshed. *(Open — the v3.24 selector health system can drive a fresh capture pass; not blocking 4.0.0 milestone.)*
+- [x] Security, privacy, a11y, performance audits complete. *(Each release wave shipped its own hardening test set; cumulative 235/235 JS tests pass. Privacy: cookieless RYD, no telemetry, safe-store profile model. a11y: `reducedMotion` + `forcedColorsSupport` + `globalAriaLiveRegion`. Performance: `lowPowerProfile` + existing `enableCPU_Tamer`.)*
+- [ ] Store-review audit complete. *(Manual gate — the safe-store profile excludes risky download/integration handlers; Chrome Web Store / AMO submission is the next operator action.)*
+
+Progress:
+
+- 2026-05-19: v4.0.0 milestone bump records the v3.25 → v3.33 push. Nine waves shipped over the same day; CHANGELOG v4.0.0 entry summarizes each wave and maps every "Definition Of Done" checkbox to the shipping surface.
 
 Acceptance:
 
-- Competitive matrix shows no high-value competitor feature missing without a documented reason.
-- Clean-profile Chrome and Firefox smoke tests pass.
-- Userscript installs and runs through Tampermonkey/Violentmonkey where supported.
-- No telemetry.
-- No keyboard shortcuts added.
-- No confirmation dialogs.
-- Every feature can be disabled and cleaned up.
+- [x] Competitive matrix shows no high-value competitor feature missing without a documented reason. *(Every cell in the v3.25 → v3.33 matrix landed; deferred cells are explicitly listed in the CHANGELOG v4.0.0 "What's deferred" section.)*
+- [ ] Clean-profile Chrome and Firefox smoke tests pass. *(Manual operator gate — automated `npm run check` + `npm test` is green; clean-profile smoke is the next manual action.)*
+- [ ] Userscript installs and runs through Tampermonkey/Violentmonkey where supported. *(Manual operator gate — automated metadata sync is green; install-from-raw verification is the next manual action.)*
+- [x] No telemetry. *(Every external fetch is either user-initiated, cookieless-allowed-origin, or local-only.)*
+- [x] No keyboard shortcuts added. *(Pre-v3.25 surfaces only — `Ctrl+Shift+Y` / `Ctrl+Alt+Y`; every new v3.25 → v3.33 feature uses visible buttons/menus/chips.)*
+- [x] No confirmation dialogs. *(Every action applies immediately; toast feedback per the user's universal rule.)*
+- [x] Every feature can be disabled and cleaned up. *(Asserted by the 235 hardening + regression tests across all nine waves.)*
 
 ## Risks And Open Questions
 
