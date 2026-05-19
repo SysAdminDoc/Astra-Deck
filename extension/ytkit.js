@@ -15,6 +15,7 @@
         flushPendingStorageWrites,
         generateSettingsSchema,
         getCurrentPage,
+        getCategoryHealthSnapshot,
         getMainVideoElement,
         getMoviePlayerElement,
         getPlayerProgressBar,
@@ -59,6 +60,7 @@
         !flushPendingStorageWrites ||
         !generateSettingsSchema ||
         !getCurrentPage ||
+        !getCategoryHealthSnapshot ||
         !getMainVideoElement ||
         !getMoviePlayerElement ||
         !getPlayerProgressBar ||
@@ -39001,6 +39003,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             features: liveFeatureList,
             allFeatures: features,
             featureHealth() { return getFeatureHealthSnapshot(); },
+            categoryHealth() { return getCategoryHealthSnapshot(); },
             settingsSchema() {
                 return generateSettingsSchema(settingsManager.defaults, {
                     settingsVersion: settingsManager.SETTINGS_VERSION
