@@ -398,6 +398,7 @@
   "localAiSummary": false,
   "researchSpacedReview": false,
   "researchTranscriptIndex": false,
+  "researchTranscriptSearchPanel": false,
   "reducedMotion": false,
   "forcedColorsSupport": false,
   "globalAriaLiveRegion": false,

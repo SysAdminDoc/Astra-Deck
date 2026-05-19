@@ -2538,3 +2538,49 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
     assert.match(mainSource, /attributeFilter:\s*\['data-ytkit-quality-target',\s*'data-ytkit-quality-context'\]/,
         'ytkit-main.js must observe both quality data attributes');
 });
+
+// ── v4.2.0 P1: Popularity sort + transcript search panel ──
+
+test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 22000);
+    assert.match(block, /_parseCompactViewCount/,
+        'subscriptionGroups must declare _parseCompactViewCount()');
+    assert.match(block, /mode === 'popular'/,
+        '_applySort must branch on the popular mode');
+    assert.match(block, /\['popular', 'Most popular \(views\)'\]/,
+        'sort select must surface the popularity option');
+    // higher views → lower score → earlier in DOM
+    assert.match(block, /return -views;/,
+        'popularity sort score must invert views so higher counts surface first');
+});
+
+test('researchTranscriptSearchPanel reuses __ytkitSearchTranscripts + __ytkitClearTranscriptIndex', () => {
+    const start = ytkitSource.indexOf("id: 'researchTranscriptSearchPanel'");
+    assert.ok(start > -1, 'researchTranscriptSearchPanel must exist');
+    const block = ytkitSource.slice(start, start + 14000);
+    assert.match(block, /window\.__ytkitSearchTranscripts/,
+        'must call the searcher helper exposed by researchTranscriptIndex');
+    assert.match(block, /window\.__ytkitClearTranscriptIndex/,
+        'must call the clear helper exposed by researchTranscriptIndex');
+    assert.match(block, /Transcript Search Index is off — enable it first\./,
+        'must surface a clear off-state message when the helpers are missing');
+    // Result links must use noopener+noreferrer.
+    assert.match(block, /link\.rel\s*=\s*'noopener noreferrer'/,
+        'result links must set rel=noopener noreferrer');
+    assert.match(block, /link\.target\s*=\s*'_blank'/,
+        'result links must open in a new tab');
+});
+
+test('researchTranscriptSearchPanel destroy() removes the button, panel, and style tag', () => {
+    const start = ytkitSource.indexOf("id: 'researchTranscriptSearchPanel'");
+    const block = ytkitSource.slice(start, start + 14000);
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /\.ytkit-transcript-search-btn/,
+        'destroy() must remove every transcript-search button');
+    assert.match(destroyBlock, /_panel\?\.remove\(\)/,
+        'destroy() must close the panel');
+    assert.match(destroyBlock, /_styleElement\?\.remove\(\)/,
+        'destroy() must remove the injected style tag');
+});
