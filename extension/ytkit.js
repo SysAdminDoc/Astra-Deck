@@ -13,6 +13,7 @@
         cleanupRetiredCommentUi,
         configureNavigationRuntime,
         flushPendingStorageWrites,
+        exportSelectorHealth: exportSelectorHealthReport,
         generateSettingsSchema,
         getCurrentPage,
         getCategoryHealthSnapshot,
@@ -21,6 +22,7 @@
         getPlayerProgressBar,
         getRegisteredFeature,
         getFeatureHealthSnapshot,
+        getSelectorHealthSnapshot,
         getUrlParam,
         getUrlSearchParams,
         getVideoId,
@@ -58,6 +60,7 @@
         !cleanupRetiredCommentUi ||
         !configureNavigationRuntime ||
         !flushPendingStorageWrites ||
+        !exportSelectorHealthReport ||
         !generateSettingsSchema ||
         !getCurrentPage ||
         !getCategoryHealthSnapshot ||
@@ -66,6 +69,7 @@
         !getPlayerProgressBar ||
         !getRegisteredFeature ||
         !getFeatureHealthSnapshot ||
+        !getSelectorHealthSnapshot ||
         !getUrlParam ||
         !getUrlSearchParams ||
         !getVideoId ||
@@ -358,6 +362,14 @@
             setTimeout(() => URL.revokeObjectURL(url), 5000);
         },
     };
+
+    window.addEventListener('ytkit-selector-miss', (event) => {
+        const detail = event?.detail || {};
+        const surface = String(detail.surface || 'unknown').slice(0, 80);
+        const selector = String(detail.selector || 'unknown').slice(0, 180);
+        const issue = detail.error ? `error: ${String(detail.error).slice(0, 160)}` : 'miss';
+        DiagnosticLog.record('selector-health', `${surface} ${issue}: ${selector}`);
+    });
 
     async function extensionFetchJson(details) {
         const req = {
@@ -39225,6 +39237,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
             allFeatures: features,
             featureHealth() { return getFeatureHealthSnapshot(); },
             categoryHealth() { return getCategoryHealthSnapshot(); },
+            selectorHealth() { return getSelectorHealthSnapshot(); },
+            exportSelectorHealth() { return exportSelectorHealthReport(); },
             settingsSchema() {
                 return generateSettingsSchema(settingsManager.defaults, {
                     settingsVersion: settingsManager.SETTINGS_VERSION

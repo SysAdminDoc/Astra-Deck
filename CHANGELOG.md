@@ -33,6 +33,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `settingsProfiles.exportSafeStoreJson()`,
   `settingsProfiles.exportGithubFullJson()`, and
   `settingsProfiles.profileModel()` expose the contract for future UI.
+- **Selector source map and health export.** The roadmap selector map now
+  lives in `core/selectors.js` as stable-first chains with fallback,
+  high-churn, and fresh-capture metadata. Resolver misses now record
+  per-surface health, dispatch first-miss diagnostics into the diagnostic
+  log, and expose `ytkit.selectorHealth()` plus
+  `ytkit.exportSelectorHealth()` for runtime reports. Player chrome
+  chains include legacy and new-UI transition candidates, including
+  Delhi/overflow/action-container surfaces.
 
 ### Documentation
 
