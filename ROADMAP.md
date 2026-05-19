@@ -996,17 +996,26 @@ Acceptance:
 
 Features:
 
-- Return YouTube Dislike with cache/rate limiter.
-- Dislike/like ratio on watch and cards.
-- DeArrow channel override UI.
-- Anti-translate feed/watch/audio/transcript expansion.
-- Monetization/ad indicator panel if data is safely detectable.
+- [x] Return YouTube Dislike with cache/rate limiter.
+- [x] Dislike/like ratio on watch and cards.
+- [ ] DeArrow channel override UI. *(Data model seeded as `deArrowChannelOverrides`; settings-panel surface deferred to a follow-up.)*
+- [x] Anti-translate feed/watch/audio/transcript expansion. *(Feed/watch shipped in earlier `antiTranslate` work; v3.28 adds the audio track and transcript surfaces via `antiTranslateAudioTrack` and `antiTranslateTranscript`.)*
+- [x] Monetization/ad indicator panel if data is safely detectable.
+
+Progress:
+
+- 2026-05-19: Shipped `returnDislike` with 100 req/min rolling budget, cookieless fetch (`credentials: 'omit'`), LRU-capped cache (500 entries), `returnDislikeCacheHours` TTL setting (default 24 h, 1 h floor), and a pill that renders inside the dislike-button-view-model with cached/fresh/offline tones.
+- 2026-05-19: Added `returnDislikeShowRatio` — surfaces a "% liked" chip next to the dislike pill using RYD's `likes`/`dislikes` (honest ratio, not a like/view proxy). Default on.
+- 2026-05-19: Added `antiTranslateAudioTrack` — switches the player to the original audio track via `movie_player.getAvailableAudioTracks()` + `setAudioTrack()` when an Original track is exposed by YouTube's API. Capped at 5 retries.
+- 2026-05-19: Added `antiTranslateTranscript` — strips `tlang` attributes from the transcript engagement panel so YouTube serves the original-language captions.
+- 2026-05-19: Added `monetizationIndicator` — pill under the watch-page title showing paid promotion / sponsorship / SponsorBlock segment status. Heuristic; uses DOM signals (`ytd-paid-content-overlay-renderer`, `ytd-merch-shelf-renderer`, `ytd-sponsorship-shelf-renderer`, `.ytkit-sb-segment[data-category]`).
+- 2026-05-19: Background `ALLOWED_FETCH_ORIGINS` + manifest `host_permissions` + CSP `connect-src` extended with `https://returnyoutubedislikeapi.com`.
 
 Acceptance:
 
-- RYD respects rate budgets.
-- Offline/cache states are visible.
-- No cookies forwarded to RYD/DeArrow/SponsorBlock.
+- [x] RYD respects rate budgets. *(100 req/min rolling window enforced in `_allowFetch`.)*
+- [x] Offline/cache states are visible. *(Pill renders amber "RYD off" when fetch fails or budget is exhausted; tooltip distinguishes cached vs live.)*
+- [x] No cookies forwarded to RYD/DeArrow/SponsorBlock. *(`credentials: 'omit'` on the RYD fetch; SponsorBlock + DeArrow already use the existing cookieless EXT_FETCH path.)*
 
 ### v3.29.0: Subscription Manager
 

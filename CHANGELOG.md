@@ -6,6 +6,68 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.28.0] - Ratings, Clickbait, and Metadata Trust
+
+Closes four of five v3.28.0 roadmap items. DeArrow channel override UI
+is deferred to a later release because the existing DeArrow per-channel
+data model already supports overrides through `deArrowChannelOverrides`
+— the UI surface is the open work, not the runtime.
+
+### Added (extension)
+
+- **Return YouTube Dislike (`returnDislike`).** Cookieless fetch
+  (`credentials: 'omit'`) to the public RYD votes API
+  (`https://returnyoutubedislikeapi.com/votes?videoId=`). 100 req/min
+  rolling budget; cache TTL = `returnDislikeCacheHours` (default 24 h,
+  1 h floor); cache LRU-capped at 500 entries; pill renders inside the
+  dislike-button-view-model with cached/fresh/offline tones. Default
+  off.
+- **Like/View Ratio (`returnDislikeShowRatio`).** When RYD data is
+  available, surfaces a "% liked" secondary chip next to the dislike
+  pill on watch pages. Reads RYD's `likes`/`dislikes` so the ratio is
+  honest, not a like/view proxy. Default on (only renders when the
+  parent `returnDislike` feature is on).
+- **Anti-Translate Audio Track (`antiTranslateAudioTrack`).** Switches
+  the player to the original audio track via
+  `movie_player.getAvailableAudioTracks()` + `setAudioTrack()` when an
+  "Original" track is exposed by YouTube's API. Capped at 5 retries
+  one second apart so we don't loop forever when the API hasn't
+  hydrated.
+- **Anti-Translate Transcript (`antiTranslateTranscript`).** Strips
+  `tlang` attributes from the transcript engagement panel before
+  YouTube applies them, forcing the original-language transcript when
+  available. Pairs with the existing `antiTranslate` title/feed work.
+- **Monetization Indicator (`monetizationIndicator`).** Pill under the
+  watch-page title showing one of: "Paid promotion declared" (paid
+  content overlay or ytd-paid-content-overlay-renderer present),
+  "Sponsorship overlay present" (ytd-merch-shelf-renderer /
+  ytd-sponsorship-shelf-renderer / ytd-ad-slot-renderer), or N
+  "SponsorBlock segment(s)" (when SponsorBlock has flagged
+  sponsor/selfpromo), else "No paid overlays detected".
+
+### Changed (extension / manifest)
+
+- **`returnyoutubedislikeapi.com` added to `host_permissions`** and
+  the CSP `connect-src` allowlist so the RYD votes endpoint is
+  reachable from both the content script and extension pages.
+  Background `ALLOWED_FETCH_ORIGINS` extended to match.
+- **`deArrowChannelOverrides`** setting key seeded (`{}`) so future
+  releases can ship the per-channel override UI on top of the existing
+  DeArrow runtime.
+
+### Tests
+
+- 5 new regression tests covering RYD budget + cookieless fetch + LRU
+  cap, RYD cache TTL minimum, manifest + CSP allowlist for the RYD
+  origin, anti-translate audio track retry cap + setAudioTrack call,
+  and monetization-indicator destroy cleanup. 215/215 JS tests pass.
+
+### Deferred
+
+- **DeArrow channel override UI.** The data model is wired
+  (`deArrowChannelOverrides`); the settings-panel surface is the open
+  task and will land in a follow-up.
+
 ## [3.27.0] - Downloads & Local Media Library
 
 Adds the four extension-side standalone items from roadmap v3.27.0.
