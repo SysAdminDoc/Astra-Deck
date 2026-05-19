@@ -13,6 +13,7 @@
         cleanupRetiredCommentUi,
         configureNavigationRuntime,
         flushPendingStorageWrites,
+        generateSettingsSchema,
         getCurrentPage,
         getMainVideoElement,
         getMoviePlayerElement,
@@ -56,6 +57,7 @@
         !cleanupRetiredCommentUi ||
         !configureNavigationRuntime ||
         !flushPendingStorageWrites ||
+        !generateSettingsSchema ||
         !getCurrentPage ||
         !getMainVideoElement ||
         !getMoviePlayerElement ||
@@ -28204,6 +28206,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     type: feature.type || 'toggle',
                     settingKey: getFeatureSettingKey(feature),
                     pages: feature.pages || null,
+                    dependsOn: feature.dependsOn || null,
+                    parentId: feature.parentId || null,
+                    isSubFeature: !!feature.isSubFeature,
                     source: 'ytkit',
                     feature,
                     init: () => initFeatureLifecycle(feature, 'registry'),
@@ -29450,8 +29455,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 appState.settings.hideVideosFromHome = toggleInput.checked;
                 toggleSwitch.classList.toggle('active', toggleInput.checked);
                 settingsManager.save(appState.settings);
-                if (toggleInput.checked) videoHiderFeature?.init?.();
-                else videoHiderFeature?.destroy?.();
+                if (toggleInput.checked) safeInitFeature(videoHiderFeature, 'video-hider-pane');
+                else safeDestroyFeature(videoHiderFeature, 'video-hider-pane');
                 updateVideoHiderMeta();
                 updateAllToggleStates();
             };
@@ -30518,11 +30523,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const defaultValue = settingsManager.defaults[f.id];
                     if (defaultValue !== undefined) {
                         appState.settings[f.id] = defaultValue;
-                        try { f.destroy?.(); f._initialized = false; } catch(err) {
+                        try { destroyFeatureLifecycle(f, 'group-reset'); } catch(err) {
                             DebugManager.log('Reset', `Destroy failed for "${f.id}": ${err.message}`);
                         }
                         if (defaultValue) {
-                            try { f.init?.(); f._initialized = true; } catch(err) {
+                            try { initFeatureLifecycle(f, 'group-reset'); } catch(err) {
                                 DebugManager.log('Reset', `Init failed for "${f.id}": ${err.message}`);
                             }
                         }
@@ -30543,11 +30548,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     categoryFeatures.forEach(f => {
                         if (backup[f.id] !== undefined) {
                             appState.settings[f.id] = backup[f.id];
-                            try { f.destroy?.(); f._initialized = false; } catch(err) {
+                            try { destroyFeatureLifecycle(f, 'group-reset-undo'); } catch(err) {
                                 DebugManager.log('Reset', `Undo destroy failed for "${f.id}": ${err.message}`);
                             }
                             if (backup[f.id]) {
-                                try { f.init?.(); f._initialized = true; } catch(err) {
+                                try { initFeatureLifecycle(f, 'group-reset-undo'); } catch(err) {
                                     DebugManager.log('Reset', `Undo init failed for "${f.id}": ${err.message}`);
                                 }
                             }
@@ -33269,8 +33274,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 appState.settings[fid] = newVal;
                 settingsManager.save(appState.settings);
                 try {
-                    if (newVal) { feat.init?.(); feat._initialized = true; }
-                    else { feat.destroy?.(); feat._initialized = false; }
+                    if (newVal) initFeatureLifecycle(feat, 'quick-settings');
+                    else destroyFeatureLifecycle(feat, 'quick-settings');
                 } catch(err) {
                     DebugManager.log('QuickSettings', `Toggle failed for "${fid}": ${err.message}`);
                 }
@@ -38996,6 +39001,11 @@ body.ytkit-panel-open #ytkit-settings-panel {
             features: liveFeatureList,
             allFeatures: features,
             featureHealth() { return getFeatureHealthSnapshot(); },
+            settingsSchema() {
+                return generateSettingsSchema(settingsManager.defaults, {
+                    settingsVersion: settingsManager.SETTINGS_VERSION
+                });
+            },
             version: YTKIT_VERSION,
         };
 
