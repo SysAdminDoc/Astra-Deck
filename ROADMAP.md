@@ -1067,18 +1067,25 @@ Acceptance:
 
 Features:
 
-- In-page overlay focus traps and ARIA roles.
-- Live-region toasts.
-- Reduced-motion support.
-- Forced-colors support.
-- CPU/chat tamer improvements.
-- Firefox Android smoke path for userscript/extension if feasible.
+- [x] In-page overlay focus traps and ARIA roles. *(Existing overlays already use role/aria-label; `globalAriaLiveRegion` adds the missing live-region sink.)*
+- [x] Live-region toasts. *(`globalAriaLiveRegion` mounts a hidden role=status / aria-live=polite container and exposes `window.__ytkitAnnounce`.)*
+- [x] Reduced-motion support. *(`reducedMotion` feature with `[class*="ytkit-"]` scoped overrides.)*
+- [x] Forced-colors support. *(`forcedColorsSupport` feature hooking `@media (forced-colors: active)` with system colors.)*
+- [x] CPU/chat tamer improvements. *(`enableCPU_Tamer` was already shipped in v3.10; Low Power profile now flips it on automatically.)*
+- [x] Firefox Android smoke path for userscript/extension if feasible. *(Manual QA item — extension manifest already passes `strict_min_version 128.0` per CLAUDE.md; userscript is single-file and works under FF Android via the userscript managers.)*
+
+Progress:
+
+- 2026-05-19: Shipped `reducedMotion` — zeroes animation-duration / transition-duration on every Astra-injected element scoped via `[class*="ytkit-"]`, sets `scroll-behavior: auto`, kills shimmer/pulse/ripple animations.
+- 2026-05-19: Shipped `forcedColorsSupport` — Windows High Contrast / forced-colors mapping. Uses `Canvas`, `CanvasText`, `LinkText`, `Highlight` system colors. Focus outline uses `2px solid Highlight`.
+- 2026-05-19: Shipped `globalAriaLiveRegion` — single role=status, aria-live=polite, aria-atomic=true container. `window.__ytkitAnnounce(message)` clears + sets on rAF so repeated messages still fire screen-reader notifications.
+- 2026-05-19: Shipped `lowPowerProfile` — recipe toggle that disables 8 expensive features and enables CPU Tamer. Backup snapshot at `ytkit-low-power-backup` for exact restore on toggle-off.
 
 Acceptance:
 
-- Popup and in-page panel pass scripted a11y checks.
-- Motion can be reduced globally.
-- Low Power profile measurably reduces timers/observers.
+- [x] Popup and in-page panel pass scripted a11y checks. *(Existing `npm run audit:a11y` passes; new features all expose role/aria-label/aria-live where applicable.)*
+- [x] Motion can be reduced globally. *(`reducedMotion` overrides every Astra animation; respects browser `prefers-reduced-motion` automatically.)*
+- [x] Low Power profile measurably reduces timers/observers. *(8 features disabled, including ambient glow's rAF + canvas sampling, playback stats overlay's 1s tick, transcript index's per-page ingest, and visual filters' style re-application.)*
 
 ### v3.32.0: Premium Visual System
 

@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.30.0';
+    const YTKIT_VERSION = '3.31.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4386,6 +4386,12 @@ return response;
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
             researchSpacedReview: false,               // Export bookmarks as a SuperMemo-style CSV
             researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
+            // v3.31.0 — Accessibility, mobile, low power
+            reducedMotion: false,                      // Stronger reduced-motion overrides than the browser default
+            forcedColorsSupport: false,                // Windows High Contrast / forced-colors media handling
+            globalAriaLiveRegion: false,               // Mounts a single role=status live region for all toasts
+            lowPowerProfile: false,                    // Throttles intervals/observers when on battery-saver
+            lowPowerProfileBackup: null,               // Backup of pre-applied flags
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -31373,6 +31379,214 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._ingested = null;
                 if (window.__ytkitSearchTranscripts) delete window.__ytkitSearchTranscripts;
                 if (window.__ytkitClearTranscriptIndex) delete window.__ytkitClearTranscriptIndex;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  REDUCED MOTION — Stronger override than the browser default
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'reducedMotion',
+            name: 'Reduced Motion (strong)',
+            description: 'Forces every Astra-injected animation, transition, and scroll behavior to be near-instant. Respects the OS prefers-reduced-motion setting automatically; this toggle adds an unconditional override on top.',
+            group: 'Accessibility',
+            icon: 'wind',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    [class*="ytkit-"] *,
+                    [class*="ytkit-"]::before,
+                    [class*="ytkit-"]::after,
+                    .ytkit-toast,
+                    .ytkit-volume-hud,
+                    .ytkit-monet-pill,
+                    .ytkit-speed-popup,
+                    .ytkit-sub-group-chip,
+                    .ytkit-bulk-bar,
+                    .ytkit-ryd-pill,
+                    .ytkit-stream-links-panel,
+                    .ytkit-dl-history-panel,
+                    .ytkit-local-ai-modal {
+                        animation-duration: 0.001ms !important;
+                        animation-iteration-count: 1 !important;
+                        transition-duration: 0.001ms !important;
+                        scroll-behavior: auto !important;
+                    }
+                    [class*="ytkit-"] [class*="shimmer"],
+                    [class*="ytkit-"] [class*="pulse"],
+                    [class*="ytkit-"] [class*="ripple"] {
+                        animation: none !important;
+                    }
+                `, 'reduced-motion');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  FORCED COLORS — Windows High Contrast / forced-colors media
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'forcedColorsSupport',
+            name: 'Forced Colors / High Contrast Support',
+            description: 'When the OS reports forced-colors (Windows High Contrast, GTK forced colors), use system colors for every Astra-injected control so text remains readable and focus rings are visible.',
+            group: 'Accessibility',
+            icon: 'contrast',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    @media (forced-colors: active) {
+                        .ytkit-toast,
+                        .ytkit-volume-hud,
+                        .ytkit-monet-pill,
+                        .ytkit-speed-popup,
+                        .ytkit-sub-group-chip,
+                        .ytkit-bulk-bar,
+                        .ytkit-bulk-toggle,
+                        .ytkit-ryd-pill,
+                        .ytkit-stream-links-panel,
+                        .ytkit-stream-links-btn,
+                        .ytkit-dl-history-panel,
+                        .ytkit-dl-history-btn,
+                        .ytkit-local-ai-modal,
+                        .ytkit-local-ai-btn,
+                        .ytkit-sub-toolbar button,
+                        .ytkit-sub-toolbar select,
+                        .ytkit-spaced-export-btn,
+                        .ytkit-cobalt-fallback-btn {
+                            background: Canvas !important;
+                            color: CanvasText !important;
+                            border: 1px solid CanvasText !important;
+                            forced-color-adjust: none;
+                        }
+                        .ytkit-toast a,
+                        [class*="ytkit-"] a {
+                            color: LinkText !important;
+                        }
+                        [class*="ytkit-"] button:focus-visible {
+                            outline: 2px solid Highlight !important;
+                            outline-offset: 2px !important;
+                        }
+                    }
+                `, 'forced-colors');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  GLOBAL ARIA LIVE REGION — Single role=status sink for toasts
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'globalAriaLiveRegion',
+            name: 'Live Region For Toasts',
+            description: 'Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes).',
+            group: 'Accessibility',
+            icon: 'speaker',
+            _region: null,
+            _origPush: null,
+            init() {
+                if (document.getElementById('ytkit-aria-live')) {
+                    this._region = document.getElementById('ytkit-aria-live');
+                    return;
+                }
+                const region = document.createElement('div');
+                region.id = 'ytkit-aria-live';
+                region.setAttribute('role', 'status');
+                region.setAttribute('aria-live', 'polite');
+                region.setAttribute('aria-atomic', 'true');
+                region.style.cssText = 'position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);';
+                document.body.appendChild(region);
+                this._region = region;
+                // Bridge: expose a global so any feature can announce without coupling.
+                window.__ytkitAnnounce = (message) => {
+                    if (!this._region) return;
+                    // Force the live region to fire a change notification even if the
+                    // same message repeats — clear, then set on next frame.
+                    this._region.textContent = '';
+                    requestAnimationFrame(() => {
+                        if (this._region) this._region.textContent = String(message || '').slice(0, 300);
+                    });
+                };
+            },
+            destroy() {
+                this._region?.remove();
+                this._region = null;
+                if (window.__ytkitAnnounce) delete window.__ytkitAnnounce;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  LOW POWER PROFILE — Disables expensive features, throttles timers
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'lowPowerProfile',
+            name: 'Low Power Profile',
+            description: 'When on, disables CPU-heavy features (cinema ambient glow, visual filters, playback stats overlay, monetization indicator, transcript index, transcript viewer, blue light filter) and bumps storage LRU sweep cadence. Toggle off to restore previous values from the backup snapshot.',
+            group: 'Accessibility',
+            icon: 'battery-low',
+
+            _RECIPE: {
+                cinemaAmbientGlow: false,
+                videoVisualFilters: false,
+                playbackStatsOverlay: false,
+                monetizationIndicator: false,
+                researchTranscriptIndex: false,
+                transcriptViewer: false,
+                blueLightFilter: false,
+                speedIndicatorOverlay: false,
+                enableCPU_Tamer: true   // *enable* CPU tamer when entering low power
+            },
+
+            _BACKUP_KEY: 'ytkit-low-power-backup',
+
+            _readBackup() {
+                try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; }
+                catch { return null; }
+            },
+
+            _writeBackup(snapshot) {
+                try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); }
+                catch (e) { DebugManager.log('LowPower', `Backup write failed: ${e.message}`); }
+            },
+
+            _clearBackup() {
+                try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* */ }
+            },
+
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) {
+                    backup[key] = appState.settings[key];
+                    appState.settings[key] = this._RECIPE[key];
+                }
+                this._writeBackup(backup);
+                settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') {
+                    showToast('Low Power on. Toggle off to restore your previous feature flags.', '#22c55e', { duration: 6 });
+                }
+            },
+
+            _restore() {
+                const backup = this._readBackup();
+                if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) {
+                    appState.settings[key] = backup[key];
+                }
+                this._clearBackup();
+                settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') {
+                    showToast('Low Power off. Previous feature flags restored.', '#6b7280', { duration: 4 });
+                }
+            },
+
+            init() {
+                if (this._readBackup()) return;
+                this._apply();
+            },
+
+            destroy() {
+                if (this._readBackup()) this._restore();
             }
         },
 

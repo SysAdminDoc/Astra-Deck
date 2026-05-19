@@ -2285,3 +2285,63 @@ test('researchTranscriptIndex stores transcripts in IndexedDB keyed by videoId',
     assert.match(block, /hits\.length\s*>=\s*200/,
         'search must cap hits to bound memory');
 });
+
+// ── v3.31.0 P1: Accessibility, mobile, low power invariants ──
+
+test('reducedMotion neuters Astra-injected animations and transitions globally', () => {
+    const start = ytkitSource.indexOf("id: 'reducedMotion'");
+    assert.ok(start > -1, 'reducedMotion must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /animation-duration:\s*0\.001ms\s*!important/,
+        'must zero out animation-duration on Astra-injected elements');
+    assert.match(block, /transition-duration:\s*0\.001ms\s*!important/,
+        'must zero out transition-duration too');
+    assert.match(block, /\[class\*="ytkit-"\]/,
+        'must scope to .ytkit-* injected classes');
+});
+
+test('forcedColorsSupport hooks @media (forced-colors: active) and uses system colors', () => {
+    const start = ytkitSource.indexOf("id: 'forcedColorsSupport'");
+    assert.ok(start > -1, 'forcedColorsSupport must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /@media \(forced-colors: active\)/,
+        'must scope overrides under the forced-colors media query');
+    assert.match(block, /background:\s*Canvas\s*!important/,
+        'must use the Canvas system color for backgrounds');
+    assert.match(block, /color:\s*CanvasText\s*!important/,
+        'must use the CanvasText system color for text');
+    assert.match(block, /color:\s*LinkText\s*!important/,
+        'links must use LinkText');
+    assert.match(block, /outline:\s*2px solid Highlight\s*!important/,
+        'focus rings must use the Highlight system color');
+});
+
+test('globalAriaLiveRegion mounts a hidden role=status / aria-live=polite container', () => {
+    const start = ytkitSource.indexOf("id: 'globalAriaLiveRegion'");
+    assert.ok(start > -1, 'globalAriaLiveRegion must exist');
+    const block = ytkitSource.slice(start, start + 3000);
+    assert.match(block, /id\s*=\s*'ytkit-aria-live'/,
+        'must mount the region with the documented id');
+    assert.match(block, /setAttribute\('role',\s*'status'\)/,
+        'must set role=status');
+    assert.match(block, /setAttribute\('aria-live',\s*'polite'\)/,
+        'must set aria-live=polite');
+    assert.match(block, /window\.__ytkitAnnounce/,
+        'must expose a global announce() helper');
+});
+
+test('lowPowerProfile backs up flags before applying, restores on destroy', () => {
+    const start = ytkitSource.indexOf("id: 'lowPowerProfile'");
+    assert.ok(start > -1, 'lowPowerProfile must exist');
+    const block = ytkitSource.slice(start, start + 6000);
+    assert.match(block, /_BACKUP_KEY:\s*'ytkit-low-power-backup'/,
+        'must persist backup under the documented storage key');
+    assert.match(block, /backup\[key\]\s*=\s*appState\.settings\[key\]/,
+        'must snapshot current settings before mutating');
+    assert.match(block, /enableCPU_Tamer:\s*true/,
+        'must explicitly enable CPU Tamer when entering low power');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
+    assert.match(destroyBlock, /this\._restore\(\)/,
+        'destroy() must restore backed-up flags');
+});
