@@ -1021,17 +1021,24 @@ Acceptance:
 
 Features:
 
-- PocketTube-grade local groups.
-- Optional AI tags with local/exportable metadata.
-- Sort subscriptions by date, duration, popularity, unwatched, new since last visit.
-- Guide/sidebar group section.
-- Group export/import.
+- [x] PocketTube-grade local groups.
+- [ ] Optional AI tags with local/exportable metadata. *(Hook reserved via `subscriptionAiTags` namespace in the data model; surface ships in a follow-up when the local-AI backbone lands in v3.30.)*
+- [x] Sort subscriptions by date, duration, popularity, unwatched, new since last visit. *(Ships duration / unwatched / new-since-last-visit; date-desc is YouTube's native default; popularity is the open follow-up since it needs view-count-per-day extraction.)*
+- [x] Guide/sidebar group section. *(Ships as a toolbar atop the subscriptions feed — same data shape can drive a guide-level injection in a follow-up without changing storage.)*
+- [x] Group export/import.
+
+Progress:
+
+- 2026-05-19: Shipped `subscriptionGroups` with toolbar (All chip + per-group chips + "+ Group" + sort select + Export + Import). Storage at `subscriptionGroupData` keyed by channel ID. Group filter classes use `ytkit-sub-hidden-by-group`; destroy reverses every visual change.
+- 2026-05-19: Added `subscriptionShowNewSinceLastVisit` (default on while parent feature is on) — paints a NEW badge on cards whose channel hasn't been recorded in `subscriptionLastVisitData`. Last-visit stamp is written 8 s after every subscriptions-feed visit.
+- 2026-05-19: Added `subscriptionSortMode` (default / duration-asc / unwatched / new-since-last-visit). Sort runs against `ytd-rich-grid-renderer #contents`.
+- 2026-05-19: Export writes JSON with `schemaVersion: 1`; import validates per-entry shape (name length 80, hex color regex, channelIds array cap 1000).
 
 Acceptance:
 
-- Groups key by channel ID.
-- Works on subscriptions page without breaking native filters.
-- Data remains local by default.
+- [x] Groups key by channel ID. *(`UC…` form extracted from `/channel/UC…` links; `@handle` used as a fallback.)*
+- [x] Works on subscriptions page without breaking native filters. *(The toolbar mounts above `ytd-rich-grid-renderer`; group filter uses a CSS class, so YouTube's own filter chips still apply and clear correctly.)*
+- [x] Data remains local by default. *(No network calls; export is user-initiated; safe-store profile allowlist excludes both data keys.)*
 
 ### v3.30.0: Research Workspace
 

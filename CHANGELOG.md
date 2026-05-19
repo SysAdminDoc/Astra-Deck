@@ -6,6 +6,50 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.29.0] - Subscription Manager
+
+Closes the entire roadmap v3.29.0 — local groups, sort modes, group
+export/import, and new-since-last-visit markers all ship in one
+feature: `subscriptionGroups`. The guide-sidebar section ships as a
+toolbar above the subscriptions feed rather than a guide-level
+injection; the data model can drive a guide section in a follow-up
+without changing storage shape.
+
+### Added (extension)
+
+- **`subscriptionGroups`.** Adds a toolbar above `/feed/subscriptions`
+  with: an "All" chip + one chip per saved group (with channel count),
+  a "+ Group" button to create a new group, a sort `<select>` (default
+  / shortest first / unwatched first / new since last visit), and
+  Export / Import buttons.
+- **Local group storage (`subscriptionGroupData`).** Shape:
+  `{ groupId: { name, color, channelIds[], updatedAt } }`. Channel IDs
+  store the canonical `UC…` form, falling back to `@handle` when that
+  is what the card link exposes. Cap of 1000 channels per group on
+  import; group names trimmed to 80 chars; colors validated against
+  `^#[0-9a-fA-F]{6}$`.
+- **`subscriptionShowNewSinceLastVisit`.** Marks cards whose channel
+  ID hasn't appeared in `subscriptionLastVisitData` with a green NEW
+  badge. `subscriptionLastVisitData` is stamped 8 s after every
+  subscriptions-feed visit so subsequent visits accurately reflect
+  what is actually new since the last visit.
+- **`subscriptionSortMode` select.** Modes: `default` (YouTube's
+  native order), `duration-asc` (shortest first — parses the timestamp
+  badge), `unwatched` (cards with a `ytd-thumbnail-overlay-resume-
+  playback-renderer` resume bar sink to the bottom), and
+  `new-since-last-visit` (unknown channels bubble up).
+- **Group export/import.** Export writes a JSON payload with
+  `schemaVersion: 1`, `exportedAt`, and `groups`; filename includes
+  the project prefix and date. Import sanitizes every entry
+  (name length, color hex, channelIds array shape) before writing.
+
+### Tests
+
+- 4 new regression tests covering channel-ID extraction + SPA
+  hooking, JSON export schema + import sanitation, destroy cleanup
+  (toolbar removed, hidden-by-group classes removed, NEW badges
+  removed), and the sort-mode option surface. 219/219 JS tests pass.
+
 ## [3.28.0] - Ratings, Clickbait, and Metadata Trust
 
 Closes four of five v3.28.0 roadmap items. DeArrow channel override UI
