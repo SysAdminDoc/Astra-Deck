@@ -52,13 +52,24 @@
     function setTrustedHTML(element, value) {
         if (!element) return null;
         const fragment = parseTrustedHTML(value);
+        // Prefer the DOMParser path — it never hits a TrustedHTML sink and
+        // therefore can't throw under YouTube's strict TrustedTypes CSP.
         if (fragment && typeof element.replaceChildren === 'function') {
             element.replaceChildren(fragment);
             return element;
         }
         element.textContent = '';
-        if (typeof element.insertAdjacentHTML === 'function') {
-            element.insertAdjacentHTML('afterbegin', toTrustedHTML(value));
+        // Last-resort fallback: append parsed children one by one so we never
+        // pass a plain string into a sink that may be policed by TrustedTypes.
+        // The previous insertAdjacentHTML('afterbegin', plainString) path could
+        // throw silently and leave the element empty on TT-enforced pages.
+        if (fragment && typeof element.appendChild === 'function') {
+            try {
+                element.appendChild(fragment);
+            } catch (_) {
+                // reason: appendChild may reject a foreign-document fragment
+                // in extremely old engines; nothing actionable left.
+            }
         }
         return element;
     }

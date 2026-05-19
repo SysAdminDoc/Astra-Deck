@@ -2421,6 +2421,38 @@ test('rectangularizeYouTube never sets a border-radius > 12px on backdrops', () 
         'rectangularizeYouTube must not introduce 100% radii');
 });
 
+test('no Astra-injected CSS uses pill (999px) backdrops anywhere in ytkit.js', () => {
+    // Hard rule from the user's CLAUDE.md applies to OUR injected UI, not
+    // just the rectangularizeYouTube feature. Audit pass found three
+    // violations (volume HUD bar, sub-group chip, sub-new badge); guard
+    // against the next one before it ships.
+    const matches = ytkitSource.match(/border-radius:\s*9{2,}px/g);
+    assert.ok(!matches,
+        `ytkit.js has pill backdrops (border-radius: 999px) — replace with 0/4/6/8/10/12:\n${matches?.join('\n')}`);
+});
+
+test('no Astra-injected CSS uses pill (999px) backdrops in theater-split.user.js', () => {
+    const source = fs.readFileSync(
+        path.join(__dirname, '..', 'theater-split.user.js'),
+        'utf8'
+    );
+    // Standalone userscript must follow the same hard rule.
+    const px999 = source.match(/border-radius:\s*9{2,}px/g);
+    assert.ok(!px999,
+        `theater-split.user.js has pill backdrops:\n${px999?.join('\n')}`);
+});
+
+test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', () => {
+    // Direct innerHTML assignment of HTML/SVG strings bypasses TrustedHTML
+    // and throws under YouTube's strict TrustedTypes CSP. Audit found one
+    // such site in the AI handoff button (was: `btn.innerHTML = '<svg...>'`).
+    // Use DOM APIs (createElementNS) or the project's TrustedHTML.setHTML
+    // wrapper instead.
+    const offenders = ytkitSource.match(/\.innerHTML\s*=\s*['"`]\s*<svg/gi);
+    assert.ok(!offenders,
+        `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
+});
+
 test('classicLayoutProfile is a select with three modes (modern / 2020 / 2016)', () => {
     const start = ytkitSource.indexOf("id: 'classicLayoutProfile'");
     assert.ok(start > -1, 'classicLayoutProfile must exist');
