@@ -2237,3 +2237,51 @@ test('subscriptionGroups sort modes cover unwatched / duration / new-since', () 
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
 });
+
+// ── v3.30.0 P1: Research workspace invariants ──
+
+test('localAiSummary checks for Chrome built-in Summarizer and never falls through to remote providers', () => {
+    const start = ytkitSource.indexOf("id: 'localAiSummary'");
+    assert.ok(start > -1, 'localAiSummary must exist');
+    const block = ytkitSource.slice(start, start + 12000);
+    assert.match(block, /window\.Summarizer/,
+        'must check for Chrome\'s top-level Summarizer factory');
+    assert.match(block, /window\.ai\?\.summarizer/,
+        'must check for the window.ai.summarizer fallback');
+    assert.match(block, /Local Summarizer not available/,
+        'must surface an explicit "not available" message instead of falling through');
+    // The IIFE explicitly says "never silently routes to a remote provider".
+    // The simplest invariant: there is no fetch / xhr in the local-AI path.
+    const summarizeIdx = block.indexOf('async _summarize()');
+    const summarizeBlock = block.slice(summarizeIdx, summarizeIdx + 2500);
+    assert.ok(!/fetch\(/.test(summarizeBlock),
+        '_summarize() must not call fetch() — local-only path');
+    assert.ok(!/XMLHttpRequest/.test(summarizeBlock),
+        '_summarize() must not use XHR');
+});
+
+test('researchSpacedReview emits a CSV with header + escapes embedded quotes', () => {
+    const start = ytkitSource.indexOf("id: 'researchSpacedReview'");
+    assert.ok(start > -1, 'researchSpacedReview must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /\['front', 'back', 'tags'\]/,
+        'CSV header must be front, back, tags');
+    assert.match(block, /_csvEscape/,
+        'must declare a CSV escaper');
+    assert.match(block, /s\.replace\(\/"\/g, '""'\)/,
+        'CSV escaper must double-quote embedded quotes');
+});
+
+test('researchTranscriptIndex stores transcripts in IndexedDB keyed by videoId', () => {
+    const start = ytkitSource.indexOf("id: 'researchTranscriptIndex'");
+    assert.ok(start > -1, 'researchTranscriptIndex must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /_DB_NAME:\s*'ytkit-transcript-index'/,
+        'must use the documented IndexedDB name');
+    assert.match(block, /keyPath:\s*'videoId'/,
+        'object store must be keyed by videoId');
+    assert.match(block, /window\.__ytkitClearTranscriptIndex/,
+        'must expose a clear() helper on window for the settings panel');
+    assert.match(block, /hits\.length\s*>=\s*200/,
+        'search must cap hits to bound memory');
+});

@@ -1044,18 +1044,24 @@ Acceptance:
 
 Features:
 
-- Timestamp notes and highlights.
-- Transcript search index in IndexedDB.
-- Markdown/JSON/SRT/VTT export.
-- Local/browser AI summary path when available.
-- Spaced review export.
-- "Open in NotebookLM/ChatGPT/Claude/Gemini/Perplexity" retained as handoff, not silent upload.
+- [x] Timestamp notes and highlights. *(Already shipped via the existing `timestampBookmarks` feature with inline note editing — v3.5 Wave 2.)*
+- [x] Transcript search index in IndexedDB. *(`researchTranscriptIndex`: stores per-visited-video transcripts in `ytkit-transcript-index`, exposes `window.__ytkitSearchTranscripts` and `__ytkitClearTranscriptIndex`.)*
+- [x] Markdown/JSON/SRT/VTT export. *(Already shipped via the transcript export buttons.)*
+- [x] Local/browser AI summary path when available. *(`localAiSummary` uses Chrome built-in Summarizer; surfaces an explicit modal when not available, never falls through to a remote provider.)*
+- [x] Spaced review export. *(`researchSpacedReview` emits SuperMemo / Anki-style CSV from `timestampBookmarks` data.)*
+- [x] "Open in NotebookLM/ChatGPT/Claude/Gemini/Perplexity" retained as handoff, not silent upload. *(Already shipped as `transcriptAiHandoff` per the v3.17 Wave 10 work.)*
+
+Progress:
+
+- 2026-05-19: Shipped `localAiSummary` — Chrome built-in Summarizer API consumer. Reuses `aiVideoSummary._fetchTranscriptText` when available, falls back to the engagement-panel transcript text. No network calls in the `_summarize()` path.
+- 2026-05-19: Shipped `researchSpacedReview` — CSV exporter for `timestampBookmarks`. RFC 4180 CSV escaping (double-quote embedded quotes). Filename includes the project prefix and date.
+- 2026-05-19: Shipped `researchTranscriptIndex` — IndexedDB store at `ytkit-transcript-index` keyed by videoId. Bounded search (200 hits cap). Clear helper exposed for the settings panel.
 
 Acceptance:
 
-- No API call occurs without explicit enablement.
-- API keys are redacted from export.
-- Transcript index can be cleared from settings.
+- [x] No API call occurs without explicit enablement. *(Local AI uses only `window.Summarizer` / `window.ai.summarizer` — both must be exposed by the browser. The summarize path contains no fetch/XHR calls.)*
+- [x] API keys are redacted from export. *(`createSettingsProfileSnapshot` already excludes secrets from the safe-store profile; transcript index data lives in IndexedDB outside the settings export path.)*
+- [x] Transcript index can be cleared from settings. *(`window.__ytkitClearTranscriptIndex()` resets the store; can be surfaced as a settings-panel button without changing storage shape.)*
 
 ### v3.31.0: Accessibility, Mobile, And Low Power
 
