@@ -6,6 +6,73 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.25.0] - Content Filtering Superset
+
+### Added (extension)
+
+- **BlockTube-grade Comment Filter.** New `commentFilterManager` feature
+  hides comment threads whose author or body text matches user rules.
+  Supports comma- or newline-separated rules: bare keywords for body match,
+  `@handle` for author match, `!word` for allowlist override, and
+  `/pattern/flags` regex with the same ReDoS guard the video keyword
+  filter uses (rejects nested quantifiers and alternation-wrapped
+  quantifier stacks). Mutation observer processes `addedNodes` only — no
+  full-document scans per tick. Destroy unhides every previously-blocked
+  thread.
+- **Advanced Local Predicate sandbox (expression-only, Option C).**
+  `advancedLocalPredicate` finally has a runtime. Predicate body parses
+  to an AST of literals, comparisons, logical operators, `ctx.<field>`
+  access, and a fixed allowlist of methods (`includes`/`startsWith`/
+  `endsWith`/`match`/`test`). No `eval`, no `new Function`, no `with`,
+  no member access outside `ctx`, no loops. Per-card budget 5 ms wall
+  clock; 10 consecutive errors auto-disable for the route. `ctx` is
+  frozen at the call site. Pattern arguments to `match`/`test` must be
+  string literals and are ReDoS-screened at parse time. Default off.
+  See `docs/predicate-sandbox-investigation.md` for the threat model and
+  the rejected Options A/B.
+- **Bulk Card Actions (Multiselect parity).** `bulkCardActions` adds a
+  floating "Bulk Select" toggle to feed surfaces (home, subscriptions,
+  search, channel). With select-mode on, clicking any feed card adds it
+  to the selection; a docked action bar surfaces Hide, Allow, Copy URLs,
+  and Clear. Hide and Allow defer to `videoHider._addHiddenVideos` /
+  `_addAllowedVideos` so storage stays single-source. Destroy removes
+  the toggle, action bar, and capture-phase click listener.
+- **Feed Triage Profile (curated recipe).** `feedTriageProfile` is a
+  one-toggle recipe that flips a curated set of filter settings on
+  together: Shorts removal/redirect, hide live/upcoming/mixes/movies/
+  auto-dubbed, hide watched videos, hide AI Summary and Jump Ahead,
+  disable infinite scroll, auto-dismiss still-watching, and hide the
+  merch shelf. Toggling off restores the user's prior values from a
+  backup snapshot persisted at `ytkit-feed-triage-backup`.
+
+### Documentation
+
+- **`docs/predicate-sandbox-investigation.md`** — captures the threat
+  model, the three rejected sandbox options (`with`-shadowed Function,
+  sandboxed iframe transport, static AST allowlist), the chosen
+  expression grammar, the `ctx` surface contract, the performance
+  budget, and the acceptance checklist for v3.25.0.
+
+### Changed (extension)
+
+- **`videoHider._shouldHide` runs the predicate evaluator** after the
+  metadata-driven filters but before the per-card duration filter, so
+  predicates can both add hides and (via a wrapping `!`) override
+  existing ones without disturbing the channel/keyword/regex layer.
+
+### Tests
+
+- 13 new regression tests covering predicate-sandbox safety invariants
+  (no eval/Function/with, ReDoS guard, parse-error position surface,
+  runtime budget and circuit breaker, videoHider ctx freezing),
+  comment filter compile-time ReDoS guard and addedNodes-only mutation
+  loop, bulk-action storage delegation and destroy cleanup, Feed Triage
+  backup/restore round-trip. 198/198 JS tests pass.
+
+---
+
+## [3.23.0/3.24.0] - Core foundation & Selector Health
+
 ### Added (extension)
 
 - **v3.23 core foundation modules.** Added passive `core/registry.js`,

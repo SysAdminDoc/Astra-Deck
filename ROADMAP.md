@@ -918,23 +918,27 @@ Acceptance:
 
 Features:
 
-- [ ] BlockTube-grade video/channel/comment filter manager.
+- [x] BlockTube-grade video/channel/comment filter manager.
 - [x] Channel ID-first blocklist.
-- [ ] Regex plus safe predicate sandbox investigation.
+- [x] Regex plus safe predicate sandbox investigation.
 - [x] Low-view, live, upcoming, mix, playlist, movie, auto-dubbed, watched-ratio filters.
-- [ ] Bulk card actions inspired by Multiselect.
-- [ ] Feed Triage profile.
+- [x] Bulk card actions inspired by Multiselect.
+- [x] Feed Triage profile.
 
 Progress:
 
 - 2026-05-19: Upgraded Video Hider channel blocks into canonical, ID-first records with handle, vanity path, URL, blockedAt, and legacy-ID fallbacks. Import/export sanitation now preserves the richer records, storage-change refreshes normalize external updates, the manager UI explains the ID-first matching model, and unblock/undo flows compare identity keys instead of brittle string equality.
 - 2026-05-19: Added opt-in metadata filters for low-view cards, live streams, upcoming premieres, YouTube Mixes, playlists, movies, auto-dubbed videos, and watched-ratio resume bars. Defaults remain off; settings now exposes a Content Type Filters section with immediate apply, conservative thresholds, and safe-store profile allowlist coverage.
+- 2026-05-19: Shipped the BlockTube-grade comment filter (`commentFilterManager` + `commentFilterRules` textarea) with author / body / regex rules, ReDoS guard, allowlist override, and SPA-survival via navigate + mutation rules processing `addedNodes` only.
+- 2026-05-19: Landed the advanced predicate sandbox per `docs/predicate-sandbox-investigation.md` (Option C, expression-only AST walker). `PredicateSandbox.compile(source)` returns `{ ok, evaluator, error, position }`; `videoHider._shouldHide` integrates it after metadata filters; per-card 5 ms wall-clock budget; 10-consecutive-error circuit breaker; `ctx` frozen at the call site; no `eval`, no `Function`, no `with` on the predicate path.
+- 2026-05-19: Added `bulkCardActions` feature (Bulk Select toggle, capture-phase click, docked action bar) with Hide / Allow / Copy URLs / Clear actions, delegating to videoHider for storage so there's no second source of truth.
+- 2026-05-19: Added `feedTriageProfile` recipe — a single toggle that flips a curated bundle of feed filters on together and stores a backup snapshot in `ytkit-feed-triage-backup` so toggling off restores the user's prior settings exactly.
 
 Acceptance:
 
-- [ ] No full-document mutation scans.
-- [ ] Filtered/restored state survives SPA navigation.
-- [ ] ReDoS guard covers regex input.
+- [x] No full-document mutation scans.
+- [x] Filtered/restored state survives SPA navigation.
+- [x] ReDoS guard covers regex input.
 - [x] Import/export of filter lists works.
 
 ### v3.26.0: Player Control Superset
