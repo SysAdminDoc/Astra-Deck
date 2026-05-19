@@ -898,14 +898,15 @@ Acceptance:
 Features:
 
 - [x] Promote selector map into source.
-- [ ] Add runtime selector health panel.
+- [x] Add runtime selector health panel.
 - [x] Add first-miss diagnostics per surface.
 - [x] Add player new-UI transition selector chains.
-- [ ] Add fresh-capture fixture workflow to docs.
+- [x] Add fresh-capture fixture workflow to docs.
 
 Progress:
 
 - 2026-05-19: Promoted the roadmap selector map into `extension/core/selectors.js` as structured stable/fallback chains with high-churn and fresh-capture metadata. Selector resolution now records per-surface hit, miss, and error health, dispatches first-miss diagnostics into `diagnosticLog`, exposes `ytkit.selectorHealth()` and `ytkit.exportSelectorHealth()`, and includes player new-UI transition candidates such as `ytp-delhi-modern`, overflow panels, and action container placeholders.
+- 2026-05-19: Added an Advanced settings `Selector Health` panel with live surface totals, miss/error rows, refresh feedback, and one-click JSON export. Added `docs/selector-fixture-workflow.md` and linked it from `CONTRIBUTING.md` so fresh MHTML capture, fixture regeneration, selector promotion, and live health export are documented as a repeatable workflow.
 
 Acceptance:
 

@@ -86,6 +86,9 @@ npm run check
 npm run build
 ```
 
+For YouTube DOM drift or refreshed MHTML captures, follow
+`docs/selector-fixture-workflow.md` before changing selector canaries.
+
 ## Code Style
 
 - Avoid new dependencies unless they solve a clear, high-value problem

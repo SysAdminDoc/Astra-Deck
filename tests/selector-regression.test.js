@@ -196,6 +196,15 @@ test('live-chat placeholder selectors are promoted while fresh MHTML coverage is
     }
 });
 
+test('fresh-capture fixture workflow is documented', () => {
+    const docPath = path.join(REPO_ROOT, 'docs', 'selector-fixture-workflow.md');
+    const doc = fs.readFileSync(docPath, 'utf8');
+
+    assert.match(doc, /File > Save Page As > Webpage, Single File/);
+    assert.match(doc, /npm run build:fixtures/);
+    assert.match(doc, /ytkit\.exportSelectorHealth\(\)/);
+});
+
 test('selector fixtures exist and contain a non-trivial token set', () => {
     for (const [label, file] of Object.entries(FIXTURES)) {
         const tokens = loadTokens(file);

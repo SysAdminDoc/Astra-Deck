@@ -1411,6 +1411,23 @@ test('settings profiles expose safe store and full GitHub profile models', () =>
         'profile export payload should declare which profile model produced it');
 });
 
+test('selector health panel exposes refresh and JSON export controls', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    assert.ok(source.includes('function createSelectorHealthPanel()'),
+        'selector health panel should have a dedicated renderer');
+    assert.ok(source.includes("id: 'selectorHealthPanel'"),
+        'selector health panel should be visible in the Advanced settings category');
+    assert.ok(source.includes("handleFileExport('astra_deck_selector_health.json', exportSelectorHealthReport())"),
+        'selector health panel should export the runtime selector report as JSON');
+    assert.ok(source.includes("createToast('Selector health refreshed', 'success')"),
+        'selector health panel should provide immediate refresh feedback');
+    assert.ok(source.includes("selectorHealth() { return getSelectorHealthSnapshot(); }"),
+        'window.ytkit should expose selectorHealth for runtime inspection');
+});
+
 test('MediaDL probe rejects legacy localhost services without Astra health identity', () => {
     const fs = require('fs');
     const path = require('path');

@@ -27252,6 +27252,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
 
+        {
+            id: 'selectorHealthPanel',
+            name: 'Selector Health',
+            description: 'Review live selector drift signals and export a JSON health report for fixture refreshes.',
+            group: 'Advanced',
+            icon: 'monitor',
+            type: 'info',
+            render: createSelectorHealthPanel
+        },
+
         // ── Storage Quota / LRU ──
         {
             id: 'storageQuotaLRU',
@@ -31115,6 +31125,125 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }));
     }
 
+    function createSelectorMetric(value, label, state = 'neutral') {
+        const metric = document.createElement('div');
+        metric.className = 'ytkit-selector-health__metric';
+        metric.dataset.state = state;
+
+        const number = document.createElement('strong');
+        number.textContent = String(value);
+
+        const caption = document.createElement('span');
+        caption.textContent = label;
+
+        metric.appendChild(number);
+        metric.appendChild(caption);
+        return metric;
+    }
+
+    function summarizeSelectorHealth() {
+        const surfaces = getSelectorHealthSnapshot();
+        const attempted = surfaces.filter(surface => surface.selectors.some(selector => selector.attempts > 0)).length;
+        const totals = surfaces.reduce((acc, surface) => {
+            acc.hits += surface.hitCount;
+            acc.misses += surface.missCount;
+            acc.errors += surface.errorCount;
+            if (surface.needsFreshCapture) acc.captureNeeded += 1;
+            return acc;
+        }, { hits: 0, misses: 0, errors: 0, captureNeeded: 0 });
+        const issues = surfaces
+            .filter(surface => surface.errorCount || surface.missCount || surface.needsFreshCapture)
+            .sort((a, b) => (
+                (b.errorCount - a.errorCount)
+                || (b.missCount - a.missCount)
+                || Number(b.needsFreshCapture) - Number(a.needsFreshCapture)
+                || a.surface.localeCompare(b.surface)
+            ));
+        return { surfaces, attempted, totals, issues };
+    }
+
+    function createSelectorHealthPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'ytkit-selector-health';
+
+        const metrics = document.createElement('div');
+        metrics.className = 'ytkit-selector-health__metrics';
+
+        const rows = document.createElement('div');
+        rows.className = 'ytkit-selector-health__rows';
+
+        const actions = document.createElement('div');
+        actions.className = 'ytkit-selector-health__actions';
+
+        const refreshBtn = document.createElement('button');
+        refreshBtn.type = 'button';
+        refreshBtn.className = 'ytkit-selector-health__btn';
+        refreshBtn.textContent = 'Refresh';
+        refreshBtn.setAttribute('aria-label', 'Refresh selector health');
+
+        const exportBtn = document.createElement('button');
+        exportBtn.type = 'button';
+        exportBtn.className = 'ytkit-selector-health__btn ytkit-selector-health__btn--primary';
+        exportBtn.textContent = 'Export JSON';
+        exportBtn.setAttribute('aria-label', 'Export selector health JSON');
+
+        const render = () => {
+            const summary = summarizeSelectorHealth();
+            metrics.replaceChildren(
+                createSelectorMetric(summary.surfaces.length, 'surfaces'),
+                createSelectorMetric(summary.attempted, 'tested'),
+                createSelectorMetric(summary.totals.hits, 'hits', 'good'),
+                createSelectorMetric(summary.totals.misses, 'misses', summary.totals.misses ? 'warn' : 'neutral'),
+                createSelectorMetric(summary.totals.errors, 'errors', summary.totals.errors ? 'bad' : 'neutral')
+            );
+
+            rows.replaceChildren();
+            if (!summary.issues.length) {
+                const empty = document.createElement('p');
+                empty.className = 'ytkit-selector-health__empty';
+                empty.textContent = summary.attempted
+                    ? 'No selector drift has been recorded this session.'
+                    : 'Selector health will populate as surfaces are resolved during normal browsing.';
+                rows.appendChild(empty);
+                return;
+            }
+
+            summary.issues.slice(0, 8).forEach(surface => {
+                const row = document.createElement('div');
+                row.className = 'ytkit-selector-health__row';
+                row.dataset.state = surface.errorCount ? 'bad' : (surface.missCount ? 'warn' : 'neutral');
+
+                const name = document.createElement('strong');
+                name.textContent = surface.surface;
+
+                const meta = document.createElement('span');
+                const captureText = surface.needsFreshCapture ? ' · capture needed' : '';
+                meta.textContent = `${surface.hitCount} hit${surface.hitCount === 1 ? '' : 's'} · ${surface.missCount} miss${surface.missCount === 1 ? '' : 'es'} · ${surface.errorCount} error${surface.errorCount === 1 ? '' : 's'}${captureText}`;
+
+                row.appendChild(name);
+                row.appendChild(meta);
+                rows.appendChild(row);
+            });
+        };
+
+        refreshBtn.addEventListener('click', () => {
+            render();
+            createToast('Selector health refreshed', 'success');
+        });
+        exportBtn.addEventListener('click', () => {
+            handleFileExport('astra_deck_selector_health.json', exportSelectorHealthReport());
+            createToast('Selector health exported', 'success');
+        });
+
+        actions.appendChild(refreshBtn);
+        actions.appendChild(exportBtn);
+        panel.appendChild(metrics);
+        panel.appendChild(rows);
+        panel.appendChild(actions);
+        render();
+        return panel;
+    }
+
     function buildFeatureCard(f, accentColor, isSubFeature = false) {
         const card = document.createElement('div');
         const featureType = f.type || 'toggle';
@@ -31199,6 +31328,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         }
 
         card.appendChild(featureMain);
+
+        if (typeof f.render === 'function') {
+            const custom = f.render(card);
+            if (custom instanceof Element) {
+                custom.classList.add('ytkit-feature-custom');
+                card.appendChild(custom);
+            }
+        }
 
         if (f.type === 'info') {
             // info-type features have no interactive control
@@ -32851,6 +32988,122 @@ body.ytkit-panel-open #ytkit-settings-panel {
 .ytkit-textarea-card,
 .ytkit-info-card {
     grid-column: 1 / -1;
+}
+
+.ytkit-feature-custom {
+    width: 100%;
+    min-width: 0;
+}
+
+.ytkit-selector-health {
+    display: grid;
+    gap: 9px;
+    width: 100%;
+    margin-top: 2px;
+}
+
+.ytkit-selector-health__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    gap: 6px;
+}
+
+.ytkit-selector-health__metric {
+    display: grid;
+    gap: 2px;
+    padding: 8px 9px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.07);
+}
+
+.ytkit-selector-health__metric strong {
+    font-size: 15px;
+    line-height: 1.1;
+    color: var(--ytkit-text-primary);
+}
+
+.ytkit-selector-health__metric span {
+    font-size: 10px;
+    line-height: 1.25;
+    color: var(--ytkit-text-muted);
+}
+
+.ytkit-selector-health__metric[data-state="good"] strong { color: #86efac; }
+.ytkit-selector-health__metric[data-state="warn"] strong { color: #facc15; }
+.ytkit-selector-health__metric[data-state="bad"] strong { color: #fca5a5; }
+
+.ytkit-selector-health__rows {
+    display: grid;
+    gap: 5px;
+}
+
+.ytkit-selector-health__row {
+    display: grid;
+    grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 7px 9px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.026);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.ytkit-selector-health__row strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--ytkit-text-primary);
+    font-size: 11px;
+}
+
+.ytkit-selector-health__row span,
+.ytkit-selector-health__empty {
+    margin: 0;
+    color: var(--ytkit-text-secondary);
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.ytkit-selector-health__row[data-state="warn"] {
+    border-color: rgba(250,204,21,0.18);
+}
+
+.ytkit-selector-health__row[data-state="bad"] {
+    border-color: rgba(248,113,113,0.22);
+}
+
+.ytkit-selector-health__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ytkit-selector-health__btn {
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.045);
+    color: var(--ytkit-text-primary);
+    font-size: 11px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.ytkit-selector-health__btn:hover {
+    border-color: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.075);
+}
+
+.ytkit-selector-health__btn--primary {
+    border-color: rgba(34,197,94,0.24);
+    background: rgba(34,197,94,0.14);
+}
+
+.ytkit-selector-health__btn:focus-visible {
+    outline: none;
+    box-shadow: var(--ytkit-focus-ring);
 }
 
 .ytkit-textarea-card {

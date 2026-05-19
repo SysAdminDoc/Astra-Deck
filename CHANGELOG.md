@@ -41,9 +41,19 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `ytkit.exportSelectorHealth()` for runtime reports. Player chrome
   chains include legacy and new-UI transition candidates, including
   Delhi/overflow/action-container surfaces.
+- **Runtime selector health panel.** The Advanced settings workspace now
+  includes a Selector Health report with live surface totals, miss/error
+  rows, refresh feedback, and one-click JSON export for debugging
+  YouTube DOM drift.
 
 ### Documentation
 
+- **Selector fixture workflow.** Added
+  `docs/selector-fixture-workflow.md` and linked it from
+  `CONTRIBUTING.md`. The workflow covers fresh MHTML capture,
+  `npm run build:fixtures`, selector-diff review, promotion into
+  `core/selectors.js`, and pairing live `ytkit.exportSelectorHealth()`
+  reports with fixture updates.
 - **Doc + version drift sweep (N4).** README version badge bumped to
   v3.22.0; intro names speed control + reaction spammer + 10 locales;
   new "Languages" section with the bundled locale table; feature tables
