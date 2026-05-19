@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.28.0';
+    const YTKIT_VERSION = '3.29.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4376,6 +4376,12 @@ return response;
             antiTranslateAudioTrack: false,            // Force original audio track on every video
             antiTranslateTranscript: false,            // Force original-language transcript view
             monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
+            // v3.29.0 — Subscription manager
+            subscriptionGroups: false,                 // Master toggle for groups + sort surface
+            subscriptionGroupData: {},                 // { groupId: { name, color, channelIds[], updatedAt } }
+            subscriptionSortMode: 'default',           // 'default' | 'date-desc' | 'duration-asc' | 'unwatched' | 'new-since-last-visit'
+            subscriptionShowNewSinceLastVisit: true,
+            subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -30710,6 +30716,330 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-monet-pill').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  SUBSCRIPTION MANAGER — Local groups + sort + new-since markers
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'subscriptionGroups',
+            name: 'Subscription Groups',
+            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up.',
+            group: 'Subscriptions',
+            icon: 'folder-tree',
+            pages: [PageTypes.SUBSCRIPTIONS],
+            _styleElement: null,
+            _toolbar: null,
+            _activeGroupId: '',     // '' = all subscriptions
+            _observer: null,
+            _navRule: null,
+            _GROUPS_KEY: 'subscriptionGroupData',
+            _LAST_VISIT_KEY: 'subscriptionLastVisitData',
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-sub-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
+                    .ytkit-sub-toolbar__label{font:600 11px/1 system-ui;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
+                    .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
+                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
+                    .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-hidden-by-group{display:none !important;}
+                `, 'subscription-groups');
+            },
+
+            _readGroups() {
+                const data = appState?.settings?.[this._GROUPS_KEY];
+                return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+            },
+
+            _writeGroups(next) {
+                appState.settings[this._GROUPS_KEY] = next;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', `Save failed: ${e.message}`); }
+            },
+
+            _readLastVisit() {
+                const data = appState?.settings?.[this._LAST_VISIT_KEY];
+                return (data && typeof data === 'object') ? data : {};
+            },
+
+            _writeLastVisit(next) {
+                appState.settings[this._LAST_VISIT_KEY] = next;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', `Save failed: ${e.message}`); }
+            },
+
+            _exportGroups() {
+                const payload = {
+                    schemaVersion: 1,
+                    exportedAt: new Date().toISOString(),
+                    groups: this._readGroups()
+                };
+                const json = JSON.stringify(payload, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                if (typeof showToast === 'function') showToast('Exported subscription groups', '#22c55e');
+            },
+
+            _importGroups(json) {
+                try {
+                    const data = JSON.parse(json);
+                    if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
+                    const sanitized = {};
+                    for (const [id, raw] of Object.entries(data.groups)) {
+                        if (typeof id !== 'string' || id.length > 64) continue;
+                        if (!raw || typeof raw !== 'object') continue;
+                        const name = String(raw.name || '').slice(0, 80);
+                        const color = /^#[0-9a-fA-F]{6}$/.test(raw.color || '') ? raw.color : '#7c3aed';
+                        const channelIds = Array.isArray(raw.channelIds)
+                            ? raw.channelIds.filter(s => typeof s === 'string' && s.length < 64).slice(0, 1000)
+                            : [];
+                        sanitized[id] = { name, color, channelIds, updatedAt: Date.now() };
+                    }
+                    this._writeGroups(sanitized);
+                    if (typeof showToast === 'function') showToast(`Imported ${Object.keys(sanitized).length} subscription groups`, '#22c55e');
+                    this._renderToolbar();
+                    this._applyGroupFilter();
+                } catch (e) {
+                    if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
+                }
+            },
+
+            _extractChannelIdFromCard(card) {
+                const link = card.querySelector('a[href*="/channel/"], a[href*="/@"]');
+                if (!link) return '';
+                const href = link.getAttribute('href') || '';
+                const m = href.match(/\/channel\/([A-Za-z0-9_-]+)/);
+                if (m) return m[1];
+                const h = href.match(/^\/@([A-Za-z0-9._-]+)/);
+                if (h) return '@' + h[1];
+                return '';
+            },
+
+            _applyGroupFilter() {
+                const groups = this._readGroups();
+                const active = this._activeGroupId;
+                const allowed = active && groups[active] ? new Set(groups[active].channelIds) : null;
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                cards.forEach(card => {
+                    if (!allowed) {
+                        card.classList.remove('ytkit-sub-hidden-by-group');
+                        return;
+                    }
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId || !allowed.has(channelId)) card.classList.add('ytkit-sub-hidden-by-group');
+                    else card.classList.remove('ytkit-sub-hidden-by-group');
+                });
+            },
+
+            _applyNewSinceMarkers() {
+                if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
+                const lastVisit = this._readLastVisit();
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId) return;
+                    // Heuristic: card includes "X minutes/hours/days ago" — if absolute
+                    // time isn't directly available, just mark every card whose channel
+                    // has no recorded last-visit yet (i.e. first time we've seen this
+                    // channel since toggling the feature on). Conservative; users opt in.
+                    if (!lastVisit[channelId] && !card.querySelector('.ytkit-sub-new-badge')) {
+                        const target = card.querySelector('#metadata-line, ytd-video-meta-block, #meta');
+                        if (target) {
+                            const badge = document.createElement('span');
+                            badge.className = 'ytkit-sub-new-badge';
+                            badge.textContent = 'NEW';
+                            target.appendChild(badge);
+                        }
+                    }
+                });
+            },
+
+            _stampLastVisit() {
+                const lastVisit = { ...this._readLastVisit() };
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (channelId) lastVisit[channelId] = Date.now();
+                });
+                this._writeLastVisit(lastVisit);
+            },
+
+            _applySort() {
+                const mode = String(appState?.settings?.subscriptionSortMode || 'default');
+                if (mode === 'default') return;
+                const container = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents');
+                if (!container) return;
+                const cards = Array.from(container.querySelectorAll(':scope > ytd-rich-item-renderer, :scope > ytd-video-renderer'));
+                if (!cards.length) return;
+                const score = (card) => {
+                    const text = card.textContent || '';
+                    if (mode === 'duration-asc') {
+                        const m = text.match(/(\d+):(\d+)(?::(\d+))?/);
+                        if (!m) return Number.POSITIVE_INFINITY;
+                        return (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0) + (Number(m[3]) || 0) / 60;
+                    }
+                    if (mode === 'unwatched') {
+                        return card.querySelector('ytd-thumbnail-overlay-resume-playback-renderer') ? 1 : 0;
+                    }
+                    if (mode === 'date-desc') {
+                        // Keep YouTube's native order; this is the upstream sort.
+                        return 0;
+                    }
+                    if (mode === 'new-since-last-visit') {
+                        const channelId = this._extractChannelIdFromCard(card);
+                        const lv = this._readLastVisit();
+                        return lv[channelId] ? 1 : 0;  // unknown channels first
+                    }
+                    return 0;
+                };
+                cards.sort((a, b) => score(a) - score(b));
+                cards.forEach(card => container.appendChild(card));
+            },
+
+            _renderToolbar() {
+                const target = document.querySelector('ytd-rich-grid-renderer, ytd-section-list-renderer');
+                if (!target || !target.parentElement) return;
+                this._toolbar?.remove();
+                const bar = document.createElement('div');
+                bar.className = 'ytkit-sub-toolbar';
+
+                const groupLabel = document.createElement('span');
+                groupLabel.className = 'ytkit-sub-toolbar__label';
+                groupLabel.textContent = 'Groups';
+                bar.appendChild(groupLabel);
+
+                const groups = this._readGroups();
+                const allChip = document.createElement('button');
+                allChip.type = 'button';
+                allChip.className = 'ytkit-sub-group-chip';
+                allChip.dataset.active = this._activeGroupId ? '0' : '1';
+                allChip.textContent = 'All';
+                allChip.addEventListener('click', () => {
+                    this._activeGroupId = '';
+                    this._renderToolbar();
+                    this._applyGroupFilter();
+                });
+                bar.appendChild(allChip);
+
+                for (const [id, group] of Object.entries(groups)) {
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'ytkit-sub-group-chip';
+                    chip.dataset.active = this._activeGroupId === id ? '1' : '0';
+                    chip.style.borderColor = group.color || '#7c3aed';
+                    chip.textContent = `${group.name || id} (${group.channelIds?.length || 0})`;
+                    chip.addEventListener('click', () => {
+                        this._activeGroupId = this._activeGroupId === id ? '' : id;
+                        this._renderToolbar();
+                        this._applyGroupFilter();
+                    });
+                    bar.appendChild(chip);
+                }
+
+                const newBtn = document.createElement('button');
+                newBtn.type = 'button';
+                newBtn.textContent = '+ Group';
+                newBtn.addEventListener('click', () => {
+                    const name = window.prompt('Name this group:');
+                    if (!name || !name.trim()) return;
+                    const id = 'g_' + Math.random().toString(36).slice(2, 9);
+                    const next = { ...this._readGroups(), [id]: { name: name.trim().slice(0, 80), color: '#7c3aed', channelIds: [], updatedAt: Date.now() } };
+                    this._writeGroups(next);
+                    this._renderToolbar();
+                });
+                bar.appendChild(newBtn);
+
+                const sortLabel = document.createElement('span');
+                sortLabel.className = 'ytkit-sub-toolbar__label';
+                sortLabel.textContent = 'Sort';
+                bar.appendChild(sortLabel);
+
+                const sortSelect = document.createElement('select');
+                for (const [v, label] of [
+                    ['default', 'YouTube default'],
+                    ['duration-asc', 'Shortest first'],
+                    ['unwatched', 'Unwatched first'],
+                    ['new-since-last-visit', 'New since last visit']
+                ]) {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = label;
+                    if (appState?.settings?.subscriptionSortMode === v) opt.selected = true;
+                    sortSelect.appendChild(opt);
+                }
+                sortSelect.addEventListener('change', () => {
+                    appState.settings.subscriptionSortMode = sortSelect.value;
+                    try { settingsManager.save(appState.settings); } catch { /* */ }
+                    this._applySort();
+                });
+                bar.appendChild(sortSelect);
+
+                const exportBtn = document.createElement('button');
+                exportBtn.type = 'button';
+                exportBtn.dataset.action = 'export';
+                exportBtn.textContent = 'Export';
+                exportBtn.addEventListener('click', () => this._exportGroups());
+                bar.appendChild(exportBtn);
+
+                const importBtn = document.createElement('button');
+                importBtn.type = 'button';
+                importBtn.textContent = 'Import';
+                importBtn.addEventListener('click', () => {
+                    const inp = document.createElement('input');
+                    inp.type = 'file';
+                    inp.accept = 'application/json';
+                    inp.addEventListener('change', () => {
+                        const file = inp.files?.[0];
+                        if (!file) return;
+                        file.text().then(text => this._importGroups(text));
+                    });
+                    inp.click();
+                });
+                bar.appendChild(importBtn);
+
+                target.parentElement.insertBefore(bar, target);
+                this._toolbar = bar;
+            },
+
+            init() {
+                if (window.location.pathname !== '/feed/subscriptions') return;
+                this._ensureStyles();
+                this._navRule = () => {
+                    if (window.location.pathname !== '/feed/subscriptions') return;
+                    setTimeout(() => {
+                        this._renderToolbar();
+                        this._applyGroupFilter();
+                        this._applyNewSinceMarkers();
+                        this._applySort();
+                    }, 1200);
+                    setTimeout(() => this._stampLastVisit(), 8000);
+                };
+                addNavigateRule(this.id, this._navRule);
+                addMutationRule(this.id, () => {
+                    if (window.location.pathname !== '/feed/subscriptions') return;
+                    this._applyGroupFilter();
+                });
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                this._navRule = null;
+                this._toolbar?.remove();
+                this._toolbar = null;
+                document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
+                document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+                this._activeGroupId = '';
             }
         },
 

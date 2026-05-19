@@ -176,7 +176,11 @@ test('quality forcer uses MAIN-world setPlaybackQualityRange, not gear-menu DOM 
 
 test('audio track language does not drive the native player settings menu', () => {
     const start = ytkitSource.indexOf("id: 'audioTrackLanguage'");
-    const end = ytkitSource.indexOf('    ];', start);
+    // Bound the slice to the next feature object, not the end of the array —
+    // otherwise later features unrelated to audioTrackLanguage pollute the
+    // regex search.
+    const next = ytkitSource.indexOf("\n        {", start + 1);
+    const end = next > start ? next : ytkitSource.indexOf('    ];', start);
     assert.ok(start > -1 && end > start, 'audioTrackLanguage feature block should exist');
     const block = ytkitSource.slice(start, end);
 
@@ -2181,4 +2185,55 @@ test('monetizationIndicator paints exactly one pill and removes it on destroy', 
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
     assert.match(destroyBlock, /querySelectorAll\('\.ytkit-monet-pill'\)/,
         'destroy() must remove all stray pills (covers SPA route races)');
+});
+
+// ── v3.29.0 P1: Subscription manager invariants ──
+
+test('subscriptionGroups keys by channel ID and survives SPA navigation', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    assert.ok(start > -1, 'subscriptionGroups must exist');
+    const block = ytkitSource.slice(start, start + 22000);
+    assert.match(block, /_GROUPS_KEY: 'subscriptionGroupData'/,
+        'must persist groups to subscriptionGroupData');
+    assert.match(block, /a\[href\*="\/channel\/"]/,
+        'must extract channel IDs from /channel/UC… links');
+    assert.match(block, /addNavigateRule\(this\.id/,
+        'must hook the SPA navigate event so groups re-apply on route changes');
+    assert.match(block, /addMutationRule\(this\.id/,
+        'must hook the mutation rule so newly-rendered cards get filtered');
+});
+
+test('subscriptionGroups exports + imports JSON with schema version', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 22000);
+    assert.match(block, /schemaVersion:\s*1/,
+        'export payload must declare schemaVersion 1');
+    assert.match(block, /astra-deck-subscription-groups-/,
+        'export filename must include the project prefix');
+    // Import must sanitize channelIds + name length + color format.
+    assert.match(block, /Array\.isArray\(raw\.channelIds\)/,
+        'import must validate that raw.channelIds is an array before assigning');
+    assert.match(block, /\/\^#\[0-9a-fA-F\]\{6\}\$\//,
+        'import must validate the color is a 6-digit hex code');
+});
+
+test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 22000);
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
+    assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
+        'destroy() must remove the injected toolbar');
+    assert.match(destroyBlock, /\.ytkit-sub-hidden-by-group/,
+        'destroy() must unhide cards that were hidden by group filter');
+    assert.match(destroyBlock, /\.ytkit-sub-new-badge/,
+        'destroy() must remove new-since-last-visit badges');
+});
+
+test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 22000);
+    assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
+    assert.match(block, /'unwatched'/, 'must support unwatched sort');
+    assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
 });
