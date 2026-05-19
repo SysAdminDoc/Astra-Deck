@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '3.27.0';
+    const YTKIT_VERSION = '3.28.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -4367,6 +4367,15 @@ return response;
             downloadStreamLinksPanel: false,           // Reads adaptiveFormats from ytInitialPlayerResponse
             downloadCobaltFallback: false,             // GitHub-full profile only; default off
             downloadCobaltInstance: 'https://api.cobalt.tools/api/json',
+            // v3.28.0 — Ratings, clickbait, and metadata trust
+            returnDislike: false,                      // Off by default — uses RYD public API with rate-limit budget
+            returnDislikeOnCards: false,
+            returnDislikeCacheHours: 24,
+            returnDislikeShowRatio: true,
+            deArrowChannelOverrides: {},               // { channelId: { mode: 'off' | 'original' | 'dearrow' } }
+            antiTranslateAudioTrack: false,            // Force original audio track on every video
+            antiTranslateTranscript: false,            // Force original-language transcript view
+            monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
             // v3.9.0 additions
             subtitleDownload: false,
             videoVisualFilters: false,
@@ -30378,6 +30387,327 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn = null;
                 this._panel?.remove();
                 this._panel = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  RETURN YOUTUBE DISLIKE — Cached, rate-limited
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'returnDislike',
+            name: 'Return YouTube Dislike',
+            description: 'Restore the dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
+            group: 'Ratings',
+            icon: 'thumbs-down',
+            pages: [PageTypes.WATCH],
+            _cache: null,
+            _budgetWindow: { start: 0, count: 0 },
+            _BUDGET_PER_MIN: 100,
+            _styleElement: null,
+            _pillEl: null,
+            _navRule: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 system-ui;font-variant-numeric:tabular-nums;}
+                    .ytkit-ryd-pill[data-tone="cached"]{color:rgba(255,255,255,0.55);}
+                    .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
+                    .ytkit-ryd-ratio{margin-left:8px;font:500 11px/1 system-ui;color:rgba(255,255,255,0.55);}
+                `, 'ryd-pill');
+            },
+
+            _readCache(videoId) {
+                if (!this._cache) {
+                    try { this._cache = storageReadJSON('ytkit-ryd-cache', {}) || {}; }
+                    catch { this._cache = {}; }
+                }
+                const entry = this._cache[videoId];
+                if (!entry) return null;
+                const ttlMs = (Math.max(1, Number(appState?.settings?.returnDislikeCacheHours) || 24)) * 3600 * 1000;
+                if (Date.now() - (entry.ts || 0) > ttlMs) return null;
+                return entry;
+            },
+
+            _writeCache(videoId, data) {
+                if (!this._cache) this._cache = {};
+                this._cache[videoId] = { ts: Date.now(), ...data };
+                // Cap cache to 500 entries (LRU by ts).
+                const keys = Object.keys(this._cache);
+                if (keys.length > 500) {
+                    keys.sort((a, b) => (this._cache[a].ts || 0) - (this._cache[b].ts || 0));
+                    for (const k of keys.slice(0, keys.length - 500)) delete this._cache[k];
+                }
+                try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* quota */ }
+            },
+
+            _allowFetch() {
+                const now = Date.now();
+                if (now - this._budgetWindow.start > 60000) {
+                    this._budgetWindow = { start: now, count: 0 };
+                }
+                if (this._budgetWindow.count >= this._BUDGET_PER_MIN) return false;
+                this._budgetWindow.count++;
+                return true;
+            },
+
+            async _fetch(videoId) {
+                const cached = this._readCache(videoId);
+                if (cached) return { ...cached, fromCache: true };
+                if (!this._allowFetch()) return null;
+                try {
+                    const { data } = await extensionFetchJson({
+                        method: 'GET',
+                        url: `https://returnyoutubedislikeapi.com/votes?videoId=${encodeURIComponent(videoId)}`,
+                        headers: { Accept: 'application/json' },
+                        credentials: 'omit'
+                    });
+                    if (!data || typeof data.dislikes !== 'number') return null;
+                    const record = {
+                        likes: Number(data.likes) || 0,
+                        dislikes: Number(data.dislikes) || 0,
+                        viewCount: Number(data.viewCount) || 0,
+                        rating: Number(data.rating) || 0
+                    };
+                    this._writeCache(videoId, record);
+                    return { ...record, fromCache: false };
+                } catch (e) {
+                    DebugManager.log('RYD', `Fetch failed: ${e.message}`);
+                    return null;
+                }
+            },
+
+            _formatCount(n) {
+                if (!Number.isFinite(n)) return '—';
+                if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+                if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+                return String(Math.round(n));
+            },
+
+            async _render() {
+                if (!isWatchPagePath()) return;
+                const videoId = getVideoId?.();
+                if (!videoId) return;
+                const dislikeButton = document.querySelector('dislike-button-view-model, ytd-segmented-like-dislike-button-renderer #dislike-button-view-model, ytd-segmented-like-dislike-button-renderer');
+                if (!dislikeButton) return;
+                const data = await this._fetch(videoId);
+                this._pillEl?.remove();
+                if (!data) {
+                    const offline = document.createElement('span');
+                    offline.className = 'ytkit-ryd-pill';
+                    offline.dataset.tone = 'offline';
+                    offline.textContent = 'RYD off';
+                    dislikeButton.appendChild(offline);
+                    this._pillEl = offline;
+                    return;
+                }
+                const pill = document.createElement('span');
+                pill.className = 'ytkit-ryd-pill';
+                pill.dataset.tone = data.fromCache ? 'cached' : 'fresh';
+                pill.textContent = this._formatCount(data.dislikes);
+                pill.title = data.fromCache
+                    ? `Cached dislike count from Return YouTube Dislike.`
+                    : `Live dislike count from Return YouTube Dislike.`;
+                dislikeButton.appendChild(pill);
+                this._pillEl = pill;
+
+                if (appState?.settings?.returnDislikeShowRatio) {
+                    const total = (data.likes || 0) + (data.dislikes || 0);
+                    if (total > 0) {
+                        const ratio = Math.round(((data.likes || 0) / total) * 100);
+                        const ratioEl = document.createElement('span');
+                        ratioEl.className = 'ytkit-ryd-ratio';
+                        ratioEl.textContent = `${ratio}% liked`;
+                        dislikeButton.appendChild(ratioEl);
+                    }
+                }
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._render(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._pillEl?.remove();
+                this._pillEl = null;
+                document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-ratio').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+                this._cache = null;
+                this._budgetWindow = { start: 0, count: 0 };
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  ANTI-TRANSLATE AUDIO TRACK — Force original-language audio
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'antiTranslateAudioTrack',
+            name: 'Anti-Translate Audio Track',
+            description: 'When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present.',
+            group: 'Content',
+            icon: 'languages',
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+            _attempts: 0,
+            _MAX_ATTEMPTS: 5,
+
+            _switchToOriginal() {
+                const movie = window.movie_player;
+                if (!movie?.getAvailableAudioTracks) return false;
+                try {
+                    const tracks = movie.getAvailableAudioTracks();
+                    if (!Array.isArray(tracks) || !tracks.length) return false;
+                    // Prefer the track marked as "original" or matching the
+                    // primary track in player response. YouTube's getAudioTrack()
+                    // returns the current; tracks contain `displayName` / `id`.
+                    const original = tracks.find(t => {
+                        const label = String(t?.displayName?.simpleText || t?.name || '').toLowerCase();
+                        return label.includes('original') || t?.isDefault;
+                    });
+                    if (original && movie.setAudioTrack) {
+                        movie.setAudioTrack(original);
+                        return true;
+                    }
+                } catch (e) {
+                    DebugManager.log('AntiTranslateAudio', `Switch failed: ${e.message}`);
+                }
+                return false;
+            },
+
+            _scheduleAttempts() {
+                this._attempts = 0;
+                const tick = () => {
+                    if (this._attempts >= this._MAX_ATTEMPTS) return;
+                    this._attempts++;
+                    if (this._switchToOriginal()) return;
+                    setTimeout(tick, 1000);
+                };
+                setTimeout(tick, 1500);
+            },
+
+            init() {
+                this._navRule = () => this._scheduleAttempts();
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._attempts = 0;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  ANTI-TRANSLATE TRANSCRIPT — Force original-language transcript
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'antiTranslateTranscript',
+            name: 'Anti-Translate Transcript',
+            description: 'Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available.',
+            group: 'Content',
+            icon: 'file-text',
+            pages: [PageTypes.WATCH],
+            _navRule: null,
+
+            _stripTranslateAttr() {
+                // Remove tlang from any open transcript panel API request that
+                // YouTube has stamped into the engagement panel renderer.
+                document.querySelectorAll('ytd-transcript-segment-list-renderer[tlang], ytd-engagement-panel-section-list-renderer[panel-target-id*="transcript" i] [tlang]').forEach(el => {
+                    el.removeAttribute('tlang');
+                });
+            },
+
+            init() {
+                this._navRule = () => { setTimeout(() => this._stripTranslateAttr(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                addMutationRule(this.id, () => this._stripTranslateAttr());
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                this._navRule = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  MONETIZATION INDICATOR — Sponsored / monetized state pill
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'monetizationIndicator',
+            name: 'Monetization Indicator',
+            description: 'Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available.',
+            group: 'Ratings',
+            icon: 'circle-dollar-sign',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _pillEl: null,
+            _navRule: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-monet-pill{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 9px;border-radius:6px;font:600 11px/1.2 system-ui;letter-spacing:.02em;}
+                    .ytkit-monet-pill[data-tone="paid"]{background:rgba(248,113,113,0.14);color:#fecaca;border:1px solid rgba(248,113,113,0.35);}
+                    .ytkit-monet-pill[data-tone="sponsored"]{background:rgba(251,146,60,0.14);color:#fed7aa;border:1px solid rgba(251,146,60,0.36);}
+                    .ytkit-monet-pill[data-tone="clean"]{background:rgba(34,197,94,0.14);color:#bbf7d0;border:1px solid rgba(34,197,94,0.36);}
+                `, 'monet-indicator');
+            },
+
+            _detect() {
+                const out = { paidPromotion: false, sponsorship: false, midRollCount: 0, sponsorblockCategories: [] };
+                if (document.querySelector('ytd-paid-content-overlay-renderer, .ytp-paid-content-overlay')) out.paidPromotion = true;
+                if (document.querySelector('ytd-merch-shelf-renderer, ytd-ad-slot-renderer, ytd-sponsorship-shelf-renderer')) out.sponsorship = true;
+                // SponsorBlock segment overlay — extension already paints these
+                // as .ytkit-sb-segment on the progress bar. Count sponsor/selfpromo
+                // categories specifically (the ones tied to monetization).
+                document.querySelectorAll('.ytkit-sb-segment[data-category="sponsor"], .ytkit-sb-segment[data-category="selfpromo"]').forEach(seg => {
+                    const cat = seg.dataset.category;
+                    if (cat && !out.sponsorblockCategories.includes(cat)) out.sponsorblockCategories.push(cat);
+                });
+                return out;
+            },
+
+            _render() {
+                const titleHost = document.querySelector('ytd-watch-metadata #title, ytd-watch-metadata h1');
+                if (!titleHost) return;
+                const data = this._detect();
+                this._pillEl?.remove();
+                let label = 'No paid overlays detected';
+                let tone = 'clean';
+                if (data.paidPromotion) { label = 'Paid promotion declared'; tone = 'paid'; }
+                else if (data.sponsorship) { label = 'Sponsorship overlay present'; tone = 'sponsored'; }
+                else if (data.sponsorblockCategories.length) {
+                    label = `${data.sponsorblockCategories.length} SponsorBlock segment${data.sponsorblockCategories.length === 1 ? '' : 's'}`;
+                    tone = 'sponsored';
+                }
+                const pill = document.createElement('div');
+                pill.className = 'ytkit-monet-pill';
+                pill.dataset.tone = tone;
+                pill.textContent = label;
+                titleHost.appendChild(pill);
+                this._pillEl = pill;
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._render(), 1800); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._pillEl?.remove();
+                this._pillEl = null;
+                document.querySelectorAll('.ytkit-monet-pill').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
             }
