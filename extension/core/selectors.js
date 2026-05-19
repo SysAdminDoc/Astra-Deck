@@ -191,6 +191,28 @@
 
     const emittedMisses = new Set();
     const selectorStats = new Map();
+    // Bound the diagnostic maps. Over a multi-hour YouTube session the resolver
+    // can be called against many fragile fallbacks, and the (surface, selector)
+    // tuple is unbounded — without a cap the diagnostic surface itself becomes
+    // a slow memory leak. When we hit the cap we drop the oldest entry (Map
+    // preserves insertion order so .keys().next() is the LRU-ish candidate).
+    const SELECTOR_STATS_CAP = 512;
+    const EMITTED_MISSES_CAP = 1024;
+
+    function _enforceMapCap(map, cap) {
+        while (map.size > cap) {
+            const first = map.keys().next().value;
+            if (first == null) break;
+            map.delete(first);
+        }
+    }
+    function _enforceSetCap(set, cap) {
+        while (set.size > cap) {
+            const first = set.values().next().value;
+            if (first == null) break;
+            set.delete(first);
+        }
+    }
 
     function normalizeSelectorList(selectors) {
         if (!selectors) return [];
@@ -242,6 +264,7 @@
                 lastError: null,
                 lastOutcome: 'untested'
             });
+            _enforceMapCap(selectorStats, SELECTOR_STATS_CAP);
         }
         return selectorStats.get(key);
     }
@@ -271,6 +294,7 @@
         const key = `${surface}:${selector}`;
         if (emittedMisses.has(key)) return;
         emittedMisses.add(key);
+        _enforceSetCap(emittedMisses, EMITTED_MISSES_CAP);
         const stat = getSelectorStat(surface, selector);
         const detail = {
             surface,

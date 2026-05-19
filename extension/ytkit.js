@@ -548,7 +548,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.3.0';
+    const YTKIT_VERSION = '4.4.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -17240,6 +17240,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 };
 
                 addNavigateRule('hideVideosFromHomeNav', () => {
+                    // Audit pass: reset the predicate-sandbox circuit at every
+                    // SPA route boundary so a transient eval failure on one
+                    // page doesn't permanently disable filters across the
+                    // session (the design doc promises route-level recovery,
+                    // not session-wide auto-disable).
+                    try { this._predicateCache?.evaluator?.reset?.(); } catch (_) { /* */ }
                     this._processAllVideosDebounced(500);
                     checkPages();
                 });
@@ -29270,8 +29276,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             },
 
+            _shortHash(text) {
+                // Audit pass: the cache-bust marker is stamped on every comment
+                // thread's dataset, so we keep it short (8 hex chars from a
+                // djb2-ish rolling hash) to avoid pinning the full rule
+                // text onto every thread node. Collisions only mean a thread
+                // is re-scanned once when rules change, which is harmless.
+                let h = 5381;
+                const s = String(text || '');
+                for (let i = 0; i < s.length; i++) {
+                    h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+                }
+                return ('00000000' + (h >>> 0).toString(16)).slice(-8);
+            },
+
             _scanAll() {
-                this._lastRulesHash = String(this._compiledRulesSource);
+                this._lastRulesHash = this._shortHash(this._compiledRulesSource);
                 this._hiddenCount = 0;
                 const comments = document.querySelector('ytd-comments#comments');
                 if (!comments) return;
@@ -30062,7 +30082,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 this._attach();
                 this._render();
-                this._pollTimer = setInterval(() => this._render(), 30000);
+                // Audit pass: only render when on /watch AND the tab is visible.
+                // Without these gates the popup polled the local downloader
+                // every 30 s from every YouTube tab regardless of route or
+                // foreground state — wasteful local-network chatter and an
+                // unnecessary keepalive for the MV3 service worker.
+                this._pollTimer = setInterval(() => {
+                    if (typeof isWatchPagePath === 'function' && !isWatchPagePath()) return;
+                    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+                    this._render();
+                }, 30000);
             },
 
             destroy() {
@@ -31144,10 +31173,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _stampLastVisit() {
                 const lastVisit = { ...this._readLastVisit() };
+                const now = Date.now();
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
                     const channelId = this._extractChannelIdFromCard(card);
-                    if (channelId) lastVisit[channelId] = Date.now();
+                    if (channelId) lastVisit[channelId] = now;
                 });
+                // Cap the map at 2000 channels (already-seen tracking grows with
+                // every distinct channel the user has ever surfaced). When over
+                // cap, prune the oldest visits by timestamp — the heuristic only
+                // needs recent state to mark things "new since last visit".
+                const LAST_VISIT_CAP = 2000;
+                const keys = Object.keys(lastVisit);
+                if (keys.length > LAST_VISIT_CAP) {
+                    const sorted = keys.sort((a, b) => (lastVisit[a] || 0) - (lastVisit[b] || 0));
+                    const drop = sorted.slice(0, keys.length - LAST_VISIT_CAP);
+                    for (const k of drop) delete lastVisit[k];
+                }
                 this._writeLastVisit(lastVisit);
             },
 
@@ -31270,6 +31311,74 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._renderToolbar();
             },
 
+            _showNewGroupDialog(anchorEl) {
+                // Audit-pass replacement for window.prompt — modal blocks the
+                // page, ships unstyled, and is deprecated in some contexts.
+                // This inline dialog reuses Astra surface CSS, focus-traps to
+                // the input, and dismisses on Esc / outside click.
+                document.querySelector('.ytkit-sub-group-dialog')?.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'ytkit-sub-group-dialog';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
+                overlay.setAttribute('role', 'dialog');
+                overlay.setAttribute('aria-modal', 'true');
+                overlay.setAttribute('aria-label', 'Create subscription group');
+                const card = document.createElement('div');
+                card.style.cssText = 'min-width:320px;max-width:420px;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 22px 48px rgba(0,0,0,.6);';
+                const h = document.createElement('div');
+                h.style.cssText = 'font:600 14px/1.3 system-ui;color:#fafafa;margin-bottom:10px;';
+                h.textContent = 'Name this group';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 80;
+                input.placeholder = 'e.g. Coding, Music, News';
+                input.setAttribute('aria-label', 'Group name');
+                input.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;box-sizing:border-box;';
+                const actions = document.createElement('div');
+                actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:14px;';
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = 'Cancel';
+                cancel.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#e5e7eb;cursor:pointer;';
+                const create = document.createElement('button');
+                create.type = 'button';
+                create.textContent = 'Create';
+                create.style.cssText = 'padding:6px 12px;border-radius:6px;border:1px solid rgba(124,58,237,0.5);background:#7c3aed;color:#fff;cursor:pointer;font-weight:600;';
+                actions.append(cancel, create);
+                card.append(h, input, actions);
+                overlay.appendChild(card);
+                document.body.appendChild(overlay);
+                setTimeout(() => input.focus(), 30);
+
+                const dismiss = () => {
+                    overlay.remove();
+                    if (anchorEl?.focus) try { anchorEl.focus(); } catch { /* focus restore best-effort */ }
+                };
+                const submit = () => {
+                    const name = (input.value || '').trim().slice(0, 80);
+                    if (!name) { input.focus(); return; }
+                    const id = 'g_' + Math.random().toString(36).slice(2, 9);
+                    const next = {
+                        ...this._readGroups(),
+                        [id]: { name, color: '#7c3aed', channelIds: [], updatedAt: Date.now() }
+                    };
+                    this._writeGroups(next);
+                    dismiss();
+                    this._renderToolbar();
+                };
+                cancel.addEventListener('click', dismiss);
+                create.addEventListener('click', submit);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); submit(); }
+                });
+                overlay.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { e.preventDefault(); dismiss(); }
+                });
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) dismiss();
+                });
+            },
+
             _renderToolbar() {
                 const target = document.querySelector('ytd-rich-grid-renderer, ytd-section-list-renderer');
                 if (!target || !target.parentElement) return;
@@ -31325,14 +31434,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const newBtn = document.createElement('button');
                 newBtn.type = 'button';
                 newBtn.textContent = '+ Group';
-                newBtn.addEventListener('click', () => {
-                    const name = window.prompt('Name this group:');
-                    if (!name || !name.trim()) return;
-                    const id = 'g_' + Math.random().toString(36).slice(2, 9);
-                    const next = { ...this._readGroups(), [id]: { name: name.trim().slice(0, 80), color: '#7c3aed', channelIds: [], updatedAt: Date.now() } };
-                    this._writeGroups(next);
-                    this._renderToolbar();
-                });
+                newBtn.addEventListener('click', () => this._showNewGroupDialog(newBtn));
                 bar.appendChild(newBtn);
 
                 const sortLabel = document.createElement('span');
@@ -31416,6 +31518,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._toolbar = null;
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
+                // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
+                document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._activeGroupId = '';

@@ -6,6 +6,106 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.4.0] - Audit-Pass Hardening
+
+Repo-wide audit pass — defensive hardening of security boundaries,
+storage growth limits, lifecycle gaps, and UX rough edges flagged by
+parallel deep-dives across `background.js`, `popup.js`, `core/*`,
+`ytkit-main.js`, and `astra_downloader.py`. No new user-facing features
+— this release is purely "make existing surfaces more robust."
+
+### Security (extension)
+
+- **DNS-rebinding hardening.** Removed every `http://localhost:*`
+  allowlist entry from `ALLOWED_FETCH_ORIGINS`, `CREDENTIALED_FETCH_
+  ORIGINS`, and `AUTH_HEADER_ALLOWED_ORIGINS`. Chrome ≥88 pins
+  `localhost` to loopback, but Firefox still resolves it through DNS
+  and a hostile network can rebind to an internal IP. `127.0.0.1` is
+  loopback-literal and immune; the downloader client already prefers
+  it, so the change is transparent.
+- **Sender identity validation on every chrome.runtime.onMessage
+  branch.** Defense-in-depth: although the manifest doesn't declare
+  `externally_connectable`, every message handler now compares
+  `sender.id` to `chrome.runtime.id` and rejects mismatches up front.
+  Hard-stops a future regression that widens the trust boundary by
+  accident.
+- **Filename sanitizer blocks Unicode bidi-override and zero-width
+  characters** (U+202A-E, U+2066-9, U+200B-D, U+2060, U+FEFF). Closes
+  the classic `report.pdf<U+202E>exe.gpj` extension-spoof attack.
+  Also strips DEL (U+007F).
+- **Popup locale override validated against the bundled allowlist.**
+  `isValidLocaleTag()` checks BCP-47 shape (length, charset) AND
+  membership in `BUNDLED_LOCALE_SET`. Both the storage-load path and
+  the dropdown-change persistence path reject anything outside the
+  set so a stale or hostile `_localeOverride` value can't trigger
+  an arbitrary `chrome.runtime.getURL` fetch.
+
+### Resource bounds
+
+- **`_pendingReveals` Set capped at 1024 entries.** Drops the oldest
+  insertion when full. Defends against unbounded growth if
+  `chrome.storage.session` writes repeatedly fail. Uses the new
+  `_addPendingReveal()` helper.
+- **`subscriptionLastVisitData` capped at 2000 channels.** Prunes by
+  oldest visit timestamp when over the cap. Without this the
+  "channels ever surfaced in the subscriptions feed" set grew
+  monotonically.
+- **`core/selectors.js` `selectorStats` Map and `emittedMisses` Set
+  capped** at 512 / 1024 entries respectively. Drops the
+  insertion-order-oldest entry when over cap. Prevents long-session
+  memory leak from accumulating diagnostic entries per (surface,
+  selector) tuple.
+- **`commentFilterManager._lastRulesHash` is now an 8-char djb2-style
+  digest** instead of the raw rule body. The hash is stamped onto
+  every comment thread's `dataset` attribute — pinning the full rule
+  text onto every DOM node was an obvious memory leak waiting to
+  happen.
+
+### Lifecycle / correctness
+
+- **`core/registry.js` `register({replace:true})` drops orphaned
+  cleanups** for the replaced feature id. Previously, re-registering
+  a feature without first calling `destroy()` leaked the prior
+  cleanup list onto the new feature's destroy() call, causing stale
+  side-effects to fire on the new instance.
+- **`videoHider` resets the PredicateSandbox circuit on every SPA
+  navigate.** Matches the design-doc contract ("auto-disabled for
+  the remainder of the SPA route") — without this hook a single
+  noisy eval could permanently disable filters across the whole
+  session.
+- **`downloadHealthPanel` polls only on `/watch` AND when the tab is
+  visible.** Previously it pinged the local downloader every 30 s
+  from every YouTube tab regardless of route or foreground state —
+  wasteful network chatter and an unnecessary keepalive for the MV3
+  service worker.
+
+### UX
+
+- **`subscriptionGroups` new-group flow now uses an inline dialog**
+  instead of `window.prompt`. The dialog is `role=dialog
+  aria-modal=true`, dismisses on Esc / outside click, restores focus
+  to the trigger button, and matches the Astra surface theme.
+  `window.prompt` blocks the page, ships unstyled, and is deprecated
+  in some contexts.
+
+### PageTypes coverage
+
+- **Added `MUSIC`, `EMBED`, and `LIVE_CHAT`** to `core/page.js`
+  `PageTypes` with matching `isMusicHost()`, `isEmbedPath()`, and
+  `isLiveChatPath()` helpers. Features that branch on page type can
+  now classify these contexts cleanly without re-deriving host/path
+  checks.
+
+### Tests
+
+- 12 new regression tests (247 → 258 total) covering every hardening
+  point above: localhost drop, sender.id check, RTL filename strip,
+  locale validation, _pendingReveals cap, _stampLastVisit cap,
+  selector stats cap, comment-filter short hash, predicate reset on
+  nav, inline group dialog (aria-modal + Esc), PageTypes coverage,
+  registry replace-cleanup, and health-poll route/visibility gate.
+  258/258 JS tests pass.
+
 ## [4.3.0] - AI Tags For Subscription Groups
 
 Closes the last concrete deferred item from the v4.0.0 milestone:

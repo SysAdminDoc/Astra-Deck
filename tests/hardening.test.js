@@ -758,15 +758,45 @@ test('_pendingReveals is mirrored to chrome.storage.session for SW-restart survi
 
     // The DOWNLOAD_FILE handler must persist the add, not just update the
     // in-memory Set — otherwise a SW kill between add and state.complete
-    // loses the reveal.
-    const addStart = backgroundSource.indexOf('_pendingReveals.add(downloadId)');
-    assert.ok(addStart > -1, 'DOWNLOAD_FILE handler must still populate _pendingReveals');
-    const addBlock = backgroundSource.slice(addStart, addStart + 200);
+    // loses the reveal. Hardening pass moved the add behind _addPendingReveal
+    // so the per-cap bound is enforced; scope the search to the DOWNLOAD_FILE
+    // branch so we don't catch the cap helper's internal `.add()` call.
+    const dlBranch = backgroundSource.indexOf("msg.type === 'DOWNLOAD_FILE'");
+    assert.ok(dlBranch > -1, 'DOWNLOAD_FILE branch must exist');
+    const dlBlock = backgroundSource.slice(dlBranch, dlBranch + 3000);
     assert.match(
-        addBlock,
+        dlBlock,
+        /(_pendingReveals\.add|_addPendingReveal)\s*\(\s*downloadId\s*\)/,
+        'DOWNLOAD_FILE handler must populate _pendingReveals'
+    );
+    assert.match(
+        dlBlock,
         /_persistPendingReveals\s*\(\s*\)/,
         'DOWNLOAD_FILE handler must mirror the add into storage.session'
     );
+});
+
+test('_pendingReveals add path is bounded by a hard cap', () => {
+    // Hardening pass — defends against unbounded growth if storage.session
+    // writes fail repeatedly. The cap must use _pendingReveals.values()/.delete()
+    // to drop the oldest id when the Set is at capacity.
+    assert.match(
+        backgroundSource,
+        /PENDING_REVEALS_CAP\s*=\s*\d+/,
+        'background.js must declare a cap constant for _pendingReveals'
+    );
+    assert.match(
+        backgroundSource,
+        /_addPendingReveal\s*\(/,
+        'background.js must expose the cap-enforcing _addPendingReveal() helper'
+    );
+    // The helper must drop the oldest id when the set is full.
+    const helperStart = backgroundSource.indexOf('function _addPendingReveal');
+    const helperBody = backgroundSource.slice(helperStart, helperStart + 600);
+    assert.match(helperBody, /_pendingReveals\.size\s*>=\s*PENDING_REVEALS_CAP/,
+        'cap helper must check Set.size against the cap');
+    assert.match(helperBody, /_pendingReveals\.values\(\)\.next\(\)\.value/,
+        'cap helper must drop the insertion-order-oldest entry');
 });
 
 test('_pendingReveals is pruned when a tracked download is erased from history', () => {
@@ -1868,7 +1898,7 @@ test('commentFilterManager rejects ReDoS regex inputs at compile time', () => {
 
 test('commentFilterManager processes mutation addedNodes only, never full-document scans on tick', () => {
     const start = ytkitSource.indexOf("id: 'commentFilterManager'");
-    const block = ytkitSource.slice(start, start + 6000);
+    const block = ytkitSource.slice(start, start + 9000);
     // The mutation rule callback must loop addedNodes only — not call
     // querySelectorAll on document.
     assert.match(block, /addMutationRule\(this\.id/,
@@ -2065,8 +2095,14 @@ test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp 
     const block = ytkitSource.slice(start, start + 8000);
     assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/health'/,
         'must query the local /health endpoint');
-    assert.match(block, /setInterval\(\(\) => this\._render\(\),\s*30000\)/,
+    // Hardening pass added a route + visibility gate inside the interval
+    // callback so we don't ping the local downloader from every YouTube tab.
+    assert.match(block, /setInterval\([\s\S]+?30000\)/,
         'must poll every 30 s');
+    assert.match(block, /isWatchPagePath/,
+        'poll callback must short-circuit when not on /watch');
+    assert.match(block, /document\.visibilityState === 'hidden'/,
+        'poll callback must short-circuit when the tab is hidden');
     assert.match(block, /poTokenProvider/, 'must surface PO Token state');
     assert.match(block, /ytDlpVersion/, 'must surface yt-dlp version');
     assert.match(block, /ffmpegCapabilities/, 'must surface ffmpeg freshness');
@@ -2583,6 +2619,164 @@ test('researchTranscriptSearchPanel destroy() removes the button, panel, and sty
         'destroy() must close the panel');
     assert.match(destroyBlock, /_styleElement\?\.remove\(\)/,
         'destroy() must remove the injected style tag');
+});
+
+// ── v4.4.0 P1: Audit-pass hardening ──
+
+test('background ALLOWED_FETCH_ORIGINS drops localhost aliases (defends DNS rebinding)', () => {
+    // `localhost` resolves via DNS in some browsers/configurations and can be
+    // rebound by a hostile network. `127.0.0.1` is loopback-literal and immune.
+    // Hardening pass dropped every `http://localhost:*` entry from the
+    // allowlists; the only http:// remaining must point at 127.0.0.1.
+    assert.ok(!/http:\/\/localhost:/.test(backgroundSource),
+        'background.js must not contain any http://localhost: allowlist entries');
+    // Sanity: 127.0.0.1 entries still present.
+    assert.match(backgroundSource, /http:\/\/127\.0\.0\.1:9751/,
+        'background.js must still allow the primary 127.0.0.1 downloader port');
+});
+
+test('chrome.runtime.onMessage rejects senders outside our extension id', () => {
+    // Defense-in-depth — even though we don't declare externally_connectable
+    // today, a future regression that adds it must not silently widen the
+    // trust boundary. Every message must come from sender.id === chrome.runtime.id.
+    const listenerStart = backgroundSource.indexOf('chrome.runtime.onMessage.addListener');
+    assert.ok(listenerStart > -1, 'onMessage listener must exist');
+    const listenerEnd = backgroundSource.indexOf('msg.type === \'OPEN_URL\'', listenerStart);
+    const header = backgroundSource.slice(listenerStart, listenerEnd);
+    assert.match(header, /sender\?\.id === chrome\.runtime\.id/,
+        'onMessage must compare sender.id to chrome.runtime.id before any handler dispatch');
+    assert.match(header, /Sender rejected\./,
+        'onMessage must surface a clear rejection reason to the caller');
+});
+
+test('sanitizeDownloadFilename blocks Unicode RTL override + zero-width chars', () => {
+    // U+202E and friends spoof file extensions in OS file managers — the
+    // canonical example is `report.pdf<U+202E>exe.gpj` rendering as
+    // `report.pdfjpg.exe`. The sanitizer must strip those before
+    // chrome.downloads.download() sees them.
+    const fnStart = backgroundSource.indexOf('function sanitizeDownloadFilename');
+    assert.ok(fnStart > -1, 'sanitizeDownloadFilename must exist');
+    const fnBody = backgroundSource.slice(fnStart, fnStart + 2000);
+    assert.match(fnBody, /\\u202A-\\u202E/,
+        'must strip bidi override characters (U+202A-E)');
+    assert.match(fnBody, /\\u2066-\\u2069/,
+        'must strip bidi isolate marks (U+2066-9)');
+    assert.match(fnBody, /\\u200B-\\u200D/,
+        'must strip zero-width spacer/joiner characters');
+    assert.match(fnBody, /\\uFEFF/,
+        'must strip the byte-order mark');
+});
+
+test('popup locale override is validated against the bundled allowlist', () => {
+    const popupSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'),
+        'utf8'
+    );
+    assert.match(popupSource, /isValidLocaleTag/,
+        'popup must declare isValidLocaleTag()');
+    assert.match(popupSource, /BUNDLED_LOCALE_SET/,
+        'popup must keep a Set of known bundled locales');
+    assert.match(popupSource, /BUNDLED_LOCALE_SET\.has\(locale\)/,
+        'isValidLocaleTag must consult the allowlist before any fetch');
+    // The fetch path must reject invalid locales before calling getURL.
+    const initIdx = popupSource.indexOf('async function initI18n');
+    const initBody = popupSource.slice(initIdx, initIdx + 1200);
+    assert.match(initBody, /isValidLocaleTag\(locale\)/,
+        'initI18n must short-circuit when isValidLocaleTag rejects the stored override');
+});
+
+test('PageTypes covers music, embed, and live_chat surfaces', () => {
+    const pageSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'page.js'),
+        'utf8'
+    );
+    assert.match(pageSource, /MUSIC: 'music'/,
+        'PageTypes must declare MUSIC for music.youtube.com');
+    assert.match(pageSource, /EMBED: 'embed'/,
+        'PageTypes must declare EMBED for /embed/ routes');
+    assert.match(pageSource, /LIVE_CHAT: 'live_chat'/,
+        'PageTypes must declare LIVE_CHAT for the engagement-panel iframe');
+    assert.match(pageSource, /isMusicHost/,
+        'PageTypes must expose an isMusicHost() helper');
+    assert.match(pageSource, /isEmbedPath/,
+        'PageTypes must expose an isEmbedPath() helper');
+});
+
+test('subscriptionGroups uses an inline dialog instead of window.prompt', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 36000);
+    // Hardening pass replaced window.prompt with _showNewGroupDialog.
+    assert.match(block, /_showNewGroupDialog/,
+        'subscriptionGroups must expose the inline new-group dialog');
+    // Match the call syntax — explanatory comments referencing the deprecated
+    // API are allowed and useful for historical context.
+    assert.ok(!/window\.prompt\s*\(/.test(block),
+        'subscriptionGroups must not call window.prompt(...)');
+    // The dialog must focus-trap (aria-modal) and clean up on destroy.
+    const dlgIdx = block.indexOf('_showNewGroupDialog');
+    const dlgBody = block.slice(dlgIdx, dlgIdx + 8000);
+    assert.match(dlgBody, /setAttribute\('aria-modal', 'true'\)/,
+        'dialog must declare aria-modal so screen readers trap focus');
+    assert.match(dlgBody, /key === 'Escape'/,
+        'dialog must dismiss on Esc');
+});
+
+test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 36000);
+    const stampIdx = block.indexOf('_stampLastVisit()');
+    const stampBody = block.slice(stampIdx, stampIdx + 1500);
+    assert.match(stampBody, /LAST_VISIT_CAP/,
+        '_stampLastVisit must declare a cap constant');
+    assert.match(stampBody, /sort\(\(a, b\)/,
+        'cap pruning must sort by timestamp before dropping the oldest entries');
+});
+
+test('selector stats and emittedMisses are bounded', () => {
+    const selSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'selectors.js'),
+        'utf8'
+    );
+    assert.match(selSrc, /SELECTOR_STATS_CAP\s*=\s*\d+/,
+        'core/selectors.js must declare a stats cap');
+    assert.match(selSrc, /EMITTED_MISSES_CAP\s*=\s*\d+/,
+        'core/selectors.js must declare an emitted-misses cap');
+    assert.match(selSrc, /_enforceMapCap/,
+        'must call the cap-enforcing helper on stats insert');
+    assert.match(selSrc, /_enforceSetCap/,
+        'must call the cap-enforcing helper on miss emit');
+});
+
+test('commentFilterManager rules hash is a short digest, not the raw rule text', () => {
+    const start = ytkitSource.indexOf("id: 'commentFilterManager'");
+    const block = ytkitSource.slice(start, start + 9000);
+    assert.match(block, /_shortHash/,
+        'commentFilterManager must declare _shortHash()');
+    // The hash must be at most 16 chars and feed _lastRulesHash so the
+    // dataset attribute does not pin the entire rule body on every thread.
+    assert.match(block, /this\._lastRulesHash\s*=\s*this\._shortHash/,
+        '_scanAll must derive the hash via _shortHash');
+});
+
+test('videoHider resets the predicate-sandbox circuit on SPA navigate', () => {
+    const idx = ytkitSource.indexOf("addNavigateRule('hideVideosFromHomeNav'");
+    assert.ok(idx > -1, 'videoHider navigate rule must exist');
+    const block = ytkitSource.slice(idx, idx + 600);
+    assert.match(block, /_predicateCache\?\.evaluator\?\.reset\?\.\(\)/,
+        'navigate rule must reset the predicate evaluator circuit each route');
+});
+
+test('core/registry.js register({replace:true}) drops orphaned cleanups for the replaced id', () => {
+    const regSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'registry.js'),
+        'utf8'
+    );
+    const fnIdx = regSrc.indexOf('function register(feature, registerOptions');
+    assert.ok(fnIdx > -1, 'register() must exist');
+    const fnBody = regSrc.slice(fnIdx, fnIdx + 1500);
+    assert.match(fnBody, /registerOptions\.replace/, 'replace option must be honoured');
+    assert.match(fnBody, /cleanups\.delete\(id\)/,
+        'when replacing a registered feature, prior cleanups must be dropped to avoid leaking onto the new feature');
 });
 
 // ── v4.3.0 P1: AI tags for subscription groups ──

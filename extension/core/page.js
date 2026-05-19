@@ -14,6 +14,11 @@
         SHORTS: 'shorts',
         HISTORY: 'history',
         LIBRARY: 'library',
+        // Audit pass — surface YouTube Music and Embed routes so features can
+        // gate cleanly without re-deriving the host/path classification.
+        MUSIC: 'music',
+        EMBED: 'embed',
+        LIVE_CHAT: 'live_chat',
         OTHER: 'other'
     });
 
@@ -31,6 +36,18 @@
     function isYoutuBeHost(host = window.location.hostname) {
         const currentHost = normalizeHost(host);
         return currentHost === 'youtu.be' || currentHost === 'www.youtu.be';
+    }
+
+    function isMusicHost(host = window.location.hostname) {
+        return normalizeHost(host) === 'music.youtube.com';
+    }
+
+    function isEmbedPath(path = window.location.pathname) {
+        return normalizePath(path).startsWith('/embed/');
+    }
+
+    function isLiveChatPath(path = window.location.pathname) {
+        return normalizePath(path).startsWith('/live_chat');
     }
 
     function isWatchPagePath(path = window.location.pathname, host = window.location.hostname) {
@@ -59,6 +76,11 @@
 
     function getCurrentPage(path = window.location.pathname, host = window.location.hostname) {
         const currentPath = normalizePath(path);
+        // Host-scoped checks first — music.youtube.com keeps its own routes
+        // and live_chat lives in an iframe whose path is /live_chat*.
+        if (isMusicHost(host)) return PageTypes.MUSIC;
+        if (isLiveChatPath(currentPath)) return PageTypes.LIVE_CHAT;
+        if (isEmbedPath(currentPath)) return PageTypes.EMBED;
         if (isWatchPagePath(currentPath, host)) return PageTypes.WATCH;
         if (currentPath === '/' || currentPath === '/feed/trending') return PageTypes.HOME;
         if (isSearchPagePath(currentPath)) return PageTypes.SEARCH;
@@ -75,6 +97,9 @@
         PageTypes,
         getCurrentPage,
         isChannelPagePath,
+        isEmbedPath,
+        isLiveChatPath,
+        isMusicHost,
         isSearchPagePath,
         isShortsPagePath,
         isWatchPagePath

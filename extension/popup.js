@@ -77,12 +77,38 @@ function createGroupIcon(groupName) {
 // working.
 const I18N = { override: null, map: null, ready: false };
 
+// Bundled locales — must match the directories under extension/_locales/.
+// Keep in sync with the language dropdown options in popup.html.
+const BUNDLED_LOCALES = Object.freeze([
+    'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
+]);
+const BUNDLED_LOCALE_SET = new Set(BUNDLED_LOCALES);
+
+// Defense: reject locale strings that aren't on the allowlist or that contain
+// path-separator / parent-segment characters. `chrome.runtime.getURL` is
+// bounded to the extension origin, so the worst a malformed locale could do
+// is fetch an unrelated extension file and fall into the JSON-parse catch —
+// but rejecting up front avoids any wasted fetch and keeps the i18n surface
+// auditable.
+function isValidLocaleTag(locale) {
+    if (typeof locale !== 'string') return false;
+    if (!locale || locale === 'auto') return false;
+    if (locale.length > 16) return false;
+    if (!/^[A-Za-z]{2,3}(?:[_-][A-Za-z0-9]{2,8})?$/.test(locale)) return false;
+    return BUNDLED_LOCALE_SET.has(locale);
+}
+
 async function initI18n() {
     try {
         const items = await new Promise((resolve) =>
             chrome.storage.local.get(['_localeOverride'], (i) => resolve(i || {})));
         const locale = (items._localeOverride || '').trim();
         if (!locale || locale === 'auto') { I18N.ready = true; return; }
+        if (!isValidLocaleTag(locale)) {
+            // Stale or hostile override — fall back to chrome.i18n auto-detect.
+            I18N.ready = true;
+            return;
+        }
         const url = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
         const resp = await fetch(url);
         if (!resp.ok) { I18N.ready = true; return; }
@@ -139,7 +165,11 @@ function initLanguageDropdown() {
     } catch (_) { /* reason: i18n detection is best-effort */ }
 
     sel.addEventListener('change', async () => {
-        const locale = sel.value || 'auto';
+        const rawLocale = sel.value || 'auto';
+        // Guard the persisted value too — the dropdown is constrained to known
+        // options but the storage key is a public surface that other code
+        // (or future migrations) might overwrite.
+        const locale = (rawLocale === 'auto' || isValidLocaleTag(rawLocale)) ? rawLocale : 'auto';
         try {
             await new Promise((resolve) =>
                 chrome.storage.local.set({ _localeOverride: locale }, resolve));
