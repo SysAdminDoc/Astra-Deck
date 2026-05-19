@@ -133,6 +133,14 @@
             if (features.has(id) && !registerOptions.replace) {
                 throw new Error(`Feature "${id}" is already registered.`);
             }
+            // Audit pass: when replacing an already-registered feature without
+            // having destroyed it first, drop any orphaned per-feature cleanups
+            // so we don't leak them onto the new feature's destroy() call.
+            // Category cleanups are intentionally preserved — those are
+            // category-level lifecycle, not per-feature.
+            if (features.has(id) && registerOptions.replace) {
+                if (cleanups.has(id)) cleanups.delete(id);
+            }
             features.set(id, feature);
             setHealth(id, {
                 category: feature.category || null,
