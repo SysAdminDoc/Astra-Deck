@@ -1460,7 +1460,7 @@ return response;
             width: auto !important;
             min-width: 32px !important;
             padding: 0 10px !important;
-            border-radius: 999px !important;
+            border-radius: 10px !important;
             font-size: 11px !important;
             font-weight: 700 !important;
             letter-spacing: 0.02em !important;
@@ -1564,7 +1564,7 @@ return response;
             min-width: 32px !important;
             gap: 6px !important;
             padding: 0 10px !important;
-            border-radius: 999px !important;
+            border-radius: 10px !important;
             font-size: 11px !important;
             font-weight: 700 !important;
             letter-spacing: 0.02em !important;
@@ -1612,7 +1612,7 @@ return response;
     `;
     (document.head || document.documentElement).appendChild(_playerBtnCSS);
 
-    //  PageControl System — dismissible injected buttons with ghost-pill restore
+    //  PageControl System — dismissible injected buttons with a compact restore chip.
     const _pageControlDismissed = {};  // in-memory cache: id -> true/false
 
     function isPageControlDismissed(id) {
@@ -1627,8 +1627,8 @@ return response;
         storageWrite('ytkit_pc_' + id, dismissed);
     }
 
-    // Wraps an existing element with an X dismiss button and ghost-pill restore.
-    // If currently dismissed, immediately replaces element with ghost pill.
+    // Wraps an existing element with an X dismiss button and a compact restore chip.
+    // If currently dismissed, immediately replaces the element with the chip.
     // options: { label, color, onRestore }
     function wrapPageControl(el, id, options = {}) {
         if (!el || !el.parentNode) return el;
@@ -1636,7 +1636,7 @@ return response;
         const label = options.label || id;
         const accentColor = options.color || 'rgba(255,255,255,0.15)';
 
-        // Ghost pill shown when dismissed
+        // Restore chip shown when dismissed
         const createGhost = () => {
             const ghost = document.createElement('button');
             ghost.className = 'ytkit-pc-ghost';
@@ -1703,7 +1703,7 @@ return response;
             gap: 5px;
             min-height: 28px;
             padding: 0 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px dashed rgba(255,255,255,0.18);
             background: rgba(8,11,16,0.28);
             color: rgba(255,255,255,0.38);
@@ -1733,7 +1733,7 @@ return response;
             width: 18px;
             height: 18px;
             padding: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(8,11,16,0.88);
             color: rgba(255,255,255,0.72);
@@ -1774,7 +1774,7 @@ return response;
             width: min(620px, calc(100vw - 24px));
             min-height: 56px;
             padding: 12px 14px 12px 16px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(var(--ytkit-toast-rgb, 53,199,127),0.26);
             background:
                 radial-gradient(circle at top right, rgba(var(--ytkit-toast-rgb, 53,199,127),0.18), transparent 42%),
@@ -1820,7 +1820,7 @@ return response;
             min-width: 78px;
             min-height: 28px;
             padding: 0 11px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(var(--ytkit-toast-rgb, 53,199,127),0.26);
             background: rgba(var(--ytkit-toast-rgb, 53,199,127),0.14);
             color: rgba(255,255,255,0.96);
@@ -1856,7 +1856,7 @@ return response;
             color: rgba(255,255,255,0.94);
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
             line-height: 1.4;
             text-wrap: pretty;
             overflow-wrap: anywhere;
@@ -1876,7 +1876,7 @@ return response;
             -webkit-appearance: none;
             min-height: 32px;
             padding: 0 12px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.14);
             background: rgba(255,255,255,0.08);
             color: rgba(255,255,255,0.96);
@@ -4917,7 +4917,7 @@ return response;
                         align-items: center !important;
                         justify-content: center !important;
                         border: 1px solid rgba(255,255,255,0.08) !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
                         box-shadow: none !important;
                     }
@@ -5362,7 +5362,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 // CSS selectors are scoped to ytd-watch-metadata — safe to inject globally
                 // (removing path guard so styles persist across SPA navigations)
-                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing:-0.025em !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(var(--ytkit-accent-rgb),0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius:14px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(var(--ytkit-accent-rgb),0.1) !important;border-color:rgba(var(--ytkit-accent-rgb),0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}.ytkit-local-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;transition:all 0.2s ease !important}.ytkit-local-dl-btn:hover{background:rgba(var(--ytkit-accent-rgb),0.1) !important;border-color:rgba(var(--ytkit-accent-rgb),0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-local-dl-btn svg{width:14px !important;height:14px !important}.ytkit-local-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}ytd-watch-flexy .ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}ytd-watch-flexy .ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(var(--ytkit-accent-rgb),0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(var(--ytkit-accent-rgb),0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(var(--ytkit-accent-rgb),0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing:-0.01em !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(var(--ytkit-accent-rgb),0.25) !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}h1.style-scope.ytd-watch-metadata{margin-top:20px !important;font-weight:900 !important;font-style:normal !important;text-align:center !important;text-transform:capitalize !important;max-width:100% !important;overflow:hidden !important;text-overflow:ellipsis !important}yt-formatted-string.style-scope.ytd-watch-metadata{margin-bottom:0 !important;word-break:break-word !important;overflow-wrap:break-word !important}#primary.ytd-watch-flexy{max-width:100% !important}ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}#title.ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}div.yt-spec-touch-feedback-shape__fill{display:none !important}div.yt-spec-touch-feedback-shape__stroke{display:none !important}yt-touch-feedback-shape.yt-spec-touch-feedback-shape.yt-spec-touch-feedback-shape--touch-response{display:none !important}yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer{display:inline !important}yt-formatted-string.style-scope.ytd-video-owner-renderer{display:inline !important}ytd-watch-flexy button.ytkit-trigger-btn{display:inline-flex !important}ytd-watch-flexy yt-icon.style-scope.ytd-logo{display:inline-flex !important}div.item.style-scope.ytd-watch-metadata{display:flex !important}ytd-watch-metadata #info-container span.style-scope.yt-formatted-string{display:inline !important}#actions.ytd-watch-metadata button.yt-spec-button-shape-next.yt-spec-button-shape-next--tonal.yt-spec-button-shape-next--mono.yt-spec-button-shape-next--size-m.yt-spec-button-shape-next--icon-leading.yt-spec-button-shape-next--segmented-start.yt-spec-button-shape-next--enable-backdrop-filter-experiment{text-align:right !important}ytd-comment-view-model span.style-scope.yt-formatted-string,ytd-comment-renderer span.style-scope.yt-formatted-string,ytd-comment-thread-renderer span.style-scope.yt-formatted-string,ytd-comments-header-renderer span.style-scope.yt-formatted-string,ytd-comment-simplebox-renderer span.style-scope.yt-formatted-string{display:inline !important}ytd-comment-view-model yt-formatted-string,ytd-comment-renderer yt-formatted-string{display:inline !important}ytd-comments#comments{display:block !important;visibility:visible !important}ytd-comments#comments ytd-item-section-renderer{display:block !important}div.thread-hitbox.style-scope.ytd-comment-thread-renderer{display:none !important}`;
+                const css = `ytd-watch-metadata[style*="--yt-saturated"]{--yt-saturated-base-background:transparent !important;--yt-saturated-raised-background:transparent !important;--yt-saturated-additive-background:transparent !important;--yt-saturated-text-primary:rgba(255,255,255,0.95) !important;--yt-saturated-text-secondary:rgba(255,255,255,0.6) !important;--yt-saturated-overlay-background:transparent !important}ytd-watch-metadata h1.ytd-watch-metadata yt-formatted-string{font-size:1.55rem !important;line-height:2rem !important;font-weight:700 !important;letter-spacing: 0 !important;color:rgba(255,255,255,0.97) !important;text-shadow:0 1px 2px rgba(0,0,0,0.2) !important}ytd-watch-metadata #title.ytd-watch-metadata{margin-bottom:2px !important}ytd-watch-metadata #top-row{display:flex !important;flex-wrap:nowrap !important;align-items:center !important;gap:0 !important;margin-bottom:6px !important;padding:10px 0 8px !important}ytd-watch-metadata[actions-on-separate-line] #top-row{flex-wrap:wrap !important}#owner.ytd-watch-metadata{display:flex !important;align-items:center !important;gap:8px !important;margin-bottom:0 !important;padding:0 !important;flex-shrink:0 !important;margin-right:auto !important}#owner.ytd-watch-metadata>#ytkit-watch-btn,#owner.ytd-watch-metadata>#ytkit-page-btn-watch{order:99 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar{width:32px !important;height:32px !important;margin-right:0 !important}#owner.ytd-watch-metadata ytd-video-owner-renderer #avatar img{width:32px !important;height:32px !important;border-radius:50% !important;border:1.5px solid rgba(var(--ytkit-accent-rgb),0.2) !important}#owner.ytd-watch-metadata ytd-video-owner-renderer{display:flex !important;align-items:center !important;gap:8px !important;min-width:0 !important}ytd-video-owner-renderer #upload-info{gap:0 !important}ytd-video-owner-renderer #channel-name{font-size:13px !important;font-weight:600 !important}ytd-video-owner-renderer #owner-sub-count{font-size:11px !important;opacity:0.4 !important;line-height:1.2 !important}ytd-watch-metadata #subscribe-button{margin:0 !important}ytd-watch-metadata #subscribe-button .yt-spec-button-shape-next,#notification-preference-button .yt-spec-button-shape-next{height:28px !important;font-size:11px !important;padding:0 12px !important;border-radius: 12px !important;min-height:unset !important}#notification-preference-button .yt-spec-button-shape-next{padding:0 6px !important}yt-animated-action .ytAnimatedActionLottie,yt-animated-action .ytAnimatedActionContentWithBackground .ytAnimatedActionLottie{display:none !important}ytd-watch-metadata #actions.ytd-watch-metadata,#actions.item.style-scope.ytd-watch-metadata{flex:0 0 auto !important;min-width:0 !important;margin-left:auto !important}ytd-watch-metadata #actions-inner{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important;justify-content:flex-end !important}#menu.ytd-watch-metadata{margin:0 !important}#top-level-buttons-computed.style-scope.ytd-menu-renderer{display:flex !important;flex-wrap:wrap !important;gap:5px !important;align-items:center !important}ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next{height:30px !important;min-height:unset !important;min-width:unset !important;padding:0 12px !important;font-size:12px !important;border-radius:6px !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;transition:all 0.2s ease !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next:hover{background:rgba(var(--ytkit-accent-rgb),0.1) !important;border-color:rgba(var(--ytkit-accent-rgb),0.2) !important;color:rgba(255,255,255,0.95) !important}segmented-like-dislike-button-view-model .ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper{gap:5px !important}ytd-watch-metadata .yt-spec-button-shape-next--segmented-start,ytd-watch-metadata .yt-spec-button-shape-next--segmented-end{border-radius:6px !important}ytd-watch-metadata #top-level-buttons-computed .yt-spec-button-shape-next__icon{margin-right:3px !important}ytd-watch-metadata #top-level-buttons-computed yt-icon,ytd-watch-metadata #top-level-buttons-computed .ytIconWrapperHost{width:16px !important;height:16px !important}dislike-button-view-model .yt-spec-button-shape-next{padding:0 8px !important}.ytkit-local-dl-btn{height:30px !important;min-height:unset !important;padding:0 10px !important;font-size:12px !important;border-radius:6px !important;margin-left:0 !important;background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.07) !important;color:rgba(255,255,255,0.7) !important;font-weight:500 !important;font-family:"Roboto","Arial",sans-serif !important;gap:4px !important;transition:all 0.2s ease !important}.ytkit-local-dl-btn:hover{background:rgba(var(--ytkit-accent-rgb),0.1) !important;border-color:rgba(var(--ytkit-accent-rgb),0.2) !important;color:rgba(255,255,255,0.95) !important}.ytkit-local-dl-btn svg{width:14px !important;height:14px !important}.ytkit-local-dl-btn svg path{fill:currentColor !important}.ytkit-pc-wrap{margin-left:0 !important}.ytkit-pc-wrap .ytkit-pc-x{top:-4px !important;right:-4px !important;width:14px !important;height:14px !important;font-size:9px !important}ytd-watch-flexy .ytkit-trigger-btn{width:26px !important;height:26px !important;padding:4px !important;background:transparent !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:6px !important;opacity:0.35 !important;transition:opacity 0.15s,background 0.15s !important}ytd-watch-flexy .ytkit-trigger-btn:hover{opacity:0.9 !important;background:rgba(255,255,255,0.08) !important;border-color:rgba(255,255,255,0.12) !important}ytd-watch-metadata #description.ytd-watch-metadata,ytd-watch-metadata ytd-text-inline-expander{background:rgba(255,255,255,0.02) !important;border:1px solid rgba(255,255,255,0.04) !important;border-left:2px solid rgba(var(--ytkit-accent-rgb),0.25) !important;border-radius:6px !important;padding:10px 14px !important;margin-top:6px !important;transition:border-color 0.2s ease,background 0.2s ease !important}ytd-watch-metadata #description.ytd-watch-metadata:hover,ytd-watch-metadata ytd-text-inline-expander:hover{background:rgba(255,255,255,0.035) !important;border-color:rgba(255,255,255,0.06) !important;border-left-color:rgba(var(--ytkit-accent-rgb),0.4) !important}ytd-watch-metadata #description-inner{margin:0 !important}ytd-watch-metadata #description tp-yt-paper-button#expand,ytd-watch-metadata #description tp-yt-paper-button#collapse,ytd-text-inline-expander #expand,ytd-text-inline-expander #collapse{font-size:12px !important;color:rgba(var(--ytkit-accent-rgb),0.5) !important;text-transform:none !important;margin-top:6px !important;padding:2px 0 !important}ytd-watch-metadata #description-inline-expander #snippet{font-size:13px !important;line-height:1.6 !important;color:rgba(255,255,255,0.55) !important}ytd-watch-metadata #info-container{font-size:12px !important;color:rgba(255,255,255,0.35) !important}ytd-watch-metadata #info span,ytd-watch-metadata #info-text{font-size:12px !important}#bottom-row.ytd-watch-metadata{margin-top:0 !important;margin-right:0 !important;gap:4px !important;padding:4px 0 !important}ytd-engagement-panel-title-header-renderer{padding:8px 16px !important}#below.ytd-watch-flexy{padding-bottom:12px !important}ytd-watch-metadata{min-height:unset !important}ytd-video-description-infocards-section-renderer{padding:8px 0 !important;margin-top:8px !important}ytd-video-description-music-section-renderer,ytd-video-description-transcript-section-renderer{padding:6px 0 !important}ytd-comments-header-renderer{min-height:0 !important;padding:12px 0 8px !important;margin:8px 0 4px 0 !important;border-top:1px solid rgba(255,255,255,0.05) !important}ytd-comments-header-renderer #count{font-size:13px !important;font-weight:600 !important;color:rgba(255,255,255,0.5) !important;letter-spacing: 0 !important}ytd-comments-header-renderer #sort-menu{opacity:0.5 !important;transition:opacity 0.2s !important}ytd-comments-header-renderer #sort-menu:hover{opacity:1 !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer{margin:0 0 8px 0 !important;padding:0 !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #placeholder-area{background:rgba(255,255,255,0.03) !important;border:1px solid rgba(255,255,255,0.06) !important;border-radius:8px !important;padding:10px 14px !important;font-size:13px !important;color:rgba(255,255,255,0.3) !important;transition:border-color 0.2s !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #placeholder-area:hover{border-color:rgba(var(--ytkit-accent-rgb),0.25) !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #avatar{width:28px !important;height:28px !important}ytd-comments-header-renderer ytd-comment-simplebox-renderer #avatar img{width:28px !important;height:28px !important;border-radius:50% !important}h1.style-scope.ytd-watch-metadata{margin-top:20px !important;font-weight:900 !important;font-style:normal !important;text-align:center !important;text-transform:capitalize !important;max-width:100% !important;overflow:hidden !important;text-overflow:ellipsis !important}yt-formatted-string.style-scope.ytd-watch-metadata{margin-bottom:0 !important;word-break:break-word !important;overflow-wrap:break-word !important}#primary.ytd-watch-flexy{max-width:100% !important}ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}#title.ytd-watch-metadata{max-width:100% !important;overflow:hidden !important}div.yt-spec-touch-feedback-shape__fill{display:none !important}div.yt-spec-touch-feedback-shape__stroke{display:none !important}yt-touch-feedback-shape.yt-spec-touch-feedback-shape.yt-spec-touch-feedback-shape--touch-response{display:none !important}yt-formatted-string.count-text.style-scope.ytd-comments-header-renderer{display:inline !important}yt-formatted-string.style-scope.ytd-video-owner-renderer{display:inline !important}ytd-watch-flexy button.ytkit-trigger-btn{display:inline-flex !important}ytd-watch-flexy yt-icon.style-scope.ytd-logo{display:inline-flex !important}div.item.style-scope.ytd-watch-metadata{display:flex !important}ytd-watch-metadata #info-container span.style-scope.yt-formatted-string{display:inline !important}#actions.ytd-watch-metadata button.yt-spec-button-shape-next.yt-spec-button-shape-next--tonal.yt-spec-button-shape-next--mono.yt-spec-button-shape-next--size-m.yt-spec-button-shape-next--icon-leading.yt-spec-button-shape-next--segmented-start.yt-spec-button-shape-next--enable-backdrop-filter-experiment{text-align:right !important}ytd-comment-view-model span.style-scope.yt-formatted-string,ytd-comment-renderer span.style-scope.yt-formatted-string,ytd-comment-thread-renderer span.style-scope.yt-formatted-string,ytd-comments-header-renderer span.style-scope.yt-formatted-string,ytd-comment-simplebox-renderer span.style-scope.yt-formatted-string{display:inline !important}ytd-comment-view-model yt-formatted-string,ytd-comment-renderer yt-formatted-string{display:inline !important}ytd-comments#comments{display:block !important;visibility:visible !important}ytd-comments#comments ytd-item-section-renderer{display:block !important}div.thread-hitbox.style-scope.ytd-comment-thread-renderer{display:none !important}`;
                 const saferCssTransforms = [
                     [
                         'ytd-watch-metadata #actions ytd-menu-renderer>yt-icon-button,ytd-watch-metadata #actions ytd-menu-renderer>yt-button-shape:last-child{display:none !important}',
@@ -5431,7 +5431,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     :is(ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown.yt-live-chat-app) #contentWrapper:has(ytd-menu-popup-renderer :is(ytd-menu-service-item-renderer, ytd-menu-navigation-item-renderer)) {
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background:
                             radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
@@ -5440,7 +5440,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         box-shadow:
                             0 24px 48px rgba(0, 0, 0, 0.34),
                             inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-                        backdrop-filter: blur(18px) saturate(1.08) !important;
+                        backdrop-filter: none;
                         overflow: hidden !important;
                     }
 
@@ -5561,7 +5561,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
 
                     tp-yt-iron-dropdown #contentWrapper:has(tp-yt-paper-listbox.yt-dropdown-menu) {
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background:
                             radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.16), transparent 42%),
@@ -5570,7 +5570,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         box-shadow:
                             0 24px 48px rgba(0, 0, 0, 0.34),
                             inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-                        backdrop-filter: blur(18px) saturate(1.08) !important;
+                        backdrop-filter: none;
                         overflow: hidden !important;
                     }
 
@@ -5754,7 +5754,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         visibility: visible !important;
                         margin-top: 10px !important;
                         padding: 8px 10px 6px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.045) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.004)),
@@ -5821,7 +5821,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comments-header-renderer #sort-menu button {
                         min-height: 28px !important;
                         padding: 0 11px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.04) !important;
                         color: rgba(255, 255, 255, 0.76) !important;
@@ -5841,7 +5841,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-renderer {
                         margin: 0 !important;
                         padding: 6px 6px 6px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.05) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.005)),
@@ -5920,7 +5920,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: rgba(255, 255, 255, 0.95) !important;
                         font-size: 12.5px !important;
                         font-weight: 750 !important;
-                        letter-spacing: -0.01em !important;
+                        letter-spacing: 0 !important;
                     }
 
                     #comments ytd-comment-view-model #author-text:hover,
@@ -6073,7 +6073,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-width: 28px !important;
                         min-height: 28px !important;
                         padding: 0 !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.04) !important;
                         color: rgba(255, 255, 255, 0.66) !important;
@@ -6195,7 +6195,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 28px !important;
                         height: 28px !important;
                         padding: 0 10px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.04) !important;
                         color: rgba(255, 255, 255, 0.72) !important;
@@ -6233,7 +6233,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         max-width: fit-content !important;
                         margin: 0 0 10px !important;
                         padding: 5px 10px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.05) !important;
                         color: rgba(255, 255, 255, 0.76) !important;
@@ -6311,7 +6311,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         height: 28px !important;
                         min-height: 28px !important;
                         padding: 0 !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                     }
 
                     #comments ytd-comment-engagement-bar #creator-heart-button button {
@@ -6348,7 +6348,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     tp-yt-paper-tooltip.ytd-creator-heart-renderer #tooltip,
                     #comments ytd-comment-engagement-bar ytd-creator-heart-renderer tp-yt-paper-tooltip,
                     #comments ytd-comment-engagement-bar ytd-creator-heart-renderer tp-yt-paper-tooltip #tooltip {
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                     }
 
                     tp-yt-paper-tooltip.ytd-creator-heart-renderer,
@@ -6367,7 +6367,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             rgba(11, 15, 21, 0.96) !important;
                         color: rgba(255, 228, 232, 0.96) !important;
                         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34) !important;
-                        backdrop-filter: blur(12px) saturate(1.08) !important;
+                        backdrop-filter: none;
                         font-size: 10.5px !important;
                         font-weight: 700 !important;
                         letter-spacing: 0.01em !important;
@@ -6378,7 +6378,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-view-model ytd-author-comment-badge-renderer[creator],
                     #comments ytd-comment-renderer ytd-author-comment-badge-renderer[creator] {
                         padding: 2px 8px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: rgba(var(--ytkit-accent-rgb), 0.14) !important;
                         border: 1px solid rgba(var(--ytkit-accent-rgb), 0.2) !important;
                     }
@@ -6415,7 +6415,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     #comments ytd-comment-replies-renderer ytd-comment-view-model,
                     #comments ytd-comment-replies-renderer ytd-comment-renderer {
                         padding: 9px 11px 8px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.055) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0.005)),
@@ -6494,7 +6494,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         gap: 12px !important;
                         margin: 12px 0 16px !important;
                         padding: 14px !important;
-                        border-radius: 20px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background:
                             radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.12), transparent 42%),
@@ -6545,7 +6545,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         gap: 10px !important;
                         min-height: 48px !important;
                         padding: 0 14px !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.035) !important;
                         transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease !important;
@@ -6627,7 +6627,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 34px !important;
                         min-width: 96px !important;
                         padding: 0 12px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: rgba(255, 255, 255, 0.05) !important;
                         border: 1px solid rgba(255, 255, 255, 0.06) !important;
                         color: rgba(255, 255, 255, 0.76) !important;
@@ -6651,7 +6651,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: grid !important;
                         gap: 10px !important;
                         padding: 14px !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(245, 158, 11, 0.16) !important;
                         background: linear-gradient(180deg, rgba(245, 158, 11, 0.08), rgba(255, 255, 255, 0.015)) !important;
                     }
@@ -6677,7 +6677,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         justify-self: start !important;
                         min-height: 34px !important;
                         padding: 0 14px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(var(--ytkit-accent-rgb), 0.22) !important;
                         background: rgba(var(--ytkit-accent-rgb), 0.12) !important;
                         color: rgba(255, 255, 255, 0.96) !important;
@@ -6721,7 +6721,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below ytd-comments#comments {
                         margin-top: 10px !important;
                         padding: 12px 12px 76px !important;
-                        border-radius: 20px !important;
+                        border-radius: 12px !important;
                         box-shadow: none !important;
                     }
 
@@ -6740,7 +6740,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-view-model,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-renderer {
                         padding: 12px 14px 10px !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18) !important;
                     }
 
@@ -6788,7 +6788,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 46px !important;
                         gap: 8px !important;
                         padding: 0 12px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer {
@@ -6797,7 +6797,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer #placeholder-area {
                         min-height: 46px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                     }
                 `;
                 this._premiumInteractionStyleElement = injectStyle(premiumInteractionCss, this.id + '-premium-2', true);
@@ -7627,7 +7627,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 0 0 8px !important;
                         padding: 3px !important;
                         gap: 3px !important;
-                        border-radius: 15px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.018)),
@@ -7635,8 +7635,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         box-shadow:
                             0 10px 26px rgba(0, 0, 0, 0.26),
                             inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-                        backdrop-filter: blur(12px) saturate(1.12) !important;
-                        -webkit-backdrop-filter: blur(12px) saturate(1.12) !important;
+                        backdrop-filter: none;
+                        -webkit-backdrop-filter: none;
                         overflow: visible !important;
                         flex-shrink: 0 !important;
                     }
@@ -7678,7 +7678,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         width: 1px !important;
                         height: 18px !important;
                         margin-right: 2px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: rgba(255, 255, 255, 0.12) !important;
                         flex: 0 0 auto !important;
                     }
@@ -7852,7 +7852,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-width: 170px !important;
                         max-height: min(420px, calc(100vh - 132px)) !important;
                         padding: 6px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         border-color: rgba(255, 255, 255, 0.1) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.022)),
@@ -7860,8 +7860,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         box-shadow:
                             0 22px 46px rgba(0, 0, 0, 0.46),
                             inset 0 1px 0 rgba(255, 255, 255, 0.055) !important;
-                        backdrop-filter: blur(14px) saturate(1.12) !important;
-                        -webkit-backdrop-filter: blur(14px) saturate(1.12) !important;
+                        backdrop-filter: none;
+                        -webkit-backdrop-filter: none;
                         overflow-x: hidden !important;
                         overflow-y: auto !important;
                         overscroll-behavior: contain !important;
@@ -7878,7 +7878,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     #ytkit-po-drop::-webkit-scrollbar-thumb {
                         border: 2px solid transparent !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: rgba(255, 255, 255, 0.2) !important;
                         background-clip: padding-box !important;
                     }
@@ -8591,7 +8591,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 card.className = 'ytkit-split-live-card';
                 card.style.cssText = [
                     'height:100%',
-                    'border-radius:16px',
+                    'border-radius: 12px',
                     'border:1px solid rgba(255,255,255,0.10)',
                     'background:rgba(18,23,32,0.88)',
                     'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)',
@@ -8620,13 +8620,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const liveBadge = document.createElement('span');
                 liveBadge.className = 'ytkit-split-live-badge';
                 liveBadge.textContent = 'LIVE';
-                liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius:999px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
+                liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius: 10px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
                 meta.appendChild(liveBadge);
 
                 const viewCount = document.createElement('span');
                 viewCount.className = 'ytkit-split-live-view-count';
                 viewCount.setAttribute('translate', 'no');
-                viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:rgba(248,250,252,0.94);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);border-radius:999px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:rgba(248,250,252,0.94);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);border-radius: 10px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                 meta.appendChild(viewCount);
 
                 const date = document.createElement('span');
@@ -8905,7 +8905,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 control.querySelectorAll('button, .yt-spec-button-shape-next, .ytSpecButtonShapeNextHost').forEach(button => {
                     button.style.setProperty('height', '32px', 'important');
                     button.style.setProperty('min-height', '32px', 'important');
-                    button.style.setProperty('border-radius', '999px', 'important');
+                    button.style.setProperty('border-radius', '10px', 'important');
                     button.style.setProperty('white-space', 'nowrap', 'important');
                 });
             },
@@ -10126,14 +10126,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         width: 32px !important;
                         height: 32px !important;
                         border: 1px solid rgba(255, 255, 255, 0.12) !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: rgba(6, 9, 14, 0.56) !important;
                         color: rgba(255, 255, 255, 0.72) !important;
                         box-shadow:
                             0 10px 22px rgba(0, 0, 0, 0.26),
                             inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
-                        backdrop-filter: blur(12px) saturate(1.1) !important;
-                        -webkit-backdrop-filter: blur(12px) saturate(1.1) !important;
+                        backdrop-filter: none;
+                        -webkit-backdrop-filter: none;
                     }
 
                     html.ytkit-split-active #ytkit-split-close:hover {
@@ -10176,7 +10176,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html.ytkit-split-active #below[style*="position"] ytd-watch-metadata #title {
                         font-size: clamp(1.02rem, 1.45vw, 1.16rem) !important;
                         line-height: 1.34 !important;
-                        letter-spacing: -0.015em !important;
+                        letter-spacing: 0 !important;
                     }
 
                     html.ytkit-split-active #below[style*="position"] #owner.ytd-watch-metadata,
@@ -10246,7 +10246,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 30px !important;
                         height: 30px !important;
                         padding-inline: 10px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         font-size: 11px !important;
                     }
 
@@ -10411,7 +10411,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 32px !important;
                         height: 32px !important;
                         padding: 0 12px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                     }
 
                     html.ytkit-split-open #below[style*="position"] #comments ytd-comment-simplebox-renderer #placeholder-area {
@@ -10485,7 +10485,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 !important;
                         font-size: clamp(1rem, 1.45vw, 1.14rem) !important;
                         line-height: 1.18 !important;
-                        letter-spacing: -0.03em !important;
+                        letter-spacing: 0 !important;
                         text-align: left !important;
                         text-transform: none !important;
                         font-weight: 780 !important;
@@ -10673,7 +10673,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below ytd-comments#comments {
                         margin-top: 10px !important;
                         padding: 10px 12px 52px !important;
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                         box-shadow: none !important;
                     }
 
@@ -10727,7 +10727,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 28px !important;
                         height: 28px !important;
                         padding: 0 11px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer ytd-comment-simplebox-renderer,
@@ -10908,7 +10908,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #actions #segmented-like-button button,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #actions .ytLikeButtonViewModelHost button,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #actions .yt-spec-button-shape-next--segmented-start {
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below ytd-watch-metadata,
@@ -10940,7 +10940,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 !important;
                         font-size: clamp(1rem, 1.45vw, 1.14rem) !important;
                         line-height: 1.18 !important;
-                        letter-spacing: -0.03em !important;
+                        letter-spacing: 0 !important;
                         text-align: left !important;
                         text-transform: none !important;
                         font-weight: 780 !important;
@@ -11058,7 +11058,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner yt-subscribe-button-view-model .yt-spec-button-shape-next {
                         min-height: 32px !important;
                         height: 32px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         padding-inline: 11px !important;
                     }
 
@@ -11192,7 +11192,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions .yt-spec-button-shape-next {
                         min-height: 32px !important;
                         height: 32px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         color: rgba(226, 232, 240, 0.88) !important;
@@ -11226,7 +11226,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer {
                         overflow: hidden !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         box-shadow: none !important;
@@ -11236,7 +11236,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         gap: 0 !important;
                         overflow: hidden !important;
                         border: 0 !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: transparent !important;
                         box-shadow: none !important;
                     }
@@ -11257,7 +11257,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-start,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-end {
                         border: 0 !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: transparent !important;
                         box-shadow: none !important;
                     }
@@ -11266,7 +11266,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below ytd-comments#comments {
                         margin-top: 12px !important;
                         padding: 14px 14px 64px !important;
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comments-header-renderer {
@@ -11459,7 +11459,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer > #comment-dialog ytd-commentbox #contenteditable-root {
                         min-height: 50px !important;
                         padding: 0 14px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below #comments ytd-comment-simplebox-renderer > #comment-dialog ytd-commentbox #footer {
@@ -11530,7 +11530,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         padding: 12px 14px 13px !important;
                         border: 1px solid rgba(255, 255, 255, 0.075) !important;
                         border-left: 2px solid rgba(var(--ytkit-split-accent-rgb), 0.42) !important;
-                        border-radius: 15px !important;
+                        border-radius: 12px !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.050), rgba(255, 255, 255, 0.018)),
                             rgba(11, 15, 23, 0.76) !important;
@@ -11694,7 +11694,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 38px !important;
                         margin-left: 0 !important;
                         padding: 5px 11px 6px !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(var(--ytkit-split-accent-rgb), 0.18) !important;
                         background:
                             linear-gradient(180deg, rgba(var(--ytkit-split-accent-rgb), 0.115), rgba(var(--ytkit-split-accent-rgb), 0.035)),
@@ -11788,7 +11788,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 !important;
                         padding: 9px 12px 8px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
                             rgba(12, 16, 24, 0.82) !important;
@@ -11818,7 +11818,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         flex: 0 0 42px !important;
                         min-width: 42px !important;
                         margin: 0 !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         overflow: hidden !important;
                     }
 
@@ -11890,7 +11890,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #owner > #ytkit-watch-btn {
                         min-height: 32px !important;
                         height: 32px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.055) !important;
                         color: rgba(248, 250, 252, 0.92) !important;
@@ -11916,7 +11916,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-width: 118px !important;
                         max-width: 100% !important;
                         padding: 0 16px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(var(--ytkit-split-accent-rgb), 0.24) !important;
                         background:
                             linear-gradient(180deg, rgba(var(--ytkit-split-accent-rgb), 0.17), rgba(var(--ytkit-split-accent-rgb), 0.075)),
@@ -12017,7 +12017,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] .ytkit-local-dl-btn {
                         min-height: 32px !important;
                         height: 32px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         color: rgba(226, 232, 240, 0.88) !important;
@@ -12066,7 +12066,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 0 12px !important;
                         padding: 10px 12px 9px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
                             rgba(13, 17, 25, 0.82) !important;
@@ -12109,7 +12109,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 30px !important;
                         height: 30px !important;
                         padding: 0 12px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         color: rgba(226, 232, 240, 0.86) !important;
@@ -12158,7 +12158,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 38px !important;
                         margin: 0 !important;
                         padding: 0 11px !important;
-                        border-radius: 13px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         color: rgba(226, 232, 240, 0.74) !important;
@@ -12178,7 +12178,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: block !important;
                         margin: 0 !important;
                         padding: 12px 54px 12px 12px !important;
-                        border-radius: 17px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255, 255, 255, 0.085) !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.046), rgba(255, 255, 255, 0.022)),
@@ -12367,7 +12367,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-width: 28px !important;
                         min-height: 28px !important;
                         padding: 0 !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         color: rgba(226, 232, 240, 0.82) !important;
                     }
@@ -12447,7 +12447,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 28px !important;
                         height: 28px !important;
                         padding: 0 10px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         color: rgba(226, 232, 240, 0.82) !important;
@@ -12471,7 +12471,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-view-model,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-replies-renderer ytd-comment-renderer {
                         padding: 10px 40px 10px 10px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         box-shadow: none !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.034), rgba(255, 255, 255, 0.016)),
@@ -12521,7 +12521,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 30px !important;
                         height: 30px !important;
                         padding: 0 14px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(148, 163, 184, 0.16) !important;
                         background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)), rgba(7, 10, 16, 0.62) !important;
                         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
@@ -12584,7 +12584,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 0 !important;
                         margin-bottom: 8px !important;
                         padding: 8px 10px 8px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         background:
                             linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.014)),
                             rgba(12, 16, 24, 0.74) !important;
@@ -12664,7 +12664,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-view-model,
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments ytd-comment-renderer {
                         padding: 11px 54px 10px 11px !important;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.028), 0 10px 22px rgba(2, 6, 12, 0.2) !important;
                     }
 
@@ -12704,7 +12704,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 26px !important;
                         margin: 0 !important;
                         padding: 0 8px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255, 255, 255, 0.08) !important;
                         background: rgba(255, 255, 255, 0.045) !important;
                         box-shadow: none !important;
@@ -12737,7 +12737,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         height: 26px !important;
                         min-height: 26px !important;
                         padding: 0 !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                     }
 
                     html:is(.ytkit-split-active, .ytkit-split-open) #below[style*="position"] #comments #creator-heart-button button {
@@ -13161,7 +13161,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 18px;
                         padding: 0 7px;
                         margin-left: 6px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 1px solid rgba(245, 158, 11, 0.18);
                         background: rgba(245, 158, 11, 0.12);
                         color: rgba(255, 239, 204, 0.96);
@@ -13178,7 +13178,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         gap: 6px;
                         min-height: 22px;
                         padding: 0 8px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         margin-left: 8px;
                         vertical-align: middle;
                         font-size: 10px;
@@ -13192,7 +13192,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         content: '';
                         width: 6px;
                         height: 6px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         background: currentColor;
                         box-shadow: 0 0 10px currentColor;
                         opacity: 0.88;
@@ -13220,7 +13220,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         gap: 10px;
                         min-height: 32px;
                         padding: 0 12px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 1px solid rgba(255, 255, 255, 0.08);
                         background: rgba(255, 255, 255, 0.035);
                         color: rgba(255, 255, 255, 0.86);
@@ -13244,7 +13244,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         justify-content: center;
                         width: 18px;
                         height: 18px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         background: rgba(255, 255, 255, 0.06);
                         flex-shrink: 0;
                     }
@@ -13475,7 +13475,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:not(.ytkit-split-active) ytd-live-chat-frame:not([collapsed]),
                     html:not(.ytkit-split-active) #chat.ytd-live-chat-frame {
                         position: relative;
-                        border-radius: 28px !important;
+                        border-radius: 12px !important;
                         overflow: hidden !important;
                         border: 1px solid rgba(255,255,255,0.08) !important;
                         background: radial-gradient(circle at top, rgba(245,158,11,0.12), transparent 42%), linear-gradient(180deg, rgba(18,24,33,0.98) 0%, rgba(9,12,18,0.98) 100%) !important;
@@ -13493,7 +13493,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html:not(.ytkit-split-active) #chat #show-hide-button {
                         border-top: 1px solid rgba(255,255,255,0.08) !important;
                         background: linear-gradient(180deg, rgba(15,19,28,0.82), rgba(11,14,21,0.96)) !important;
-                        backdrop-filter: blur(18px) saturate(150%);
+                        backdrop-filter: none;
                     }
 
                     html[data-ytkit-livechat-premium],
@@ -13532,10 +13532,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0 0 12px;
                         padding: 14px 16px !important;
                         border: 1px solid var(--ytkit-livechat-border);
-                        border-radius: 22px;
+                        border-radius: 12px;
                         background: linear-gradient(180deg, rgba(24,30,41,0.94), rgba(14,18,27,0.92)) !important;
                         box-shadow: 0 22px 64px rgba(2,6,12,0.46);
-                        backdrop-filter: blur(22px) saturate(145%);
+                        backdrop-filter: none;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #primary-content {
                         display: flex;
@@ -13546,7 +13546,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #title {
                         font-size: 20px;
                         font-weight: 700;
-                        letter-spacing: -0.02em;
+                        letter-spacing: 0;
                         color: var(--ytkit-livechat-text);
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #view-selector { margin-left: auto; }
@@ -13556,12 +13556,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #live-chat-header-context-menu button,
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #close-button button {
                         min-height: 36px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         border: 1px solid rgba(255,255,255,0.08) !important;
                         background: rgba(255,255,255,0.045) !important;
                         color: var(--ytkit-livechat-text) !important;
                         box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-                        backdrop-filter: blur(16px) saturate(140%);
+                        backdrop-filter: none;
                     }
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer tp-yt-paper-button#label:hover,
                     html[data-ytkit-livechat-premium] yt-live-chat-header-renderer #viewer-leaderboard-entry-point button:hover,
@@ -13585,13 +13585,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-height: 0 !important;
                         margin: 0 0 10px !important;
                         padding: 10px 48px 10px 12px !important;
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                         border: 1px solid var(--ytkit-livechat-border) !important;
                         background:
                             linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.022)),
                             rgba(12,16,24,0.82) !important;
                         box-shadow: inset 0 1px 0 rgba(255,255,255,0.035), 0 14px 30px rgba(2,6,12,0.22);
-                        backdrop-filter: blur(16px) saturate(135%);
+                        backdrop-filter: none;
                         overflow: visible !important;
                         transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
                     }
@@ -13698,7 +13698,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #author-name.owner.yt-live-chat-author-chip,
                     html[data-ytkit-livechat-premium] yt-live-chat-author-chip[is-highlighted] #author-name.owner.yt-live-chat-author-chip {
                         padding: 4px 10px !important;
-                        border-radius: 999px !important;
+                        border-radius: 10px !important;
                         background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
                         color: #16181d !important;
                     }
@@ -13746,7 +13746,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #card.yt-live-chat-paid-message-renderer,
                     html[data-ytkit-livechat-premium] #card.yt-live-chat-paid-sticker-renderer,
                     html[data-ytkit-livechat-premium] #card.yt-live-chat-membership-item-renderer {
-                        border-radius: 22px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255,255,255,0.14);
                         box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 52px rgba(2,6,12,0.38);
                         overflow: hidden;
@@ -13756,7 +13756,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] yt-live-chat-item-bumper-view-model {
                         margin: 10px 0 !important;
                         padding: 12px 14px !important;
-                        border-radius: 16px !important;
+                        border-radius: 12px !important;
                         border: 1px solid var(--ytkit-livechat-border);
                         background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03)) !important;
                         color: var(--ytkit-livechat-muted) !important;
@@ -13770,11 +13770,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         padding: 16px 14px 18px !important;
                         border-top: 1px solid var(--ytkit-livechat-border);
                         background: linear-gradient(180deg, rgba(7,10,16,0), rgba(7,10,16,0.92) 18%, rgba(9,12,18,0.98) 100%) !important;
-                        backdrop-filter: blur(22px) saturate(145%);
+                        backdrop-filter: none;
                     }
                     html[data-ytkit-livechat-premium] #input-container.yt-live-chat-message-input-renderer {
                         min-height: 44px !important;
-                        border-radius: 18px !important;
+                        border-radius: 12px !important;
                         border: 1px solid rgba(255,255,255,0.08);
                         background: rgba(15,20,28,0.84) !important;
                         box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 16px 36px rgba(2,6,12,0.24);
@@ -13795,7 +13795,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] #send-button.yt-live-chat-message-input-renderer > .yt-live-chat-message-input-renderer {
                         min-width: 38px;
                         height: 38px;
-                        border-radius: 14px !important;
+                        border-radius: 12px !important;
                         background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
                         color: #14181f !important;
                         box-shadow: inset 0 1px 0 rgba(255,255,255,0.26), 0 14px 26px rgba(245,158,11,0.22);
@@ -13809,7 +13809,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     html[data-ytkit-livechat-premium] ::-webkit-scrollbar { width: 10px; }
                     html[data-ytkit-livechat-premium] ::-webkit-scrollbar-track { background: transparent; }
                     html[data-ytkit-livechat-premium] ::-webkit-scrollbar-thumb {
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 2px solid transparent;
                         background: rgba(148,163,184,0.28);
                         background-clip: padding-box;
@@ -14739,7 +14739,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         height: 36px;
                         padding: 0 12px;
                         border: 1px solid rgba(245,158,11,0.42);
-                        border-radius: 999px;
+                        border-radius: 10px;
                         background: linear-gradient(135deg, #fbbf24, #f59e0b);
                         color: #14181f;
                         box-shadow: 0 14px 34px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.28);
@@ -16200,7 +16200,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             transform 180ms var(--ytkit-ease-out);
                         padding: 0;
                         color: #fff;
-                        backdrop-filter: blur(4px);
+                        backdrop-filter: none;
                     }
                     .ytkit-video-hide-btn:hover {
                         background: rgba(224, 40, 40, 0.92);
@@ -17086,7 +17086,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         z-index: 9999;
                         background: rgba(18,18,18,0.98);
                         border: 1px solid rgba(255,255,255,0.08);
-                        border-radius: 14px;
+                        border-radius: 12px;
                         box-shadow: 0 16px 30px rgba(0,0,0,0.28);
                         opacity: 0;
                         visibility: hidden;
@@ -17552,7 +17552,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         bottom: 0;
                         height: 4px;
                         width: var(--ytkit-progress-width, 0%);
-                        border-radius: 0 999px 0 0;
+                        border-radius: 0 10px 0 0;
                         background: linear-gradient(90deg, #69c0ff, #3ea6ff);
                         box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
                         z-index: 10;
@@ -18613,7 +18613,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!player) return;
                 const chip = document.createElement('div');
                 chip.className = 'ytkit-sleep-timer-chip';
-                chip.style.cssText = 'position:absolute;right:12px;bottom:64px;background:rgba(20,20,28,0.92);color:#cdd6f4;padding:6px 10px;border-radius:8px;font:12px/1.2 system-ui;display:flex;align-items:center;gap:8px;z-index:2147483640;backdrop-filter:blur(8px);';
+                chip.style.cssText = 'position:absolute;right:12px;bottom:64px;background:rgba(20,20,28,0.92);color:#cdd6f4;padding:6px 10px;border-radius:8px;font:12px/1.2 system-ui;display:flex;align-items:center;gap:8px;z-index:2147483640;backdrop-filter: none;';
                 chip.setAttribute('role', 'status');
                 chip.setAttribute('aria-live', 'polite');
 
@@ -24205,14 +24205,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         bottom: 20px;
                         width: min(286px, calc(100vw - 24px));
                         padding: 12px;
-                        border-radius: 20px;
+                        border-radius: 12px;
                         border: 1px solid rgba(255, 255, 255, 0.08);
                         background:
                             radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb), 0.14), transparent 42%),
                             linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)),
                             rgba(8, 11, 18, 0.94);
                         box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-                        backdrop-filter: blur(14px);
+                        backdrop-filter: none;
                         z-index: 10020;
                     }
 
@@ -24255,7 +24255,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         max-width: 132px;
                         min-width: 0;
                         padding: 5px 10px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 1px solid rgba(var(--ytkit-accent-rgb), 0.18);
                         background: rgba(var(--ytkit-accent-rgb), 0.1);
                         color: rgba(255, 255, 255, 0.9);
@@ -24271,7 +24271,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: rgba(255, 255, 255, 0.96);
                         font-size: 28px;
                         line-height: 1;
-                        letter-spacing: -0.04em;
+                        letter-spacing: 0;
                         font-variant-numeric: tabular-nums;
                     }
 
@@ -24294,7 +24294,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         min-width: 92px;
                         min-height: 38px;
                         padding: 0 14px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 1px solid rgba(255, 255, 255, 0.08);
                         background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
                         color: rgba(255, 255, 255, 0.84);
@@ -24354,7 +24354,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         left: auto;
                         width: clamp(196px, calc(var(--ytkit-split-right-width, 320px) - 18px), 272px);
                         padding: 10px;
-                        border-radius: 16px;
+                        border-radius: 12px;
                         box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
                     }
 
@@ -26215,7 +26215,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         display: grid;
                         gap: 14px;
                         padding: 22px 22px 20px;
-                        border-radius: 24px;
+                        border-radius: 12px;
                         border: 1px solid rgba(137, 180, 250, 0.2);
                         background:
                             radial-gradient(circle at top right, rgba(137,180,250,0.16), transparent 36%),
@@ -26243,7 +26243,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         align-items: center;
                         min-height: 26px;
                         padding: 0 10px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 1px solid rgba(255,255,255,0.08);
                         background: rgba(255,255,255,0.05);
                         font-size: 10px;
@@ -26263,7 +26263,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         place-items: center;
                         width: 64px;
                         height: 64px;
-                        border-radius: 20px;
+                        border-radius: 12px;
                         border: 1px solid rgba(255,255,255,0.08);
                         background:
                             linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
@@ -26274,7 +26274,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         margin: 0;
                         color: rgba(248,250,252,0.96);
                         font: 700 27px/1.12 'Roboto', system-ui, sans-serif;
-                        letter-spacing: -0.04em;
+                        letter-spacing: 0;
                         text-wrap: balance;
                     }
                     .ytkit-wellbeing-msg {
@@ -26297,7 +26297,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         justify-self: start;
                         min-height: 42px;
                         padding: 0 18px;
-                        border-radius: 999px;
+                        border-radius: 10px;
                         border: 1px solid rgba(137,180,250,0.18);
                         background: linear-gradient(135deg, #89b4fa, #b4befe);
                         color: #141a26;
@@ -26325,7 +26325,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     @media (max-width: 560px) {
                         .ytkit-wellbeing-card {
                             padding: 18px 18px 16px;
-                            border-radius: 20px;
+                            border-radius: 12px;
                         }
                         .ytkit-wellbeing-title {
                             font-size: 24px;
@@ -26636,7 +26636,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         content: 'Peek: showing original titles';
                         position: fixed; top: 12px; right: 12px; z-index: 2147483647;
                         background: #f5c2e7; color: #1e1e2e; padding: 6px 12px;
-                        border-radius: 999px; font: 600 12px Roboto, system-ui;
+                        border-radius: 10px; font: 600 12px Roboto, system-ui;
                     }
                 `, this.id, true);
                 this._keyDown = (e) => { if (e.key === 'Alt' && !e.repeat) document.documentElement.classList.add('ytkit-peek'); };
@@ -26786,7 +26786,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     .ytkit-wtab {
                         background: transparent; color: var(--yt-spec-text-primary, #f1f1f1);
-                        border: 1px solid transparent; border-radius: 999px;
+                        border: 1px solid transparent; border-radius: 10px;
                         padding: 6px 14px; font: 500 13px Roboto, system-ui, sans-serif;
                         cursor: pointer;
                     }
@@ -27135,11 +27135,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-wha-overlay {
                         position: fixed; inset: 0; z-index: 2147483647;
                         background: rgba(17, 17, 27, 0.85); display: flex; align-items: center; justify-content: center;
-                        backdrop-filter: blur(6px);
+                        backdrop-filter: none;
                     }
                     .ytkit-wha-card {
                         background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
-                        border-radius: 14px; padding: 20px; min-width: 680px; max-width: 90vw;
+                        border-radius: 12px; padding: 20px; min-width: 680px; max-width: 90vw;
                         box-shadow: 0 20px 60px rgba(0,0,0,0.6); font: 13px Roboto, system-ui;
                     }
                     .ytkit-wha-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -27170,7 +27170,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const btn = document.createElement('button');
                 btn.className = 'ytkit-wha-btn';
                 btn.textContent = '📊 Watch Stats';
-                btn.style.cssText = 'background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius:999px;padding:6px 14px;font:600 12px Roboto;cursor:pointer;margin:4px;';
+                btn.style.cssText = 'background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius: 10px;padding:6px 14px;font:600 12px Roboto;cursor:pointer;margin:4px;';
                 btn.onclick = () => this._open();
                 menu.appendChild(btn);
             },
@@ -31632,7 +31632,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
 /* ─── Responsive Breakpoints ─── */
 @media (max-width:900px){
-    #ytkit-settings-panel{width:98%;height:92vh;max-height:none;border-radius:14px;}
+    #ytkit-settings-panel{width:98%;height:92vh;max-height:none;border-radius: 12px;}
     .ytkit-sidebar{width:190px;padding:6px 4px;}
     .ytkit-nav-label{font-size:12px;}
     .ytkit-nav-icon{width:26px;height:26px;}
@@ -31711,7 +31711,7 @@ body.ytkit-panel-open {
     margin: 0 4px;
     background: transparent;
     border: none;
-    border-radius: 14px;
+    border-radius: 12px;
     cursor: pointer;
     transition:
         background-color 180ms var(--ytkit-ease-out),
@@ -31745,7 +31745,7 @@ body.ytkit-panel-open {
 
 #ytkit-settings-panel ::-webkit-scrollbar { width: 6px; height: 6px; }
 #ytkit-settings-panel ::-webkit-scrollbar-track { background: transparent; }
-#ytkit-settings-panel ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+#ytkit-settings-panel ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
 #ytkit-settings-panel ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.24); }
 
 #ytkit-settings-panel {
@@ -31763,7 +31763,7 @@ body.ytkit-panel-open {
         radial-gradient(ellipse at top left, rgba(255,107,74,0.05), transparent 40%),
         var(--ytkit-bg-base);
     border: 1px solid var(--ytkit-border);
-    border-radius: 22px;
+    border-radius: 12px;
     box-shadow: 0 24px 80px rgba(0,0,0,0.5);
     color-scheme: dark;
     font-family: var(--ytkit-font);
@@ -31844,7 +31844,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     height: 42px;
     display: grid;
     place-items: center;
-    border-radius: 16px;
+    border-radius: 12px;
     background: linear-gradient(145deg, rgba(255,107,74,0.2), rgba(255,107,74,0.04));
     border: 1px solid rgba(255,107,74,0.24);
     color: #fff;
@@ -31881,7 +31881,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     margin: 0;
     font-size: clamp(22px, 2.05vw, 30px);
     font-weight: 800;
-    letter-spacing: -0.04em;
+    letter-spacing: 0;
 }
 
 .ytkit-title-yt {
@@ -31902,7 +31902,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-badge {
     padding: 5px 10px;
-    border-radius: 999px;
+    border-radius: 10px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
     color: var(--ytkit-text-secondary);
@@ -31983,7 +31983,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-search-input {
     padding: 12px 84px 12px 40px;
-    border-radius: 14px;
+    border-radius: 12px;
     background: rgba(255,255,255,0.04);
     border-color: rgba(255,255,255,0.08);
 }
@@ -32004,7 +32004,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     top: 50%;
     transform: translateY(-50%);
     padding: 4px 8px;
-    border-radius: 999px;
+    border-radius: 10px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.06);
     color: var(--ytkit-text-secondary);
@@ -32094,7 +32094,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
 .ytkit-nav-count {
     padding: 5px 8px;
-    border-radius: 999px;
+    border-radius: 10px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.06);
     font-size: 10px;
@@ -32174,7 +32174,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 .ytkit-pane-title h2 {
     font-size: clamp(16px, 1.5vw, 20px);
     font-weight: 700;
-    letter-spacing: -0.04em;
+    letter-spacing: 0;
 }
 
 .ytkit-pane-description {
@@ -32195,7 +32195,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     display: inline-flex;
     align-items: center;
     padding: 6px 10px;
-    border-radius: 999px;
+    border-radius: 10px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.07);
     color: var(--ytkit-text-secondary);
@@ -32236,7 +32236,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 .ytkit-mediadl-banner {
     margin: 0 0 12px;
     padding: 14px 16px;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.08);
     background:
         linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.014)),
@@ -32286,7 +32286,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 .ytkit-mediadl-banner__dot {
     width: 10px;
     height: 10px;
-    border-radius: 999px;
+    border-radius: 10px;
     flex-shrink: 0;
     background: #6b7280;
     box-shadow: 0 0 0 4px rgba(107,114,128,0.14);
@@ -32318,7 +32318,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     color: var(--ytkit-text-primary);
     font-size: 13px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
 }
 
 .ytkit-mediadl-banner__status {
@@ -32485,7 +32485,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     margin: 0;
     font-size: 12px;
     font-weight: 550;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     line-height: 1.3;
     color: var(--ytkit-text-primary);
 }
@@ -32587,7 +32587,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     background: rgba(255,255,255,0.08);
     border-color: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 999px;
+    border-radius: 10px;
     transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -32683,7 +32683,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     align-items: center;
     padding: 6px 10px;
     border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 999px;
+    border-radius: 10px;
     background: rgba(255,255,255,0.04);
     color: var(--ytkit-text-secondary);
     font-size: 10px;
@@ -32740,7 +32740,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     #ytkit-settings-panel {
         width: 100vw;
         height: 100vh;
-        border-radius: 14px;
+        border-radius: 12px;
         max-height: 100vh;
     }
 
@@ -32774,7 +32774,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         min-width: 0;
         padding: 10px;
         gap: 10px;
-        border-radius: 14px;
+        border-radius: 12px;
         white-space: normal;
     }
 
@@ -33347,7 +33347,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             z-index: 99991;
             background: rgba(18,18,18,0.98);
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
+            border-radius: 12px;
             box-shadow: 0 18px 34px rgba(0,0,0,0.32);
             font-family: var(--ytkit-font);
             color: var(--ytkit-text-primary);
@@ -33368,7 +33368,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-pm::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.12);
-            border-radius: 999px;
+            border-radius: 10px;
         }
 
         .ytkit-pm-visible {
@@ -33413,7 +33413,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             margin: 0;
             font-size: 15px;
             font-weight: 700;
-            letter-spacing: -0.03em;
+            letter-spacing: 0;
             color: rgba(255,255,255,0.94);
             text-wrap: balance;
         }
@@ -33435,7 +33435,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex;
             align-items: center;
             padding: 5px 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.07);
             color: rgba(255,255,255,0.72);
@@ -33572,7 +33572,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             width: fit-content;
             padding: 4px 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.07);
             color: rgba(255,255,255,0.64);
@@ -33595,7 +33595,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-pm-toggle-track {
             width: 36px;
             height: 20px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.12);
             position: relative;
             transition: background 0.2s ease;
@@ -33662,7 +33662,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-pm-empty {
             padding: 14px;
-            border-radius: 14px;
+            border-radius: 12px;
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015)),
                 rgba(255,255,255,0.02);
@@ -33696,7 +33696,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         #ytkit-settings-panel {
             width: min(1180px, calc(100vw - 24px));
             max-height: min(820px, calc(100vh - 20px));
-            border-radius: 26px;
+            border-radius: 12px;
             border-color: rgba(255,255,255,0.08);
             box-shadow:
                 0 30px 90px rgba(0,0,0,0.58),
@@ -33745,7 +33745,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-title {
             font-size: clamp(15px, 1.15vw, 17px);
-            letter-spacing: -0.03em;
+            letter-spacing: 0;
         }
 
         .ytkit-eyebrow {
@@ -33775,7 +33775,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex;
             align-items: center;
             padding: 4px 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             color: rgba(255,255,255,0.72);
@@ -33808,7 +33808,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-sidebar-card {
             display: block;
             padding: 12px;
-            border-radius: 16px;
+            border-radius: 12px;
         }
 
         .ytkit-sidebar-card-copy {
@@ -33976,7 +33976,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 8px;
             margin-bottom: 14px;
             padding: 14px 16px;
-            border-radius: 18px;
+            border-radius: 12px;
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018)),
                 rgba(11,15,21,0.9);
@@ -33999,7 +33999,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: inline-flex;
             align-items: center;
             padding: 4px 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.08);
             color: rgba(255,255,255,0.72);
@@ -34013,7 +34013,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             margin: 0;
             font-size: clamp(16px, 1.2vw, 19px);
             font-weight: 700;
-            letter-spacing: -0.04em;
+            letter-spacing: 0;
         }
 
         .ytkit-search-state-copy {
@@ -34047,7 +34047,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-pane-title h2 {
             font-size: clamp(16px, 1.2vw, 19px);
-            letter-spacing: -0.045em;
+            letter-spacing: 0;
         }
 
         .ytkit-pane-description {
@@ -34089,7 +34089,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             grid-template-columns: minmax(0, 1fr);
             gap: 10px;
             padding: 10px 11px;
-            border-radius: 14px;
+            border-radius: 12px;
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
                 rgba(12,16,22,0.84);
@@ -34134,7 +34134,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-feature-name {
             margin-bottom: 2px;
             font-size: 12px;
-            letter-spacing: -0.025em;
+            letter-spacing: 0;
         }
 
         .ytkit-feature-desc {
@@ -34170,7 +34170,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         }
 
         .ytkit-sub-card {
-            border-radius: 14px;
+            border-radius: 12px;
         }
 
         .ytkit-field-shell,
@@ -34208,7 +34208,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-input {
             min-height: 72px;
             padding: 10px 12px;
-            border-radius: 13px;
+            border-radius: 12px;
             font-size: 11px;
         }
 
@@ -34222,7 +34222,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-select {
             min-height: 34px;
             padding: 0 36px 0 10px;
-            border-radius: 13px;
+            border-radius: 12px;
             font-size: 10px;
             appearance: none;
             -webkit-appearance: none;
@@ -34265,7 +34265,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 100%;
             height: 4px;
             margin: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             background: linear-gradient(90deg, rgba(255,107,74,0.78), rgba(255,173,117,0.42));
             outline: none;
             cursor: pointer;
@@ -34522,7 +34522,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-height: 34px;
             padding: 0 12px 0 10px;
             gap: 8px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.1);
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
@@ -34541,7 +34541,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-width: 30px;
             padding: 0;
             gap: 0;
-            border-radius: 14px;
+            border-radius: 12px;
         }
 
         .ytkit-ql-launcher:hover,
@@ -34592,7 +34592,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-ql-drop {
             min-width: 240px;
             padding: 10px;
-            border-radius: 18px;
+            border-radius: 12px;
             background:
                 radial-gradient(circle at top left, rgba(255,107,74,0.08), transparent 42%),
                 linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)),
@@ -34605,7 +34605,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         .ytkit-ql-empty {
             padding: 10px 12px 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
         }
@@ -34715,7 +34715,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.9);
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-speed-presets__status {
@@ -34723,7 +34723,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 24px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.62);
@@ -34754,7 +34754,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             justify-content: center;
             min-height: 26px;
             padding: 0 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.74);
@@ -34804,7 +34804,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-height: 28px !important;
             padding: 0 10px !important;
             margin-left: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 10px !important;
             border: 1px solid rgba(255,255,255,0.08) !important;
             background: rgba(255,255,255,0.045) !important;
             color: rgba(255,255,255,0.82) !important;
@@ -34867,7 +34867,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: stretch !important;
             gap: 0 !important;
             margin-left: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 10px !important;
             overflow: hidden !important;
             border: 1px solid rgba(255,255,255,0.08) !important;
             background: rgba(255,255,255,0.045) !important;
@@ -35023,7 +35023,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: min(1280px, calc(100vw - 16px));
             height: min(860px, calc(100vh - 16px));
             max-height: calc(100vh - 16px);
-            border-radius: 24px;
+            border-radius: 12px;
         }
 
         @supports (height: 100dvh) {
@@ -35059,7 +35059,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 8px;
             padding: 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.075);
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.016)),
@@ -35081,7 +35081,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-size: 15px;
             line-height: 1.08;
             font-weight: 800;
-            letter-spacing: -0.035em;
+            letter-spacing: 0;
         }
 
         .ytkit-sidebar-card-copy {
@@ -35111,7 +35111,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-size: 14px;
             line-height: 1;
             font-weight: 850;
-            letter-spacing: -0.03em;
+            letter-spacing: 0;
             font-variant-numeric: tabular-nums;
         }
 
@@ -35643,7 +35643,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-width: 28px !important;
             min-height: 28px !important;
             padding: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 10px !important;
             border: 1px solid rgba(255,255,255,0.08) !important;
             background: rgba(8,11,16,0.88) !important;
             color: rgba(255,255,255,0.92) !important;
@@ -35688,7 +35688,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-height: 22px !important;
             min-width: 34px !important;
             padding: 0 8px !important;
-            border-radius: 999px !important;
+            border-radius: 10px !important;
             border: 1px solid rgba(255,255,255,0.1) !important;
             background: rgba(12,17,26,0.78) !important;
             color: rgba(255,255,255,0.94) !important;
@@ -35841,7 +35841,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             bottom: 78px;
             width: min(380px, calc(100vw - 20px));
             padding: 18px;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb),0.14), transparent 42%),
@@ -35897,7 +35897,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: fit-content;
             min-height: 22px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,107,74,0.22);
             background: rgba(255,107,74,0.08);
             color: #ffb59f;
@@ -35939,7 +35939,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-install-prompt__title {
             font-size: 15px;
             font-weight: 800;
-            letter-spacing: -0.025em;
+            letter-spacing: 0;
             color: #f4f6fb;
             text-wrap: balance;
             line-height: 1.2;
@@ -35954,7 +35954,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 30px;
             height: 30px;
             padding: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.72);
@@ -36049,7 +36049,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             font-family: var(--ytkit-font);
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
             cursor: pointer;
             transition:
                 border-color 180ms var(--ytkit-ease-out),
@@ -36199,7 +36199,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             bottom: 18px;
             width: min(336px, calc(100vw - 20px));
             padding: 14px 16px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(circle at top right, rgba(34,197,94,0.12), transparent 38%),
@@ -36241,7 +36241,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 24px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.68);
@@ -36257,7 +36257,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 28px;
             height: 28px;
             padding: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.68);
@@ -36306,7 +36306,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: fit-content;
             min-height: 22px;
             padding: 0 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.76);
@@ -36325,7 +36325,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-dl-progress__bar {
             height: 7px;
             margin-bottom: 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.06);
             box-shadow:
                 inset 0 1px 1px rgba(0,0,0,0.3),
@@ -36396,7 +36396,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 24px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.72);
@@ -36451,7 +36451,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             position: fixed;
             width: 330px;
             padding: 0;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(90% 60% at 0% 0%, rgba(255,107,74,0.06), transparent 55%),
@@ -36463,8 +36463,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
             z-index: 2147483647;
             animation: ytkit-slide-in 220ms var(--ytkit-ease-out);
             overflow: hidden;
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
         }
 
         .ytkit-dl-popup__header {
@@ -36477,7 +36477,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-dl-popup__title {
             font-size: 14px;
             font-weight: 700;
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
             color: rgba(255,255,255,0.96);
         }
 
@@ -36490,7 +36490,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 26px;
             height: 26px;
             padding: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.64);
@@ -36535,7 +36535,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.55);
             font-size: 12px;
             font-weight: 650;
-            letter-spacing: -0.005em;
+            letter-spacing: 0;
             cursor: pointer;
             transition:
                 background-color 160ms var(--ytkit-ease-out),
@@ -36596,7 +36596,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.7);
             font-size: 11.5px;
             font-weight: 650;
-            letter-spacing: -0.005em;
+            letter-spacing: 0;
             cursor: pointer;
             transition:
                 background-color 160ms var(--ytkit-ease-out),
@@ -36705,7 +36705,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: #1a0b06;
             font-size: 13px;
             font-weight: 800;
-            letter-spacing: -0.015em;
+            letter-spacing: 0;
             cursor: pointer;
             box-shadow:
                 0 8px 22px rgba(255, 95, 74, 0.22),
@@ -36751,7 +36751,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             transform: translateX(-50%);
             width: min(720px, calc(100vw - 24px));
             padding: 16px;
-            border-radius: 20px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(circle at top right, rgba(245,158,11,0.14), transparent 34%),
@@ -36762,14 +36762,14 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 16px;
             z-index: var(--ytkit-banner-z, 2147483644);
             box-shadow: 0 28px 60px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04);
-            backdrop-filter: blur(14px);
+            backdrop-filter: none;
             overscroll-behavior: contain;
         }
 
         .ytkit-subs-load-banner__icon {
             width: 46px;
             height: 46px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(245,158,11,0.16);
             background: rgba(245,158,11,0.08);
             display: grid;
@@ -36801,7 +36801,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.97);
             font-size: 15px;
             font-weight: 700;
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
             text-wrap: balance;
         }
 
@@ -36823,7 +36823,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 3px;
             min-width: 88px;
             padding: 8px 10px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.035);
         }
@@ -36933,14 +36933,14 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 8px;
             width: min(360px, calc(100vw - 24px));
             padding: 10px;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 34%),
                 linear-gradient(180deg, rgba(19,26,36,0.98), rgba(10,14,21,0.98));
             z-index: var(--ytkit-banner-z, 2147483644);
             box-shadow: 0 24px 52px rgba(0,0,0,0.34);
-            backdrop-filter: blur(14px);
+            backdrop-filter: none;
         }
 
         .ytkit-subs-load-chip__main {
@@ -36984,7 +36984,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             padding: 4px;
             margin-bottom: 12px;
             border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
+            border-radius: 12px;
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.018)),
                 rgba(11,15,21,0.9);
@@ -37055,7 +37055,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-width: 28px;
             min-height: 22px;
             padding: 0 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.6);
@@ -37077,7 +37077,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 10px;
             padding: 16px;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02)),
@@ -37098,7 +37098,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: fit-content;
             min-height: 24px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.68);
@@ -37114,7 +37114,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.94);
             font-size: 18px;
             font-weight: 700;
-            letter-spacing: -0.03em;
+            letter-spacing: 0;
             text-wrap: balance;
         }
 
@@ -37147,7 +37147,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 12px;
             padding: 12px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.016)),
@@ -37248,7 +37248,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-vh-item-title--code {
             font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
             font-size: 13px;
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
         }
 
         .ytkit-vh-item-meta {
@@ -37271,7 +37271,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 32px;
             padding: 0 12px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(var(--ytkit-accent-rgb),0.24);
             background: rgba(var(--ytkit-accent-rgb),0.12);
             color: rgba(255,255,255,0.94);
@@ -37306,7 +37306,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.88);
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-vh-field-copy {
@@ -37331,7 +37331,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 100%;
             min-height: 120px;
             padding: 11px 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             font-size: 12px;
             line-height: 1.6;
             resize: vertical;
@@ -37396,7 +37396,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             justify-content: space-between;
             gap: 16px;
             padding: 12px 13px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.04);
         }
@@ -37411,7 +37411,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.9);
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-vh-toggle-desc {
@@ -37432,7 +37432,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 28px;
             padding: 0 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.68);
@@ -37451,7 +37451,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 4px;
             padding: 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.04);
             text-align: left;
@@ -37461,7 +37461,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.94);
             font-size: 24px;
             font-weight: 800;
-            letter-spacing: -0.04em;
+            letter-spacing: 0;
             line-height: 1;
             font-variant-numeric: tabular-nums;
         }
@@ -37500,7 +37500,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 6px;
             min-height: 32px;
             padding: 0 12px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.84);
@@ -37622,7 +37622,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-bookmarks-container {
             margin-bottom: 12px;
             overflow: hidden;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(circle at top right, rgba(62,166,255,0.12), transparent 34%),
@@ -37651,7 +37651,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: fit-content;
             min-height: 22px;
             padding: 0 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.62);
@@ -37665,7 +37665,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.92);
             font-size: 15px;
             font-weight: 700;
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
             text-wrap: balance;
         }
 
@@ -37690,7 +37690,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 28px;
             padding: 0 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.76);
@@ -37717,7 +37717,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 6px;
             padding: 16px 14px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.03);
             text-align: left;
@@ -37727,7 +37727,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.9);
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-bookmarks-empty-copy {
@@ -37743,7 +37743,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             gap: 10px;
             padding: 10px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.018)),
@@ -37759,7 +37759,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 10px;
             min-height: 54px;
             padding: 0 12px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: #fff;
@@ -37794,7 +37794,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.92);
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-bookmark-jump-meta {
@@ -37810,7 +37810,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             justify-content: center;
             min-height: 28px;
             padding: 0 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(62,166,255,0.24);
             background: rgba(62,166,255,0.12);
             color: #bfe6ff;
@@ -37825,7 +37825,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 5px;
             padding: 9px 10px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.03);
             transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
@@ -37879,7 +37879,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 30px;
             height: 30px;
             padding: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.03);
             color: rgba(255,255,255,0.52);
@@ -37918,7 +37918,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-transcript-panel {
             margin-bottom: 16px;
             overflow: hidden;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background: linear-gradient(180deg, rgba(22,27,36,0.96), rgba(10,13,19,0.98));
             display: flex;
@@ -37948,7 +37948,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: fit-content;
             min-height: 20px;
             padding: 0 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.58);
@@ -37962,7 +37962,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.9);
             font-size: 14px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
             text-wrap: balance;
         }
 
@@ -37971,7 +37971,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             -webkit-appearance: none;
             min-height: 28px;
             padding: 0 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.72);
@@ -38007,7 +38007,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 24px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.76);
@@ -38066,7 +38066,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             background: rgba(255,255,255,0.06);
             color: #f3f4f6;
             border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 999px;
+            border-radius: 10px;
             min-height: 30px;
             padding: 0 12px;
             font: 600 11px/1 'Roboto', system-ui, sans-serif;
@@ -38102,7 +38102,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: grid;
             gap: 6px;
             padding: 12px 14px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background: rgba(255,255,255,0.03);
         }
@@ -38111,7 +38111,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.92);
             font-size: 13px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-transcript-state__copy {
@@ -38129,7 +38129,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-transcript-state__skeleton-line {
             display: block;
             height: 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.14), rgba(255,255,255,0.05));
             background-size: 180% 100%;
             animation: ytkit-transcript-shimmer 1.3s linear infinite;
@@ -38207,7 +38207,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 12px;
             min-height: 68px;
             padding: 10px 14px;
-            border-radius: 18px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.08);
             background:
                 radial-gradient(circle at top right, rgba(var(--ytkit-accent-rgb),0.12), transparent 42%),
@@ -38250,7 +38250,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: 34px;
             height: 34px;
             padding: 0;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.82);
@@ -38291,7 +38291,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             left: 14px;
             right: 14px;
             height: 3px;
-            border-radius: 999px;
+            border-radius: 10px;
             background: rgba(255,255,255,0.08);
             overflow: hidden;
         }
@@ -38308,7 +38308,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             gap: 10px;
             margin: 6px 0 4px;
             padding: 10px 12px;
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.06);
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.018)),
@@ -38327,7 +38327,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             color: rgba(255,255,255,0.92);
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
         }
 
         .ytkit-playlist-enhance__status {
@@ -38335,7 +38335,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             align-items: center;
             min-height: 24px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
             color: rgba(255,255,255,0.62);
@@ -38358,7 +38358,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             -webkit-appearance: none;
             min-height: 30px;
             padding: 0 12px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.82);
@@ -38436,7 +38436,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-height: 22px;
             margin-left: 8px;
             padding: 0 8px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.66);
@@ -38525,7 +38525,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             justify-content: center;
             min-height: 30px;
             padding: 0 10px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(8,11,16,0.78);
             color: rgba(255,255,255,0.88);
@@ -38574,7 +38574,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             min-height: 30px;
             margin-left: 10px;
             padding: 0 9px;
-            border-radius: 999px;
+            border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.72);
@@ -38685,7 +38685,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 width: calc(100vw - 12px);
                 height: calc(100vh - 12px);
                 max-height: calc(100vh - 12px);
-                border-radius: 20px;
+                border-radius: 12px;
             }
 
             @supports (height: 100dvh) {

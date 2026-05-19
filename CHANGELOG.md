@@ -39,6 +39,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Changed (extension)
 
+- **Premium UI polish pass.** Toolbar popup copy is clearer and more
+  trust-oriented, quick-toggle descriptions now explain outcomes instead
+  of implementation, diagnostic actions reliably surface success feedback,
+  and the shared popup/injected UI radius system has been tightened to
+  rectangular controls with no text-bearing pill backdrops. Injected
+  YouTube surfaces no longer use blur-heavy `backdrop-filter` effects,
+  reducing compositing cost while keeping the dark premium visual language.
 - **Reaction Spammer is opt-in now (N3).** The feature was introduced
   default-ON in v3.22.0; rapid emoji reactions risk YouTube's automated-
   behavior heuristics flagging the account. The migration v6 → v7 force-
