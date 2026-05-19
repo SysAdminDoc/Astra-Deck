@@ -918,19 +918,24 @@ Acceptance:
 
 Features:
 
-- BlockTube-grade video/channel/comment filter manager.
-- Channel ID-first blocklist.
-- Regex plus safe predicate sandbox investigation.
-- Low-view, live, upcoming, mix, playlist, movie, auto-dubbed, watched-ratio filters.
-- Bulk card actions inspired by Multiselect.
-- Feed Triage profile.
+- [ ] BlockTube-grade video/channel/comment filter manager.
+- [x] Channel ID-first blocklist.
+- [ ] Regex plus safe predicate sandbox investigation.
+- [x] Low-view, live, upcoming, mix, playlist, movie, auto-dubbed, watched-ratio filters.
+- [ ] Bulk card actions inspired by Multiselect.
+- [ ] Feed Triage profile.
+
+Progress:
+
+- 2026-05-19: Upgraded Video Hider channel blocks into canonical, ID-first records with handle, vanity path, URL, blockedAt, and legacy-ID fallbacks. Import/export sanitation now preserves the richer records, storage-change refreshes normalize external updates, the manager UI explains the ID-first matching model, and unblock/undo flows compare identity keys instead of brittle string equality.
+- 2026-05-19: Added opt-in metadata filters for low-view cards, live streams, upcoming premieres, YouTube Mixes, playlists, movies, auto-dubbed videos, and watched-ratio resume bars. Defaults remain off; settings now exposes a Content Type Filters section with immediate apply, conservative thresholds, and safe-store profile allowlist coverage.
 
 Acceptance:
 
-- No full-document mutation scans.
-- Filtered/restored state survives SPA navigation.
-- ReDoS guard covers regex input.
-- Import/export of filter lists works.
+- [ ] No full-document mutation scans.
+- [ ] Filtered/restored state survives SPA navigation.
+- [ ] ReDoS guard covers regex input.
+- [x] Import/export of filter lists works.
 
 ### v3.26.0: Player Control Superset
 

@@ -45,6 +45,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   includes a Selector Health report with live surface totals, miss/error
   rows, refresh feedback, and one-click JSON export for debugging
   YouTube DOM drift.
+- **Video Hider content-filtering foundation.** Channel blocks are now
+  normalized into ID-first records with handle, vanity, URL, blockedAt,
+  and legacy fallbacks so blocklist import/export survives YouTube URL
+  shape drift. Video Hider also gained opt-in low-view, live, upcoming,
+  mix, playlist, movie, auto-dubbed, and watched-ratio filters with an
+  immediate-apply Content Type Filters settings section.
 
 ### Documentation
 
@@ -95,8 +101,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Storage sync audit now measures safe profiles separately.**
   `npm run audit:storage` now reports a safe-store profile sync candidate
   separately from the full UI-preferences payload. The safe-store payload
-  currently measures 3.4 KB and passes Chrome `storage.sync` item limits;
-  full settings are 8.6 KB and remain local-only by default.
+  currently measures 5.4 KB and passes Chrome `storage.sync` item limits;
+  full settings are 9.4 KB and remain local-only by default.
 - **Premium UI polish pass.** Toolbar popup copy is clearer and more
   trust-oriented, quick-toggle descriptions now explain outcomes instead
   of implementation, diagnostic actions reliably surface success feedback,
