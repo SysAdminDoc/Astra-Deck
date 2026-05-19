@@ -1326,6 +1326,7 @@ test('guard block checks all destructured core functions', () => {
         'registerFeature',
         'setFeatureHealth',
         'getFeatureHealthSnapshot',
+        'getCategoryHealthSnapshot',
         'generateSettingsSchema',
     ];
 
@@ -1360,6 +1361,8 @@ test('ytkit feature lifecycle is bridged through the core registry', () => {
         'lifecycle changes should update registry feature health');
     assert.ok(source.includes("featureHealth() { return getFeatureHealthSnapshot(); }"),
         'debug API should expose registry health snapshots');
+    assert.ok(source.includes("categoryHealth() { return getCategoryHealthSnapshot(); }"),
+        'debug API should expose category health snapshots');
     assert.ok(source.includes('settingsSchema() {'),
         'debug API should expose the registry-generated settings schema');
     assert.ok(source.includes('return generateSettingsSchema(settingsManager.defaults'),

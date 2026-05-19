@@ -20,6 +20,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `settingsManager.defaults`, including default-only and internal keys.
   The debug API exposes it as `ytkit.settingsSchema()` for future
   settings-panel and import/export work.
+- **Category cleanup and health snapshots.** The core registry now owns
+  category cleanup buckets, category destroy orchestration, and category
+  health rollups. `ytkit.categoryHealth()` reports feature counts,
+  initialized counts, cleanup counts, and status totals by category.
 
 ### Documentation
 

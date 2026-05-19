@@ -114,6 +114,34 @@ test('feature registry generates a settings schema from registered metadata and 
     assert.equal(schema.entries.find((entry) => entry.key === '_errors').category, 'Internal');
 });
 
+test('feature registry supports category cleanup and category health snapshots', () => {
+    const core = loadFoundation();
+    const registry = core.createFeatureRegistry({ logger: { error() {} } });
+    const calls = [];
+
+    registry.register({
+        id: 'watchOne',
+        name: 'Watch One',
+        category: 'Watch',
+        destroy() {
+            calls.push('feature');
+        }
+    });
+    registry.setHealth('watchOne', { status: 'initialized', initialized: true });
+    registry.addCategoryCleanup('Watch', () => calls.push('category-b'));
+    registry.addCategoryCleanup('Watch', () => calls.push('category-a'));
+
+    const before = registry.getCategoryHealthSnapshot().find((entry) => entry.category === 'Watch');
+    assert.equal(before.featureCount, 1);
+    assert.equal(before.initializedCount, 1);
+    assert.equal(before.cleanupCount, 2);
+    assert.equal(before.statuses.initialized, 1);
+
+    assert.deepEqual(JSON.parse(JSON.stringify(registry.destroyCategory('Watch'))), { ok: true, errors: [] });
+    assert.deepEqual(calls, ['feature', 'category-a', 'category-b']);
+    assert.equal(registry.getHealth('watchOne').status, 'destroyed');
+});
+
 test('surface selectors prefer stable selectors and emit first-miss diagnostics', () => {
     const events = [];
     const core = loadFoundation({
