@@ -132,16 +132,36 @@
             };
         }
 
+        function _rejectQueuedTasks(bucket) {
+            // Pending tasks must reject so awaiters don't hang forever.
+            // Previously clear() dropped the queue and the held promises
+            // never resolved or rejected — a silent resource leak whenever
+            // a feature destroyed its limiter mid-flight.
+            if (!bucket || !bucket.queue.length) return;
+            const drained = bucket.queue;
+            bucket.queue = [];
+            for (const item of drained) {
+                try {
+                    item.reject(new Error('API limiter cleared'));
+                } catch (_) {
+                    // reason: caller's reject handler may itself throw;
+                    // we still want to reject every other queued item.
+                }
+            }
+        }
+
         function clear(key) {
             if (typeof key === 'undefined') {
                 for (const bucket of buckets.values()) {
                     if (bucket.timer) defaults.clearTimeout(bucket.timer);
+                    _rejectQueuedTasks(bucket);
                 }
                 buckets.clear();
                 return;
             }
             const bucket = buckets.get(String(key));
             if (bucket?.timer) defaults.clearTimeout(bucket.timer);
+            _rejectQueuedTasks(bucket);
             buckets.delete(String(key));
         }
 

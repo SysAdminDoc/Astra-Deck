@@ -29068,7 +29068,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.type = 'button';
                 btn.setAttribute('aria-label', 'Send transcript to AI tool');
                 btn.title = 'Send transcript to AI tool';
-                btn.innerHTML = '<svg height="100%" viewBox="0 0 24 24" width="100%"><path fill="currentColor" d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z"/></svg>';
+                // Build SVG via DOM APIs — direct innerHTML throws under YouTube's
+                // TrustedTypes CSP. The rest of the codebase uses TrustedHTML.setHTML
+                // for HTML, but for a fixed icon glyph the DOM path is leaner.
+                const SVG_NS = 'http://www.w3.org/2000/svg';
+                const svg = document.createElementNS(SVG_NS, 'svg');
+                svg.setAttribute('height', '100%');
+                svg.setAttribute('width', '100%');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('aria-hidden', 'true');
+                const path = document.createElementNS(SVG_NS, 'path');
+                path.setAttribute('fill', 'currentColor');
+                path.setAttribute('d', 'M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z');
+                svg.appendChild(path);
+                btn.appendChild(svg);
                 btn.addEventListener('click', () => this._handoff());
                 controls.insertBefore(btn, controls.firstChild);
                 this._btn = btn;
@@ -29693,7 +29706,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement = injectStyle(`
                     .ytkit-volume-hud{position:absolute;left:50%;top:14%;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:10px;background:rgba(8,8,10,0.86);color:#f4f4f5;border:1px solid rgba(255,255,255,0.08);font:600 14px/1 'YouTube Sans',system-ui,sans-serif;pointer-events:none;opacity:0;transition:opacity 140ms ease;}
                     .ytkit-volume-hud[data-visible="1"]{opacity:1;}
-                    .ytkit-volume-hud__bar{position:relative;width:120px;height:6px;border-radius:999px;background:rgba(255,255,255,0.12);overflow:hidden;}
+                    .ytkit-volume-hud__bar{position:relative;width:120px;height:6px;border-radius:4px;background:rgba(255,255,255,0.12);overflow:hidden;}
                     .ytkit-volume-hud__fill{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ff7849,#ff3d3d);border-radius:inherit;}
                     .ytkit-volume-hud__num{font-variant-numeric:tabular-nums;min-width:32px;text-align:right;}
                     .ytkit-volume-hint{position:absolute;right:10px;bottom:64px;z-index:60;padding:4px 8px;border-radius:6px;background:rgba(8,8,10,0.6);color:rgba(255,255,255,0.7);font:500 11px/1 system-ui;pointer-events:none;opacity:0;transition:opacity 200ms ease;}
@@ -31052,9 +31065,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;}
                     .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
-                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
                     .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
-                    .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
                     .ytkit-sub-hidden-by-group{display:none !important;}
                 `, 'subscription-groups');
             },

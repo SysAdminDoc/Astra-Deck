@@ -776,6 +776,25 @@ async function broadcast(key, value) {
     } catch { /* extension suspended */ }
 }
 
+// Bulk variant for import / reset paths where dozens or hundreds of settings
+// change at once. Sending one message per key produces O(N*tabs) IPC traffic
+// — the receiver only needs the final aggregate state, so a single
+// `YTKIT_SETTINGS_REPLACED` message per tab is both cheaper and more
+// consistent (no flicker between partial reload states). Receivers that don't
+// understand the bulk message still re-read storage on `chrome.storage.onChanged`.
+async function broadcastSettingsReplaced(settings) {
+    try {
+        const tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS });
+        for (const tab of tabs) {
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTINGS_REPLACED', settings }, () => {
+                    void chrome.runtime.lastError;
+                });
+            } catch { /* tab closing or no receiver */ }
+        }
+    } catch { /* extension suspended */ }
+}
+
 function render(settings, filter) {
     const term = (filter || '').toLowerCase().trim();
     const totalCount = QUICK_TOGGLES.length;
@@ -1324,9 +1343,12 @@ async function importSettings(file) {
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
-        // Broadcast whole-settings change so open tabs pick up the new state
-        for (const key of Object.keys(writes[STORAGE_KEYS.settings] || {})) {
-            void broadcast(key, writes[STORAGE_KEYS.settings][key]);
+        // Broadcast whole-settings change so open tabs pick up the new state.
+        // Use the bulk-replaced variant — the prior per-key fan-out produced
+        // O(N*tabs) IPC traffic on an import (~250 settings × open tabs) and
+        // visible flicker as the UI reconciled partial state.
+        if (writes[STORAGE_KEYS.settings]) {
+            void broadcastSettingsReplaced(writes[STORAGE_KEYS.settings]);
         }
         showStatus(t('statusBackupImported', 'Backup imported.'), 'success');
     } catch (error) {

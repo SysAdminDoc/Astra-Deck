@@ -453,7 +453,7 @@
         body.ts-split #below[style*="position"] #owner ytd-subscription-notification-toggle-button-renderer-next button {
             min-height: 32px !important;
             height: 32px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.055) !important;
             color: rgba(248, 250, 252, 0.92) !important;
@@ -477,7 +477,7 @@
             min-width: 118px !important;
             max-width: 100% !important;
             padding: 0 16px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(var(--ts-accent-rgb), 0.24) !important;
             background:
                 linear-gradient(180deg, rgba(var(--ts-accent-rgb), 0.17), rgba(var(--ts-accent-rgb), 0.075)),
@@ -533,7 +533,7 @@
         body.ts-split #below[style*="position"] .ytkit-local-dl-btn {
             min-height: 32px !important;
             height: 32px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             color: rgba(226, 232, 240, 0.88) !important;
@@ -634,7 +634,7 @@
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .yt-spec-button-shape-next {
             min-height: 32px !important;
             height: 32px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             color: rgba(226, 232, 240, 0.88) !important;
@@ -664,7 +664,7 @@
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions segmented-like-dislike-button-view-model,
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions ytd-segmented-like-dislike-button-renderer {
             overflow: hidden !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             box-shadow: none !important;
@@ -673,7 +673,7 @@
             gap: 0 !important;
             overflow: hidden !important;
             border: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             background: transparent !important;
             box-shadow: none !important;
         }
@@ -692,7 +692,7 @@
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-start,
         body.ts-split #below[style*="position"] #owner .ytkit-split-owner-actions .yt-spec-button-shape-next--segmented-end {
             border: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             background: transparent !important;
             box-shadow: none !important;
         }
@@ -764,7 +764,7 @@
             min-height: 30px !important;
             height: 30px !important;
             padding: 0 12px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             color: rgba(226, 232, 240, 0.86) !important;
@@ -1001,7 +1001,7 @@
             min-width: 28px !important;
             min-height: 28px !important;
             padding: 0 !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             background: rgba(255, 255, 255, 0.045) !important;
             color: rgba(226, 232, 240, 0.82) !important;
         }
@@ -1052,7 +1052,7 @@
             min-height: 28px !important;
             height: 28px !important;
             padding: 0 10px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             color: rgba(226, 232, 240, 0.82) !important;
@@ -1119,7 +1119,7 @@
             min-height: 30px !important;
             height: 30px !important;
             padding: 0 14px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(148, 163, 184, 0.16) !important;
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)), rgba(7, 10, 16, 0.62) !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
@@ -1282,7 +1282,7 @@
             min-height: 26px !important;
             margin: 0 !important;
             padding: 0 8px !important;
-            border-radius: 999px !important;
+            border-radius: 8px !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             background: rgba(255, 255, 255, 0.045) !important;
             box-shadow: none !important;
@@ -2015,13 +2015,13 @@
         const liveBadge = document.createElement('span');
         liveBadge.className = 'ytkit-split-live-badge';
         liveBadge.textContent = 'LIVE';
-        liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius:999px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
+        liveBadge.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;font:800 11px/1.2 Arial,sans-serif;letter-spacing:0;color:#fff;background:#dc2626;border-radius:4px;padding:5px 9px;box-shadow:0 8px 18px rgba(220,38,38,0.22);';
         meta.appendChild(liveBadge);
 
         const viewCount = document.createElement('span');
         viewCount.className = 'ytkit-split-live-view-count';
         viewCount.setAttribute('translate', 'no');
-        viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:rgba(248,250,252,0.94);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);border-radius:999px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        viewCount.style.cssText = 'display:inline-flex;align-items:center;flex:0 0 auto;min-width:0;max-width:100%;font:700 12px/1.2 Arial,sans-serif;color:rgba(248,250,252,0.94);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:5px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         meta.appendChild(viewCount);
 
         const date = document.createElement('span');
@@ -2625,7 +2625,24 @@
         closeBtn.id = 'ts-close';
         closeBtn.title = 'Close side panel';
         closeBtn.style.cssText = `position:absolute;top:8px;right:8px;z-index:10010;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity 0.2s;color:rgba(255,255,255,0.7);padding:0;`;
-        closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        // Build the "X" via DOM APIs — innerHTML can throw under strict
+        // TrustedTypes CSP and is unnecessary for a fixed icon glyph.
+        const _TS_SVG_NS = 'http://www.w3.org/2000/svg';
+        const closeSvg = document.createElementNS(_TS_SVG_NS, 'svg');
+        closeSvg.setAttribute('viewBox', '0 0 24 24');
+        closeSvg.setAttribute('width', '13');
+        closeSvg.setAttribute('height', '13');
+        closeSvg.setAttribute('fill', 'none');
+        closeSvg.setAttribute('stroke', 'currentColor');
+        closeSvg.setAttribute('stroke-width', '2.5');
+        closeSvg.setAttribute('aria-hidden', 'true');
+        for (const [x1, y1, x2, y2] of [['18', '6', '6', '18'], ['6', '6', '18', '18']]) {
+            const line = document.createElementNS(_TS_SVG_NS, 'line');
+            line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+            closeSvg.appendChild(line);
+        }
+        closeBtn.appendChild(closeSvg);
         closeBtn.onclick = () => collapseSplit(true);
         left.appendChild(closeBtn);
 
