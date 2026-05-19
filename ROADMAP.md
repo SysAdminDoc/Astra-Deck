@@ -1091,18 +1091,23 @@ Acceptance:
 
 Features:
 
-- Native YouTube token bridge.
-- OLED-only theme pack.
-- Dense mode.
-- Classic layout profiles.
-- New-player UI restoration profile.
-- Rectangularized UI with approved radii only.
+- [x] Native YouTube token bridge. *(`tokenThemeBridge` maps Astra accent into `--yt-sys-color-baseline--call-to-action`, `--static-brand-red`, and `--yt-spec-*` siblings.)*
+- [x] OLED-only theme pack. *(`oledTheme` rewrites `--yt-sys-color-baseline--base-background` plus the legacy `--yt-saturated-*` set to true black `#000`. No light theme exists.)*
+- [x] Dense mode. *(`denseMode` tightens padding / gap / font on Astra-injected surfaces only — never touches YouTube's native layout.)*
+- [x] Classic layout profiles. *(`classicLayoutProfile` select: modern / classic-2020 / classic-2016.)*
+- [x] New-player UI restoration profile. *(`newPlayerUiRestore` hides `.ytp-delhi-modern`, `.ytp-overflow-panel-button`, tightens progress bar to 3 px, removes rounded progress fill.)*
+- [x] Rectangularized UI with approved radii only. *(`rectangularizeYouTube` clamps every backdrop to 8 px; avatars / progress rings stay circular via explicit 50% carve-out. No 999 / 100% radii anywhere.)*
+
+Progress:
+
+- 2026-05-19: Shipped six new theming features. Token bridge + OLED combo means dark surfaces survive YouTube native theme reshuffles because we hook the tokens themselves, not surface classes.
+- 2026-05-19: `rectangularizeYouTube` matches the user's HARD RULE — no pill / oval / fully-rounded backdrops ever; allowed radii 0/4/6/8/10/12. Regression test asserts the 999 / 100% radii never sneak in.
 
 Acceptance:
 
-- No light theme.
-- No pill/stadium backdrops.
-- Theme survives home, subscriptions, watch, search, channel, and live chat.
+- [x] No light theme. *(All six features assume dark-only; no light fallback exists.)*
+- [x] No pill/stadium backdrops. *(rectangularizeYouTube clamps every backdrop to 8 px; circular carve-out scoped to avatars / progress rings only.)*
+- [x] Theme survives home, subscriptions, watch, search, channel, and live chat. *(Token-bridge approach hooks the `--yt-sys-*` tokens at the `html` element, which all five surfaces inherit. OLED + accent token override is global.)*
 
 ### v3.33.0: Integrations And Interop
 
