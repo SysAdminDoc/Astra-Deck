@@ -34,6 +34,21 @@ function normalizeCookieExpiry(value) {
 // path; the session mirror is authoritative when the SW cold-starts.
 const _pendingReveals = new Set();
 const _PENDING_REVEALS_KEY = '_pendingReveals';
+// Hard cap to defend against pathological cases (millions of downloads queued
+// without ever transitioning to a terminal state, or storage.session writes
+// failing repeatedly). Beyond this size we drop the oldest pending id —
+// dropping a single "show in folder" is acceptable, runaway memory growth is
+// not. 1024 is two orders of magnitude over realistic user concurrency.
+const PENDING_REVEALS_CAP = 1024;
+
+function _addPendingReveal(downloadId) {
+    if (typeof downloadId !== 'number') return;
+    if (_pendingReveals.size >= PENDING_REVEALS_CAP && !_pendingReveals.has(downloadId)) {
+        const oldest = _pendingReveals.values().next().value;
+        if (oldest != null) _pendingReveals.delete(oldest);
+    }
+    _pendingReveals.add(downloadId);
+}
 
 const _pendingRevealsReady = (async () => {
     if (!chrome.storage?.session) return;
@@ -64,7 +79,15 @@ function _persistPendingReveals() {
     }
 }
 
-// Allowed origins for EXT_FETCH proxy — blocks SSRF to private networks
+// Allowed origins for EXT_FETCH proxy — blocks SSRF to private networks.
+//
+// SECURITY NOTE: The `localhost` alias intentionally is NOT allowlisted.
+// Chrome 88+ pins `localhost` to loopback without DNS lookup, but Firefox
+// still resolves through DNS — a hostile network or compromised resolver
+// can rebind `localhost` to an internal IP and probe the LAN. `127.0.0.1`
+// is the literal loopback address and is immune to DNS rebinding. The
+// downloader client (MediaDLManager) already prefers `127.0.0.1`, so
+// dropping `localhost` is a transparent hardening pass.
 const ALLOWED_FETCH_ORIGINS = [
     'https://www.youtube.com',
     'https://youtube.com',
@@ -82,14 +105,13 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://old.reddit.com',
     // AstraDownloader — primary port plus fallbacks (must match astra_downloader.PORT_FALLBACKS
     // and MediaDLManager._PORT_CANDIDATES). Extension probes these when 9751 is blocked.
-    'http://127.0.0.1:9751', 'http://localhost:9751',
-    'http://127.0.0.1:9761', 'http://localhost:9761',
-    'http://127.0.0.1:9771', 'http://localhost:9771',
-    'http://127.0.0.1:9781', 'http://localhost:9781',
-    'http://127.0.0.1:9791', 'http://localhost:9791',
-    'http://127.0.0.1:9851', 'http://localhost:9851',
+    'http://127.0.0.1:9751',
+    'http://127.0.0.1:9761',
+    'http://127.0.0.1:9771',
+    'http://127.0.0.1:9781',
+    'http://127.0.0.1:9791',
+    'http://127.0.0.1:9851',
     'http://127.0.0.1:11434',
-    'http://localhost:11434',
 ];
 
 // Origins that are allowed to receive cookies on proxied requests.
@@ -102,12 +124,12 @@ const CREDENTIALED_FETCH_ORIGINS = new Set([
     'https://music.youtube.com',
     'https://youtu.be',
     'https://www.youtube-nocookie.com',
-    'http://127.0.0.1:9751', 'http://localhost:9751',
-    'http://127.0.0.1:9761', 'http://localhost:9761',
-    'http://127.0.0.1:9771', 'http://localhost:9771',
-    'http://127.0.0.1:9781', 'http://localhost:9781',
-    'http://127.0.0.1:9791', 'http://localhost:9791',
-    'http://127.0.0.1:9851', 'http://localhost:9851',
+    'http://127.0.0.1:9751',
+    'http://127.0.0.1:9761',
+    'http://127.0.0.1:9771',
+    'http://127.0.0.1:9781',
+    'http://127.0.0.1:9791',
+    'http://127.0.0.1:9851',
 ]);
 
 const ALLOWED_COOKIE_DOMAINS = new Set([
@@ -185,13 +207,14 @@ function filterHeaders(headers, blocklist) {
 const AUTH_HEADER_ALLOWED_ORIGINS = new Set([
     'https://api.openai.com',
     'https://api.anthropic.com',
-    'http://127.0.0.1:9751', 'http://localhost:9751',
-    'http://127.0.0.1:9761', 'http://localhost:9761',
-    'http://127.0.0.1:9771', 'http://localhost:9771',
-    'http://127.0.0.1:9781', 'http://localhost:9781',
-    'http://127.0.0.1:9791', 'http://localhost:9791',
-    'http://127.0.0.1:9851', 'http://localhost:9851',
-    'http://127.0.0.1:11434', 'http://localhost:11434',
+    // Local-only services — see SECURITY NOTE above for why `localhost` is omitted.
+    'http://127.0.0.1:9751',
+    'http://127.0.0.1:9761',
+    'http://127.0.0.1:9771',
+    'http://127.0.0.1:9781',
+    'http://127.0.0.1:9791',
+    'http://127.0.0.1:9851',
+    'http://127.0.0.1:11434',
 ]);
 
 function getRequestOrigin(url) {
@@ -264,7 +287,14 @@ function sanitizeDownloadFilename(filename) {
     if (typeof filename !== 'string') return undefined;
 
     let sanitized = filename
-        .replace(/[\x00-\x1f]/g, '')
+        .replace(/[\x00-\x1f\x7f]/g, '')
+        // Block Unicode bidirectional and invisible-formatting characters that
+        // can spoof file extensions in OS file browsers — e.g.
+        // `report.pdf<U+202E>exe.gpj` is rendered as `report.pdfjpg.exe`.
+        // Covered ranges: RTL/LTR override + isolate + embed marks (U+202A-E,
+        // U+2066-9), zero-width joiners/spacers (U+200B-D, U+FEFF), word joiner
+        // (U+2060), and the BOM. Keep emoji and CJK intact.
+        .replace(/[\u202A-\u202E\u2066-\u2069\u200B-\u200D\u2060\uFEFF]/g, '')
         .replace(/[\\/:*?"<>|]/g, '_')
         .replace(/\s+/g, ' ')
         .trim()
@@ -390,6 +420,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         try { sendResponse({ error: 'Invalid message.' }); } catch (_) {
             // reason: sender may have disconnected before response is delivered
         }
+        return false;
+    }
+
+    // Defense-in-depth sender validation. The manifest does not declare
+    // `externally_connectable`, so the only legitimate senders are our own
+    // popup, options pages, and content scripts injected on YouTube. We
+    // still reject anything whose sender.id doesn't match our own runtime
+    // id so a future externally_connectable misconfiguration can't widen
+    // the trust boundary by accident. Content-script senders without an
+    // `id` field are rejected too: chrome.runtime.sendMessage from a
+    // legitimate context always sets it. (`tab` sender means a YouTube
+    // tab; `id` matching us means our own contexts.)
+    try {
+        const isOurExtension = sender?.id === chrome.runtime.id;
+        if (!isOurExtension) {
+            try { sendResponse({ error: 'Sender rejected.' }); } catch (_) {
+                // reason: sender may already be disconnected
+            }
+            return false;
+        }
+    } catch (_) {
+        // reason: chrome.runtime.id should always exist in a SW context,
+        // but if reading it throws we conservatively reject the message.
+        try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* */ }
         return false;
     }
 
@@ -623,7 +677,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     // exists, and the SW is kept alive while a download is in flight.
                     // v3.20.0: mirror to chrome.storage.session so a SW cold-start
                     // between add and `state.complete` still honours the reveal.
-                    _pendingReveals.add(downloadId);
+                    // Audit pass: route through _addPendingReveal so the cap is enforced.
+                    _addPendingReveal(downloadId);
                     _persistPendingReveals();
                 }
                 sendResponse({ downloadId });
