@@ -1939,3 +1939,116 @@ test('feedTriageProfile destroy() restores prior values from the backup snapshot
     assert.match(destroyBlock, /this\._restore\(\)/,
         'destroy() must call _restore() when a backup is present');
 });
+
+// ── v3.26.0 P1: Player control superset invariants ──
+
+test('videoScreenshot honors the format setting (PNG/JPEG/WebP)', () => {
+    // _getScreenshotFormat reads the user's downloadScreenshotFormat setting and
+    // returns { mime, ext }. _capture passes mime through _blobFromCanvas.
+    const start = ytkitSource.indexOf('_getScreenshotFormat()');
+    assert.ok(start > -1, 'videoScreenshot must declare _getScreenshotFormat()');
+    const block = ytkitSource.slice(start, start + 1200);
+    assert.match(block, /'image\/jpeg'/,
+        '_getScreenshotFormat must recognize JPEG');
+    assert.match(block, /'image\/webp'/,
+        '_getScreenshotFormat must recognize WebP');
+    assert.match(block, /downloadScreenshotFormat/,
+        '_getScreenshotFormat must read appState.settings.downloadScreenshotFormat');
+
+    // _capture must thread the mime through _blobFromCanvas + clipboard helper.
+    const capIdx = ytkitSource.indexOf('async _capture()');
+    const capBlock = ytkitSource.slice(capIdx, capIdx + 2500);
+    assert.match(capBlock, /_blobFromCanvas\(canvas,\s*mime\)/,
+        '_capture must pass the chosen mime into _blobFromCanvas');
+    assert.match(capBlock, /_copyBlobToClipboard\(blob,\s*mime\)/,
+        '_capture must pass mime into _copyBlobToClipboard');
+});
+
+test('videoScreenshot bakes captions into the canvas when downloadSubtitlesWithScreenshot is on', () => {
+    const captionsIdx = ytkitSource.indexOf('_drawCaptionsOntoCanvas(');
+    assert.ok(captionsIdx > -1, 'videoScreenshot must declare _drawCaptionsOntoCanvas()');
+    const block = ytkitSource.slice(captionsIdx, captionsIdx + 2000);
+    assert.match(block, /\.ytp-caption-segment/,
+        '_drawCaptionsOntoCanvas must read from .ytp-caption-segment');
+    // _capture gate
+    const gateIdx = ytkitSource.indexOf('_shouldIncludeSubtitles()');
+    assert.ok(gateIdx > -1, 'videoScreenshot must declare _shouldIncludeSubtitles()');
+});
+
+test('SPEED_OPTIONS expanded to extreme range with at least 18 entries', () => {
+    const m = ytkitSource.match(/const SPEED_OPTIONS = \[([^\]]+)\]/);
+    assert.ok(m, 'SPEED_OPTIONS must be declared');
+    const entries = m[1].split(',').map(s => parseFloat(s.trim())).filter(Number.isFinite);
+    assert.ok(entries.length >= 18, `SPEED_OPTIONS must have >= 18 entries, got ${entries.length}`);
+    assert.ok(entries.includes(0.25), 'SPEED_OPTIONS must include 0.25x');
+    assert.ok(entries.includes(1), 'SPEED_OPTIONS must include 1x');
+    assert.ok(entries.some(v => v >= 10), 'SPEED_OPTIONS must include 10x+');
+});
+
+test('volumeWheelMode uses passive:false wheel listener with preventDefault and shows visible HUD', () => {
+    const start = ytkitSource.indexOf("id: 'volumeWheelMode'");
+    assert.ok(start > -1, 'volumeWheelMode feature must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /addEventListener\('wheel',\s*this\._wheelHandler,\s*\{\s*passive:\s*false\s*\}\)/,
+        'volumeWheelMode must register the wheel listener with passive:false (preventDefault required)');
+    assert.match(block, /e\.preventDefault\(\)/,
+        'volumeWheelMode wheel handler must call preventDefault');
+    assert.match(block, /class="ytkit-volume-hint"|className = 'ytkit-volume-hint'/,
+        'volumeWheelMode must surface a visible "Scroll to change volume" hint');
+});
+
+test('volumeWheelMode destroy() removes the wheel listener, HUD, hint, and style tag', () => {
+    const start = ytkitSource.indexOf("id: 'volumeWheelMode'");
+    const block = ytkitSource.slice(start, start + 8000);
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    assert.match(destroyBlock, /removeEventListener\('wheel'/,
+        'destroy() must remove the wheel listener');
+    assert.match(destroyBlock, /_hudEl\?\.remove\(\)/,
+        'destroy() must remove the HUD element');
+    assert.match(destroyBlock, /_styleElement\?\.remove\(\)/,
+        'destroy() must remove the injected style tag');
+});
+
+test('initialPlayerState features respect visibility state and "inherit" mode', () => {
+    const fgStart = ytkitSource.indexOf("id: 'initialPlayerStateForeground'");
+    const bgStart = ytkitSource.indexOf("id: 'initialPlayerStateBackground'");
+    assert.ok(fgStart > -1, 'initialPlayerStateForeground must exist');
+    assert.ok(bgStart > -1, 'initialPlayerStateBackground must exist');
+    const fg = ytkitSource.slice(fgStart, fgStart + 3000);
+    const bg = ytkitSource.slice(bgStart, bgStart + 3000);
+    assert.match(fg, /document\.visibilityState !== 'visible'/,
+        'foreground variant must short-circuit when tab is hidden');
+    assert.match(bg, /document\.visibilityState === 'visible'/,
+        'background variant must short-circuit when tab is visible');
+    assert.match(fg, /=== 'inherit'/, 'foreground variant must respect inherit mode');
+    assert.match(bg, /=== 'inherit'/, 'background variant must respect inherit mode');
+});
+
+test('perChannelIntroOutro stores offsets keyed by channel ID and skips bidirectionally', () => {
+    const start = ytkitSource.indexOf("id: 'perChannelIntroOutro'");
+    assert.ok(start > -1, 'perChannelIntroOutro feature must exist');
+    const block = ytkitSource.slice(start, start + 8000);
+    assert.match(block, /_STORAGE_KEY: 'perChannelIntroOutroData'/,
+        'must persist to perChannelIntroOutroData');
+    assert.match(block, /introSec/,
+        'must support intro offset');
+    assert.match(block, /outroSec/,
+        'must support outro offset');
+    assert.match(block, /timeupdate/,
+        'must hook video timeupdate');
+    assert.match(block, /this\._video\.currentTime\s*=\s*offsets\.intro/,
+        'must fast-forward past the intro window');
+});
+
+test('disableLoudnessNormalization flips the html data attribute for the MAIN-world bridge', () => {
+    const start = ytkitSource.indexOf("id: 'disableLoudnessNormalization'");
+    assert.ok(start > -1, 'disableLoudnessNormalization must exist');
+    const block = ytkitSource.slice(start, start + 4000);
+    assert.match(block, /documentElement\.dataset\.ytkitDisableLoudness\s*=\s*'1'/,
+        'must set data-ytkit-disable-loudness for future MAIN-world bridge');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
+    assert.match(destroyBlock, /delete document\.documentElement\.dataset\.ytkitDisableLoudness/,
+        'destroy() must clear the html data attribute');
+});

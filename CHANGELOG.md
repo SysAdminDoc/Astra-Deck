@@ -6,6 +6,76 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [3.26.0] - Player Control Superset
+
+Closes six of the seven items in roadmap v3.26.0 (the Tweaks-grade
+per-context quality matrix remains for a follow-up release because it
+needs the MAIN-world bridge to listen on more player lifecycle events).
+
+### Added (extension)
+
+- **Screenshot format picker (`downloadScreenshotFormat`).** PNG /
+  JPEG (90% quality) / WebP (90% quality). PNG is lossless and the only
+  format that copies to the clipboard via the ClipboardItem API; JPEG
+  and WebP download but skip the clipboard step gracefully.
+- **Subtitle-included screenshots (`downloadSubtitlesWithScreenshot`).**
+  When on, the rendered caption line is baked into the bottom band of
+  the canvas before encoding. Reads `.ytp-caption-segment` text; falls
+  through silently when the player has no caption frame on screen.
+- **Volume Wheel (`volumeWheelMode`).** Scrolling the mouse wheel over
+  the player adjusts volume in 5% steps. A floating HUD chip surfaces
+  the new level for 1.2 s. A persistent "Scroll to change volume" hint
+  appears on hover so the gesture is discoverable. No keyboard shortcut
+  added. Wheel listener uses `{ passive: false }` so we can preventDefault
+  the page scroll while over the player.
+- **Initial Player State (`initialPlayerStateForeground`,
+  `initialPlayerStateBackground`).** Force play or pause on watch-page
+  load, scoped by whether the tab is currently visible. Both selects
+  default to `inherit` (YouTube's native behavior). Background-tab play
+  is best-effort — most browsers gate autoplay-in-background behind a
+  prior user gesture.
+- **Disable Loudness Normalization (`disableLoudnessNormalization`).**
+  Best-effort from the ISOLATED world: pins `video.volume` to identity
+  whenever YouTube quietly clamps it under 1.0, and flips the html
+  `data-ytkit-disable-loudness="1"` attribute so the MAIN-world bridge
+  (future ytkit-main.js work) can disable the Web Audio gainNode there.
+- **Per-Channel Intro/Outro Offsets (`perChannelIntroOutro`).** Skip
+  the first N and last M seconds of every video on a given channel.
+  Offsets persist under `perChannelIntroOutroData` keyed by channel ID.
+  Skips bidirectionally: fast-forward past the intro window, and seek
+  to end when the outro cutoff is reached.
+
+### Changed (extension)
+
+- **`SPEED_OPTIONS` expanded from 10 → 18 entries** (0.1, 0.25, 0.5,
+  0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 5, 6, 8, 10, 16). Speed
+  popup grid widened from 5 to 6 columns to fit. Persistent-speed
+  storage and visible palette stay in sync — selecting any value writes
+  `persistentSpeedValue` and re-applies through the existing
+  `persistentSpeed._applied` reset path.
+- **`videoScreenshot._capture` threads chosen mime/quality through
+  `_blobFromCanvas` and `_copyBlobToClipboard`.** Clipboard write only
+  fires on PNG (Chrome ClipboardItem API limitation) — JPEG/WebP
+  capture downloads only. JPEG/WebP encoding quality fixed at 0.92.
+
+### Tests
+
+- 8 new regression tests covering screenshot format threading,
+  subtitle-overlay rendering, expanded speed range, volume-wheel
+  passive:false + preventDefault + visible hint, volume-wheel destroy
+  cleanup, initial-player-state visibility gating + inherit mode,
+  per-channel intro/outro storage + skip behavior, and loudness
+  normalization data-attribute toggle. 206/206 JS tests pass.
+
+### Deferred
+
+- **Quality matrix per context (normal/theater/fullscreen/background/
+  embed).** The Tweaks-grade per-context quality default needs MAIN-
+  world `ytkit-main.js` to listen on fullscreenchange and
+  yt-navigate-finish + interrogate the current player UI state on every
+  transition. Scoped for v3.26.1 or v3.27.0 to keep this release
+  focused on the standalone features.
+
 ## [3.25.0] - Content Filtering Superset
 
 ### Added (extension)
