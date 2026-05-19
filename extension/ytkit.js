@@ -640,17 +640,129 @@ return response;
         return [];
     }
 
+    const YOUTUBE_CHANNEL_ID_PATTERN = /^UC[a-zA-Z0-9_-]{10,}$/;
+    const YOUTUBE_CHANNEL_HANDLE_PATTERN = /^@[a-zA-Z0-9._-]{2,100}$/;
+
+    function normalizeChannelUrlCandidate(value) {
+        const raw = typeof value === 'string' ? value.trim() : '';
+        if (!raw) return null;
+        try {
+            const parsed = new URL(raw, window.location.href);
+            const hostname = parsed.hostname.toLowerCase();
+            if (!hostname.includes('youtube.com') && !hostname.includes('youtu.be')) return null;
+            return parsed;
+        } catch (error) {
+            void error;
+            return null;
+        }
+    }
+
+    function decodeChannelPathSegment(part) {
+        try {
+            return decodeURIComponent(part || '').trim();
+        } catch (error) {
+            void error;
+            return String(part || '').trim();
+        }
+    }
+
+    function getChannelIdentityFromValue(value) {
+        const raw = typeof value === 'string' ? value.trim() : '';
+        if (!raw) return null;
+        const identity = {};
+        const parsed = normalizeChannelUrlCandidate(raw);
+        const pathname = parsed ? parsed.pathname : raw;
+        const segments = pathname.split('/').map(part => decodeChannelPathSegment(part)).filter(Boolean);
+        const lowerSegments = segments.map(part => part.toLowerCase());
+
+        const channelIndex = lowerSegments.indexOf('channel');
+        if (channelIndex > -1 && YOUTUBE_CHANNEL_ID_PATTERN.test(segments[channelIndex + 1] || '')) {
+            identity.channelId = segments[channelIndex + 1];
+        }
+
+        const handleSegment = segments.find(part => YOUTUBE_CHANNEL_HANDLE_PATTERN.test(part));
+        if (handleSegment) identity.handle = handleSegment;
+
+        const directChannel = raw.match(/\b(UC[a-zA-Z0-9_-]{10,})\b/);
+        if (!identity.channelId && directChannel) identity.channelId = directChannel[1];
+
+        const directHandle = raw.match(/(^|\/)(@[a-zA-Z0-9._-]{2,100})(?=$|[/?#])/);
+        if (!identity.handle && directHandle) identity.handle = directHandle[2];
+
+        const vanityIndex = lowerSegments.findIndex(part => part === 'c' || part === 'user');
+        if (vanityIndex > -1 && segments[vanityIndex + 1]) identity.vanity = segments[vanityIndex + 1];
+
+        if (parsed) identity.url = parsed.origin + parsed.pathname;
+        if (!identity.channelId && !identity.handle && !identity.vanity) {
+            if (YOUTUBE_CHANNEL_ID_PATTERN.test(raw)) identity.channelId = raw;
+            else if (YOUTUBE_CHANNEL_HANDLE_PATTERN.test(raw)) identity.handle = raw;
+            else identity.legacyId = raw.slice(0, 128);
+        }
+        identity.primary = identity.channelId || identity.handle || identity.vanity || identity.legacyId || '';
+        return identity.primary ? identity : null;
+    }
+
+    function normalizeBlockedChannelRecord(entry) {
+        if (!isPlainObject(entry) && typeof entry !== 'string') return null;
+        const rawId = typeof entry === 'string'
+            ? entry
+            : (entry.channelId || entry.id || entry.handle || entry.url || entry.vanity || '');
+        const identity = getChannelIdentityFromValue(rawId)
+            || getChannelIdentityFromValue(isPlainObject(entry) ? entry.url : '')
+            || getChannelIdentityFromValue(isPlainObject(entry) ? entry.handle : '');
+        if (!identity?.primary) return null;
+        const nameSource = isPlainObject(entry) && typeof entry.name === 'string'
+            ? entry.name
+            : identity.primary;
+        const record = {
+            id: identity.channelId || identity.handle || identity.vanity || identity.primary,
+            name: (nameSource || identity.primary).trim().slice(0, 200) || identity.primary
+        };
+        if (identity.channelId) record.channelId = identity.channelId;
+        if (identity.handle) record.handle = identity.handle;
+        if (identity.vanity) record.vanity = identity.vanity.slice(0, 128);
+        if (identity.url) record.url = identity.url.slice(0, 240);
+        if (isPlainObject(entry) && Number.isFinite(Number(entry.blockedAt)) && Number(entry.blockedAt) > 0) {
+            record.blockedAt = Math.floor(Number(entry.blockedAt));
+        }
+        if (isPlainObject(entry) && typeof entry.source === 'string') {
+            const source = entry.source.trim().slice(0, 40);
+            if (source) record.source = source;
+        }
+        return record;
+    }
+
+    function getBlockedChannelIdentityKeys(record) {
+        const normalized = normalizeBlockedChannelRecord(record);
+        if (!normalized) return [];
+        const keys = [];
+        if (normalized.channelId) keys.push(`channel:${normalized.channelId}`);
+        if (normalized.handle) keys.push(`handle:${normalized.handle.toLowerCase()}`);
+        if (normalized.vanity) keys.push(`vanity:${normalized.vanity.toLowerCase()}`);
+        if (normalized.id) keys.push(`legacy:${normalized.id.toLowerCase()}`);
+        if (normalized.url) keys.push(`url:${normalized.url.toLowerCase()}`);
+        return [...new Set(keys)];
+    }
+
+    function getBlockedChannelDedupeKey(record) {
+        const normalized = normalizeBlockedChannelRecord(record);
+        if (!normalized) return '';
+        if (normalized.channelId) return `channel:${normalized.channelId}`;
+        if (normalized.handle) return `handle:${normalized.handle.toLowerCase()}`;
+        if (normalized.vanity) return `vanity:${normalized.vanity.toLowerCase()}`;
+        return `legacy:${String(normalized.id || '').toLowerCase()}`;
+    }
+
     function sanitizeImportedBlockedChannels(value) {
         if (!Array.isArray(value)) return [];
         const seen = new Set();
         const sanitized = [];
         for (const entry of value) {
-            if (!isPlainObject(entry)) continue;
-            const id = typeof entry.id === 'string' ? entry.id.trim().slice(0, 128) : '';
-            if (!id || seen.has(id)) continue;
-            seen.add(id);
-            const name = typeof entry.name === 'string' ? entry.name.trim().slice(0, 200) : id;
-            sanitized.push({ id, name: name || id });
+            const record = normalizeBlockedChannelRecord(entry);
+            const key = getBlockedChannelDedupeKey(record);
+            if (!record || !key || seen.has(key)) continue;
+            seen.add(key);
+            sanitized.push(record);
             if (sanitized.length >= IMPORT_LIMITS.blockedChannels) break;
         }
         return sanitized;
@@ -3710,6 +3822,15 @@ return response;
             hideVideosScopeWatch: true,
             hideVideosScopeChannels: true,
             hideVideosScopeOther: true,
+            hideVideosLowViewFilter: false,
+            hideVideosLowViewThreshold: 1000,
+            hideVideosHideLive: false,
+            hideVideosHideUpcoming: false,
+            hideVideosHideMixes: false,
+            hideVideosHidePlaylists: false,
+            hideVideosHideMovies: false,
+            hideVideosHideAutoDubbed: false,
+            hideVideosWatchedRatio: 0,
             hideInfoPanels: true,
             colorTheme: 'none',
             commentEnhancements: false,
@@ -3890,6 +4011,16 @@ return response;
                 'fullWidthSubscriptions', 'hideRelatedVideos', 'expandVideoWidth',
                 'hideDescriptionRow', 'hideVideoEndContent', 'hideJumpAheadButton',
                 'videosPerRow', 'autoMaxResolution', 'colorTheme', 'themeAccentColor',
+                'hideVideosFromHome', 'hideVideosKeywordFilter', 'hideVideosDurationFilter',
+                'hideVideosSubsLoadLimit', 'hideVideosSubsLoadThreshold',
+                'hideVideosRemoveHiddenCards', 'hideVideosShowQuickHideButton',
+                'hideVideosAllowChannelBlock', 'hideVideosRememberRestoredVideos',
+                'hideVideosScopeHome', 'hideVideosScopeSubscriptions', 'hideVideosScopeSearch',
+                'hideVideosScopeWatch', 'hideVideosScopeChannels', 'hideVideosScopeOther',
+                'hideVideosLowViewFilter', 'hideVideosLowViewThreshold',
+                'hideVideosHideLive', 'hideVideosHideUpcoming', 'hideVideosHideMixes',
+                'hideVideosHidePlaylists', 'hideVideosHideMovies', 'hideVideosHideAutoDubbed',
+                'hideVideosWatchedRatio',
                 'hiddenActionButtonsManager', 'hiddenActionButtons', 'hiddenPlayerControlsManager',
                 'hiddenPlayerControls', 'hiddenWatchElementsManager', 'hiddenWatchElements',
                 'sponsorBlock', 'sbCat_sponsor', 'sbCat_intro', 'sbCat_outro',
@@ -4876,7 +5007,8 @@ return response;
                     videoHider._allowedSet = new Set(allowedVideos);
                 }
                 if (filteredChanges[STORAGE_KEYS.blockedChannels]) {
-                    videoHider._channelsCache = filteredChanges[STORAGE_KEYS.blockedChannels].newValue || [];
+                    videoHider._channelsCache = videoHider._normalizeBlockedChannels?.(filteredChanges[STORAGE_KEYS.blockedChannels].newValue || [])
+                        || [];
                 }
                 if (videoHider._initialized) {
                     try { videoHider._processAllVideos?.(); } catch (error) {
@@ -15756,15 +15888,68 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._setHiddenVideos(hidden.filter(id => !idSet.has(id)));
                 return removed;
             },
+            _normalizeBlockedChannels(channels) {
+                return sanitizeImportedBlockedChannels(Array.isArray(channels) ? channels : []);
+            },
             _getBlockedChannels() {
                 if (this._channelsCache === null) {
-                    this._channelsCache = storageRead(this._CHANNELS_KEY, []);
+                    const stored = storageRead(this._CHANNELS_KEY, []);
+                    const sanitized = this._normalizeBlockedChannels(stored);
+                    this._channelsCache = sanitized;
+                    try {
+                        if (JSON.stringify(stored) !== JSON.stringify(sanitized)) storageWrite(this._CHANNELS_KEY, sanitized);
+                    } catch (error) {
+                        void error;
+                    }
                 }
                 return this._channelsCache;
             },
             _setBlockedChannels(channels) {
-                this._channelsCache = channels;
-                storageWrite(this._CHANNELS_KEY, channels);
+                const sanitized = this._normalizeBlockedChannels(channels);
+                this._channelsCache = sanitized;
+                storageWrite(this._CHANNELS_KEY, sanitized);
+            },
+            _getChannelIdentityKeys(channelInfo) {
+                return getBlockedChannelIdentityKeys(channelInfo);
+            },
+            _isSameChannel(left, right) {
+                const leftKeys = new Set(this._getChannelIdentityKeys(left));
+                if (leftKeys.size === 0) return false;
+                return this._getChannelIdentityKeys(right).some(key => leftKeys.has(key));
+            },
+            _isChannelBlocked(channelInfo) {
+                if (!channelInfo) return false;
+                const keys = new Set(this._getChannelIdentityKeys(channelInfo));
+                if (keys.size === 0) return false;
+                return this._getBlockedChannels().some(channel => this._getChannelIdentityKeys(channel).some(key => keys.has(key)));
+            },
+            _addBlockedChannel(channelInfo) {
+                const record = normalizeBlockedChannelRecord({
+                    ...(isPlainObject(channelInfo) ? channelInfo : { id: channelInfo }),
+                    blockedAt: isPlainObject(channelInfo) && channelInfo.blockedAt ? channelInfo.blockedAt : Date.now(),
+                    source: isPlainObject(channelInfo) && channelInfo.source ? channelInfo.source : 'thumbnail'
+                });
+                if (!record) return { added: false, record: null };
+                const channels = this._getBlockedChannels();
+                const existing = channels.find(channel => this._isSameChannel(channel, record));
+                if (existing) return { added: false, record: existing };
+                this._setBlockedChannels([...channels, record]);
+                return { added: true, record };
+            },
+            _removeBlockedChannel(channelInfo) {
+                const channels = this._getBlockedChannels();
+                const removed = channels.filter(channel => this._isSameChannel(channel, channelInfo));
+                if (removed.length === 0) return [];
+                this._setBlockedChannels(channels.filter(channel => !this._isSameChannel(channel, channelInfo)));
+                return removed;
+            },
+            _getChannelUrl(channelInfo) {
+                const record = normalizeBlockedChannelRecord(channelInfo);
+                if (!record) return '';
+                if (record.url) return record.url;
+                if (record.channelId) return `https://www.youtube.com/channel/${record.channelId}`;
+                if (record.handle) return `https://www.youtube.com/${record.handle}`;
+                return '';
             },
 
             _getCurrentScope(pathname = window.location.pathname) {
@@ -15884,17 +16069,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _extractChannelInfo(element) {
                 const channelLink = element.querySelector('a[href*="/@"], a[href*="/channel/"], a[href*="/c/"], a[href*="/user/"]');
                 if (!channelLink) return null;
-                const href = channelLink.href;
-                let channelId = null;
-                const handleMatch = href.match(/\/@([^/?]+)/);
-                if (handleMatch) channelId = '@' + handleMatch[1];
-                else {
-                    const idMatch = href.match(/\/(channel|c|user)\/([^/?]+)/);
-                    if (idMatch) channelId = idMatch[2];
-                }
+                const href = channelLink.href || channelLink.getAttribute('href') || '';
                 const channelName = element.querySelector('#channel-name a, .ytd-channel-name a, [id="text"] a')?.textContent?.trim() ||
-                                   element.querySelector('#channel-name, .ytd-channel-name')?.textContent?.trim() || channelId;
-                return channelId ? { id: channelId, name: channelName } : null;
+                                   element.querySelector('#channel-name, .ytd-channel-name')?.textContent?.trim() || href;
+                const record = normalizeBlockedChannelRecord({
+                    id: href,
+                    url: href,
+                    name: channelName,
+                    source: 'dom'
+                });
+                return record ? { ...record, name: channelName || record.name } : null;
             },
 
             _extractDuration(element) {
@@ -15909,6 +16093,81 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _extractTitle(element) {
                 return element.querySelector('#video-title, .title, [id="video-title"]')?.textContent?.trim()?.toLowerCase() || '';
+            },
+
+            _parseCompactCount(text) {
+                const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
+                if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
+                const match = raw.match(/(\d+(?:[,.]\d+)?)\s*([kmb])?\s*(?:views?|watching)/i);
+                if (!match) return null;
+                const number = parseFloat(match[1].replace(',', '.'));
+                if (!Number.isFinite(number)) return null;
+                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[match[2]?.toLowerCase()] || 1;
+                return Math.round(number * scale);
+            },
+
+            _extractViewCount(element) {
+                const candidates = [
+                    ...element.querySelectorAll('#metadata-line, ytd-video-meta-block, .metadata, #meta, [aria-label*="view"], [aria-label*="watching"]')
+                ];
+                for (const candidate of candidates) {
+                    const text = `${candidate.textContent || ''} ${candidate.getAttribute('aria-label') || ''}`;
+                    const count = this._parseCompactCount(text);
+                    if (count !== null) return count;
+                }
+                return this._parseCompactCount(element.textContent || '');
+            },
+
+            _extractWatchedRatio(element) {
+                const progress = element.querySelector('#progress, ytd-thumbnail-overlay-resume-playback-renderer #progress, ytd-thumbnail-overlay-resume-playback-renderer [style*="width"]');
+                if (!progress) return 0;
+                const ariaNow = Number(progress.getAttribute('aria-valuenow'));
+                if (Number.isFinite(ariaNow) && ariaNow > 0) return Math.max(0, Math.min(100, ariaNow));
+                const styleText = `${progress.getAttribute('style') || ''};width:${progress.style?.width || ''}`;
+                const match = styleText.match(/width\s*:\s*(\d+(?:\.\d+)?)%/i);
+                return match ? Math.max(0, Math.min(100, Number(match[1]) || 0)) : 0;
+            },
+
+            _extractVideoMetadata(element) {
+                const title = this._extractTitle(element);
+                const metadataText = [
+                    title,
+                    ...Array.from(element.querySelectorAll('#metadata-line, ytd-video-meta-block, #meta, ytd-badge-supported-renderer, ytd-thumbnail-overlay-time-status-renderer, ytd-thumbnail-overlay-bottom-panel-renderer, ytd-thumbnail-overlay-side-panel-renderer'))
+                        .map(node => `${node.textContent || ''} ${node.getAttribute('aria-label') || ''}`)
+                ].join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+                const hrefText = Array.from(element.querySelectorAll('a[href]')).map(link => link.getAttribute('href') || '').join(' ').toLowerCase();
+                const hasDuration = this._extractDuration(element) > 0;
+                return {
+                    title,
+                    metadataText,
+                    hrefText,
+                    views: this._extractViewCount(element),
+                    watchedRatio: this._extractWatchedRatio(element),
+                    isLive: !!element.querySelector('ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"], .badge-style-type-live-now, [aria-label*="LIVE"]')
+                        || /\b(live|watching now)\b/.test(metadataText) && !hasDuration,
+                    isUpcoming: /\b(upcoming|scheduled for|premieres?|set reminder|starts in)\b/.test(metadataText),
+                    isMix: /\b(youtube\s+mix|mix)\b/.test(metadataText) || /(?:start_radio=1|list=rd)/i.test(hrefText),
+                    isPlaylist: !!element.querySelector('a[href*="/playlist?list="], ytd-thumbnail-overlay-side-panel-renderer')
+                        || /\bplaylist\b|\b\d+\s+videos?\b/.test(metadataText),
+                    isMovie: /\b(movie|free with ads|buy or rent|rent or buy)\b/.test(metadataText),
+                    isAutoDubbed: /\b(auto[-\s]?dubbed|dubbed|audio track)\b/.test(metadataText)
+                };
+            },
+
+            _matchesMetadataFilters(element, metadata = this._extractVideoMetadata(element)) {
+                if (appState.settings.hideVideosHideLive && metadata.isLive) return { hide: true, reason: 'live' };
+                if (appState.settings.hideVideosHideUpcoming && metadata.isUpcoming) return { hide: true, reason: 'upcoming' };
+                if (appState.settings.hideVideosHideMixes && metadata.isMix) return { hide: true, reason: 'mix' };
+                if (appState.settings.hideVideosHidePlaylists && metadata.isPlaylist) return { hide: true, reason: 'playlist' };
+                if (appState.settings.hideVideosHideMovies && metadata.isMovie) return { hide: true, reason: 'movie' };
+                if (appState.settings.hideVideosHideAutoDubbed && metadata.isAutoDubbed) return { hide: true, reason: 'auto-dubbed' };
+                if (appState.settings.hideVideosLowViewFilter) {
+                    const threshold = Math.max(0, Number(appState.settings.hideVideosLowViewThreshold) || 0);
+                    if (threshold > 0 && metadata.views !== null && metadata.views < threshold) return { hide: true, reason: 'low-view' };
+                }
+                const watchedThreshold = Math.max(0, Math.min(100, Number(appState.settings.hideVideosWatchedRatio) || 0));
+                if (watchedThreshold > 0 && metadata.watchedRatio >= watchedThreshold) return { hide: true, reason: 'watched-ratio' };
+                return { hide: false, reason: '' };
             },
 
             _findThumbnailContainer(element) {
@@ -15998,23 +16257,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     showToast('Channel blocking is disabled', '#6b7280');
                     return;
                 }
-                const channels = this._getBlockedChannels();
-                if (!channels.find(c => c.id === channelInfo.id)) {
-                    channels.push(channelInfo);
-                    this._setBlockedChannels(channels);
-                }
-                this._hideChannelVideos(channelInfo.id);
-                this._lastHidden = { type: 'channel', info: channelInfo };
-                this._showToast(`Blocked: ${channelInfo.name}`, [
+                const result = this._addBlockedChannel(channelInfo);
+                const record = result.record || channelInfo;
+                this._hideChannelVideos(record);
+                this._lastHidden = { type: 'channel', info: record };
+                this._showToast(result.added ? `Blocked: ${record.name}` : `${record.name} is already blocked`, [
                     { text: 'Undo', onClick: () => this._undoHide() },
                     { text: 'Manage', onClick: () => this._showManager() }
                 ]);
             },
 
-            _hideChannelVideos(channelId) {
+            _hideChannelVideos(channelInfo) {
                 document.querySelectorAll(this._VIDEO_SELECTORS).forEach(el => {
                     const info = this._extractChannelInfo(el);
-                    if (info && info.id === channelId) this._applyVideoHiddenState(el, this._shouldHide(el));
+                    if (info && this._isSameChannel(info, channelInfo)) this._applyVideoHiddenState(el, this._shouldHide(el));
                 });
             },
 
@@ -16028,9 +16284,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._restoreRemovedVideoNodes(new Set([this._lastHidden.id]));
                     this._lastHidden.element?.classList.remove('ytkit-video-hidden');
                 } else if (this._lastHidden.type === 'channel') {
-                    const channels = this._getBlockedChannels();
-                    const idx = channels.findIndex(c => c.id === this._lastHidden.info.id);
-                    if (idx > -1) { channels.splice(idx, 1); this._setBlockedChannels(channels); }
+                    this._removeBlockedChannel(this._lastHidden.info);
                     this._processAllVideos();
                 }
                 this._updatePageActionButtons();
@@ -16067,7 +16321,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (videoId && this._isVideoAllowed(videoId)) return false;
                 if (videoId && this._isVideoIdHidden(videoId)) return true;
                 const channelInfo = this._extractChannelInfo(element);
-                if (channelInfo && this._getBlockedChannels().find(c => c.id === channelInfo.id)) return true;
+                if (this._isChannelBlocked(channelInfo)) return true;
 
                 const filterStr = (appState.settings.hideVideosKeywordFilter || '').trim();
                 if (filterStr) {
@@ -16107,6 +16361,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (positiveKw.length && positiveKw.some(k => searchText.includes(k))) return true;
                     }
                 }
+
+                const metadataMatch = this._matchesMetadataFilters(element);
+                if (metadataMatch.hide) {
+                    element.dataset.ytkitFilterReason = metadataMatch.reason;
+                    return true;
+                }
+                delete element.dataset.ytkitFilterReason;
 
                 const minDuration = (appState.settings.hideVideosDurationFilter || 0) * 60;
                 if (minDuration > 0) {
@@ -29770,6 +30031,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     || appState.settings.hideVideosShowQuickHideButton === false
                     || appState.settings.hideVideosAllowChannelBlock === false
                     || appState.settings.hideVideosRememberRestoredVideos === false
+                    || appState.settings.hideVideosLowViewFilter === true
+                    || (appState.settings.hideVideosLowViewThreshold || 1000) !== 1000
+                    || appState.settings.hideVideosHideLive === true
+                    || appState.settings.hideVideosHideUpcoming === true
+                    || appState.settings.hideVideosHideMixes === true
+                    || appState.settings.hideVideosHidePlaylists === true
+                    || appState.settings.hideVideosHideMovies === true
+                    || appState.settings.hideVideosHideAutoDubbed === true
+                    || (appState.settings.hideVideosWatchedRatio || 0) > 0
                     || scopeKeys.some(key => appState.settings[key] === false)
                     ? 'Custom'
                     : 'Ready';
@@ -30299,7 +30569,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         tabContent.appendChild(createVideoHiderLead(
                             'Channel Blocks',
                             'No blocked channels yet',
-                            'Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs.',
+                            'Right-click the thumbnail X button when you want to block a channel everywhere that Video Hider runs. Channel IDs are preferred, with handles and URLs kept as fallbacks.',
                             true
                         ));
                     } else {
@@ -30308,7 +30578,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         tabContent.appendChild(createVideoHiderLead(
                             'Blocklist',
                             `${countLabel(channels.length, 'Blocked Channel')} in Your List`,
-                            'Blocked channels stay hidden across supported feeds until you remove them here.'
+                            'Blocked channels stay hidden across supported feeds until you remove them here. Astra Deck matches the canonical channel ID first, then falls back to handle, vanity path, URL, and legacy ID.'
                         ));
                         channels.forEach(ch => {
                             const item = document.createElement('article');
@@ -30331,14 +30601,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             const handle = document.createElement('div');
                             handle.className = 'ytkit-vh-item-meta';
                             handle.setAttribute('translate', 'no');
-                            handle.textContent = ch.id;
+                            handle.textContent = [ch.channelId || ch.id, ch.handle].filter(Boolean).join(' / ');
                             const actions = document.createElement('div');
                             actions.className = 'ytkit-vh-item-actions';
-                            const channelUrl = ch.id?.startsWith('@')
-                                ? `https://www.youtube.com/${ch.id}`
-                                : /^UC[a-zA-Z0-9_-]+$/.test(ch.id || '')
-                                    ? `https://www.youtube.com/channel/${ch.id}`
-                                    : '';
+                            const channelUrl = videoHiderFeature?._getChannelUrl?.(ch) || '';
                             if (channelUrl) {
                                 const link = document.createElement('a');
                                 link.className = 'ytkit-vh-link';
@@ -30354,9 +30620,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             removeBtn.textContent = 'Unblock';
                             removeBtn.setAttribute('aria-label', `Unblock channel ${ch.name || ch.id}`);
                             removeBtn.onclick = () => {
-                                const c = videoHiderFeature._getBlockedChannels();
-                                const idx = c.findIndex(x => x.id === ch.id);
-                                if (idx > -1) { c.splice(idx, 1); videoHiderFeature._setBlockedChannels(c); }
+                                videoHiderFeature._removeBlockedChannel?.(ch);
                                 videoHiderFeature._restoreRemovedVideoNodes?.();
                                 videoHiderFeature._processAllVideos();
                                 renderTabContent('channels');
@@ -30500,6 +30764,109 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         scopeSection.appendChild(createVideoHiderToggle(toggleInfo));
                     });
                     container.appendChild(scopeSection);
+
+                    // Content type filters
+                    const typeSection = createVideoHiderSection(
+                        'Content Type Filters',
+                        'Opt into precise feed triage for low-view videos, live/upcoming items, mixes, playlists, movies, auto-dubbed videos, and mostly watched cards.'
+                    );
+                    [
+                        { key: 'hideVideosHideLive', title: 'Hide live streams', description: 'Hide live-now cards and live recommendations when they appear in supported feeds.' },
+                        { key: 'hideVideosHideUpcoming', title: 'Hide upcoming premieres', description: 'Hide scheduled, upcoming, and reminder-driven video cards.' },
+                        { key: 'hideVideosHideMixes', title: 'Hide YouTube Mixes', description: 'Hide radio-style mixes and auto-generated recommendation mixes.' },
+                        { key: 'hideVideosHidePlaylists', title: 'Hide playlist cards', description: 'Hide playlist and multi-video cards from supported feed surfaces.' },
+                        { key: 'hideVideosHideMovies', title: 'Hide movies', description: 'Hide rental, purchase, free-with-ads, and movie-labeled cards.' },
+                        { key: 'hideVideosHideAutoDubbed', title: 'Hide auto-dubbed videos', description: 'Hide cards labeled as dubbed, auto-dubbed, or alternate-audio videos.' }
+                    ].forEach(toggleInfo => {
+                        typeSection.appendChild(createVideoHiderToggle({ ...toggleInfo, defaultChecked: false }));
+                    });
+
+                    const lowViewToggle = createVideoHiderToggle({
+                        key: 'hideVideosLowViewFilter',
+                        title: 'Hide low-view videos',
+                        description: 'Hide videos below the view-count threshold when YouTube exposes a view count on the card.',
+                        defaultChecked: false
+                    });
+                    typeSection.appendChild(lowViewToggle);
+
+                    const lowViewField = document.createElement('label');
+                    lowViewField.className = 'ytkit-vh-field';
+                    lowViewField.htmlFor = 'ytkit-vh-low-view-threshold';
+                    const lowViewLabel = document.createElement('span');
+                    lowViewLabel.className = 'ytkit-vh-field-label';
+                    lowViewLabel.textContent = 'Low-View Threshold';
+                    const lowViewCopy = document.createElement('span');
+                    lowViewCopy.className = 'ytkit-vh-field-copy';
+                    lowViewCopy.id = 'ytkit-vh-low-view-copy';
+                    lowViewCopy.textContent = 'Videos below this view count are hidden only when low-view filtering is enabled.';
+                    const lowViewRow = document.createElement('div');
+                    lowViewRow.className = 'ytkit-vh-input-row';
+                    const lowViewInput = document.createElement('input');
+                    lowViewInput.type = 'number';
+                    lowViewInput.id = 'ytkit-vh-low-view-threshold';
+                    lowViewInput.name = 'hideVideosLowViewThreshold';
+                    lowViewInput.className = 'ytkit-vh-number';
+                    lowViewInput.inputMode = 'numeric';
+                    lowViewInput.autocomplete = 'off';
+                    lowViewInput.min = '0';
+                    lowViewInput.max = '10000000';
+                    lowViewInput.step = '100';
+                    lowViewInput.value = appState.settings.hideVideosLowViewThreshold || 1000;
+                    lowViewInput.setAttribute('aria-describedby', 'ytkit-vh-low-view-copy');
+                    lowViewInput.onchange = async () => {
+                        appState.settings.hideVideosLowViewThreshold = Math.max(0, Math.min(10000000, parseInt(lowViewInput.value, 10) || 0));
+                        lowViewInput.value = appState.settings.hideVideosLowViewThreshold;
+                        refreshVideoHiderAfterSettingChange();
+                    };
+                    const lowViewSuffix = document.createElement('span');
+                    lowViewSuffix.className = 'ytkit-vh-inline-note';
+                    lowViewSuffix.textContent = 'views';
+                    lowViewRow.appendChild(lowViewInput);
+                    lowViewRow.appendChild(lowViewSuffix);
+                    lowViewField.appendChild(lowViewLabel);
+                    lowViewField.appendChild(lowViewCopy);
+                    lowViewField.appendChild(lowViewRow);
+                    typeSection.appendChild(lowViewField);
+
+                    const watchedField = document.createElement('label');
+                    watchedField.className = 'ytkit-vh-field';
+                    watchedField.htmlFor = 'ytkit-vh-watched-ratio';
+                    const watchedLabel = document.createElement('span');
+                    watchedLabel.className = 'ytkit-vh-field-label';
+                    watchedLabel.textContent = 'Hide Watched Ratio';
+                    const watchedCopy = document.createElement('span');
+                    watchedCopy.className = 'ytkit-vh-field-copy';
+                    watchedCopy.id = 'ytkit-vh-watched-ratio-copy';
+                    watchedCopy.textContent = 'Use 0 to disable. Cards with a resume bar at or above this percent are hidden.';
+                    const watchedRow = document.createElement('div');
+                    watchedRow.className = 'ytkit-vh-input-row';
+                    const watchedInput = document.createElement('input');
+                    watchedInput.type = 'number';
+                    watchedInput.id = 'ytkit-vh-watched-ratio';
+                    watchedInput.name = 'hideVideosWatchedRatio';
+                    watchedInput.className = 'ytkit-vh-number';
+                    watchedInput.inputMode = 'numeric';
+                    watchedInput.autocomplete = 'off';
+                    watchedInput.min = '0';
+                    watchedInput.max = '100';
+                    watchedInput.step = '5';
+                    watchedInput.value = appState.settings.hideVideosWatchedRatio || 0;
+                    watchedInput.setAttribute('aria-describedby', 'ytkit-vh-watched-ratio-copy');
+                    watchedInput.onchange = async () => {
+                        appState.settings.hideVideosWatchedRatio = Math.max(0, Math.min(100, parseInt(watchedInput.value, 10) || 0));
+                        watchedInput.value = appState.settings.hideVideosWatchedRatio;
+                        refreshVideoHiderAfterSettingChange();
+                    };
+                    const watchedSuffix = document.createElement('span');
+                    watchedSuffix.className = 'ytkit-vh-inline-note';
+                    watchedSuffix.textContent = '% watched';
+                    watchedRow.appendChild(watchedInput);
+                    watchedRow.appendChild(watchedSuffix);
+                    watchedField.appendChild(watchedLabel);
+                    watchedField.appendChild(watchedCopy);
+                    watchedField.appendChild(watchedRow);
+                    typeSection.appendChild(watchedField);
+                    container.appendChild(typeSection);
 
                     // Duration filter
                     const durSection = createVideoHiderSection(
