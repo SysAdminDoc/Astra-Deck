@@ -36,6 +36,26 @@ const LOCAL_QUOTA = Object.freeze({
     totalBytes: 10485760
 });
 
+const SAFE_STORE_PROFILE_META_KEYS = Object.freeze([
+    'safeStoreProfile',
+    'githubFullProfile',
+    'syncSafePrefs',
+    'syncSafePrefsAllowlist',
+    'privacyDataFlowPanel'
+]);
+
+const SAFE_STORE_EXCLUDED_KEYS = Object.freeze(new Set([
+    'customCssCode',
+    'advancedLocalPredicateCode',
+    'quickLinkItems',
+    'aiSummaryEndpoint',
+    'aiSummaryModel',
+    'aiSummaryProvider',
+    'downloadQuality',
+    'downloadVideoFormat',
+    'downloadAudioFormat'
+]));
+
 const FIXED_NOW = Date.UTC(2026, 3, 26, 12, 0, 0);
 
 function utf8Bytes(value) {
@@ -219,6 +239,60 @@ function buildUiPreferencesPayload(repoRoot = REPO_ROOT) {
     };
 }
 
+function sanitizeSafePrefsAllowlist(settings) {
+    const knownKeys = new Set(Object.keys(settings || {}));
+    const source = Array.isArray(settings?.syncSafePrefsAllowlist)
+        ? settings.syncSafePrefsAllowlist
+        : [];
+    const seen = new Set();
+    const allowlist = [];
+    for (const rawKey of source) {
+        const key = String(rawKey || '').trim();
+        if (!key || seen.has(key) || !knownKeys.has(key) || SAFE_STORE_EXCLUDED_KEYS.has(key) || key.startsWith('_')) continue;
+        seen.add(key);
+        allowlist.push(key);
+    }
+    return allowlist;
+}
+
+function buildSafeStoreProfileSnapshot(settings) {
+    const allowlist = sanitizeSafePrefsAllowlist(settings);
+    const snapshot = {};
+    if (settings.syncSafePrefs !== false) {
+        for (const key of allowlist) {
+            snapshot[key] = settings[key];
+        }
+    }
+    snapshot.safeStoreProfile = true;
+    snapshot.githubFullProfile = false;
+    snapshot.syncSafePrefs = settings.syncSafePrefs !== false;
+    snapshot.syncSafePrefsAllowlist = allowlist;
+    snapshot.privacyDataFlowPanel = !!settings.privacyDataFlowPanel;
+    return snapshot;
+}
+
+function buildSafeStoreProfilePayload(repoRoot = REPO_ROOT) {
+    const settings = loadCurrentSettings(repoRoot);
+    const currentSnapshot = buildSafeStoreProfileSnapshot(settings);
+    return {
+        [STORAGE_KEYS.settings]: {
+            schemaVersion: 2,
+            profileMode: 'safe-store',
+            profileModel: {
+                mode: 'safe-store',
+                safeStoreProfile: true,
+                githubFullProfile: false,
+                syncSafePrefs: currentSnapshot.syncSafePrefs,
+                syncSafePrefsAllowlist: currentSnapshot.syncSafePrefsAllowlist,
+                advancedLocalPredicate: !!settings.advancedLocalPredicate,
+                includesAdvancedLocalPredicateCode: false
+            },
+            metaKeys: SAFE_STORE_PROFILE_META_KEYS,
+            currentSnapshot
+        }
+    };
+}
+
 function buildTypicalLocalPayload(repoRoot = REPO_ROOT) {
     return {
         ...buildUiPreferencesPayload(repoRoot),
@@ -261,6 +335,7 @@ function buildCapStressPayload(repoRoot = REPO_ROOT) {
 
 function buildAuditPayloads(repoRoot = REPO_ROOT) {
     return {
+        safeStoreProfile: buildSafeStoreProfilePayload(repoRoot),
         uiPreferences: buildUiPreferencesPayload(repoRoot),
         typicalLocal: buildTypicalLocalPayload(repoRoot),
         capStressLocal: buildCapStressPayload(repoRoot)
@@ -291,11 +366,13 @@ function formatReport(payloads) {
     for (const [name, payload] of Object.entries(payloads)) {
         sections.push(formatAssessment(name, payload));
     }
+    const safe = assessSyncEligibility(payloads.safeStoreProfile);
     const ui = assessSyncEligibility(payloads.uiPreferences);
     const typical = assessSyncEligibility(payloads.typicalLocal);
     sections.push([
         'Decision:',
-        `  UI preferences sync candidate: ${ui.ok ? 'viable' : 'not viable'} (${formatBytes(ui.totalBytes)}, largest ${formatBytes(ui.largestItem.bytes)}).`,
+        `  Safe-store profile sync candidate: ${safe.ok ? 'viable' : 'not viable'} (${formatBytes(safe.totalBytes)}, largest ${formatBytes(safe.largestItem.bytes)}).`,
+        `  Full UI preferences payload: ${ui.ok ? 'viable' : 'not viable'} for sync (${formatBytes(ui.totalBytes)}, largest ${formatBytes(ui.largestItem.bytes)}).`,
         `  Whole chrome.storage.local payload: ${typical.ok ? 'viable' : 'not viable'} for sync (${formatBytes(typical.totalBytes)}, largest ${formatBytes(typical.largestItem.bytes)}).`,
         '  Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only.'
     ].join('\n'));
@@ -334,6 +411,8 @@ module.exports = {
     assessSyncEligibility,
     buildAuditPayloads,
     buildCapStressPayload,
+    buildSafeStoreProfilePayload,
+    buildSafeStoreProfileSnapshot,
     buildTypicalLocalPayload,
     buildUiPreferencesPayload,
     formatBytes,
