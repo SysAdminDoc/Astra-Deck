@@ -200,4 +200,35 @@
 
     // Initial state — read what ISOLATED may have already set before document_idle.
     syncFromAttr();
+
+    // ── v4.1.0: per-context quality target ──
+    // data-ytkit-quality-target carries an explicit quality string written by
+    // qualityProfileMatrix (ISOLATED world). When present, it overrides the
+    // best-quality picker above; when removed, the picker resumes.
+    var _ctxLastApplied = '';
+    function applyContextQuality() {
+        var target = document.documentElement.getAttribute('data-ytkit-quality-target');
+        if (!target) { _ctxLastApplied = ''; return; }
+        var p = getPlayer();
+        if (!p || typeof p.setPlaybackQualityRange !== 'function') return;
+        var vid = getVideoId();
+        var key = vid + ':ctx:' + target;
+        if (key === _ctxLastApplied) return;
+        try {
+            p.setPlaybackQualityRange(target, target);
+            if (typeof p.setPlaybackQuality === 'function') p.setPlaybackQuality(target);
+            _ctxLastApplied = key;
+            log('per-context quality applied', target);
+        } catch (e) { log('per-context apply failed', e && e.message); }
+    }
+    new MutationObserver(applyContextQuality)
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-ytkit-quality-target', 'data-ytkit-quality-context'] });
+    document.addEventListener('loadedmetadata', function(e) {
+        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+            _ctxLastApplied = '';
+            applyContextQuality();
+        }
+    }, true);
+    window.addEventListener('yt-navigate-finish', function() { _ctxLastApplied = ''; applyContextQuality(); });
+    applyContextQuality();
 })();
