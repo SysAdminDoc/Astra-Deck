@@ -10,6 +10,7 @@
         const features = new Map();
         const health = new Map();
         const cleanups = new Map();
+        const categoryCleanups = new Map();
 
         function normalizeId(id) {
             return String(id || '').trim();
@@ -171,6 +172,100 @@
             };
         }
 
+        function normalizeCategory(category) {
+            return normalizeId(category) || 'Uncategorized';
+        }
+
+        function getFeatureCategory(feature) {
+            return normalizeCategory(feature?.category || feature?.group);
+        }
+
+        function addCategoryCleanup(category, cleanup) {
+            const categoryId = normalizeCategory(category);
+            if (typeof cleanup !== 'function') return () => {};
+            const list = categoryCleanups.get(categoryId) || [];
+            list.push(cleanup);
+            categoryCleanups.set(categoryId, list);
+            let removed = false;
+            return () => {
+                if (removed) return;
+                removed = true;
+                const activeList = categoryCleanups.get(categoryId);
+                if (!activeList) return;
+                const index = activeList.indexOf(cleanup);
+                if (index >= 0) activeList.splice(index, 1);
+                if (!activeList.length) categoryCleanups.delete(categoryId);
+            };
+        }
+
+        function runCategoryCleanups(category) {
+            const categoryId = normalizeCategory(category);
+            const list = categoryCleanups.get(categoryId);
+            if (!list?.length) return { ok: true, errors: [] };
+            const errors = [];
+            while (list.length) {
+                const cleanup = list.pop();
+                try {
+                    cleanup();
+                } catch (error) {
+                    errors.push(error);
+                    logger?.error?.('[YTKit] Category cleanup error:', error);
+                }
+            }
+            categoryCleanups.delete(categoryId);
+            return { ok: errors.length === 0, errors };
+        }
+
+        function destroyCategory(category) {
+            const categoryId = normalizeCategory(category);
+            const errors = [];
+            for (const feature of features.values()) {
+                if (getFeatureCategory(feature) !== categoryId) continue;
+                if (!destroy(feature.id)) {
+                    const entry = health.get(feature.id);
+                    errors.push(entry?.lastError || `Destroy failed for ${feature.id}`);
+                }
+            }
+            const cleanupResult = runCategoryCleanups(categoryId);
+            errors.push(...cleanupResult.errors);
+            return { ok: errors.length === 0, errors };
+        }
+
+        function getCategoryHealthSnapshot() {
+            const categories = new Map();
+            const ensureCategory = (categoryId) => {
+                if (!categories.has(categoryId)) {
+                    categories.set(categoryId, {
+                        category: categoryId,
+                        featureCount: 0,
+                        initializedCount: 0,
+                        cleanupCount: categoryCleanups.get(categoryId)?.length || 0,
+                        statuses: Object.create(null)
+                    });
+                }
+                return categories.get(categoryId);
+            };
+
+            for (const feature of features.values()) {
+                const categoryId = getFeatureCategory(feature);
+                const summary = ensureCategory(categoryId);
+                const entry = health.get(feature.id);
+                const status = entry?.status || 'registered';
+                summary.featureCount += 1;
+                if (entry?.initialized || feature._initialized) summary.initializedCount += 1;
+                summary.statuses[status] = (summary.statuses[status] || 0) + 1;
+            }
+
+            for (const categoryId of categoryCleanups.keys()) {
+                ensureCategory(categoryId);
+            }
+
+            return Array.from(categories.values(), (summary) => ({
+                ...summary,
+                statuses: { ...summary.statuses }
+            }));
+        }
+
         function runCleanups(id) {
             const featureId = normalizeId(id);
             const list = featureId ? cleanups.get(featureId) : null;
@@ -231,8 +326,10 @@
 
         function clear() {
             for (const id of features.keys()) destroy(id);
+            for (const category of categoryCleanups.keys()) runCategoryCleanups(category);
             features.clear();
             cleanups.clear();
+            categoryCleanups.clear();
         }
 
         return Object.freeze({
@@ -242,11 +339,15 @@
             getAll,
             has,
             addCleanup,
+            addCategoryCleanup,
             runCleanups,
+            runCategoryCleanups,
             destroy,
+            destroyCategory,
             setHealth,
             getHealth,
             getHealthSnapshot,
+            getCategoryHealthSnapshot,
             createSettingsSchema,
             clear
         });
@@ -262,10 +363,13 @@
         getRegisteredFeature: featureRegistry.get,
         getRegisteredFeatures: featureRegistry.getAll,
         addFeatureCleanup: featureRegistry.addCleanup,
+        addCategoryCleanup: featureRegistry.addCategoryCleanup,
         destroyRegisteredFeature: featureRegistry.destroy,
+        destroyFeatureCategory: featureRegistry.destroyCategory,
         setFeatureHealth: featureRegistry.setHealth,
         getFeatureHealth: featureRegistry.getHealth,
         getFeatureHealthSnapshot: featureRegistry.getHealthSnapshot,
+        getCategoryHealthSnapshot: featureRegistry.getCategoryHealthSnapshot,
         generateSettingsSchema: featureRegistry.createSettingsSchema
     });
 })();

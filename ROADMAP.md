@@ -875,7 +875,7 @@ Features:
 - [x] Add `core/registry.js`, `core/selectors.js`, `core/trusted-html.js`, `core/api-limiter.js`.
 - [x] Wrap current feature init/destroy into registry entries without changing behavior.
 - [x] Introduce settings schema generator from registry.
-- [ ] Add category-level cleanup registry and feature health state.
+- [x] Add category-level cleanup registry and feature health state.
 - [ ] Add "safe store profile" vs "full GitHub profile" setting model.
 
 Progress:
@@ -883,6 +883,7 @@ Progress:
 - 2026-05-19: Added passive core foundation modules and tests. The new modules expose a feature registry with reversible cleanups and health snapshots, stable-first selector chains with first-miss diagnostics, TrustedTypes policy helpers, and bucketed API scheduling. They are loaded before `ytkit.js` in both normal and live-chat isolated content-script contexts without changing existing feature behavior.
 - 2026-05-19: Bridged live feature startup, live-chat startup, popup setting messages, settings-panel toggles, config reinitializers, external storage updates, conflict disables, and SPA page transitions through shared lifecycle helpers. Each live feature is registered with a registry adapter that delegates to the existing `init()` and `destroy()` methods while recording health snapshots.
 - 2026-05-19: Added a registry-backed settings schema generator. The schema combines registered feature metadata with `settingsManager.defaults`, covers default-only/internal keys, and is exposed through `ytkit.settingsSchema()` for future settings-panel and import/export work.
+- 2026-05-19: Added category cleanup buckets, category destroy orchestration, and category health snapshots. `ytkit.categoryHealth()` now summarizes feature counts, initialized counts, cleanup counts, and status totals by category.
 
 Acceptance:
 
