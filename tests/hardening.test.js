@@ -2119,3 +2119,66 @@ test('downloadHistoryPanel reads /history with auth + limit=50 and shows offline
     assert.match(block, /Astra Downloader unreachable\./,
         'must render an explicit offline state, not a blank panel');
 });
+
+// ── v3.28.0 P1: Ratings, clickbait, and metadata trust invariants ──
+
+test('returnDislike enforces a 100 req/min budget, cookieless fetch, and LRU-capped cache', () => {
+    const start = ytkitSource.indexOf("id: 'returnDislike'");
+    assert.ok(start > -1, 'returnDislike feature must exist');
+    const block = ytkitSource.slice(start, start + 12000);
+    assert.match(block, /_BUDGET_PER_MIN:\s*100/,
+        'must declare a 100 req/min budget');
+    assert.match(block, /credentials:\s*'omit'/,
+        'must fetch without cookies');
+    assert.match(block, /returnyoutubedislikeapi\.com\/votes\?videoId=/,
+        'must hit the public RYD votes endpoint');
+    assert.match(block, /500/,
+        'cache must be LRU-capped (500 entries)');
+});
+
+test('returnDislike honors returnDislikeCacheHours TTL with a sane minimum', () => {
+    const start = ytkitSource.indexOf("id: 'returnDislike'");
+    const block = ytkitSource.slice(start, start + 12000);
+    assert.match(block, /Math\.max\(1,\s*Number\(appState\?\.settings\?\.returnDislikeCacheHours\)\s*\|\|\s*24\)/,
+        'TTL must default to 24 h with a 1 h floor');
+});
+
+test('extension manifest now whitelists returnyoutubedislikeapi.com (host_permissions + CSP)', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    assert.ok(
+        (manifest.host_permissions || []).includes('https://returnyoutubedislikeapi.com/*'),
+        'manifest host_permissions must include the RYD API'
+    );
+    const csp = manifest.content_security_policy?.extension_pages || '';
+    assert.ok(
+        csp.includes('https://returnyoutubedislikeapi.com'),
+        'CSP connect-src must include the RYD API'
+    );
+});
+
+test('antiTranslateAudioTrack uses movie_player.setAudioTrack and caps retries', () => {
+    const start = ytkitSource.indexOf("id: 'antiTranslateAudioTrack'");
+    assert.ok(start > -1, 'antiTranslateAudioTrack must exist');
+    const block = ytkitSource.slice(start, start + 5000);
+    assert.match(block, /movie\.getAvailableAudioTracks/,
+        'must call getAvailableAudioTracks');
+    assert.match(block, /movie\.setAudioTrack/,
+        'must call setAudioTrack with the chosen track');
+    assert.match(block, /_MAX_ATTEMPTS:\s*5/,
+        'must cap retry attempts at 5');
+});
+
+test('monetizationIndicator paints exactly one pill and removes it on destroy', () => {
+    const start = ytkitSource.indexOf("id: 'monetizationIndicator'");
+    assert.ok(start > -1, 'monetizationIndicator must exist');
+    const block = ytkitSource.slice(start, start + 7000);
+    assert.match(block, /this\._pillEl\?\.remove\(\)/,
+        '_render() must remove any prior pill before painting a new one');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
+    assert.match(destroyBlock, /querySelectorAll\('\.ytkit-monet-pill'\)/,
+        'destroy() must remove all stray pills (covers SPA route races)');
+});
