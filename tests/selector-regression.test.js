@@ -35,6 +35,7 @@ const YTKIT_SOURCE = fs.readFileSync(
 );
 const RUNTIME_SOURCE = [
     YTKIT_SOURCE,
+    fs.readFileSync(path.join(REPO_ROOT, 'extension', 'core', 'selectors.js'), 'utf8'),
     fs.readFileSync(path.join(REPO_ROOT, 'extension', 'core', 'player.js'), 'utf8'),
 ].join('\n');
 
@@ -82,6 +83,8 @@ const FIXTURES = {
 //     hooks live.
 //   - Feed grid (ytd-rich-grid-renderer / ytd-rich-item-renderer) catches
 //     home/subs/results renderer renames.
+//   - Notifications (ytd-notification-topbar-button-renderer /
+//     yt-icon-badge-shape) catch topbar and menu badge rewrites.
 //   - Comments DOM in BOTH shapes:
 //        * old: ytd-comment-thread-renderer
 //        * new: ytd-comment-view-model
@@ -113,6 +116,10 @@ const CRITICAL_SELECTORS = [
     // Feed / grid
     'ytd-rich-grid-renderer',
     'ytd-rich-item-renderer',
+    'yt-lockup-view-model',
+    // Notifications
+    'ytd-notification-topbar-button-renderer',
+    'yt-icon-badge-shape',
     // Comments — both DOM shapes
     'ytd-comment-thread-renderer',
     'ytd-comment-view-model',
@@ -165,6 +172,12 @@ const LIQUID_GLASS_WATCHLIST = [
     'ytd-like-button-renderer (legacy)',
 ];
 
+const LIVE_CHAT_PLACEHOLDER_SELECTORS = [
+    'ytd-live-chat-frame',
+    'yt-live-chat-renderer',
+    'yt-live-chat-text-message-renderer',
+];
+
 test('liquid-glass watchlist exists as a transition-period anchor (informational)', () => {
     // This test is a documentation hook, not an assertion of state. It
     // ensures the watchlist array is non-empty so future maintainers see
@@ -172,6 +185,15 @@ test('liquid-glass watchlist exists as a transition-period anchor (informational
     // CRITICAL_SELECTORS once fresh MHTML captures land.
     assert.ok(LIQUID_GLASS_WATCHLIST.length >= 1,
         'LIQUID_GLASS_WATCHLIST must document at least one transition selector');
+});
+
+test('live-chat placeholder selectors are promoted while fresh MHTML coverage is pending', () => {
+    for (const selector of LIVE_CHAT_PLACEHOLDER_SELECTORS) {
+        assert.ok(
+            sourceReferencesToken(selector),
+            `Live-chat placeholder selector "${selector}" should remain referenced by runtime source until a live-chat MHTML capture lands.`
+        );
+    }
 });
 
 test('selector fixtures exist and contain a non-trivial token set', () => {
