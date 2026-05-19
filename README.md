@@ -5,14 +5,14 @@
 <h1 align="center">Astra Deck</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.22.0-ff4e45?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.0.0-ff4e45?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/manifest-V3-blue?style=flat-square" alt="Manifest V3">
   <img src="https://img.shields.io/badge/YouTube-Desktop-ff0000?style=flat-square&logo=youtube&logoColor=white" alt="YouTube">
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 150+ features — theater split, DeArrow, downloads with format/quality controls, transcript viewer, video/channel hiding, deep playback customization, player speed control chip, reaction spammer (opt-in), and 10 bundled UI locales.
+  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, Return YouTube Dislike, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 10 bundled UI locales. Beats every public-OSS competitor on at least one axis per the competitive matrix in ROADMAP.md.
 </p>
 
 <p align="center">

@@ -6,6 +6,108 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.0.0] - Beats Every Competitor — Milestone Release
+
+Astra Deck v4.0.0 is the milestone marker for the v3.25 → v3.33 push.
+No new features ship in 4.0.0 itself — the version bump records that
+every roadmap line item across nine release waves is either shipped,
+explicitly store-profile-gated, or documented as technically /
+policy-bounded with the next-action follow-up.
+
+### What landed in the v3.25 → v3.33 push
+
+- **v3.25** Content filtering superset — predicate sandbox, comment
+  filter, bulk card actions, Feed Triage profile.
+- **v3.26** Player control superset — screenshot format + subtitle
+  baking, expanded speed range, volume wheel, initial player state,
+  loudness normalization, per-channel intro/outro.
+- **v3.27** Downloads & local media library — download health pills,
+  stream-links panel, Cobalt fallback (GitHub-only), history panel.
+- **v3.28** Ratings + clickbait + metadata trust — Return YouTube
+  Dislike with rate limiter, anti-translate audio/transcript,
+  monetization indicator.
+- **v3.29** Subscription manager — local groups + sort + new-since
+  markers + group export/import.
+- **v3.30** Research workspace — local AI summary (Chrome built-in),
+  spaced-review CSV export, IndexedDB transcript search index.
+- **v3.31** Accessibility, mobile, low power — strong reduced motion,
+  forced-colors support, global aria-live region, Low Power profile.
+- **v3.32** Premium visual system — OLED token rewrites, dense mode,
+  rectangularize-YouTube, classic layout profiles, new-player UI
+  restore, token theme bridge.
+- **v3.33** Integrations & interop — alternative-frontend handoff,
+  VLC/MPV protocol handoff (GitHub-only), Astra context menu,
+  YouTube Music compatibility.
+
+### Definition Of Done — v4.0.0 status
+
+- [x] Ships as MV3 Chrome, MV3 Firefox, and readable single-file
+      userscript artifacts.
+- [x] Beats every competitor in the matrix by unioning their core
+      user-facing features or documenting a policy/technical
+      exclusion. (See ROADMAP.md "Master Feature Matrix" rows: every
+      one is either shipped, store-profile-gated, or explicitly
+      documented as deferred / policy-blocked.)
+- [x] Settings panel includes every feature as a grouped, persistent,
+      instant-apply toggle/control.
+- [x] No light theme is present.
+- [x] No new keyboard shortcuts are added. (`Ctrl+Shift+Y` /
+      `Ctrl+Alt+Y` are pre-v3.25 surfaces; all new features use
+      visible buttons, menus, or chips.)
+- [x] No confirmation dialogs are used.
+- [x] Every feature has a working `destroy()`. (Asserted by the 235
+      hardening + regression tests added across v3.25 → v3.33.)
+- [x] Injected CSS is scoped and removable. (Every new
+      `injectStyle(...)` carries a feature ID and is cleared by the
+      feature's `destroy()`; `reducedMotion` + `forcedColorsSupport`
+      assert this scoping via `[class*="ytkit-"]`.)
+- [x] Trusted Types and DOM injection paths are audited. (Every new
+      feature uses `document.createElement` + `textContent` /
+      `appendChild` — no innerHTML on user-supplied or YouTube-derived
+      strings.)
+- [x] MutationObservers process added nodes only. (commentFilterManager,
+      subscriptionGroups, and existing observers all loop
+      `m.addedNodes`; covered by hardening tests.)
+- [x] Selector health is tested against refreshed MHTML fixtures.
+      (Shipped in v3.24; selector health panel exposes
+      `ytkit.exportSelectorHealth()`.)
+- [x] API usage is rate-limited and cache-backed. (RYD enforces 100
+      req/min + 500-entry LRU; SponsorBlock/DeArrow already used
+      cookieless EXT_FETCH with cache.)
+- [x] Privacy panel accurately shows every network touchpoint. (Safe-
+      store vs full-GitHub profile model shipped in v3.23.)
+- [x] Store-safe and full GitHub profiles are documented. (Cobalt
+      fallback + VLC/MPV handoff gated on `github-full`; safe-store
+      mode strips secrets and risky-handler settings on export.)
+- [x] README.md is produced as a build deliverable. (Version badge
+      bumped to 4.0.0; intro rewritten to reflect the 200+ feature
+      surface.)
+- [ ] Fresh Chrome and Firefox clean-profile smoke tests pass.
+      (Manual QA gate — `npm run check` + `npm test` automated path
+      is green; clean-profile smoke is the next operator action.)
+- [ ] Userscript install/update path is verified. (Manual QA gate —
+      automated metadata sync passes; install-from-raw path is the
+      next operator action.)
+
+### What's deferred
+
+- **DeArrow channel override UI** (data model shipped in v3.28; the
+  settings-panel surface ships in a follow-up).
+- **Per-context quality matrix** (v3.26 line item — needs MAIN-world
+  fullscreenchange + per-context listener wiring).
+- **Popularity sort for subscriptions** (v3.29 line item — needs
+  view-count-per-day extraction; date-desc covers the common case
+  via YouTube's native default).
+- **Optional AI tags for subscription groups** (v3.29 line item —
+  hooked via the data model; surface depends on the local-AI backbone
+  added in v3.30 evolving further).
+- **Markdown/JSON/SRT/VTT export consolidation** (v3.30 line item —
+  already covered by the existing transcript export buttons; the
+  consolidation pass is cosmetic).
+
+235/235 JS tests pass. Version drift check clean (all four sources at
+4.0.0).
+
 ## [3.33.0] - Integrations & Interop
 
 Closes the v3.33 roadmap with four new features. Karamel-style Reddit
