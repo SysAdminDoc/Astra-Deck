@@ -904,6 +904,61 @@ class PoTokenProviderTests(unittest.TestCase):
         self.assertEqual(result['version'], '2.0.0')
         self.assertTrue(seen_paths[0].endswith('/ping'))
 
+    # iter-6 N14: stale-version notice.
+    def test_probe_flags_stale_when_provider_below_min_version(self):
+        """If the running provider reports a version < BGUTIL_POT_MIN_VERSION,
+        the probe result must set stale=True so the extension popup can
+        surface an 'update bgutil-pot' notice."""
+        original_get = ad.http_requests.get
+
+        class FakeResp:
+            ok = True
+            headers = {'content-type': 'application/json'}
+            status_code = 200
+            def json(self):
+                return {'version': '1.0.0'}  # well below 1.3.0
+
+        ad.http_requests.get = lambda url, **k: FakeResp()
+        try:
+            result = ad.probe_po_token_provider(force=True)
+        finally:
+            ad.http_requests.get = original_get
+        self.assertIsNotNone(result)
+        self.assertEqual(result['version'], '1.0.0')
+        self.assertTrue(result['stale'])
+        self.assertEqual(result['minVersion'], ad.BGUTIL_POT_MIN_VERSION)
+
+    def test_probe_does_not_flag_stale_when_version_meets_or_beats_min(self):
+        original_get = ad.http_requests.get
+
+        class FakeResp:
+            ok = True
+            headers = {'content-type': 'application/json'}
+            status_code = 200
+            def json(self):
+                return {'version': '1.3.1'}  # at/above 1.3.0
+
+        ad.http_requests.get = lambda url, **k: FakeResp()
+        try:
+            result = ad.probe_po_token_provider(force=True)
+        finally:
+            ad.http_requests.get = original_get
+        self.assertIsNotNone(result)
+        self.assertEqual(result['version'], '1.3.1')
+        self.assertFalse(result['stale'])
+
+    def test_compare_semver_handles_unusual_inputs(self):
+        # Pre-release suffix is truncated at first non-digit segment.
+        self.assertEqual(ad._compare_semver('1.3.1-rc.2', '1.3.1'), 0)
+        # 'v' prefix is stripped.
+        self.assertEqual(ad._compare_semver('v1.3.1', '1.3.1'), 0)
+        # Different lengths normalize with zero-pad.
+        self.assertEqual(ad._compare_semver('1.3', '1.3.0'), 0)
+        self.assertEqual(ad._compare_semver('1.3', '1.3.1'), -1)
+        # Garbage inputs compare as empty lists (equal).
+        self.assertEqual(ad._compare_semver(None, None), 0)
+        self.assertEqual(ad._compare_semver('', ''), 0)
+
 
 # v1.4.0 (NX10): ffmpeg capabilities audit.
 class FfmpegCapabilitiesTests(unittest.TestCase):
