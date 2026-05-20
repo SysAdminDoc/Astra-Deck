@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Données de stockage corrompues — Réinitialiser pour récupérer."
   },
+  "selectorHealthTitle": {
+    "message": "Santé des sélecteurs"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} surfaces suivies"
+  },
+  "selectorHealthEmpty": {
+    "message": "Aucune surface échantillonnée pour le moment."
+  },
   "storageBannerReset": {
     "message": "Réinitialiser"
   },

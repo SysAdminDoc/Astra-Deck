@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "存储数据损坏 — 重置以恢复。"
   },
+  "selectorHealthTitle": {
+    "message": "选择器健康度"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "已跟踪 {count} 个表面"
+  },
+  "selectorHealthEmpty": {
+    "message": "尚未采样任何表面。"
+  },
   "storageBannerReset": {
     "message": "重置"
   },

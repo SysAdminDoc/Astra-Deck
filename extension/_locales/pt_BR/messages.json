@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Dados de armazenamento corrompidos — Redefina para recuperar."
   },
+  "selectorHealthTitle": {
+    "message": "Saúde dos seletores"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} superfícies rastreadas"
+  },
+  "selectorHealthEmpty": {
+    "message": "Nenhuma superfície amostrada ainda."
+  },
   "storageBannerReset": {
     "message": "Redefinir"
   },

@@ -315,6 +315,12 @@ const storageBanner = $('#storage-banner');
 const storageBannerDetail = $('#storage-banner-detail');
 const storageBannerResetBtn = $('#storage-banner-reset-btn');
 
+// iter-6 N7: selector-health dashboard refs.
+const selectorHealthSection = $('#selector-health');
+const selectorHealthTotal = $('#selector-health-total');
+const selectorHealthList = $('#selector-health-list');
+const selectorHealthCtx = $('#selector-health-ctx');
+
 // Storage warning thresholds.
 // Astra Deck declares the `unlimitedStorage` permission so the
 // default 10 MB chrome.storage.local quota is removed — but a
@@ -1110,6 +1116,106 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
 // future factory runs (per iter-5 ROADMAP) can promote N4 follow-ups when
 // the field detects corruption events. We do NOT show or save corruption
 // findings during the storage-read-failed path (no settings to write to).
+// iter-6 N7: selector-health dashboard. Queries the active YouTube tab
+// for the per-surface health snapshot + DiagnosticLog ctx counts, then
+// renders a compact list of top-K problematic surfaces. Bounded payload
+// (top 12 surfaces per the message handler in ytkit.js); we render up to
+// 6 here to keep the popup compact. Hides the section gracefully when
+// no YT tab is active OR the content script doesn't respond.
+async function renderSelectorHealthDashboard() {
+    if (!selectorHealthSection || !selectorHealthList) return;
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
+            selectorHealthSection.hidden = true;
+            return;
+        }
+        const response = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(null), 1500);
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_SELECTOR_HEALTH' }, (msg) => {
+                    clearTimeout(timer);
+                    if (chrome.runtime.lastError) {
+                        resolve(null);
+                        return;
+                    }
+                    resolve(msg);
+                });
+            } catch {
+                clearTimeout(timer);
+                resolve(null);
+            }
+        });
+        if (!response || response.ok === false || !Array.isArray(response.surfaces)) {
+            selectorHealthSection.hidden = true;
+            return;
+        }
+        // Top 6 problematic surfaces (already sorted by trouble-score
+        // in the content-script handler).
+        const top = response.surfaces.slice(0, 6);
+        selectorHealthList.textContent = '';
+        if (top.length === 0) {
+            const empty = document.createElement('li');
+            empty.className = 'selector-health-empty';
+            empty.textContent = t('selectorHealthEmpty', 'No surfaces sampled yet.');
+            selectorHealthList.appendChild(empty);
+        } else {
+            for (const surface of top) {
+                const li = document.createElement('li');
+                const name = document.createElement('span');
+                name.className = 'sh-name';
+                name.textContent = surface.surface
+                    + (surface.highChurn ? ' ⚡' : '')
+                    + (surface.needsFreshCapture ? ' 📷' : '');
+                const stats = document.createElement('span');
+                stats.className = 'sh-stats';
+                const parts = [];
+                parts.push(`${surface.hits || 0} hits`);
+                if (surface.errors > 0) parts.push(`<span class="sh-errors">${surface.errors} err</span>`);
+                if (surface.misses > 0) parts.push(`${surface.misses} miss`);
+                if (surface.shapeDrifts > 0) parts.push(`<span class="sh-drifts">${surface.shapeDrifts} drift</span>`);
+                // Use safe DOM construction (no innerHTML on YT page; this
+                // is the popup so manifest CSP applies, but stay defensive).
+                const tmpl = document.createElement('template');
+                tmpl.innerHTML = parts.join(' · ');
+                stats.appendChild(tmpl.content);
+                li.appendChild(name);
+                li.appendChild(stats);
+                selectorHealthList.appendChild(li);
+            }
+        }
+        // Total surfaces line.
+        if (selectorHealthTotal) {
+            const totalLabel = t('selectorHealthTotalTpl', `${response.totalSurfaces} surfaces tracked`);
+            selectorHealthTotal.textContent = totalLabel.replace('{count}', String(response.totalSurfaces));
+        }
+        // Per-ctx diagnostic chip strip.
+        if (selectorHealthCtx) {
+            selectorHealthCtx.textContent = '';
+            const counts = response.ctxCounts && typeof response.ctxCounts === 'object' ? response.ctxCounts : {};
+            const ordered = Object.entries(counts)
+                .filter(([, v]) => Number(v) > 0)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            if (ordered.length === 0) {
+                selectorHealthCtx.hidden = true;
+            } else {
+                selectorHealthCtx.hidden = false;
+                for (const [ctx, count] of ordered) {
+                    const chip = document.createElement('span');
+                    chip.className = 'sh-ctx-chip';
+                    chip.textContent = `${ctx}: ${count}`;
+                    selectorHealthCtx.appendChild(chip);
+                }
+            }
+        }
+        selectorHealthSection.hidden = false;
+    } catch (_) {
+        // Best-effort surface — never break the popup on a snapshot failure.
+        selectorHealthSection.hidden = true;
+    }
+}
+
 async function recordCorruptionDiagnostic(corruption) {
     try {
         const items = await storageGet([SETTINGS_STORAGE_KEY]);
@@ -1613,6 +1719,10 @@ function installWheelScrolling() {
     }
 
     void renderStorageInfo();
+    // iter-6 N7: best-effort selector-health snapshot from the active tab.
+    // Hides the section if the user isn't on a YouTube page or if the
+    // content script doesn't respond in time.
+    void renderSelectorHealthDashboard();
 
     try {
         const settings = await loadSettings();

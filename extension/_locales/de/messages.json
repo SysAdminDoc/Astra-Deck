@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Speicherdaten beschädigt — Zurücksetzen zur Wiederherstellung."
   },
+  "selectorHealthTitle": {
+    "message": "Selektorzustand"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} Oberflächen verfolgt"
+  },
+  "selectorHealthEmpty": {
+    "message": "Noch keine Oberflächen erfasst."
+  },
   "storageBannerReset": {
     "message": "Zurücksetzen"
   },
