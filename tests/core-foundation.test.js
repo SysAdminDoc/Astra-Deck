@@ -11,7 +11,8 @@ const coreSources = [
     'registry.js',
     'selectors.js',
     'trusted-html.js',
-    'api-limiter.js'
+    'api-limiter.js',
+    'diagnostic-log.js'
 ].map((fileName) => ({
     fileName,
     source: fs.readFileSync(path.join(repoRoot, 'extension', 'core', fileName), 'utf8')
@@ -532,4 +533,76 @@ test('api limiter clear() rejects pending tasks instead of dropping them silentl
     // the queue before clear() — clear only affects tasks still queued.
     blockResolve('head');
     assert.equal(await headPromise, 'head');
+});
+
+// ── iter-6 N11 (M-phase partial): DiagnosticLog factory ──
+
+test('createDiagnosticLog records, counts per-ctx, and respects the diagnosticLog gate (iter-6 N11)', () => {
+    const core = loadFoundation();
+    const settings = { diagnosticLog: true, _errors: [] };
+    const saved = [];
+    const log = core.createDiagnosticLog({
+        getSettings: () => settings,
+        saveSettings: (s) => saved.push(s),
+        getVersion: () => '4.4.0',
+        cap: 4
+    });
+
+    // Disabled-by-default in-memory flag — relies on the
+    // diagnosticLog settings gate.
+    log.record('tt', 'first');
+    log.record('selectors', 'second');
+    log.record('tt', 'third');
+    assert.equal(settings._errors.length, 3);
+    // countsByCtx() returns a VM-context object; JSON-normalize so
+    // deepStrictEqual's prototype check passes across realms.
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(log.countsByCtx())),
+        { tt: 2, selectors: 1 }
+    );
+
+    // Cap-bounded ring with counter decrement.
+    log.record('storage-corruption', 'fourth');  // size = 4 (at cap)
+    log.record('window', 'fifth');               // shifts out 'tt:first'
+    assert.equal(settings._errors.length, 4);
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(log.countsByCtx())),
+        { tt: 1, selectors: 1, 'storage-corruption': 1, window: 1 }
+    );
+
+    // clear() resets both the ring AND the in-memory counter map.
+    log.clear();
+    assert.deepEqual(JSON.parse(JSON.stringify(log.countsByCtx())), {});
+    // settings._errors was replaced inside the VM (clear() assigns []),
+    // so normalize across realms before comparing.
+    assert.deepEqual(JSON.parse(JSON.stringify(settings._errors)), []);
+    assert.equal(saved.length, 1);  // clear triggered one save
+
+    // Settings gate: diagnosticLog=false silences record() unless
+    // enable() has been called.
+    settings.diagnosticLog = false;
+    log.record('tt', 'after-gate-off');
+    assert.equal(settings._errors.length, 0);
+    log.enable();
+    log.record('tt', 'after-enable');
+    assert.equal(settings._errors.length, 1);
+});
+
+test('createDiagnosticLog resyncs counters from a pre-populated ring (iter-6 N11)', () => {
+    // Cross-session entries loaded from chrome.storage at startup must
+    // be reflected in countsByCtx() without requiring a record() call.
+    const core = loadFoundation();
+    const settings = {
+        diagnosticLog: true,
+        _errors: [
+            { ts: 1, ctx: 'tt', msg: 'prior session a' },
+            { ts: 2, ctx: 'tt', msg: 'prior session b' },
+            { ts: 3, ctx: 'selectors', msg: 'prior session c' }
+        ]
+    };
+    const log = core.createDiagnosticLog({ getSettings: () => settings });
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(log.countsByCtx())),
+        { tt: 2, selectors: 1 }
+    );
 });
