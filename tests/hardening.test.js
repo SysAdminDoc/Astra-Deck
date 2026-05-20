@@ -2453,6 +2453,29 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('popup detects malformed chrome.storage payloads and offers Reset (iter-6 N4)', () => {
+    // Storage corruption is rare but real — disk-full mid-write, browser
+    // crash mid-flush, profile sync conflict, manual edit of the profile
+    // JSON. The detector flags wrong-type values for the four canonical
+    // storage shapes (settings object, hiddenVideos/allowedVideos/
+    // blockedChannels arrays, bookmarks object) and the banner surfaces
+    // a recovery path. Failures also write to the _errors ring buffer
+    // under ctx: 'storage-corruption' so future factory runs can
+    // promote N4 follow-ups on field signal.
+    assert.match(popupSource, /function detectStorageCorruption/,
+        'popup.js must declare detectStorageCorruption');
+    assert.match(popupSource, /storageBannerCorruptionTpl/,
+        'corruption tier must have an i18n key');
+    assert.match(popupSource, /function recordCorruptionDiagnostic/,
+        'popup.js must persist corruption findings to the _errors ring');
+    assert.match(popupSource, /ctx:\s*'storage-corruption'/,
+        "ring buffer entries must carry ctx: 'storage-corruption'");
+    // Corruption tier must win over quota tier in the banner — corruption
+    // is a stronger signal than "storage is large."
+    assert.match(popupSource, /corruption.*length\s*>\s*0/s,
+        'renderStorageInfo must check corruption before quota');
+});
+
 test('popup ships a storage-quota warning banner with two-tier thresholds (iter-6 N2)', () => {
     // The popup now surfaces a proactive nudge when chrome.storage.local
     // approaches problematic size. Astra Deck declares unlimitedStorage

@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Almacenamiento en {size} — considera Restablecer."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Datos de almacenamiento corruptos — Restablecer para recuperar."
+  },
   "storageBannerReset": {
     "message": "Restablecer"
   },

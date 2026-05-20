@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "저장 공간 {size} — 초기화를 고려하세요."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "저장 공간 데이터가 손상됨 — 초기화하여 복구하세요."
+  },
   "storageBannerReset": {
     "message": "재설정"
   },

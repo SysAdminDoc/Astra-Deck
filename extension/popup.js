@@ -943,11 +943,58 @@ function summarizeStorage(allStorage) {
     // multi-MB local storage payload.
     const sizeBytes = estimateSerializedBytes(allStorage);
     const diagnostics = summarizeDiagnostics(allStorage[SETTINGS_STORAGE_KEY]);
+    // iter-6 N4: surface malformed storage payloads so users aren't left
+    // staring at silently-broken state (e.g. ytSuiteSettings deserialized
+    // as a string, hiddenVideos as an object). Detector returns the list
+    // of issues; banner offers the same guarded Reset as the quota tier.
+    const corruption = detectStorageCorruption(allStorage);
     return {
         hiddenVideos, blockedChannels, bookmarks, keys,
         sizeBytes, sizeText: formatBytes(sizeBytes),
-        diagnostics
+        diagnostics,
+        corruption
     };
+}
+
+// iter-6 N4: storage corruption detector. chrome.storage.local is robust
+// in practice but the underlying browser profile is not — disk full
+// during a write, browser crash mid-flush, profile sync conflicts, or a
+// user manually editing the profile JSON can leave keys in shapes that
+// the rest of the popup assumes are correct (Arrays for lists, plain
+// objects for settings + bookmarks). Returns an array of findings; an
+// empty array means storage looks healthy.
+function detectStorageCorruption(allStorage) {
+    if (!allStorage || typeof allStorage !== 'object') {
+        return [{ key: '(root)', kind: 'not-object', detail: 'storage payload is not an object' }];
+    }
+    const findings = [];
+    const settingsRaw = allStorage[STORAGE_KEYS.settings];
+    if (settingsRaw !== undefined && !isPlainObject(settingsRaw)) {
+        findings.push({
+            key: STORAGE_KEYS.settings,
+            kind: 'wrong-type',
+            detail: `expected plain object, got ${typeof settingsRaw}` + (Array.isArray(settingsRaw) ? ' (array)' : '')
+        });
+    }
+    for (const k of ['hiddenVideos', 'allowedVideos', 'blockedChannels']) {
+        const raw = allStorage[STORAGE_KEYS[k]];
+        if (raw !== undefined && !Array.isArray(raw)) {
+            findings.push({
+                key: STORAGE_KEYS[k],
+                kind: 'wrong-type',
+                detail: `expected Array, got ${typeof raw}` + (raw === null ? ' (null)' : '')
+            });
+        }
+    }
+    const bookmarksRaw = allStorage[STORAGE_KEYS.bookmarks];
+    if (bookmarksRaw !== undefined && !isPlainObject(bookmarksRaw)) {
+        findings.push({
+            key: STORAGE_KEYS.bookmarks,
+            kind: 'wrong-type',
+            detail: `expected plain object, got ${typeof bookmarksRaw}`
+        });
+    }
+    return findings;
 }
 
 // v3.20.2: extract the TrustedTypes diagnostic signal written by
@@ -982,7 +1029,13 @@ async function renderStorageInfo() {
         statBlocked.textContent = String(summary.blockedChannels);
         statBookmarks.textContent = String(summary.bookmarks);
         renderHealthBanner(summary.diagnostics);
-        renderStorageWarningBanner(summary.sizeBytes, summary.hiddenVideos, summary.blockedChannels, summary.bookmarks);
+        // iter-6 N4: corruption wins over quota — if we detect a malformed
+        // payload, that's a more urgent signal than "storage is large."
+        if (summary.corruption && summary.corruption.length > 0) {
+            renderStorageWarningBanner(0, 0, 0, 0, summary.corruption);
+        } else {
+            renderStorageWarningBanner(summary.sizeBytes, summary.hiddenVideos, summary.blockedChannels, summary.bookmarks);
+        }
     } catch (error) {
         statKeys.textContent = '0';
         statSize.textContent = '0 B';
@@ -990,7 +1043,14 @@ async function renderStorageInfo() {
         statBlocked.textContent = '0';
         statBookmarks.textContent = '0';
         renderHealthBanner(null);
-        renderStorageWarningBanner(0);
+        // iter-6 N4: a thrown error from chrome.storage.local.get(null) is
+        // itself a corruption signal (profile-level read failure). Surface
+        // it through the same banner so the user has a single recovery
+        // surface regardless of the failure mode.
+        renderStorageWarningBanner(0, 0, 0, 0, [{
+            key: '(read)', kind: 'read-failed',
+            detail: String(error && error.message || error).slice(0, 200)
+        }]);
         showStatus(t('statusStorageReadFail', 'Storage read failed') + ': ' + error.message, 'error', 4200);
     }
 }
@@ -1000,8 +1060,29 @@ async function renderStorageInfo() {
 // firmer wording at the hard threshold. The Reset button shares the
 // existing destructive-confirm dialog so accidental clicks are still
 // guarded.
-function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bookmarks) {
+function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bookmarks, corruption) {
     if (!storageBanner || !storageBannerDetail) return;
+
+    // iter-6 N4: corruption tier supersedes quota tier. Show first to
+    // signal that the recovery action (Reset) is more urgent than a
+    // size nudge.
+    if (Array.isArray(corruption) && corruption.length > 0) {
+        const summary = corruption
+            .slice(0, 3)  // bound so the banner detail stays readable
+            .map((f) => `${f.key}: ${f.detail}`)
+            .join('; ');
+        const extra = corruption.length > 3 ? ` (+${corruption.length - 3} more)` : '';
+        storageBanner.dataset.tier = 'corruption';
+        storageBannerDetail.textContent =
+            t('storageBannerCorruptionTpl', 'Storage data malformed — Reset to recover.')
+            + ' ' + summary + extra;
+        storageBanner.hidden = false;
+        // Record to DiagnosticLog ring (per iter-5 ROADMAP plan: storage-
+        // corruption ctx triggers promote-to-Now signals in future runs).
+        recordCorruptionDiagnostic(corruption);
+        return;
+    }
+
     const bytes = Number(sizeBytes) || 0;
     if (bytes < STORAGE_WARN_SOFT_BYTES) {
         storageBanner.hidden = true;
@@ -1023,6 +1104,35 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
         : t('storageBannerSoftTpl', `Storage at ${sizeText} — heading toward the ceiling.`);
     storageBannerDetail.textContent = baseTpl.replace('{size}', sizeText) + contributors;
     storageBanner.hidden = false;
+}
+
+// iter-6 N4: best-effort persistence into the existing _errors ring so
+// future factory runs (per iter-5 ROADMAP) can promote N4 follow-ups when
+// the field detects corruption events. We do NOT show or save corruption
+// findings during the storage-read-failed path (no settings to write to).
+async function recordCorruptionDiagnostic(corruption) {
+    try {
+        const items = await storageGet([SETTINGS_STORAGE_KEY]);
+        const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
+            ? { ...items[SETTINGS_STORAGE_KEY] }
+            : {};
+        const arr = Array.isArray(settings._errors)
+            ? settings._errors.filter(isPlainObject).slice(-499)
+            : [];
+        arr.push({
+            ts: Date.now(),
+            ctx: 'storage-corruption',
+            msg: corruption.slice(0, 5)
+                .map((f) => `${f.kind}:${f.key}`)
+                .join('|')
+                .slice(0, 500)
+        });
+        settings._errors = arr;
+        await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
+    } catch (_) {
+        // Best-effort — if even writing the diagnostic fails the popup
+        // banner is still surfaced, which is the user-facing recovery.
+    }
 }
 
 function renderHealthBanner(diagnostics) {
