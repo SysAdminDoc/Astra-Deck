@@ -1998,7 +1998,17 @@ class DownloadManager(QObject):
                     dl.progress = 100
                 else:
                     dl.status = "failed"
-                    dl.error = error_lines[-1] if error_lines else " ".join(last_lines)[-240:] if last_lines else "Unknown error"
+                    # Audit pass: truncate error_lines[-1] like the fallback
+                    # branch already does. yt-dlp ERROR lines can carry a
+                    # full Python traceback; an untruncated value used to
+                    # round-trip through /status to the extension popup and
+                    # blow past the JSON payload UI budget.
+                    if error_lines:
+                        dl.error = error_lines[-1][-240:]
+                    elif last_lines:
+                        dl.error = " ".join(last_lines)[-240:]
+                    else:
+                        dl.error = "Unknown error"
 
         except FileNotFoundError:
             if dl.status != "cancelled":
