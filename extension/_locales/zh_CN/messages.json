@@ -284,6 +284,18 @@
   "healthCopyBtn": {
     "message": "复制"
   },
+  "healthSaveAria": {
+    "message": "将诊断日志保存为JSON"
+  },
+  "healthSaveBtn": {
+    "message": "保存"
+  },
+  "statusDiagSaved": {
+    "message": "诊断日志已保存。"
+  },
+  "statusDiagSaveFail": {
+    "message": "无法保存日志"
+  },
   "healthEventPlural": {
     "message": "条事件"
   },
@@ -310,9 +322,6 @@
   },
   "languageEs": {
     "message": "Español (西班牙语)"
-  },
-  "languageEyebrow": {
-    "message": "语言"
   },
   "languageFr": {
     "message": "Français (法语)"

@@ -30,13 +30,13 @@
     "message": "Подтвердить"
   },
   "contextNoteAnyTab": {
-    "message": "Быстрые переключатели синхронизируются после открытия вкладки YouTube."
+    "message": "Quick toggles are saved now and sync when YouTube is open."
   },
   "contextNoteInlinePanel": {
-    "message": "Нажмите «Открыть полные настройки», чтобы запустить рабочую область на этой вкладке."
+    "message": "Open the full workspace on this tab; quick toggles apply immediately."
   },
   "contextNoteLaunch": {
-    "message": "Полные настройки находятся в рабочей области на вкладках YouTube для просмотра."
+    "message": "Open a watchable YouTube tab to use the full in-page workspace."
   },
   "contextStateAnyTab": {
     "message": "Любая вкладка"
@@ -284,6 +284,18 @@
   "healthCopyBtn": {
     "message": "Копировать"
   },
+  "healthSaveAria": {
+    "message": "Сохранить журнал диагностики как JSON"
+  },
+  "healthSaveBtn": {
+    "message": "Сохранить"
+  },
+  "statusDiagSaved": {
+    "message": "Журнал диагностики сохранён."
+  },
+  "statusDiagSaveFail": {
+    "message": "Не удалось сохранить журнал"
+  },
   "healthEventPlural": {
     "message": "событий"
   },
@@ -408,91 +420,91 @@
     "message": "Поток просмотра"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "По умолчанию режим театра"
+    "message": "Open videos in theater view"
   },
   "qt_autoTheaterMode_name": {
     "message": "Авто-театр"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Более тёплые цвета"
+    "message": "Warm the player for late viewing"
   },
   "qt_blueLightFilter_name": {
     "message": "Фильтр синего света"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Удалять параметры отслеживания"
+    "message": "Remove tracking from share links"
   },
   "qt_cleanShareUrls_name": {
     "message": "Чистые URL"
   },
   "qt_commentSearch_desc": {
-    "message": "Фильтр комментариев на страницах просмотра"
+    "message": "Filter watch-page comments inline"
   },
   "qt_commentSearch_name": {
     "message": "Поиск в комментариях"
   },
   "qt_deArrow_desc": {
-    "message": "Лучшие заголовки и миниатюры"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Подробное логирование в консоли"
+    "message": "Record detailed local diagnostics"
   },
   "qt_debugMode_name": {
     "message": "Режим отладки"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Напоминания о перерывах + дневной лимит"
+    "message": "Track breaks and daily viewing"
   },
   "qt_digitalWellbeing_name": {
     "message": "Цифровое благополучие"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Остановить автопереход к следующему"
+    "message": "Stop the next video from starting"
   },
   "qt_disableAutoplayNext_name": {
     "message": "Без автовоспроизведения"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Остановить бесконечную прокрутку"
+    "message": "Stop endless feed loading"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "Ограничить прокрутку"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Нет панели похожих при просмотре"
+    "message": "Clear the watch-page side rail"
   },
   "qt_hideRelatedVideos_name": {
     "message": "Скрыть похожие"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Плавающая панель при прокрутке"
+    "message": "Keep controls visible while scrolling"
   },
   "qt_miniPlayerBar_name": {
     "message": "Мини-плеер"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Запомнить скорость воспроизведения"
+    "message": "Keep playback speed consistent"
   },
   "qt_persistentSpeed_name": {
     "message": "Постоянная скорость"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Удалить Shorts из лент"
+    "message": "Remove Shorts shelves and links"
   },
   "qt_removeAllShorts_name": {
     "message": "Скрыть Shorts"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Пропускать спонсорские сегменты"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Кликабельный транскрипт + экспорт"
+    "message": "Read, jump, and export captions"
   },
   "qt_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
@@ -643,9 +655,9 @@
     "message": "Рабочая область настроек"
   },
   "workspaceSupport": {
-    "message": "Изменения автоматически синхронизируются с открытыми вкладками YouTube."
+    "message": "Quick toggles save immediately and sync to YouTube."
   },
   "workspaceTitle": {
-    "message": "Управление и локальные данные"
+    "message": "Controls and backups"
   }
 }

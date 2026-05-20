@@ -26,6 +26,7 @@ const path = require('path');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const MESSAGES_PATH = path.join(REPO_ROOT, 'extension', '_locales', 'en', 'messages.json');
+const LOCALES_DIR = path.join(REPO_ROOT, 'extension', '_locales');
 const MANIFEST_PATH = path.join(REPO_ROOT, 'extension', 'manifest.json');
 const EXTENSION_DIR = path.join(REPO_ROOT, 'extension');
 
@@ -122,11 +123,51 @@ function main() {
         }
     }
 
+    // ── 3. Validate per-locale parity against en/messages.json ──
+    // Audit pass: 4 health-save keys had drifted out of every non-EN locale
+    // and a zh_CN-only orphan (languageEyebrow) had no EN counterpart. Catch
+    // both flavours of drift in CI before they ship.
+    let localeDirs = [];
+    try {
+        localeDirs = fs.readdirSync(LOCALES_DIR, { withFileTypes: true })
+            .filter((d) => d.isDirectory())
+            .map((d) => d.name)
+            .filter((name) => name !== 'en');
+    } catch (err) {
+        console.error(`[check-i18n] Cannot list locales dir: ${err.message}`);
+        process.exit(2);
+    }
+
+    for (const locale of localeDirs) {
+        const localePath = path.join(LOCALES_DIR, locale, 'messages.json');
+        let localeMessages;
+        try {
+            localeMessages = JSON.parse(fs.readFileSync(localePath, 'utf8'));
+        } catch (err) {
+            errors.push(`_locales/${locale}/messages.json: ${err.message}`);
+            continue;
+        }
+        const localeKeys = new Set(Object.keys(localeMessages));
+        // Keys EN has that this locale lacks → user sees default-locale fallback (English).
+        for (const key of definedKeys) {
+            if (!localeKeys.has(key)) {
+                errors.push(`_locales/${locale}/messages.json: missing key "${key}" (present in EN)`);
+            }
+        }
+        // Keys this locale has that EN doesn't → dead translation, unreachable from any code path.
+        for (const key of localeKeys) {
+            if (!definedKeys.has(key)) {
+                errors.push(`_locales/${locale}/messages.json: orphan key "${key}" (not in EN)`);
+            }
+        }
+    }
+
     if (errors.length === 0) {
         const totalKeys = definedKeys.size;
         const scannedFiles = jsFiles.length;
         console.log(`[check-i18n] OK — ${totalKeys} message key(s) defined; ${manifestKeys.length} manifest ref(s) and 0 getMessage() calls all resolve`);
         console.log(`[check-i18n] Scanned ${scannedFiles} JS file(s) under extension/`);
+        console.log(`[check-i18n] Locale parity OK — ${localeDirs.length} non-EN locale(s) match EN key set`);
         process.exit(0);
     }
 

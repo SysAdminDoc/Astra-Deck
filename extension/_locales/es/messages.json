@@ -30,13 +30,13 @@
     "message": "Confirmar"
   },
   "contextNoteAnyTab": {
-    "message": "Los interruptores rápidos se sincronizan una vez que se abre una pestaña de YouTube."
+    "message": "Quick toggles are saved now and sync when YouTube is open."
   },
   "contextNoteInlinePanel": {
-    "message": "Haz clic en «Abrir configuración completa» para iniciar el espacio de trabajo en esta pestaña."
+    "message": "Open the full workspace on this tab; quick toggles apply immediately."
   },
   "contextNoteLaunch": {
-    "message": "La configuración completa se encuentra en el espacio de trabajo en pestañas de YouTube reproducibles."
+    "message": "Open a watchable YouTube tab to use the full in-page workspace."
   },
   "contextStateAnyTab": {
     "message": "Cualquier pestaña"
@@ -284,6 +284,18 @@
   "healthCopyBtn": {
     "message": "Copiar"
   },
+  "healthSaveAria": {
+    "message": "Guardar registro de diagnóstico como JSON"
+  },
+  "healthSaveBtn": {
+    "message": "Guardar"
+  },
+  "statusDiagSaved": {
+    "message": "Registro de diagnóstico guardado."
+  },
+  "statusDiagSaveFail": {
+    "message": "No se pudo guardar el registro"
+  },
   "healthEventPlural": {
     "message": "eventos"
   },
@@ -408,91 +420,91 @@
     "message": "Flujo de visualización"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Vista de cine por defecto"
+    "message": "Open videos in theater view"
   },
   "qt_autoTheaterMode_name": {
     "message": "Auto cine"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Colores más cálidos"
+    "message": "Warm the player for late viewing"
   },
   "qt_blueLightFilter_name": {
     "message": "Filtro de luz azul"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Eliminar parámetros de seguimiento"
+    "message": "Remove tracking from share links"
   },
   "qt_cleanShareUrls_name": {
     "message": "URLs limpias"
   },
   "qt_commentSearch_desc": {
-    "message": "Filtrar comentarios en páginas de visualización"
+    "message": "Filter watch-page comments inline"
   },
   "qt_commentSearch_name": {
     "message": "Búsqueda de comentarios"
   },
   "qt_deArrow_desc": {
-    "message": "Mejores títulos y miniaturas"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Registro detallado en consola"
+    "message": "Record detailed local diagnostics"
   },
   "qt_debugMode_name": {
     "message": "Modo depuración"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Recordatorios de descanso + límite diario"
+    "message": "Track breaks and daily viewing"
   },
   "qt_digitalWellbeing_name": {
     "message": "Bienestar digital"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Detener avance automático al siguiente"
+    "message": "Stop the next video from starting"
   },
   "qt_disableAutoplayNext_name": {
     "message": "Sin reproducción automática"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Detener desplazamiento infinito"
+    "message": "Stop endless feed loading"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "Limitar desplazamiento"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Sin panel de relacionados al ver"
+    "message": "Clear the watch-page side rail"
   },
   "qt_hideRelatedVideos_name": {
     "message": "Ocultar relacionados"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Barra flotante al desplazar"
+    "message": "Keep controls visible while scrolling"
   },
   "qt_miniPlayerBar_name": {
     "message": "Barra de reproductor mini"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Recordar la velocidad de reproducción"
+    "message": "Keep playback speed consistent"
   },
   "qt_persistentSpeed_name": {
     "message": "Velocidad persistente"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Eliminar Shorts de los feeds"
+    "message": "Remove Shorts shelves and links"
   },
   "qt_removeAllShorts_name": {
     "message": "Ocultar Shorts"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Omitir segmentos patrocinados"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Transcripción clicable + exportación"
+    "message": "Read, jump, and export captions"
   },
   "qt_transcriptViewer_name": {
     "message": "Barra lateral de transcripción"
@@ -643,9 +655,9 @@
     "message": "Espacio de configuración"
   },
   "workspaceSupport": {
-    "message": "Los cambios se sincronizan automáticamente con las pestañas de YouTube abiertas."
+    "message": "Quick toggles save immediately and sync to YouTube."
   },
   "workspaceTitle": {
-    "message": "Controles y datos locales"
+    "message": "Controls and backups"
   }
 }
