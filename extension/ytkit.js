@@ -984,23 +984,43 @@ return response;
                 logFallbackOnce();
                 if (policy) {
                     element.innerHTML = policy.createHTML(html);
-                } else {
-                    // Fallback: DOMParser (covers non-TrustedTypes browsers).
-                    // Use replaceChildren() instead of `innerHTML = ''` — the latter
-                    // still counts as a TrustedHTML sink in strict CSP contexts and
-                    // can throw on YouTube pages that policy to no-innerHTML.
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(`<template>${html}</template>`, 'text/html');
-                    const template = doc.querySelector('template');
-                    element.replaceChildren();
-                    if (template && template.content) {
-                        element.appendChild(template.content.cloneNode(true));
-                    }
+                    return;
+                }
+                // iter-6 N10: delegate the fallback path to the shared
+                // setTrustedHTML helper in extension/core/trusted-html.js
+                // when present (loaded by manifest before ytkit.js).
+                // That helper already implements the parsed-fragment
+                // appendChild pattern hardened in the audit pass and
+                // gracefully handles foreign-document fragments. If the
+                // core module is missing (e.g. unit-test contexts that
+                // load ytkit.js in isolation) we fall back to the inline
+                // DOMParser logic — keeps existing test fixtures working.
+                const core = globalThis.YTKitCore;
+                if (core && typeof core.setTrustedHTML === 'function') {
+                    core.setTrustedHTML(element, html);
+                    return;
+                }
+                // Inline fallback (legacy code path):
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<template>${html}</template>`, 'text/html');
+                const template = doc.querySelector('template');
+                element.replaceChildren();
+                if (template && template.content) {
+                    element.appendChild(template.content.cloneNode(true));
                 }
             },
             create(html) {
                 logFallbackOnce();
-                return policy ? policy.createHTML(html) : html;
+                if (policy) return policy.createHTML(html);
+                // iter-6 N10: when TT is unavailable, prefer the core
+                // helper's toTrustedHTML so the two wrappers return the
+                // same shape (passthrough string). Falls through to raw
+                // string when the core module isn't loaded.
+                const core = globalThis.YTKitCore;
+                if (core && typeof core.toTrustedHTML === 'function') {
+                    return core.toTrustedHTML(html);
+                }
+                return html;
             }
         };
     })();
