@@ -250,7 +250,75 @@ test('selector health snapshot tracks hits, misses, errors, and exports JSON', (
     assert.equal(customHealth, undefined, 'custom one-off selectors should not pollute surface-map reports');
     assert.equal(events.length, 1);
     assert.equal(events[0].detail.selector, 'bad[');
-    assert.equal(JSON.parse(core.exportSelectorHealth()).schemaVersion, 1);
+    // v4.5+ (iter-5 N5): schemaVersion bumped to 2 — snapshot rows now
+    // carry shape-drift fields. Consumers parsing v1 must ignore the new
+    // keys safely; v2 callers can read them.
+    assert.equal(JSON.parse(core.exportSelectorHealth()).schemaVersion, 2);
+});
+
+test('recordSelectorShape silently captures the first shape, emits on drift, no-ops on repeats', () => {
+    // v4.5+ (iter-5 N5): drift signal mirrors the iSponsorBlockTV story —
+    // YouTube changed a paired-device screen-id from 26 chars to 64 hex
+    // digits without changing the selector that targets it. The selector
+    // keeps hitting but the matched node's identifier shape silently
+    // changes; that is the failure mode this API surfaces.
+    const events = [];
+    const core = loadFoundation({
+        dispatchEvent(event) { events.push(event); }
+    });
+
+    // First observation — captures, no event. Use a real selector from the
+    // watch surface so the health snapshot row is reachable below.
+    const SEL = 'ytd-watch-flexy[video-id]';
+    const first = core.recordSelectorShape('watch', SEL, 'attr-len:11');
+    assert.equal(first.drifted, false);
+    assert.equal(events.length, 0);
+
+    // Repeat observation — no event, no drift.
+    const second = core.recordSelectorShape('watch', SEL, 'attr-len:11');
+    assert.equal(second.drifted, false);
+    assert.equal(events.length, 0);
+
+    // Actual drift — captures, emits one event with previous + current.
+    const drifted = core.recordSelectorShape('watch', SEL, 'attr-len:32');
+    assert.equal(drifted.drifted, true);
+    assert.equal(drifted.previousShape, 'attr-len:11');
+    assert.equal(events.length, 1);
+    assert.equal(events[0].type, 'ytkit-selector-shape-drift');
+    assert.equal(events[0].detail.surface, 'watch');
+    assert.equal(events[0].detail.selector, SEL);
+    assert.equal(events[0].detail.previousShape, 'attr-len:11');
+    assert.equal(events[0].detail.currentShape, 'attr-len:32');
+    assert.equal(events[0].detail.drifts, 1);
+    assert.equal(events[0].detail.firstShape, 'attr-len:11');
+
+    // Snapshot row now carries shape fields with v2 schema.
+    const snap = JSON.parse(core.exportSelectorHealth());
+    assert.equal(snap.schemaVersion, 2);
+    const watchRow = snap.surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === SEL);
+    assert.equal(watchRow.firstShape, 'attr-len:11');
+    assert.equal(watchRow.lastShape, 'attr-len:32');
+    assert.equal(watchRow.shapeDrifts, 1);
+
+    // Defensive: missing / non-string / huge shapes don't blow up the
+    // selector pipeline. Empty + non-string returns null without
+    // mutating the stat.
+    assert.equal(core.recordSelectorShape('watch', SEL, null), null);
+    assert.equal(core.recordSelectorShape('watch', SEL, ''), null);
+    assert.equal(core.recordSelectorShape('watch', SEL, 12345), null);
+    // Huge shape gets clamped to 120 chars — still records.
+    const huge = 'x'.repeat(500);
+    const clampResult = core.recordSelectorShape('watch', SEL, huge);
+    assert.equal(clampResult.drifted, true);
+    assert.equal(clampResult.previousShape, 'attr-len:32');
+    // The recorded lastShape should be clamped to 120 chars.
+    const snap2 = JSON.parse(core.exportSelectorHealth());
+    const row2 = snap2.surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === SEL);
+    assert.equal(row2.lastShape.length, 120);
 });
 
 test('trusted html helper centralizes TrustedTypes policy creation', () => {

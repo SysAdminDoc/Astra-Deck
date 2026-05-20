@@ -262,7 +262,21 @@
                 lastMissAt: null,
                 lastHitAt: null,
                 lastError: null,
-                lastOutcome: 'untested'
+                lastOutcome: 'untested',
+                // v4.5+: DOM-shape drift tracking. The selector may keep
+                // hitting (no miss/error) while the matched node's identifier
+                // shape silently changes (iSponsorBlockTV signal: YouTube
+                // changed a paired device-screen-id from 26 chars to 64).
+                // firstShape: shape signature at first hit. lastShape: most
+                // recent observation. shapeDrifts: count of transitions. The
+                // signatures are short opaque strings produced by the caller
+                // (recordSelectorShape) so this module doesn't need to know
+                // what 'shape' means for each surface.
+                firstShape: null,
+                lastShape: null,
+                shapeDrifts: 0,
+                lastShapeAt: null,
+                firstShapeAt: null
             });
             _enforceMapCap(selectorStats, SELECTOR_STATS_CAP);
         }
@@ -323,6 +337,65 @@
 
     function recordHit(surface, selector) {
         recordSelectorAttempt(surface, selector, 'hit');
+    }
+
+    // v4.5+ (iter-5 N5): DOM-shape drift recorder.
+    //
+    // Callers compute a short opaque "shape signature" for the matched node —
+    // e.g. `attr-len:11` for an 11-char [video-id], `children-count:5` for a
+    // shelf with 5 cards, `tag:DIV` for an element-tag fingerprint. The
+    // signature is opaque to this module: any consistent string works.
+    //
+    // When the signature differs from the prior recorded shape for the same
+    // (surface, selector) pair, we count a drift and emit a
+    // `ytkit-selector-shape-drift` CustomEvent. The popup-side health surface
+    // can listen for this and surface "iSponsorBlockTV-class drift" to the
+    // user before a hashed-class refactor silently breaks a feature.
+    //
+    // No-op fast path: same shape as last observation → just refresh the
+    // timestamp, do NOT emit (would drown signal).
+    function recordSelectorShape(surface, selector, shapeKey) {
+        if (typeof shapeKey !== 'string' || !shapeKey) return null;
+        // Bound the shape-key length so an accidentally huge signature
+        // (someone passing the whole outerHTML by mistake) can't blow up
+        // memory or the drift event payload.
+        if (shapeKey.length > 120) shapeKey = shapeKey.slice(0, 120);
+        const stat = getSelectorStat(surface, selector);
+        const now = Date.now();
+        if (stat.firstShape == null) {
+            stat.firstShape = shapeKey;
+            stat.firstShapeAt = now;
+            stat.lastShape = shapeKey;
+            stat.lastShapeAt = now;
+            return { stat, drifted: false };
+        }
+        if (stat.lastShape === shapeKey) {
+            // Same shape — quiet path; just refresh last-seen.
+            stat.lastShapeAt = now;
+            return { stat, drifted: false };
+        }
+        // Real drift: shape changed since last observation.
+        const previousShape = stat.lastShape;
+        stat.lastShape = shapeKey;
+        stat.lastShapeAt = now;
+        stat.shapeDrifts += 1;
+        try {
+            globalThis.dispatchEvent?.(new CustomEvent('ytkit-selector-shape-drift', {
+                detail: {
+                    surface,
+                    selector,
+                    previousShape,
+                    currentShape: shapeKey,
+                    drifts: stat.shapeDrifts,
+                    firstShape: stat.firstShape,
+                    firstShapeAt: stat.firstShapeAt,
+                    at: now
+                }
+            }));
+        } catch (_) {
+            // CustomEvent not available in some unit-test contexts.
+        }
+        return { stat, drifted: true, previousShape };
     }
 
     function getQueryRoot(options = {}) {
@@ -486,7 +559,13 @@
                     lastMissAt: stat.lastMissAt,
                     lastHitAt: stat.lastHitAt,
                     lastError: stat.lastError,
-                    lastOutcome: stat.lastOutcome
+                    lastOutcome: stat.lastOutcome,
+                    // v4.5+ shape-drift fields (iter-5 N5).
+                    firstShape: stat.firstShape,
+                    lastShape: stat.lastShape,
+                    shapeDrifts: stat.shapeDrifts,
+                    firstShapeAt: stat.firstShapeAt,
+                    lastShapeAt: stat.lastShapeAt
                 };
             });
             return {
@@ -506,7 +585,10 @@
 
     function exportSelectorHealth() {
         return JSON.stringify({
-            schemaVersion: 1,
+            // v4.5+: schemaVersion bumped to 2 — health snapshot rows now carry
+            // shape-drift fields (firstShape/lastShape/shapeDrifts/...).
+            // Consumers parsing schemaVersion 1 ignore the new keys safely.
+            schemaVersion: 2,
             exportedAt: new Date().toISOString(),
             surfaces: getSelectorHealthSnapshot()
         }, null, 2);
@@ -522,6 +604,7 @@
         getSurfaceSelectorChain,
         getSurfaceSelectorEntry,
         normalizeSelectorList,
+        recordSelectorShape,
         waitForSurfaceElement
     });
 })();
