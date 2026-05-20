@@ -13,7 +13,8 @@ const coreSources = [
     'trusted-html.js',
     'api-limiter.js',
     'diagnostic-log.js',
-    'predicate-sandbox.js'
+    'predicate-sandbox.js',
+    'video-type.js'
 ].map((fileName) => ({
     fileName,
     source: fs.readFileSync(path.join(repoRoot, 'extension', 'core', fileName), 'utf8')
@@ -640,6 +641,56 @@ test('createPredicateSandbox parses and evaluates ctx-bound expressions (iter-7 
     // Identifiers other than `ctx` are rejected (no globals reachable).
     const escape = sandbox.compile('window.location.href.includes("evil")');
     assert.equal(escape.ok, false);
+});
+
+// ── iter-7 N11 (M-phase extraction #3): VideoTypeDetector factory ──
+
+test('createVideoTypeDetector classifies from player response and caches by video id (iter-7 N11)', () => {
+    const core = loadFoundation();
+
+    // Stub the document so _fromDOM finds no live signals — exercise
+    // the player-response branch in isolation. We don't go through vm's
+    // document/window because the detector is now decoupled enough that
+    // a minimal stub on globalThis works.
+    let currentVid = 'abc11111111';
+    let playerResponse = {
+        videoDetails: { videoId: 'abc11111111', isLive: true }
+    };
+    const debugCalls = [];
+
+    const detector = core.createVideoTypeDetector({
+        getPlayerResponse: () => playerResponse,
+        getVideoId: () => currentVid,
+        getMainVideoElement: () => null,
+        debugLog: (category, message) => debugCalls.push([category, message])
+    });
+
+    assert.equal(detector.getType(), 'live');
+    assert.equal(detector.isLive(), true);
+    assert.equal(detector.hasChat(), true);
+    assert.equal(detector.hasComments(), false);
+
+    // Cache: same videoId must not re-run detection (no new debug log).
+    debugCalls.length = 0;
+    detector.getType();
+    detector.getType();
+    assert.equal(debugCalls.length, 0, 'cache hit must not re-emit debug telemetry');
+
+    // Video id change forces re-detection.
+    currentVid = 'def22222222';
+    playerResponse = {
+        videoDetails: { videoId: 'def22222222', isUpcoming: true }
+    };
+    assert.equal(detector.getType(), 'premiere');
+    assert.equal(detector.isPremiere(), true);
+
+    // Stale player response (videoId mismatch) falls back to DOM (which
+    // we've stubbed to nothing) → returns 'standard'.
+    currentVid = 'ghi33333333';
+    playerResponse = {
+        videoDetails: { videoId: 'stale-id-mismatch', isLive: true }
+    };
+    assert.equal(detector.refresh(), 'standard');
 });
 
 test('createPredicateSandbox opens the circuit after consecutive evaluator errors (iter-7 N11)', () => {

@@ -711,10 +711,16 @@ test('split live chat gets a video info header and neutral divider hover', () =>
     const path = require('path');
     const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
     const theaterSplit = fs.readFileSync(path.join(__dirname, '..', 'theater-split.user.js'), 'utf8');
+    // iter-7 N11 (M-phase #3): VideoTypeDetector moved to core/video-type.js
+    // so the live-override invariant is asserted against the new source location.
+    const videoTypeSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'video-type.js'),
+        'utf8'
+    );
 
     assert.ok(source.includes('_ensureSplitLiveHeader(rightPct)'),
         'extension split should create a live video info header');
-    assert.ok(source.includes("const type = domType === 'live' ? 'live' : (responseType || domType || 'standard');"),
+    assert.ok(videoTypeSource.includes("const type = domType === 'live' ? 'live' : (responseType || domType || 'standard');"),
         'extension video type detection should let hydrated DOM live signals override stale playerResponse VOD');
     assert.ok(source.includes("if (chatEl) this._videoType = VideoTypeDetector.refresh();"),
         'extension split should re-detect chat video type at expand time');
