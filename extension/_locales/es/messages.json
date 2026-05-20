@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Datos de almacenamiento corruptos — Restablecer para recuperar."
   },
+  "selectorHealthTitle": {
+    "message": "Salud de selectores"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} superficies rastreadas"
+  },
+  "selectorHealthEmpty": {
+    "message": "Aún no se han muestreado superficies."
+  },
   "storageBannerReset": {
     "message": "Restablecer"
   },

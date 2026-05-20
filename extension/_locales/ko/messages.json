@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "저장 공간 데이터가 손상됨 — 초기화하여 복구하세요."
   },
+  "selectorHealthTitle": {
+    "message": "셀렉터 상태"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count}개 표면 추적 중"
+  },
+  "selectorHealthEmpty": {
+    "message": "아직 샘플링된 표면이 없습니다."
+  },
   "storageBannerReset": {
     "message": "재설정"
   },

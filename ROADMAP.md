@@ -896,7 +896,7 @@ Next-tier (carried to iter-6):
 
 Later-tier:
 
-- [ ] N7 popup selector-health dashboard
+- [x] N7 popup selector-health dashboard — done iter-6: popup queries the active YouTube tab via `YTKIT_GET_SELECTOR_HEALTH`, content-script handler returns top-12 problematic surfaces (sorted by errors×100 + misses + drifts) + DiagnosticLog `countsByCtx()` snapshot (from N6); popup renders top 6 with ⚡ high-churn + 📷 needs-fresh-capture indicators plus a per-ctx chip strip; gracefully hidden on non-YT tabs or 1.5s timeout; 3 i18n keys added across 10 locales.
 - [x] N14 bgutil-pot stale-version notice — done iter-6: `probe_po_token_provider` now includes `stale` + `minVersion` fields in the `/health.poTokenProvider` payload when the running provider reports a version less than `BGUTIL_POT_MIN_VERSION` ("1.3.0"). Comparator is a lightweight semver impl handling `v` prefix, pre-release suffix truncation, and uneven part counts. Python suite +3 tests (67 total green).
 - [x] N10 consolidate parallel TrustedHTML wrappers — done iter-6: `ytkit.js`'s no-policy fallback path now delegates to `core/trusted-html.js`'s `setTrustedHTML` + `toTrustedHTML` when the core module is loaded. Inline DOMParser fallback retained as a last-resort safety net for unit tests that load `ytkit.js` in isolation. Diagnostic-recording surface (`fallbackReason` capture, `logFallbackOnce` → `DiagnosticLog.record('trusted-types', ...)`) preserved.
 
