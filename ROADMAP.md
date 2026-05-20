@@ -902,7 +902,11 @@ Later-tier:
 
 Under Consideration:
 
-- [~] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`. **Iter-7 partial M-phase landed:** `DiagnosticLog` extracted to `extension/core/diagnostic-log.js` as a `createDiagnosticLog({getSettings, saveSettings, getVersion, cap})` factory, manifest load-order updated (regular + live_chat content_scripts), `ytkit.js` consumes the factory with an inline-IIFE fallback for unit-test isolation. Bug fix carried with the move: `record()` resyncs counters BEFORE the push so cross-session ring entries are counted exactly once (prior inline impl did push→resync→increment, double-counting the first record on a fresh session). +3 regression tests across `tests/core-foundation.test.js` and `tests/hardening.test.js`. Remaining extractions (settings manager, observer registry, feature surfaces) require dedicated future M-phase runs.
+- [~] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`. **Iter-7 partial M-phase landed (2 extractions):**
+  1. `DiagnosticLog` → `extension/core/diagnostic-log.js` as a `createDiagnosticLog({getSettings, saveSettings, getVersion, cap})` factory. Bug fix carried: `record()` resyncs counters BEFORE the push so cross-session ring entries are counted exactly once (prior inline impl did push→resync→increment, double-counting the first record on a fresh session). Inline-IIFE fallback retained for unit-test isolation.
+  2. `PredicateSandbox` → `extension/core/predicate-sandbox.js` as a `createPredicateSandbox({debugLog})` factory exporting `{compile, PredicateError}`. The 303-line expression-only AST walker (Option C) moved out cleanly with no behavioral change. `ytkit.js` consumes the factory and wires `DebugManager.log` for budget/circuit telemetry. Defensive fallback: a missing core module yields a permanently-failing `compile()` rather than a crash. Hardening invariants (no eval/Function/with, ReDoS guard, 5ms budget, 10-error circuit, ok:false-with-position) now assert against `core/predicate-sandbox.js` instead of `ytkit.js`.
+  
+  Manifest load-order updated (regular + live_chat content_scripts). `ytkit.js` shrunk from 44,264 → 43,976 lines. +6 regression tests total across `tests/core-foundation.test.js` and `tests/hardening.test.js`. Remaining extractions (settings manager, observer registry, feature surfaces) require dedicated future M-phase runs.
 
 Rejected (reasoning persisted so future runs don't resurrect):
 

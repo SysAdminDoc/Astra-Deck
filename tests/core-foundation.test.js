@@ -12,7 +12,8 @@ const coreSources = [
     'selectors.js',
     'trusted-html.js',
     'api-limiter.js',
-    'diagnostic-log.js'
+    'diagnostic-log.js',
+    'predicate-sandbox.js'
 ].map((fileName) => ({
     fileName,
     source: fs.readFileSync(path.join(repoRoot, 'extension', 'core', fileName), 'utf8')
@@ -605,4 +606,64 @@ test('createDiagnosticLog resyncs counters from a pre-populated ring (iter-6 N11
         JSON.parse(JSON.stringify(log.countsByCtx())),
         { tt: 2, selectors: 1 }
     );
+});
+
+// ── iter-7 N11 (M-phase extraction #2): PredicateSandbox factory ──
+
+test('createPredicateSandbox parses and evaluates ctx-bound expressions (iter-7 N11)', () => {
+    const core = loadFoundation();
+    const debugCalls = [];
+    const sandbox = core.createPredicateSandbox({
+        debugLog: (category, message) => debugCalls.push([category, message])
+    });
+
+    // Happy-path compile + evaluate. The evaluator must freeze the ctx
+    // it's handed; the call site freezes upstream too as a belt-and-braces.
+    const compiled = sandbox.compile('ctx.title.includes("review") && ctx.duration > 60');
+    assert.equal(compiled.ok, true);
+    assert.equal(typeof compiled.evaluator, 'function');
+    assert.equal(compiled.evaluator({ title: 'movie review', duration: 120 }), true);
+    assert.equal(compiled.evaluator({ title: 'unboxing', duration: 120 }), false);
+    assert.equal(compiled.evaluator({ title: 'movie review', duration: 30 }), false);
+
+    // Parse failures surface a PredicateError-shaped { error, position }.
+    const bad = sandbox.compile('ctx. ');
+    assert.equal(bad.ok, false);
+    assert.equal(typeof bad.error, 'string');
+    assert.ok(bad.position >= 0);
+
+    // ReDoS guard rejects nested-quantifier regex patterns at parse time.
+    const reDoS = sandbox.compile('ctx.title.test("(a+)+")');
+    assert.equal(reDoS.ok, false);
+    assert.match(reDoS.error, /nested quantifiers/);
+
+    // Identifiers other than `ctx` are rejected (no globals reachable).
+    const escape = sandbox.compile('window.location.href.includes("evil")');
+    assert.equal(escape.ok, false);
+});
+
+test('createPredicateSandbox opens the circuit after consecutive evaluator errors (iter-7 N11)', () => {
+    const core = loadFoundation();
+    const debugCalls = [];
+    const sandbox = core.createPredicateSandbox({
+        debugLog: (category, message) => debugCalls.push([category, message])
+    });
+
+    // ctx access on a field that isn't an own property throws inside
+    // evaluate() — caught by compile()'s evaluator wrapper. 10 in a row
+    // must open the circuit and freeze all subsequent calls to false.
+    const compiled = sandbox.compile('ctx.unknown === "x"');
+    assert.equal(compiled.ok, true);
+    for (let i = 0; i < 10; i++) {
+        assert.equal(compiled.evaluator({ other: 'y' }), false);
+    }
+    // 11th call should be short-circuited regardless of ctx shape.
+    assert.equal(compiled.evaluator({ unknown: 'x' }), false);
+    // Telemetry must surface the circuit-open event.
+    const circuitMsg = debugCalls.find(([, msg]) => /Circuit opened/.test(msg));
+    assert.ok(circuitMsg, 'debugLog must record the circuit-open telemetry');
+
+    // reset() unlocks the evaluator without recompilation.
+    compiled.evaluator.reset();
+    assert.equal(compiled.evaluator({ unknown: 'x' }), true);
 });
