@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "清除"
   },
+  "storageBannerTitle": {
+    "message": "存储用量较高"
+  },
+  "storageBannerSoftTpl": {
+    "message": "存储 {size} — 接近上限。"
+  },
+  "storageBannerHardTpl": {
+    "message": "存储 {size} — 建议重置。"
+  },
+  "storageBannerReset": {
+    "message": "重置"
+  },
+  "storageBannerResetAria": {
+    "message": "重置所有本地数据"
+  },
   "healthCopyAria": {
     "message": "复制诊断详情"
   },

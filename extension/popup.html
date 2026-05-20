@@ -76,6 +76,20 @@
       <button type="button" class="health-clear-btn" id="health-clear-btn" data-i18n-attr-aria-label="healthClearAria" aria-label="Clear diagnostic log" data-i18n="healthClearBtn">Clear</button>
     </aside>
 
+    <!-- iter-6 N2: storage-quota proactive warning banner. Separate from
+         #health-banner because the action surface (jump to Reset, copy
+         storage report) is different from TT diagnostics, and the audience
+         is different — TT banner is for support; quota banner is for
+         "you're heading toward the wall." -->
+    <aside class="storage-banner" id="storage-banner" role="status" aria-live="polite" hidden>
+      <span class="storage-banner-icon" aria-hidden="true">⚠</span>
+      <span class="storage-banner-copy">
+        <strong class="storage-banner-title" data-i18n="storageBannerTitle">Storage usage high</strong>
+        <span class="storage-banner-detail" id="storage-banner-detail"></span>
+      </span>
+      <button type="button" class="storage-banner-btn" id="storage-banner-reset-btn" data-i18n-attr-aria-label="storageBannerResetAria" aria-label="Reset all local data" data-i18n="storageBannerReset">Reset</button>
+    </aside>
+
     <nav class="actions-row" data-i18n-attr-aria-label="dataMgmtAria" aria-label="Data management">
       <div class="button-row">
         <button id="export-btn" type="button" data-i18n="exportBtn">Export</button>

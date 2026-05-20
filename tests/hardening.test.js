@@ -2453,6 +2453,31 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('popup ships a storage-quota warning banner with two-tier thresholds (iter-6 N2)', () => {
+    // The popup now surfaces a proactive nudge when chrome.storage.local
+    // approaches problematic size. Astra Deck declares unlimitedStorage
+    // so there's no hard ceiling, but a runaway-growth banner is still
+    // useful UX. Tier 1 (>20 MB) starts the soft nudge; tier 2 (>50 MB)
+    // upgrades the wording.
+    assert.match(popupHtmlSource, /id="storage-banner"/,
+        'popup.html must declare the storage-banner element');
+    assert.match(popupHtmlSource, /id="storage-banner-detail"/,
+        'storage-banner must have a detail slot for the size readout');
+    assert.match(popupHtmlSource, /id="storage-banner-reset-btn"/,
+        'storage-banner must offer a Reset CTA');
+    assert.match(popupSource, /STORAGE_WARN_SOFT_BYTES\s*=\s*20\s*\*\s*1024\s*\*\s*1024/,
+        'soft threshold must be 20 MB');
+    assert.match(popupSource, /STORAGE_WARN_HARD_BYTES\s*=\s*50\s*\*\s*1024\s*\*\s*1024/,
+        'hard threshold must be 50 MB');
+    assert.match(popupSource, /function renderStorageWarningBanner/,
+        'popup.js must declare renderStorageWarningBanner');
+    // The Reset CTA must dispatch into the existing destructive-confirm
+    // dialog (resetAllData), not a separate path — accidental clicks
+    // stay guarded by the same confirmation gate.
+    assert.match(popupSource, /storageBannerResetBtn.*addEventListener.*resetAllData/s,
+        'storage-banner Reset must call resetAllData() for guarded confirmation');
+});
+
 test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered handlers (iter-6 N9)', () => {
     // Audit pass: three separate MutationObservers all watched the same
     // documentElement for different attributes. Every documentElement

@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "Löschen"
   },
+  "storageBannerTitle": {
+    "message": "Speicher-Nutzung hoch"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Speicher bei {size} — bewegt sich Richtung Grenze."
+  },
+  "storageBannerHardTpl": {
+    "message": "Speicher bei {size} — Zurücksetzen erwägen."
+  },
+  "storageBannerReset": {
+    "message": "Zurücksetzen"
+  },
+  "storageBannerResetAria": {
+    "message": "Alle lokalen Daten zurücksetzen"
+  },
   "healthCopyAria": {
     "message": "Diagnose-Details kopieren"
   },
