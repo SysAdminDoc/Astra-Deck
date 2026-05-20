@@ -5443,6 +5443,26 @@ return response;
                     sendResponse?.({ ok: true, open: false });
                     return false;
                 }
+                // Audit pass: bulk-replace from the popup's import flow. The
+                // popup used to broadcast one YTKIT_SETTING_CHANGED per key
+                // (~250 keys × open tabs per import). The bulk message is
+                // a single payload; we hand it straight to the same
+                // applyExternalSettingsUpdate path that storage.onChanged
+                // would eventually trigger, just without the storage round-
+                // trip latency.
+                if (message.type === 'YTKIT_SETTINGS_REPLACED' && message.settings) {
+                    try {
+                        applyExternalSettingsUpdate({
+                            source: 'popup-import',
+                            nextSettings: message.settings
+                        });
+                        sendResponse?.({ ok: true });
+                    } catch (e) {
+                        sendResponse?.({ ok: false, error: String(e?.message || e) });
+                    }
+                    return false;
+                }
+
                 // v3.8.0: live setting updates from the toolbar popup without reload.
                 if (message.type === 'YTKIT_SETTING_CHANGED' && message.key) {
                     try {
