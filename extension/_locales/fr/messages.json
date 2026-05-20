@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "Effacer"
   },
+  "storageBannerTitle": {
+    "message": "Stockage saturé"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Stockage à {size} — vous approchez du plafond."
+  },
+  "storageBannerHardTpl": {
+    "message": "Stockage à {size} — envisagez Réinitialiser."
+  },
+  "storageBannerReset": {
+    "message": "Réinitialiser"
+  },
+  "storageBannerResetAria": {
+    "message": "Réinitialiser toutes les données locales"
+  },
   "healthCopyAria": {
     "message": "Copier les détails de diagnostic"
   },

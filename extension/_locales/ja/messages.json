@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "クリア"
   },
+  "storageBannerTitle": {
+    "message": "ストレージ使用量が多い"
+  },
+  "storageBannerSoftTpl": {
+    "message": "ストレージは {size} です — 上限に近づいています。"
+  },
+  "storageBannerHardTpl": {
+    "message": "ストレージは {size} です — リセットを検討してください。"
+  },
+  "storageBannerReset": {
+    "message": "リセット"
+  },
+  "storageBannerResetAria": {
+    "message": "すべてのローカルデータをリセット"
+  },
   "healthCopyAria": {
     "message": "診断詳細をコピー"
   },

@@ -889,7 +889,7 @@ Verification gates (run as Q1/Q2 postflight greps, not roadmap items per Phase-5
 Next-tier (carried to iter-6):
 
 - [ ] N4 storage corruption recovery (offer reset on malformed `chrome.storage.local.get(null)`) — promote if any field `_errors` entry with `ctx: 'storage-corruption'`.
-- [ ] N2 storage.local quota warning — capacity-bumped to Now in iter-6 unless higher-leverage item displaces.
+- [x] N2 storage.local quota warning — done iter-6: two-tier proactive banner (>20 MB soft / >50 MB hard) wired to the existing destructive-confirm Reset flow; 5 i18n keys added across all 10 locales; WCAG AA verified for the new red/orange color lane.
 - [ ] N6 per-ctx error rate counters surfaced in popup health banner — bundle with N7 dashboard.
 - [x] N3 popup.html inline CSP `<meta>` belt-and-suspenders — stricter than manifest CSP (no remote connect-src/img-src); regression-tested in `tests/hardening.test.js` (iter-6).
 - [x] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — done iter-6: one observer + 3 handlers via a shared `_obsRegister` registry with combined attributeFilter; per-handler try/catch isolation; regression-tested.

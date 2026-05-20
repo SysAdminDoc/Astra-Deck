@@ -310,6 +310,22 @@ const healthClearBtn = $('#health-clear-btn');
 // clipboard without rebuilding it from DOM text.
 let healthCopyPayload = '';
 
+// iter-6 N2: storage-quota proactive warning banner.
+const storageBanner = $('#storage-banner');
+const storageBannerDetail = $('#storage-banner-detail');
+const storageBannerResetBtn = $('#storage-banner-reset-btn');
+
+// Storage warning thresholds.
+// Astra Deck declares the `unlimitedStorage` permission so the
+// default 10 MB chrome.storage.local quota is removed — but a
+// runaway-growth signal is still useful UX even without a hard
+// ceiling. Tier 1 (>20 MB) starts the soft nudge; tier 2 (>50 MB)
+// upgrades the wording. Both stay polite — the popup never auto-
+// resets; the Reset button hands the user to the existing
+// confirm-action dialog so the destructive step keeps its guard.
+const STORAGE_WARN_SOFT_BYTES = 20 * 1024 * 1024;
+const STORAGE_WARN_HARD_BYTES = 50 * 1024 * 1024;
+
 function getVersion() {
     try { return (chrome.runtime.getManifest().version || '—'); } catch { return '—'; }
 }
@@ -966,6 +982,7 @@ async function renderStorageInfo() {
         statBlocked.textContent = String(summary.blockedChannels);
         statBookmarks.textContent = String(summary.bookmarks);
         renderHealthBanner(summary.diagnostics);
+        renderStorageWarningBanner(summary.sizeBytes, summary.hiddenVideos, summary.blockedChannels, summary.bookmarks);
     } catch (error) {
         statKeys.textContent = '0';
         statSize.textContent = '0 B';
@@ -973,8 +990,39 @@ async function renderStorageInfo() {
         statBlocked.textContent = '0';
         statBookmarks.textContent = '0';
         renderHealthBanner(null);
+        renderStorageWarningBanner(0);
         showStatus(t('statusStorageReadFail', 'Storage read failed') + ': ' + error.message, 'error', 4200);
     }
+}
+
+// iter-6 N2: storage-size warning banner. Surfaces a polite nudge when
+// total chrome.storage.local payload crosses the soft threshold, and a
+// firmer wording at the hard threshold. The Reset button shares the
+// existing destructive-confirm dialog so accidental clicks are still
+// guarded.
+function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bookmarks) {
+    if (!storageBanner || !storageBannerDetail) return;
+    const bytes = Number(sizeBytes) || 0;
+    if (bytes < STORAGE_WARN_SOFT_BYTES) {
+        storageBanner.hidden = true;
+        return;
+    }
+    const sizeText = formatBytes(bytes);
+    const tier = bytes >= STORAGE_WARN_HARD_BYTES ? 'hard' : 'soft';
+    storageBanner.dataset.tier = tier;
+    // Build a compact detail string showing the four biggest contributor
+    // counts so users know which lists to trim if they don't want to nuke
+    // everything. Empty contributors omitted.
+    const parts = [];
+    if (Number.isFinite(hiddenVideos) && hiddenVideos > 0) parts.push(hiddenVideos + ' hidden');
+    if (Number.isFinite(blockedChannels) && blockedChannels > 0) parts.push(blockedChannels + ' blocked');
+    if (Number.isFinite(bookmarks) && bookmarks > 0) parts.push(bookmarks + ' bookmarks');
+    const contributors = parts.length ? ' — ' + parts.join(' · ') : '';
+    const baseTpl = tier === 'hard'
+        ? t('storageBannerHardTpl', `Storage at ${sizeText} — consider Reset.`)
+        : t('storageBannerSoftTpl', `Storage at ${sizeText} — heading toward the ceiling.`);
+    storageBannerDetail.textContent = baseTpl.replace('{size}', sizeText) + contributors;
+    storageBanner.hidden = false;
 }
 
 function renderHealthBanner(diagnostics) {
@@ -1536,4 +1584,7 @@ function installWheelScrolling() {
     });
     resetButton.addEventListener('click', () => { void resetAllData(); });
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
+    // iter-6 N2: storage-banner Reset shares the same destructive-confirm
+    // dialog as the primary Reset button so accidental clicks stay guarded.
+    if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
 })();

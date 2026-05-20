@@ -468,6 +468,93 @@ body {
   outline-offset: 2px;
 }
 
+/* ── iter-6 N2: Storage Quota Warning Banner ──
+   Sibling of the health banner but a distinct visual lane (red/orange
+   accent vs. amber) so users instantly read "this is about my data
+   footprint" not "this is about TrustedTypes." */
+
+.storage-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 99, 99, 0.35);
+  background:
+    linear-gradient(180deg, rgba(255, 99, 99, 0.06), rgba(255, 99, 99, 0.02)),
+    rgba(24, 12, 12, 0.82);
+  color: #ffd0d0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.storage-banner[hidden] { display: none; }
+
+.storage-banner-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: rgba(255, 99, 99, 0.16);
+  color: #ff8585;
+  font-weight: 900;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.storage-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.storage-banner-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ff8585;
+}
+
+.storage-banner-detail {
+  font-size: 12px;
+  color: #ffd0d0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-banner-btn {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 99, 99, 0.45);
+  background: rgba(255, 99, 99, 0.08);
+  color: #ffd0d0;
+  cursor: pointer;
+  transition: background-color var(--dur-quick) var(--ease-out),
+              border-color var(--dur-quick) var(--ease-out);
+}
+
+.storage-banner-btn:hover {
+  background: rgba(255, 99, 99, 0.15);
+  border-color: rgba(255, 99, 99, 0.65);
+}
+
+.storage-banner-btn:focus-visible {
+  outline: 2px solid rgba(255, 99, 99, 0.75);
+  outline-offset: 2px;
+}
+
 /* ── Main Action (CTA) ── */
 
 .main-action { margin: 0; }

@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "Очистить"
   },
+  "storageBannerTitle": {
+    "message": "Высокий расход хранилища"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Хранилище: {size} — приближается к пределу."
+  },
+  "storageBannerHardTpl": {
+    "message": "Хранилище: {size} — рассмотрите Сброс."
+  },
+  "storageBannerReset": {
+    "message": "Сбросить"
+  },
+  "storageBannerResetAria": {
+    "message": "Сбросить все локальные данные"
+  },
   "healthCopyAria": {
     "message": "Копировать данные диагностики"
   },
