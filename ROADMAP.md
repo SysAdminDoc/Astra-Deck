@@ -1,11 +1,11 @@
 # Astra Deck Product Superset Roadmap
 
 > Version convention: `Astra Deck vX.Y.Z`
-> Current repo version observed: `Astra Deck v4.0.0`
-> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**.
+> Current repo version observed: `Astra Deck v4.4.0`
+> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**. Post-milestone hardening cuts v4.1.0 → v4.4.0 shipped same day.
 > Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
-> Deliverable type for this run: ship the full v3.25 → v4.0.0 push, deferred items documented in CHANGELOG.
-> Generated: 2026-05-19 (refreshed)
+> Deliverable type for this run: factory-loop maintenance (Iter-5 Now-tier: N1 dep audit + N5 DOM-shape drift detection + N8 doc/version drift sync).
+> Generated: 2026-05-19 (iter-5 refresh after Phase-5 self-audit re-tier).
 
 ## Project Overview
 
@@ -867,6 +867,47 @@ Privacy and profiles:
 - `advancedLocalPredicateCode`
 
 ## Phased Build Plan
+
+### v4.5+ — Iter-5 Factory Loop (Maintenance Track)
+
+L1 delta research surfaced 18 candidates (see `docs/research/iter-5-harvest.md`).
+Tier assignments in `docs/research/iter-5-scored.md`. Phase-5 codex-direct
+self-audit verdict was **FAIL** — re-tiered per audit actions:
+
+Now-tier (this iteration, top 3 implementable):
+
+- [ ] **N1** `npm audit` rotation — last D-phase 2026-04-24 (25 d stale); run + remediate any high/critical, document medium/low deferrals.
+- [ ] **N5** YouTube DOM-shape drift detection (promoted from Next by Phase-5 audit) — extend selectorStats to track attribute-shape change events (e.g. video-id length flip from 26 to 64 chars per iSponsorBlockTV signal Δ3), not just class-hash churn.
+- [ ] **N8** Doc / version drift sync (broadened by Phase-5 audit) — CHANGELOG "Unreleased" backfill for audit-pass commits `c98d3e8` + `8650e55` + `3e949b4` AND ROADMAP.md version header `v4.0.0` → `v4.4.0` (Phase-5 caught this drift).
+- [ ] **N2** storage.local quota warning — popup banner when usage > 80% of 10 MB; preventative before chrome.storage write rejects. *Deferred to next iter — capacity-limited by 3-task cap; N5 outranked per Phase-5 audit.*
+
+Verification gates (run as Q1/Q2 postflight greps, not roadmap items per Phase-5 re-tier):
+
+- N12 Chrome 120 `chrome.alarms` compliance — verify no usage with period < 30s.
+- N13 Chrome 118 declarativeNetRequest case-sensitivity — verify no DNR usage that assumes case-sensitive URL filters.
+
+Next-tier (carried to iter-6):
+
+- [ ] N4 storage corruption recovery (offer reset on malformed `chrome.storage.local.get(null)`) — promote if any field `_errors` entry with `ctx: 'storage-corruption'`.
+- [ ] N2 storage.local quota warning — capacity-bumped to Now in iter-6 unless higher-leverage item displaces.
+- [ ] N6 per-ctx error rate counters surfaced in popup health banner — bundle with N7 dashboard.
+- [ ] N3 popup.html inline CSP `<meta>` belt-and-suspenders — promote when popup adds new dynamic-injection surfaces.
+- [ ] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — bundle with next ytkit-main.js change.
+
+Later-tier:
+
+- [ ] N7 popup selector-health dashboard
+- [ ] N14 bgutil-pot stale-version notice
+- [ ] N10 consolidate parallel TrustedHTML wrappers (core/ vs ytkit.js inline IIFE)
+
+Under Consideration:
+
+- [ ] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`.
+
+Rejected (reasoning persisted so future runs don't resurrect):
+
+- N15 Rust bgutil-pot alternative — feature add; **out of maintenance charter**.
+- N18 generate-locales.js zh_CN coverage — build-pipeline feature creep; current manual zh_CN works.
 
 ### v3.23.0: Core Registry And Settings Foundation
 
