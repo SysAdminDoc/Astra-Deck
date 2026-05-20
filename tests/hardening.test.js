@@ -34,6 +34,14 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
+// iter-7 N11 (M-phase #2): PredicateSandbox moved out of ytkit.js into
+// core/predicate-sandbox.js. The safety-invariant hardening tests read
+// this source instead so the tests follow the implementation.
+const predicateSandboxSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'core', 'predicate-sandbox.js'),
+    'utf8'
+);
+
 // ── v3.14.0 C1: ReDoS guard in videoHider ──
 
 test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () => {
@@ -1828,12 +1836,9 @@ test('reaction spammer panel surfaces a one-shot rate-limit warning toast on fir
 test('PredicateSandbox uses no eval / Function / with anywhere on its path', () => {
     // The sandbox is Option C from docs/predicate-sandbox-investigation.md —
     // expression-only AST walker. If `eval(`, `new Function(`, or `with (`
-    // appear inside the PredicateSandbox IIFE the safety promise is broken.
-    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
-    assert.ok(start > -1, 'PredicateSandbox IIFE must exist in ytkit.js');
-    // The IIFE ends at the matching '})()' followed by ';'. We bound the
-    // search by 20 KB which is comfortably larger than the implementation.
-    const block = ytkitSource.slice(start, start + 20000);
+    // appear inside the implementation the safety promise is broken.
+    // iter-7 N11: the canonical source is now extension/core/predicate-sandbox.js.
+    const block = predicateSandboxSource;
     assert.ok(!/\beval\s*\(/.test(block),
         'PredicateSandbox must not call eval()');
     assert.ok(!/new\s+Function\s*\(/.test(block),
@@ -1843,8 +1848,7 @@ test('PredicateSandbox uses no eval / Function / with anywhere on its path', () 
 });
 
 test('PredicateSandbox enforces ReDoS guard on user-supplied match/test patterns', () => {
-    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
-    const block = ytkitSource.slice(start, start + 20000);
+    const block = predicateSandboxSource;
     assert.match(block, /hasUnsafeQuantifiers/,
         'PredicateSandbox must expose a ReDoS guard helper');
     assert.match(block, /nested quantifiers \(ReDoS risk\)/,
@@ -1852,8 +1856,7 @@ test('PredicateSandbox enforces ReDoS guard on user-supplied match/test patterns
 });
 
 test('PredicateSandbox compile returns ok:false with error position on parse failure', () => {
-    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
-    const block = ytkitSource.slice(start, start + 20000);
+    const block = predicateSandboxSource;
     assert.match(block, /ok:\s*false[\s,]*error/,
         'compile() must return an { ok:false, error, position } shape on failure');
     assert.match(block, /position:\s*e instanceof PredicateError/,
@@ -1861,14 +1864,48 @@ test('PredicateSandbox compile returns ok:false with error position on parse fai
 });
 
 test('PredicateSandbox runtime budget + circuit breaker auto-disable', () => {
-    const start = ytkitSource.indexOf('const PredicateSandbox = (() => {');
-    const block = ytkitSource.slice(start, start + 20000);
+    const block = predicateSandboxSource;
     assert.match(block, /BUDGET_MS\s*=\s*5/,
         'Per-card budget must be 5 ms');
     assert.match(block, /ERROR_CIRCUIT\s*=\s*10/,
         'Circuit must open after 10 consecutive errors');
     assert.match(block, /circuitOpen\s*=\s*true/,
         'circuitOpen flag must be flipped when the budget or error gate trips');
+});
+
+test('ytkit.js consumes the PredicateSandbox factory and wires DebugManager telemetry (iter-7 N11)', () => {
+    // After the iter-7 M-phase #2 extraction, ytkit.js no longer holds
+    // the PredicateSandbox implementation — it constructs a sandbox via
+    // the core factory and forwards budget/circuit telemetry through
+    // DebugManager.log. A legacy fallback shape is retained so a missing
+    // core module surfaces as a permanently-failing compile() rather
+    // than crashing featureSet boot.
+    assert.match(
+        ytkitSource,
+        /globalThis\.YTKitCore\.createPredicateSandbox\(\{[\s\S]*?debugLog:[\s\S]*?DebugManager\.log/,
+        'ytkit.js must construct PredicateSandbox via createPredicateSandbox with a DebugManager-backed debugLog'
+    );
+    assert.match(
+        ytkitSource,
+        /PredicateSandbox core module not loaded/,
+        'ytkit.js must keep the defensive fallback error string so featureSet boots when core/predicate-sandbox.js is missing'
+    );
+    // Manifest load-order: predicate-sandbox.js must load BEFORE ytkit.js
+    // in every content_scripts entry that includes ytkit.js.
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    for (const entry of manifest.content_scripts || []) {
+        if (!Array.isArray(entry.js)) continue;
+        if (!entry.js.includes('ytkit.js')) continue;
+        const sandboxIdx = entry.js.indexOf('core/predicate-sandbox.js');
+        const ytkitIdx = entry.js.indexOf('ytkit.js');
+        assert.ok(
+            sandboxIdx > -1 && sandboxIdx < ytkitIdx,
+            'core/predicate-sandbox.js must precede ytkit.js in every content_scripts entry'
+        );
+    }
 });
 
 test('videoHider integrates predicate evaluator between metadata and duration checks', () => {
