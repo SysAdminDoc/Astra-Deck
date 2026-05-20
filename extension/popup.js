@@ -316,10 +316,15 @@ function getVersion() {
 
 const versionEl = $('#version');
 const manifestVersion = getVersion();
-versionEl.textContent = 'v' + manifestVersion;
-versionEl.title = manifestVersion === '—'
-    ? `${BRAND_NAME} version unavailable`
-    : `${BRAND_NAME} v${manifestVersion}`;
+// Defensive: a popup.html edit removing #version used to crash the entire
+// popup bootstrap at this top-level line. Audit pass: degrade gracefully
+// so the rest of the popup still functions even if the badge slot is gone.
+if (versionEl) {
+    versionEl.textContent = 'v' + manifestVersion;
+    versionEl.title = manifestVersion === '—'
+        ? `${BRAND_NAME} version unavailable`
+        : `${BRAND_NAME} v${manifestVersion}`;
+}
 
 // ── Storage wrappers ──
 
@@ -917,7 +922,10 @@ function summarizeStorage(allStorage) {
     const blockedChannels = Array.isArray(allStorage[STORAGE_KEYS.blockedChannels]) ? allStorage[STORAGE_KEYS.blockedChannels].length : 0;
     const bookmarks = countObjectEntries(allStorage[STORAGE_KEYS.bookmarks]);
     const keys = Object.keys(allStorage).length;
-    const sizeBytes = new Blob([JSON.stringify(allStorage)]).size;
+    // estimateSerializedBytes avoids the second Blob allocation `new Blob(...)`
+    // used to do just to read .size — relevant on every popup open with a
+    // multi-MB local storage payload.
+    const sizeBytes = estimateSerializedBytes(allStorage);
     const diagnostics = summarizeDiagnostics(allStorage[SETTINGS_STORAGE_KEY]);
     return {
         hiddenVideos, blockedChannels, bookmarks, keys,
@@ -1156,7 +1164,16 @@ function sanitizeImportedBookmarks(value) {
 }
 
 function estimateSerializedBytes(value) {
-    return new Blob([JSON.stringify(value)]).size;
+    // TextEncoder is dramatically cheaper than new Blob([...]) — the Blob
+    // path allocates a second copy of the payload just to read .size.
+    // Falls back to UTF-16 length × 2 if TextEncoder is missing (very old
+    // browsers); slight over-estimate but never an under-estimate, which
+    // is the safe direction for a quota check.
+    const json = JSON.stringify(value);
+    if (typeof TextEncoder !== 'undefined') {
+        return new TextEncoder().encode(json).byteLength;
+    }
+    return json.length * 2;
 }
 
 function getLegacySidebarOrder(allStorage = {}) {

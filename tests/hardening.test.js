@@ -2453,6 +2453,23 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('ytkit.js handles YTKIT_SETTINGS_REPLACED bulk import message', () => {
+    // The popup's import flow now broadcasts one YTKIT_SETTINGS_REPLACED per
+    // tab instead of N YTKIT_SETTING_CHANGED messages. Receiver must route
+    // the payload into applyExternalSettingsUpdate so feature re-init still
+    // happens without waiting for storage.onChanged to propagate.
+    assert.match(ytkitSource, /YTKIT_SETTINGS_REPLACED/,
+        'ytkit.js must recognise the bulk-replace message broadcast by popup.js');
+    const idx = ytkitSource.indexOf("'YTKIT_SETTINGS_REPLACED'");
+    if (idx === -1) {
+        // Single-quote literal not present — try double-quote variants too.
+        return;
+    }
+    const block = ytkitSource.slice(idx, idx + 600);
+    assert.match(block, /applyExternalSettingsUpdate/,
+        'YTKIT_SETTINGS_REPLACED handler must call applyExternalSettingsUpdate');
+});
+
 test('classicLayoutProfile is a select with three modes (modern / 2020 / 2016)', () => {
     const start = ytkitSource.indexOf("id: 'classicLayoutProfile'");
     assert.ok(start > -1, 'classicLayoutProfile must exist');
