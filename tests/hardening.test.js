@@ -2453,6 +2453,29 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('popup.html ships inline CSP meta with the audited tightenings (iter-6 N3)', () => {
+    // Belt-and-suspenders CSP independent of manifest. The manifest CSP can
+    // be loosened in a future refactor; the inline meta is a second wall.
+    // Stricter than manifest: no remote connect-src, no remote img-src.
+    assert.match(popupHtmlSource, /http-equiv="Content-Security-Policy"/,
+        'popup.html must declare an inline CSP meta tag');
+    // default-src 'none' is the lockdown floor — every other directive
+    // is an explicit allow.
+    assert.match(popupHtmlSource, /default-src 'none'/,
+        'CSP must default-deny');
+    // connect-src 'self' is intentional: popup.js fetches its locale
+    // override bundle via `chrome.runtime.getURL(...)` which is the
+    // extension's own origin. Anything broader is a regression.
+    assert.match(popupHtmlSource, /connect-src 'self'/,
+        "connect-src must be 'self' only (popup makes no remote network calls)");
+    // No remote img-src — popup ships its own icons.
+    assert.match(popupHtmlSource, /img-src 'self' data:/,
+        'img-src may include data: for inline SVG backgrounds but no remote');
+    // frame-ancestors 'none' — popup must never be embedded.
+    assert.match(popupHtmlSource, /frame-ancestors 'none'/,
+        "frame-ancestors 'none' prevents popup clickjacking");
+});
+
 test('every locale matches the EN message key set (no drift, no orphans)', () => {
     // Audit pass: found 4 health-save keys had drifted out of all 9 non-EN
     // locales and zh_CN carried an orphan `languageEyebrow` with no EN
