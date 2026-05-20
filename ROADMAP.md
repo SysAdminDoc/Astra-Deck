@@ -892,7 +892,7 @@ Next-tier (carried to iter-6):
 - [ ] N2 storage.local quota warning — capacity-bumped to Now in iter-6 unless higher-leverage item displaces.
 - [ ] N6 per-ctx error rate counters surfaced in popup health banner — bundle with N7 dashboard.
 - [x] N3 popup.html inline CSP `<meta>` belt-and-suspenders — stricter than manifest CSP (no remote connect-src/img-src); regression-tested in `tests/hardening.test.js` (iter-6).
-- [ ] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — bundle with next ytkit-main.js change.
+- [x] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — done iter-6: one observer + 3 handlers via a shared `_obsRegister` registry with combined attributeFilter; per-handler try/catch isolation; regression-tested.
 
 Later-tier:
 
