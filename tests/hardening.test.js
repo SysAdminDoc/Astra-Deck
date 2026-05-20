@@ -2453,6 +2453,56 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('every locale matches the EN message key set (no drift, no orphans)', () => {
+    // Audit pass: found 4 health-save keys had drifted out of all 9 non-EN
+    // locales and zh_CN carried an orphan `languageEyebrow` with no EN
+    // counterpart. chrome.i18n falls back to default_locale silently, so
+    // the regression was invisible to users on non-EN browsers but the
+    // diagnostic "Save" button rendered in English while everything else
+    // around it was localized.
+    const localesDir = path.join(__dirname, '..', 'extension', '_locales');
+    const enKeys = new Set(Object.keys(JSON.parse(
+        fs.readFileSync(path.join(localesDir, 'en', 'messages.json'), 'utf8')
+    )));
+    const localeDirs = fs.readdirSync(localesDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
+        .filter((name) => name !== 'en');
+
+    const failures = [];
+    for (const locale of localeDirs) {
+        const msgs = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'), 'utf8'
+        ));
+        const keys = new Set(Object.keys(msgs));
+        for (const k of enKeys) {
+            if (!keys.has(k)) failures.push(`${locale}: missing "${k}"`);
+        }
+        for (const k of keys) {
+            if (!enKeys.has(k)) failures.push(`${locale}: orphan "${k}"`);
+        }
+    }
+    assert.ok(failures.length === 0,
+        `locale parity violations:\n  ${failures.join('\n  ')}`);
+});
+
+test('extensionRequestWithRetry honors server Retry-After header', () => {
+    // RFC 7231 §7.1.3 — Retry-After is a strong signal that we should not
+    // hammer the server. Audit pass: prior implementation ignored the
+    // header and used pure exponential backoff, which on a 429 just made
+    // the rate-limit pressure worse.
+    const idx = ytkitSource.indexOf('async function extensionRequestWithRetry');
+    assert.ok(idx > -1, 'extensionRequestWithRetry must exist');
+    const block = ytkitSource.slice(idx, idx + 3000);
+    assert.match(block, /_findRetryAfter/,
+        'must parse Retry-After from responseHeaders');
+    // Helpers live just above the function so we look across a wider window
+    // for the ceiling constant.
+    const wideBlock = ytkitSource.slice(Math.max(0, idx - 1500), idx + 3000);
+    assert.match(wideBlock, /RETRY_AFTER_MAX_MS/,
+        'must cap honored Retry-After to a finite ceiling');
+});
+
 test('ytkit.js handles YTKIT_SETTINGS_REPLACED bulk import message', () => {
     // The popup's import flow now broadcasts one YTKIT_SETTINGS_REPLACED per
     // tab instead of N YTKIT_SETTING_CHANGED messages. Receiver must route

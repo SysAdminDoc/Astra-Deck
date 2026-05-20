@@ -297,7 +297,38 @@
         });
     }
 
-    // v3.9.0: retry with exponential backoff for transient failures
+    // v3.9.0: retry with exponential backoff for transient failures.
+    // Audit pass: honour Retry-After when the server provides one — clients
+    // that ignore it on a 429 just compound the rate-limit pressure. Cap at
+    // 60 s so a malicious / buggy server can't park our request indefinitely.
+    const RETRY_AFTER_MAX_MS = 60000;
+    function _parseRetryAfter(headerValue) {
+        if (typeof headerValue !== 'string') return null;
+        const trimmed = headerValue.trim();
+        if (!trimmed) return null;
+        // RFC 7231: delta-seconds (positive integer).
+        if (/^\d+$/.test(trimmed)) {
+            const seconds = parseInt(trimmed, 10);
+            if (!Number.isFinite(seconds) || seconds <= 0) return null;
+            return Math.min(RETRY_AFTER_MAX_MS, seconds * 1000);
+        }
+        // RFC 7231: HTTP-date. Parse via Date so absolute timestamps work.
+        const ms = Date.parse(trimmed);
+        if (!Number.isFinite(ms)) return null;
+        const delta = ms - Date.now();
+        if (delta <= 0) return null;
+        return Math.min(RETRY_AFTER_MAX_MS, delta);
+    }
+    function _findRetryAfter(responseHeaders) {
+        if (typeof responseHeaders !== 'string' || !responseHeaders) return null;
+        for (const line of responseHeaders.split(/\r?\n/)) {
+            const idx = line.indexOf(':');
+            if (idx <= 0) continue;
+            if (line.slice(0, idx).trim().toLowerCase() !== 'retry-after') continue;
+            return _parseRetryAfter(line.slice(idx + 1));
+        }
+        return null;
+    }
     async function extensionRequestWithRetry(details, { retries = 3, baseDelayMs = 1000 } = {}) {
         let lastErr;
         for (let attempt = 0; attempt <= retries; attempt++) {
@@ -307,7 +338,13 @@
                 // Retry on 5xx / 429. Return on everything else.
                 if (st && (st === 429 || (st >= 500 && st < 600)) && attempt < retries) {
                     lastErr = new Error('HTTP ' + st);
-                    await new Promise(r => setTimeout(r, baseDelayMs * Math.pow(2, attempt)));
+                    // Server-provided Retry-After wins over the exponential
+                    // schedule when present and reasonable; otherwise fall back
+                    // to the exponential delay so we still back off.
+                    const serverHint = _findRetryAfter(resp?.responseHeaders);
+                    const expDelay = baseDelayMs * Math.pow(2, attempt);
+                    const delay = serverHint != null ? Math.max(serverHint, expDelay) : expDelay;
+                    await new Promise(r => setTimeout(r, delay));
                     continue;
                 }
                 return resp;
