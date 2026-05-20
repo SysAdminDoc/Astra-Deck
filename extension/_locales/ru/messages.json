@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Данные хранилища повреждены — Сбросьте для восстановления."
   },
+  "selectorHealthTitle": {
+    "message": "Состояние селекторов"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "Отслеживается поверхностей: {count}"
+  },
+  "selectorHealthEmpty": {
+    "message": "Поверхности ещё не зафиксированы."
+  },
   "storageBannerReset": {
     "message": "Сбросить"
   },

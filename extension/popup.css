@@ -555,6 +555,104 @@ body {
   outline-offset: 2px;
 }
 
+/* ── iter-6 N7: Selector Health Dashboard ──
+   Compact list of top problematic YouTube DOM surfaces + diagnostic-log
+   per-ctx counts. Rendered only on YouTube tabs (popup queries the active
+   tab via YTKIT_GET_SELECTOR_HEALTH). Visual lane is neutral/muted —
+   informational, not an alarm — so it doesn't compete with the red/orange
+   storage banner or amber TT health banner for attention. */
+
+.selector-health {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.selector-health[hidden] { display: none; }
+
+.selector-health-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.selector-health-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.selector-health-total {
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.selector-health-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selector-health-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 3px 0;
+  color: var(--text-secondary);
+}
+
+.selector-health-list .sh-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selector-health-list .sh-stats {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.selector-health-list .sh-stats .sh-errors { color: #ff8585; }
+.selector-health-list .sh-stats .sh-drifts { color: #ffb84d; }
+
+.selector-health-ctx {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.selector-health-ctx .sh-ctx-chip {
+  font-variant-numeric: tabular-nums;
+}
+
+.selector-health-empty {
+  text-align: center;
+  padding: 6px 0;
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
 /* ── Main Action (CTA) ── */
 
 .main-action { margin: 0; }

@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "ストレージデータが破損しています — リセットして復旧してください。"
   },
+  "selectorHealthTitle": {
+    "message": "セレクター状態"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} 個のサーフェスを追跡中"
+  },
+  "selectorHealthEmpty": {
+    "message": "まだサーフェスがサンプリングされていません。"
+  },
   "storageBannerReset": {
     "message": "リセット"
   },

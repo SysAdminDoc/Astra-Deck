@@ -5568,6 +5568,50 @@ return response;
                     return false;
                 }
 
+                // iter-6 N7: selector-health snapshot for popup dashboard.
+                // Returns a compact summary (top-K problematic surfaces +
+                // per-ctx diagnostic counts) so the popup can render
+                // without round-tripping the whole snapshot. Read-only —
+                // does not mutate any state.
+                if (message.type === 'YTKIT_GET_SELECTOR_HEALTH') {
+                    try {
+                        const snapshot = (typeof getSelectorHealthSnapshot === 'function'
+                            ? getSelectorHealthSnapshot()
+                            : []) || [];
+                        const surfaces = snapshot
+                            .map((s) => ({
+                                surface: s.surface,
+                                hits: s.hitCount,
+                                misses: s.missCount,
+                                errors: s.errorCount,
+                                shapeDrifts: s.selectors.reduce((sum, sel) => sum + (sel.shapeDrifts || 0), 0),
+                                hasShapeSample: s.selectors.some((sel) => sel.hasShapeSample === true),
+                                highChurn: s.highChurn,
+                                needsFreshCapture: s.needsFreshCapture
+                            }));
+                        // Sort by trouble-score descending: errors first,
+                        // then misses, then shape-drifts. Hit-only surfaces
+                        // land last so the popup naturally shows trouble
+                        // spots at the top.
+                        surfaces.sort((a, b) => {
+                            const score = (x) => x.errors * 100 + x.misses + x.shapeDrifts;
+                            return score(b) - score(a);
+                        });
+                        const ctxCounts = (typeof DiagnosticLog !== 'undefined' && DiagnosticLog?.countsByCtx)
+                            ? DiagnosticLog.countsByCtx()
+                            : {};
+                        sendResponse?.({
+                            ok: true,
+                            surfaces: surfaces.slice(0, 12),  // bound payload — popup only shows top few
+                            totalSurfaces: surfaces.length,
+                            ctxCounts
+                        });
+                    } catch (e) {
+                        sendResponse?.({ ok: false, error: String(e?.message || e) });
+                    }
+                    return false;
+                }
+
                 // v3.8.0: live setting updates from the toolbar popup without reload.
                 if (message.type === 'YTKIT_SETTING_CHANGED' && message.key) {
                     try {

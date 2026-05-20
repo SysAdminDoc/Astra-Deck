@@ -2453,6 +2453,32 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('popup ships a selector-health dashboard wired to the content script (iter-6 N7)', () => {
+    // The popup now surfaces a top-K selector trouble list + per-ctx
+    // diagnostic counts. Both flow through one round-trip message
+    // (YTKIT_GET_SELECTOR_HEALTH) to the active YouTube tab. Hidden
+    // gracefully on non-YT tabs or when the content script doesn't
+    // respond in time (1500 ms timeout).
+    assert.match(popupHtmlSource, /id="selector-health"/,
+        'popup.html must declare the selector-health section');
+    assert.match(popupHtmlSource, /id="selector-health-list"/,
+        'selector-health section must include the trouble list');
+    assert.match(popupHtmlSource, /id="selector-health-ctx"/,
+        'selector-health section must include the ctx-chip strip');
+    assert.match(popupSource, /function renderSelectorHealthDashboard/,
+        'popup.js must declare renderSelectorHealthDashboard');
+    assert.match(popupSource, /YTKIT_GET_SELECTOR_HEALTH/,
+        'popup.js must dispatch the YTKIT_GET_SELECTOR_HEALTH message');
+    // The content-script-side handler must exist on the ytkit.js side too.
+    assert.match(ytkitSource, /YTKIT_GET_SELECTOR_HEALTH/,
+        'ytkit.js must register the YTKIT_GET_SELECTOR_HEALTH message handler');
+    assert.match(ytkitSource, /surfaces:\s*surfaces\.slice\(0, 12\)/,
+        'ytkit.js handler must bound the response payload (top 12 surfaces)');
+    // Timeout / non-YT graceful hide.
+    assert.match(popupSource, /selectorHealthSection\.hidden\s*=\s*true/,
+        'popup.js must hide the dashboard when no response is available');
+});
+
 test('ytkit.js TrustedHTML.setHTML delegates the no-policy fallback to core/trusted-html.js (iter-6 N10)', () => {
     // N10 deduplicates the parallel DOMParser fallback logic. ytkit.js
     // still owns the policy-attempt + diagnostic-recording surface (it

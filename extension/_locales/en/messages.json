@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Storage data malformed — Reset to recover."
   },
+  "selectorHealthTitle": {
+    "message": "Selector health"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} surfaces tracked"
+  },
+  "selectorHealthEmpty": {
+    "message": "No surfaces sampled yet."
+  },
   "storageBannerReset": {
     "message": "Reset"
   },

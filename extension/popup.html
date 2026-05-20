@@ -65,6 +65,21 @@
       </div>
     </section>
 
+    <!-- iter-6 N7: selector-health dashboard. Only rendered when the
+         active tab is a YouTube page; otherwise hidden by JS so the
+         popup stays compact on non-YT tabs. Shows top problematic
+         surfaces (errors > misses > drifts) + diagnostic-log per-ctx
+         counts from N6. Both are read-only, sourced via a single
+         YTKIT_GET_SELECTOR_HEALTH round-trip to the active tab. -->
+    <section class="selector-health" id="selector-health" aria-label="Selector health snapshot" hidden>
+      <header class="selector-health-head">
+        <strong class="selector-health-title" data-i18n="selectorHealthTitle">Selector health</strong>
+        <span class="selector-health-total" id="selector-health-total" aria-live="polite"></span>
+      </header>
+      <ul class="selector-health-list" id="selector-health-list" role="list"></ul>
+      <div class="selector-health-ctx" id="selector-health-ctx" aria-live="polite"></div>
+    </section>
+
     <aside class="health-banner" id="health-banner" role="status" aria-live="polite" hidden>
       <span class="health-icon" aria-hidden="true">!</span>
       <span class="health-copy">

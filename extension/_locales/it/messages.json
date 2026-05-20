@@ -290,6 +290,15 @@
   "storageBannerCorruptionTpl": {
     "message": "Dati di archivio corrotti — Ripristina per recuperare."
   },
+  "selectorHealthTitle": {
+    "message": "Salute selettori"
+  },
+  "selectorHealthTotalTpl": {
+    "message": "{count} superfici monitorate"
+  },
+  "selectorHealthEmpty": {
+    "message": "Nessuna superficie ancora campionata."
+  },
   "storageBannerReset": {
     "message": "Reimposta"
   },
