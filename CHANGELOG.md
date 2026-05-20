@@ -6,6 +6,88 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Hardening (post-v4.4.0)
+
+- **TrustedTypes bypass repaired** in `extension/ytkit.js` AI handoff button
+  and `theater-split.user.js` close button. Both were direct
+  `element.innerHTML = '<svg…>'` assignments that throw under YouTube's
+  strict TT CSP. Rebuilt the SVG via `createElementNS` / `appendChild`.
+- **No-pill-backdrop rule** propagated across every Astra-injected CSS.
+  Three sites in `ytkit.js` (volume HUD bar, sub-group chip, sub-new
+  badge) and fourteen sites in `theater-split.user.js` (live badge,
+  view-count badge, twelve button overrides) used `border-radius: 999px`
+  and now use 4-8 px. Two new hardening tests guard against the next
+  regression — `tests/hardening.test.js` "no Astra-injected CSS uses
+  pill (999px) backdrops anywhere in ytkit.js" and the matching
+  theater-split assertion.
+- **`core/api-limiter.js clear()` no longer drops queued promises.**
+  Awaiters used to hang forever when a feature destroyed its limiter
+  mid-flight. Now rejects every pending task with a clear error.
+- **`core/selectors.js waitForSurfaceElement` redundant timeout leak fixed.**
+  Two parallel timers (the inner `core.waitForElement` and an explicit
+  fallback) both ran to expiry; the fallback handle was never cleared.
+- **`core/trusted-html.js setTrustedHTML` last-resort fallback hardened.**
+  Replaced `element.insertAdjacentHTML('afterbegin', plainString)` (a
+  TT-policed sink fed a raw string) with parsed-fragment `appendChild`,
+  so we never touch a TT sink with a non-TrustedHTML value.
+- **Popup import bulk-broadcast.** `extension/popup.js` used to send
+  one `chrome.tabs.sendMessage` per setting key (~250 messages × open
+  YouTube tabs per import). Now sends a single
+  `YTKIT_SETTINGS_REPLACED` per tab; `extension/ytkit.js` routes it
+  straight into `applyExternalSettingsUpdate` so feature re-init fires
+  immediately without waiting for `storage.onChanged` propagation.
+- **`astra_downloader._run_download` error truncation.** The branch
+  that captured `error_lines[-1]` skipped the 240-char cap the fallback
+  branch already applied; a yt-dlp ERROR with a Python traceback could
+  round-trip unbounded to the popup. Both branches now truncate
+  consistently.
+- **Defensive `versionEl` null-guard** in `popup.js` — any future
+  `popup.html` edit that removes `#version` would crash the popup
+  bootstrap; now degrades gracefully.
+- **Perf**: `popup.js` switched two hot-path size accounting sites
+  from `new Blob([JSON.stringify(value)]).size` to
+  `TextEncoder.encode().byteLength` (UTF-16 length × 2 fallback for
+  ancient engines). Material on every popup open with multi-MB local
+  storage.
+
+### i18n / l10n
+
+- **Locale parity restored.** Four health-save keys
+  (`healthSaveAria`, `healthSaveBtn`, `statusDiagSaved`,
+  `statusDiagSaveFail`) had drifted out of every non-EN locale when
+  v3.23.0 shipped the Save Diagnostic feature but never propagated.
+  Backfilled translations in all 9 non-EN locales
+  (de / es / fr / it / ja / ko / pt_BR / ru / zh_CN). Updated
+  `scripts/generate-locales.js` so re-running the generator emits the
+  same translations instead of falling back to English.
+- **Removed `zh_CN` orphan key** `languageEyebrow` (not present in
+  EN; not referenced anywhere in code).
+- **`scripts/check-i18n.js` extended** with a per-locale parity gate
+  that fails CI on missing-key drift AND on orphan keys. Output now
+  reports "Locale parity OK — N non-EN locales match EN key set".
+
+### Networking
+
+- **`extensionRequestWithRetry` honors `Retry-After`** (RFC 7231 §7.1.3 —
+  delta-seconds OR HTTP-date), capped at 60 s ceiling so a hostile or
+  buggy server can't park a request indefinitely. Falls back to the
+  exponential schedule as a floor when the server hint is shorter.
+
+### Dependencies
+
+- **`brace-expansion` 5.0.5 → 5.0.6** to address GHSA-jxxr-4gwj-5jf2
+  (moderate DoS via large numeric range). Dev-only — transitive through
+  `eslint`.
+
+### Tests + CI
+
+- 258 → 265 tests (+7 regression assertions: api-limiter clear()
+  reject behavior, pill-backdrop guard in ytkit.js + theater-split,
+  direct-innerHTML-SVG detector, locale parity gate, Retry-After
+  honoring, YTKIT_SETTINGS_REPLACED handler presence).
+- `npm run check` continues green; locale-parity gate now runs in
+  CI via the extended `scripts/check-i18n.js`.
+
 ## [4.4.0] - Audit-Pass Hardening
 
 Repo-wide audit pass — defensive hardening of security boundaries,
