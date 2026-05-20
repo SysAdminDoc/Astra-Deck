@@ -902,11 +902,12 @@ Later-tier:
 
 Under Consideration:
 
-- [~] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`. **Iter-7 partial M-phase landed (2 extractions):**
+- [~] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`. **Iter-7 partial M-phase landed (3 extractions):**
   1. `DiagnosticLog` → `extension/core/diagnostic-log.js` as a `createDiagnosticLog({getSettings, saveSettings, getVersion, cap})` factory. Bug fix carried: `record()` resyncs counters BEFORE the push so cross-session ring entries are counted exactly once (prior inline impl did push→resync→increment, double-counting the first record on a fresh session). Inline-IIFE fallback retained for unit-test isolation.
   2. `PredicateSandbox` → `extension/core/predicate-sandbox.js` as a `createPredicateSandbox({debugLog})` factory exporting `{compile, PredicateError}`. The 303-line expression-only AST walker (Option C) moved out cleanly with no behavioral change. `ytkit.js` consumes the factory and wires `DebugManager.log` for budget/circuit telemetry. Defensive fallback: a missing core module yields a permanently-failing `compile()` rather than a crash. Hardening invariants (no eval/Function/with, ReDoS guard, 5ms budget, 10-error circuit, ok:false-with-position) now assert against `core/predicate-sandbox.js` instead of `ytkit.js`.
+  3. `VideoTypeDetector` → `extension/core/video-type.js` as a `createVideoTypeDetector({getPlayerResponse, getVideoId, getMainVideoElement, debugLog})` factory. The 76-line live/vod/standard/premiere classifier (used by 7 feature surfaces incl. Theater Split) moved out; `ytkit.js` retains a no-op fallback that classifies everything as 'standard' so feature surfaces don't crash if the core module fails to load. The bugfix-validation invariant pinning the DOM-live-override semantics (`domType === 'live' ? 'live' : (responseType || domType || 'standard')`) now asserts against `core/video-type.js`.
   
-  Manifest load-order updated (regular + live_chat content_scripts). `ytkit.js` shrunk from 44,264 → 43,976 lines. +6 regression tests total across `tests/core-foundation.test.js` and `tests/hardening.test.js`. Remaining extractions (settings manager, observer registry, feature surfaces) require dedicated future M-phase runs.
+  Manifest load-order updated (regular + live_chat content_scripts). `ytkit.js` shrunk from 44,264 → 43,924 lines (-340). +9 regression tests total across `tests/core-foundation.test.js`, `tests/hardening.test.js`, and `tests/bugfix-validation.test.js`. Remaining extractions (settings manager, observer registry, MediaDLManager, TranscriptService, feature surfaces) require dedicated future M-phase runs.
 
 Rejected (reasoning persisted so future runs don't resurrect):
 
