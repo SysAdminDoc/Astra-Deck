@@ -891,7 +891,7 @@ Next-tier (carried to iter-6):
 - [ ] N4 storage corruption recovery (offer reset on malformed `chrome.storage.local.get(null)`) — promote if any field `_errors` entry with `ctx: 'storage-corruption'`.
 - [ ] N2 storage.local quota warning — capacity-bumped to Now in iter-6 unless higher-leverage item displaces.
 - [ ] N6 per-ctx error rate counters surfaced in popup health banner — bundle with N7 dashboard.
-- [ ] N3 popup.html inline CSP `<meta>` belt-and-suspenders — promote when popup adds new dynamic-injection surfaces.
+- [x] N3 popup.html inline CSP `<meta>` belt-and-suspenders — stricter than manifest CSP (no remote connect-src/img-src); regression-tested in `tests/hardening.test.js` (iter-6).
 - [ ] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — bundle with next ytkit-main.js change.
 
 Later-tier:
