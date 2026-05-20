@@ -191,6 +191,14 @@ INTEGRATIONS_STAMP_VALUE = 'IntegrationsVersion'
 PO_TOKEN_PROVIDER_PORT = 4416
 PO_TOKEN_PROVIDER_PROBE_TIMEOUT = 1.0
 _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
+# v1.5.0 (iter-6 N14): minimum bgutil-ytdlp-pot-provider version that is
+# known to work cleanly with current yt-dlp. Bumped when upstream fixes
+# something that materially changes our success rate (PO token format
+# change, attestation extractor change, etc.). Older providers may still
+# work but the extension popup surfaces a notice asking the user to update.
+# Compare via the local _compare_semver helper — handles X.Y / X.Y.Z and
+# pre-release suffixes by truncating at the first non-numeric segment.
+BGUTIL_POT_MIN_VERSION = "1.3.0"
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
@@ -546,13 +554,59 @@ def is_youtube_url(url):
     return bool(_YOUTUBE_HOST_RE.match(url or ''))
 
 
+def _compare_semver(a, b):
+    """Lightweight semver comparator for X.Y / X.Y.Z strings.
+
+    Returns -1, 0, 1. Pre-release / build suffixes drop the whole
+    suffixed chunk and stop the parse (so '1.3.1-rc.2' is treated as
+    '1.3.1' — pre-release sorts less-than the release proper, but in
+    practice we only compare *user-reported running version* to a
+    minimum-known-good, never to another pre-release, so treating
+    suffixed-1.3.1 == 1.3.1 is the conservative call).
+    Designed for the N14 stale-provider check; not a full semver impl.
+    """
+    def parts(s):
+        if not isinstance(s, str):
+            return []
+        out = []
+        for chunk in s.strip().lstrip('vV').split('.'):
+            digits = ''
+            for ch in chunk:
+                if ch.isdigit():
+                    digits += ch
+                else:
+                    break
+            if not digits:
+                break
+            out.append(int(digits))
+            # If the chunk had a non-digit tail (e.g. '1-rc' or '1+build'),
+            # stop the whole parse so suffix segments after the dot don't
+            # affect the comparison.
+            if digits != chunk:
+                break
+        return out
+    pa, pb = parts(a), parts(b)
+    n = max(len(pa), len(pb))
+    pa += [0] * (n - len(pa))
+    pb += [0] * (n - len(pb))
+    if pa < pb: return -1
+    if pa > pb: return 1
+    return 0
+
+
 def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT):
     """Best-effort detection of a running bgutil-ytdlp-pot-provider.
 
-    Returns ``{'ok': True, 'port': int, 'version': str | None}`` when the
-    provider's HTTP server responds on ``127.0.0.1:4416``, ``None`` otherwise.
-    Cached for 30 s. The probe uses a tight timeout so a stale firewall hold
-    can't gum up health polling.
+    Returns ``{'ok': True, 'port': int, 'version': str | None, 'stale': bool,
+    'minVersion': str}`` when the provider's HTTP server responds on
+    ``127.0.0.1:4416``, ``None`` otherwise. Cached for 30 s. The probe uses
+    a tight timeout so a stale firewall hold can't gum up health polling.
+
+    The ``stale`` field (iter-6 N14) is true when the detected version
+    string compares less than ``BGUTIL_POT_MIN_VERSION``. The extension
+    popup health surface renders an amber "update bgutil-pot" notice on
+    stale, distinct from the absence notice when the provider isn't running
+    at all.
 
     The provider's ``/ping`` endpoint is the documented liveness check; older
     builds expose ``/`` instead. We accept either as long as the body parses
@@ -584,10 +638,24 @@ def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT
                 raw = payload.get('version') or payload.get('plugin_version')
                 if raw is not None:
                     version = str(raw)[:32]
+            # iter-6 N14: stale-version comparison. Stale is only set true
+            # when the detected version parses cleanly AND compares less
+            # than BGUTIL_POT_MIN_VERSION. Unknown version -> stale=False
+            # (don't false-positive on older provider builds that don't
+            # return a version field).
+            stale = False
+            if version:
+                try:
+                    if _compare_semver(version, BGUTIL_POT_MIN_VERSION) < 0:
+                        stale = True
+                except Exception:
+                    stale = False
             result = {
                 'ok': True,
                 'port': PO_TOKEN_PROVIDER_PORT,
                 'version': version,
+                'stale': stale,
+                'minVersion': BGUTIL_POT_MIN_VERSION,
             }
             break
         cache['value'] = result
