@@ -5370,82 +5370,30 @@ return response;
     // Centralized detection: 'live' | 'vod' | 'standard' | 'premiere'
     // Used by Theater Split to decide what goes in the right panel,
     // and by other features to skip irrelevant operations.
-    const VideoTypeDetector = {
-        _cache: { videoId: null, type: 'standard' },
-
-        // Primary detection via ytInitialPlayerResponse (most reliable)
-        _fromPlayerResponse() {
-            try {
-                const pr = _rw.ytInitialPlayerResponse;
-                if (!pr?.videoDetails) return null;
-                const d = pr.videoDetails;
-                const vid = getVideoId();
-                if (d.videoId && d.videoId !== vid) return null; // stale response
-                if (d.isUpcoming) return 'premiere';
-                if (d.isLive) return 'live';
-                if (d.isLiveContent || d.isPostLiveDvr) return 'vod';
-                return 'standard';
-            } catch (e) { return null; }
-        },
-
-        // Fallback: DOM signals
-        _fromDOM() {
-            const video = getMainVideoElement();
-            const liveBadge = document.querySelector('.ytp-live-badge');
-            const liveBadgeActive = liveBadge && !liveBadge.classList.contains('ytp-live-badge-disabled')
-                && window.getComputedStyle(liveBadge).display !== 'none';
-            const chatFrame = document.querySelector('ytd-live-chat-frame#chat, ytd-live-chat-frame, #chat');
-            const hasChatFrame = chatFrame && !chatFrame.hasAttribute('hidden');
-
-            // Check ytd-watch-flexy for live attribute (YouTube sets this on live pages)
-            const watchFlexy = document.querySelector('ytd-watch-flexy');
-            const flexyIsLive = watchFlexy?.hasAttribute('is-live');
-
-            // Currently live: badge active OR flexy attribute
-            if (liveBadgeActive || flexyIsLive) return 'live';
-            if (video && !isFinite(video.duration) && hasChatFrame) return 'live';
-
-            // VOD: has chat frame (replay) but not currently live
-            if (hasChatFrame && video && isFinite(video.duration)) return 'vod';
-
-            // Chat frame present but no video yet — likely live or VOD
-            if (hasChatFrame) return 'vod';
-
-            return 'standard';
-        },
-
-        // Get cached type for current video, refreshing if video changed
-        getType() {
-            const vid = getVideoId();
-            if (vid && vid === this._cache.videoId) return this._cache.type;
-            this.refresh();
-            return this._cache.type;
-        },
-
-        // Force refresh detection
-        refresh() {
-            const vid = getVideoId();
-            const responseType = this._fromPlayerResponse();
-            const domType = this._fromDOM();
-            const type = domType === 'live' ? 'live' : (responseType || domType || 'standard');
-            this._cache = { videoId: vid, type };
-            DebugManager.log('VideoType', `Detected: ${type} for ${vid}`);
-            return type;
-        },
-
-        // Convenience checks
-        isLive()      { return this.getType() === 'live'; },
-        isVOD()       { return this.getType() === 'vod'; },
-        isStandard()  { return this.getType() === 'standard'; },
-        isPremiere()  { return this.getType() === 'premiere'; },
-        hasChat()     { return this.isLive() || this.isVOD(); },
-        hasComments() { return this.isStandard() || this.isVOD(); },
-
-        // Get the chat element (ytd-live-chat-frame or #chat container)
-        getChatEl() {
-            return document.querySelector('ytd-live-chat-frame#chat, ytd-live-chat-frame, #chat');
-        }
-    };
+    //
+    // iter-7 N11 (M-phase extraction #3): full implementation lives in
+    // `core/video-type.js` exposing `createVideoTypeDetector`. The fallback
+    // below is only reached when the core module failed to load — it returns
+    // a no-op detector that classifies everything as 'standard' and reports
+    // hasChat()/hasComments() defensively so feature surfaces don't crash.
+    const VideoTypeDetector = (globalThis.YTKitCore && globalThis.YTKitCore.createVideoTypeDetector)
+        ? globalThis.YTKitCore.createVideoTypeDetector({
+            getPlayerResponse: () => _rw.ytInitialPlayerResponse,
+            getVideoId: () => getVideoId(),
+            getMainVideoElement: () => getMainVideoElement(),
+            debugLog: (category, message) => DebugManager.log(category, message)
+        })
+        : {
+            getType() { return 'standard'; },
+            refresh() { return 'standard'; },
+            isLive() { return false; },
+            isVOD() { return false; },
+            isStandard() { return true; },
+            isPremiere() { return false; },
+            hasChat() { return false; },
+            hasComments() { return true; },
+            getChatEl() { return document.querySelector('ytd-live-chat-frame#chat, ytd-live-chat-frame, #chat'); }
+        };
 
     // ─── Conflict Detection Map ───
     const CONFLICT_MAP = {
