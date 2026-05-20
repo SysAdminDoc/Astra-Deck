@@ -2453,6 +2453,31 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('ytkit.js TrustedHTML.setHTML delegates the no-policy fallback to core/trusted-html.js (iter-6 N10)', () => {
+    // N10 deduplicates the parallel DOMParser fallback logic. ytkit.js
+    // still owns the policy-attempt + diagnostic-recording surface (it
+    // captures the TT_POLICY_FAIL reason and writes to DiagnosticLog),
+    // but the actual DOMParser-then-appendChild work is delegated to the
+    // hardened core helper so both wrappers stay in lockstep.
+    const idx = ytkitSource.indexOf('const TrustedHTML = (() => {');
+    assert.ok(idx > -1, 'ytkit.js must declare its TrustedHTML wrapper');
+    // Read until the IIFE closes — the wrapper now has more conditional
+    // paths (policy attempt + diagnostic + core-delegate + inline fallback)
+    // and the modifications live near the end.
+    const end = ytkitSource.indexOf('})();', idx);
+    const block = ytkitSource.slice(idx, end + 5);
+    assert.match(block, /globalThis\.YTKitCore/,
+        'TrustedHTML wrapper must reach for the core module by name');
+    assert.match(block, /core\.setTrustedHTML\(element, html\)/,
+        'setHTML must call core.setTrustedHTML on the no-policy path');
+    assert.match(block, /core\.toTrustedHTML\(html\)/,
+        'create() must call core.toTrustedHTML on the no-policy path');
+    // Legacy inline DOMParser fallback must still exist as the last-resort
+    // safety net for unit-test contexts that load ytkit.js in isolation.
+    assert.match(block, /Inline fallback \(legacy code path\)/,
+        'inline DOMParser fallback must remain as last-resort safety net');
+});
+
 test('DiagnosticLog exposes per-ctx counters via countsByCtx() (iter-6 N6)', () => {
     // Popup health surface used to surface only TT events. With multiple
     // ctx classes flowing through the ring (trusted-types, selector-health,

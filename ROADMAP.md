@@ -898,7 +898,7 @@ Later-tier:
 
 - [ ] N7 popup selector-health dashboard
 - [x] N14 bgutil-pot stale-version notice — done iter-6: `probe_po_token_provider` now includes `stale` + `minVersion` fields in the `/health.poTokenProvider` payload when the running provider reports a version less than `BGUTIL_POT_MIN_VERSION` ("1.3.0"). Comparator is a lightweight semver impl handling `v` prefix, pre-release suffix truncation, and uneven part counts. Python suite +3 tests (67 total green).
-- [ ] N10 consolidate parallel TrustedHTML wrappers (core/ vs ytkit.js inline IIFE)
+- [x] N10 consolidate parallel TrustedHTML wrappers — done iter-6: `ytkit.js`'s no-policy fallback path now delegates to `core/trusted-html.js`'s `setTrustedHTML` + `toTrustedHTML` when the core module is loaded. Inline DOMParser fallback retained as a last-resort safety net for unit tests that load `ytkit.js` in isolation. Diagnostic-recording surface (`fallbackReason` capture, `logFallbackOnce` → `DiagnosticLog.record('trusted-types', ...)`) preserved.
 
 Under Consideration:
 
