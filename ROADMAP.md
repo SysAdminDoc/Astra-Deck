@@ -902,7 +902,7 @@ Later-tier:
 
 Under Consideration:
 
-- [ ] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`.
+- [~] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`. **Iter-7 partial M-phase landed:** `DiagnosticLog` extracted to `extension/core/diagnostic-log.js` as a `createDiagnosticLog({getSettings, saveSettings, getVersion, cap})` factory, manifest load-order updated (regular + live_chat content_scripts), `ytkit.js` consumes the factory with an inline-IIFE fallback for unit-test isolation. Bug fix carried with the move: `record()` resyncs counters BEFORE the push so cross-session ring entries are counted exactly once (prior inline impl did push→resync→increment, double-counting the first record on a fresh session). +3 regression tests across `tests/core-foundation.test.js` and `tests/hardening.test.js`. Remaining extractions (settings manager, observer registry, feature surfaces) require dedicated future M-phase runs.
 
 Rejected (reasoning persisted so future runs don't resurrect):
 

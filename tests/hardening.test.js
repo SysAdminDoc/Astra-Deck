@@ -2453,6 +2453,41 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('ytkit.js DiagnosticLog instantiates from core/diagnostic-log.js factory when present (iter-6 N11)', () => {
+    // First M-phase extraction toward N11 (the ytkit.js monolith). The
+    // DiagnosticLog implementation now lives in core/diagnostic-log.js;
+    // ytkit.js consumes it via the factory, falling back to the legacy
+    // inline IIFE only when the core module isn't loaded (userscript
+    // build / unit tests that load ytkit.js in isolation).
+    const idx = ytkitSource.indexOf('const DiagnosticLog = (function () {');
+    assert.ok(idx > -1, 'DiagnosticLog must be an IIFE that picks factory vs legacy');
+    const block = ytkitSource.slice(idx, idx + 4000);
+    assert.match(block, /globalThis\.YTKitCore && globalThis\.YTKitCore\.createDiagnosticLog/,
+        'factory path must guard on YTKitCore.createDiagnosticLog presence');
+    assert.match(block, /getSettings:\s*\(\)\s*=>\s*\(appState && appState\.settings\)/,
+        'factory must be wired with the ytkit.js appState.settings accessor');
+    assert.match(block, /saveSettings:\s*\(settings\)\s*=>\s*\{[\s\S]*?settingsManager\.save\(settings\)/,
+        'factory must be wired with the settingsManager.save accessor');
+    assert.match(block, /Legacy fallback/,
+        'inline-IIFE fallback must remain for userscript/test contexts');
+
+    // Manifest content_scripts must load the new core file BEFORE ytkit.js
+    // (otherwise the factory check on ytkit.js's first execution would fail).
+    const manifestSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    );
+    const manifest = JSON.parse(manifestSrc);
+    for (const cs of manifest.content_scripts || []) {
+        if (!Array.isArray(cs.js)) continue;
+        const dlIdx = cs.js.indexOf('core/diagnostic-log.js');
+        const ytIdx = cs.js.indexOf('ytkit.js');
+        if (ytIdx === -1) continue;  // not a content script that loads ytkit
+        assert.ok(dlIdx > -1, `content_scripts entry must include core/diagnostic-log.js (${JSON.stringify(cs.matches)})`);
+        assert.ok(dlIdx < ytIdx, `core/diagnostic-log.js must load before ytkit.js (${JSON.stringify(cs.matches)})`);
+    }
+});
+
 test('popup ships a selector-health dashboard wired to the content script (iter-6 N7)', () => {
     // The popup now surfaces a top-K selector trouble list + per-ctx
     // diagnostic counts. Both flow through one round-trip message
@@ -2511,23 +2546,30 @@ test('DiagnosticLog exposes per-ctx counters via countsByCtx() (iter-6 N6)', () 
     // needs cheap O(1)-per-ctx access. countsByCtx() is the derived-view
     // accessor; the per-ctx counter is maintained inline by record() so
     // there's no whole-ring scan on every read.
-    assert.match(ytkitSource, /_ctxCounts:\s*Object\.create\(null\)/,
+    //
+    // iter-6 N11 (partial M-phase) moved the implementation to
+    // core/diagnostic-log.js — but the inline fallback in ytkit.js
+    // must mirror the same machinery so the userscript / unit-test
+    // build paths still work. Patterns updated to match either the
+    // factory or the inline-fallback shape.
+    assert.match(ytkitSource, /ctxCounts:\s*Object\.create\(null\)/,
         'DiagnosticLog must own a plain-prototype-less counter map');
     assert.match(ytkitSource, /countsByCtx\(\)\s*\{/,
         'DiagnosticLog must expose countsByCtx()');
-    assert.match(ytkitSource, /_resyncCounts\(\)/,
+    assert.match(ytkitSource, /_resyncCounts/,
         'DiagnosticLog must rebuild counters from the persisted ring on first read');
     // Counter must decrement when the ring trims an entry so the view
-    // doesn't drift upward forever.
-    assert.match(ytkitSource, /while\s*\(arr\.length\s*>\s*this\._cap\)\s*\{[\s\S]*?this\._ctxCounts\[dropCtx\]\s*-=\s*1/,
+    // doesn't drift upward forever. Matches either `this._ctxCounts`
+    // (legacy IIFE) or `state.ctxCounts` (post-extraction closure state).
+    assert.match(ytkitSource, /while\s*\(arr\.length\s*>\s*(state|this)\.\w*[Cc]ap\)\s*\{[\s\S]*?(state|this)\.\w*[Cc]ounts\[dropCtx\]\s*-=\s*1/,
         'record() must decrement the counter for entries dropped during trim');
     // clear() must reset the in-memory counters too — otherwise stale
     // counts survive a user Clear-Diagnostic-Log click.
     const clearStart = ytkitSource.indexOf('clear() {', ytkitSource.indexOf('const DiagnosticLog'));
     assert.ok(clearStart > -1, 'DiagnosticLog.clear() must exist');
     const clearBlock = ytkitSource.slice(clearStart, clearStart + 600);
-    assert.match(clearBlock, /this\._ctxCounts\s*=\s*Object\.create\(null\)/,
-        'clear() must reset _ctxCounts');
+    assert.match(clearBlock, /(state|this)\.\w*[Cc]ounts\s*=\s*Object\.create\(null\)/,
+        'clear() must reset the counter map');
 });
 
 test('popup detects malformed chrome.storage payloads and offers Reset (iter-6 N4)', () => {
