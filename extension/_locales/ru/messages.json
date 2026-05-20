@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Хранилище: {size} — рассмотрите Сброс."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Данные хранилища повреждены — Сбросьте для восстановления."
+  },
   "storageBannerReset": {
     "message": "Сбросить"
   },

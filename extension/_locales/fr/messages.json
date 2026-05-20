@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Stockage à {size} — envisagez Réinitialiser."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Données de stockage corrompues — Réinitialiser pour récupérer."
+  },
   "storageBannerReset": {
     "message": "Réinitialiser"
   },

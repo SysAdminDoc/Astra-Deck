@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "存储 {size} — 建议重置。"
   },
+  "storageBannerCorruptionTpl": {
+    "message": "存储数据损坏 — 重置以恢复。"
+  },
   "storageBannerReset": {
     "message": "重置"
   },

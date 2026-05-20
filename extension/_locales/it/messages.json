@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Archivio a {size} — considera Ripristina."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Dati di archivio corrotti — Ripristina per recuperare."
+  },
   "storageBannerReset": {
     "message": "Reimposta"
   },

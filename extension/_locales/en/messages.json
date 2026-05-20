@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Storage at {size} — consider Reset."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Storage data malformed — Reset to recover."
+  },
   "storageBannerReset": {
     "message": "Reset"
   },
