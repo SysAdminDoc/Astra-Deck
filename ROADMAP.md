@@ -45,8 +45,8 @@ Core product already exists:
 
 Important already-built assets:
 
-- `extension/ytkit.js`: 35,743 lines, primary feature monolith.
-- `extension/core/*.js`: storage, navigation, player, page, style, URL, and environment helpers.
+- `extension/ytkit.js`: 43,924 lines, primary feature monolith (post-N11 M-phase #1-#3 partial extractions; was 44,264 before iter-7).
+- `extension/core/*.js`: storage, navigation, player, page, style, URL, environment, registry, selectors, trusted-html, api-limiter, diagnostic-log, predicate-sandbox, video-type helpers.
 - `extension/ytkit-main.js`: MAIN-world bridge for quality/codec control.
 - `extension/background.js`: fetch proxy, downloads, cookies, toolbar messaging.
 - `extension/popup.*`: premium toolbar popup with quick toggles, data management, and i18n.
