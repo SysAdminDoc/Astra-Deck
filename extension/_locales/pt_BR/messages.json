@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Armazenamento em {size} — considere Redefinir."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Dados de armazenamento corrompidos — Redefina para recuperar."
+  },
   "storageBannerReset": {
     "message": "Redefinir"
   },

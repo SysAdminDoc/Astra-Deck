@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "Speicher bei {size} — Zurücksetzen erwägen."
   },
+  "storageBannerCorruptionTpl": {
+    "message": "Speicherdaten beschädigt — Zurücksetzen zur Wiederherstellung."
+  },
   "storageBannerReset": {
     "message": "Zurücksetzen"
   },

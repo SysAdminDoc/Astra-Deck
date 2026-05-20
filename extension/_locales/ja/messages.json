@@ -287,6 +287,9 @@
   "storageBannerHardTpl": {
     "message": "ストレージは {size} です — リセットを検討してください。"
   },
+  "storageBannerCorruptionTpl": {
+    "message": "ストレージデータが破損しています — リセットして復旧してください。"
+  },
   "storageBannerReset": {
     "message": "リセット"
   },
