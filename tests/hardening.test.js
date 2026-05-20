@@ -2453,6 +2453,32 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('DiagnosticLog exposes per-ctx counters via countsByCtx() (iter-6 N6)', () => {
+    // Popup health surface used to surface only TT events. With multiple
+    // ctx classes flowing through the ring (trusted-types, selector-health,
+    // storage-corruption, settings-migration, console, window) the popup
+    // needs cheap O(1)-per-ctx access. countsByCtx() is the derived-view
+    // accessor; the per-ctx counter is maintained inline by record() so
+    // there's no whole-ring scan on every read.
+    assert.match(ytkitSource, /_ctxCounts:\s*Object\.create\(null\)/,
+        'DiagnosticLog must own a plain-prototype-less counter map');
+    assert.match(ytkitSource, /countsByCtx\(\)\s*\{/,
+        'DiagnosticLog must expose countsByCtx()');
+    assert.match(ytkitSource, /_resyncCounts\(\)/,
+        'DiagnosticLog must rebuild counters from the persisted ring on first read');
+    // Counter must decrement when the ring trims an entry so the view
+    // doesn't drift upward forever.
+    assert.match(ytkitSource, /while\s*\(arr\.length\s*>\s*this\._cap\)\s*\{[\s\S]*?this\._ctxCounts\[dropCtx\]\s*-=\s*1/,
+        'record() must decrement the counter for entries dropped during trim');
+    // clear() must reset the in-memory counters too — otherwise stale
+    // counts survive a user Clear-Diagnostic-Log click.
+    const clearStart = ytkitSource.indexOf('clear() {', ytkitSource.indexOf('const DiagnosticLog'));
+    assert.ok(clearStart > -1, 'DiagnosticLog.clear() must exist');
+    const clearBlock = ytkitSource.slice(clearStart, clearStart + 600);
+    assert.match(clearBlock, /this\._ctxCounts\s*=\s*Object\.create\(null\)/,
+        'clear() must reset _ctxCounts');
+});
+
 test('popup detects malformed chrome.storage payloads and offers Reset (iter-6 N4)', () => {
     // Storage corruption is rare but real — disk-full mid-write, browser
     // crash mid-flush, profile sync conflict, manual edit of the profile

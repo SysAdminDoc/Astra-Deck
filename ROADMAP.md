@@ -890,7 +890,7 @@ Next-tier (carried to iter-6):
 
 - [x] N4 storage corruption recovery — done iter-6: `detectStorageCorruption()` flags wrong-type payloads for the four canonical storage shapes; corruption tier supersedes quota tier in the storage banner; recovery path uses the same destructive-confirm Reset dialog; findings persist to the `_errors` ring under `ctx: 'storage-corruption'` for field-signal collection.
 - [x] N2 storage.local quota warning — done iter-6: two-tier proactive banner (>20 MB soft / >50 MB hard) wired to the existing destructive-confirm Reset flow; 5 i18n keys added across all 10 locales; WCAG AA verified for the new red/orange color lane.
-- [ ] N6 per-ctx error rate counters surfaced in popup health banner — bundle with N7 dashboard.
+- [x] N6 per-ctx error rate counters in `DiagnosticLog` — done iter-6: `countsByCtx()` accessor with inline counter bookkeeping (O(1) per `record()`, ring-trim decrement, `clear()` reset, lazy resync from persisted ring on first call). Ready for the popup dashboard surface (N7).
 - [x] N3 popup.html inline CSP `<meta>` belt-and-suspenders — stricter than manifest CSP (no remote connect-src/img-src); regression-tested in `tests/hardening.test.js` (iter-6).
 - [x] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — done iter-6: one observer + 3 handlers via a shared `_obsRegister` registry with combined attributeFilter; per-handler try/catch isolation; regression-tested.
 
