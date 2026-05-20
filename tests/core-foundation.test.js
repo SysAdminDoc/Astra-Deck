@@ -298,9 +298,19 @@ test('recordSelectorShape silently captures the first shape, emits on drift, no-
     const watchRow = snap.surfaces
         .find((s) => s.surface === 'watch')
         .selectors.find((r) => r.selector === SEL);
+    assert.equal(watchRow.hasShapeSample, true);
     assert.equal(watchRow.firstShape, 'attr-len:11');
     assert.equal(watchRow.lastShape, 'attr-len:32');
     assert.equal(watchRow.shapeDrifts, 1);
+    // Other watch selectors haven't been observed for shape — must report
+    // hasShapeSample:false so pollers can distinguish "healthy" from
+    // "never sampled" (the L3 audit's E-WARN about shapeDrifts:0 ambiguity).
+    const otherRow = snap.surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === 'ytd-watch-flexy');
+    assert.equal(otherRow.hasShapeSample, false);
+    assert.equal(otherRow.firstShape, null);
+    assert.equal(otherRow.shapeDrifts, 0);
 
     // Defensive: missing / non-string / huge shapes don't blow up the
     // selector pipeline. Empty + non-string returns null without
@@ -319,6 +329,60 @@ test('recordSelectorShape silently captures the first shape, emits on drift, no-
         .find((s) => s.surface === 'watch')
         .selectors.find((r) => r.selector === SEL);
     assert.equal(row2.lastShape.length, 120);
+});
+
+test('findSurfaceElement wires hits into recordSelectorShape with a default signature (iter-5 N5 L3 follow-up)', () => {
+    // L3 audit's F-FAIL: the recordSelectorShape API existed but no live
+    // resolver path invoked it. Verify the wiring is now real — a hit on
+    // a real surface selector produces a shape sample without the caller
+    // having to manually call recordSelectorShape.
+    const events = [];
+    const core = loadFoundation({
+        dispatchEvent(event) { events.push(event); }
+    });
+    const fakeWatchFlexy = {
+        nodeType: 1,
+        tagName: 'YTD-WATCH-FLEXY',
+        getAttribute(name) { return name === 'video-id' ? 'aaaaaaaaaaa' : null; },
+        attributes: { length: 4 },
+        childElementCount: 3
+    };
+    const root = {
+        querySelector(sel) {
+            if (sel === 'ytd-watch-flexy[video-id]') return fakeWatchFlexy;
+            return null;
+        }
+    };
+
+    // First hit captures the shape — no drift event yet.
+    const hit1 = core.findSurfaceElement('watch', { root });
+    assert.equal(hit1, fakeWatchFlexy);
+    assert.equal(events.length, 0, 'first-shape observation is silent');
+    let snap = JSON.parse(core.exportSelectorHealth());
+    let row = snap.surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === 'ytd-watch-flexy[video-id]');
+    assert.equal(row.hasShapeSample, true);
+    assert.match(row.firstShape, /vid-len:11/);
+
+    // Mutate the node so the next resolver hit derives a different signature
+    // — this is the iSponsorBlockTV class of drift (id length changed).
+    fakeWatchFlexy.getAttribute = (name) => (
+        name === 'video-id' ? 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' : null
+    );
+    const hit2 = core.findSurfaceElement('watch', { root });
+    assert.equal(hit2, fakeWatchFlexy);
+    // Now we should have a drift event.
+    assert.equal(events.length, 1);
+    assert.equal(events[0].type, 'ytkit-selector-shape-drift');
+    assert.match(events[0].detail.currentShape, /vid-len:64/);
+    assert.match(events[0].detail.previousShape, /vid-len:11/);
+
+    snap = JSON.parse(core.exportSelectorHealth());
+    row = snap.surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === 'ytd-watch-flexy[video-id]');
+    assert.equal(row.shapeDrifts, 1);
 });
 
 test('trusted html helper centralizes TrustedTypes policy creation', () => {

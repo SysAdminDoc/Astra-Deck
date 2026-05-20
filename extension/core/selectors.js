@@ -402,6 +402,41 @@
         return options.root || document;
     }
 
+    // v4.5+ (iter-5 N5 L3 follow-up): derive a default shape signature for
+    // an Element so live resolver hits actually feed `recordSelectorShape`.
+    // The L3 audit flagged that the recorder API existed but no live call
+    // site invoked it. Default signature samples cheap, stable identifier
+    // surfaces: video-id length, child count, tag name. Callers can pass
+    // their own `options.shapeKey(node) -> string` for finer-grained
+    // signatures (e.g. live chat may key on aria-label hashing).
+    //
+    // Returns null on non-Element or any throw so the resolver pipeline is
+    // never broken by a shape-extraction edge case.
+    function _defaultShapeKey(node) {
+        try {
+            if (!node || node.nodeType !== 1) return null;
+            const parts = [];
+            const tag = node.tagName ? String(node.tagName).toLowerCase() : '';
+            if (tag) parts.push(`t:${tag}`);
+            // [video-id] length is the canonical iSponsorBlockTV-class
+            // drift signal — a stable selector that suddenly matches a
+            // 32-char id where it used to match an 11-char id is exactly
+            // the surface this detector exists for.
+            const vid = node.getAttribute?.('video-id');
+            if (typeof vid === 'string') parts.push(`vid-len:${vid.length}`);
+            // [data-context-menu] / [data-stream-type] etc. attribute
+            // counts give a coarse but useful surface fingerprint without
+            // burning a full attribute walk.
+            const attrCount = node.attributes?.length;
+            if (typeof attrCount === 'number') parts.push(`attrs:${attrCount}`);
+            const childCount = node.childElementCount;
+            if (typeof childCount === 'number') parts.push(`children:${childCount}`);
+            return parts.join('|') || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
     function findSurfaceElement(surfaceOrSelectors, selectorsOrOptions, maybeOptions) {
         const { surface, selectors, options } = normalizeArgs(surfaceOrSelectors, selectorsOrOptions, maybeOptions);
         const root = getQueryRoot(options);
@@ -411,6 +446,13 @@
                 const match = root.querySelector?.(selector);
                 if (match) {
                     recordHit(surface, selector);
+                    // v4.5+: live shape sampling. Custom shapeKey takes
+                    // precedence so callers can pass surface-specific
+                    // fingerprints; otherwise the default signature.
+                    const sample = typeof options.shapeKey === 'function'
+                        ? (function () { try { return options.shapeKey(match); } catch (_) { return null; } })()
+                        : _defaultShapeKey(match);
+                    if (sample) recordSelectorShape(surface, selector, sample);
                     return match;
                 }
                 recordMiss(surface, selector, null, options);
@@ -434,6 +476,19 @@
                 const matches = Array.from(root.querySelectorAll?.(selector) || []);
                 if (matches.length) {
                     recordHit(surface, selector);
+                    // v4.5+: sample shape of the first match. Multi-match
+                    // surfaces (feed cards, comment threads) have collection
+                    // drift too — node count changes can be a drift signal
+                    // distinct from any individual node's shape — so we
+                    // fold `count:N` into the default signature.
+                    const head = matches[0];
+                    const sample = typeof options.shapeKey === 'function'
+                        ? (function () { try { return options.shapeKey(head, matches); } catch (_) { return null; } })()
+                        : (function () {
+                            const base = _defaultShapeKey(head);
+                            return base ? `${base}|set-count:${matches.length}` : `set-count:${matches.length}`;
+                        })();
+                    if (sample) recordSelectorShape(surface, selector, sample);
                     return matches;
                 }
                 recordMiss(surface, selector, null, options);
@@ -561,6 +616,12 @@
                     lastError: stat.lastError,
                     lastOutcome: stat.lastOutcome,
                     // v4.5+ shape-drift fields (iter-5 N5).
+                    // hasShapeSample disambiguates "shapeDrifts:0 because the
+                    // shape has been stable since first observation" from
+                    // "shapeDrifts:0 because no live caller has invoked
+                    // recordSelectorShape yet" — the L3 audit flagged that
+                    // a poller could otherwise misread "no data" as "healthy".
+                    hasShapeSample: stat.firstShape != null,
                     firstShape: stat.firstShape,
                     lastShape: stat.lastShape,
                     shapeDrifts: stat.shapeDrifts,

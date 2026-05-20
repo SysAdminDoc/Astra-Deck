@@ -33,7 +33,7 @@ Design house style:
 
 ### Repo State Summary
 
-The checkout is clean on `main` and aligned with `origin/main`. Recent commits are roadmap/status and feature hardening work, with current release surfaces at `v3.22.0`.
+The checkout is clean on `main` and aligned with `origin/main`. Recent commits are factory-loop maintenance, audit-pass hardening, and the v3.25→v4.0.0 "beats every competitor" milestone push followed by same-day v4.1.0–v4.4.0 follow-up cuts. Current release surfaces at **v4.4.0** (Phase-0 of the iter-1 research snapshot below was authored against v3.22.0; build artifact paths in the directory tree later in this file reflect that historical snapshot — production artifacts are now `astra-deck-chrome-v4.4.0.{zip,crx}`, `astra-deck-firefox-v4.4.0.{zip,xpi}`, and `ytkit-v4.4.0.user.js`).
 
 Core product already exists:
 
