@@ -30,13 +30,13 @@
     "message": "確認"
   },
   "contextNoteAnyTab": {
-    "message": "クイックトグルは YouTube タブが開かれた時点で同期されます。"
+    "message": "Quick toggles are saved now and sync when YouTube is open."
   },
   "contextNoteInlinePanel": {
-    "message": "このタブでページ内ワークスペースを開くには「完全な設定を開く」をクリックします。"
+    "message": "Open the full workspace on this tab; quick toggles apply immediately."
   },
   "contextNoteLaunch": {
-    "message": "完全な設定は視聴可能な YouTube タブのページ内ワークスペースにあります。"
+    "message": "Open a watchable YouTube tab to use the full in-page workspace."
   },
   "contextStateAnyTab": {
     "message": "任意のタブ"
@@ -284,6 +284,18 @@
   "healthCopyBtn": {
     "message": "コピー"
   },
+  "healthSaveAria": {
+    "message": "診断ログをJSONとして保存"
+  },
+  "healthSaveBtn": {
+    "message": "保存"
+  },
+  "statusDiagSaved": {
+    "message": "診断ログを保存しました。"
+  },
+  "statusDiagSaveFail": {
+    "message": "ログを保存できませんでした"
+  },
   "healthEventPlural": {
     "message": "イベント"
   },
@@ -408,91 +420,91 @@
     "message": "視聴フロー"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "デフォルトでシアター表示"
+    "message": "Open videos in theater view"
   },
   "qt_autoTheaterMode_name": {
     "message": "自動シアター"
   },
   "qt_blueLightFilter_desc": {
-    "message": "暖かい色"
+    "message": "Warm the player for late viewing"
   },
   "qt_blueLightFilter_name": {
     "message": "ブルーライトフィルター"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "トラッキングパラメータを削除"
+    "message": "Remove tracking from share links"
   },
   "qt_cleanShareUrls_name": {
     "message": "クリーンな URL"
   },
   "qt_commentSearch_desc": {
-    "message": "視聴ページでコメントをフィルター"
+    "message": "Filter watch-page comments inline"
   },
   "qt_commentSearch_name": {
     "message": "コメント検索"
   },
   "qt_deArrow_desc": {
-    "message": "より良いタイトルとサムネイル"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "詳細なコンソールログ"
+    "message": "Record detailed local diagnostics"
   },
   "qt_debugMode_name": {
     "message": "デバッグモード"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "休憩リマインダー + 日次上限"
+    "message": "Track breaks and daily viewing"
   },
   "qt_digitalWellbeing_name": {
     "message": "デジタルウェルビーイング"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "次への自動進行を停止"
+    "message": "Stop the next video from starting"
   },
   "qt_disableAutoplayNext_name": {
     "message": "自動再生なし"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "無限スクロールを停止"
+    "message": "Stop endless feed loading"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "スクロール制限"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "視聴時に関連パネルなし"
+    "message": "Clear the watch-page side rail"
   },
   "qt_hideRelatedVideos_name": {
     "message": "関連を非表示"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "スクロール時のフローティングバー"
+    "message": "Keep controls visible while scrolling"
   },
   "qt_miniPlayerBar_name": {
     "message": "ミニプレーヤーバー"
   },
   "qt_persistentSpeed_desc": {
-    "message": "再生速度を記憶"
+    "message": "Keep playback speed consistent"
   },
   "qt_persistentSpeed_name": {
     "message": "持続的な速度"
   },
   "qt_removeAllShorts_desc": {
-    "message": "フィードから Shorts を削除"
+    "message": "Remove Shorts shelves and links"
   },
   "qt_removeAllShorts_name": {
     "message": "Shorts を非表示"
   },
   "qt_sponsorBlock_desc": {
-    "message": "スポンサーセグメントをスキップ"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "クリック可能なトランスクリプト + エクスポート"
+    "message": "Read, jump, and export captions"
   },
   "qt_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
@@ -643,9 +655,9 @@
     "message": "設定ワークスペース"
   },
   "workspaceSupport": {
-    "message": "変更は開いている YouTube タブに自動的に同期されます。"
+    "message": "Quick toggles save immediately and sync to YouTube."
   },
   "workspaceTitle": {
-    "message": "コントロールとローカルデータ"
+    "message": "Controls and backups"
   }
 }

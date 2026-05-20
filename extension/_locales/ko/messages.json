@@ -30,13 +30,13 @@
     "message": "확인"
   },
   "contextNoteAnyTab": {
-    "message": "YouTube 탭이 열리면 빠른 토글이 동기화됩니다."
+    "message": "Quick toggles are saved now and sync when YouTube is open."
   },
   "contextNoteInlinePanel": {
-    "message": "이 탭에서 페이지 내 작업 공간을 시작하려면 \"전체 설정 열기\"를 클릭하세요."
+    "message": "Open the full workspace on this tab; quick toggles apply immediately."
   },
   "contextNoteLaunch": {
-    "message": "전체 설정은 시청 가능한 YouTube 탭의 페이지 내 작업 공간에 있습니다."
+    "message": "Open a watchable YouTube tab to use the full in-page workspace."
   },
   "contextStateAnyTab": {
     "message": "모든 탭"
@@ -284,6 +284,18 @@
   "healthCopyBtn": {
     "message": "복사"
   },
+  "healthSaveAria": {
+    "message": "진단 로그를 JSON으로 저장"
+  },
+  "healthSaveBtn": {
+    "message": "저장"
+  },
+  "statusDiagSaved": {
+    "message": "진단 로그가 저장되었습니다."
+  },
+  "statusDiagSaveFail": {
+    "message": "로그를 저장할 수 없습니다"
+  },
   "healthEventPlural": {
     "message": "이벤트"
   },
@@ -408,91 +420,91 @@
     "message": "시청 흐름"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "기본 시어터 보기"
+    "message": "Open videos in theater view"
   },
   "qt_autoTheaterMode_name": {
     "message": "자동 시어터"
   },
   "qt_blueLightFilter_desc": {
-    "message": "따뜻한 색상"
+    "message": "Warm the player for late viewing"
   },
   "qt_blueLightFilter_name": {
     "message": "블루라이트 필터"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "추적 매개변수 제거"
+    "message": "Remove tracking from share links"
   },
   "qt_cleanShareUrls_name": {
     "message": "깨끗한 URL"
   },
   "qt_commentSearch_desc": {
-    "message": "시청 페이지에서 댓글 필터"
+    "message": "Filter watch-page comments inline"
   },
   "qt_commentSearch_name": {
     "message": "댓글 검색"
   },
   "qt_deArrow_desc": {
-    "message": "더 나은 제목과 썸네일"
+    "message": "Replace clickbait titles and thumbnails"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "상세 콘솔 로깅"
+    "message": "Record detailed local diagnostics"
   },
   "qt_debugMode_name": {
     "message": "디버그 모드"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "휴식 알림 + 일일 한도"
+    "message": "Track breaks and daily viewing"
   },
   "qt_digitalWellbeing_name": {
     "message": "디지털 웰빙"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "다음으로 자동 진행 중지"
+    "message": "Stop the next video from starting"
   },
   "qt_disableAutoplayNext_name": {
     "message": "자동재생 없음"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "무한 스크롤 중지"
+    "message": "Stop endless feed loading"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "스크롤 제한"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "시청 시 관련 패널 없음"
+    "message": "Clear the watch-page side rail"
   },
   "qt_hideRelatedVideos_name": {
     "message": "관련 동영상 숨기기"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "스크롤 시 플로팅 바"
+    "message": "Keep controls visible while scrolling"
   },
   "qt_miniPlayerBar_name": {
     "message": "미니 플레이어 바"
   },
   "qt_persistentSpeed_desc": {
-    "message": "재생 속도 기억"
+    "message": "Keep playback speed consistent"
   },
   "qt_persistentSpeed_name": {
     "message": "지속적인 속도"
   },
   "qt_removeAllShorts_desc": {
-    "message": "피드에서 Shorts 제거"
+    "message": "Remove Shorts shelves and links"
   },
   "qt_removeAllShorts_name": {
     "message": "Shorts 숨기기"
   },
   "qt_sponsorBlock_desc": {
-    "message": "스폰서 구간 건너뛰기"
+    "message": "Skip crowd-marked sponsor segments"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "클릭 가능한 대본 + 내보내기"
+    "message": "Read, jump, and export captions"
   },
   "qt_transcriptViewer_name": {
     "message": "대본 사이드바"
@@ -643,9 +655,9 @@
     "message": "설정 작업 공간"
   },
   "workspaceSupport": {
-    "message": "변경 사항은 열려 있는 YouTube 탭과 자동으로 동기화됩니다."
+    "message": "Quick toggles save immediately and sync to YouTube."
   },
   "workspaceTitle": {
-    "message": "제어 및 로컬 데이터"
+    "message": "Controls and backups"
   }
 }
