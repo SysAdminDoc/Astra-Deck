@@ -876,15 +876,15 @@ self-audit verdict was **FAIL** — re-tiered per audit actions:
 
 Now-tier (this iteration, top 3 implementable):
 
-- [ ] **N1** `npm audit` rotation — last D-phase 2026-04-24 (25 d stale); run + remediate any high/critical, document medium/low deferrals.
-- [ ] **N5** YouTube DOM-shape drift detection (promoted from Next by Phase-5 audit) — extend selectorStats to track attribute-shape change events (e.g. video-id length flip from 26 to 64 chars per iSponsorBlockTV signal Δ3), not just class-hash churn.
-- [ ] **N8** Doc / version drift sync (broadened by Phase-5 audit) — CHANGELOG "Unreleased" backfill for audit-pass commits `c98d3e8` + `8650e55` + `3e949b4` AND ROADMAP.md version header `v4.0.0` → `v4.4.0` (Phase-5 caught this drift).
-- [ ] **N2** storage.local quota warning — popup banner when usage > 80% of 10 MB; preventative before chrome.storage write rejects. *Deferred to next iter — capacity-limited by 3-task cap; N5 outranked per Phase-5 audit.*
+- [x] **N1** `npm audit` rotation — closed by commit `1a101ba` (brace-expansion 5.0.5 → 5.0.6, GHSA-jxxr-4gwj-5jf2, dev-only). 0 vulnerabilities post-fix.
+- [x] **N5** YouTube DOM-shape drift detection — closed across commits `13299f8` (API + selectorStats fields), `76b7670` (live wiring + `hasShapeSample` disambiguation), `dcbfb80` (cooldown + re-entry guard + `chrome.runtime.sendMessage` ext-internal channel).
+- [x] **N8** Doc / version drift sync — closed by commit `fbdd25e` (CHANGELOG `[Unreleased]` backfill, ROADMAP header `v4.0.0` → `v4.4.0`) and `76b7670` (cleaned the remaining `v3.22.0` remnant on L36).
+- [x] **N2** storage.local quota warning — *moved to v4.5+ Next-tier work below; closing this row out as duplicate.*
 
 Verification gates (run as Q1/Q2 postflight greps, not roadmap items per Phase-5 re-tier):
 
-- N12 Chrome 120 `chrome.alarms` compliance — verify no usage with period < 30s.
-- N13 Chrome 118 declarativeNetRequest case-sensitivity — verify no DNR usage that assumes case-sensitive URL filters.
+- [x] N12 Chrome 120 `chrome.alarms` compliance — verified iter-5: zero `chrome.alarms` usage in `extension/`.
+- [x] N13 Chrome 118 declarativeNetRequest case-sensitivity — verified iter-5: zero DNR usage in `extension/manifest.json` and content scripts.
 
 Next-tier (carried to iter-6):
 
