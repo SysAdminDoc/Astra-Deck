@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "Clear"
   },
+  "storageBannerTitle": {
+    "message": "Storage usage high"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Storage at {size} — heading toward the ceiling."
+  },
+  "storageBannerHardTpl": {
+    "message": "Storage at {size} — consider Reset."
+  },
+  "storageBannerReset": {
+    "message": "Reset"
+  },
+  "storageBannerResetAria": {
+    "message": "Reset all local data"
+  },
   "healthCopyAria": {
     "message": "Copy diagnostic details"
   },

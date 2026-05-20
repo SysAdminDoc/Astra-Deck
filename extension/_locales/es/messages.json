@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "Limpiar"
   },
+  "storageBannerTitle": {
+    "message": "Uso de almacenamiento elevado"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Almacenamiento en {size} — acercándose al límite."
+  },
+  "storageBannerHardTpl": {
+    "message": "Almacenamiento en {size} — considera Restablecer."
+  },
+  "storageBannerReset": {
+    "message": "Restablecer"
+  },
+  "storageBannerResetAria": {
+    "message": "Restablecer todos los datos locales"
+  },
   "healthCopyAria": {
     "message": "Copiar detalles de diagnóstico"
   },

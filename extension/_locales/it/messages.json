@@ -278,6 +278,21 @@
   "healthClearBtn": {
     "message": "Pulisci"
   },
+  "storageBannerTitle": {
+    "message": "Utilizzo archivio elevato"
+  },
+  "storageBannerSoftTpl": {
+    "message": "Archivio a {size} — ti avvicini al limite."
+  },
+  "storageBannerHardTpl": {
+    "message": "Archivio a {size} — considera Ripristina."
+  },
+  "storageBannerReset": {
+    "message": "Reimposta"
+  },
+  "storageBannerResetAria": {
+    "message": "Ripristina tutti i dati locali"
+  },
   "healthCopyAria": {
     "message": "Copia dettagli diagnostici"
   },
