@@ -357,29 +357,77 @@
         throw lastErr || new Error('Request failed after retries');
     }
 
-    // v3.9.0: diagnostic error ring buffer
+    // v3.9.0: diagnostic error ring buffer.
+    // iter-6 N6: per-ctx counters + countsByCtx() accessor so the popup
+    // health surface can show "TT: 12 events · selector-health: 3 ·
+    // storage-corruption: 1" without scanning the whole ring on every
+    // render. Counters live in-memory only (not persisted to storage) —
+    // they're a derived view of the persisted ring.
     const DiagnosticLog = {
         _enabled: false,
         _cap: 500,
+        _ctxCounts: Object.create(null),
         enable() { this._enabled = true; },
         disable() { this._enabled = false; },
+        _resyncCounts() {
+            // Recompute counts from the persisted ring. Called on first
+            // get() / countsByCtx() so cross-session entries (loaded from
+            // storage at startup) are reflected without a record() call.
+            const arr = appState?.settings?._errors;
+            if (!Array.isArray(arr)) return;
+            const next = Object.create(null);
+            for (let i = 0; i < arr.length; i++) {
+                const ctx = arr[i] && typeof arr[i].ctx === 'string' ? arr[i].ctx : '';
+                if (!ctx) continue;
+                next[ctx] = (next[ctx] || 0) + 1;
+            }
+            this._ctxCounts = next;
+            this._countsResynced = true;
+        },
         record(ctx, msg) {
             if (!this._enabled && !appState?.settings?.diagnosticLog) return;
             if (!appState?.settings) return;
             try {
                 const arr = appState.settings._errors || [];
-                arr.push({ ts: Date.now(), ctx: String(ctx).slice(0, 40), msg: String(msg).slice(0, 500) });
-                if (arr.length > this._cap) arr.splice(0, arr.length - this._cap);
+                const ctxKey = String(ctx).slice(0, 40);
+                arr.push({ ts: Date.now(), ctx: ctxKey, msg: String(msg).slice(0, 500) });
+                // Per-ctx counter bookkeeping. When we trim the ring, the
+                // counter for the dropped entry's ctx is decremented so
+                // the view stays consistent. Resync the FIRST time
+                // record() is called per session to absorb entries
+                // loaded from storage at startup.
+                if (!this._countsResynced) this._resyncCounts();
+                this._ctxCounts[ctxKey] = (this._ctxCounts[ctxKey] || 0) + 1;
+                while (arr.length > this._cap) {
+                    const dropped = arr.shift();
+                    const dropCtx = dropped && typeof dropped.ctx === 'string' ? dropped.ctx : '';
+                    if (dropCtx && this._ctxCounts[dropCtx]) {
+                        this._ctxCounts[dropCtx] -= 1;
+                        if (this._ctxCounts[dropCtx] <= 0) delete this._ctxCounts[dropCtx];
+                    }
+                }
                 appState.settings._errors = arr;
                 // Debounced save handled by settingsManager on next settings touch; avoid thrashing
             } catch (e) {
                 console.warn('[YTKit] DiagnosticLog.record failed:', e);
             }
         },
+        // iter-6 N6: cheap O(1)-per-ctx accessor for popup rendering.
+        // Resyncs from the persisted ring on first call so entries
+        // loaded at startup are reflected.
+        countsByCtx() {
+            if (!this._countsResynced) this._resyncCounts();
+            return { ...this._ctxCounts };
+        },
         get() { return appState?.settings?._errors || []; },
         clear() {
             if (!appState?.settings) return;
             appState.settings._errors = [];
+            // iter-6 N6: counters are a derived view of the ring; reset
+            // them when the ring resets so consumers don't read stale
+            // counts after Clear-Diagnostic-Log fires.
+            this._ctxCounts = Object.create(null);
+            this._countsResynced = true;
             if (typeof settingsManager !== 'undefined' && settingsManager?.save) {
                 settingsManager.save(appState.settings);
             }
