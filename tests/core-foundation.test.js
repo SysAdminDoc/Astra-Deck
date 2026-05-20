@@ -331,6 +331,66 @@ test('recordSelectorShape silently captures the first shape, emits on drift, no-
     assert.equal(row2.lastShape.length, 120);
 });
 
+test('recordSelectorShape suppresses event storms via per-(surface,selector) cooldown (iter-5 Q1 S3)', () => {
+    const events = [];
+    const core = loadFoundation({
+        dispatchEvent(event) { events.push(event); }
+    });
+    const SEL = 'ytd-watch-flexy[video-id]';
+    // First sample — silent.
+    core.recordSelectorShape('watch', SEL, 'a');
+    assert.equal(events.length, 0);
+    // Real drift — emits.
+    const r1 = core.recordSelectorShape('watch', SEL, 'b');
+    assert.equal(r1.drifted, true);
+    assert.equal(events.length, 1);
+    // Immediate alternation within cooldown — drift count still increments
+    // but event NOT emitted (suppression flagged in return).
+    const r2 = core.recordSelectorShape('watch', SEL, 'c');
+    assert.equal(r2.drifted, true);
+    assert.equal(r2.suppressed, 'cooldown');
+    assert.equal(events.length, 1, 'cooldown must suppress in-window events');
+    // Snapshot still reflects the suppressed drift count.
+    const snap = JSON.parse(core.exportSelectorHealth());
+    const row = snap.surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === SEL);
+    assert.equal(row.shapeDrifts, 2, 'cooldown does not hide saturation');
+});
+
+test('recordSelectorShape does not recurse when a listener calls back synchronously (iter-5 Q1 S5)', () => {
+    // A listener for ytkit-selector-shape-drift that synchronously invokes
+    // recordSelectorShape() must not cause stack-exhaustion recursion.
+    let inListener = false;
+    let maxDepth = 0;
+    let depth = 0;
+    const core = loadFoundation({
+        dispatchEvent(event) {
+            if (event.type !== 'ytkit-selector-shape-drift') return;
+            // Simulate a listener that re-enters with an alternating shape.
+            inListener = true;
+            depth += 1;
+            if (depth > maxDepth) maxDepth = depth;
+            try {
+                if (depth < 100) {
+                    // Recursive call with a NEW shape would otherwise cause
+                    // infinite recursion. The re-entry guard must catch it.
+                    core.recordSelectorShape('watch', 'ytd-watch-flexy[video-id]', 'rec-' + depth);
+                }
+            } finally {
+                depth -= 1;
+                inListener = false;
+            }
+        }
+    });
+
+    core.recordSelectorShape('watch', 'ytd-watch-flexy[video-id]', 'a');
+    core.recordSelectorShape('watch', 'ytd-watch-flexy[video-id]', 'b');
+    // Without the guard, maxDepth would have spiked to ~100. With the
+    // guard, the nested call returns early and never re-enters dispatch.
+    assert.ok(maxDepth <= 1, `re-entry guard failed; depth went to ${maxDepth}`);
+});
+
 test('findSurfaceElement wires hits into recordSelectorShape with a default signature (iter-5 N5 L3 follow-up)', () => {
     // L3 audit's F-FAIL: the recordSelectorShape API existed but no live
     // resolver path invoked it. Verify the wiring is now real — a hit on

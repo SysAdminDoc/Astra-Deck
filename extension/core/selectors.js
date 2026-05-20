@@ -352,13 +352,25 @@
     // can listen for this and surface "iSponsorBlockTV-class drift" to the
     // user before a hashed-class refactor silently breaks a feature.
     //
-    // No-op fast path: same shape as last observation → just refresh the
-    // timestamp, do NOT emit (would drown signal).
+    // Defensive properties:
+    //   - shapeKey clamped to 120 chars at the boundary (no payload bloat)
+    //   - same-shape repeat is silent (just refresh lastSeen — no event)
+    //   - per-(surface, selector) cooldown suppresses event storms from
+    //     oscillating nodes (Q1 S3 WARN). shapeDrifts still increments so
+    //     suppressed drifts remain visible in the health snapshot.
+    //   - re-entrancy guarded — a listener that synchronously calls
+    //     recordSelectorShape() will NOT recurse into a second dispatch
+    //     within the same call stack (Q1 S5 WARN).
+    //   - prefer chrome.runtime.sendMessage when available so the drift
+    //     signal stays extension-internal (Q1 S2 WARN: a CustomEvent on
+    //     globalThis is observable to page-context scripts in the same
+    //     frame, which leaks selector names). Falls back to CustomEvent
+    //     dispatch only when no extension messaging context exists
+    //     (userscript / unit-test contexts).
+    const SHAPE_DRIFT_COOLDOWN_MS = 1000;
+    const SHAPE_DRIFT_REENTRY_FLAG = Symbol('ytkit-shape-drift-reentry');
     function recordSelectorShape(surface, selector, shapeKey) {
         if (typeof shapeKey !== 'string' || !shapeKey) return null;
-        // Bound the shape-key length so an accidentally huge signature
-        // (someone passing the whole outerHTML by mistake) can't blow up
-        // memory or the drift event payload.
         if (shapeKey.length > 120) shapeKey = shapeKey.slice(0, 120);
         const stat = getSelectorStat(surface, selector);
         const now = Date.now();
@@ -379,23 +391,70 @@
         stat.lastShape = shapeKey;
         stat.lastShapeAt = now;
         stat.shapeDrifts += 1;
+
+        // Cooldown: suppress event emission if the same (surface, selector)
+        // pair already emitted within SHAPE_DRIFT_COOLDOWN_MS. The drift
+        // count still increments so the saturation is visible in the
+        // health snapshot — we just don't broadcast every alternation.
+        if (stat._lastEmitAt && (now - stat._lastEmitAt) < SHAPE_DRIFT_COOLDOWN_MS) {
+            return { stat, drifted: true, previousShape, suppressed: 'cooldown' };
+        }
+
+        // Re-entrancy: if a listener for `ytkit-selector-shape-drift`
+        // synchronously calls back into recordSelectorShape, do not
+        // recurse into a second dispatch on this call stack.
+        if (globalThis[SHAPE_DRIFT_REENTRY_FLAG]) {
+            return { stat, drifted: true, previousShape, suppressed: 'reentry' };
+        }
+
+        stat._lastEmitAt = now;
+        const detail = {
+            surface,
+            selector,
+            previousShape,
+            currentShape: shapeKey,
+            drifts: stat.shapeDrifts,
+            firstShape: stat.firstShape,
+            firstShapeAt: stat.firstShapeAt,
+            at: now
+        };
+
+        // Prefer extension-internal messaging when available — keeps the
+        // drift signal off the shared DOM where page scripts can listen.
+        // chrome.runtime is the actual extension surface; the background
+        // service worker is the natural drift-event consumer.
+        let messagedExt = false;
         try {
-            globalThis.dispatchEvent?.(new CustomEvent('ytkit-selector-shape-drift', {
-                detail: {
-                    surface,
-                    selector,
-                    previousShape,
-                    currentShape: shapeKey,
-                    drifts: stat.shapeDrifts,
-                    firstShape: stat.firstShape,
-                    firstShapeAt: stat.firstShapeAt,
-                    at: now
-                }
-            }));
+            const runtime = (typeof chrome !== 'undefined' && chrome?.runtime)
+                || (typeof browser !== 'undefined' && browser?.runtime)
+                || null;
+            if (runtime?.sendMessage) {
+                runtime.sendMessage({
+                    type: 'YTKIT_SELECTOR_SHAPE_DRIFT',
+                    detail
+                }, () => {
+                    // swallow lastError — no receiver in popup is OK
+                    void (runtime.lastError || null);
+                });
+                messagedExt = true;
+            }
+        } catch (_) {
+            // Extension context unavailable; fall through to CustomEvent.
+        }
+
+        globalThis[SHAPE_DRIFT_REENTRY_FLAG] = true;
+        try {
+            // Always dispatch the CustomEvent too — unit tests and the
+            // userscript build rely on it. In a real extension context
+            // the chrome.runtime message above is the authoritative
+            // channel; the event is purely a same-frame fallback.
+            globalThis.dispatchEvent?.(new CustomEvent('ytkit-selector-shape-drift', { detail }));
         } catch (_) {
             // CustomEvent not available in some unit-test contexts.
+        } finally {
+            globalThis[SHAPE_DRIFT_REENTRY_FLAG] = false;
         }
-        return { stat, drifted: true, previousShape };
+        return { stat, drifted: true, previousShape, messagedExt };
     }
 
     function getQueryRoot(options = {}) {
