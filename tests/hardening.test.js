@@ -2453,6 +2453,38 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
+test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered handlers (iter-6 N9)', () => {
+    // Audit pass: three separate MutationObservers all watched the same
+    // documentElement for different attributes. Every documentElement
+    // attribute mutation ran three observer engines in parallel. The
+    // consolidation registers all three handlers on one observer with a
+    // combined attributeFilter, preserving the original per-handler
+    // semantics (each handler still re-reads its attribute).
+    const ytkitMainSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit-main.js'),
+        'utf8'
+    );
+    const observerInstantiations = (ytkitMainSource.match(/new MutationObserver\(/g) || []).length;
+    assert.equal(observerInstantiations, 1,
+        `ytkit-main.js should instantiate exactly one MutationObserver after consolidation; found ${observerInstantiations}`);
+
+    // All three feature handlers must be registered with the shared observer.
+    const registrations = (ytkitMainSource.match(/_obsRegister\(/g) || []).length;
+    assert.ok(registrations >= 4,
+        `_obsRegister should appear 4× (1 definition + 3 call sites); found ${registrations}`);
+
+    // Verify the consolidated observer's attributeFilter is built from the
+    // registry's union set (not hardcoded), so adding a 4th handler later
+    // doesn't require touching the observe() call.
+    assert.match(ytkitMainSource, /attributeFilter:\s*Array\.from\(_ObsAttrs\)/,
+        'consolidated observer must build attributeFilter from the shared _ObsAttrs set');
+
+    // Re-entrancy hardening: handler errors must be isolated so one
+    // misbehaving feature doesn't break the others on the same batch.
+    assert.match(ytkitMainSource, /try \{ h\.fn\(\); \} catch/,
+        'consolidated dispatcher must wrap each handler in try/catch');
+});
+
 test('popup.html ships inline CSP meta with the audited tightenings (iter-6 N3)', () => {
     // Belt-and-suspenders CSP independent of manifest. The manifest CSP can
     // be loosened in a future refactor; the inline meta is a second wall.
@@ -2693,8 +2725,12 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
         'ytkit-main.js must declare an applyContextQuality function');
     assert.match(mainSource, /data-ytkit-quality-target/,
         'ytkit-main.js must read the per-context quality target attribute');
-    assert.match(mainSource, /attributeFilter:\s*\['data-ytkit-quality-target',\s*'data-ytkit-quality-context'\]/,
-        'ytkit-main.js must observe both quality data attributes');
+    // iter-6 N9: after observer consolidation both attributes are
+    // registered together via the shared _obsRegister helper (not via a
+    // dedicated attributeFilter array on a per-handler observer). The
+    // semantic is preserved: both attributes are observed.
+    assert.match(mainSource, /_obsRegister\(\['data-ytkit-quality-target',\s*'data-ytkit-quality-context'\]/,
+        'ytkit-main.js must register both quality data attributes with the shared observer');
 });
 
 // ── v4.2.0 P1: Popularity sort + transcript search panel ──

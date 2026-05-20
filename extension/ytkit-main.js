@@ -2,6 +2,69 @@
 // Handles canPlayType + MediaSource.isTypeSupported patching for codec filtering
 // Runs in world: "MAIN" at document_start
 // Communicates with ISOLATED world via data attributes on <html>
+
+// iter-6 N9: shared <html> attribute observer.
+// Previously three separate MutationObservers all watched
+// `document.documentElement` for `data-ytkit-codec`,
+// `data-ytkit-quality`, and `data-ytkit-quality-target` /
+// `data-ytkit-quality-context`. Every documentElement attribute mutation
+// fired three observers' engine paths in parallel. Consolidated into one
+// observer with a combined attributeFilter; handlers self-read the
+// attribute they care about (matches the original semantics where each
+// handler ignored the records parameter and re-read the attribute
+// directly via getAttribute).
+//
+// Wrap the entire MAIN-world bridge in an outer IIFE so the registry
+// closure stays private to this file — does NOT pollute window.
+(function() {
+    'use strict';
+
+    var _ObsHandlers = [];
+    var _ObsAttrs = new Set();
+    var _ObsInstance = null;
+    function _reobserve() {
+        if (!document || !document.documentElement) return;
+        if (_ObsInstance) _ObsInstance.disconnect();
+        _ObsInstance = new MutationObserver(function(records) {
+            // Dedup attribute hits across the batch so each handler fires
+            // at most once per tick (matches the prior per-observer
+            // single-fire semantics — each old observer's callback was
+            // invoked once per batch regardless of record count).
+            var touched = null;
+            for (var i = 0; i < records.length; i++) {
+                var rec = records[i];
+                if (rec.type !== 'attributes' || !rec.attributeName) continue;
+                if (touched === null) touched = new Set();
+                touched.add(rec.attributeName);
+            }
+            if (!touched) return;
+            for (var j = 0; j < _ObsHandlers.length; j++) {
+                var h = _ObsHandlers[j];
+                for (var k = 0; k < h.attrs.length; k++) {
+                    if (touched.has(h.attrs[k])) {
+                        try { h.fn(); } catch (e) {
+                            // never let one feature's handler poison another
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+        _ObsInstance.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: Array.from(_ObsAttrs)
+        });
+    }
+    function _obsRegister(attrs, fn) {
+        if (!attrs || !attrs.length || typeof fn !== 'function') return;
+        for (var i = 0; i < attrs.length; i++) _ObsAttrs.add(attrs[i]);
+        _ObsHandlers.push({ attrs: attrs.slice(), fn: fn });
+        _reobserve();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 1: codec blocker (data-ytkit-codec)
+    // ──────────────────────────────────────────────────────────────────
 (function() {
     'use strict';
 
@@ -61,24 +124,26 @@
         _patched = true;
     }
 
-    new MutationObserver(function() {
+    _obsRegister(['data-ytkit-codec'], function() {
         var val = document.documentElement.getAttribute('data-ytkit-codec');
         if (val !== null && val !== _codec) {
             _codec = val || 'auto';
             sync();
         }
-    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-ytkit-codec'] });
+    });
 
     var initial = document.documentElement.getAttribute('data-ytkit-codec');
     if (initial) { _codec = initial; sync(); }
 })();
 
-// ─────────────────────────────────────────────────────────────────────────
-// Quality forcer — Premium-aware, no-UI. Calls movie_player.setPlaybackQualityRange
-// directly (the same API used by Auto-HD-FPS, Iridium, Enhancer for YouTube,
-// and the popular YouTube HD Premium userscript). Never opens the gear menu.
-// ISOLATED world toggles this by setting <html data-ytkit-quality="on">.
-// ─────────────────────────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 2: Quality forcer
+    // ──────────────────────────────────────────────────────────────────
+    // Premium-aware, no-UI. Calls movie_player.setPlaybackQualityRange
+    // directly (the same API used by Auto-HD-FPS, Iridium, Enhancer for
+    // YouTube, and the popular YouTube HD Premium userscript). Never
+    // opens the gear menu. ISOLATED world toggles this by setting
+    // <html data-ytkit-quality="on">.
 (function() {
     'use strict';
     if (typeof document === 'undefined') return;
@@ -195,8 +260,7 @@
         else { lastApplied = ''; if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; } }
     }
 
-    new MutationObserver(syncFromAttr)
-        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-ytkit-quality'] });
+    _obsRegister(['data-ytkit-quality'], syncFromAttr);
 
     // Initial state — read what ISOLATED may have already set before document_idle.
     syncFromAttr();
@@ -221,8 +285,7 @@
             log('per-context quality applied', target);
         } catch (e) { log('per-context apply failed', e && e.message); }
     }
-    new MutationObserver(applyContextQuality)
-        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-ytkit-quality-target', 'data-ytkit-quality-context'] });
+    _obsRegister(['data-ytkit-quality-target', 'data-ytkit-quality-context'], applyContextQuality);
     document.addEventListener('loadedmetadata', function(e) {
         if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
             _ctxLastApplied = '';
@@ -232,3 +295,5 @@
     window.addEventListener('yt-navigate-finish', function() { _ctxLastApplied = ''; applyContextQuality(); });
     applyContextQuality();
 })();
+
+})();  // outer N9 IIFE closes here
