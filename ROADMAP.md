@@ -32,8 +32,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.26.0 | Number-type inline editor in schema overview + 4 tests | 435 | +4 |
 | v4.27.0 | String-type inline editor (text + auto color picker for hex defaults) + 5 tests | 440 | +5 |
 | v4.28.0 | `humanizeSettingKey()` helper + popup label upgrade + 6 tests | 446 | +6 |
+| v4.29.0 | Persist popup overview expansion across opens + 5 tests | 451 | +5 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup now ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels (no i18n stub backfill required), 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +131 hardening tests (315 → 446), 23 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup now ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +136 hardening tests (315 → 451), 24 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 

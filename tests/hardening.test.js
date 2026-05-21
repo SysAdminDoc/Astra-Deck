@@ -5260,3 +5260,65 @@ test('v4.28.0 popup schema-overview row labels prefer humanizeSettingKey output'
     assert.match(src, /label\.title = entry\.key;/,
         'popup must keep the raw key in the label title for support workflows');
 });
+
+// ── v4.29.0 NX1: popup overview expansion persistence ──
+
+test('v4.29.0 popup.js declares the SCHEMA_OVERVIEW_EXPANDED_KEY storage constant', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /const SCHEMA_OVERVIEW_EXPANDED_KEY = 'ytkit_popup_schema_overview_expanded';/,
+        'popup.js must declare the storage key constant');
+});
+
+test('v4.29.0 popup.js defines async persist + restore helpers wired to chrome.storage.local', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /async function persistSchemaOverviewExpanded\(\)/,
+        'popup.js must define persistSchemaOverviewExpanded');
+    assert.match(src, /async function restoreSchemaOverviewExpanded\(\)/,
+        'popup.js must define restoreSchemaOverviewExpanded');
+    // Both helpers route through the existing storageGet/storageSet
+    // wrappers so the persistence path is consistent with everything
+    // else the popup stores.
+    assert.match(src, /await storageSet\(\{ \[SCHEMA_OVERVIEW_EXPANDED_KEY\]: \[\.\.\.schemaOverviewState\.expanded\] \}\);/,
+        'persist must serialise the Set into an Array');
+    assert.match(src, /await storageGet\(\[SCHEMA_OVERVIEW_EXPANDED_KEY\]\)/,
+        'restore must read via storageGet');
+});
+
+test('v4.29.0 restore guards against malformed persisted values', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Anything not a string Array must round-trip into an empty Set.
+    assert.match(src, /if \(!Array\.isArray\(raw\)\) return;/,
+        'restore must reject non-array stored values');
+    // Filter must drop garbage entries (non-strings, empty strings, or
+    // suspiciously long strings) so a corrupt store can't blow up the
+    // UI with a million open categories.
+    assert.match(src, /typeof entry === 'string' && entry\.length > 0 && entry\.length < 64/,
+        'restore must filter entries to safe strings (1-63 chars)');
+});
+
+test('v4.29.0 the category-row click handler kicks off the persist promise', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // The click handler fires-and-forgets the persist call so the UI
+    // re-render isn't blocked on storage I/O.
+    assert.match(src, /void persistSchemaOverviewExpanded\(\);/,
+        'click handler must dispatch persistSchemaOverviewExpanded');
+});
+
+test('v4.29.0 init flow restores the expanded set BEFORE the first renderSchemaOverview', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const restoreIdx = src.indexOf('await restoreSchemaOverviewExpanded()');
+    const firstRenderIdx = src.indexOf('renderSchemaOverview();', restoreIdx);
+    assert.ok(restoreIdx > -1, 'init must await restoreSchemaOverviewExpanded');
+    assert.ok(firstRenderIdx > restoreIdx,
+        'restore must be awaited BEFORE the first renderSchemaOverview so the user sees their open categories on open');
+});
