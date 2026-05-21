@@ -6,6 +6,57 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.11.0] - 2026-05-21 - v5.0.0 foundation #6: schema ↔ data-flow coverage gate + Cobalt entry
+
+Closes the conceptual gap between the v4.6.0 settings-schema risk
+metadata and the v4.10.0 data-flow origin catalogue. Every
+`api` / `local-companion` schema entry must now be reachable from
+some origin entry (directly or via parent-feature inheritance), and
+the test suite fails loudly if a developer adds a new external API
+toggle without listing its origin.
+
+### Added
+
+- `extension/core/data-flow.js` — `PARENT_FEATURE` inheritance map.
+  Sub-toggles inherit their driving status from a parent feature
+  (e.g. `sbCat_sponsor` inherits from `sponsorBlock`, `daReplaceTitles`
+  inherits from `deArrow`, `aiSummaryProvider` inherits from
+  `aiVideoSummary`, the Astra Downloader sub-knobs inherit from
+  `showLocalDownloadButton`, etc.). One intentional exemption:
+  `subscriptionAiTags` uses Chrome's built-in Summarizer (no remote
+  origin) and stays absent from the catalogue.
+- `extension/core/data-flow.js` — new `https://api.cobalt.tools`
+  catalogue entry. The Cobalt fallback origin was previously absent
+  from the catalogue despite being referenced by `downloadCobaltFallback`
+  / `downloadCobaltInstance`. Profile `github-full`, credentialsPolicy
+  `no-cookies`, riskBand `api`.
+- `extension/core/data-flow.js` — `findCoverageGaps(schema, catalogue,
+  parentMap)` helper used by the new hardening test. Returns the list
+  of api/local-companion schema entries that are NOT covered after
+  applying the parent-feature inheritance map.
+- `tests/hardening.test.js` — 3 new regressions: zero-coverage-gap
+  invariant against the live schema, presence of the Cobalt catalogue
+  entry, and PARENT_FEATURE keys-and-parents all exist in the schema.
+
+### Why
+
+A 21-key drift was found at audit time before this slice landed —
+the data-flow catalogue described 5 driving features per origin while
+the schema declared 21 keys with risk `api`/`local-companion`. Most
+were legitimate sub-toggles (SponsorBlock categories, DeArrow shape
+options, AI summary knobs) that the catalogue intentionally leaves
+implicit, but one — `downloadCobaltFallback` — was a real missing
+origin. The PARENT_FEATURE map makes the sub-toggle convention
+explicit, the new origin closes the genuine gap, and the test ensures
+the next time someone adds `xyzApi` they're prompted to either add a
+catalogue entry or extend PARENT_FEATURE.
+
+The Cobalt origin remains absent from `manifest.json` host_permissions
+because the github-full profile build (the only profile that can
+enable `downloadCobaltFallback`) is expected to ship with extended
+permissions; pinning it into the store-safe manifest would
+unnecessarily flag CWS/AMO review.
+
 ## [4.10.0] - 2026-05-21 - v5.0.0 foundation #5: data-flow origin catalogue
 
 Fifth foundation slice. Pure-data backing for the v5.0.0/v5.8.0

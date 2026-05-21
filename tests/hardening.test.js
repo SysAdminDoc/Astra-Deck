@@ -3857,3 +3857,39 @@ test('v4.10.0 manifest content_scripts include data-flow.js before ytkit.js', ()
         assert.ok(dfIdx < ytkitIdx, 'data-flow.js must load before ytkit.js');
     }
 });
+
+// ── v4.11.0 NX1: data-flow ↔ schema coverage gate ──
+
+test('v4.11.0 data-flow: every api/local-companion schema entry maps to a catalogued origin', () => {
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const { findCoverageGaps } = require('../extension/core/data-flow');
+    const gaps = findCoverageGaps(SETTINGS_SCHEMA);
+    if (gaps.length > 0) {
+        const lines = gaps.map((g) => '  - ' + g.key + ' (risk=' + g.risk + ')');
+        assert.fail(
+            'The settings-schema and data-flow catalogue have drifted. ' +
+            'Add a new origin entry or extend PARENT_FEATURE in core/data-flow.js for:\n' +
+            lines.join('\n')
+        );
+    }
+});
+
+test('v4.11.0 data-flow: Cobalt fallback origin is catalogued (was missing pre-v4.11.0)', () => {
+    const { ORIGIN_CATALOGUE } = require('../extension/core/data-flow');
+    const cobalt = ORIGIN_CATALOGUE.find((o) => o.origin === 'https://api.cobalt.tools');
+    assert.ok(cobalt, 'data-flow catalogue must list https://api.cobalt.tools');
+    assert.equal(cobalt.profile, 'github-full',
+        'Cobalt is github-full only (user-supplied instance, off by default)');
+    assert.ok(cobalt.requiredByFeatures.includes('downloadCobaltFallback'),
+        'Cobalt origin must be driven by downloadCobaltFallback');
+});
+
+test('v4.11.0 data-flow: PARENT_FEATURE inheritance map names only real parent features', () => {
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const { PARENT_FEATURE } = require('../extension/core/data-flow');
+    const schemaKeys = new Set(SETTINGS_SCHEMA.map((e) => e.key));
+    for (const [child, parent] of Object.entries(PARENT_FEATURE)) {
+        assert.ok(schemaKeys.has(child), 'PARENT_FEATURE child ' + child + ' must exist in the schema');
+        assert.ok(schemaKeys.has(parent), 'PARENT_FEATURE parent ' + parent + ' must exist in the schema');
+    }
+});
