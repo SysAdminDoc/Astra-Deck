@@ -3893,3 +3893,111 @@ test('v4.11.0 data-flow: PARENT_FEATURE inheritance map names only real parent f
         assert.ok(schemaKeys.has(parent), 'PARENT_FEATURE parent ' + parent + ' must exist in the schema');
     }
 });
+
+// ── v4.12.0 NX1: popup data-flow panel wire-up ──
+
+test('v4.12.0 popup.html includes the data-flow section with the required hooks', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    assert.match(html, /id="data-flow"/,        'popup.html must define #data-flow');
+    assert.match(html, /id="data-flow-list"/,   'popup.html must define #data-flow-list');
+    assert.match(html, /id="data-flow-summary"/,'popup.html must define #data-flow-summary');
+    // Default state must be hidden — schema-gated reveal flips this.
+    assert.match(html, /<section class="data-flow" id="data-flow"[^>]*hidden/,
+        'data-flow section must default to hidden (privacyDataFlowPanel off by default)');
+});
+
+test('v4.12.0 popup.html bundles the v5.0.0 core modules so the panel can render', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    for (const mod of ['core/settings-schema.js', 'core/policy-profile.js', 'core/data-flow.js']) {
+        assert.match(html, new RegExp('<script src="' + mod.replace(/\//g, '\\/') + '">'),
+            'popup.html must load ' + mod);
+    }
+    // popup.js must come AFTER the core modules so its renderDataFlowPanel
+    // function can rely on window.YTKitCore.createDataFlow.
+    const coreIdx = html.lastIndexOf('core/data-flow.js');
+    const popupIdx = html.lastIndexOf('popup.js');
+    assert.ok(coreIdx < popupIdx,
+        'core/data-flow.js must load before popup.js so the factory is available');
+});
+
+test('v4.12.0 popup.js registers data-flow panel refs and uses the live schema setting as the gate', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /const dataFlowSection = \$\('#data-flow'\)/,
+        'popup.js must capture the section ref');
+    assert.match(src, /function renderDataFlowPanel\(\)/,
+        'popup.js must define renderDataFlowPanel');
+    assert.match(src, /settings\.privacyDataFlowPanel !== true/,
+        'renderDataFlowPanel must gate on the privacyDataFlowPanel schema setting');
+    assert.match(src, /window\.YTKitCore && window\.YTKitCore\.createDataFlow/,
+        'renderDataFlowPanel must resolve the factory from window.YTKitCore');
+});
+
+test('v4.12.0 popup.js wires the renderer into init and into storage.onChanged so it stays reactive', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Two call sites: initial render, and storage-change re-render.
+    const occurrences = src.match(/renderDataFlowPanel\(\)/g) || [];
+    assert.ok(occurrences.length >= 3,
+        'renderDataFlowPanel must be called at least three times — definition + init + storage.onChanged (was ' + occurrences.length + ')');
+});
+
+test('v4.12.0 every locale defines the data-flow i18n strings', () => {
+    const localesDir = path.join(__dirname, '..', 'extension', '_locales');
+    const required = [
+        'dataFlowTitle', 'dataFlowNote', 'dataFlowSummaryTpl',
+        'dataFlowActive', 'dataFlowInactive',
+        'dataFlowProfile', 'dataFlowCreds', 'dataFlowRisk', 'dataFlowDriver'
+    ];
+    for (const locale of fs.readdirSync(localesDir)) {
+        const file = path.join(localesDir, locale, 'messages.json');
+        if (!fs.existsSync(file)) continue;
+        const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+        for (const k of required) {
+            assert.ok(k in data,
+                'locale ' + locale + ' must define ' + k);
+            assert.equal(typeof data[k].message, 'string');
+            assert.ok(data[k].message.length > 0, locale + '.' + k + ' must be non-empty');
+        }
+    }
+});
+
+test('v4.12.0 popup.css adds the data-flow surface without using pill backdrops', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(css, /\.data-flow \{/, 'popup.css must define .data-flow');
+    assert.match(css, /\.data-flow-list li \{/, 'popup.css must style the list rows');
+    assert.match(css, /\.data-flow-dot \{/, 'popup.css must define the risk dot');
+    // House style: no full-rounded backdrops. The list rows use a fixed
+    // 8 px radius; the only border-radius: 50% lives on the small risk dot.
+    const oversized = css.match(/border-radius:\s*(999px|9999px|50%)/g) || [];
+    for (const hit of oversized) {
+        // 50% on the dot is fine — it's a 6 px round indicator, not a backdrop.
+        if (hit === 'border-radius: 50%') continue;
+        assert.fail('popup.css must not use stadium/pill border-radius: ' + hit);
+    }
+});
+
+test('v4.12.0 background.js fetch allowlist matches the data-flow store-safe origin list', () => {
+    const bg = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'background.js'), 'utf8'
+    );
+    // Every store-safe data-flow origin (except the wildcarded YouTube
+    // host + 127.0.0.1 loopback) must appear verbatim in the
+    // ALLOWED_FETCH_ORIGINS list. Local-loopback is matched separately.
+    const { ORIGIN_CATALOGUE } = require('../extension/core/data-flow');
+    for (const e of ORIGIN_CATALOGUE) {
+        if (e.profile !== 'store-safe') continue;
+        if (e.origin.includes('*')) continue;
+        if (e.origin.startsWith('http://127.0.0.1')) continue;
+        assert.match(bg, new RegExp(e.origin.replace(/\./g, '\\.')),
+            'background.js ALLOWED_FETCH_ORIGINS must list ' + e.origin);
+    }
+});

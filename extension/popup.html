@@ -71,6 +71,20 @@
          surfaces (errors > misses > drifts) + diagnostic-log per-ctx
          counts from N6. Both are read-only, sourced via a single
          YTKIT_GET_SELECTOR_HEALTH round-trip to the active tab. -->
+    <!-- v4.12.0: privacyDataFlowPanel surface. Lists every external
+         origin Astra Deck can reach, why, under which profile, and
+         whether any currently-enabled feature drives it. Schema-gated
+         on the privacyDataFlowPanel setting (off by default); read-only,
+         rendered from extension/core/data-flow.js's catalogue. -->
+    <section class="data-flow" id="data-flow" aria-labelledby="data-flow-title" hidden>
+      <header class="data-flow-head">
+        <strong class="data-flow-title" id="data-flow-title" data-i18n="dataFlowTitle">Data flow</strong>
+        <span class="data-flow-summary" id="data-flow-summary" aria-live="polite"></span>
+      </header>
+      <ul class="data-flow-list" id="data-flow-list" role="list"></ul>
+      <p class="data-flow-note" id="data-flow-note" data-i18n="dataFlowNote">Active origins are highlighted. Disable the driving toggle to mute an origin entirely.</p>
+    </section>
+
     <section class="selector-health" id="selector-health" aria-label="Selector health snapshot" hidden>
       <header class="selector-health-head">
         <strong class="selector-health-title" data-i18n="selectorHealthTitle">Selector health</strong>
@@ -170,6 +184,15 @@
   </section>
 </div>
 
+<!-- v4.12.0: bundle the v5.0.0 read-only core modules into the popup so
+     the data-flow panel can render the live origin catalogue without
+     round-tripping through the content script. Load order matches the
+     manifest's content_scripts entry: schema first, then policy-profile,
+     then data-flow. All three are popup-safe (IIFE attached to
+     globalThis.YTKitCore == window). -->
+<script src="core/settings-schema.js"></script>
+<script src="core/policy-profile.js"></script>
+<script src="core/data-flow.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>
