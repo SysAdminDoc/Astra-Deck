@@ -5322,3 +5322,153 @@ test('v4.29.0 init flow restores the expanded set BEFORE the first renderSchemaO
     assert.ok(firstRenderIdx > restoreIdx,
         'restore must be awaited BEFORE the first renderSchemaOverview so the user sees their open categories on open');
 });
+
+// ── v4.31.0 NX1: versioned selector-pack file split ──
+
+const V431_FIRST_BATCH_SURFACES = ['appShell', 'nav', 'masthead', 'search', 'leftNav'];
+const V431_FIRST_BATCH_FILES = [
+    'core/selector-packs/appShell.js',
+    'core/selector-packs/nav.js',
+    'core/selector-packs/search.js',
+    'core/selector-packs/leftNav.js'
+];
+
+function loadSelectorPackContext() {
+    // Mirror manifest load order: registry.js + selector-packs/*.js then
+    // selectors.js. The selector packs register themselves into
+    // YTKitCore.SurfacePackRegistry which selectors.js consumes when it
+    // builds SurfaceSelectorMap.
+    const vm = require('node:vm');
+    const ctx = {
+        console,
+        Date,
+        Math,
+        globalThis: null,
+        dispatchEvent() {}
+    };
+    ctx.globalThis = ctx;
+    vm.createContext(ctx);
+    const files = [
+        'extension/core/registry.js',
+        'extension/core/selector-packs/appShell.js',
+        'extension/core/selector-packs/nav.js',
+        'extension/core/selector-packs/search.js',
+        'extension/core/selector-packs/leftNav.js',
+        'extension/core/selectors.js'
+    ];
+    for (const rel of files) {
+        const src = fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
+        vm.runInContext(src, ctx, { filename: rel });
+    }
+    return ctx.globalThis.YTKitCore;
+}
+
+test('v4.31.0 selector-packs/ files exist for the first-batch surfaces', () => {
+    for (const rel of V431_FIRST_BATCH_FILES) {
+        const full = path.join(__dirname, '..', 'extension', rel);
+        assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
+        const body = fs.readFileSync(full, 'utf8');
+        // Every pack must register into the shared SurfacePackRegistry so
+        // the order of pack-file loading is irrelevant.
+        assert.match(body, /SurfacePackRegistry/, `${rel} must reference SurfacePackRegistry`);
+        // Every pack must declare the v4.31.0 schema fields.
+        assert.match(body, /captureEvidence:/, `${rel} must declare captureEvidence`);
+        assert.match(body, /lastVerified:/, `${rel} must declare lastVerified`);
+        assert.match(body, /highChurn:/, `${rel} must declare highChurn`);
+        assert.match(body, /needsFreshCapture:/, `${rel} must declare needsFreshCapture`);
+        assert.match(body, /notes:/, `${rel} must declare notes`);
+        // The pack file must be idempotent — re-registration in a re-run
+        // context (Firefox hot-reload, userscript-on-userscript) must be a
+        // no-op. The check uses the registry.has() guard.
+        assert.match(body, /registry\.has\(/, `${rel} must guard against double-registration`);
+    }
+});
+
+test('v4.31.0 selector pack registry populates SurfaceSelectorMap with first-batch surfaces', () => {
+    const core = loadSelectorPackContext();
+    // instanceof Map doesn't cross vm realms — duck-type the registry
+    // instead. The runtime contract is "has .has() + .keys() + .get()".
+    const reg = core.SurfacePackRegistry;
+    assert.ok(reg && typeof reg.has === 'function' && typeof reg.get === 'function',
+        'YTKitCore.SurfacePackRegistry must expose has() and get()');
+    for (const surface of V431_FIRST_BATCH_SURFACES) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
+        assert.ok(entry.stable.length >= 1, `${surface} must have at least one stable selector`);
+        assert.ok(entry.fallback.length >= 1, `${surface} must have at least one fallback selector`);
+        assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
+            `${surface} must declare at least one captureEvidence entry`);
+        assert.match(entry.lastVerified || '', /^\d{4}-\d{2}-\d{2}$/,
+            `${surface} must declare lastVerified as ISO yyyy-mm-dd`);
+    }
+});
+
+test('v4.31.0 nav and masthead packs share an identical selector spine', () => {
+    const core = loadSelectorPackContext();
+    const nav = core.SurfaceSelectorMap.nav;
+    const masthead = core.SurfaceSelectorMap.masthead;
+    assert.deepEqual([...nav.stable], [...masthead.stable],
+        'nav and masthead must share the same stable selectors');
+    assert.deepEqual([...nav.fallback], [...masthead.fallback],
+        'nav and masthead must share the same fallback selectors');
+    // The two entries diverge only on the notes — masthead announces it
+    // is an alias so feature code that grep'd for it knows which surface
+    // is canonical.
+    assert.match(masthead.notes, /alias/i, 'masthead notes must mark it as an alias');
+});
+
+test('v4.31.0 manifest loads selector packs before core/selectors.js in every content_scripts entry', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const selectorsIdx = cs.js.indexOf('core/selectors.js');
+        if (selectorsIdx === -1) continue;
+        for (const pack of V431_FIRST_BATCH_FILES) {
+            const packIdx = cs.js.indexOf(pack);
+            assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
+            assert.ok(packIdx < selectorsIdx,
+                `${pack} must load BEFORE core/selectors.js (otherwise the registry is empty when the map is built)`);
+        }
+    }
+});
+
+test('v4.31.0 freezeEntry preserves captureEvidence and lastVerified on entries that declare them', () => {
+    const core = loadSelectorPackContext();
+    const appShell = core.SurfaceSelectorMap.appShell;
+    assert.ok(Object.isFrozen(appShell), 'pack entries must be frozen');
+    assert.ok(Object.isFrozen(appShell.captureEvidence), 'captureEvidence must be frozen');
+    assert.ok(appShell.captureEvidence.includes('mhtml/WatchPage.mhtml'),
+        'appShell pack must list the WatchPage capture as evidence');
+    assert.equal(appShell.lastVerified, '2026-05-19');
+});
+
+test('v4.31.0 inline surfaces still resolve through SurfaceSelectorMap (no regression)', () => {
+    const core = loadSelectorPackContext();
+    // These surfaces are still inline in selectors.js (next-batch
+    // candidates). They must continue to resolve correctly after the
+    // refactor or every feature that uses them silently breaks.
+    for (const surface of ['feed', 'watch', 'player', 'comments', 'liveChat']) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must still be in SurfaceSelectorMap`);
+        assert.ok(entry.stable.length >= 1);
+    }
+    assert.equal(core.SurfaceSelectorMap.feed.highChurn, true);
+    assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, true);
+});
+
+test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified', () => {
+    const core = loadSelectorPackContext();
+    const entry = core.getSurfaceSelectorEntry('search');
+    assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
+        'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
+    assert.equal(entry.lastVerified, '2026-05-19');
+    // Inline surfaces that haven't migrated to a pack yet must still
+    // round-trip — captureEvidence comes back as an empty array, not
+    // undefined, so consumers can iterate without a guard.
+    const inline = core.getSurfaceSelectorEntry('feed');
+    assert.ok(Array.isArray(inline.captureEvidence), 'inline surface captureEvidence must be an array (empty)');
+    assert.equal(inline.captureEvidence.length, 0, 'inline surface captureEvidence must default to empty');
+    assert.equal(inline.lastVerified, null);
+});

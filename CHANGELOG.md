@@ -6,6 +6,87 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.31.0] - 2026-05-21 - v5.1.0 #1: versioned selector-pack file split (batch 1)
+
+First batch of the v5.1.0 selector-pack migration. Four shell
+surfaces move out of `extension/core/selectors.js` and into
+`extension/core/selector-packs/<surface>.js` files. Each pack file
+owns one surface (or a tightly aliased pair) and declares capture
+provenance + last-verified date next to the selectors, so the
+popup health surface can ground "miss rate 3.4%" in "verified
+against 4 captures on 2026-05-19" instead of just a live counter.
+
+### Added
+
+- `extension/core/selector-packs/appShell.js`,
+  `extension/core/selector-packs/nav.js` (covers the `masthead`
+  alias), `extension/core/selector-packs/search.js`,
+  `extension/core/selector-packs/leftNav.js` — four pack files
+  declaring `{ surface, stable, fallback, captureEvidence,
+  lastVerified, highChurn, needsFreshCapture, notes }`. Each pack
+  is an idempotent IIFE that registers itself into
+  `globalThis.YTKitCore.SurfacePackRegistry` and bails on
+  re-registration (Firefox hot-reload / userscript safety).
+- `extension/core/selectors.js` — `freezeEntry()` extended to
+  preserve `captureEvidence` (frozen array) and `lastVerified`
+  (ISO date string or null). The inline 28-entry map is now
+  `INLINE_SURFACES` (24 entries — first batch peeled out), and
+  `SurfaceSelectorMap` is built from `INLINE_SURFACES` + every
+  registered pack. Packs win when both define a surface so a future
+  pack file can override a stale inline entry without editing
+  `selectors.js`. `getSurfaceSelectorEntry()` now exposes
+  `captureEvidence` (defaults to `[]`) and `lastVerified`
+  (defaults to `null`) so consumers can iterate without a guard.
+- `extension/manifest.json` — both ISOLATED content-script blocks
+  load every selector pack BEFORE `core/selectors.js` so the pack
+  registry is populated when the map is built.
+- `tests/core-foundation.test.js` — the foundation test now loads
+  the pack files in front of `selectors.js`, matching manifest
+  order, so the existing `surface selector map promotes roadmap
+  surfaces` assertion continues to see appShell / nav / search /
+  leftNav after they peeled out of the inline map.
+- `tests/hardening.test.js` — 7 new regressions: pack-file
+  existence + schema-field declaration, registry duck-type +
+  population, nav/masthead spine parity, manifest pack-before-
+  selectors load order, `freezeEntry` preserves capture provenance,
+  inline surfaces still resolve after the refactor, and
+  `getSurfaceSelectorEntry` exposes the new fields with the right
+  defaults on un-migrated surfaces.
+
+### Changed
+
+- `extension/core/selectors.js` no longer hard-codes the appShell /
+  nav / masthead / search / leftNav entries — they live next to
+  their captures in `selector-packs/`. Net change ≈ -65 / +28 lines.
+
+### Why
+
+The v4.8.0 `selector-health.js` surface already shows live miss
+rates, but a high miss rate against a surface verified yesterday
+is very different from a high miss rate against a surface last
+captured in 2024. Co-locating capture provenance with the
+selectors makes that distinction trivially answerable from the
+popup. The split also makes per-surface rollback feasible: when
+YouTube ships a masthead refactor, the diff lands inside
+`selector-packs/nav.js` instead of a 700-line catch-all.
+
+Roadmap milestone: `ROADMAP.md` carry-forward item #1 enters
+`[~]` with the next three batches (feed / watch / engagement)
+named as the remaining v5.1.0 work.
+
+### Verification
+
+- 458 tests pass (was 451; +7 selector-pack regressions).
+- `npm run check` clean (syntax / versions / i18n / settings /
+  lint / a11y / contrast).
+- `node sync-userscript.js` re-bundles the v5.0.0 modules at
+  v4.31.0; the userscript path keeps the inline selectors map
+  (the pack split is extension-only — userscript selectors are
+  inlined in the monolith already and not routed through the
+  registry).
+- `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
+  at v4.31.0.
+
 ## [4.30.0] - 2026-05-21 - v5.0.0 foundation arc closed (documentation tag)
 
 No code changes from v4.29.0 — version bump + documentation tag

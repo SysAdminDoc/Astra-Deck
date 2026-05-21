@@ -7,8 +7,18 @@ const path = require('path');
 const vm = require('node:vm');
 
 const repoRoot = path.join(__dirname, '..');
+// v4.31.0: selector-packs/*.js MUST load before selectors.js so the
+// pack registry is populated when SurfaceSelectorMap is built. Mirrors
+// the manifest content_scripts order.
+const selectorPackFiles = [
+    'selector-packs/appShell.js',
+    'selector-packs/nav.js',
+    'selector-packs/search.js',
+    'selector-packs/leftNav.js'
+];
 const coreSources = [
     'registry.js',
+    ...selectorPackFiles,
     'selectors.js',
     'trusted-html.js',
     'api-limiter.js',
