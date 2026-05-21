@@ -5334,10 +5334,12 @@ const V431_FIRST_BATCH_FILES = [
 ];
 
 function loadSelectorPackContext() {
-    // Mirror manifest load order: registry.js + selector-packs/*.js then
-    // selectors.js. The selector packs register themselves into
+    // Mirror manifest load order: registry.js + every selector-packs/*.js
+    // then selectors.js. The selector packs register themselves into
     // YTKitCore.SurfacePackRegistry which selectors.js consumes when it
-    // builds SurfaceSelectorMap.
+    // builds SurfaceSelectorMap. The helper discovers pack files from
+    // disk so a new batch (v4.32.0+) doesn't require updating this
+    // setup block.
     const vm = require('node:vm');
     const ctx = {
         console,
@@ -5348,12 +5350,13 @@ function loadSelectorPackContext() {
     };
     ctx.globalThis = ctx;
     vm.createContext(ctx);
+    const packsDir = path.join(__dirname, '..', 'extension', 'core', 'selector-packs');
+    const packFiles = fs.existsSync(packsDir)
+        ? fs.readdirSync(packsDir).filter((f) => f.endsWith('.js')).sort()
+        : [];
     const files = [
         'extension/core/registry.js',
-        'extension/core/selector-packs/appShell.js',
-        'extension/core/selector-packs/nav.js',
-        'extension/core/selector-packs/search.js',
-        'extension/core/selector-packs/leftNav.js',
+        ...packFiles.map((f) => `extension/core/selector-packs/${f}`),
         'extension/core/selectors.js'
     ];
     for (const rel of files) {
@@ -5449,11 +5452,15 @@ test('v4.31.0 inline surfaces still resolve through SurfaceSelectorMap (no regre
     // These surfaces are still inline in selectors.js (next-batch
     // candidates). They must continue to resolve correctly after the
     // refactor or every feature that uses them silently breaks.
-    for (const surface of ['feed', 'watch', 'player', 'comments', 'liveChat']) {
+    for (const surface of ['watch', 'player', 'comments', 'liveChat']) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must still be in SurfaceSelectorMap`);
         assert.ok(entry.stable.length >= 1);
     }
+    // Note: feed/feedCard/thumbnail/shortsShelf were peeled in v4.32.0
+    // (batch 2) so they now come from selector-packs/ rather than the
+    // inline map. The map-level highChurn flag stays true regardless of
+    // origin.
     assert.equal(core.SurfaceSelectorMap.feed.highChurn, true);
     assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, true);
 });
@@ -5464,11 +5471,83 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
     assert.equal(entry.lastVerified, '2026-05-19');
-    // Inline surfaces that haven't migrated to a pack yet must still
-    // round-trip — captureEvidence comes back as an empty array, not
-    // undefined, so consumers can iterate without a guard.
-    const inline = core.getSurfaceSelectorEntry('feed');
+    // A still-inline surface (watch is in batch 3, not yet packed) must
+    // round-trip with empty captureEvidence + null lastVerified so
+    // consumers can iterate without a guard.
+    const inline = core.getSurfaceSelectorEntry('watch');
     assert.ok(Array.isArray(inline.captureEvidence), 'inline surface captureEvidence must be an array (empty)');
     assert.equal(inline.captureEvidence.length, 0, 'inline surface captureEvidence must default to empty');
     assert.equal(inline.lastVerified, null);
+});
+
+// ── v4.32.0 NX1: selector-pack batch 2 (feed-shell) ──
+
+const V432_FEED_SHELL_SURFACES = ['feed', 'feedCard', 'thumbnail', 'shortsShelf'];
+const V432_FEED_SHELL_FILES = [
+    'core/selector-packs/feed.js',
+    'core/selector-packs/feedCard.js',
+    'core/selector-packs/thumbnail.js',
+    'core/selector-packs/shortsShelf.js'
+];
+
+const loadSelectorPackContextV432 = loadSelectorPackContext;
+
+test('v4.32.0 feed-shell pack files exist with the v4.31.0 schema fields', () => {
+    for (const rel of V432_FEED_SHELL_FILES) {
+        const full = path.join(__dirname, '..', 'extension', rel);
+        assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
+        const body = fs.readFileSync(full, 'utf8');
+        assert.match(body, /SurfacePackRegistry/, `${rel} must reference SurfacePackRegistry`);
+        assert.match(body, /captureEvidence:/, `${rel} must declare captureEvidence`);
+        assert.match(body, /lastVerified:/, `${rel} must declare lastVerified`);
+        assert.match(body, /highChurn:/, `${rel} must declare highChurn`);
+        assert.match(body, /needsFreshCapture:/, `${rel} must declare needsFreshCapture`);
+        assert.match(body, /registry\.has\(/, `${rel} must guard against double-registration`);
+    }
+});
+
+test('v4.32.0 feed-shell surfaces now come from the pack registry, not INLINE_SURFACES', () => {
+    const core = loadSelectorPackContextV432();
+    for (const surface of V432_FEED_SHELL_SURFACES) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
+        // captureEvidence is the marker — only packed surfaces carry it.
+        assert.ok(entry.captureEvidence.length >= 1,
+            `${surface} must carry capture evidence (i.e. live in a pack file, not INLINE_SURFACES)`);
+        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.equal(entry.highChurn, true, `${surface} must keep highChurn=true after the peel`);
+    }
+});
+
+test('v4.32.0 feed-shell pack selectors round-trip the pre-peel values', () => {
+    const core = loadSelectorPackContextV432();
+    const feed = core.SurfaceSelectorMap.feed;
+    assert.deepEqual([...feed.stable],
+        ['ytd-browse ytd-rich-grid-renderer', 'ytd-rich-grid-renderer']);
+    assert.deepEqual([...feed.fallback],
+        ['ytd-rich-grid-renderer.style-scope', '#contents.ytd-rich-grid-renderer']);
+
+    const feedCard = core.SurfaceSelectorMap.feedCard;
+    assert.deepEqual([...feedCard.stable],
+        ['ytd-rich-item-renderer', 'yt-lockup-view-model', 'ytd-video-renderer']);
+
+    const shorts = core.SurfaceSelectorMap.shortsShelf;
+    assert.equal(shorts.stable[0], 'a[href^="/shorts"]',
+        'Shorts shelf must keep the URL-anchored selector first');
+});
+
+test('v4.32.0 manifest loads the feed-shell packs before core/selectors.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const selectorsIdx = cs.js.indexOf('core/selectors.js');
+        if (selectorsIdx === -1) continue;
+        for (const pack of V432_FEED_SHELL_FILES) {
+            const packIdx = cs.js.indexOf(pack);
+            assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
+            assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);
+        }
+    }
 });
