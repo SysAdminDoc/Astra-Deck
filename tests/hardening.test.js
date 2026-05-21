@@ -5138,3 +5138,70 @@ test('v4.26.0 the schema has at least 20 number-typed non-internal entries (edit
     assert.ok(numbers.length >= 20,
         'schema must declare at least 20 user-visible number-typed entries (was ' + numbers.length + ')');
 });
+
+// ── v4.27.0 NX1: string-type inline editor in schema overview ──
+
+test('v4.27.0 string-type rows render a real input element with the right pattern', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Both the colour-picker branch and the text-input branch must
+    // be present, and the looksHex selection must be regex-driven.
+    assert.match(src, /entry\.type === 'string'/,
+        'popup.js must declare a string-type branch');
+    assert.match(src, /input\.type = looksHex \? 'color' : 'text';/,
+        'string branch must split on looksHex into color | text');
+    assert.match(src, /\/\^#\[0-9a-fA-F\]\{3\}\(\?:\[0-9a-fA-F\]\{3\}\)\?\(\?:\[0-9a-fA-F\]\{2\}\)\?\$\//,
+        'looksHex detection must use the documented #RGB / #RRGGBB / #RRGGBBAA regex');
+});
+
+test('v4.27.0 string persist routes through writeSetting with no-op short-circuit', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Equal-value short-circuit prevents needless writes when the user
+    // tabs through an input without changing it.
+    assert.match(src, /if \(popupState\.settings\[entry\.key\] === raw\) return;/,
+        'string persist must short-circuit when the value is unchanged');
+    assert.match(src, /await writeSetting\(entry\.key, raw\)/,
+        'string persist must use writeSetting');
+});
+
+test('v4.27.0 color input coerces #RGB short-hex into #RRGGBB before assigning to input.value', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // input[type=color] only accepts the 6-digit form — the popup
+    // expands #RGB to #RRGGBB by mirroring each digit. Keep this in
+    // sync with theme-css's identical normalisation.
+    assert.match(src, /current\[1\] \+ current\[1\] \+ current\[2\] \+ current\[2\] \+ current\[3\] \+ current\[3\]/,
+        'string branch must mirror short-hex digits when feeding input[type=color]');
+});
+
+test('v4.27.0 popup.css declares both editor variants without pill backdrops', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(css, /\.so-key-text \{/);
+    assert.match(css, /\.so-key-color \{/);
+    // Both surfaces use 6 px radius — same house-style constraint as
+    // the v4.26.0 number input. No half-height stadium aesthetic.
+    const textBlock = css.slice(css.indexOf('.so-key-text {'));
+    const textRadius = textBlock.match(/border-radius:\s*(\d+)px/);
+    assert.ok(textRadius && parseInt(textRadius[1], 10) <= 8);
+    const colourBlock = css.slice(css.indexOf('.so-key-color {'));
+    const colourRadius = colourBlock.match(/border-radius:\s*(\d+)px/);
+    assert.ok(colourRadius && parseInt(colourRadius[1], 10) <= 8);
+});
+
+test('v4.27.0 the schema has at least 30 string-typed non-internal entries (editor coverage canary)', () => {
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const strings = SETTINGS_SCHEMA.filter((e) => e.type === 'string' && !e.internal);
+    assert.ok(strings.length >= 30,
+        'schema must declare at least 30 user-visible string-typed entries (was ' + strings.length + ')');
+    // And at least a few of them must be hex-coloured so the colour
+    // picker branch has live coverage.
+    const hexLike = strings.filter((e) => /^#[0-9a-fA-F]{3,8}$/.test(e.defaultValue));
+    assert.ok(hexLike.length >= 3,
+        'schema must declare at least 3 hex-coloured strings so the color picker branch has live coverage (was ' + hexLike.length + ')');
+});
