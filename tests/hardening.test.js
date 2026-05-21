@@ -5205,3 +5205,58 @@ test('v4.27.0 the schema has at least 30 string-typed non-internal entries (edit
     assert.ok(hexLike.length >= 3,
         'schema must declare at least 3 hex-coloured strings so the color picker branch has live coverage (was ' + hexLike.length + ')');
 });
+
+// ── v4.28.0 NX1: humanizeSettingKey helper + popup wiring ──
+
+test('v4.28.0 settings-schema exports humanizeSettingKey', () => {
+    delete require.cache[require.resolve('../extension/core/settings-schema')];
+    const mod = require('../extension/core/settings-schema');
+    assert.equal(typeof mod.humanizeSettingKey, 'function');
+});
+
+test('v4.28.0 humanizeSettingKey splits camelCase + capitalises the first letter', () => {
+    const { humanizeSettingKey } = require('../extension/core/settings-schema');
+    assert.equal(humanizeSettingKey('customProgressBarColor'), 'Custom progress bar color');
+    assert.equal(humanizeSettingKey('hideEndCards'),           'Hide end cards');
+    assert.equal(humanizeSettingKey('safeStoreProfile'),       'Safe store profile');
+});
+
+test('v4.28.0 humanizeSettingKey upper-cases registered short-form acronyms', () => {
+    const { humanizeSettingKey } = require('../extension/core/settings-schema');
+    assert.equal(humanizeSettingKey('vvfBrightness'),  'VVF brightness');
+    assert.equal(humanizeSettingKey('aiSummaryApiKey'),'AI summary API key');
+    assert.equal(humanizeSettingKey('dwDailyCapMin'),  'DW daily cap min');
+    assert.equal(humanizeSettingKey('dataFlowCss'),    'Data flow CSS');
+    assert.equal(humanizeSettingKey('rssFeedLink'),    'RSS feed link');
+});
+
+test('v4.28.0 humanizeSettingKey strips leading underscores and survives weird input', () => {
+    const { humanizeSettingKey } = require('../extension/core/settings-schema');
+    assert.equal(humanizeSettingKey('_profiles'),     'Profiles');
+    assert.equal(humanizeSettingKey('_activeProfile'),'Active profile');
+    // Defensive paths — must not throw, must return empty string for
+    // genuinely empty/invalid input.
+    assert.equal(humanizeSettingKey(''),         '');
+    assert.equal(humanizeSettingKey(null),       '');
+    assert.equal(humanizeSettingKey(undefined),  '');
+});
+
+test('v4.28.0 humanizeSettingKey inserts spaces around digit runs', () => {
+    const { humanizeSettingKey } = require('../extension/core/settings-schema');
+    assert.equal(humanizeSettingKey('vp9Codec'),       'VP9 codec');
+    assert.equal(humanizeSettingKey('av1ForceEnable'), 'AV1 force enable');
+});
+
+test('v4.28.0 popup schema-overview row labels prefer humanizeSettingKey output', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /const humanizer = window\.__YTKIT_SETTINGS_SCHEMA__\s*\n?\s*&& window\.__YTKIT_SETTINGS_SCHEMA__\.humanizeSettingKey;/,
+        'popup must resolve humanizer via the schema namespace');
+    assert.match(src, /label\.textContent = \(typeof humanizer === 'function' \? humanizer\(entry\.key\) : entry\.key\);/,
+        'popup must prefer the humanised label, falling back to the raw key');
+    // Raw key still surfaces via the tooltip so power users can identify
+    // the underlying setting.
+    assert.match(src, /label\.title = entry\.key;/,
+        'popup must keep the raw key in the label title for support workflows');
+});

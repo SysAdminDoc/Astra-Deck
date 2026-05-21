@@ -1500,7 +1500,14 @@ function buildSchemaOverviewKeyRow(entry, settings) {
 
     const label = document.createElement('span');
     label.className = 'so-key-name';
-    label.textContent = entry.key;
+    // v4.28.0: prefer the schema's humanised label so users see
+    // "Custom progress bar color" instead of "customProgressBarColor".
+    // The raw storage key is still surfaced via the tooltip so power
+    // users can identify the underlying setting for support tickets.
+    const humanizer = window.__YTKIT_SETTINGS_SCHEMA__
+        && window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey;
+    label.textContent = (typeof humanizer === 'function' ? humanizer(entry.key) : entry.key);
+    label.title = entry.key;
     row.appendChild(label);
 
     if (entry.type === 'boolean') {
