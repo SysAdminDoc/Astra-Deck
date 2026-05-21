@@ -42,6 +42,14 @@ const predicateSandboxSource = fs.readFileSync(
     'utf8'
 );
 
+function runNodeCommand(args) {
+    const { spawnSync } = require('child_process');
+    return spawnSync(process.execPath, args, {
+        stdio: 'pipe',
+        cwd: path.join(__dirname, '..')
+    });
+}
+
 // ── v3.14.0 C1: ReDoS guard in videoHider ──
 
 test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () => {
@@ -1336,7 +1344,7 @@ test('theater-split teardown calls abortDividerDrag to handle SPA-nav mid-drag',
 // ── v3.20.4 H10: scripts/check-versions.js — pre-push version drift check ──
 //
 // .github/workflows/build.yml validates version-string consistency only
-// after a tag push. A developer who bumps three of four sources locally
+// after a tag push. A developer who bumps most sources locally
 // (e.g. forgets to run `node sync-userscript.js`) won't notice until CI
 // fails post-tag. H10 ports the same check into a local `npm run check`
 // hook so drift is caught pre-push.
@@ -1345,8 +1353,9 @@ test('check-versions.js exists and is wired into npm run check', () => {
     const scriptPath = path.join(__dirname, '..', 'scripts', 'check-versions.js');
     assert.ok(fs.existsSync(scriptPath), 'scripts/check-versions.js must exist');
     const scriptSource = fs.readFileSync(scriptPath, 'utf8');
-    // Confirm the four canonical sources are read.
+    // Confirm every canonical version surface is read, including the lockfile.
     assert.match(scriptSource, /readPackageVersion/, 'must read package.json version');
+    assert.match(scriptSource, /readPackageLockVersion/, 'must read package-lock.json version');
     assert.match(scriptSource, /readManifestVersion/, 'must read extension/manifest.json version');
     assert.match(scriptSource, /readYtkitVersion/, 'must read extension/ytkit.js YTKIT_VERSION');
     assert.match(scriptSource, /readUserscriptVersion/, 'must read YTKit.user.js @version');
@@ -1373,7 +1382,33 @@ test('check-versions.js runs cleanly against the current tree', () => {
         exitCode = e.status || 1;
     }
     assert.equal(exitCode, 0,
-        'check-versions must pass on a clean tree — if this fails, version drift exists somewhere in the four canonical sources');
+        'check-versions must pass on a clean tree — if this fails, version drift exists somewhere in the canonical version surfaces');
+});
+
+test('build-extension.js updates package-lock version during --bump', () => {
+    const buildSource = fs.readFileSync(
+        path.join(__dirname, '..', 'build-extension.js'),
+        'utf8'
+    );
+    assert.match(buildSource, /package-lock\.json/,
+        'build-extension.js must update package-lock.json during version bumps');
+    assert.match(buildSource, /lock\.packages\[''\]\.version\s*=\s*version/,
+        'build-extension.js must update packages[""].version so lockfile drift cannot ship');
+});
+
+test('check-syntax dynamically covers every extension and script JS file', () => {
+    const scriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'check-syntax.js'),
+        'utf8'
+    );
+    assert.match(scriptSource, /function\s+listJsFiles\s*\(/,
+        'check-syntax.js must recursively discover JS files instead of carrying a stale hand list');
+    for (const expectedDir of ["'extension'", "'scripts'"]) {
+        assert.ok(scriptSource.includes(expectedDir),
+            `check-syntax.js must scan ${expectedDir}`);
+    }
+    assert.doesNotMatch(scriptSource, /core\/storage-manager\.js/,
+        'check-syntax.js must not regress to hard-coded recently extracted core modules');
 });
 
 test('EXT_FETCH aborts the controller on every size-limit early return path', () => {
@@ -1571,12 +1606,10 @@ test('scripts/eslint-rules/no-post-await-addlistener.js is loadable and has corr
 });
 
 test('npm run lint passes cleanly on extension/background.js', () => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('npm', ['run', 'lint'], {
-        stdio: 'pipe',
-        cwd: path.join(__dirname, '..'),
-        shell: true
-    });
+    const result = runNodeCommand([
+        path.join(__dirname, '..', 'node_modules', 'eslint', 'bin', 'eslint.js'),
+        'extension/background.js'
+    ]);
     assert.equal(result.status, 0,
         'npm run lint must pass cleanly — all existing addListener calls must be at top level');
 });
@@ -1607,21 +1640,18 @@ test('popup carries dialog semantics with focus trap, Tab wrap, Escape close', (
 });
 
 test('all popup buttons carry aria-label or visible text for a11y', () => {
-    // Buttons found in popup.html: openPanel, export-btn, import-btn, reset-btn,
-    // clearSearch, health-copy-btn, health-clear-btn, confirm-cancel-btn, confirm-accept-btn
-    const buttonIds = [
-        'openPanel', 'export-btn', 'import-btn', 'reset-btn',
-        'clearSearch', 'health-copy-btn', 'health-clear-btn'
-    ];
-    for (const id of buttonIds) {
-        const hasAriaLabel = popupHtmlSource.includes(`id="${id}"`) && 
-                             popupHtmlSource.includes(`aria-label=`);
-        const hasVisibleText = popupHtmlSource.match(
-            new RegExp(`id="${id}"[^>]*>[^<]+<`, '')
-        );
+    const dynamicButtonIds = new Set(['confirm-cancel-btn', 'confirm-accept-btn']);
+    const buttons = [...popupHtmlSource.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/gi)];
+    assert.ok(buttons.length >= 10, 'popup.html should expose every static button to the audit');
+    for (const [, attrs, body] of buttons) {
+        const id = (attrs.match(/\bid="([^"]+)"/) || [])[1] || '(anonymous button)';
+        const hasAriaLabel = /\baria-label="[^"]+"/.test(attrs);
+        const hasVisibleText = body.replace(/<[^>]+>/g, '').replace(/&times;/g, 'x').trim().length > 0;
+        const hasDynamicText = dynamicButtonIds.has(id) && new RegExp(`${id.replace(/-/g, '[-]')}|${id}`).test(popupHtmlSource)
+            && (id === 'confirm-cancel-btn' ? /cancelBtn\.textContent\s*=/.test(popupSource) : /acceptBtn\.textContent\s*=/.test(popupSource));
         assert.ok(
-            hasAriaLabel || hasVisibleText,
-            `Button ${id} must have aria-label or visible text`
+            hasAriaLabel || hasVisibleText || hasDynamicText,
+            `Button ${id} must have aria-label, visible text, or audited dynamic text`
         );
     }
 });
@@ -1635,7 +1665,8 @@ test('popup CSS includes focus-visible styles for keyboard navigation', () => {
         'button:focus-visible',
         'input:focus-visible',
         'textarea:focus-visible',
-        '.toggle:focus-visible'
+        '.toggle:focus-visible',
+        '[role="switch"]:focus-visible'
     ]) {
         assert.ok(
             cssSource.includes(selector),
@@ -1645,25 +1676,22 @@ test('popup CSS includes focus-visible styles for keyboard navigation', () => {
 });
 
 test('health banner colors pass WCAG AA contrast (4.5:1 for text)', () => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('npm', ['run', 'audit:contrast'], {
-        stdio: 'pipe',
-        cwd: path.join(__dirname, '..'),
-        shell: true
-    });
+    const result = runNodeCommand([path.join(__dirname, '..', 'scripts', 'check-contrast.js')]);
     assert.equal(result.status, 0,
         'npm run audit:contrast must pass — all health banner colors must meet WCAG AA');
 });
 
 test('npm run audit:a11y reports no popup a11y issues', () => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('npm', ['run', 'audit:a11y'], {
-        stdio: 'pipe',
-        cwd: path.join(__dirname, '..'),
-        shell: true
-    });
+    const result = runNodeCommand([path.join(__dirname, '..', 'scripts', 'audit-popup-a11y.js')]);
     assert.equal(result.status, 0,
         'npm run audit:a11y must pass — all buttons must be labeled, dialog semantics must be present');
+});
+
+test('popup selector-health stats are rendered without template innerHTML', () => {
+    assert.match(popupSource, /function\s+appendSelectorMetric\s*\(/,
+        'popup.js must use a DOM helper for selector-health metrics');
+    assert.doesNotMatch(popupSource, /tmpl\.innerHTML\s*=/,
+        'selector-health metrics must not use template.innerHTML for mixed text/spans');
 });
 
 // ── v3.23.0 NX5: ARIA live region for SponsorBlock skip + DeArrow replace ──
@@ -2995,6 +3023,18 @@ test('background ALLOWED_FETCH_ORIGINS drops localhost aliases (defends DNS rebi
     // Sanity: 127.0.0.1 entries still present.
     assert.match(backgroundSource, /http:\/\/127\.0\.0\.1:9751/,
         'background.js must still allow the primary 127.0.0.1 downloader port');
+});
+
+test('manifest host_permissions also drop localhost aliases', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    const hosts = manifest.host_permissions || [];
+    assert.ok(hosts.some((entry) => entry.startsWith('http://127.0.0.1:9751/')),
+        'manifest must still allow the loopback-literal downloader origin');
+    assert.ok(hosts.every((entry) => !entry.startsWith('http://localhost:')),
+        'manifest.host_permissions must not grant localhost aliases; runtime only uses 127.0.0.1');
 });
 
 test('chrome.runtime.onMessage rejects senders outside our extension id', () => {
