@@ -4852,3 +4852,76 @@ test('v4.22.0 theme-css now exposes seven CSS builders (peel count keeps climbin
         'buildSelectionColorCss'
     ], 'theme-css must export the seven v4.22.0 builders alphabetically');
 });
+
+// ── v4.23.0 NX1: schema-driven category overview in popup ──
+
+test('v4.23.0 popup.html declares the schema-overview details surface', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    assert.match(html, /<details class="schema-overview" id="schema-overview">/,
+        'popup.html must declare a <details> wrapping the schema overview');
+    assert.match(html, /id="schema-overview-count"/,
+        'overview must expose the count target');
+    assert.match(html, /id="schema-overview-list"/,
+        'overview must expose the per-category list target');
+    // The wrapper must NOT default to `open` — first-time openers see
+    // a compact summary line.
+    const tag = html.match(/<details class="schema-overview"[^>]*>/)[0];
+    assert.equal(tag.includes(' open'), false,
+        'schema-overview details must be collapsed by default');
+});
+
+test('v4.23.0 popup.js defines renderSchemaOverview + isToggleEnabled and reads from the schema', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /function renderSchemaOverview\(\)/,
+        'popup.js must define renderSchemaOverview');
+    assert.match(src, /function isToggleEnabled\(entry, settings\)/,
+        'popup.js must define isToggleEnabled');
+    assert.match(src, /window\.__YTKIT_SETTINGS_SCHEMA__/,
+        'renderSchemaOverview must read the schema via __YTKIT_SETTINGS_SCHEMA__');
+    // Wired into init + storage.onChanged so the counts stay reactive.
+    const calls = (src.match(/renderSchemaOverview\(\)/g) || []).length;
+    assert.ok(calls >= 3,
+        'renderSchemaOverview must be invoked at least three times — definition + init + storage.onChanged (was ' + calls + ')');
+});
+
+test('v4.23.0 popup.css declares the schema-overview surface without pill backdrops', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(css, /\.schema-overview \{/);
+    assert.match(css, /\.schema-overview-list li \{/);
+    // The list rows must use the house-style 8 px radius. No
+    // border-radius: 999px / 50%.
+    const overviewBlock = css.split('.schema-overview')[1] || '';
+    const oversized = overviewBlock.match(/border-radius:\s*(999px|9999px|50%)/g) || [];
+    assert.equal(oversized.length, 0,
+        'schema-overview must not use stadium/pill backdrops (found: ' + oversized.join(', ') + ')');
+});
+
+test('v4.23.0 every locale defines the new schemaOverview i18n keys', () => {
+    const dir = path.join(__dirname, '..', 'extension', '_locales');
+    const required = ['schemaOverviewEyebrow', 'schemaOverviewCountTpl'];
+    for (const locale of fs.readdirSync(dir)) {
+        const p = path.join(dir, locale, 'messages.json');
+        if (!fs.existsSync(p)) continue;
+        const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+        for (const k of required) {
+            assert.ok(k in data, locale + ' must define ' + k);
+            assert.ok(typeof data[k].message === 'string' && data[k].message.length > 0);
+        }
+    }
+});
+
+test('v4.23.0 schemaOverviewCountTpl placeholders cover enabled/total/categories', () => {
+    const en = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    const tpl = en.schemaOverviewCountTpl.message;
+    assert.match(tpl, /\{enabled\}/,    'tpl must reference {enabled}');
+    assert.match(tpl, /\{total\}/,      'tpl must reference {total}');
+    assert.match(tpl, /\{categories\}/, 'tpl must reference {categories}');
+});

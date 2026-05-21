@@ -6,6 +6,54 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.23.0] - 2026-05-21 - v5.0.0 foundation #18: schema-driven category overview in popup
+
+Closes the visible end of the v5.0.0 schema-consumption arc: the
+popup now ships a read-only "Settings overview" surface that
+displays every settings-schema category with live enabled-vs-total
+counts. Collapsed by default; uses native `<details>` for
+accessibility; reactive to `chrome.storage.onChanged`.
+
+### Added
+
+- `extension/popup.html` — `<details class="schema-overview">`
+  surface between the storage stats and the data-flow panel. Native
+  collapsible disclosure pattern; defaults closed so first-time
+  openers see only the summary line.
+- `extension/popup.js` — `renderSchemaOverview()` renderer + new
+  `isToggleEnabled(entry, settings)` helper (mirrors the data-flow
+  panel's "currently active" heuristic across booleans, strings,
+  numbers, arrays, objects). Reads
+  `window.__YTKIT_SETTINGS_SCHEMA__.SETTINGS_SCHEMA` (bundled in
+  popup.html via the v4.12.0 core-module script tags). Wired into
+  both the initial `loadSettings()` flow and the
+  `chrome.storage.onChanged` reactive re-render. Non-internal
+  entries only — `_`-prefixed storage state is excluded.
+- `extension/popup.css` — `.schema-overview` surface styled to match
+  the existing health/data-flow lanes: dense, OLED-friendly, dark
+  only. Two-column grid for the per-category list keeps the popup
+  height bounded even with 18 categories.
+- `extension/_locales/*/messages.json` — two new i18n keys
+  (`schemaOverviewEyebrow`, `schemaOverviewCountTpl` with
+  `{enabled}/{total}/{categories}` placeholders). All 10 locales
+  seeded with English fallbacks.
+- `tests/hardening.test.js` — 5 new regressions: details surface
+  exists and defaults closed, popup.js wires the renderer in three
+  places (definition + init + storage.onChanged), CSS uses no pill
+  backdrops, every locale defines both new keys, and the count
+  template references all three placeholders.
+
+### Why
+
+The v5.0.0 schema has been the source of truth for risk badges
+(v4.16.0) and the data-flow panel (v4.12.0). v4.23.0 generalises
+the pattern with a read-only category roll-up that demonstrates
+the schema is consumable for any future popup or in-page UI
+surface that needs per-category state. The native `<details>`
+choice keeps it discoverable without permanently adding 18 rows of
+popup chrome — closed by default, opens on click for users who
+want the full landscape.
+
 ## [4.22.0] - 2026-05-21 - v5.0.0 foundation #17: theme-css extends (+compactUnfixedHeader, +hideVideoEndContent)
 
 Two more bulk peels into the existing `extension/features/theme-css/`

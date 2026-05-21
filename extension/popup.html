@@ -71,6 +71,20 @@
          surfaces (errors > misses > drifts) + diagnostic-log per-ctx
          counts from N6. Both are read-only, sourced via a single
          YTKIT_GET_SELECTOR_HEALTH round-trip to the active tab. -->
+    <!-- v4.23.0: schema-driven category overview. Read-only snapshot of
+         every settings-schema category with its enabled/total counts
+         sourced from the live settings bag. Demonstrates the schema is
+         consumable beyond the data-flow panel + risk badges. Native
+         <details> for collapsibility; defaults closed so the popup
+         stays compact for first-time openers. -->
+    <details class="schema-overview" id="schema-overview">
+      <summary class="schema-overview-summary">
+        <span class="schema-overview-eyebrow" data-i18n="schemaOverviewEyebrow">Settings overview</span>
+        <span class="schema-overview-count" id="schema-overview-count" aria-live="polite"></span>
+      </summary>
+      <ul class="schema-overview-list" id="schema-overview-list" role="list"></ul>
+    </details>
+
     <!-- v4.12.0: privacyDataFlowPanel surface. Lists every external
          origin Astra Deck can reach, why, under which profile, and
          whether any currently-enabled feature drives it. Schema-gated

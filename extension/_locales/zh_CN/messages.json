@@ -709,5 +709,11 @@
   },
   "dataFlowDriver": {
     "message": "driver"
+  },
+  "schemaOverviewEyebrow": {
+    "message": "Settings overview"
+  },
+  "schemaOverviewCountTpl": {
+    "message": "{enabled}/{total} settings on across {categories} categories"
   }
 }
