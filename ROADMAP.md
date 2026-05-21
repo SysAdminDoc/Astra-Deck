@@ -1187,13 +1187,14 @@ Goal: make the product maintainable enough to carry the full superset.
 Features:
 
 - [x] Introduce full settings schema metadata for all 354 observed keys. _(Delivered in v4.6.0 — `extension/core/settings-schema.js` is the single source of truth; `scripts/check-settings.js` is hooked into `npm run check`; 10 hardening tests pin the invariants; `build-extension.js` emits `default-settings.json` from the schema with a drift gate against the legacy `ytkit.js` extractor.)_
-- [ ] Extract feature modules from the monolith by category.
-- [ ] Introduce `feature-lifecycle.js`.
-- [ ] Build category-driven settings panel with search, profile badges, and diagnostics.
-- [ ] Add selector health system and versioned selector packs.
-- [ ] Add route-aware observer coordinator.
-- [ ] Add data-flow panel v1 with API origins and permission explanations.
-- [ ] Add explicit store-safe/full/userscript profile switch.
+- [x] Introduce `feature-lifecycle.js`. _(Delivered in v4.7.0 — `extension/core/feature-lifecycle.js` exports `createLifecycle()` with `defineFeature`/`start`/`apply`/`destroy`, AbortController-backed signals, monotonic route tokens, best-effort destroy, snapshot diagnostics. Wired into both content_script load orders ahead of `ytkit.js`; 5 hardening tests pin invariants. Adoption is opt-in per feature — no existing features rewired yet.)_
+- [x] Add explicit store-safe/full/userscript profile switch. _(Resolver delivered in v4.7.0 — `extension/core/policy-profile.js` exports `createPolicyProfile()` with `resolveEffectiveProfile`, `isEntryAllowedInProfile`, `filterSettingsForProfile`, `shouldScrubKey`, `buildExportSnapshot`, `countByProfile`. 6 hardening tests pin the partition + scrub rules. Popup UI for the toggle row + visible warnings still pending — see v5.0.0 follow-up below.)_
+- [ ] Build category-driven settings panel with search, profile badges, and diagnostics _(popup work — consumes the new schema + policy-profile + lifecycle modules)._
+- [ ] Add selector health system and versioned selector packs _(v5.1.0)._
+- [ ] Add route-aware observer coordinator _(layers on the lifecycle route token)._
+- [ ] Add data-flow panel v1 with API origins and permission explanations _(consumes `countByProfile` + host_permissions audit)._
+- [ ] Extract feature modules from the monolith by category _(incremental — each peel adopts feature-lifecycle and policy-profile)._
+- [ ] Extract `showToast` into `core/toast.js` _(non-functional refactor of the existing in-monolith implementation; safe to bundle with the first feature peel)._
 
 Acceptance criteria:
 
