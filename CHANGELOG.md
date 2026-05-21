@@ -6,6 +6,55 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.41.0] - 2026-05-21 - array / object JSON editors in the schema overview
+
+Closes carry-forward item #5. The popup schema overview can now
+edit every type — closes editor coverage from ~340 to **354 of 354**
+schema keys.
+
+### Added
+
+- `extension/popup.js` — `buildSchemaOverviewKeyRow` gains an
+  `array | object` branch that renders a `<textarea.so-key-json>`
+  pre-populated with `JSON.stringify(value, null, 2)` and a
+  `.so-key-json-error` pill below. Commit happens on change/blur
+  via `JSON.parse`; failures stamp the pill with
+  `"Invalid JSON: <reason>"` and skip persistence. Type-shape
+  guards reject array→object and object→array shape flips
+  up-front so a paste accident can't silently corrupt the store.
+- `extension/popup.css` — `.so-key-json-wrap`, `.so-key-json`
+  (6 px backdrop radius — house style), `.so-key-json-error`
+  (4 px radius, amber-red tone).
+- `tests/hardening.test.js` — 6 new v4.41.0 regressions:
+  textarea + error-pill branch wired, pretty-print + parse
+  round-trip, type-shape guards, persist-skips-on-parse-error
+  ordering, sub-8 px CSS radii on both the editor and the pill,
+  and a coverage canary that ≥1 array AND ≥1 object entry remain
+  in the schema. The v4.24.0 array-length read-only canary is
+  rewritten to expect the v4.41.0 JSON-editor branch.
+
+### Why
+
+The remaining 14 array + object schema keys
+(`hiddenChatElements`, `hiddenVideos`, `hiddenChannels`,
+`hiddenWatchElements`, `subscriptionGroupData`, etc.) were the
+last bucket the popup couldn't edit. The JSON-textarea editor
+matches the per-slice instruction in CLAUDE.md / the v5.1.0 brief
+exactly: round-trip via `JSON.stringify(value, null, 2)` and
+`JSON.parse` on commit, parse-error pill below an invalid
+textarea. Real per-key custom UIs (multi-select for
+`hiddenChatElements`, channel-handle list for
+`hiddenChannels`, etc.) can layer on top of this in v5.2.0+
+without breaking the JSON-fallback path.
+
+### Verification
+
+- 504 tests pass (was 498; +6 JSON-editor regressions, +0 from
+  the v4.24.0 rewrite).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.41.0.
+
 ## [4.40.0] - 2026-05-21 - labelKey/descriptionKey override fields on schema entries
 
 Closes carry-forward item #8. Schema entries gain optional

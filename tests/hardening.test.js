@@ -4950,7 +4950,7 @@ test('v4.24.0 popup.js builds clickable category disclosure rows via <button> he
         'category head must reflect expanded state from schemaOverviewState');
 });
 
-test('v4.24.0 popup.js defines buildSchemaOverviewKeyRow with boolean switch + read-only badge paths', () => {
+test('v4.24.0 popup.js defines buildSchemaOverviewKeyRow with boolean switch + writeSetting persist', () => {
     const src = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
     );
@@ -4961,10 +4961,11 @@ test('v4.24.0 popup.js defines buildSchemaOverviewKeyRow with boolean switch + r
         'boolean rows must use role="switch"');
     assert.match(src, /await writeSetting\(entry\.key, next\)/,
         'boolean rows must persist via writeSetting');
-    // Non-boolean rows render a read-only value badge with a type-aware
-    // display (string/number/array/object).
-    assert.match(src, /\['\[' \+ \(Array\.isArray\(value\) \? value\.length : 0\) \+ '\]'\]|'\[' \+ \(Array\.isArray\(value\) \? value\.length : 0\) \+ '\]'/,
-        'array values must render as [length]');
+    // v4.41.0: array / object rows are no longer read-only — they now
+    // render a JSON textarea editor. The v4.24.0 array-length read-only
+    // canary is replaced by the v4.41.0 textarea + JSON.parse pair.
+    assert.match(src, /entry\.type === 'array' \|\| entry\.type === 'object'/,
+        'array / object rows must take the v4.41.0 JSON editor branch');
 });
 
 test('v4.24.0 popup.css declares the new disclosure + switch styles without pill backdrops', () => {
@@ -6088,6 +6089,76 @@ test('v4.40.0 every labelKey/descriptionKey override is a non-empty string in th
     }
     assert.ok(count >= 4,
         `expected ≥4 labelKey/descriptionKey overrides in schema (found ${count})`);
+});
+
+// ── v4.41.0 NX1: array / object JSON editors in the popup ──
+
+test('v4.41.0 popup buildSchemaOverviewKeyRow renders a textarea + error pill for array/object entries', () => {
+    assert.match(popupSource, /entry\.type === 'array' \|\| entry\.type === 'object'/,
+        'buildSchemaOverviewKeyRow must branch on array OR object entries');
+    assert.match(popupSource, /document\.createElement\('textarea'\)/,
+        'the editor must render an actual <textarea>');
+    assert.match(popupSource, /so-key-json/,
+        'the textarea must carry the so-key-json class');
+    assert.match(popupSource, /so-key-json-error/,
+        'the error pill must carry the so-key-json-error class');
+});
+
+test('v4.41.0 popup JSON editor round-trips via JSON.stringify(value, null, 2) + JSON.parse', () => {
+    assert.match(popupSource, /JSON\.stringify\(seedSafe, null, 2\)/,
+        'seed must use 2-space pretty-print');
+    assert.match(popupSource, /JSON\.parse\(raw\)/,
+        'commit path must parse via JSON.parse');
+});
+
+test('v4.41.0 popup JSON editor enforces type shape (array stays array, object stays object)', () => {
+    // Without these guards a user pasting {} into an array-typed entry
+    // would silently flip the storage shape, breaking every consumer
+    // that calls .length on the value.
+    assert.match(popupSource, /entry\.type === 'array' && !Array\.isArray\(parsed\)/,
+        'array-typed entry must reject non-array parses');
+    assert.match(popupSource, /entry\.type === 'object' && \(parsed === null \|\| Array\.isArray\(parsed\) \|\| typeof parsed !== 'object'\)/,
+        'object-typed entry must reject null / arrays / non-objects');
+});
+
+test('v4.41.0 popup JSON editor skips persistence + shows pill on parse error', () => {
+    // The persist arrow catches JSON.parse failure, sets the pill text
+    // (`Invalid JSON: <msg>`) + un-hides the pill, then returns BEFORE
+    // touching writeSetting. The order matters: a future refactor must
+    // not call writeSetting on the bad value.
+    const persistIdx = popupSource.indexOf("const persist = async () => {", popupSource.indexOf('so-key-json'));
+    assert.ok(persistIdx > -1, 'JSON editor persist arrow must be inside the array/object branch');
+    const persistBody = popupSource.slice(persistIdx, persistIdx + 1500);
+    assert.match(persistBody, /errorPill\.textContent = 'Invalid JSON: '/,
+        'parse-error pill must use the "Invalid JSON: ..." prefix');
+    assert.ok(persistBody.indexOf('errorPill.hidden = false') < persistBody.indexOf('writeSetting'),
+        'pill must be shown BEFORE writeSetting could otherwise run on bad data');
+});
+
+test('v4.41.0 popup CSS declares textarea + error pill with sub-8px radii', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8');
+    assert.match(css, /\.so-key-json\s*\{/,
+        'popup.css must declare .so-key-json');
+    assert.match(css, /\.so-key-json-error\s*\{/,
+        'popup.css must declare .so-key-json-error');
+    const editorBlock = css.slice(css.indexOf('.so-key-json {'), css.indexOf('.so-key-json:focus'));
+    assert.match(editorBlock, /border-radius:\s*6px/,
+        '.so-key-json must use the house-style 6px radius (no pill backdrop)');
+    const errorBlock = css.slice(css.indexOf('.so-key-json-error'), css.indexOf('.so-key-json-error') + 400);
+    assert.match(errorBlock, /border-radius:\s*4px/,
+        '.so-key-json-error must use the house-style 4px radius');
+});
+
+test('v4.41.0 settings-schema has ≥1 array-typed AND ≥1 object-typed entry (coverage canary)', () => {
+    // If a future refactor removes every array/object entry, the new
+    // editor branch becomes dead. Fail loudly so we either repoint or
+    // delete it.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
+    const arrays  = (schemaSrc.match(/type:\s*"array"/g)  || []).length;
+    const objects = (schemaSrc.match(/type:\s*"object"/g) || []).length;
+    assert.ok(arrays  >= 1, `expected ≥1 array-typed entry in schema (found ${arrays})`);
+    assert.ok(objects >= 1, `expected ≥1 object-typed entry in schema (found ${objects})`);
 });
 
 test('v4.40.0 settings-migration round-trip preserves entries that carry overrides', () => {

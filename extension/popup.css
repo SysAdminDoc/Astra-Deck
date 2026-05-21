@@ -805,6 +805,48 @@ body {
   white-space: nowrap;
 }
 
+/* v4.41.0: array / object JSON editor in the schema overview. The
+   textarea closes the editor coverage from ~340 → 354 schema keys.
+   House-style 6 px radius, monospace font, parse-error pill below. */
+.schema-overview-list .so-key-json-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.schema-overview-list .so-key-json {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 6px 8px;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+}
+
+.schema-overview-list .so-key-json:focus {
+  outline: 1px solid rgba(255, 184, 77, 0.5);
+  outline-offset: 0;
+}
+
+.schema-overview-list .so-key-json-error {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: #ff8585;
+  background: rgba(255, 133, 133, 0.08);
+  border: 1px solid rgba(255, 133, 133, 0.28);
+  border-radius: 4px;
+  padding: 2px 6px;
+  align-self: flex-start;
+}
+
 /* v4.39.0: github-full-gated entries in the schema overview. The badge
    makes it visible up-front that the toggle is a no-op until
    GitHub-Full Profile is enabled. House-style 4 px radius — square /
