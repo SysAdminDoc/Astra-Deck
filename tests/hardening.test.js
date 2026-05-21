@@ -3656,3 +3656,90 @@ test('v5.1.0 manifest content_scripts include selector-health before ytkit.js', 
             'core/selector-health.js must load after core/policy-profile.js');
     }
 });
+
+// ── v4.9.0 NX1: lifecycle-route bridge ──
+
+function loadBridgeModule() {
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    delete require.cache[require.resolve('../extension/core/lifecycle-route-bridge.js')];
+    require('../extension/core/lifecycle-route-bridge.js');
+    global.YTKitCore = prev;
+    return stub;
+}
+
+test('v4.9.0 lifecycle-route-bridge is a no-op when dependencies are missing', () => {
+    // Loaded against an empty YTKitCore stub — neither addNavigateRule nor
+    // getLifecycle is present. The module must not throw at load time
+    // and must not flip the installed flag.
+    const stub = loadBridgeModule();
+    assert.equal(stub.__lifecycleRouteBridgeInstalled, undefined,
+        'bridge must not mark itself installed without dependencies');
+    // Calling the named installer directly with the same empty deps also
+    // returns false instead of throwing.
+    assert.equal(stub.installLifecycleRouteBridge({}), false);
+});
+
+test('v4.9.0 lifecycle-route-bridge registers a navigate rule that bumps the route token', () => {
+    const stub = loadBridgeModule();
+    let registered = null;
+    let bumps = 0;
+    const fakeLifecycle = {
+        notifyRouteChange() { bumps += 1; }
+    };
+    const ok = stub.installLifecycleRouteBridge({
+        addNavigateRule(id, fn) { registered = { id, fn }; },
+        getLifecycle() { return fakeLifecycle; },
+        logger: { warn() {} }
+    });
+    assert.equal(ok, true);
+    assert.equal(registered.id, 'astra-lifecycle-route-bridge');
+    // Simulate three SPA navigations. navigation.js never inspects the
+    // body argument — passing a plain stub lets the test run without a
+    // DOM globals dependency.
+    const stubBody = {};
+    registered.fn(stubBody, false);
+    registered.fn(stubBody, true);
+    registered.fn(stubBody, false);
+    assert.equal(bumps, 3, 'each navigate rule invocation must bump the route token once');
+});
+
+test('v4.9.0 lifecycle-route-bridge swallows lifecycle errors so navigation stays intact', () => {
+    const stub = loadBridgeModule();
+    let warned = 0;
+    let registered = null;
+    stub.installLifecycleRouteBridge({
+        addNavigateRule(id, fn) { registered = fn; },
+        getLifecycle() {
+            return {
+                notifyRouteChange() { throw new Error('lifecycle blew up'); }
+            };
+        },
+        logger: {
+            warn() { warned += 1; }
+        }
+    });
+    const stubBody = {};
+    assert.doesNotThrow(() => registered(stubBody, false),
+        'a lifecycle-side failure must not propagate through the navigate rule');
+    assert.equal(warned, 1, 'failure must be logged for diagnostics');
+});
+
+test('v4.9.0 manifest content_scripts load lifecycle-route-bridge after navigation and lifecycle, before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const bridgeIdx = cs.js.indexOf('core/lifecycle-route-bridge.js');
+        assert.notEqual(bridgeIdx, -1, 'lifecycle-route-bridge.js must be present');
+        assert.ok(bridgeIdx < ytkitIdx, 'bridge must load before ytkit.js');
+        const navIdx = cs.js.indexOf('core/navigation.js');
+        const lcIdx = cs.js.indexOf('core/feature-lifecycle.js');
+        assert.ok(navIdx > -1 && navIdx < bridgeIdx, 'bridge must load after core/navigation.js');
+        assert.ok(lcIdx > -1 && lcIdx < bridgeIdx, 'bridge must load after core/feature-lifecycle.js');
+    }
+});
