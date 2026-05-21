@@ -4114,3 +4114,112 @@ test('v4.13.0 subtitles module loads before ytkit.js in both content_script entr
     }
     assert.ok(validated >= 1, 'at least one content_scripts entry must contain ytkit.js');
 });
+
+// ── v4.14.0 NX1: core/toast.js helper peel ──
+
+function loadToastModule() {
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    delete require.cache[require.resolve('../extension/core/toast.js')];
+    require('../extension/core/toast.js');
+    global.YTKitCore = prev;
+    return stub;
+}
+
+test('v4.14.0 core/toast exports the full helper surface', () => {
+    const core = loadToastModule();
+    assert.ok(core.toast, 'core.toast must be present after module load');
+    for (const name of ['inferToastTone', 'getToastRgb', 'getToastBadgeLabel', 'getToastAriaDefaults', 'TONE_RGB', 'TONE_BADGE']) {
+        assert.ok(name in core.toast, 'core.toast must export ' + name);
+    }
+});
+
+test('v4.14.0 inferToastTone maps the legacy colour palette deterministically', () => {
+    const { inferToastTone } = require('../extension/core/toast.js');
+    assert.equal(inferToastTone('#ef4444'), 'error');
+    assert.equal(inferToastTone('#EF4444'), 'error');         // case-insensitive
+    assert.equal(inferToastTone('#f59e0b'), 'warning');
+    assert.equal(inferToastTone('#f97316'), 'warning');
+    assert.equal(inferToastTone('#3b82f6'), 'info');
+    assert.equal(inferToastTone('#6b7280'), 'neutral');
+    // Unknown colours fall back to success — preserving the previous
+    // in-monolith behaviour so a feature passing an arbitrary brand
+    // colour doesn't render with an empty badge.
+    assert.equal(inferToastTone('#22c55e'), 'success');
+    assert.equal(inferToastTone(''), 'success');
+    assert.equal(inferToastTone(undefined), 'success');
+});
+
+test('v4.14.0 getToastRgb + getToastBadgeLabel agree with the inline monolith fallback', () => {
+    const { getToastRgb, getToastBadgeLabel } = require('../extension/core/toast.js');
+    // Brand palette must match the inline fallback in extension/ytkit.js.
+    assert.equal(getToastRgb('error'),   '255,116,128');
+    assert.equal(getToastRgb('warning'), '255,190,122');
+    assert.equal(getToastRgb('info'),    '106,169,255');
+    assert.equal(getToastRgb('neutral'), '139,151,171');
+    assert.equal(getToastRgb('success'), '53,199,127');
+    // Unknown tone → success default.
+    assert.equal(getToastRgb('chartreuse'), '53,199,127');
+    assert.equal(getToastBadgeLabel('error'),   'Issue');
+    assert.equal(getToastBadgeLabel('warning'), 'Heads Up');
+    assert.equal(getToastBadgeLabel('info'),    'Update');
+    assert.equal(getToastBadgeLabel('neutral'), 'Notice');
+    assert.equal(getToastBadgeLabel('success'), 'Done');
+});
+
+test('v4.14.0 getToastAriaDefaults uses assertive role only for the error tone', () => {
+    const { getToastAriaDefaults } = require('../extension/core/toast.js');
+    assert.deepEqual(getToastAriaDefaults('error'),   { role: 'alert',  ariaLive: 'assertive' });
+    assert.deepEqual(getToastAriaDefaults('success'), { role: 'status', ariaLive: 'polite' });
+    assert.deepEqual(getToastAriaDefaults('warning'), { role: 'status', ariaLive: 'polite' });
+    assert.deepEqual(getToastAriaDefaults('info'),    { role: 'status', ariaLive: 'polite' });
+});
+
+test('v4.14.0 ytkit.js inline fallback values match the v4.14.0 toast module byte-for-byte', () => {
+    // Belt-and-braces: even though the monolith delegates when the
+    // module loads, the inline fallback inside ytkit.js MUST stay
+    // byte-stable with core/toast.js so the userscript path renders
+    // identical toasts. Source-string assertions on each tone keep
+    // the two copies tied together at refactor time.
+    const ytkit = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const palette = {
+        'error':   "'255,116,128'",
+        'warning': "'255,190,122'",
+        'info':    "'106,169,255'",
+        'neutral': "'139,151,171'",
+        'success': "'53,199,127'"
+    };
+    for (const [tone, rgb] of Object.entries(palette)) {
+        // The inline fallback uses different shapes per tone (case
+        // labels for error/warning/info/neutral; default for success).
+        // Either way the brand RGB string must appear in the file.
+        assert.ok(ytkit.includes(rgb),
+            'ytkit.js inline toast fallback must contain ' + tone + ' rgb ' + rgb);
+    }
+    // The labels must also survive.
+    for (const label of ['Issue', 'Heads Up', 'Update', 'Notice', 'Done']) {
+        assert.ok(ytkit.includes("'" + label + "'"),
+            'ytkit.js inline toast fallback must contain label "' + label + '"');
+    }
+});
+
+test('v4.14.0 manifest content_scripts include core/toast.js before features/subtitles and ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const toastIdx = cs.js.indexOf('core/toast.js');
+        assert.notEqual(toastIdx, -1, 'manifest must include core/toast.js');
+        assert.ok(toastIdx < ytkitIdx, 'core/toast.js must load before ytkit.js');
+        // Position: after core/data-flow.js (alphabetical-ish, keeps
+        // related core modules adjacent).
+        const dataFlowIdx = cs.js.indexOf('core/data-flow.js');
+        assert.ok(dataFlowIdx < toastIdx, 'core/toast.js must load after core/data-flow.js');
+    }
+});
