@@ -18,7 +18,11 @@ const selectorPackFiles = [
     'selector-packs/feed.js',
     'selector-packs/feedCard.js',
     'selector-packs/thumbnail.js',
-    'selector-packs/shortsShelf.js'
+    'selector-packs/shortsShelf.js',
+    'selector-packs/watch.js',
+    'selector-packs/relatedSidebar.js',
+    'selector-packs/player.js',
+    'selector-packs/mainVideo.js'
 ];
 const coreSources = [
     'registry.js',

@@ -5449,19 +5449,18 @@ test('v4.31.0 freezeEntry preserves captureEvidence and lastVerified on entries 
 
 test('v4.31.0 inline surfaces still resolve through SurfaceSelectorMap (no regression)', () => {
     const core = loadSelectorPackContext();
-    // These surfaces are still inline in selectors.js (next-batch
-    // candidates). They must continue to resolve correctly after the
-    // refactor or every feature that uses them silently breaks.
-    for (const surface of ['watch', 'player', 'comments', 'liveChat']) {
+    // Still-inline surfaces (next-batch candidates) must continue to
+    // resolve correctly after each peel or every feature that uses
+    // them silently breaks.
+    for (const surface of ['playerChrome', 'playerSettings', 'comments', 'liveChat']) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must still be in SurfaceSelectorMap`);
         assert.ok(entry.stable.length >= 1);
     }
-    // Note: feed/feedCard/thumbnail/shortsShelf were peeled in v4.32.0
-    // (batch 2) so they now come from selector-packs/ rather than the
-    // inline map. The map-level highChurn flag stays true regardless of
-    // origin.
+    // Peeled surfaces from prior batches must keep their map-level
+    // flags regardless of which file they live in.
     assert.equal(core.SurfaceSelectorMap.feed.highChurn, true);
+    assert.equal(core.SurfaceSelectorMap.watch.highChurn, true);
     assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, true);
 });
 
@@ -5471,10 +5470,10 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
     assert.equal(entry.lastVerified, '2026-05-19');
-    // A still-inline surface (watch is in batch 3, not yet packed) must
-    // round-trip with empty captureEvidence + null lastVerified so
-    // consumers can iterate without a guard.
-    const inline = core.getSurfaceSelectorEntry('watch');
+    // A still-inline surface (playerChrome is in batch 4) must round-trip
+    // with empty captureEvidence + null lastVerified so consumers can
+    // iterate without a guard.
+    const inline = core.getSurfaceSelectorEntry('playerChrome');
     assert.ok(Array.isArray(inline.captureEvidence), 'inline surface captureEvidence must be an array (empty)');
     assert.equal(inline.captureEvidence.length, 0, 'inline surface captureEvidence must default to empty');
     assert.equal(inline.lastVerified, null);
@@ -5545,6 +5544,73 @@ test('v4.32.0 manifest loads the feed-shell packs before core/selectors.js', () 
         const selectorsIdx = cs.js.indexOf('core/selectors.js');
         if (selectorsIdx === -1) continue;
         for (const pack of V432_FEED_SHELL_FILES) {
+            const packIdx = cs.js.indexOf(pack);
+            assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
+            assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);
+        }
+    }
+});
+
+// ── v4.33.0 NX1: selector-pack batch 3 (watch-shell) ──
+
+const V433_WATCH_SHELL_SURFACES = ['watch', 'relatedSidebar', 'player', 'mainVideo'];
+const V433_WATCH_SHELL_FILES = [
+    'core/selector-packs/watch.js',
+    'core/selector-packs/relatedSidebar.js',
+    'core/selector-packs/player.js',
+    'core/selector-packs/mainVideo.js'
+];
+
+test('v4.33.0 watch-shell pack files exist with the v4.31.0 schema fields', () => {
+    for (const rel of V433_WATCH_SHELL_FILES) {
+        const full = path.join(__dirname, '..', 'extension', rel);
+        assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
+        const body = fs.readFileSync(full, 'utf8');
+        assert.match(body, /SurfacePackRegistry/, `${rel} must reference SurfacePackRegistry`);
+        assert.match(body, /captureEvidence:/, `${rel} must declare captureEvidence`);
+        assert.match(body, /lastVerified:/, `${rel} must declare lastVerified`);
+        assert.match(body, /highChurn:/, `${rel} must declare highChurn`);
+        assert.match(body, /needsFreshCapture:/, `${rel} must declare needsFreshCapture`);
+        assert.match(body, /registry\.has\(/, `${rel} must guard against double-registration`);
+    }
+});
+
+test('v4.33.0 watch-shell surfaces now come from the pack registry with capture evidence', () => {
+    const core = loadSelectorPackContext();
+    for (const surface of V433_WATCH_SHELL_SURFACES) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
+        assert.ok(entry.captureEvidence.length >= 1,
+            `${surface} must carry capture evidence after the v4.33.0 peel`);
+        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.equal(entry.highChurn, true, `${surface} must keep highChurn=true after the peel`);
+    }
+});
+
+test('v4.33.0 watch-shell pack selectors round-trip the pre-peel values', () => {
+    const core = loadSelectorPackContext();
+    const watch = core.SurfaceSelectorMap.watch;
+    assert.equal(watch.stable[0], 'ytd-watch-flexy[video-id]',
+        'watch surface must keep the route-state selector first');
+    assert.deepEqual([...watch.fallback],
+        ['ytd-watch-metadata.watch-active-metadata', 'ytd-watch-flexy[flexy]']);
+
+    const player = core.SurfaceSelectorMap.player;
+    assert.deepEqual([...player.stable], ['#movie_player', '.html5-video-player']);
+
+    const mainVideo = core.SurfaceSelectorMap.mainVideo;
+    assert.deepEqual([...mainVideo.stable], ['video.html5-main-video', '#movie_player video']);
+});
+
+test('v4.33.0 manifest loads the watch-shell packs before core/selectors.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const selectorsIdx = cs.js.indexOf('core/selectors.js');
+        if (selectorsIdx === -1) continue;
+        for (const pack of V433_WATCH_SHELL_FILES) {
             const packIdx = cs.js.indexOf(pack);
             assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
             assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);

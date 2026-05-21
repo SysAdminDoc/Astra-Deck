@@ -6,6 +6,41 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.33.0] - 2026-05-21 - v5.1.0 #3: selector-pack file split (batch 3 — watch-shell)
+
+Third batch of the v5.1.0 selector-pack migration. The four watch-
+shell surfaces — `watch`, `relatedSidebar`, `player`, `mainVideo` —
+move out of `INLINE_SURFACES` into per-surface files under
+`core/selector-packs/`.
+
+### Added
+
+- `extension/core/selector-packs/watch.js`,
+  `extension/core/selector-packs/relatedSidebar.js`,
+  `extension/core/selector-packs/player.js`,
+  `extension/core/selector-packs/mainVideo.js` — four packs at the
+  v4.31.0 schema, verified against `mhtml/WatchPage.mhtml` +
+  `Worldwide Societal Collapse... - YouTube.mhtml` (2026-05-19).
+  The `watch` pack notes that `ytd-watch-flexy[video-id]` is the
+  best route-state probe (lifecycle-route-bridge.js observes it);
+  the `player` pack warns ISOLATED-world callers to use the
+  MAIN-world bridge for `window.movie_player`.
+- `extension/manifest.json` — both ISOLATED content-script blocks
+  now load all 12 pack files before `core/selectors.js`.
+- `tests/core-foundation.test.js` — vm loader now seeds the 12
+  pack files.
+- `tests/hardening.test.js` — 4 new v4.33.0 regressions and the
+  v4.31.0 inline-still-resolves canary is repointed to
+  `playerChrome` (the next-batch unmigrated probe).
+
+### Verification
+
+- 466 tests pass (was 462; +4 watch-shell regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` re-bundles v5.0.0 modules at v4.33.0.
+- `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
+  at v4.33.0.
+
 ## [4.32.0] - 2026-05-21 - v5.1.0 #2: selector-pack file split (batch 2 — feed-shell)
 
 Second batch of the v5.1.0 selector-pack migration. The four
