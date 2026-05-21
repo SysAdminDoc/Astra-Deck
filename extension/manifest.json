@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.12.0",
+  "version": "4.13.0",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
@@ -120,6 +120,7 @@
         "core/selector-health.js",
         "core/data-flow.js",
         "core/lifecycle-route-bridge.js",
+        "features/subtitles/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -157,6 +158,7 @@
         "core/selector-health.js",
         "core/data-flow.js",
         "core/lifecycle-route-bridge.js",
+        "features/subtitles/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
