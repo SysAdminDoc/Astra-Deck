@@ -6,6 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.36.0] - 2026-05-21 - v5.1.0 #6: selector-pack file split (batch 6 — misc)
+
+Sixth batch of the v5.1.0 selector-pack migration. Five surfaces
+move out of `INLINE_SURFACES`: `settingsOverlay` (Astra-owned),
+`profile` + `channelProfile` (alias), `notifications`, `media`.
+
+### Added
+
+- `extension/core/selector-packs/settingsOverlay.js` (uses
+  `extension/ytkit.js#createControlCenter` as `captureEvidence`
+  because the surface is Astra-owned, not YouTube-owned),
+  `profile.js` (covers the `channelProfile` alias too),
+  `notifications.js`, `media.js`.
+- `extension/manifest.json` — 23 pack files load before
+  `core/selectors.js`.
+- `tests/core-foundation.test.js` — vm loader seeds the 23 packs.
+- `tests/hardening.test.js` — 5 new v4.36.0 regressions covering
+  pack-file schema, registry-vs-inline origin, profile/
+  channelProfile spine parity, the Astra-owned evidence
+  convention for `settingsOverlay`, and manifest load order.
+
+### Verification
+
+- 479 tests pass (was 474; +5 misc-batch regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.36.0.
+
 ## [4.35.0] - 2026-05-21 - v5.1.0 #5: selector-pack file split (batch 5 — engagement)
 
 Fifth batch of the v5.1.0 selector-pack migration. The three

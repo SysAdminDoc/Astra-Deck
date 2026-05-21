@@ -28,34 +28,6 @@
     // The remaining entries below are next on the deck for the
     // batch-by-batch v5.1.0 selector-pack migration.
     const INLINE_SURFACES = {
-        settingsOverlay: {
-            stable: ['[data-ytkit-surface="control-center"]', '.ytkit-control-center', '#ytkit-panel'],
-            fallback: ['.ytkit-panel', '.ytkit-modal'],
-            notes: 'Astra-owned UI must remain scoped and removable.'
-        },
-        profile: {
-            stable: ['ytd-video-owner-renderer', 'ytd-channel-name', '#channel-name', 'ytd-c4-tabbed-header-renderer', 'ytd-page-header-renderer'],
-            fallback: ['yt-avatar-shape', 'yt-decorated-avatar-view-model', 'ytd-browse[page-subtype="channels"] ytd-c4-tabbed-header-renderer'],
-            highChurn: true,
-            notes: 'Resolve channel ID or handle from links, not visible text.'
-        },
-        channelProfile: {
-            stable: ['ytd-video-owner-renderer', 'ytd-channel-name', '#channel-name', 'ytd-c4-tabbed-header-renderer', 'ytd-page-header-renderer'],
-            fallback: ['yt-avatar-shape', 'yt-decorated-avatar-view-model', 'ytd-browse[page-subtype="channels"] ytd-c4-tabbed-header-renderer'],
-            highChurn: true,
-            notes: 'Alias for profile.'
-        },
-        notifications: {
-            stable: ['ytd-notification-topbar-button-renderer', 'yt-icon-badge-shape', 'ytd-notification-renderer'],
-            fallback: ['.ytd-notification-topbar-button-renderer .badge-shape-wiz', 'ytd-multi-page-menu-renderer ytd-notification-renderer'],
-            highChurn: true,
-            notes: 'Wait for popup menu root before sorting or transforming notifications.'
-        },
-        media: {
-            stable: ['video', 'img', 'ytd-thumbnail', 'yt-thumbnail-view-model'],
-            fallback: ['#content video', '#content img', '#content ytd-thumbnail'],
-            notes: 'Generic media resolver; prefer feature-specific roots.'
-        },
         liveChatFrame: {
             stable: ['ytd-live-chat-frame#chat', 'ytd-live-chat-frame', 'iframe#chatframe'],
             fallback: ['#chat.ytd-live-chat-frame', 'ytd-live-chat-frame iframe'],
