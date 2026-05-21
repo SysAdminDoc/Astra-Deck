@@ -282,8 +282,25 @@ const YOUTUBE_TAB_URLS = [
 const popupState = {
     settings: {},
     activeTab: null,
-    statusTimer: null
+    statusTimer: null,
+    // v4.39.0: policy-profile instance — populated lazily on first
+    // schema-overview render so the badge code can read profile
+    // visibility without rebuilding the resolver on every key row.
+    _policyProfile: null
 };
+
+function ensurePolicyProfile() {
+    if (popupState._policyProfile) return popupState._policyProfile;
+    const factory = window.YTKitCore && window.YTKitCore.createPolicyProfile;
+    if (typeof factory !== 'function') return null;
+    try {
+        popupState._policyProfile = factory();
+    } catch (err) {
+        console.warn('[Astra Deck popup] policy-profile init failed:', err);
+        popupState._policyProfile = null;
+    }
+    return popupState._policyProfile;
+}
 
 const $ = (s) => document.querySelector(s);
 const FOCUSABLE_SELECTOR = [
@@ -1421,6 +1438,11 @@ function renderSchemaOverview() {
     schemaOverviewSection.hidden = false;
     const settings = popupState.settings || {};
 
+    // v4.39.0: seed the policy-profile resolver before the row-builder
+    // runs so each github-full row can render the gated badge from the
+    // same cached instance. ensurePolicyProfile() is idempotent.
+    ensurePolicyProfile();
+
     // v4.25.0: share the popup's existing `#q` filter with the schema
     // overview. When a search term is active, the overview auto-opens
     // any category that contains a matching key + filters keys within
@@ -1542,6 +1564,26 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     label.textContent = (typeof humanizer === 'function' ? humanizer(entry.key) : entry.key);
     label.title = entry.key;
     row.appendChild(label);
+
+    // v4.39.0: profile-badge integration. A `github-full` entry only
+    // takes effect when `githubFullProfile=true`; under store-safe the
+    // toggle is a no-op. Make that visible up-front via a small lock
+    // badge so users understand why a flip didn't change anything.
+    // policy-profile.js exposes `isEntryAllowedInProfile`; we cache
+    // the factory once per render via `popupState._policyProfile`.
+    if (entry.profile === 'github-full') {
+        const policy = popupState._policyProfile;
+        const effective = policy
+            ? policy.resolveEffectiveProfile(settings || {})
+            : 'store-safe';
+        if (!policy || !policy.isEntryAllowedInProfile(entry, effective)) {
+            const badge = document.createElement('span');
+            badge.className = 'so-key-profile-badge so-key-profile-gated';
+            badge.textContent = 'github-full';
+            badge.title = 'This setting only applies when GitHub-Full Profile is enabled.';
+            row.appendChild(badge);
+        }
+    }
 
     if (entry.type === 'boolean') {
         const on = settings[entry.key] === true;

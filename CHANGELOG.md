@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.39.0] - 2026-05-21 - profile-badge integration in the schema overview
+
+Closes carry-forward item #7. `github-full`-gated entries in the
+popup schema overview now display a small "github-full" badge so
+users immediately understand that the toggle is a no-op until
+`githubFullProfile=true`.
+
+### Added
+
+- `extension/popup.js` — `popupState._policyProfile` caches a
+  single `createPolicyProfile()` instance. `ensurePolicyProfile()`
+  is idempotent and seeded from `renderSchemaOverview()` so the
+  per-row badge check doesn't rebuild the resolver on every call.
+- `extension/popup.js` — `buildSchemaOverviewKeyRow` branches on
+  `entry.profile === 'github-full'` and appends a
+  `.so-key-profile-badge.so-key-profile-gated` chip with a tooltip
+  explaining the gate when the effective profile is store-safe.
+- `extension/popup.css` — `.so-key-profile-badge` declared at the
+  house-style 4 px backdrop radius (no pill backdrops) with an
+  amber tone so it reads as informational, not warning.
+- `tests/hardening.test.js` — 5 new v4.39.0 regressions: badge
+  branch is wired, resolver is cached + seeded before rows
+  render, CSS uses sub-8 px radius, ≥1 schema entry still carries
+  `profile: 'github-full'` (the badge has live coverage), and the
+  policy-profile module still exports the two functions the badge
+  consumes.
+
+### Why
+
+The v4.7.0 `policy-profile.js` resolver shipped without a popup
+surface; users had no way to know that flipping a Cobalt or
+BYO-API-key toggle did nothing under the default store-safe
+profile. The badge resolves that confusion at the row level and
+reuses the resolver from the existing core module — no new
+profile logic.
+
+### Verification
+
+- 494 tests pass (was 489; +5 profile-badge regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.39.0.
+
 ## [4.38.0] - 2026-05-21 - feature-peel batch (wave-8 CSS-only quintet)
 
 Picks the v5.1.x feature-peel work back up after the selector-pack
