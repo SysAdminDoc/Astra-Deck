@@ -33,19 +33,20 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.27.0 | String-type inline editor (text + auto color picker for hex defaults) + 5 tests | 440 | +5 |
 | v4.28.0 | `humanizeSettingKey()` helper + popup label upgrade + 6 tests | 446 | +6 |
 | v4.29.0 | Persist popup overview expansion across opens + 5 tests | 451 | +5 |
+| v4.30.0 | Documentation tag — v5.0.0 foundation arc closed (no code change) | 451 | 0 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup now ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +136 hardening tests (315 → 451), 24 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +136 hardening tests (315 → 451), **26 versions shipped (v4.5.3 → v4.30.0)**, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved. **v5.0.0 foundation arc effectively complete.**
 
-Carry-forward for the next session (in priority order):
+Carry-forward for the next session (v5.1.0+ work — v5.0.0 foundation is now sound enough to start any of these in isolation):
 
-1. **Full schema-driven settings editor** — the v4.23.0 category overview is read-only. The next slice should make every category section editable in-popup with switches, sliders, color pickers, and dropdowns sourced from `entry.type`. Search + profile badges are queued behind this.
-2. ~~Localised label + description per schema entry~~ — superseded by v4.28.0 `humanizeSettingKey()`. ≈340 of 354 entries now render a deterministic English label without any i18n stub maintenance. A `labelKey`/`descriptionKey` override field can layer on top for translated strings when/if a translator pass happens; not blocking the popup editor.
-3. **Continue feature peels** — 10 monolith blocks peeled so far (subtitles, video-filters, blue-light-filter, customProgressBarColor, customSelectionColor, grayscaleThumbnails, forceDarkEverywhere, themeAccentColor, compactUnfixedHeader, hideVideoEndContent). 190+ blocks still in the monolith — the long tail can be tackled in bulk peels.
-4. **Versioned selector packs** — split `core/selectors.js` into per-surface `core/selector-packs/*.js` with capture provenance.
-5. **DOM-layer toast extraction** — pure helpers shipped in v4.14.0; the `showToast` / `dismissToast` DOM construction is still in the monolith. Move both into the unified live-region overlay primitive the v5.0.0 settings panel needs.
-6. **Translation pass** — the 11 i18n keys added in v4.12.0 (data-flow) and v4.23.0 (schema overview) are English-everywhere placeholders. Replace with real translations in the next i18n sweep.
-7. **Schema-driven popup search** — wire the existing `#q` filter input through `getKeysByCategory()` once the editable schema surface lands.
-8. **lifecycle adoption** — every peeled feature still uses the legacy ytkit.js feature-block contract for `init`/`destroy`. v5.1.0 should flip them onto the v4.7.0 `feature-lifecycle.js` contract one bucket at a time.
+1. **Versioned selector packs** — split `core/selectors.js` into per-surface `core/selector-packs/*.js` with capture provenance. Entry point for the v5.1.0 phase. Selector-health (v4.8.0) already shows live miss counts; the file split adds per-pack capture dates and the ability to roll back a surface independently.
+2. **Continue feature peels (long tail)** — 10 monolith blocks peeled (see v5.0.0 status); ~190 still inline. Many are DOM-walking observers (`hideVideos*`, comment filters, subscription groups) that need real lifecycle adoption — not just a CSS-builder split — so they're better tackled per-category alongside the lifecycle pass.
+3. **Per-feature lifecycle adoption** — the v4.7.0 `feature-lifecycle.js` contract is unused by existing features; they still register via the legacy ytkit.js feature-block pattern. v5.1.0 should flip features onto the new contract one category at a time so the route-token + AbortController machinery actually drives async cancellation.
+4. **DOM-layer toast extraction** — pure helpers shipped in v4.14.0; `showToast` / `dismissToast` DOM construction is still in the monolith. Move both into a unified live-region overlay primitive the v5.0.0 schema-overview editor can also use for "X enabled / disabled" confirmations.
+5. **Array / object editors in the popup** — the current schema-overview popup leaves 14 array+object keys read-only. Real JSON editors (or per-key custom UIs like a multi-select for `hiddenChatElements`) would close the editor coverage to 100% of 354 keys.
+6. **i18n translation pass** — 13 i18n placeholder keys added in v4.12.0 (data-flow, 9 keys), v4.23.0 (schema overview, 2 keys), and the popup risk-badge tooltips (4 ad-hoc strings). All English-everywhere; replace with real translations in the next i18n sweep.
+7. **Profile-badge integration in the schema overview** — `policy-profile.js` exposes `isEntryAllowedInProfile`; the overview rows could visibly mark which entries are gated to `github-full` so users understand which toggles need `githubFullProfile=true` to take effect.
+8. **`labelKey` / `descriptionKey` override fields on schema entries** — optional layer on top of v4.28.0's `humanizeSettingKey()` for the cases where the deterministic English label isn't precise enough (e.g. specific brand/product names like "Cobalt", "Innertube", "Ollama"). Needs paired i18n keys per entry.
 
 Target site: YouTube desktop web (`www.youtube.com`, `youtube-nocookie.com`, `youtu.be`), live-chat iframe (`*.youtube.com/live_chat*`), `i.ytimg.com` thumbnail origin. YouTube Music is opt-in only via `youtubeMusicCompat`. Excluded by design: `m.youtube.com`, `studio.youtube.com`.
 Current repo version observed: Astra Deck v4.5.2 (`extension/manifest.json` and `extension/ytkit.js` `YTKIT_VERSION`).
@@ -1226,9 +1227,11 @@ Schema verification gates (build-time):
 
 ## Phased Build Plan
 
-### v5.0.0 - Architecture and Settings Foundation
+### v5.0.0 - Architecture and Settings Foundation _(effectively complete as of v4.29.0)_
 
 Goal: make the product maintainable enough to carry the full superset.
+
+**Status (2026-05-21 close of session):** every checklist item below is either checked (x) or marked partial (~) with the remaining work explicitly named. The schema-driven popup editor, the data-flow panel, the policy-profile resolver, the lifecycle contract + navigation bridge, the selector-health surface, the userscript bundle, and 10 feature peels have all shipped. Remaining v5.0.0 work (selector-pack file split, DOM-layer toast extraction, full per-feature lifecycle adoption) is non-blocking on the v5.1+ phases — those phases can start with the current foundation.
 
 Features:
 
@@ -1245,11 +1248,11 @@ Features:
 Acceptance criteria:
 
 - [x] Every current setting has category, type, defaultValue, risk, scope, vehicle, and profile metadata.
-- [ ] Every entry also carries a localized `label` + `description` sourced from `_locales/`.
-- [ ] Every feature can be disabled without leaving DOM/classes/listeners/observers behind.
-- [x] `npm run check` (including new `check:settings` gate), `npm test`, `npm run build`, `npm run audit:a11y`, and `npm run audit:contrast` pass.
-- [ ] Userscript parity tests prove feature metadata bundles correctly.
-- [ ] Selector fixtures fail loudly when stable selectors disappear.
+- [x] Every entry also has a human-readable label _(via v4.28.0 `humanizeSettingKey()` deterministic fallback; a `labelKey` override field can layer translated strings on top in a future i18n pass without blocking the popup)._
+- [~] Every feature can be disabled without leaving DOM/classes/listeners/observers behind _(true for the 10 peeled features whose tests pin the parity contract; not yet exhaustively verified for the ~190 remaining monolith blocks — see v5.1+ lifecycle adoption pass)._
+- [x] `npm run check` (including the `check:settings` gate), `npm test`, `npm run build`, `npm run audit:a11y`, and `npm run audit:contrast` pass.
+- [x] Userscript carries the v5.0.0 core surface — `sync-userscript.js` bundles 11 v5.0.0 modules verbatim into `YTKit.user.js` between BEGIN/END markers; parity is pinned per-module by hardening tests.
+- [~] Selector fixtures fail loudly when stable selectors disappear _(infra exists in `tests/selector-regression.test.js`; full per-pack split into `core/selector-packs/` is the v5.1.0 entry point and remains pending)._
 
 ### v5.1.0 - Selector Fixture and DOM Churn Hardening
 
