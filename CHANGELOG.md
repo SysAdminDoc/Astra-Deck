@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.26.0] - 2026-05-21 - v5.0.0 foundation #21: number-type inline editor in schema overview
+
+Extends the v4.24.0 schema-overview per-key editor to number types.
+Roughly 22 number-typed schema entries (blueLightIntensity,
+videosPerRow, vvfBrightness, subStyleFontSize, etc.) are now
+editable directly from the popup via a compact `<input type="number">`
+field instead of just showing as read-only badges.
+
+### Added
+
+- `extension/popup.js` — number-type branch in
+  `buildSchemaOverviewKeyRow`. Creates an `<input type="number">`
+  seeded with the schema default as placeholder + the live value
+  pre-filled. Persists on both `change` (Enter / native commit)
+  and `blur` (tab-away) so any commit surface a user expects works.
+  Validates with `Number.isFinite` before persist; empty input
+  short-circuits so users can clear the field without nuking the
+  prior value. Routes through `writeSetting` so the existing
+  chained-Promise serialisation applies.
+- `extension/popup.css` — `.so-key-number` styles: monospace,
+  square 6 px backdrop, right-aligned tabular-nums, native spinner
+  buttons stripped (Chrome + Firefox) to keep the dense layout
+  clean.
+- `tests/hardening.test.js` — 4 new regressions: input element
+  shape + `change`/`blur` wiring + placeholder, persist routes
+  through `writeSetting` with `Number.isFinite` and empty-input
+  guards, CSS surface declared with sub-8 px radius and spinner
+  kill on both webkit pseudo-elements, and a canary asserting the
+  schema declares at least 20 user-visible number-typed entries so
+  this editor has real coverage.
+
+### Why
+
+After v4.24.0 the popup let users toggle ~264 booleans but still
+sent them to the in-page workspace for any numeric tweak (blue-
+light intensity, video filter strength, subtitle font size).
+v4.26.0 closes that gap with a minimal editor surface — no
+slider yet (sliders need declared min/max in the schema, which is
+a follow-up), but a `<input type="number">` covers the common case
+and trusts the user to enter a sensible value. The remaining
+type editors (string, array, object) will land in subsequent
+slices.
+
 ## [4.25.0] - 2026-05-21 - v5.0.0 foundation #20: schema-overview search integration
 
 The popup's existing `#q` filter input now drives the schema

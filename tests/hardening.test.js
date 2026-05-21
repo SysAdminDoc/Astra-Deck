@@ -5075,3 +5075,66 @@ test('v4.25.0 matchEntry covers booleans and non-booleans alike (key + category 
     assert.equal(matchTerm('totally-fake-search-string-xyz').length, 0,
         'fake search must find zero keys');
 });
+
+// ── v4.26.0 NX1: number-type inline editor in schema overview ──
+
+test('v4.26.0 buildSchemaOverviewKeyRow renders <input type="number"> for number-typed schema entries', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // The new branch must declare input.type = 'number' and bind to
+    // both 'change' and 'blur' so the value persists on every commit
+    // surface a user might trigger (tab away, enter key, lose focus).
+    assert.match(src, /input\.type = 'number';/,
+        'number branch must create an input[type=number]');
+    assert.match(src, /input\.addEventListener\('change', persist\);/,
+        'number branch must persist on change');
+    assert.match(src, /input\.addEventListener\('blur',\s*persist\);/,
+        'number branch must persist on blur');
+    assert.match(src, /input\.placeholder = String\(entry\.defaultValue\);/,
+        'number branch must seed the placeholder from the schema default');
+});
+
+test('v4.26.0 number persist routes through writeSetting and validates Number.isFinite', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // The persist function must short-circuit on empty/NaN AND must
+    // route through the existing writeSetting path so the popup's
+    // chained-Promise serialisation applies.
+    assert.match(src, /if \(!Number\.isFinite\(next\)\) return;/,
+        'persist must reject non-finite numbers');
+    assert.match(src, /if \(raw === ''\) return;/,
+        'persist must short-circuit on empty input (preserve prior value)');
+    assert.match(src, /await writeSetting\(entry\.key, next\)/,
+        'persist must use writeSetting so onChanged fans out');
+});
+
+test('v4.26.0 popup.css declares the number-editor styles and strips the spinner', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(css, /\.so-key-number \{/,
+        'popup.css must define .so-key-number');
+    // Square corners — 6 px is well under the half-height threshold.
+    const block = css.slice(css.indexOf('.so-key-number {'));
+    const radius = block.match(/border-radius:\s*(\d+)px/);
+    assert.ok(radius && parseInt(radius[1], 10) <= 8,
+        '.so-key-number must use a small (<=8 px) radius');
+    // The spinner kill must hit both pseudo-elements so the field
+    // looks clean in both Chrome and Firefox.
+    assert.match(css, /\.so-key-number::-webkit-outer-spin-button/,
+        'must hide the outer webkit spinner');
+    assert.match(css, /\.so-key-number::-webkit-inner-spin-button/,
+        'must hide the inner webkit spinner');
+});
+
+test('v4.26.0 the schema has at least 20 number-typed non-internal entries (editor coverage canary)', () => {
+    // Sanity that the new editor materially expands editing coverage —
+    // there should be roughly two dozen number-typed entries (matches
+    // the 22 number total reported by the v4.6.0 schema bring-up).
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const numbers = SETTINGS_SCHEMA.filter((e) => e.type === 'number' && !e.internal);
+    assert.ok(numbers.length >= 20,
+        'schema must declare at least 20 user-visible number-typed entries (was ' + numbers.length + ')');
+});

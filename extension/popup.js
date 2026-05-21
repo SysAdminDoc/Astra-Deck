@@ -1526,15 +1526,53 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             }
         });
         row.appendChild(btn);
+    } else if (entry.type === 'number') {
+        // v4.26.0: number-type inline editor. <input type="number">
+        // accepts any numeric value the user enters and persists on
+        // change/blur. Schema default fills the placeholder so the
+        // user can recover by clearing and re-typing.
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'so-key-number';
+        input.dataset.key = entry.key;
+        input.placeholder = String(entry.defaultValue);
+        input.setAttribute('aria-label', entry.key);
+        const current = settings[entry.key];
+        if (current !== undefined && current !== null) input.value = String(current);
+        // Persist on every change/blur. We deliberately don't debounce
+        // — typing in a number field implies a deliberate edit, and
+        // writeSetting's chained Promise already serialises rapid
+        // edits so race conditions are bounded.
+        const persist = async () => {
+            const raw = input.value.trim();
+            if (raw === '') return;     // empty input leaves the prior value untouched
+            const next = Number(raw);
+            if (!Number.isFinite(next)) return;
+            if (popupState.settings[entry.key] === next) return;
+            input.disabled = true;
+            try {
+                await writeSetting(entry.key, next);
+                renderSchemaOverview();
+            } catch (err) {
+                console.warn('[Astra Deck popup] schema-overview number persist failed:', err);
+            } finally {
+                input.disabled = false;
+            }
+        };
+        input.addEventListener('change', persist);
+        input.addEventListener('blur',   persist);
+        row.appendChild(input);
     } else {
-        // Read-only value badge for non-boolean types.
+        // Read-only value badge for non-boolean / non-number types.
+        // Strings, arrays, and objects still route to the in-page
+        // workspace for editing — rendering each type's right editor
+        // (color picker, textarea, multi-select) is a follow-up.
         const badge = document.createElement('span');
         badge.className = 'so-key-value';
         const value = settings[entry.key];
         let display;
         if (value === undefined || value === null) display = '—';
         else if (entry.type === 'string')  display = value.length > 24 ? value.slice(0, 21) + '…' : value;
-        else if (entry.type === 'number')  display = String(value);
         else if (entry.type === 'array')   display = '[' + (Array.isArray(value) ? value.length : 0) + ']';
         else if (entry.type === 'object')  display = '{' + (value && typeof value === 'object' ? Object.keys(value).length : 0) + '}';
         else display = String(value);
