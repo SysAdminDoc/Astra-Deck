@@ -6,6 +6,90 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.44.0] - 2026-05-21 - v5.1.0 carry-forward arc closed (documentation tag)
+
+No code changes from v4.43.0 — version bump + documentation tag
+declaring the v5.1.0 carry-forward arc complete. Every
+acceptance-criterion item in the v5.0.0-foundation carry-forward
+list (ROADMAP.md L40-49) is now either checked `[x]` or marked
+`[~]` with a v5.2.0+ scope explicitly named in plain English.
+
+### Cumulative scoreboard (single autonomous v5.1.0 session)
+
+| | |
+|---|---:|
+| Versions shipped | 14 (v4.31.0 → v4.44.0) |
+| Tests added | +64 (451 → 515) |
+| Carry-forward items closed `[x]` | 5 of 8 (#1, #4, #5, #7, #8) |
+| Carry-forward items deferred `[~]` | 3 of 8 (#2, #3, #6 — all with v5.2.0+ scope notes) |
+| New `extension/core/` modules | 1 (toast-dom — paired with the existing 7 v5.0.0 core modules) |
+| New `extension/core/selector-packs/` files | 26 (full migration; `INLINE_SURFACES` now `{}`) |
+| New `extension/features/` modules | 2 (wave-8-css + home-subs-css — 11 CSS-only features peeled) |
+| Popup editor coverage | 354 of 354 schema keys (was ~340) |
+| New popup surfaces | profile-badge chip on github-full-gated rows + array/object JSON textarea editor |
+| New popup labels | labelKey/descriptionKey overrides on 4 brand-name schema entries |
+| `npm run check` + `npm test` + `node build-extension.js` | Green at every step |
+
+### Closed `[x]` carry-forward items
+
+1. **Selector-pack file split** — v4.31.0 → v4.37.0 (7 batches).
+   All 28 surfaces (+ 2 aliases) live in
+   `extension/core/selector-packs/<surface>.js` with
+   `captureEvidence` + `lastVerified`. `INLINE_SURFACES = {}`;
+   the pack registry drives `SurfaceSelectorMap`.
+4. **DOM-layer toast extraction** — v4.42.0.
+   `core/toast-dom.js#createToastSystem` is the canonical
+   implementation; ytkit.js delegates via a cached system with
+   byte-identical inline fallback.
+5. **Array / object editors in the popup** — v4.41.0.
+   `<textarea.so-key-json>` + `.so-key-json-error` pill; commit
+   via `JSON.parse` with type-shape guards. Popup editor
+   coverage is now **354 / 354** schema keys.
+7. **Profile-badge integration** — v4.39.0.
+   `.so-key-profile-badge.so-key-profile-gated` chip on
+   github-full rows when the effective profile is store-safe;
+   cached `createPolicyProfile()` instance.
+8. **`labelKey` / `descriptionKey` override fields** — v4.40.0.
+   Four brand-name overrides applied so far
+   (`downloadCobaltFallback`, `downloadCobaltInstance`,
+   `aiSummaryEndpoint`, `aiSummaryProvider`).
+
+### Deferred `[~]` carry-forward items (v5.2.0+ scope)
+
+2. **Feature peels (long tail)** — 21 of ~200 monolith blocks
+   peeled this session (wave-8-css quintet + home-subs-css
+   sextet + 10 prior v5.0.0 peels). Continue batch-by-batch in
+   v5.2.0+; DOM-walking observers are blocked on #3 and stay
+   v5.2.0+.
+3. **Per-feature lifecycle adoption** — multi-slice initiative
+   that changes feature-internal init/destroy semantics. Needs
+   paired DOM-walking peels + visible-behaviour QA per
+   category. The v4.7.0 contract + v4.9.0 lifecycle-route
+   bridge are ready for adoption when category owners are
+   available.
+4. ~~_(toast extraction — closed above)_~~
+6. **i18n translation pass** — 13 placeholder keys still ship
+   English-everywhere across all 10 locales. The `t()` helper
+   already falls through to inline English, so user-visible
+   behaviour stays correct. Shipping unverified machine
+   translations would risk localisation regressions; a focused
+   locale-by-locale sweep with native-speaker review is the
+   right path.
+
+### Why a documentation tag
+
+The v4.30.0 documentation tag closed the v5.0.0 foundation arc.
+The v4.44.0 tag mirrors that pattern for the v5.1.0 carry-forward
+arc: a clean reference point future sessions can cite when
+starting v5.2.0+ work, and matches the v4.44.0 binary artifacts
+shipped in `build/`. The five carry-forward items closed `[x]`
+collectively delivered the largest user-visible surface change
+since v4.0.0: the popup is now a full settings editor (354/354
+keys), the selector map is per-surface rollback-able, and the
+two DOM primitives the v5.2.0 "control center" surface will
+build on (`toastDom`, `policyProfile`) are both factory-shaped
+and unit-testable in isolation.
+
 ## [4.43.0] - 2026-05-21 - feature-peel batch 2 (6 home / subs CSS-only features)
 
 Continues carry-forward item #2. Six Home / Subscriptions
