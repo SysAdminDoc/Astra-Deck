@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.18.0';
+    const YTKIT_VERSION = '4.19.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -18187,9 +18187,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
 
             init() {
-                const color = appState.settings.customProgressBarColor || '#ff0000';
-                if (color === '#ff0000') return;
-                const css = `.ytp-play-progress, .ytp-swatch-background-color { background: ${color} !important; } .ytp-volume-slider-foreground::after { background: ${color} !important; }`;
+                // v4.19.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildProgressBarCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod(appState.settings);
+                    if (!css) return;
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildProgressBarCss.
+                    const color = appState.settings.customProgressBarColor || '#ff0000';
+                    if (color === '#ff0000') return;
+                    css = `.ytp-play-progress, .ytp-swatch-background-color { background: ${color} !important; } .ytp-volume-slider-foreground::after { background: ${color} !important; }`;
+                }
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
@@ -23859,7 +23873,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
 
             init() {
-                const css = `
+                // v4.19.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildGrayscaleThumbnailsCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod();
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildGrayscaleThumbnailsCss.
+                    css = `
                     ytd-rich-item-renderer ytd-thumbnail img,
                     ytd-video-renderer ytd-thumbnail img,
                     ytd-grid-video-renderer ytd-thumbnail img,
@@ -23874,6 +23900,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         filter: grayscale(0%) !important;
                     }
                 `;
+                }
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
@@ -28162,11 +28189,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             settingKey: 'selectionColor',
             _styleEl: null,
             init() {
-                const color = appState.settings.selectionColor || '#2dd36f';
-                const css = `
+                // v4.19.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildSelectionColorCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod(appState.settings);
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildSelectionColorCss.
+                    const color = appState.settings.selectionColor || '#2dd36f';
+                    css = `
                     ::selection { background: ${color} !important; color: #000 !important; }
                     ::-moz-selection { background: ${color} !important; color: #000 !important; }
                 `;
+                }
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
