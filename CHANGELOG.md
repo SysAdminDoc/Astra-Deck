@@ -6,6 +6,53 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.40.0] - 2026-05-21 - labelKey/descriptionKey override fields on schema entries
+
+Closes carry-forward item #8. Schema entries gain optional
+`labelKey` + `descriptionKey` fields that override the v4.28.0
+deterministic humaniser for brand-name / domain-specific strings
+where the algorithmic label is imprecise.
+
+### Added
+
+- `extension/core/settings-schema.js` — four brand-name entries
+  gain overrides:
+  - `downloadCobaltFallback` → "Cobalt download fallback"
+  - `downloadCobaltInstance` → "Cobalt API instance URL"
+  - `aiSummaryEndpoint` → "AI summary endpoint URL"
+  - `aiSummaryProvider` → "AI summary provider"
+- `extension/popup.js` — `buildSchemaOverviewKeyRow` consults
+  `entry.labelKey` first (trimmed-non-empty guard) and falls back
+  to the v4.28.0 humaniser. The tooltip surfaces the raw storage
+  key plus, when present, the `descriptionKey` text so power
+  users see both.
+- `tests/hardening.test.js` — 4 new v4.40.0 regressions covering
+  the override branch in popup, brand-name canary markers in the
+  schema, a defensive non-empty-string parser canary across every
+  override in the schema, and a freeze/round-trip canary on the
+  `downloadCobaltInstance` entry.
+- `tests/hardening.test.js` — the v4.28.0 label-resolution
+  invariant test is rewritten as fragment matches so both v4.28.0
+  and v4.40.0 implementations satisfy it.
+
+### Why
+
+The humaniser is great for the bulk of the 354-key schema but
+loses precision on brand names — "Download cobalt instance"
+reads worse than "Cobalt API instance URL", and "Ai summary
+endpoint" looks like a typo. A lightweight per-entry override
+field gives the popup precise labels for the ~10–20 brand /
+endpoint settings without paying for full i18n yet (the upcoming
+i18n pass can hang real translations off the same field).
+
+### Verification
+
+- 498 tests pass (was 494; +4 override regressions, +0 from the
+  v4.28.0 rewrite).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.40.0.
+
 ## [4.39.0] - 2026-05-21 - profile-badge integration in the schema overview
 
 Closes carry-forward item #7. `github-full`-gated entries in the

@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.39.0
+// @name         YTKit v4.40.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.39.0
+// @version      4.40.0
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
@@ -54,7 +54,7 @@
         });
     }
 
-                                                                                        // ── BEGIN v5.0.0 bundled core modules ──
+                                                                                            // ── BEGIN v5.0.0 bundled core modules ──
     // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:
     //     node sync-userscript.js
     //
@@ -580,8 +580,8 @@
         Object.freeze({ key: "downloadHistoryPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "downloadHealthPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "downloadStreamLinksPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "downloadCobaltFallback", category: "downloads", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", defaultValue: "https://api.cobalt.tools/api/json", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "downloadCobaltFallback", category: "downloads", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", labelKey: "Cobalt download fallback", descriptionKey: "When the Astra Downloader companion is unreachable, fall back to the Cobalt API." }),
+        Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", defaultValue: "https://api.cobalt.tools/api/json", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "Cobalt API instance URL", descriptionKey: "Custom Cobalt API endpoint — leave default unless self-hosting." }),
 
         // ─── enrichment ───
         Object.freeze({ key: "returnDislike", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -694,10 +694,10 @@
 
         // ─── research-ai ───
         Object.freeze({ key: "aiVideoSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "aiSummaryEndpoint", category: "research-ai", type: "string", defaultValue: "https://api.openai.com/v1/chat/completions", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary endpoint URL", descriptionKey: "Chat-completions endpoint — OpenAI, Anthropic, Gemini, or local Ollama." }),
         Object.freeze({ key: "aiSummaryModel", category: "research-ai", type: "string", defaultValue: "gpt-4o-mini", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "aiSummaryApiKey", category: "research-ai", type: "string", defaultValue: "", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "aiSummaryProvider", category: "research-ai", type: "string", defaultValue: "openai", risk: "api", profile: "github-full", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "AI summary provider", descriptionKey: "Provider id — openai, anthropic, gemini, or ollama (local)." }),
 
         // ─── watch-player ───
         Object.freeze({ key: "copyChapterMarkdown", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -2446,7 +2446,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.39.0';
+    const YTKIT_VERSION = '4.40.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
