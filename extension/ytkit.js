@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.20.0';
+    const YTKIT_VERSION = '4.21.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -23307,13 +23307,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Set dark theme attribute and inject fallback CSS
                 document.documentElement.setAttribute('dark', '');
                 document.documentElement.style.colorScheme = 'dark';
-                const css = `
+                // v4.21.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildForceDarkEverywhereCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod();
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildForceDarkEverywhereCss.
+                    css = `
                     html[dark] { --yt-spec-base-background: #0f0f0f !important; --yt-spec-brand-background-solid: #0f0f0f !important; }
                     ytd-app, ytd-browse, ytd-page-manager, #content { background-color: #0f0f0f !important; }
                     body { background-color: #0f0f0f !important; color: #f1f1f1 !important; }
                     /* Force dark on non-standard pages */
                     .page-container, .yt-core-attributed-string, [light] { background: #0f0f0f !important; color: #f1f1f1 !important; }
                 `;
+                }
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() {
@@ -24959,9 +24972,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             type: 'color',
             _styleElement: null,
             init() {
-                const accent = appState.settings.themeAccentColor;
-                if (!accent || !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(accent)) return;
-                const css = `
+                // v4.21.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildAccentColorCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod(appState.settings);
+                    if (!css) return;
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildAccentColorCss.
+                    const accent = appState.settings.themeAccentColor;
+                    if (!accent || !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(accent)) return;
+                    css = `
                     :root { --ytkit-accent: ${accent} !important; }
                     .ytp-swatch-background-color, .ytp-play-progress,
                     #progress.ytd-thumbnail-overlay-resume-playback-renderer {
@@ -24974,6 +25000,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         color: ${accent} !important;
                     }
                 `;
+                }
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); this._styleElement = null; }
