@@ -1702,20 +1702,90 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         input.addEventListener('change', persist);
         input.addEventListener('blur',   persist);
         row.appendChild(input);
+    } else if (entry.type === 'array' || entry.type === 'object') {
+        // v4.41.0: array / object JSON editor. The schema overview
+        // can now edit every type — closes the editor coverage from
+        // ~340 to 354 schema keys. The editor renders the current
+        // value via JSON.stringify(value, null, 2) and persists on
+        // commit (change/blur) via JSON.parse. If parse fails the
+        // row shows a parse-error pill below the textarea and skips
+        // persistence; the user sees the bad JSON until they fix it.
+        const wrap = document.createElement('div');
+        wrap.className = 'so-key-json-wrap';
+        const textarea = document.createElement('textarea');
+        textarea.className = 'so-key-json';
+        textarea.dataset.key = entry.key;
+        textarea.setAttribute('aria-label', entry.key);
+        textarea.spellcheck = false;
+        textarea.rows = 4;
+        const seed = settings[entry.key];
+        const seedSafe = (seed === undefined || seed === null)
+            ? (entry.type === 'array' ? [] : {})
+            : seed;
+        try {
+            textarea.value = JSON.stringify(seedSafe, null, 2);
+        } catch (_) {
+            // reason: a cyclic / non-JSON-serialisable value can't be
+            // stringified — render as empty so the user can re-key
+            // from a clean slate.
+            textarea.value = entry.type === 'array' ? '[]' : '{}';
+        }
+        const errorPill = document.createElement('span');
+        errorPill.className = 'so-key-json-error';
+        errorPill.hidden = true;
+        const persist = async () => {
+            const raw = textarea.value;
+            let parsed;
+            try {
+                parsed = JSON.parse(raw);
+            } catch (err) {
+                errorPill.textContent = 'Invalid JSON: ' + (err && err.message || err);
+                errorPill.hidden = false;
+                return;
+            }
+            // Reject type mismatches up-front so a user who pastes
+            // `{}` into an array-typed entry sees a clear error
+            // instead of silently corrupting the storage shape.
+            if (entry.type === 'array' && !Array.isArray(parsed)) {
+                errorPill.textContent = 'Expected an array';
+                errorPill.hidden = false;
+                return;
+            }
+            if (entry.type === 'object' && (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object')) {
+                errorPill.textContent = 'Expected an object';
+                errorPill.hidden = false;
+                return;
+            }
+            errorPill.hidden = true;
+            errorPill.textContent = '';
+            textarea.disabled = true;
+            try {
+                await writeSetting(entry.key, parsed);
+                renderSchemaOverview();
+            } catch (err) {
+                console.warn('[Astra Deck popup] schema-overview JSON persist failed:', err);
+            } finally {
+                textarea.disabled = false;
+            }
+        };
+        textarea.addEventListener('change', persist);
+        textarea.addEventListener('blur',   persist);
+        wrap.appendChild(textarea);
+        wrap.appendChild(errorPill);
+        row.appendChild(wrap);
     } else {
-        // Read-only value badge for array / object / null types. The
-        // schema-overview popup intentionally doesn't ship JSON editors
-        // for those — the in-page workspace remains authoritative.
+        // Read-only value badge for null types. The schema-overview
+        // popup ships type-specific editors for boolean / number /
+        // string / array / object; the remaining cases (only `null`
+        // in the current schema) fall through to this read-only path.
         const badge = document.createElement('span');
         badge.className = 'so-key-value';
         const value = settings[entry.key];
         let display;
         if (value === undefined || value === null) display = '—';
-        else if (entry.type === 'array')   display = '[' + (Array.isArray(value) ? value.length : 0) + ']';
-        else if (entry.type === 'object')  display = '{' + (value && typeof value === 'object' ? Object.keys(value).length : 0) + '}';
         else display = String(value);
         badge.textContent = display;
-        badge.title = entry.type + ' (read-only in popup; use in-page workspace to edit)';
+        badge.title = entry.type + ' (no inline editor)';
         row.appendChild(badge);
     }
     return row;
