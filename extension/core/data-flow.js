@@ -117,8 +117,51 @@
             credentialsPolicy: 'local-loopback',
             profile: 'github-full',
             riskBand: 'local-companion'
+        }),
+        Object.freeze({
+            origin: 'https://api.cobalt.tools',
+            purpose: 'Cobalt fallback download API (user-configurable instance, off by default).',
+            requiredByFeatures: ['downloadCobaltFallback'],
+            credentialsPolicy: 'no-cookies',
+            profile: 'github-full',
+            riskBand: 'api'
         })
     ]);
+
+    // Sub-toggle inheritance map. Some schema entries are pure sub-knobs
+    // of a parent feature — turning the sub-toggle on never makes a new
+    // network request, it only modulates the parent's behaviour. The
+    // cross-check treats these as covered when the parent appears in
+    // some origin's requiredByFeatures.
+    const PARENT_FEATURE = Object.freeze({
+        // SponsorBlock per-category sub-toggles
+        sbCat_sponsor: 'sponsorBlock',
+        sbCat_intro: 'sponsorBlock',
+        sbCat_outro: 'sponsorBlock',
+        sbCat_selfpromo: 'sponsorBlock',
+        sbCat_interaction: 'sponsorBlock',
+        sbCat_music_offtopic: 'sponsorBlock',
+        sbCat_preview: 'sponsorBlock',
+        sbCat_filler: 'sponsorBlock',
+        sbCat_poi_highlight: 'sponsorBlock',
+        // DeArrow shape/format sub-toggles
+        daReplaceTitles: 'deArrow',
+        daReplaceThumbs: 'deArrow',
+        // Astra Downloader sub-knobs
+        downloadQuality: 'showLocalDownloadButton',
+        downloadVideoFormat: 'showLocalDownloadButton',
+        downloadAudioFormat: 'showLocalDownloadButton',
+        // Cobalt fallback sub-knobs
+        downloadCobaltInstance: 'downloadCobaltFallback',
+        // AI summary sub-knobs (provider/model/endpoint/key)
+        aiSummaryEndpoint: 'aiVideoSummary',
+        aiSummaryModel: 'aiVideoSummary',
+        aiSummaryApiKey: 'aiVideoSummary',
+        aiSummaryProvider: 'aiVideoSummary',
+        // subscriptionAiTags is intentionally NOT mapped: per the schema
+        // description it uses Chrome's built-in Summarizer (no remote
+        // origin), so it correctly stays absent from the catalogue.
+    });
 
     function originMatchesManifest(origin, hostPermissions) {
         if (!Array.isArray(hostPermissions)) return null;
@@ -139,6 +182,40 @@
         if (typeof value === 'string') return value.length > 0;
         if (typeof value === 'number') return value > 0;
         return true;
+    }
+
+    // Build a set of every key that is "covered" — either directly listed
+    // in some origin's requiredByFeatures, or covered through the parent
+    // feature inheritance map above.
+    function buildCoveredKeySet(catalogue, parentMap) {
+        const directly = new Set();
+        for (const o of catalogue) {
+            for (const f of o.requiredByFeatures) directly.add(f);
+        }
+        const covered = new Set(directly);
+        for (const [child, parent] of Object.entries(parentMap)) {
+            if (directly.has(parent)) covered.add(child);
+        }
+        return covered;
+    }
+
+    // Public helper for hardening tests: report keys that should be
+    // covered (risk = 'api' or 'local-companion', non-internal) but
+    // aren't, after applying the parent-feature inheritance map. An
+    // empty list means schema and catalogue are in sync.
+    function findCoverageGaps(schema, catalogue = ORIGIN_CATALOGUE, parentMap = PARENT_FEATURE) {
+        const covered = buildCoveredKeySet(catalogue, parentMap);
+        const gaps = [];
+        for (const e of schema) {
+            if (e.internal) continue;
+            if (e.risk !== 'api' && e.risk !== 'local-companion') continue;
+            if (covered.has(e.key)) continue;
+            // subscriptionAiTags is an intentional exemption: uses the
+            // Chrome built-in Summarizer, no remote origin.
+            if (e.key === 'subscriptionAiTags') continue;
+            gaps.push({ key: e.key, risk: e.risk });
+        }
+        return gaps;
     }
 
     function createDataFlow(options = {}) {
@@ -196,8 +273,10 @@
 
     core.createDataFlow = createDataFlow;
     core.ORIGIN_CATALOGUE = ORIGIN_CATALOGUE;
+    core.PARENT_FEATURE = PARENT_FEATURE;
+    core.findDataFlowCoverageGaps = findCoverageGaps;
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { createDataFlow, ORIGIN_CATALOGUE };
+        module.exports = { createDataFlow, ORIGIN_CATALOGUE, PARENT_FEATURE, findCoverageGaps };
     }
 })();

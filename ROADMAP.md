@@ -1,6 +1,33 @@
 # Astra Deck Roadmap
 
-Generated: 2026-05-21 (research pass 2 — supersedes the morning pass with full per-toggle settings schema, manifest-command audit, and tightened architecture)
+Generated: 2026-05-21 (research pass 2 + autonomous v5.0.0 foundation sprint — supersedes the morning pass with full per-toggle settings schema, manifest-command audit, tightened architecture, and 6 shipped foundation slices v4.5.3 → v4.11.0)
+
+## Session log (2026-05-21 autonomous loop)
+
+Six ships executed in sequence, each fully tested + built + pushed:
+
+| Version | Slice | Tests | Δ |
+|---|---|---:|---|
+| v4.5.3 | Retire `commands` keyboard-shortcut surface (manifest, background, locales, Firefox patch, ytkit.js, CLAUDE.md, HARDENING.md) | 315 | (Open question resolved) |
+| v4.6.0 | settings-schema single source of truth + `scripts/check-settings.js` + build wire + 10 regression tests | 325 | +10 |
+| v4.7.0 | core/feature-lifecycle.js + core/policy-profile.js + manifest wire + 11 tests | 336 | +11 |
+| v4.8.0 | core/selector-health.js + lifecycle singleton + 7 tests | 343 | +7 |
+| v4.9.0 | core/lifecycle-route-bridge.js (navigation → lifecycle) + 4 tests | 347 | +4 |
+| v4.10.0 | core/data-flow.js (origin catalogue) + 6 tests | 353 | +6 |
+| v4.11.0 | schema↔data-flow coverage gate + Cobalt entry + PARENT_FEATURE map + 3 tests | 356 | +3 |
+
+Net: 6 new `extension/core/` modules, +41 hardening tests (315 → 356), 6 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+
+Carry-forward for the next session (in priority order):
+
+1. **Popup data-flow panel UI** — render `createDataFlow().getOrigins()` as a categorised chip surface in `popup.html` / `popup.js`. Behind the in-page gear icon, hidden until enabled by `privacyDataFlowPanel`.
+2. **Categorised settings panel** — replace the flat popup toggle list with `getKeysByCategory()`-driven sections; add search, profile badges from `policy-profile`, and per-feature diagnostics rows.
+3. **Localised label + description per schema entry** — extend `settings-schema.js` entries with `labelKey` / `descriptionKey`; backfill `_locales/en/messages.json` for 354 keys (translation deferred — entries fall back to English).
+4. **First feature peel** — pick one bounded category (likely `subtitles` — 8 isolated keys, no SPA coupling) and extract from `ytkit.js` into `extension/features/subtitles/` using the v4.7.0 lifecycle contract.
+5. **`toast.js` extraction** — bundle with the first feature peel.
+6. **Versioned selector packs** — split `core/selectors.js` into per-surface `core/selector-packs/*.js` with capture provenance.
+7. **Userscript build pipeline** — `sync-userscript.js` currently only syncs version metadata; teach it to bundle the new `core/*` modules so the userscript path reaches feature parity with the extension.
+
 Target site: YouTube desktop web (`www.youtube.com`, `youtube-nocookie.com`, `youtu.be`), live-chat iframe (`*.youtube.com/live_chat*`), `i.ytimg.com` thumbnail origin. YouTube Music is opt-in only via `youtubeMusicCompat`. Excluded by design: `m.youtube.com`, `studio.youtube.com`.
 Current repo version observed: Astra Deck v4.5.2 (`extension/manifest.json` and `extension/ytkit.js` `YTKIT_VERSION`).
 Planning track: Astra Deck v5.0.0 through v6.0.0.
