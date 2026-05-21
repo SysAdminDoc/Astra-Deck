@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.17.0';
+    const YTKIT_VERSION = '4.18.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -19755,15 +19755,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _overlay: null,
 
             _apply() {
-                const intensity = (appState.settings.blueLightIntensity || 30) / 100;
+                // v4.18.0: tint RGBA computation is owned by
+                // extension/features/blue-light-filter/index.js. The module
+                // attaches to globalThis.YTKitFeatures.blueLightFilter and
+                // is loaded ahead of ytkit.js via manifest.content_scripts.
+                // Inline fallback preserves the userscript path; the
+                // hardening test pins byte parity.
                 if (!this._overlay) {
                     this._overlay = document.createElement('div');
                     this._overlay.className = 'ytkit-blue-light-filter';
                     this._overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2147483646;mix-blend-mode:multiply;transition:background 0.3s;`;
                     document.documentElement.appendChild(this._overlay);
                 }
+                const fromModule = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.blueLightFilter
+                    && globalThis.YTKitFeatures.blueLightFilter.buildBlueLightRgba);
+                let rgba;
+                if (typeof fromModule === 'function') {
+                    rgba = fromModule(appState.settings);
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/blue-light-filter/index.js's
+                    // buildBlueLightRgba.
+                    const intensity = (appState.settings.blueLightIntensity || 30) / 100;
+                    rgba = `rgba(255, ${Math.round(180 - intensity * 80)}, ${Math.round(60 - intensity * 60)}, ${intensity * 0.35})`;
+                }
                 // Warm orange tint that blocks blue light
-                this._overlay.style.background = `rgba(255, ${Math.round(180 - intensity * 80)}, ${Math.round(60 - intensity * 60)}, ${intensity * 0.35})`;
+                this._overlay.style.background = rgba;
             },
 
             init() {

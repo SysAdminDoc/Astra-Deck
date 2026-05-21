@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.18.0] - 2026-05-21 - v5.0.0 foundation #13: third feature peel (blueLightFilter)
+
+Third feature peel from `extension/ytkit.js`, following the v4.13.0
+subtitles and v4.17.0 video-filters pattern. The warm-tint RGBA
+computation for the blueLightFilter overlay moves into its own
+pure module; the DOM overlay element and lifecycle stay in the
+monolith.
+
+### Added
+
+- `extension/features/blue-light-filter/index.js` — pure helper
+  `buildBlueLightRgba(settings)` plus a frozen `OVERLAY_FIXED_CSS`
+  declaring the overlay element's static styles (position, z-index,
+  mix-blend-mode, etc.) so a future popup preview swatch can render
+  the same overlay without duplicating CSS rules. Clamps
+  `blueLightIntensity` to the schema-declared 10..80 range and falls
+  back to the default 30 for missing/non-numeric input.
+- `tests/hardening.test.js` — 5 new regressions covering module
+  surface exports, byte-stable RGBA output at three intensity
+  values, out-of-range clamping, the monolith fallback parity
+  contract (delegates + inline-formula matches), and the manifest
+  load order (after `features/video-filters`, before `ytkit.js`).
+
+### Changed
+
+- `extension/ytkit.js` — `blueLightFilter._apply()` delegates the
+  tint RGBA computation to
+  `globalThis.YTKitFeatures.blueLightFilter.buildBlueLightRgba`
+  when present. Inline fallback formula preserved unchanged for the
+  userscript path; tests pin the parity contract.
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries load `features/blue-light-filter/index.js` immediately
+  after `features/video-filters/index.js`.
+
+### Why
+
+Third installment of the monolith carve-out per ROADMAP.md v5.0.0.
+Blue-light filtering is a self-contained CSS computation that
+benefits the most from being testable in isolation — the JS-float
+precision in the alpha channel (`0.1 * 0.35 → 0.034999999999999996`)
+is now locked by a test, so any future "tidy-up" refactor that
+silently rounds the precision will also be flagged at build time.
+
 ## [4.17.0] - 2026-05-21 - v5.0.0 foundation #12: second feature peel (video-filters)
 
 Second feature carve-out from `extension/ytkit.js`, mirroring the
