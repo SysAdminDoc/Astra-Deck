@@ -6,6 +6,39 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.25.0] - 2026-05-21 - v5.0.0 foundation #20: schema-overview search integration
+
+The popup's existing `#q` filter input now drives the schema
+overview too. Typing a search term filters categories to those
+containing matching keys, force-expands matching categories, and
+filters the per-key sub-list to just the matches.
+
+### Added
+
+- `extension/popup.js` — `renderSchemaOverview()` now reads
+  `q.value` into a normalised term. Inline `matchEntry(entry)`
+  helper checks both the storage key and the category name (so
+  searching for `subtitle` finds the seven subtitles keys via key
+  prefix; searching for `downloads` finds every downloads-category
+  key via category name).
+- `extension/popup.js` — `q.addEventListener('input', …)` debounced
+  handler now also calls `renderSchemaOverview()` after `render()`,
+  so both surfaces stay in sync at the same 120 ms cadence.
+- `tests/hardening.test.js` — 5 new regressions: term normalisation,
+  matchEntry's key + category branches, zero-match categories
+  hidden, term-match force-expands the row, input handler refreshes
+  both surfaces, and a smoke test running the matcher against the
+  live schema (subtitle ≥7, vvf ≥6, downloads ≥5, fake-term =0).
+
+### Why
+
+The v4.24.0 per-key editor unlocked editing for ~264 boolean keys.
+Without search the user has to click through 18 categories to find
+one. v4.25.0 closes that loop by reusing the existing filter input
+— no extra UI surface, no extra keyboard handler, no separate state
+to maintain. Force-expanding matching categories means the search
+result list is one click away from being toggled instead of two.
+
 ## [4.24.0] - 2026-05-21 - v5.0.0 foundation #19: interactive category expansion + per-key edit
 
 Promotes the v4.23.0 read-only category overview to a real editor.

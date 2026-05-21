@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.24.0
+// @name         YTKit v4.25.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.24.0
+// @version      4.25.0
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
@@ -54,7 +54,7 @@
         });
     }
 
-                            // ── BEGIN v5.0.0 bundled core modules ──
+                                // ── BEGIN v5.0.0 bundled core modules ──
     // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:
     //     node sync-userscript.js
     //
@@ -2324,7 +2324,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.24.0';
+    const YTKIT_VERSION = '4.25.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {
