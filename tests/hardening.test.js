@@ -4713,6 +4713,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/blue-light-filter/index.js',
         'extension/features/theme-css/index.js',
         'extension/features/wave-8-css/index.js',
+        'extension/features/home-subs-css/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     assert.deepEqual(bundleOrder, expectedOrder,
@@ -6040,6 +6041,93 @@ test('v4.39.0 ≥1 settings-schema entry has profile=github-full (badge has cove
 });
 
 // ── v4.40.0 NX1: labelKey/descriptionKey override fields on schema entries ──
+
+// ── v4.43.0 NX1: feature-peel batch 2 (6 home / subs CSS-only features) ──
+
+function loadHomeSubsCssModule() {
+    delete require.cache[require.resolve('../extension/features/home-subs-css/index.js')];
+    const stub = {};
+    const prev = global.YTKitFeatures;
+    global.YTKitFeatures = stub;
+    require('../extension/features/home-subs-css/index.js');
+    global.YTKitFeatures = prev;
+    return stub.homeSubsCss;
+}
+
+test('v4.43.0 home-subs-css module exports six pure builders', () => {
+    const mod = loadHomeSubsCssModule();
+    assert.ok(mod, 'YTKitFeatures.homeSubsCss must be populated by the IIFE');
+    for (const name of [
+        'buildHideCreateButtonCss',
+        'buildHideVoiceSearchCss',
+        'buildWidenSearchBarCss',
+        'buildDisablePlayOnHoverCss',
+        'buildFullWidthSubscriptionsCss',
+        'buildHideSubscriptionOptionsCss'
+    ]) {
+        assert.equal(typeof mod[name], 'function', `homeSubsCss.${name} must be a function`);
+        const css = mod[name]();
+        assert.equal(typeof css, 'string', `${name} must return a string`);
+        assert.ok(css.length > 0, `${name} must return a non-empty CSS string`);
+    }
+});
+
+test('v4.43.0 home-subs-css helpers return CSS that the monolith inline fallback also contains', () => {
+    const mod = loadHomeSubsCssModule();
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const cases = [
+        ['buildHideCreateButtonCss', 'button[aria-label="Create"]'],
+        ['buildHideVoiceSearchCss', '#voice-search-button'],
+        ['buildWidenSearchBarCss', 'margin-left: -180px'],
+        ['buildDisablePlayOnHoverCss', 'ytd-moving-thumbnail-renderer'],
+        ['buildFullWidthSubscriptionsCss', 'max-width: 100% !important'],
+        ['buildHideSubscriptionOptionsCss', '.grid-subheader']
+    ];
+    for (const [fn, marker] of cases) {
+        const css = mod[fn]();
+        assert.ok(css.includes(marker), `${fn}() output must contain ${marker}`);
+        assert.ok(ytkit.includes(marker),
+            `ytkit.js must keep the inline fallback containing ${marker}`);
+    }
+});
+
+test('v4.43.0 monolith cssFeature() callsites delegate via globalThis.YTKitFeatures.homeSubsCss', () => {
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    for (const fn of [
+        'buildHideCreateButtonCss',
+        'buildHideVoiceSearchCss',
+        'buildWidenSearchBarCss',
+        'buildDisablePlayOnHoverCss',
+        'buildFullWidthSubscriptionsCss',
+        'buildHideSubscriptionOptionsCss'
+    ]) {
+        assert.ok(
+            ytkit.includes(`globalThis.YTKitFeatures.homeSubsCss.${fn}()`),
+            `ytkit.js must delegate ${fn} via globalThis.YTKitFeatures.homeSubsCss`
+        );
+    }
+});
+
+test('v4.43.0 manifest content_scripts loads features/home-subs-css/index.js before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const moduleIdx = cs.js.indexOf('features/home-subs-css/index.js');
+        assert.notEqual(moduleIdx, -1,
+            'manifest content_scripts must include features/home-subs-css/index.js');
+        assert.ok(moduleIdx < ytkitIdx,
+            'features/home-subs-css/index.js must load before ytkit.js');
+    }
+});
+
+test('v4.43.0 sync-userscript V5_BUNDLE_MODULES includes features/home-subs-css', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
+    assert.ok(src.includes('extension/features/home-subs-css/index.js'),
+        'sync-userscript.js V5_BUNDLE_MODULES must include features/home-subs-css/index.js');
+});
 
 test('v4.40.0 popup honours entry.labelKey + entry.descriptionKey when present', () => {
     assert.match(popupSource, /entry\.labelKey/,

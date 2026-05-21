@@ -6,6 +6,27 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.43.0] - 2026-05-21 - feature-peel batch 2 (6 home / subs CSS-only features)
+
+Continues carry-forward item #2. Six Home / Subscriptions
+cssFeature() callsites peel into
+`extension/features/home-subs-css/index.js`:
+`hideCreateButton`, `hideVoiceSearch`, `widenSearchBar`,
+`disablePlayOnHover`, `fullWidthSubscriptions`,
+`hideSubscriptionOptions`.
+
+Same pattern as the v4.38.0 wave-8 batch: pure builders in the
+module, inline literal preserved as a byte-identical fallback for
+the userscript / module-unavailable path, manifest +
+`V5_BUNDLE_MODULES` extended.
+
+### Verification
+
+- 515 tests pass (was 510; +5 home-subs regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.43.0.
+
 ## [4.42.0] - 2026-05-21 - DOM-layer toast extraction (core/toast-dom.js)
 
 Closes carry-forward item #4. The DOM-touching `showToast` /

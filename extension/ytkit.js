@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.42.0';
+    const YTKIT_VERSION = '4.43.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -5007,10 +5007,16 @@ return response;
 
     const features = [
         // ─── Interface ───
+        // v4.43.0: six Home / Subscriptions CSS-only features peel out
+        // to extension/features/home-subs-css/index.js. The inline
+        // literal stays as a byte-identical fallback for the userscript
+        // path.
         cssFeature('hideCreateButton', 'Hide Create Button', 'Remove the "Create" button from the header toolbar', 'Home / Subscriptions', 'plus-circle',
-            'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])'),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideCreateButtonCss && globalThis.YTKitFeatures.homeSubsCss.buildHideCreateButtonCss())
+            || 'ytd-masthead ytd-button-renderer:has(button[aria-label="Create"])'),
         cssFeature('hideVoiceSearch', 'Hide Voice Search', 'Remove the microphone icon from the search bar', 'Home / Subscriptions', 'mic-off',
-            '#voice-search-button'),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideVoiceSearchCss && globalThis.YTKitFeatures.homeSubsCss.buildHideVoiceSearchCss())
+            || '#voice-search-button'),
         {
             id: 'logoToSubscriptions',
             name: 'Logo Click → Subscriptions',
@@ -5033,7 +5039,8 @@ return response;
             }
         },
         cssFeature('widenSearchBar', 'Widen Search Bar', 'Expand the search bar to use more available space', 'Home / Subscriptions', 'search',
-            `ytd-masthead yt-searchbox { margin-left: -180px; margin-right: -300px; }`),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildWidenSearchBarCss && globalThis.YTKitFeatures.homeSubsCss.buildWidenSearchBarCss())
+            || `ytd-masthead yt-searchbox { margin-left: -180px; margin-right: -300px; }`),
         {
             id: 'subscriptionsGrid',
             name: 'Subscriptions Grid',
@@ -7307,17 +7314,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() { removeNavigateRule(this.id); }
         },
         cssFeature('disablePlayOnHover', 'Disable Hover Preview', 'Stop videos from playing when hovering over thumbnails', 'Home / Subscriptions', 'pause',
-            `ytd-video-preview, #preview, #mouseover-overlay,
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildDisablePlayOnHoverCss && globalThis.YTKitFeatures.homeSubsCss.buildDisablePlayOnHoverCss())
+            || `ytd-video-preview, #preview, #mouseover-overlay,
                     ytd-moving-thumbnail-renderer,
                     ytd-thumbnail-overlay-loading-preview-renderer {
                         display: none !important;
                     }`),
         cssFeature('fullWidthSubscriptions', 'Full-Width Subscriptions', 'Expand the subscription grid to fill the page', 'Home / Subscriptions', 'maximize',
-            `ytd-browse[page-subtype="subscriptions"] #grid-container.ytd-two-column-browse-results-renderer {
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildFullWidthSubscriptionsCss && globalThis.YTKitFeatures.homeSubsCss.buildFullWidthSubscriptionsCss())
+            || `ytd-browse[page-subtype="subscriptions"] #grid-container.ytd-two-column-browse-results-renderer {
                         max-width: 100% !important;
                     }`),
         cssFeature('hideSubscriptionOptions', 'Hide Layout Options', 'Remove the "Latest" header and view toggles on subscriptions', 'Home / Subscriptions', 'layout',
-            'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)'),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.homeSubsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideSubscriptionOptionsCss && globalThis.YTKitFeatures.homeSubsCss.buildHideSubscriptionOptionsCss())
+            || 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)'),
         {
             id: 'videosPerRow',
             name: 'Videos Per Row',
