@@ -855,6 +855,38 @@ async function broadcastSettingsReplaced(settings) {
     } catch { /* extension suspended */ }
 }
 
+// v4.16.0: schema-driven risk-band badge for the popup toggle list.
+// Returns a small <span> tagged with the entry's risk band, or null
+// when the schema declares the toggle as `safe` (or when the schema
+// module isn't loaded — defensive degradation). Reuses the v4.12.0
+// data-flow palette so the popup speaks one consistent visual
+// language for "what this toggle does to your network surface".
+function createSchemaRiskBadge(key) {
+    const finder = window.YTKitCore && window.YTKitCore.findSettingEntry;
+    let entry = null;
+    if (typeof finder === 'function') {
+        try { entry = finder(key); }
+        catch (_) { /* reason: schema lookup must never break a toggle row */ }
+    }
+    if (!entry) return null;
+    if (entry.risk === 'safe') return null;
+    if (entry.internal) return null;
+    const span = document.createElement('span');
+    span.className = 'toggle-risk-badge toggle-risk-' + entry.risk;
+    span.textContent = entry.risk;
+    // Localised tooltip describes what the badge means; falls back to
+    // an English sentence so unenglish locales still get a usable hint.
+    span.title = t('toggleRiskTooltip_' + entry.risk,
+        ({
+            api:               'Talks to an external API server',
+            'local-companion': 'Talks to the local Astra Downloader (127.0.0.1)',
+            experimental:      'Experimental feature; behaviour may change',
+            'store-risk':      'Higher review-policy sensitivity — github-full only'
+        }[entry.risk]) || ('Risk band: ' + entry.risk));
+    span.setAttribute('aria-label', span.title);
+    return span;
+}
+
 function render(settings, filter) {
     const term = (filter || '').toLowerCase().trim();
     const totalCount = QUICK_TOGGLES.length;
@@ -934,13 +966,24 @@ function render(settings, filter) {
 
             const label = document.createElement('div');
             label.className = 'label';
+            const nameRow = document.createElement('div');
+            nameRow.className = 'name-row';
             const name = document.createElement('div');
             name.className = 'name';
             name.textContent = tName;
+            nameRow.appendChild(name);
+            // v4.16.0: schema-driven risk-band badge. Shown only when the
+            // toggle's risk is non-`safe` so the surface stays calm for
+            // ordinary cosmetic toggles and the small set of API/companion-
+            // touching toggles stand out. Reads from the v4.6.0 schema via
+            // window.YTKitCore.findSettingEntry; degrades silently if the
+            // schema module didn't load (CSP regression guard).
+            const riskBadge = createSchemaRiskBadge(item.key);
+            if (riskBadge) nameRow.appendChild(riskBadge);
             const desc = document.createElement('div');
             desc.className = 'desc';
             desc.textContent = tDesc;
-            label.appendChild(name);
+            label.appendChild(nameRow);
             label.appendChild(desc);
 
             const toggleSwitch = document.createElement('div');

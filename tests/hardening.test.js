@@ -4284,3 +4284,78 @@ test('v4.15.0 new popup quick-toggle keys all exist in the v4.6.0 settings schem
             'Quick-toggle key ' + k + ' must exist in the settings schema');
     }
 });
+
+// ── v4.16.0 NX1: schema-driven risk-band badges on popup toggles ──
+
+test('v4.16.0 popup.js defines createSchemaRiskBadge and consults the schema', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /function createSchemaRiskBadge\(key\)/,
+        'popup.js must define createSchemaRiskBadge');
+    assert.match(src, /window\.YTKitCore && window\.YTKitCore\.findSettingEntry/,
+        'createSchemaRiskBadge must consult the v4.6.0 schema via findSettingEntry');
+    assert.match(src, /entry\.risk === 'safe'/,
+        'createSchemaRiskBadge must skip safe-risk entries');
+    assert.match(src, /toggle-risk-badge/,
+        'badge must carry the toggle-risk-badge class');
+});
+
+test('v4.16.0 popup render() inserts the risk badge into the toggle name row', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // The render() function must call createSchemaRiskBadge per row and
+    // append the result into the name-row container only when non-null.
+    assert.match(src, /const riskBadge = createSchemaRiskBadge\(item\.key\)/,
+        'render() must call createSchemaRiskBadge per toggle');
+    assert.match(src, /if \(riskBadge\) nameRow\.appendChild\(riskBadge\)/,
+        'render() must guard against null badges');
+    assert.match(src, /nameRow\.className = 'name-row'/,
+        'render() must create a name-row wrapper for the badge');
+});
+
+test('v4.16.0 popup.css defines square-cornered (4px radius) risk badges for every non-safe band', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(css, /\.toggle-risk-badge \{/,
+        'popup.css must define the base .toggle-risk-badge class');
+    // 4 px radius is the house-style allowed value for backdrop elements.
+    assert.match(css, /\.toggle-risk-badge \{[^}]*border-radius:\s*4px/s,
+        'risk badge must use a 4px radius (no pill / stadium backdrops)');
+    for (const tone of ['api', 'local-companion', 'experimental', 'store-risk']) {
+        assert.match(css, new RegExp('\\.toggle-risk-badge\\.toggle-risk-' + tone.replace(/-/g, '\\-') + ' \\{'),
+            'popup.css must declare a colour variant for ' + tone);
+    }
+});
+
+test('v4.16.0 the risk-badge surface on quick toggles stays bounded to the schema-declared api set', () => {
+    // Locks in the present state: of the v4.15.0 18-key quick-toggle
+    // surface, three keys trip the badge because their schema risk is
+    // `api` (sponsorBlock + deArrow hit sponsor.ajay.app; transcriptViewer
+    // hits YouTube's caption-tracks endpoint). Everything else is safe.
+    // Adding a new quick toggle with a non-safe risk band will require
+    // updating this list — the intended canary so the badge surface
+    // stays legible.
+    const popupSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const schemaByKey = new Map(SETTINGS_SCHEMA.map((e) => [e.key, e]));
+
+    const start = popupSrc.indexOf('const QUICK_TOGGLES = [');
+    const end = popupSrc.indexOf('];', start);
+    const block = popupSrc.slice(start, end);
+    const keyRe = /key:\s*'([A-Za-z_][A-Za-z0-9_]*)'/g;
+    const keys = [...block.matchAll(keyRe)].map((m) => m[1]);
+    assert.ok(keys.length >= 18, 'QUICK_TOGGLES must contain at least the v4.15.0 18 entries (was ' + keys.length + ')');
+
+    const nonSafe = keys.filter((k) => {
+        const e = schemaByKey.get(k);
+        return e && !e.internal && e.risk !== 'safe';
+    });
+    nonSafe.sort();
+    assert.deepEqual(nonSafe, ['deArrow', 'sponsorBlock', 'transcriptViewer'],
+        'risk-badge surface must remain just the three api-touching quick toggles; new non-safe quick toggles require a deliberate canary update');
+});
