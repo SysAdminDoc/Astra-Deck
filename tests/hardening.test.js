@@ -3212,3 +3212,136 @@ test('subscriptionAiTags renders chip suffix and binds shift+click for regenerat
     assert.match(block, /e\.shiftKey && appState\?\.settings\?\.subscriptionAiTags/,
         'click handler must gate regeneration on shift+click AND the subscriptionAiTags toggle');
 });
+
+// ── v5.0.0 NX1: settings-schema foundation ──
+
+const settingsSchemaModule = require('../extension/core/settings-schema.js');
+const defaultSettings = require('../extension/default-settings.json');
+
+test('v5.0.0 settings-schema exports the required surface', () => {
+    const required = [
+        'SETTINGS_SCHEMA', 'CATEGORIES', 'RISKS', 'PROFILES', 'SCOPES',
+        'VEHICLES', 'TYPES', 'buildDefaultsFromSchema', 'getKeysByCategory',
+        'findSettingEntry', 'isInternalSettingKey', 'getStoreSafeKeys',
+        'getGithubFullKeys'
+    ];
+    for (const name of required) {
+        assert.ok(name in settingsSchemaModule,
+            `settings-schema must export ${name}`);
+    }
+    assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
+        'SETTINGS_SCHEMA must be an array');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 354,
+        'SETTINGS_SCHEMA must cover all 354 keys');
+});
+
+test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
+    const { SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, TYPES } = settingsSchemaModule;
+    const cats = new Set(CATEGORIES);
+    const risks = new Set(RISKS);
+    const profiles = new Set(PROFILES);
+    const scopes = new Set(SCOPES);
+    const types = new Set(TYPES);
+    for (const entry of SETTINGS_SCHEMA) {
+        assert.ok(cats.has(entry.category), `${entry.key} has invalid category ${entry.category}`);
+        assert.ok(types.has(entry.type), `${entry.key} has invalid type ${entry.type}`);
+        assert.ok(risks.has(entry.risk), `${entry.key} has invalid risk ${entry.risk}`);
+        assert.ok(profiles.has(entry.profile), `${entry.key} has invalid profile ${entry.profile}`);
+        assert.ok(scopes.has(entry.scope), `${entry.key} has invalid scope ${entry.scope}`);
+        assert.equal(typeof entry.immediateApply, 'boolean', `${entry.key} immediateApply must be boolean`);
+        assert.equal(typeof entry.destroyRequired, 'boolean', `${entry.key} destroyRequired must be boolean`);
+        assert.equal(typeof entry.internal, 'boolean', `${entry.key} internal must be boolean`);
+        assert.equal(typeof entry.since, 'string', `${entry.key} since must be a string`);
+        // Internal flag must agree with the `_` prefix.
+        assert.equal(entry.internal, entry.key.startsWith('_'),
+            `${entry.key} internal flag must agree with leading-underscore convention`);
+        // Declared type must match the defaultValue's runtime type.
+        const v = entry.defaultValue;
+        const runtimeType = Array.isArray(v) ? 'array' : (v === null ? 'null' : typeof v);
+        assert.equal(entry.type, runtimeType,
+            `${entry.key} type "${entry.type}" must match runtime type "${runtimeType}"`);
+    }
+});
+
+test('v5.0.0 schema has no duplicate keys', () => {
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const seen = new Set();
+    for (const entry of SETTINGS_SCHEMA) {
+        assert.equal(seen.has(entry.key), false, `Duplicate key in schema: ${entry.key}`);
+        seen.add(entry.key);
+    }
+});
+
+test('v5.0.0 schema key set === default-settings.json key set', () => {
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const schemaKeys = new Set(SETTINGS_SCHEMA.map((e) => e.key));
+    const defaultKeys = new Set(Object.keys(defaultSettings));
+    for (const k of defaultKeys) {
+        assert.ok(schemaKeys.has(k), `default-settings has ${k} but schema does not`);
+    }
+    for (const k of schemaKeys) {
+        assert.ok(defaultKeys.has(k), `schema has ${k} but default-settings does not`);
+    }
+});
+
+test('v5.0.0 schema iteration order matches default-settings.json insertion order', () => {
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const defaultKeys = Object.keys(defaultSettings);
+    const schemaKeys = SETTINGS_SCHEMA.map((e) => e.key);
+    assert.deepEqual(schemaKeys, defaultKeys,
+        'A regenerated default-settings.json must be byte-for-byte stable; schema order must match insertion order');
+});
+
+test('v5.0.0 buildDefaultsFromSchema round-trips to default-settings.json byte-for-byte', () => {
+    const rebuilt = settingsSchemaModule.buildDefaultsFromSchema();
+    assert.equal(JSON.stringify(rebuilt), JSON.stringify(defaultSettings),
+        'buildDefaultsFromSchema() must produce the same JSON as default-settings.json');
+});
+
+test('v5.0.0 every category in CATEGORIES is represented by at least one entry', () => {
+    const { CATEGORIES, getKeysByCategory } = settingsSchemaModule;
+    const byCat = getKeysByCategory();
+    for (const c of CATEGORIES) {
+        assert.ok(byCat[c] && byCat[c].length > 0,
+            `Category "${c}" must have at least one entry`);
+    }
+});
+
+test('v5.0.0 getStoreSafeKeys and getGithubFullKeys partition the schema', () => {
+    const { SETTINGS_SCHEMA, getStoreSafeKeys, getGithubFullKeys } = settingsSchemaModule;
+    const all = SETTINGS_SCHEMA.map((e) => e.key);
+    const safe = new Set(getStoreSafeKeys());
+    const full = new Set(getGithubFullKeys());
+    // Every key must land in exactly one bucket.
+    for (const k of all) {
+        const inSafe = safe.has(k);
+        const inFull = full.has(k);
+        assert.equal(inSafe || inFull, true, `${k} must be in store-safe OR github-full`);
+        assert.equal(inSafe && inFull, false, `${k} must not be in both store-safe AND github-full`);
+    }
+});
+
+test('v5.0.0 internal storage-only keys (prefix _) are excluded from popup-target lists', () => {
+    const { SETTINGS_SCHEMA, isInternalSettingKey } = settingsSchemaModule;
+    for (const entry of SETTINGS_SCHEMA) {
+        assert.equal(entry.internal, isInternalSettingKey(entry.key),
+            `${entry.key}: isInternalSettingKey must agree with the entry.internal flag`);
+        if (entry.internal) {
+            assert.equal(entry.immediateApply, false,
+                `Internal key ${entry.key} must not declare immediateApply`);
+            assert.equal(entry.destroyRequired, false,
+                `Internal key ${entry.key} must not declare destroyRequired`);
+        }
+    }
+});
+
+test('v5.0.0 findSettingEntry resolves every schema key and returns null for unknown keys', () => {
+    const { SETTINGS_SCHEMA, findSettingEntry } = settingsSchemaModule;
+    for (const entry of SETTINGS_SCHEMA) {
+        const found = findSettingEntry(entry.key);
+        assert.ok(found, `findSettingEntry must resolve ${entry.key}`);
+        assert.equal(found.key, entry.key);
+    }
+    assert.equal(findSettingEntry('definitely-not-a-real-setting-key-12345'), null,
+        'findSettingEntry must return null for unknown keys');
+});

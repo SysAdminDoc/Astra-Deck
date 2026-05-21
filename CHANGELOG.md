@@ -6,6 +6,59 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.6.0] - 2026-05-21 - v5.0.0 foundation #1: settings-schema single source of truth
+
+First slice of the v5.0.0 architecture refactor from `ROADMAP.md`. The
+schema is now the canonical reference for every Astra Deck setting,
+with build-time + test-time gates that prevent default-value drift
+between `extension/core/settings-schema.js`, `extension/ytkit.js`'s
+in-code defaults, and `extension/default-settings.json`.
+
+### Added
+
+- `extension/core/settings-schema.js` — 354-entry frozen array. Every
+  entry carries `key`, `category`, `type`, `defaultValue`, `risk`,
+  `profile`, `scope`, `vehicle`, `immediateApply`, `destroyRequired`,
+  `internal`, and `since`. Helpers exported: `buildDefaultsFromSchema`,
+  `getKeysByCategory`, `findSettingEntry`, `isInternalSettingKey`,
+  `getStoreSafeKeys`, `getGithubFullKeys`. Loadable as both a Node
+  CommonJS module and an ISOLATED-world classic content script.
+- `scripts/check-settings.js` — schema parity gate. Validates exports,
+  per-entry metadata against the canonical enums, no-duplicate keys,
+  schema↔default-settings key set parity, insertion-order match, and
+  byte-for-byte round-trip. Hooked into `npm run check` between
+  `check-i18n` and `lint`. Standalone runner is `npm run check:settings`.
+- `tests/hardening.test.js` — 10 new regression tests pinning the
+  schema invariants (surface exports, metadata validity, no dupes,
+  key-set parity, ordering, round-trip, category coverage,
+  store-safe/github-full partition, internal-key exclusion,
+  findSettingEntry resolution).
+- `scripts/_gen-schema.js` — one-shot generator that rebuilt the
+  initial schema from `ROADMAP.md` "Full Per-Toggle Settings Schema"
+  and `default-settings.json`. Retained so future ROADMAP narrative
+  updates can be re-synced into the schema on demand.
+
+### Changed
+
+- `build-extension.js` — `writeDefaultSettingsCatalog` now emits
+  `extension/default-settings.json` from `buildDefaultsFromSchema()`.
+  The legacy `extractDefaultsFromSource(ytkitSource)` extractor still
+  runs as a belt-and-braces drift check; any disagreement between the
+  schema and `ytkit.js`'s in-code `defaults:` block fails the build
+  with a per-key drift report.
+
+### Why
+
+`ROADMAP.md` v5.0.0 phase mandates the settings-schema foundation as
+the first deliverable: every other v5 phase (selector packs,
+content-filter superset, player superset, watch-page tabs, etc.) needs
+a single source of truth for category/risk/profile/scope metadata. The
+brace-balanced extractor from `ytkit.js` was workable but fragile;
+flipping to a frozen array module unblocks the categorised popup,
+data-flow panel, dual-profile build, and import/export scrubbing
+features queued for v5.0.0+ without piling new responsibilities onto
+the 43k-line monolith.
+
 ## [4.5.3] - 2026-05-21 - Retire keyboard shortcut surface (house-style alignment)
 
 The "no keyboard shortcuts" rule in the v5 roadmap is now enforced in

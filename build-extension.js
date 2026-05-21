@@ -12,6 +12,7 @@ const {
     extractSettingsVersionFromSource
 } = require('./scripts/catalog-utils');
 const { patchManifestForFirefox } = require('./scripts/manifest-patch');
+const { buildDefaultsFromSchema } = require('./extension/core/settings-schema');
 
 const EXT_DIR = path.join(__dirname, 'extension');
 const BUILD_DIR = path.join(__dirname, 'build');
@@ -206,16 +207,43 @@ function listFiles(dir, base) {
 }
 
 function writeDefaultSettingsCatalog(ytkitSource) {
-    const defaults = extractDefaultsFromSource(ytkitSource);
+    // v5.0.0: extension/core/settings-schema.js is the single source of truth.
+    // The legacy brace-balanced extractor from ytkit.js still runs as a
+    // belt-and-braces drift check — if the in-code `defaults:` block ever
+    // disagrees with the schema (a developer hand-edits ytkit.js but forgets
+    // the schema, or vice versa), the build fails loudly here instead of
+    // silently shipping mismatched defaults.
+
+    const schemaDefaults = buildDefaultsFromSchema();
+    const legacyDefaults = extractDefaultsFromSource(ytkitSource);
 
     // Keep this empty unless a setting is fully removed from defaults, UI, and runtime.
     const retiredSettingKeys = [];
-
     for (const key of retiredSettingKeys) {
-        delete defaults[key];
+        delete schemaDefaults[key];
+        delete legacyDefaults[key];
     }
 
-    fs.writeFileSync(DEFAULT_SETTINGS_JSON, JSON.stringify(defaults, null, 2) + '\n', 'utf8');
+    const schemaKeys = Object.keys(schemaDefaults);
+    const legacyKeys = Object.keys(legacyDefaults);
+    const missingFromSchema = legacyKeys.filter((k) => !(k in schemaDefaults));
+    const missingFromLegacy = schemaKeys.filter((k) => !(k in legacyDefaults));
+    const valueDrift = schemaKeys
+        .filter((k) => k in legacyDefaults)
+        .filter((k) => JSON.stringify(schemaDefaults[k]) !== JSON.stringify(legacyDefaults[k]));
+
+    if (missingFromSchema.length || missingFromLegacy.length || valueDrift.length) {
+        const lines = ['default-settings drift between settings-schema.js and ytkit.js:'];
+        if (missingFromSchema.length) lines.push('  schema missing keys: ' + missingFromSchema.join(', '));
+        if (missingFromLegacy.length) lines.push('  ytkit.js defaults block missing keys: ' + missingFromLegacy.join(', '));
+        if (valueDrift.length) lines.push('  default-value drift on: ' + valueDrift.join(', '));
+        lines.push('Resolve by updating extension/core/settings-schema.js OR ytkit.js defaults block,');
+        lines.push('then re-run `node scripts/check-settings.js` to verify.');
+        throw new Error(lines.join('\n'));
+    }
+
+    // Schema wins — emit from schema for byte-stable insertion order.
+    fs.writeFileSync(DEFAULT_SETTINGS_JSON, JSON.stringify(schemaDefaults, null, 2) + '\n', 'utf8');
 }
 
 function writeSettingsMetaCatalog(ytkitSource) {
