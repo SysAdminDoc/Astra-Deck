@@ -6,6 +6,50 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.16.0] - 2026-05-21 - v5.0.0 foundation #11: schema-driven risk badges on popup toggles
+
+First popup surface that consumes the v4.6.0 settings-schema risk
+metadata beyond the data-flow panel. Each quick-toggle row whose
+schema entry declares a non-`safe` risk band now renders a small
+square-cornered badge next to the toggle name, coloured by risk
+tone. Tooltip explains the meaning. Reuses the v4.12.0 data-flow
+palette so the popup speaks one consistent visual language for
+"what this touches".
+
+### Added
+
+- `extension/popup.js` — `createSchemaRiskBadge(key)` helper that
+  consults `window.YTKitCore.findSettingEntry(key)` and returns a
+  rendered `<span>` for `api` / `local-companion` / `experimental` /
+  `store-risk` entries (and `null` for `safe` entries or when the
+  schema module didn't load). Tooltip + `aria-label` carry a
+  human-readable risk description with sensible English fallbacks.
+- `extension/popup.js` — toggle-row renderer now wraps the name in
+  a flex `.name-row` container and appends the risk badge to its
+  right when present.
+- `extension/popup.css` — `.toggle-risk-badge` base style + four
+  tone-specific variants (`toggle-risk-api`, `-local-companion`,
+  `-experimental`, `-store-risk`). Square-cornered 4 px radius per
+  house style, monospace label, semi-transparent tinted background
+  + matching border. No pill / stadium backdrops.
+- `tests/hardening.test.js` — 4 new regressions: helper exists +
+  consults the schema, render() inserts the badge in the name-row,
+  CSS declares all four tone variants with a 4 px radius (no pill
+  backdrop check), and a canary test pinning the current
+  three-toggle non-safe surface (sponsorBlock + deArrow +
+  transcriptViewer).
+
+### Why
+
+The risk metadata has been in the schema since v4.6.0 but only the
+data-flow panel consumed it. Surfacing the same risk band on the
+quick-toggle row puts the trust signal exactly where users make the
+toggle decision — no extra clicks, no extra panel. The canary test
+on the non-safe surface keeps the badge subset small + meaningful:
+adding a new quick toggle that talks to an external service forces
+a deliberate update to the test, preventing accidental visual
+clutter.
+
 ## [4.15.0] - 2026-05-21 - v5.0.0 foundation #10: privacy quick-toggles in popup
 
 Makes the v4.12.0 data-flow panel and the v4.7.0 store-safe vs

@@ -1344,6 +1344,61 @@ button:focus-visible {
   transition: color var(--dur-snap) var(--ease-out);
 }
 
+/* v4.16.0: name row + schema-driven risk-band badge. The badge surfaces
+   the v4.6.0 schema's risk metadata on quick-toggle rows where it isn't
+   `safe`. Square-cornered 4 px radius per house style — no pill /
+   stadium backdrop. Tones reuse the v4.12.0 data-flow palette so popup
+   speaks one consistent visual language for "what this touches". */
+.toggle .name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.toggle .name-row .name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toggle-risk-badge {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.toggle-risk-badge.toggle-risk-api {
+  color: #6aa9ff;
+  border-color: rgba(106, 169, 255, 0.32);
+  background: rgba(106, 169, 255, 0.08);
+}
+
+.toggle-risk-badge.toggle-risk-local-companion {
+  color: #ffbe7a;
+  border-color: rgba(255, 190, 122, 0.32);
+  background: rgba(255, 190, 122, 0.08);
+}
+
+.toggle-risk-badge.toggle-risk-experimental {
+  color: #b889ff;
+  border-color: rgba(184, 137, 255, 0.32);
+  background: rgba(184, 137, 255, 0.08);
+}
+
+.toggle-risk-badge.toggle-risk-store-risk {
+  color: #ff8585;
+  border-color: rgba(255, 133, 133, 0.32);
+  background: rgba(255, 133, 133, 0.08);
+}
+
 .toggle .desc {
   color: var(--text-muted);
   font-size: 10.5px;
