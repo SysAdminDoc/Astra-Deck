@@ -5452,7 +5452,7 @@ test('v4.31.0 inline surfaces still resolve through SurfaceSelectorMap (no regre
     // Still-inline surfaces (next-batch candidates) must continue to
     // resolve correctly after each peel or every feature that uses
     // them silently breaks.
-    for (const surface of ['comments', 'commentComposer', 'engagementPanels', 'liveChat']) {
+    for (const surface of ['settingsOverlay', 'profile', 'notifications', 'liveChat']) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must still be in SurfaceSelectorMap`);
         assert.ok(entry.stable.length >= 1);
@@ -5470,10 +5470,10 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
     assert.equal(entry.lastVerified, '2026-05-19');
-    // A still-inline surface (comments is in batch 5) must round-trip
-    // with empty captureEvidence + null lastVerified so consumers can
-    // iterate without a guard.
-    const inline = core.getSurfaceSelectorEntry('comments');
+    // A still-inline surface (settingsOverlay is in batch 6) must
+    // round-trip with empty captureEvidence + null lastVerified so
+    // consumers can iterate without a guard.
+    const inline = core.getSurfaceSelectorEntry('settingsOverlay');
     assert.ok(Array.isArray(inline.captureEvidence), 'inline surface captureEvidence must be an array (empty)');
     assert.equal(inline.captureEvidence.length, 0, 'inline surface captureEvidence must default to empty');
     assert.equal(inline.lastVerified, null);
@@ -5677,6 +5677,64 @@ test('v4.34.0 manifest loads the player-chrome batch packs before core/selectors
         const selectorsIdx = cs.js.indexOf('core/selectors.js');
         if (selectorsIdx === -1) continue;
         for (const pack of V434_BATCH_FILES) {
+            const packIdx = cs.js.indexOf(pack);
+            assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
+            assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);
+        }
+    }
+});
+
+// ── v4.35.0 NX1: selector-pack batch 5 (engagement) ──
+
+const V435_BATCH_SURFACES = ['comments', 'commentComposer', 'engagementPanels'];
+const V435_BATCH_FILES = [
+    'core/selector-packs/comments.js',
+    'core/selector-packs/commentComposer.js',
+    'core/selector-packs/engagementPanels.js'
+];
+
+test('v4.35.0 engagement batch pack files exist with the v4.31.0 schema fields', () => {
+    for (const rel of V435_BATCH_FILES) {
+        const full = path.join(__dirname, '..', 'extension', rel);
+        assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
+        const body = fs.readFileSync(full, 'utf8');
+        assert.match(body, /SurfacePackRegistry/);
+        assert.match(body, /captureEvidence:/);
+        assert.match(body, /lastVerified:/);
+        assert.match(body, /registry\.has\(/);
+    }
+});
+
+test('v4.35.0 engagement surfaces now come from the pack registry', () => {
+    const core = loadSelectorPackContext();
+    for (const surface of V435_BATCH_SURFACES) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
+        assert.ok(entry.captureEvidence.length >= 1,
+            `${surface} must carry capture evidence after the v4.35.0 peel`);
+        assert.equal(entry.lastVerified, '2026-05-19');
+    }
+});
+
+test('v4.35.0 comments pack keeps the new + legacy comment shapes both in the chain', () => {
+    const core = loadSelectorPackContext();
+    const c = core.SurfaceSelectorMap.comments;
+    const chain = [...c.stable, ...c.fallback];
+    assert.ok(chain.includes('ytd-comment-view-model'),
+        'comments chain must include the new view-model shape');
+    assert.ok(chain.includes('ytd-comment-renderer'),
+        'comments chain must keep the legacy renderer in the fallback');
+});
+
+test('v4.35.0 manifest loads the engagement packs before core/selectors.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const selectorsIdx = cs.js.indexOf('core/selectors.js');
+        if (selectorsIdx === -1) continue;
+        for (const pack of V435_BATCH_FILES) {
             const packIdx = cs.js.indexOf(pack);
             assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
             assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);

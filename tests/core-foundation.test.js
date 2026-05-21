@@ -26,7 +26,10 @@ const selectorPackFiles = [
     'selector-packs/playerChrome.js',
     'selector-packs/playerSettings.js',
     'selector-packs/sidebar.js',
-    'selector-packs/modals.js'
+    'selector-packs/modals.js',
+    'selector-packs/comments.js',
+    'selector-packs/commentComposer.js',
+    'selector-packs/engagementPanels.js'
 ];
 const coreSources = [
     'registry.js',
