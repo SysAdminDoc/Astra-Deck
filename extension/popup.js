@@ -1390,6 +1390,19 @@ function renderSchemaOverview() {
     }
     schemaOverviewSection.hidden = false;
     const settings = popupState.settings || {};
+
+    // v4.25.0: share the popup's existing `#q` filter with the schema
+    // overview. When a search term is active, the overview auto-opens
+    // any category that contains a matching key + filters keys within
+    // those categories to only the matches. Empty filter restores the
+    // user's manually-toggled state.
+    const term = (q && q.value ? q.value : '').toLowerCase().trim();
+    const matchEntry = (entry) => {
+        if (!term) return true;
+        return entry.key.toLowerCase().includes(term)
+            || entry.category.toLowerCase().includes(term);
+    };
+
     const buckets = new Map();
     let nonInternalTotal = 0;
     let nonInternalEnabled = 0;
@@ -1398,10 +1411,11 @@ function renderSchemaOverview() {
         nonInternalTotal += 1;
         const isOn = isToggleEnabled(entry, settings);
         if (isOn) nonInternalEnabled += 1;
-        if (!buckets.has(entry.category)) buckets.set(entry.category, { total: 0, enabled: 0 });
+        if (!buckets.has(entry.category)) buckets.set(entry.category, { total: 0, enabled: 0, matches: 0 });
         const b = buckets.get(entry.category);
         b.total += 1;
         if (isOn) b.enabled += 1;
+        if (matchEntry(entry)) b.matches += 1;
     }
     // Render rolled-up counts.
     if (schemaOverviewCount) {
@@ -1419,6 +1433,9 @@ function renderSchemaOverview() {
     for (const cat of ordered) {
         const bucket = buckets.get(cat);
         if (!bucket) continue;
+        // v4.25.0: when a search term is active, hide categories that
+        // don't contain any matching keys.
+        if (term && bucket.matches === 0) continue;
         const li = document.createElement('li');
         li.dataset.active = bucket.enabled > 0 ? 'true' : 'false';
         li.dataset.category = cat;
@@ -1426,10 +1443,14 @@ function renderSchemaOverview() {
         // v4.24.0: the row is now a clickable disclosure. Use <button>
         // so screen readers + keyboard activation work without bespoke
         // role/tabindex/keydown plumbing.
+        //
+        // v4.25.0: when a search term is active, force-expand every
+        // matching category so users see results without an extra click.
+        const isExpanded = (term && bucket.matches > 0) || schemaOverviewState.expanded.has(cat);
         const head = document.createElement('button');
         head.type = 'button';
         head.className = 'so-row-head';
-        head.setAttribute('aria-expanded', schemaOverviewState.expanded.has(cat) ? 'true' : 'false');
+        head.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
         head.dataset.category = cat;
         const nameSpan = document.createElement('span');
         nameSpan.className = 'so-category';
@@ -1451,12 +1472,13 @@ function renderSchemaOverview() {
 
         // Render the per-key sub-list only when the row is expanded.
         // Keeps the popup compact when none are open.
-        if (schemaOverviewState.expanded.has(cat)) {
+        // v4.25.0: search-term match also force-opens the row.
+        if (isExpanded) {
             const subList = document.createElement('ul');
             subList.className = 'so-key-list';
             subList.setAttribute('role', 'list');
             const entriesInCat = scope.SETTINGS_SCHEMA
-                .filter((entry) => entry.category === cat && !entry.internal);
+                .filter((entry) => entry.category === cat && !entry.internal && matchEntry(entry));
             for (const entry of entriesInCat) {
                 subList.appendChild(buildSchemaOverviewKeyRow(entry, settings));
             }
@@ -2080,6 +2102,10 @@ function installWheelScrolling() {
         _searchDebounce = setTimeout(() => {
             _searchDebounce = null;
             render(popupState.settings, q.value);
+            // v4.25.0: the schema overview consults q.value too — keep
+            // it in sync with the same debounce cadence as the
+            // quick-toggle filter.
+            renderSchemaOverview();
         }, 120);
     });
     q.addEventListener('keydown', (event) => {
