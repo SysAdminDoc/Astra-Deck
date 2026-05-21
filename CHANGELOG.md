@@ -6,6 +6,50 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.9.0] - 2026-05-21 - v5.0.0 foundation #4: lifecycle ↔ navigation bridge
+
+Fourth foundation slice. Wires `core/navigation.js`'s SPA-navigation
+event stream into the lifecycle singleton, so every
+yt-navigate-finish / yt-page-data-updated / popstate / watch-flexy
+mutation auto-increments the lifecycle route token exactly once. Any
+future feature adopting the lifecycle contract can now drop stale
+async results trivially by comparing `ctx.routeToken` at start vs.
+completion.
+
+### Added
+
+- `extension/core/lifecycle-route-bridge.js` — idempotent
+  self-installing bridge module. Auto-runs on production load (after
+  `core/navigation.js` + `core/feature-lifecycle.js` per the
+  manifest order); degrades to a no-op if either dependency is
+  absent. Exposes the named `installLifecycleRouteBridge(options)`
+  so tests can wire mock `addNavigateRule` + `getLifecycle`
+  providers. Lifecycle-side throws are caught + logged through
+  `logger.warn` so a misbehaving lifecycle implementation can never
+  break navigation processing.
+- `tests/hardening.test.js` — 4 new regressions: no-op-without-deps
+  guard, route-token bump-per-navigate, error-swallow with
+  diagnostic log, and the manifest load-order invariant
+  (bridge AFTER navigation + lifecycle, BEFORE `ytkit.js`).
+
+### Changed
+
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries now load `core/lifecycle-route-bridge.js` immediately
+  before `ytkit.js`. The relative load order
+  `navigation → feature-lifecycle → policy-profile → selector-health
+  → lifecycle-route-bridge → ytkit.js` is pinned by tests.
+
+### Why
+
+`ROADMAP.md` v5.0.0 calls for a route-aware observer coordinator
+"that layers on the lifecycle route token". The route-token API
+already lives on the lifecycle (v4.7.0); the bridge is the missing
+glue that makes navigation events actually drive that counter. With
+the bridge in place, every v5.1+ feature peel can rely on a single
+authoritative route token without each feature subscribing to
+navigation independently.
+
 ## [4.8.0] - 2026-05-21 - v5.0.0/v5.1.0 foundation #3: selector-health + lifecycle singleton
 
 Third slice of the v5.0.0 architecture and the first taste of the
