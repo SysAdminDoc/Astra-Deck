@@ -5976,6 +5976,71 @@ test('v4.38.0 sync-userscript V5_BUNDLE_MODULES includes features/wave-8-css', (
         'sync-userscript.js V5_BUNDLE_MODULES must include features/wave-8-css/index.js');
 });
 
+// ── v4.39.0 NX1: profile-badge integration in schema overview ──
+
+test('v4.39.0 popup buildSchemaOverviewKeyRow renders a github-full badge for gated entries', () => {
+    assert.match(popupSource, /entry\.profile === ['"]github-full['"]/,
+        'buildSchemaOverviewKeyRow must branch on entry.profile === github-full');
+    assert.match(popupSource, /so-key-profile-badge/,
+        'buildSchemaOverviewKeyRow must add the so-key-profile-badge class');
+    assert.match(popupSource, /so-key-profile-gated/,
+        'buildSchemaOverviewKeyRow must mark gated entries with so-key-profile-gated');
+});
+
+test('v4.39.0 popup caches the policy-profile resolver once per popup session', () => {
+    // ensurePolicyProfile() must be idempotent — once popupState._policyProfile
+    // is set it must short-circuit on subsequent calls so we don't pay the
+    // factory cost per row. The cache MUST be initialised before
+    // buildSchemaOverviewKeyRow runs (renderSchemaOverview calls
+    // ensurePolicyProfile up-front).
+    assert.match(popupSource, /function ensurePolicyProfile/,
+        'popup must declare ensurePolicyProfile');
+    assert.match(popupSource, /popupState\._policyProfile/,
+        'popup must cache the resolver on popupState._policyProfile');
+    const renderIdx = popupSource.indexOf('function renderSchemaOverview()');
+    assert.ok(renderIdx > -1, 'renderSchemaOverview must exist');
+    const renderBody = popupSource.slice(renderIdx, renderIdx + 2000);
+    assert.match(renderBody, /ensurePolicyProfile\(\)/,
+        'renderSchemaOverview must seed the policy-profile cache before iterating rows');
+});
+
+test('v4.39.0 popup CSS declares the gated badge with a sub-8px radius', () => {
+    const css = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8');
+    assert.match(css, /\.so-key-profile-badge\s*\{/,
+        'popup.css must declare .so-key-profile-badge');
+    // House style: no pill/oval backdrops. Allowed backdrop radius:
+    // 0/4/6/8/10/12. The badge sits at 4px.
+    const badgeStart = css.indexOf('.so-key-profile-badge');
+    const badgeBlock = css.slice(badgeStart, badgeStart + 800);
+    assert.match(badgeBlock, /border-radius:\s*4px/,
+        '.so-key-profile-badge must use the house-style 4px radius (no pill backdrop)');
+});
+
+test('v4.39.0 ≥1 settings-schema entry has profile=github-full (badge has coverage)', () => {
+    // The badge only renders when an entry's profile === 'github-full'. If
+    // someone refactors the schema and removes every github-full entry,
+    // the badge code becomes dead — fail loudly so we know to repoint or
+    // delete it.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
+    const matches = schemaSrc.match(/profile:\s*['"]github-full['"]/g) || [];
+    assert.ok(matches.length >= 1,
+        `expected at least one github-full schema entry, found ${matches.length}`);
+});
+
+test('v4.39.0 policy-profile module exposes isEntryAllowedInProfile + resolveEffectiveProfile', () => {
+    // The badge code reads both functions off the cached resolver. If the
+    // module renames either, the badge silently degrades to "no badge"
+    // (because the optional-chain short-circuits) — pin the surface here
+    // so a future rename surfaces immediately.
+    const policySrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'policy-profile.js'), 'utf8');
+    assert.match(policySrc, /isEntryAllowedInProfile,/,
+        'policy-profile must export isEntryAllowedInProfile');
+    assert.match(policySrc, /resolveEffectiveProfile,/,
+        'policy-profile must export resolveEffectiveProfile');
+});
+
 test('v4.37.0 SurfaceSelectorMap surface count matches the pack file count exactly', () => {
     const core = loadSelectorPackContext();
     const packsDir = path.join(__dirname, '..', 'extension', 'core', 'selector-packs');

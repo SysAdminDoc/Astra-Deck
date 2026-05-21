@@ -805,6 +805,24 @@ body {
   white-space: nowrap;
 }
 
+/* v4.39.0: github-full-gated entries in the schema overview. The badge
+   makes it visible up-front that the toggle is a no-op until
+   GitHub-Full Profile is enabled. House-style 4 px radius — square /
+   small radii only (no pill backdrops). */
+.schema-overview-list .so-key-profile-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 184, 77, 0.12);
+  color: #ffb84d;
+  border: 1px solid rgba(255, 184, 77, 0.32);
+  flex-shrink: 0;
+}
+
 .schema-overview-list .so-key-switch {
   appearance: none;
   background: rgba(255, 255, 255, 0.04);
