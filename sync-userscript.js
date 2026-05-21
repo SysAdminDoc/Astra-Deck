@@ -41,6 +41,7 @@ const V5_BUNDLE_MODULES = [
     'extension/core/selector-health.js',
     'extension/core/data-flow.js',
     'extension/core/toast.js',
+    'extension/core/toast-dom.js',
     'extension/features/subtitles/index.js',
     'extension/features/video-filters/index.js',
     'extension/features/blue-light-filter/index.js',
