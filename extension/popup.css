@@ -653,6 +653,144 @@ body {
   font-style: italic;
 }
 
+/* ── Data-flow panel (v4.12.0) ───────────────────────────────────────
+   Renders extension/core/data-flow.js's catalogue. Schema-gated on the
+   privacyDataFlowPanel setting (off by default). Visual lane mirrors
+   selector-health: muted/informational, dense, OLED-friendly. House
+   style: no pill backdrops — chips use 8 px radius rectangles, risk
+   tone is carried by a leading dot + text colour, not a stadium
+   background. */
+
+.data-flow {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.data-flow[hidden] { display: none; }
+
+.data-flow-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.data-flow-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.data-flow-summary {
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.data-flow-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-flow-list li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+}
+
+.data-flow-list li.df-active {
+  background: rgba(78, 200, 165, 0.06);
+  border-color: rgba(78, 200, 165, 0.18);
+}
+
+.data-flow-list li.df-inactive {
+  opacity: 0.62;
+}
+
+.data-flow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+  margin-top: 5px;
+}
+
+.data-flow-dot.df-risk-safe        { background: #4ec8a5; }
+.data-flow-dot.df-risk-api         { background: #5aa9ff; }
+.data-flow-dot.df-risk-local       { background: #ffb84d; }
+.data-flow-dot.df-risk-experimental{ background: #b889ff; }
+.data-flow-dot.df-risk-store-risk  { background: #ff8585; }
+
+.data-flow-origin {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-flow-active-flag {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4ec8a5;
+  font-weight: 700;
+}
+
+.data-flow-active-flag.df-flag-inactive {
+  color: var(--text-subtle);
+}
+
+.data-flow-purpose {
+  grid-column: 2 / -1;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.data-flow-meta {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.data-flow-meta strong {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.data-flow-note {
+  margin: 8px 0 0 0;
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
 /* ── Main Action (CTA) ── */
 
 .main-action { margin: 0; }

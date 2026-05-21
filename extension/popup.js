@@ -321,6 +321,11 @@ const selectorHealthTotal = $('#selector-health-total');
 const selectorHealthList = $('#selector-health-list');
 const selectorHealthCtx = $('#selector-health-ctx');
 
+// v4.12.0: data-flow panel refs.
+const dataFlowSection = $('#data-flow');
+const dataFlowSummary = $('#data-flow-summary');
+const dataFlowList = $('#data-flow-list');
+
 // Storage warning thresholds.
 // Astra Deck declares the `unlimitedStorage` permission so the
 // default 10 MB chrome.storage.local quota is removed — but a
@@ -1224,6 +1229,93 @@ async function renderSelectorHealthDashboard() {
     }
 }
 
+// v4.12.0: data-flow panel. Reads extension/core/data-flow.js's
+// catalogue (bundled into popup.html) and renders the per-origin chip
+// surface gated on the `privacyDataFlowPanel` schema setting. Operates
+// entirely inside the popup context — no content-script round-trip
+// required, since the catalogue is static + the live settings are
+// already in popupState.
+function renderDataFlowPanel() {
+    if (!dataFlowSection || !dataFlowList) return;
+    const settings = popupState.settings || {};
+    if (settings.privacyDataFlowPanel !== true) {
+        dataFlowSection.hidden = true;
+        return;
+    }
+    const factory = window.YTKitCore && window.YTKitCore.createDataFlow;
+    if (typeof factory !== 'function') {
+        // Modules failed to load (CSP regression, missing file). Stay hidden
+        // rather than render a broken panel.
+        dataFlowSection.hidden = true;
+        return;
+    }
+    let manifest = null;
+    try { manifest = chrome.runtime.getManifest(); } catch (_) { /* reason: unavailable in some contexts */ }
+    const df = factory({ manifest });
+    const origins = df.getOrigins(settings);
+    const summary = df.summarise(settings);
+
+    dataFlowList.textContent = '';
+    for (const entry of origins) {
+        const li = document.createElement('li');
+        li.classList.add(entry.currentlyActive ? 'df-active' : 'df-inactive');
+
+        const dot = document.createElement('span');
+        dot.className = 'data-flow-dot df-risk-' + entry.riskBand;
+        dot.setAttribute('aria-hidden', 'true');
+
+        const originSpan = document.createElement('span');
+        originSpan.className = 'data-flow-origin';
+        originSpan.textContent = entry.origin;
+
+        const flag = document.createElement('span');
+        flag.className = 'data-flow-active-flag' + (entry.currentlyActive ? '' : ' df-flag-inactive');
+        flag.textContent = entry.currentlyActive
+            ? t('dataFlowActive', 'active')
+            : t('dataFlowInactive', 'idle');
+
+        const purpose = document.createElement('span');
+        purpose.className = 'data-flow-purpose';
+        purpose.textContent = entry.purpose;
+
+        const meta = document.createElement('span');
+        meta.className = 'data-flow-meta';
+        appendDataFlowMeta(meta, t('dataFlowProfile', 'profile'), entry.profile);
+        appendDataFlowMeta(meta, t('dataFlowCreds', 'creds'), entry.credentialsPolicy);
+        appendDataFlowMeta(meta, t('dataFlowRisk', 'risk'), entry.riskBand);
+        if (entry.requiredByFeatures.length > 0) {
+            const featList = entry.requiredByFeatures.length <= 2
+                ? entry.requiredByFeatures.join(', ')
+                : entry.requiredByFeatures.slice(0, 2).join(', ') + ' +' + (entry.requiredByFeatures.length - 2);
+            appendDataFlowMeta(meta, t('dataFlowDriver', 'driver'), featList);
+        }
+
+        li.appendChild(dot);
+        li.appendChild(originSpan);
+        li.appendChild(flag);
+        li.appendChild(purpose);
+        li.appendChild(meta);
+        dataFlowList.appendChild(li);
+    }
+
+    if (dataFlowSummary) {
+        const tpl = t('dataFlowSummaryTpl', '{active}/{total} origins active');
+        dataFlowSummary.textContent = tpl
+            .replace('{active}', String(summary.currentlyActive))
+            .replace('{total}', String(summary.totalCatalogued));
+    }
+    dataFlowSection.hidden = false;
+}
+
+function appendDataFlowMeta(container, label, value) {
+    const wrap = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = label + ':';
+    wrap.appendChild(strong);
+    wrap.appendChild(document.createTextNode(' ' + value));
+    container.appendChild(wrap);
+}
+
 async function recordCorruptionDiagnostic(corruption) {
     try {
         const items = await storageGet([SETTINGS_STORAGE_KEY]);
@@ -1735,6 +1827,10 @@ function installWheelScrolling() {
     try {
         const settings = await loadSettings();
         render(settings, '');
+        // v4.12.0: data-flow panel renders from the v5.0.0 core/data-flow.js
+        // catalogue. Gated on the privacyDataFlowPanel schema setting so the
+        // popup stays compact for users who haven't opted in.
+        renderDataFlowPanel();
     } catch (error) {
         console.warn('[Astra Deck popup] Failed to load settings:', error);
         render({}, '');
@@ -1781,6 +1877,10 @@ function installWheelScrolling() {
             if (!relevant) return;
             void loadSettings().then((settings) => {
                 render(settings, q.value);
+                // v4.12.0: keep the data-flow panel reactive — flipping
+                // privacyDataFlowPanel from the in-page workspace must
+                // surface in the popup on next render.
+                renderDataFlowPanel();
             }).catch((error) => {
                 console.warn('[Astra Deck popup] Failed to refresh settings:', error);
             });

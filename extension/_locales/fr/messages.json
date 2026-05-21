@@ -682,5 +682,32 @@
   },
   "workspaceTitle": {
     "message": "Controls and backups"
+  },
+  "dataFlowTitle": {
+    "message": "Data flow"
+  },
+  "dataFlowNote": {
+    "message": "Active origins are highlighted. Disable the driving toggle to mute an origin entirely."
+  },
+  "dataFlowSummaryTpl": {
+    "message": "{active}/{total} origins active"
+  },
+  "dataFlowActive": {
+    "message": "active"
+  },
+  "dataFlowInactive": {
+    "message": "idle"
+  },
+  "dataFlowProfile": {
+    "message": "profile"
+  },
+  "dataFlowCreds": {
+    "message": "creds"
+  },
+  "dataFlowRisk": {
+    "message": "risk"
+  },
+  "dataFlowDriver": {
+    "message": "driver"
   }
 }
