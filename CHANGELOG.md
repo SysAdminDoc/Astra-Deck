@@ -6,6 +6,47 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.20.0] - 2026-05-21 - v5.0.0 foundation #15: userscript bundle of core modules
+
+Closes a major v5.0.0 gap: the YTKit.user.js userscript no longer
+lags the MV3 extension on the v5.0.0 core surface. The 11 modules
+that have shipped since v4.6.0 (settings-schema, feature-lifecycle,
+policy-profile, selector-health, data-flow, toast, the four feature
+peels, and the lifecycle-route-bridge) are now auto-bundled into
+the userscript inside its outer IIFE.
+
+### Added
+
+- `YTKit.user.js` — `// ── BEGIN v5.0.0 bundled core modules ──` /
+  `// ── END v5.0.0 bundled core modules ──` marker pair right
+  inside the outer IIFE. Auto-bundled content sits between them.
+- `sync-userscript.js` — `V5_BUNDLE_MODULES` constant declaring the
+  11 module file paths plus a regex-driven replace pass that swaps
+  the bundle contents on every sync. Modules are concatenated in
+  the same order the manifest's content_scripts entries declare,
+  so the userscript runs them in the same dependency-correct
+  sequence as the extension. Each bundled module preserves its
+  IIFE wrapper and its `globalThis.YTKitCore` /
+  `globalThis.YTKitFeatures` attachment.
+- `tests/hardening.test.js` — 5 new regressions: marker presence,
+  every module appears by name in the bundle, every module's
+  unique signature appears verbatim (parity fingerprint), bundle
+  order matches V5_BUNDLE_MODULES, and the V5_BUNDLE_MODULES list
+  is declared in sync-userscript.js so an auditor can read both
+  side-by-side.
+
+### Why
+
+The v5.0.0 architecture has been growing on the extension side
+since v4.6.0 (settings-schema). The userscript was stuck at
+metadata-sync only — none of the new core modules ran there. The
+v4.20.0 bundling pass closes that gap with a single hand-curated
+`V5_BUNDLE_MODULES` array, leaving the per-module IIFE shape
+untouched so the runtime semantics are byte-identical between
+the two artifacts. A future bulk peel that introduces a new core
+module just appends to the array; the test suite immediately
+flags any drift.
+
 ## [4.19.0] - 2026-05-21 - v5.0.0 foundation #14: bundled theme-css peels (×3)
 
 Bundled fourth, fifth, and sixth feature peels in a single slice.
