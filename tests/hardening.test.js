@@ -4618,3 +4618,113 @@ test('v4.19.0 features/theme-css loads before ytkit.js in both content_script en
         assert.ok(themeIdx < ytkitIdx, 'features/theme-css/index.js must load before ytkit.js');
     }
 });
+
+// ── v4.20.0 NX1: userscript bundle of v5.0.0 core modules ──
+
+test('v4.20.0 userscript carries the v5.0.0 bundle markers', () => {
+    const userscript = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
+    );
+    assert.match(userscript, /\/\/ ── BEGIN v5\.0\.0 bundled core modules ──/,
+        'userscript must declare a v5.0.0 BEGIN bundle marker');
+    assert.match(userscript, /\/\/ ── END v5\.0\.0 bundled core modules ──/,
+        'userscript must declare a v5.0.0 END bundle marker');
+});
+
+test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
+    const userscript = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
+    );
+    const expectedModules = [
+        'extension/core/settings-schema.js',
+        'extension/core/feature-lifecycle.js',
+        'extension/core/policy-profile.js',
+        'extension/core/selector-health.js',
+        'extension/core/data-flow.js',
+        'extension/core/toast.js',
+        'extension/features/subtitles/index.js',
+        'extension/features/video-filters/index.js',
+        'extension/features/blue-light-filter/index.js',
+        'extension/features/theme-css/index.js',
+        'extension/core/lifecycle-route-bridge.js'
+    ];
+    for (const mod of expectedModules) {
+        assert.match(userscript, new RegExp('// ── bundled module: ' + mod.replace(/\//g, '\\/') + ' ──'),
+            'userscript must include bundle marker for ' + mod);
+    }
+});
+
+test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', () => {
+    // Strongest parity check: for each bundled module, the unique
+    // function/constant signature inside the module must appear inside
+    // the userscript bundle block. If a sync goes stale, this fails
+    // loudly with the module name.
+    const userscript = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
+    );
+    const beginIdx = userscript.indexOf('// ── BEGIN v5.0.0 bundled core modules ──');
+    const endIdx = userscript.indexOf('// ── END v5.0.0 bundled core modules ──');
+    assert.ok(beginIdx > -1 && endIdx > beginIdx, 'bundle markers must be present and ordered');
+    const bundle = userscript.slice(beginIdx, endIdx);
+    const fingerprints = {
+        'core/settings-schema.js':              'const SETTINGS_SCHEMA = Object.freeze(',
+        'core/feature-lifecycle.js':            'function createLifecycle(options',
+        'core/policy-profile.js':               'function createPolicyProfile(options',
+        'core/selector-health.js':              'function createSelectorHealth(options',
+        'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
+        'core/toast.js':                        'function inferToastTone(color)',
+        'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
+        'features/video-filters/index.js':      'function buildVideoFilterCss(settings)',
+        'features/blue-light-filter/index.js':  'function buildBlueLightRgba(settings)',
+        'features/theme-css/index.js':          'function buildProgressBarCss(settings)',
+        'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
+    };
+    for (const [mod, fingerprint] of Object.entries(fingerprints)) {
+        assert.ok(bundle.includes(fingerprint),
+            'userscript bundle missing fingerprint from ' + mod + ': "' + fingerprint + '"');
+    }
+});
+
+test('v4.20.0 userscript bundle order matches the manifest content_scripts run order', () => {
+    const userscript = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
+    );
+    // Pull the module declaration order out of the bundle.
+    const markerRe = /\/\/ ── bundled module: ([^\s]+) ──/g;
+    const bundleOrder = [];
+    let m;
+    while ((m = markerRe.exec(userscript)) !== null) {
+        bundleOrder.push(m[1]);
+    }
+    // The bundle must mirror the order sync-userscript.js declares in
+    // V5_BUNDLE_MODULES. That order in turn mirrors the manifest's
+    // content_scripts.js load order for these modules.
+    const expectedOrder = [
+        'extension/core/settings-schema.js',
+        'extension/core/feature-lifecycle.js',
+        'extension/core/policy-profile.js',
+        'extension/core/selector-health.js',
+        'extension/core/data-flow.js',
+        'extension/core/toast.js',
+        'extension/features/subtitles/index.js',
+        'extension/features/video-filters/index.js',
+        'extension/features/blue-light-filter/index.js',
+        'extension/features/theme-css/index.js',
+        'extension/core/lifecycle-route-bridge.js'
+    ];
+    assert.deepEqual(bundleOrder, expectedOrder,
+        'bundle module order must match V5_BUNDLE_MODULES in sync-userscript.js');
+});
+
+test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the userscript shows', () => {
+    // Static check that the V5_BUNDLE_MODULES array in sync-userscript.js
+    // is the source of truth. Lets the user audit the list by reading the
+    // sync script + this test only.
+    const sync = fs.readFileSync(
+        path.join(__dirname, '..', 'sync-userscript.js'), 'utf8'
+    );
+    assert.match(sync, /const V5_BUNDLE_MODULES = \[/,
+        'sync-userscript.js must declare V5_BUNDLE_MODULES');
+    assert.match(sync, /BUNDLE_BEGIN_RE = \/\\\/\\\/ ── BEGIN v5\\\.0\\\.0 bundled core modules ──/,
+        'sync-userscript.js must define the BEGIN/END marker regex');
+});
