@@ -1,10 +1,19 @@
 # Astra Deck Roadmap
 
-Generated: 2026-05-21
-Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
-Current repo version observed: Astra Deck v4.5.2
-Planning track: Astra Deck v5.0.0 through v6.0.0
-Deliverable for this run: planning only. No feature code was written.
+Generated: 2026-05-21 (research pass 2 — supersedes the morning pass with full per-toggle settings schema, manifest-command audit, and tightened architecture)
+Target site: YouTube desktop web (`www.youtube.com`, `youtube-nocookie.com`, `youtu.be`), live-chat iframe (`*.youtube.com/live_chat*`), `i.ytimg.com` thumbnail origin. YouTube Music is opt-in only via `youtubeMusicCompat`. Excluded by design: `m.youtube.com`, `studio.youtube.com`.
+Current repo version observed: Astra Deck v4.5.2 (`extension/manifest.json` and `extension/ytkit.js` `YTKIT_VERSION`).
+Planning track: Astra Deck v5.0.0 through v6.0.0.
+Deliverable for this run: planning only. No feature code was written. README is deferred to the implementation release per repo rules.
+
+Source-of-truth inputs for this pass:
+
+- `extension/default-settings.json` — 354 keys (273 boolean, 44 string, 22 number, 7 object, 6 array, 2 null) extracted live.
+- `extension/manifest.json` — MV3 v4.5.2, 4 permissions, 17 host-permission origins, MAIN+ISOLATED dual-world content-script layout, dedicated all-frame live-chat injection.
+- `extension/core/*.js` — runtime modules (registry, selectors, navigation, api-limiter, trusted-html, predicate-sandbox, transcript-service, storage-manager, diagnostic-log, etc.) already implementing several Phase-3 contracts.
+- `mhtml/WatchPage.mhtml`, `mhtml/YouTube.mhtml`, `Subscriptions - YouTube.mhtml`, `Worldwide Societal Collapse... - YouTube.mhtml` — four captures, 16 MIME parts decoded.
+- `CHANGELOG.md` (3024 lines), `CLAUDE.md` (901 lines), `HARDENING.md` (audit history), `docs/research/iter-{1,5,8}-*.md` (prior factory-loop sources).
+- `tests/` 19 spec files (unit, hardening, parity, selector regression, settings migration round-trip).
 
 ## Project Overview
 
@@ -593,51 +602,89 @@ Packaging profiles:
 
 ### Architecture
 
-Recommended v5 file layout:
+Recommended v5 file layout (`extension/ytkit.js` is currently a 43,081-line monolith; v5.0.0 carves it apart by category, keeps the dual-world bridge, and adds selector packs + schema as build-time artifacts):
 
 ```text
 extension/
+  manifest.json                  # MV3 — keep dual-world + all-frame live-chat injection
+  background.js                  # service worker — domain-allowlisted fetch proxy, downloads, command (TBD)
+  ytkit-main.js                  # MAIN world bridge — canPlayType, ytcfg/ytInitialPlayerResponse window read
+  early.css                      # document_start anti-FOUC
   core/
-    registry.js
-    feature-lifecycle.js
-    selectors.js
-    selector-health.js
-    navigation.js
-    observers.js
-    api-limiter.js
-    trusted-html.js
-    storage.js
-    storage-manager.js
-    settings-schema.js
-    settings-migrations.js
-    diagnostics.js
-    toast.js
-    a11y.js
-    theme-tokens.js
-    policy-profile.js
+    env.js                       # browser detect, version, runtime globals (existing)
+    storage.js                   # chrome.storage.local wrapper (existing)
+    storage-manager.js           # LRU caches for resumePlayback, perChannelSpeed, etc. (existing)
+    styles.js                    # GM_addStyle shim + scoped <style> mount (existing)
+    registry.js                  # passive feature registry + cleanup buckets (existing)
+    feature-lifecycle.js         # NEW — single contract (init/apply/destroy/AbortController/route token)
+    selectors.js                 # versioned selector packs (existing — promote to per-pack files in v5.1)
+    selector-health.js           # NEW — bounded miss diagnostics, copy-report action
+    selector-packs/              # NEW — one file per surface, capture-provenance + lastVerified
+      feed.js
+      watch.js
+      player.js
+      comments.js
+      live-chat.js
+      notifications.js
+      modals.js
+      masthead.js
+    navigation.js                # yt-navigate-finish + yt-page-data-updated + popstate + Navigation API fallback (existing)
+    page.js                      # page-type detection, landmarks (existing)
+    player.js                    # <video> + #movie_player resolution (existing)
+    video-type.js                # short/live/upcoming/movie/mix predicates (existing)
+    url.js                       # video id / channel handle / list extraction (existing)
+    observers.js                 # NEW — single coordinator, scoped per high-churn surface
+    api-limiter.js               # per-origin concurrency, dedupe, TTL, backoff (existing)
+    trusted-html.js              # TrustedTypes policy + fragment helpers (existing)
+    predicate-sandbox.js         # safe-expression DSL evaluator (existing — extend with budgets)
+    transcript-service.js        # 5-method failover transcript loader (existing)
+    diagnostic-log.js            # bounded log + export (existing)
+    settings-schema.js           # NEW — single source of truth for all 354 keys + categories + risk/profile/scope
+    settings-migrations.js       # NEW — explicit per-version migrations with round-trip tests
+    toast.js                     # NEW — single overlay live region (no confirmation dialogs)
+    a11y.js                      # NEW — focus traps, aria-live, forced-colors, reduced-motion gates
+    theme-tokens.js              # NEW — YouTube token → Astra semantic token bridge
+    policy-profile.js            # NEW — store-safe / github-full / userscript profile resolver
   features/
-    content-filters/
-    player/
-    media-downloads/
-    sponsorblock/
-    dearrow/
-    return-dislike/
-    subscriptions/
-    research/
-    comments/
-    live-chat/
-    navigation/
-    theming/
-    privacy/
-    accessibility/
+    shell/                       # category `shell`
+    nav/                         # category `nav`
+    shorts/                      # category `shorts`
+    feed/                        # category `feed`
+    watch-player/                # category `watch-player`
+    playback-audio/              # category `playback-audio`
+    quality-codec/               # category `quality-codec` (MAIN-bridge consumers)
+    content-filter/              # category `content-filter` (incl. predicate-sandbox consumers)
+    comments/                    # category `comments`
+    live-chat/                   # category `live-chat` (all-frame inject only)
+    subscriptions/               # category `subscriptions`
+    enrichment/                  # category `enrichment` — SponsorBlock / DeArrow / RYD
+    downloads/                   # category `downloads` — local companion + Cobalt + handoff
+    subtitles/                   # category `subtitles`
+    research-ai/                 # category `research-ai`
+    privacy-profiles/            # category `privacy-profiles`
+    a11y-perf/                   # category `a11y-perf`
+    dev-diagnostics/             # category `dev-diagnostics`
   ui/
-    control-center/
-    popup/
-    overlays/
-    components/
+    control-center/              # in-page settings overlay (pointer-events: none when hidden)
+    popup/                       # toolbar popup — hero card + storage stats + export/import/reset
+    overlays/                    # toast/live-region/mini-player-bar/data-flow panel
+    components/                  # shared dark/OLED primitives, no light theme
   generated/
-    userscript-bundle.js
+    default-settings.json        # emitted by build from settings-schema.js (not hand-edited in v5+)
+    settings-meta.json           # SETTINGS_VERSION + per-version migration metadata
+    userscript-bundle.js         # single-file portable build — extension is the upstream truth
+  _locales/                      # 10 locales today; settings-schema labels feed extract-i18n-keys.js
+astra_downloader/                # local companion (PyInstaller, Flask, yt-dlp, ffmpeg)
+scripts/                         # build/audit tooling — extend with check:settings, check:selector-packs
+tests/                           # extend with per-pack selector regression + schema diff tests
 ```
+
+Migration sequence from the current v4.5.2 monolith:
+
+1. v5.0.0 — introduce `settings-schema.js`; `build-extension.js` starts generating `default-settings.json` from the schema, fails build on drift. The current 43k-line `ytkit.js` stays in place; only the schema and lifecycle contracts move first.
+2. v5.0.0 — introduce `feature-lifecycle.js`, `observers.js`, `selector-health.js`, `toast.js`, `a11y.js`, `theme-tokens.js`, `policy-profile.js` as new core modules. Existing features adopt them opportunistically.
+3. v5.1.0 — split `selectors.js` into per-surface `selector-packs/` with capture provenance.
+4. v5.2.0+ — peel feature blocks out of `ytkit.js` by category, one phase per category bucket. Userscript parity tests gate each peel.
 
 Feature contract:
 
@@ -697,26 +744,439 @@ Required setting categories:
 - Accessibility and performance
 - Developer diagnostics
 
-Current observed flat key inventory, to be categorized and given metadata in v5:
-
-```text
-hideCreateButton, hideVoiceSearch, logoToSubscriptions, widenSearchBar, squareSearchBar, squareAvatars, subscriptionsGrid, homepageGridAlign, styledFilterChips, hideSidebar, uiStyle, noAmbientMode, compactLayout, thinScrollbar, watchPageRestyle, chatStyleComments, removeAllShorts, redirectShorts, disablePlayOnHover, fullWidthSubscriptions, hideSubscriptionOptions, hidePaidContentOverlay, redirectToVideosTab, hidePlayables, hideMembersOnly, hideNewsHome, hidePlaylistsHome, hideRelatedVideos, expandVideoWidth, floatingLogoOnWatch, hideDescriptionRow, hideVideoEndContent, hideJumpAheadButton, stickyVideo, cleanShareUrls, videosPerRow, quickLinkMenu, quickLinkItems, autoMaxResolution, hideMerchShelf, hideAiSummary, hideDescriptionExtras, hideHashtags, hidePinnedComments, hideCommentDislikeButton, hideCommentActionMenu, condenseComments, hideCommentTeaser, autoExpandComments, hideLiveChatEngagement, premiumLiveChat, reactionSpammer, _reactionSpammerAck, hidePaidPromotionWatch, hideChannelJoinButton, hideFundraiser, hiddenChatElementsManager, hiddenChatElements, chatKeywordFilter, hiddenActionButtonsManager, hiddenActionButtons, hiddenPlayerControlsManager, hiddenPlayerControls, hiddenWatchElementsManager, hiddenWatchElements, showLocalDownloadButton, videoContextMenu, hideCollaborations, hideVideosFromHome, hideVideosKeywordFilter, hideVideosDurationFilter, hideVideosSubsLoadLimit, hideVideosSubsLoadThreshold, hideVideosRemoveHiddenCards, hideVideosShowQuickHideButton, hideVideosAllowChannelBlock, hideVideosRememberRestoredVideos, hideVideosScopeHome, hideVideosScopeSubscriptions, hideVideosScopeSearch, hideVideosScopeWatch, hideVideosScopeChannels, hideVideosScopeOther, hideVideosLowViewFilter, hideVideosLowViewThreshold, hideVideosHideLive, hideVideosHideUpcoming, hideVideosHideMixes, hideVideosHidePlaylists, hideVideosHideMovies, hideVideosHideAutoDubbed, hideVideosWatchedRatio, hideInfoPanels, colorTheme, commentEnhancements, sidebarOrder, forceH264, titleNormalization, watchProgress, autoDismissStillWatching, remainingTimeDisplay, showPlaylistDuration, showTimeInTabTitle, customProgressBarColor, compactUnfixedHeader, reversePlaylist, rssFeedLink, preciseViewCounts, videoScreenshot, perChannelSpeed, hideWatchedVideos, hideWatchedMode, antiTranslate, pauseOtherTabs, abLoop, fineSpeedControl, showChannelVideoCount, redirectHomeToSubs, notInterestedButton, timestampBookmarks, blueLightFilter, blueLightIntensity, disableInfiniteScroll, popOutPlayer, watchTimeTracker, alwaysShowProgressBar, sortCommentsNewest, autoSkipChapters, autoSkipChapterPatterns, chapterNavButtons, videoLoopButton, persistentSpeed, persistentSpeedValue, codecSelector, ageRestrictionBypass, autoLikeSubscribed, thumbnailPreviewSize, cinemaAmbientGlow, transcriptViewer, searchFilterDefaults, searchFilterSort, forceStandardFps, stickyChat, autoExpandDescription, keyMoments, scrollToPlayer, hideEndCards, hideInfoCards, autoTheaterMode, resumePlayback, miniPlayerBar, playbackStatsOverlay, hideNotificationBadge, autoPauseOnSwitch, creatorCommentHighlight, copyVideoTitle, channelAgeDisplay, speedIndicatorOverlay, hideAutoplayToggle, fullscreenOnDoubleClick, rememberVolume, rememberVolumeLevel, pipButton, autoSubtitles, autoSubtitleLang, focusedMode, thumbnailQualityUpgrade, watchLaterQuickAdd, playlistEnhancer, commentSearch, videoZoom, forceDarkEverywhere, customCssInjection, customCssCode, shareMenuCleaner, autoClosePopups, videoResolutionBadge, likeViewRatio, downloadThumbnail, grayscaleThumbnails, disableAutoplayNext, channelSubCount, customSpeedButtons, openInNewTab, preventAutoplay, hideNotificationButton, noFrostedGlass, autoOpenChapters, autoOpenTranscript, chronologicalNotifications, hideLatestPosts, disableMiniPlayer, adaptiveLiveLayout, commentNavigator, shortsAsRegularVideo, themeAccentColor, theaterAutoScroll, scrollWheelSpeed, speedStep, preloadComments, playbackSpeedOSD, enableCPU_Tamer, enableHandleRevealer, autoDownloadOnVisit, downloadQuality, downloadVideoFormat, downloadAudioFormat, deArrow, daReplaceTitles, daReplaceThumbs, daTitleFormat, daFallbackFormat, daShowOriginalHover, daCacheTTL, sponsorBlock, sbCat_sponsor, sbCat_intro, sbCat_outro, sbCat_selfpromo, sbCat_interaction, sbCat_music_offtopic, sbCat_preview, sbCat_filler, sbCat_poi_highlight, showStatisticsDashboard, settingsProfiles, debugMode, nyanCatProgressBar, fitPlayerToWindow, disableSpaNavigation, videoRotation, videoRotationAngle, frameByFrameButtons, digitalWellbeing, dwBreakIntervalMin, dwDailyCapMin, dwWatchTimeToday, _profiles, _activeProfile, privacyDataFlowPanel, safeStoreProfile, githubFullProfile, syncSafePrefs, syncSafePrefsAllowlist, advancedLocalPredicate, advancedLocalPredicateCode, commentFilterManager, commentFilterRules, bulkCardActions, feedTriageProfile, downloadScreenshotFormat, downloadSubtitlesWithScreenshot, volumeWheelMode, disableLoudnessNormalization, perChannelIntroOutro, perChannelIntroOutroData, initialPlayerStateForeground, initialPlayerStateBackground, downloadHistoryPanel, downloadHealthPanel, downloadStreamLinksPanel, downloadCobaltFallback, downloadCobaltInstance, returnDislike, returnDislikeOnCards, returnDislikeCacheHours, returnDislikeShowRatio, deArrowChannelOverrides, deArrowChannelOverridesPanel, qualityProfileMatrix, qualityDefaultNormal, qualityDefaultTheater, qualityDefaultFullscreen, qualityDefaultBackground, qualityDefaultEmbed, antiTranslateAudioTrack, antiTranslateTranscript, monetizationIndicator, subscriptionGroups, subscriptionGroupData, subscriptionSortMode, subscriptionShowNewSinceLastVisit, subscriptionLastVisitData, subscriptionAiTags, subscriptionAiTagData, localAiSummary, researchSpacedReview, researchTranscriptIndex, researchTranscriptSearchPanel, reducedMotion, forcedColorsSupport, globalAriaLiveRegion, lowPowerProfile, lowPowerProfileBackup, oledTheme, denseMode, rectangularizeYouTube, classicLayoutProfile, newPlayerUiRestore, tokenThemeBridge, openInAlternativeFrontend, alternativeFrontendInstance, vlcMpvHandoff, astraContextMenu, youtubeMusicCompat, subtitleDownload, videoVisualFilters, vvfBrightness, vvfContrast, vvfSaturation, vvfHue, vvfGrayscale, vvfSepia, dearrowPeekButton, videoAgeColors, watchPageTabs, redditComments, diagnosticLog, _errors, storageQuotaLRU, apiRetryBackoff, watchHistoryAnalytics, subtitleStyling, subStyleFontSize, subStyleFontFamily, subStyleColor, subStyleBgOpacity, subStyleBgColor, subStyleBottomOffset, subStyleTextShadow, aiVideoSummary, aiSummaryEndpoint, aiSummaryModel, aiSummaryApiKey, aiSummaryProvider, copyChapterMarkdown, chapterJumpButtons, hideAirplayButton, hideQueueOnThumbnails, fullTitles, titleCaseTransform, titleCaseMode, customSelectionColor, selectionColor, bypassPlaylistMode, musicVideoSpeedLock, playlistQuickRemove, watchLaterCleanup, transcriptAiHandoff, transcriptAiTarget, audioTrackLanguage, preferredAudioLang, notifyAutoDubbedAudio, sleepTimer
-```
-
 For every key, `settings-schema.js` must add:
 
-- `category`
-- `label`
-- `description`
-- `defaultValue`
-- `storageKey`
-- `type`
-- `risk`: `safe`, `api`, `local-companion`, `experimental`, `store-risk`
-- `scope`: `global`, `feed`, `watch`, `player`, `comments`, `live-chat`, `subscriptions`, `downloads`
-- `vehicle`: `extension`, `userscript`, or `both`
-- `profile`: `store-safe`, `github-full`, or `both`
-- `immediateApply`: true unless technically impossible
-- `destroyRequired`: true for all DOM-affecting features
+- `category` — one of the 16 categories below (`shell`, `nav`, `shorts`, `feed`, `watch-player`, `playback-audio`, `quality-codec`, `content-filter`, `comments`, `live-chat`, `subscriptions`, `enrichment`, `downloads`, `subtitles`, `research-ai`, `privacy-profiles`, `a11y-perf`, `dev-diagnostics`).
+- `label` — short user-facing string (localized via `_locales/`).
+- `description` — one-sentence rationale; mention churn risk if applicable.
+- `defaultValue` — must match `extension/default-settings.json` byte-for-byte; build fails on drift.
+- `storageKey` — equal to the JSON key; `_`-prefixed keys are internal/never user-toggleable.
+- `type` — `boolean`, `string`, `number`, `array`, `object`, or `null` (transient).
+- `risk` — `safe` (no network), `api` (third-party API: SB/DA/RYD/Reddit/AI), `local-companion` (Astra Downloader 127.0.0.1), `experimental` (incomplete or churn-sensitive), `store-risk` (likely to flag CWS/AMO review).
+- `scope` — `global`, `feed`, `watch`, `player`, `comments`, `live-chat`, `subscriptions`, `downloads`, `popup`.
+- `vehicle` — `extension`, `userscript`, or `both`.
+- `profile` — `store-safe`, `github-full`, or `both`.
+- `immediateApply` — `true` unless the underlying API forbids hot-swap (codec/quality on an active player needs a single in-band reapply).
+- `destroyRequired` — `true` for every DOM-touching, observer-owning, or timer-owning feature.
+
+### Full Per-Toggle Settings Schema (354 keys)
+
+Source: `extension/default-settings.json` snapshot, 2026-05-21. Every key appears below exactly once. Format per line: `storageKey (type, default) — risk[/profile if not "both"]`. Keys prefixed with `_` are internal state, never user-toggleable, and live in the same storage namespace only so a single import/export round-trip covers them.
+
+#### Category `shell` — Interface, theme, masthead, scrollbars (41)
+
+- `uiStyle` (string, `"square"`) — safe
+- `noAmbientMode` (boolean, `true`) — safe
+- `compactLayout` (boolean, `true`) — safe
+- `thinScrollbar` (boolean, `true`) — safe
+- `watchPageRestyle` (boolean, `true`) — safe
+- `styledFilterChips` (boolean, `true`) — safe
+- `squareSearchBar` (boolean, `true`) — safe
+- `squareAvatars` (boolean, `true`) — safe
+- `widenSearchBar` (boolean, `true`) — safe
+- `hideSidebar` (boolean, `true`) — safe
+- `subscriptionsGrid` (boolean, `true`) — safe
+- `fullWidthSubscriptions` (boolean, `true`) — safe
+- `homepageGridAlign` (boolean, `true`) — safe
+- `floatingLogoOnWatch` (boolean, `true`) — safe
+- `expandVideoWidth` (boolean, `true`) — safe
+- `colorTheme` (string, `"none"`) — safe
+- `themeAccentColor` (string, `""`) — safe
+- `customProgressBarColor` (string, `"#ff0000"`) — safe
+- `nyanCatProgressBar` (boolean, `false`) — safe
+- `forceDarkEverywhere` (boolean, `false`) — safe
+- `oledTheme` (boolean, `false`) — safe
+- `denseMode` (boolean, `false`) — safe
+- `rectangularizeYouTube` (boolean, `false`) — safe
+- `classicLayoutProfile` (string, `"modern"`) — experimental (high churn)
+- `newPlayerUiRestore` (boolean, `false`) — experimental (high churn)
+- `tokenThemeBridge` (boolean, `false`) — safe
+- `noFrostedGlass` (boolean, `false`) — safe
+- `customCssInjection` (boolean, `false`) — store-risk/github-full
+- `customCssCode` (string, `""`) — store-risk/github-full
+- `customSelectionColor` (boolean, `false`) — safe
+- `selectionColor` (string, `"#2dd36f"`) — safe
+- `thumbnailPreviewSize` (boolean, `false`) — safe
+- `grayscaleThumbnails` (boolean, `false`) — safe
+- `thumbnailQualityUpgrade` (boolean, `false`) — safe (uses `i.ytimg.com` only)
+- `titleCaseTransform` (boolean, `false`) — safe
+- `titleCaseMode` (string, `"none"`) — safe
+- `fullTitles` (boolean, `false`) — safe
+- `compactUnfixedHeader` (boolean, `false`) — safe
+- `chatStyleComments` (boolean, `false`) — safe
+- `redirectToVideosTab` (boolean, `true`) — safe
+- `hideAirplayButton` (boolean, `false`) — safe
+- `hideQueueOnThumbnails` (boolean, `false`) — safe
+
+#### Category `nav` — Masthead nav, quick links, share URLs, alternative frontends (13)
+
+- `hideCreateButton` (boolean, `true`) — safe
+- `hideVoiceSearch` (boolean, `true`) — safe
+- `logoToSubscriptions` (boolean, `true`) — safe
+- `quickLinkMenu` (boolean, `true`) — safe
+- `quickLinkItems` (string, multi-line list) — safe
+- `redirectHomeToSubs` (boolean, `false`) — safe
+- `cleanShareUrls` (boolean, `true`) — safe
+- `openInNewTab` (boolean, `false`) — safe
+- `openInAlternativeFrontend` (boolean, `false`) — store-risk/github-full
+- `alternativeFrontendInstance` (string, `"https://yewtu.be"`) — store-risk/github-full
+- `bypassPlaylistMode` (boolean, `false`) — safe
+- `shareMenuCleaner` (boolean, `false`) — safe
+- `titleNormalization` (boolean, `false`) — safe
+
+#### Category `shorts` — Shorts removal/redirection (4)
+
+- `removeAllShorts` (boolean, `true`) — safe
+- `redirectShorts` (boolean, `true`) — safe
+- `shortsAsRegularVideo` (boolean, `false`) — safe
+- `disablePlayOnHover` (boolean, `true`) — safe
+
+#### Category `feed` — Home/feed layout and bulk visibility (10)
+
+- `videosPerRow` (number, `0`) — safe
+- `disableInfiniteScroll` (boolean, `false`) — safe
+- `hidePlayables` (boolean, `true`) — safe
+- `hideMembersOnly` (boolean, `true`) — safe
+- `hideNewsHome` (boolean, `true`) — safe
+- `hidePlaylistsHome` (boolean, `true`) — safe
+- `hideMerchShelf` (boolean, `true`) — safe
+- `hideLatestPosts` (boolean, `false`) — safe
+- `hideAiSummary` (boolean, `true`) — safe
+- `hideInfoPanels` (boolean, `true`) — safe
+
+#### Category `watch-player` — Watch page chrome, panels, tabs, sticky/popout/mini player, badges (52)
+
+- `hideRelatedVideos` (boolean, `true`) — safe
+- `hideDescriptionRow` (boolean, `true`) — safe
+- `hideVideoEndContent` (boolean, `true`) — safe
+- `hideJumpAheadButton` (boolean, `true`) — safe
+- `stickyVideo` (boolean, `true`) — safe
+- `hideEndCards` (boolean, `false`) — safe
+- `hideInfoCards` (boolean, `false`) — safe
+- `hideDescriptionExtras` (boolean, `true`) — safe
+- `hideHashtags` (boolean, `true`) — safe
+- `hidePaidContentOverlay` (boolean, `true`) — safe
+- `hidePaidPromotionWatch` (boolean, `true`) — safe
+- `hideChannelJoinButton` (boolean, `true`) — safe
+- `hideFundraiser` (boolean, `true`) — safe
+- `hideCollaborations` (boolean, `true`) — safe
+- `hideSubscriptionOptions` (boolean, `true`) — safe
+- `hideAutoplayToggle` (boolean, `false`) — safe
+- `hiddenActionButtonsManager` (boolean, `true`) — safe
+- `hiddenActionButtons` (array, `["like","share","ask","clip","thanks","save","sponsor","moreActions"]`) — safe
+- `hiddenPlayerControlsManager` (boolean, `true`) — safe
+- `hiddenPlayerControls` (array, `["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"]`) — safe
+- `hiddenWatchElementsManager` (boolean, `true`) — safe
+- `hiddenWatchElements` (array, default 12+ tokens) — safe
+- `watchPageTabs` (boolean, `false`) — safe
+- `autoExpandDescription` (boolean, `false`) — safe
+- `scrollToPlayer` (boolean, `false`) — safe
+- `focusedMode` (boolean, `false`) — safe
+- `fitPlayerToWindow` (boolean, `false`) — safe (conflicts with stickyVideo)
+- `popOutPlayer` (boolean, `false`) — experimental (Document PiP)
+- `autoTheaterMode` (boolean, `false`) — safe
+- `miniPlayerBar` (boolean, `false`) — safe
+- `disableMiniPlayer` (boolean, `false`) — safe
+- `adaptiveLiveLayout` (boolean, `false`) — safe
+- `showStatisticsDashboard` (boolean, `false`) — safe
+- `playbackStatsOverlay` (boolean, `false`) — safe
+- `monetizationIndicator` (boolean, `false`) — safe
+- `channelAgeDisplay` (boolean, `false`) — safe
+- `channelSubCount` (boolean, `false`) — safe
+- `showChannelVideoCount` (boolean, `false`) — safe
+- `videoResolutionBadge` (boolean, `false`) — safe
+- `likeViewRatio` (boolean, `false`) — safe
+- `videoAgeColors` (boolean, `false`) — safe
+- `speedIndicatorOverlay` (boolean, `false`) — safe
+- `playbackSpeedOSD` (boolean, `false`) — safe
+- `chapterNavButtons` (boolean, `false`) — safe
+- `chapterJumpButtons` (boolean, `false`) — safe
+- `autoOpenChapters` (boolean, `false`) — safe
+- `keyMoments` (boolean, `false`) — safe
+- `copyChapterMarkdown` (boolean, `false`) — safe
+- `transcriptViewer` (boolean, `false`) — api (caption tracks)
+- `autoOpenTranscript` (boolean, `false`) — safe
+- `stickyChat` (boolean, `false`) — safe
+- `alwaysShowProgressBar` (boolean, `false`) — safe
+- `watchProgress` (boolean, `false`) — safe
+- `preloadComments` (boolean, `false`) — safe
+- `theaterAutoScroll` (boolean, `false`) — safe
+- `cinemaAmbientGlow` (boolean, `false`) — safe (canvas sampling, throttled)
+
+#### Category `playback-audio` — Speed, volume, audio routing, autoplay, timing, screenshots (62)
+
+- `preventAutoplay` (boolean, `false`) — safe
+- `disableAutoplayNext` (boolean, `false`) — safe
+- `autoDismissStillWatching` (boolean, `false`) — store-risk
+- `autoSubtitles` (boolean, `false`) — safe
+- `autoSubtitleLang` (string, `"en"`) — safe
+- `audioTrackLanguage` (boolean, `false`) — safe
+- `preferredAudioLang` (string, `"en"`) — safe
+- `notifyAutoDubbedAudio` (boolean, `false`) — safe
+- `antiTranslate` (boolean, `false`) — safe
+- `antiTranslateAudioTrack` (boolean, `false`) — safe
+- `antiTranslateTranscript` (boolean, `false`) — safe
+- `persistentSpeed` (boolean, `false`) — safe (conflicts with perChannelSpeed)
+- `persistentSpeedValue` (number, `1`) — safe
+- `perChannelSpeed` (boolean, `false`) — safe
+- `musicVideoSpeedLock` (boolean, `false`) — safe
+- `customSpeedButtons` (boolean, `false`) — safe
+- `fineSpeedControl` (boolean, `false`) — safe
+- `speedStep` (number, `0.25`) — safe
+- `scrollWheelSpeed` (boolean, `false`) — safe
+- `volumeWheelMode` (boolean, `false`) — safe
+- `rememberVolume` (boolean, `false`) — safe
+- `rememberVolumeLevel` (number, `100`) — safe
+- `disableLoudnessNormalization` (boolean, `false`) — safe
+- `abLoop` (boolean, `false`) — safe
+- `videoLoopButton` (boolean, `false`) — safe
+- `sleepTimer` (boolean, `false`) — safe
+- `pauseOtherTabs` (boolean, `false`) — safe (BroadcastChannel; conflicts with autoPauseOnSwitch)
+- `autoPauseOnSwitch` (boolean, `false`) — safe
+- `autoSkipChapters` (boolean, `false`) — safe
+- `autoSkipChapterPatterns` (string, `"intro,outro,recap,sponsor"`) — safe
+- `perChannelIntroOutro` (boolean, `false`) — safe
+- `perChannelIntroOutroData` (object, `{}`) — safe
+- `ageRestrictionBypass` (boolean, `false`) — store-risk/github-full
+- `remainingTimeDisplay` (boolean, `false`) — safe
+- `showPlaylistDuration` (boolean, `false`) — safe
+- `showTimeInTabTitle` (boolean, `false`) — safe
+- `reversePlaylist` (boolean, `false`) — safe
+- `resumePlayback` (boolean, `false`) — safe (StorageManager 500-entry LRU)
+- `autoLikeSubscribed` (boolean, `false`) — store-risk
+- `autoClosePopups` (boolean, `false`) — safe
+- `preciseViewCounts` (boolean, `false`) — safe
+- `videoScreenshot` (boolean, `false`) — safe
+- `downloadScreenshotFormat` (string, `"png"`) — safe
+- `downloadSubtitlesWithScreenshot` (boolean, `false`) — safe
+- `frameByFrameButtons` (boolean, `false`) — safe
+- `videoZoom` (boolean, `false`) — safe (Ctrl+wheel; no keyboard binding, pointer modifier only)
+- `videoRotation` (boolean, `false`) — safe
+- `videoRotationAngle` (number, `0`) — safe
+- `videoVisualFilters` (boolean, `false`) — safe
+- `vvfBrightness` (number, `100`) — safe
+- `vvfContrast` (number, `100`) — safe
+- `vvfSaturation` (number, `100`) — safe
+- `vvfHue` (number, `0`) — safe
+- `vvfGrayscale` (number, `0`) — safe
+- `vvfSepia` (number, `0`) — safe
+- `pipButton` (boolean, `false`) — safe
+- `fullscreenOnDoubleClick` (boolean, `false`) — safe
+- `blueLightFilter` (boolean, `false`) — safe
+- `blueLightIntensity` (number, `30`) — safe
+- `timestampBookmarks` (boolean, `false`) — safe
+- `watchTimeTracker` (boolean, `false`) — safe (90-day retention)
+- `copyVideoTitle` (boolean, `false`) — safe
+- `enableCPU_Tamer` (boolean, `false`) — safe (rAF timer throttling)
+- `enableHandleRevealer` (boolean, `false`) — safe
+- `searchFilterDefaults` (boolean, `false`) — safe
+- `searchFilterSort` (string, `"upload_date"`) — safe
+- `rssFeedLink` (boolean, `false`) — safe
+- `notInterestedButton` (boolean, `false`) — safe
+- `watchLaterQuickAdd` (boolean, `false`) — safe
+- `playlistEnhancer` (boolean, `false`) — safe
+- `playlistQuickRemove` (boolean, `false`) — safe
+- `watchLaterCleanup` (boolean, `false`) — safe (≥90 % progress threshold)
+
+#### Category `quality-codec` — Quality matrix, codec/FPS selection, MAIN-bridge surfaces (12)
+
+- `autoMaxResolution` (boolean, `true`) — safe
+- `forceH264` (boolean, `false`) — safe (MAIN bridge; conflicts with codecSelector)
+- `codecSelector` (string, `"auto"`) — safe (MAIN bridge)
+- `forceStandardFps` (boolean, `false`) — safe
+- `qualityProfileMatrix` (boolean, `false`) — safe
+- `qualityDefaultNormal` (string, `"inherit"`) — safe
+- `qualityDefaultTheater` (string, `"inherit"`) — safe
+- `qualityDefaultFullscreen` (string, `"inherit"`) — safe
+- `qualityDefaultBackground` (string, `"inherit"`) — safe
+- `qualityDefaultEmbed` (string, `"inherit"`) — safe
+- `initialPlayerStateForeground` (string, `"inherit"`) — safe
+- `initialPlayerStateBackground` (string, `"inherit"`) — safe
+
+#### Category `content-filter` — Card/video/channel filters and the predicate sandbox (29)
+
+- `hideVideosFromHome` (boolean, `true`) — safe
+- `hideVideosKeywordFilter` (string, `""`) — safe
+- `hideVideosDurationFilter` (number, `0`) — safe
+- `hideVideosSubsLoadLimit` (boolean, `true`) — safe
+- `hideVideosSubsLoadThreshold` (number, `3`) — safe
+- `hideVideosRemoveHiddenCards` (boolean, `false`) — safe
+- `hideVideosShowQuickHideButton` (boolean, `true`) — safe
+- `hideVideosAllowChannelBlock` (boolean, `true`) — safe
+- `hideVideosRememberRestoredVideos` (boolean, `true`) — safe
+- `hideVideosScopeHome` (boolean, `true`) — safe
+- `hideVideosScopeSubscriptions` (boolean, `true`) — safe
+- `hideVideosScopeSearch` (boolean, `true`) — safe
+- `hideVideosScopeWatch` (boolean, `true`) — safe
+- `hideVideosScopeChannels` (boolean, `true`) — safe
+- `hideVideosScopeOther` (boolean, `true`) — safe
+- `hideVideosLowViewFilter` (boolean, `false`) — safe
+- `hideVideosLowViewThreshold` (number, `1000`) — safe
+- `hideVideosHideLive` (boolean, `false`) — safe
+- `hideVideosHideUpcoming` (boolean, `false`) — safe
+- `hideVideosHideMixes` (boolean, `false`) — safe
+- `hideVideosHidePlaylists` (boolean, `false`) — safe
+- `hideVideosHideMovies` (boolean, `false`) — safe
+- `hideVideosHideAutoDubbed` (boolean, `false`) — safe
+- `hideVideosWatchedRatio` (number, `0`) — safe
+- `hideWatchedVideos` (boolean, `false`) — safe
+- `hideWatchedMode` (string, `"dim"`) — safe
+- `advancedLocalPredicate` (boolean, `false`) — experimental (predicate-sandbox.js DSL)
+- `advancedLocalPredicateCode` (string, `""`) — experimental
+- `bulkCardActions` (boolean, `false`) — safe
+- `feedTriageProfile` (boolean, `false`) — safe
+
+#### Category `comments` — Comment chrome, filters, navigator, notifications (15)
+
+- `hidePinnedComments` (boolean, `true`) — safe
+- `hideCommentDislikeButton` (boolean, `false`) — safe
+- `hideCommentActionMenu` (boolean, `false`) — safe
+- `condenseComments` (boolean, `false`) — safe
+- `hideCommentTeaser` (boolean, `false`) — safe
+- `autoExpandComments` (boolean, `true`) — safe
+- `commentEnhancements` (boolean, `false`) — safe
+- `sortCommentsNewest` (boolean, `false`) — safe
+- `commentSearch` (boolean, `false`) — safe
+- `commentNavigator` (boolean, `false`) — safe
+- `commentFilterManager` (boolean, `false`) — safe
+- `commentFilterRules` (string, `""`) — safe
+- `creatorCommentHighlight` (boolean, `false`) — safe
+- `chronologicalNotifications` (boolean, `false`) — safe
+- `hideNotificationBadge` (boolean, `false`) — safe
+- `hideNotificationButton` (boolean, `false`) — safe
+
+#### Category `live-chat` — Live-chat iframe (all-frame inject, requires fresh fixtures) (6)
+
+- `hideLiveChatEngagement` (boolean, `true`) — safe
+- `premiumLiveChat` (boolean, `true`) — safe
+- `hiddenChatElementsManager` (boolean, `true`) — safe
+- `hiddenChatElements` (array, default 14 tokens) — safe
+- `chatKeywordFilter` (string, `""`) — safe
+- `reactionSpammer` (boolean, `false`) — store-risk/github-full (anti-abuse risk)
+- `_reactionSpammerAck` (boolean, `false`) — internal acknowledgment flag
+
+#### Category `subscriptions` — Subscription groups, sort, AI tags, last-visit deltas (7)
+
+- `subscriptionGroups` (boolean, `false`) — safe
+- `subscriptionGroupData` (object, `{}`) — safe
+- `subscriptionSortMode` (string, `"default"`) — safe
+- `subscriptionShowNewSinceLastVisit` (boolean, `true`) — safe
+- `subscriptionLastVisitData` (object, `{}`) — safe
+- `subscriptionAiTags` (boolean, `false`) — api (BYO-key or local AI)
+- `subscriptionAiTagData` (object, `{}`) — safe
+
+#### Category `enrichment` — SponsorBlock, DeArrow, Return YouTube Dislike (23)
+
+- `sponsorBlock` (boolean, `true`) — api
+- `sbCat_sponsor` (boolean, `true`) — api
+- `sbCat_intro` (boolean, `true`) — api
+- `sbCat_outro` (boolean, `true`) — api
+- `sbCat_selfpromo` (boolean, `true`) — api
+- `sbCat_interaction` (boolean, `true`) — api
+- `sbCat_music_offtopic` (boolean, `true`) — api
+- `sbCat_preview` (boolean, `true`) — api
+- `sbCat_filler` (boolean, `true`) — api
+- `sbCat_poi_highlight` (boolean, `false`) — api
+- `deArrow` (boolean, `false`) — api
+- `daReplaceTitles` (boolean, `true`) — api
+- `daReplaceThumbs` (boolean, `true`) — api
+- `daTitleFormat` (string, `"sentence"`) — safe
+- `daFallbackFormat` (boolean, `true`) — safe
+- `daShowOriginalHover` (boolean, `true`) — safe
+- `daCacheTTL` (string, `"4"`) — safe
+- `dearrowPeekButton` (boolean, `false`) — safe
+- `deArrowChannelOverrides` (object, `{}`) — safe
+- `deArrowChannelOverridesPanel` (boolean, `false`) — safe
+- `returnDislike` (boolean, `false`) — api
+- `returnDislikeOnCards` (boolean, `false`) — api (card-level, must be visibility-bound)
+- `returnDislikeCacheHours` (number, `24`) — safe
+- `returnDislikeShowRatio` (boolean, `true`) — safe
+
+#### Category `downloads` — Local downloader, Cobalt fallback, context-menu surfaces (15)
+
+- `showLocalDownloadButton` (boolean, `true`) — local-companion
+- `videoContextMenu` (boolean, `true`) — safe
+- `astraContextMenu` (boolean, `false`) — safe
+- `autoDownloadOnVisit` (boolean, `false`) — local-companion/github-full
+- `downloadQuality` (string, `"best"`) — local-companion
+- `downloadVideoFormat` (string, `"mp4"`) — local-companion
+- `downloadAudioFormat` (string, `"mp3"`) — local-companion
+- `downloadThumbnail` (boolean, `false`) — safe (uses `i.ytimg.com`)
+- `subtitleDownload` (boolean, `false`) — safe
+- `downloadHistoryPanel` (boolean, `false`) — local-companion
+- `downloadHealthPanel` (boolean, `false`) — local-companion
+- `downloadStreamLinksPanel` (boolean, `false`) — local-companion/github-full
+- `downloadCobaltFallback` (boolean, `false`) — api/github-full
+- `downloadCobaltInstance` (string, `"https://api.cobalt.tools/api/json"`) — api/github-full
+- `vlcMpvHandoff` (boolean, `false`) — local-companion/github-full
+
+#### Category `subtitles` — Native caption styling (8)
+
+- `subtitleStyling` (boolean, `false`) — safe
+- `subStyleFontSize` (number, `100`) — safe
+- `subStyleFontFamily` (string, `"default"`) — safe
+- `subStyleColor` (string, `"#ffffff"`) — safe
+- `subStyleBgOpacity` (number, `75`) — safe
+- `subStyleBgColor` (string, `"#000000"`) — safe
+- `subStyleBottomOffset` (number, `10`) — safe
+- `subStyleTextShadow` (boolean, `true`) — safe
+
+#### Category `research-ai` — Transcripts, summaries, Reddit, analytics, digital wellbeing (17)
+
+- `aiVideoSummary` (boolean, `false`) — api/github-full (BYO key)
+- `aiSummaryEndpoint` (string, OpenAI default) — api/github-full
+- `aiSummaryModel` (string, `"gpt-4o-mini"`) — api/github-full
+- `aiSummaryApiKey` (string, `""`) — api/github-full (never synced)
+- `aiSummaryProvider` (string, `"openai"`) — api/github-full
+- `localAiSummary` (boolean, `false`) — api (Ollama 127.0.0.1:11434)
+- `transcriptAiHandoff` (boolean, `false`) — safe (opens external tab)
+- `transcriptAiTarget` (string, `"notebooklm"`) — safe
+- `researchSpacedReview` (boolean, `false`) — safe
+- `researchTranscriptIndex` (boolean, `false`) — safe (IndexedDB local)
+- `researchTranscriptSearchPanel` (boolean, `false`) — safe
+- `redditComments` (boolean, `false`) — api (Reddit JSON)
+- `watchHistoryAnalytics` (boolean, `false`) — safe
+- `digitalWellbeing` (boolean, `false`) — safe
+- `dwBreakIntervalMin` (number, `30`) — safe
+- `dwDailyCapMin` (number, `0`) — safe
+- `dwWatchTimeToday` (object, `{date:"",seconds:0}`) — internal counter
+
+#### Category `privacy-profiles` — Profiles, sync, data-flow, predicates (10)
+
+- `safeStoreProfile` (boolean, `true`) — safe
+- `githubFullProfile` (boolean, `false`) — safe
+- `syncSafePrefs` (boolean, `true`) — safe
+- `syncSafePrefsAllowlist` (array, default broad-but-safe set) — safe
+- `_profiles` (object, `{}`) — internal storage of saved profile bundles
+- `_activeProfile` (string, `"default"`) — internal pointer
+- `settingsProfiles` (boolean, `false`) — safe
+- `privacyDataFlowPanel` (boolean, `false`) — safe
+- `sidebarOrder` (null, `null`) — internal layout state
+- `storageQuotaLRU` (boolean, `false`) — safe
+
+#### Category `a11y-perf` — Accessibility, low-power, retry/backoff, Music compat (8)
+
+- `reducedMotion` (boolean, `false`) — safe
+- `forcedColorsSupport` (boolean, `false`) — safe
+- `globalAriaLiveRegion` (boolean, `false`) — safe
+- `lowPowerProfile` (boolean, `false`) — safe
+- `lowPowerProfileBackup` (null, `null`) — internal snapshot for restore
+- `apiRetryBackoff` (boolean, `true`) — safe
+- `youtubeMusicCompat` (boolean, `false`) — experimental
+- `disableSpaNavigation` (boolean, `false`) — experimental
+
+#### Category `dev-diagnostics` — Debug + internal error sink (3)
+
+- `debugMode` (boolean, `false`) — safe
+- `diagnosticLog` (boolean, `false`) — safe
+- `_errors` (array, `[]`) — internal bounded error queue
+
+Schema verification gates (build-time):
+
+- `npm run check:settings` (new) — diffs `default-settings.json` against `settings-schema.js`; build fails on any missing key, missing category, default mismatch, or risk/profile/scope drift.
+- `npm run check:versions` (existing) — ensures all version strings agree.
+- `tests/settings-migration-roundtrip.test.js` — round-trips a JSON export through every migration; new keys must declare a `since` version and a migration entry or build fails.
+- `_*` prefixed keys are excluded from popup surfaces and export scrubbing audits.
 
 ## Phased Build Plan
 
@@ -961,6 +1421,7 @@ Acceptance criteria:
 
 ## Risks and Open Questions
 
+- ~~Manifest `commands` violates the "no keyboard shortcuts" rule.~~ **Resolved in v4.5.3 (2026-05-21).** The entire `commands` block was stripped from `extension/manifest.json`; the `chrome.commands.onCommand` listener, the orphaned `togglePanelForTab`/`sendTabMessage` helpers, the `Ctrl+Alt+Y` in-page keydown handler, and the `SETTINGS_SHORTCUTS` constant/tooltips/badges in `extension/ytkit.js` were all removed. `toggleControlCenterDesc` was dropped from all 10 locale bundles. The Firefox `Ctrl+Shift+Y → Ctrl+Alt+Y` rebind in `scripts/manifest-patch.js` is now a no-op kept only as a comment. Sole activators: toolbar action button, in-page gear icon, popup.
 - YouTube player redesign: `.ytp-delhi-modern`, action pills, overflow panels, and bottom controls are high-churn. Need fresh captures before large player UI work.
 - Live chat: current MHTML captures do not include full iframe internals. Major live-chat work needs live-stream fixtures.
 - Store policy: download, ad/promo skip, age-restriction bypass, and Cobalt/direct-stream features may require GitHub-full only.

@@ -659,10 +659,6 @@
   "toastDlStopped": {
     "message": "本地下载器已停止。正在重新启动…"
   },
-  "toggleControlCenterDesc": {
-    "message": "在当前 YouTube 标签页中切换 Astra Deck 控制中心",
-    "description": "Description for the keyboard command that opens the Astra Deck control center."
-  },
   "toggleStateOff": {
     "message": "已禁用"
   },

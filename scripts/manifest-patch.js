@@ -19,12 +19,10 @@ function patchManifestForFirefox(ffManifest) {
         ffManifest.background = { scripts: [worker] };
     }
 
-    // Firefox reserves Ctrl+Shift+Y for "Show Downloads". Rebind the
-    // toggle to Ctrl+Alt+Y on Firefox only. Users can still remap via
-    // about:addons -> Manage Extension Shortcuts.
-    if (ffManifest.commands?.['toggle-control-center']?.suggested_key?.default === 'Ctrl+Shift+Y') {
-        ffManifest.commands['toggle-control-center'].suggested_key.default = 'Ctrl+Alt+Y';
-    }
+    // v4.5.3: the `commands` block was retired entirely (no keyboard
+    // shortcuts policy). The previous Ctrl+Shift+Y → Ctrl+Alt+Y rebind for
+    // Firefox's "Show Downloads" collision is moot — there is no shortcut
+    // left to collide.
 
     return ffManifest;
 }
