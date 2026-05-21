@@ -6,6 +6,67 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.7.0] - 2026-05-21 - v5.0.0 foundation #2: feature-lifecycle + policy-profile
+
+Second slice of the v5.0.0 architecture from ROADMAP.md. Adds the
+two clean-room contract modules new features build on top of: a
+deterministic lifecycle wrapper around init/apply/destroy + the
+store-safe vs github-full policy resolver. No existing feature is
+rewired yet — these are additive primitives that v5.1+ features will
+adopt incrementally.
+
+### Added
+
+- `extension/core/feature-lifecycle.js` — `createLifecycle()`
+  factory wrapping the ROADMAP contract: `defineFeature({ id,
+  category, init, apply, destroy })` validates required hooks and
+  the category enum, `start()` provisions a fresh AbortController
+  whose `signal` is exposed on the context object, `apply()` hot-
+  applies a new value without teardown, `destroy()` aborts the
+  controller first then runs teardown (best-effort — sub-failures
+  are captured on `lastError` so callers can always tear down). A
+  monotonic route token bumps on `notifyRouteChange()` so async work
+  can drop stale results after an SPA navigation. `snapshot()`
+  returns per-feature health for diagnostics.
+- `extension/core/policy-profile.js` — `createPolicyProfile()`
+  factory built on the v4.6.0 schema. `resolveEffectiveProfile()`
+  maps `{safeStoreProfile, githubFullProfile}` to `'store-safe'` or
+  `'github-full'` with the "most permissive wins" rule. Helpers:
+  `isEntryAllowedInProfile`, `isKeyAllowedInProfile`,
+  `filterSettingsForProfile`, `shouldScrubKey`,
+  `buildExportSnapshot`, `countByProfile`. The scrubber removes any
+  key matching `/apiKey$/i` or `/token$/i` from exports and reverts
+  github-full-only entries to their schema defaults when exporting
+  under store-safe.
+- `tests/hardening.test.js` — 11 new regressions pinning lifecycle
+  hook validation, category gate, AbortController lifecycle, route-
+  token monotonicity, best-effort destroy, profile resolution,
+  github-full hiding under store-safe, secret scrubbing, export
+  defaulting, count partitioning, and the manifest content_script
+  load-order invariant.
+
+### Changed
+
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries (top-level + all-frame live-chat) now load
+  `core/settings-schema.js`, `core/feature-lifecycle.js`, and
+  `core/policy-profile.js` immediately before `ytkit.js`. The
+  manifest invariant test pins the relative load order so a future
+  refactor can't accidentally promote `ytkit.js` ahead of the
+  contract modules.
+
+### Why
+
+`ROADMAP.md` v5.0.0 calls for `feature-lifecycle.js` and explicit
+store-safe/full profile gates before any large feature carve-out
+ships. Building them as clean-room modules (with no current
+consumers) lets the upcoming feature-by-feature peel from
+`ytkit.js`'s 43k-line monolith adopt them incrementally without
+breaking the existing surface area. `toast.js` extraction is
+deferred — `showToast()` inside `ytkit.js` already meets the
+single-live-region contract; carving it into a module is a
+non-functional refactor best done alongside the first feature peel.
+
 ## [4.6.0] - 2026-05-21 - v5.0.0 foundation #1: settings-schema single source of truth
 
 First slice of the v5.0.0 architecture refactor from `ROADMAP.md`. The

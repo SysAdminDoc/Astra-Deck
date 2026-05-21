@@ -3345,3 +3345,184 @@ test('v5.0.0 findSettingEntry resolves every schema key and returns null for unk
     assert.equal(findSettingEntry('definitely-not-a-real-setting-key-12345'), null,
         'findSettingEntry must return null for unknown keys');
 });
+
+// ── v5.0.0 NX2: feature-lifecycle + policy-profile foundations ──
+
+// Both core modules attach themselves to globalThis.YTKitCore. The IIFE
+// pattern means require() runs the module's side effects, so we need a
+// clean globalThis between requires when tests reorder modules. The
+// stub globalThis is built per-test.
+function loadLifecycleModule() {
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    // Drop from require cache so the IIFE re-runs against the new stub.
+    delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
+    require('../extension/core/feature-lifecycle.js');
+    global.YTKitCore = prev;
+    return stub;
+}
+
+function loadPolicyProfileModule() {
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    delete require.cache[require.resolve('../extension/core/policy-profile.js')];
+    require('../extension/core/policy-profile.js');
+    global.YTKitCore = prev;
+    return stub;
+}
+
+test('v5.0.0 feature-lifecycle: defineFeature validates required hooks', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    assert.throws(() => lc.defineFeature(null), /must be an object/i);
+    assert.throws(() => lc.defineFeature({ id: '', init() {}, destroy() {} }), /id is required/i);
+    assert.throws(() => lc.defineFeature({ id: 'x', destroy() {} }), /init missing/i);
+    assert.throws(() => lc.defineFeature({ id: 'x', init() {} }), /destroy missing/i);
+    // Same id twice is rejected.
+    lc.defineFeature({ id: 'ok', init() {}, destroy() {} });
+    assert.throws(() => lc.defineFeature({ id: 'ok', init() {}, destroy() {} }),
+        /already defined/i);
+});
+
+test('v5.0.0 feature-lifecycle: category must be in CATEGORIES if provided', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    assert.throws(
+        () => lc.defineFeature({ id: 'bad-cat', category: 'not-a-category', init() {}, destroy() {} }),
+        /is not in CATEGORIES/
+    );
+    assert.doesNotThrow(() => lc.defineFeature({
+        id: 'good-cat', category: 'shell', init() {}, destroy() {}
+    }));
+});
+
+test('v5.0.0 feature-lifecycle: start/apply/destroy aborts in-flight async on destroy', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    let observedSignal = null;
+    let initCalls = 0;
+    let destroyCalls = 0;
+    let applyCalls = 0;
+    lc.defineFeature({
+        id: 'demo',
+        category: 'shell',
+        init(ctx) { initCalls++; observedSignal = ctx.signal; },
+        apply(_ctx, value) { applyCalls++; void value; },
+        destroy() { destroyCalls++; }
+    });
+    lc.start('demo');
+    assert.equal(initCalls, 1);
+    assert.equal(observedSignal && observedSignal.aborted, false,
+        'signal must be live after start');
+    lc.apply('demo', { foo: 1 });
+    assert.equal(applyCalls, 1);
+    lc.destroy('demo');
+    assert.equal(destroyCalls, 1);
+    assert.equal(observedSignal.aborted, true,
+        'destroy must abort the AbortController');
+});
+
+test('v5.0.0 feature-lifecycle: route-token bumps on notifyRouteChange', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    const initial = lc.getRouteToken();
+    lc.notifyRouteChange();
+    assert.equal(lc.getRouteToken(), initial + 1);
+    lc.notifyRouteChange();
+    assert.equal(lc.getRouteToken(), initial + 2);
+});
+
+test('v5.0.0 feature-lifecycle: destroy is best-effort and never throws on sub-failures', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    lc.defineFeature({
+        id: 'flaky',
+        category: 'shell',
+        init() {},
+        destroy() { throw new Error('teardown blew up'); }
+    });
+    lc.start('flaky');
+    assert.doesNotThrow(() => lc.destroy('flaky'),
+        'destroy must swallow sub-failures so callers can always tear down');
+    const snap = lc.snapshot().find((s) => s.id === 'flaky');
+    assert.ok(snap.lastError, 'lastError must capture the teardown failure for diagnostics');
+});
+
+test('v5.0.0 policy-profile: effective profile resolution honours both flags', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    assert.equal(pp.resolveEffectiveProfile({}), 'store-safe');
+    assert.equal(pp.resolveEffectiveProfile({ safeStoreProfile: true }), 'store-safe');
+    assert.equal(pp.resolveEffectiveProfile({ githubFullProfile: true }), 'github-full');
+    assert.equal(pp.resolveEffectiveProfile({ safeStoreProfile: false }), 'github-full');
+    assert.equal(pp.resolveEffectiveProfile({ safeStoreProfile: true, githubFullProfile: true }),
+        'github-full');
+});
+
+test('v5.0.0 policy-profile: github-full-only schema entries are hidden under store-safe', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    assert.equal(pp.isKeyAllowedInProfile('ageRestrictionBypass', 'store-safe'), false);
+    assert.equal(pp.isKeyAllowedInProfile('ageRestrictionBypass', 'github-full'), true);
+    assert.equal(pp.isKeyAllowedInProfile('sponsorBlock', 'store-safe'), true);
+    assert.equal(pp.isKeyAllowedInProfile('sponsorBlock', 'github-full'), true);
+});
+
+test('v5.0.0 policy-profile: scrubber removes apiKey-shaped values from exports', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const input = {
+        aiSummaryApiKey: 'sk-test-very-secret',
+        sponsorBlock: true,
+        safeStoreProfile: true
+    };
+    const { settings: out } = pp.buildExportSnapshot(input);
+    assert.equal('aiSummaryApiKey' in out, false,
+        'aiSummaryApiKey must be scrubbed from export');
+    assert.equal(out.sponsorBlock, true);
+});
+
+test('v5.0.0 policy-profile: store-safe export reverts github-full keys to schema defaults', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const input = {
+        ageRestrictionBypass: true,
+        sponsorBlock: true,
+        safeStoreProfile: true
+    };
+    const { settings: out, effective } = pp.buildExportSnapshot(input);
+    assert.equal(effective, 'store-safe');
+    assert.equal(out.ageRestrictionBypass, false,
+        'github-full toggle must revert to its schema default on a store-safe export');
+    assert.equal(out.sponsorBlock, true);
+});
+
+test('v5.0.0 policy-profile: countByProfile partitions the schema cleanly', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const storeSafe = pp.countByProfile('store-safe');
+    const githubFull = pp.countByProfile('github-full');
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const nonInternal = SETTINGS_SCHEMA.filter((e) => !e.internal).length;
+    assert.equal(storeSafe.visible.length + storeSafe.hidden.length, nonInternal);
+    assert.equal(githubFull.visible.length + githubFull.hidden.length, nonInternal);
+    assert.ok(githubFull.visible.length >= storeSafe.visible.length);
+});
+
+test('v5.0.0 manifest content_scripts load new core modules before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        for (const mod of ['core/settings-schema.js', 'core/feature-lifecycle.js', 'core/policy-profile.js']) {
+            const modIdx = cs.js.indexOf(mod);
+            assert.notEqual(modIdx, -1, 'manifest content_scripts must include ' + mod);
+            assert.ok(modIdx < ytkitIdx, mod + ' must load before ytkit.js');
+        }
+    }
+});

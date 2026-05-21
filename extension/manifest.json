@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.6.0",
+  "version": "4.7.0",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
@@ -114,6 +114,9 @@
         "core/page.js",
         "core/navigation.js",
         "core/player.js",
+        "core/settings-schema.js",
+        "core/feature-lifecycle.js",
+        "core/policy-profile.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -145,6 +148,9 @@
         "core/page.js",
         "core/navigation.js",
         "core/player.js",
+        "core/settings-schema.js",
+        "core/feature-lifecycle.js",
+        "core/policy-profile.js",
         "ytkit.js"
       ],
       "all_frames": true,
