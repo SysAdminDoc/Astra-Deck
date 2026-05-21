@@ -1562,17 +1562,61 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         input.addEventListener('change', persist);
         input.addEventListener('blur',   persist);
         row.appendChild(input);
+    } else if (entry.type === 'string') {
+        // v4.27.0: string-type inline editor. Schema entries whose
+        // default looks like a hex colour (#RGB or #RRGGBB or #RRGGBBAA)
+        // get a real <input type="color"> picker; everything else gets
+        // a compact text input. Either way the persist path is the
+        // same — writeSetting on change/blur, empty short-circuits.
+        const def = typeof entry.defaultValue === 'string' ? entry.defaultValue : '';
+        const looksHex = /^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?$/.test(def)
+            || /^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?$/.test(settings[entry.key] || '');
+        const input = document.createElement('input');
+        input.type = looksHex ? 'color' : 'text';
+        input.className = looksHex ? 'so-key-color' : 'so-key-text';
+        input.dataset.key = entry.key;
+        input.setAttribute('aria-label', entry.key);
+        if (looksHex) {
+            const current = settings[entry.key] || def || '#000000';
+            // input[type=color] only accepts #RRGGBB. Coerce shorter
+            // forms by mirroring the digit-expand from theme-css.
+            const safe = /^#[0-9a-fA-F]{3}$/.test(current)
+                ? '#' + current[1] + current[1] + current[2] + current[2] + current[3] + current[3]
+                : current;
+            input.value = /^#[0-9a-fA-F]{6}$/.test(safe) ? safe : '#000000';
+        } else {
+            input.placeholder = def;
+            const current = settings[entry.key];
+            if (typeof current === 'string') input.value = current;
+        }
+        const persist = async () => {
+            const raw = (input.value || '').toString();
+            // For the colour picker an empty value never happens; for
+            // the text input we let empty strings persist so a user
+            // can intentionally clear a string-shaped setting.
+            if (popupState.settings[entry.key] === raw) return;
+            input.disabled = true;
+            try {
+                await writeSetting(entry.key, raw);
+                renderSchemaOverview();
+            } catch (err) {
+                console.warn('[Astra Deck popup] schema-overview string persist failed:', err);
+            } finally {
+                input.disabled = false;
+            }
+        };
+        input.addEventListener('change', persist);
+        input.addEventListener('blur',   persist);
+        row.appendChild(input);
     } else {
-        // Read-only value badge for non-boolean / non-number types.
-        // Strings, arrays, and objects still route to the in-page
-        // workspace for editing — rendering each type's right editor
-        // (color picker, textarea, multi-select) is a follow-up.
+        // Read-only value badge for array / object / null types. The
+        // schema-overview popup intentionally doesn't ship JSON editors
+        // for those — the in-page workspace remains authoritative.
         const badge = document.createElement('span');
         badge.className = 'so-key-value';
         const value = settings[entry.key];
         let display;
         if (value === undefined || value === null) display = '—';
-        else if (entry.type === 'string')  display = value.length > 24 ? value.slice(0, 21) + '…' : value;
         else if (entry.type === 'array')   display = '[' + (Array.isArray(value) ? value.length : 0) + ']';
         else if (entry.type === 'object')  display = '{' + (value && typeof value === 'object' ? Object.keys(value).length : 0) + '}';
         else display = String(value);

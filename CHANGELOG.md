@@ -6,6 +6,47 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.27.0] - 2026-05-21 - v5.0.0 foundation #22: string-type editor (incl. auto color picker)
+
+Extends the v4.24.0 / v4.26.0 schema-overview editor to strings.
+Most string-typed entries get a compact text input; entries whose
+default value matches a hex-colour shape (`#RGB` / `#RRGGBB` /
+`#RRGGBBAA`) auto-upgrade to a native `<input type="color">`
+picker.
+
+### Added
+
+- `extension/popup.js` — string-type branch in
+  `buildSchemaOverviewKeyRow`. `looksHex` regex detects hex-coloured
+  defaults so the colour picker swaps in automatically. For color
+  inputs, the schema's short-form `#RGB` is mirrored into the
+  6-digit form that `input[type=color]` requires (so e.g.
+  `customProgressBarColor: "#ff0000"` and `selectionColor: "#2dd36f"`
+  both render as native pickers). Empty-value short-circuit, equal-
+  value short-circuit, and `writeSetting` persistence path mirror
+  the v4.26.0 number branch.
+- `extension/popup.css` — `.so-key-text` (mono text field) and
+  `.so-key-color` (native picker chrome stripped — appearance: none
+  plus per-vendor `::-webkit-color-swatch` + `::-moz-color-swatch`
+  rules). Both use the house-style 6 px radius.
+- `tests/hardening.test.js` — 5 new regressions: the input element
+  branches by type, persist short-circuits when unchanged, color
+  inputs coerce short-hex into the 6-digit form, CSS surface
+  declared with sub-8 px radii, and a canary asserting the schema
+  declares ≥30 string-typed entries (≥3 hex-coloured) so both
+  editor branches have live coverage.
+
+### Why
+
+After v4.26.0 the popup let users edit booleans + numbers in
+place, but string-typed entries (44 in the schema, including
+custom colours, AI provider/endpoint configs, content-filter
+keywords, locale codes, etc.) still required a trip through the
+in-page workspace. v4.27.0 closes that gap. The colour-picker
+auto-detection means `customProgressBarColor`, `selectionColor`,
+`subStyleColor`, `subStyleBgColor`, and any future hex-default
+string just works — no schema annotation required.
+
 ## [4.26.0] - 2026-05-21 - v5.0.0 foundation #21: number-type inline editor in schema overview
 
 Extends the v4.24.0 schema-overview per-key editor to number types.
