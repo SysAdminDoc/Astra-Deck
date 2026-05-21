@@ -6,6 +6,124 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+### Modularization (iter-8 — N11 M-phase continues)
+
+- **TranscriptService extracted to `extension/core/transcript-service.js`**
+  (iter-8 N18, M-phase #4). The 446-line inline `const TranscriptService = {…}`
+  block moved into a focused factory module exposing
+  `globalThis.YTKitCore.createTranscriptService`. The 5-method failover
+  pipeline (window-variable → Innertube → HTML fetch → captionTracks
+  regex → DOM panel scrape) is preserved verbatim. The factory accepts
+  lazy accessor callbacks for `getVideoId` / `showToast` /
+  `getPlayerResponseGlobal` / `extensionFetchJson` / `extensionFetchText`
+  so the module decouples from the ytkit.js feature monolith. Unit
+  tests pass plain mocks. Defensive fallback in ytkit.js if the core
+  module ever fails to load: a stub that logs a clear error and
+  returns failure results for all 4 call sites.
+- **StorageManager cache+debounce extracted to
+  `extension/core/storage-manager.js`** (iter-8 N19, M-phase #5). The
+  99-line inline `const StorageManager = {…}` block moved into a
+  focused factory module exposing
+  `globalThis.YTKitCore.createStorageCache` (renamed to disambiguate
+  from `core/storage.js`, which is the LOW-LEVEL `chrome.storage`
+  wrapper — the two used to share a name). The factory passes
+  `storageRead` / `storageWrite` / `storageWriteMany` /
+  `flushPendingStorageWrites` / `getSaveDebounceMs` accessors so the
+  module is unit-testable with plain backing-store mocks. The
+  `_initUnloadFlush()` hook is WeakSet-guarded so the `beforeunload`
+  and `yt-navigate-start` listeners only register once per window —
+  was previously a memory-leak risk on re-instantiation.
+- **`extension/ytkit.js` LOC** dropped 43,924 → 43,407 across N18 +
+  N19 (-517 lines net; the inline implementations were 446 + 99 = 545
+  lines, replaced by 27 + 27 = 54 lines of factory + defensive
+  fallback wrappers). Cumulative N11 M-phase reduction since iter-7
+  start: 44,264 → 43,407 = -857 lines (-1.93%). Five extractions
+  shipped to date: DiagnosticLog, PredicateSandbox, VideoTypeDetector
+  (iter-7), TranscriptService, StorageManager (iter-8).
+
+### Downloads / observability (iter-8 N20)
+
+- **AstraDownloader v1.4.0 → v1.5.0** ships an external JavaScript
+  runtime probe. yt-dlp `>= 2026.04` ships an external n/sig solver
+  for YouTube (upstream PR #14157) and invokes an external JS runtime
+  (Deno is the documented option). Field installs that auto-update
+  yt-dlp.exe to a 2026.04+ build but lack Deno hit silent download
+  failures. The `/health` endpoint gains a `denoRuntime` field
+  `{ installed, version, path, ytdlpNeedsRuntime, advice }` —
+  additive, `SERVICE_API_VERSION` stays at 2.
+- **`extension/ytkit.js downloadHealthPanel`** renders a Deno pill
+  next to the download button when `ytdlpNeedsRuntime` is true.
+  Tone `warn` with label `missing` and install advice in the
+  tooltip when Deno is absent; tone `ok` with label `v2.x.x` and
+  the binary path in the tooltip when present. Pill stays hidden on
+  pre-cutoff yt-dlp builds so the panel doesn't gain a dead surface
+  in the field.
+- **`README.md`** astra_downloader section gains a "External
+  JavaScript runtime (yt-dlp 2026+)" subsection with winget + curl
+  install commands.
+- **Detection primitive** is `shutil.which('deno')` — no shell-out,
+  no shell-injection surface. Version is parsed permissively from
+  `deno --version` first-line semver.
+- **Conservative cutoff**: `YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)`.
+  Older yt-dlp builds (the in-field-stable pre-Deno line) don't
+  false-positive on a misconfigured PATH.
+
+### UI surfaces shipped earlier in iter-6 (now part of this release window)
+
+- **Storage-quota proactive warning banner** in the toolbar popup
+  (iter-6 N2). Renders when usage > 80% of the 10 MB
+  `chrome.storage.local` ceiling. Uses the same accent-tinted warn
+  styling as the existing diagnostic banners.
+- **Storage corruption detector + recovery banner** (iter-6 N4). If
+  `chrome.storage.local.get(null)` returns a malformed payload, the
+  popup surfaces an amber banner with a clear-storage CTA. No silent
+  data loss.
+- **Per-context DiagnosticLog counters via `countsByCtx()`**
+  (iter-6 N6). The ring buffer maintains O(1) bookkeeping per
+  context tag (`trusted-types` / `selector-health` /
+  `storage-corruption` / `settings-migration` / `console` / `window`),
+  with ring-trim decrement and lazy resync from the persisted ring on
+  first read. Wrong-order bug from the in-line implementation (push
+  → resync → increment) fixed during extraction.
+- **Popup selector-health dashboard** (iter-6 N7). Surfaces the
+  iter-5 N5 DOM-shape drift detection in the popup — pills per
+  surface showing live drift status. `schemaVersion 2` for the
+  export.
+- **`extension/popup.html` inline CSP meta tag** (iter-6 N3).
+  Defense-in-depth: complements the existing manifest CSP with a
+  page-level `<meta http-equiv="Content-Security-Policy">` so the
+  popup is constrained even if the manifest CSP is somehow stripped.
+- **MainWorld MutationObserver consolidation** (iter-6 N9). Three
+  separate `MutationObserver` instances on `<html>` in
+  `ytkit-main.js` consolidated into one. Reduces per-frame DOM
+  observation cost.
+- **TrustedHTML fallback delegation to `core/trusted-html.js`**
+  (iter-6 N10). The inline DOMParser fallback in `ytkit.js`
+  `TrustedHTML` now delegates to the shared `core.setTrustedHTML` /
+  `core.toTrustedHTML` helpers when the core module is present,
+  keeping ytkit.js's inline fallback only for the unit-test path.
+- **bgutil-ytdlp-pot-provider stale-version notice in `/health`**
+  (iter-6 N14). The `poTokenProvider` field gains a `stale: bool`
+  + `minVersion: str` pair. Set true when the detected provider
+  version compares less than `BGUTIL_POT_MIN_VERSION = "1.3.0"`.
+  Extension popup health surface renders an amber "update bgutil-pot"
+  pill distinct from the absence notice.
+
+### Modularization shipped earlier in iter-7 (now part of this release window)
+
+- **DiagnosticLog extracted to `extension/core/diagnostic-log.js`**
+  (iter-7, M-phase #1). Ring buffer + per-ctx counters now live in a
+  ~170-line core module. Coupling to `appState.settings` /
+  `settingsManager.save` flows through accessor callbacks.
+- **PredicateSandbox extracted to `extension/core/predicate-sandbox.js`**
+  (iter-7, M-phase #2). The custom-JS predicate evaluator and its
+  PredicateError class moved into a 343-line core module. The
+  sandbox uses `new Function('ctx', userCode)` against a frozen
+  context — no eval, no Function constructor with arbitrary deps.
+- **VideoTypeDetector extracted to `extension/core/video-type.js`**
+  (iter-7, M-phase #3). The "is this video a Short / livestream /
+  premiere / normal" heuristic moved to a 128-line core module.
+
 ### Hardening (post-v4.4.0)
 
 - **TrustedTypes bypass repaired** in `extension/ytkit.js` AI handoff button
@@ -81,12 +199,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ### Tests + CI
 
-- 258 → 265 tests (+7 regression assertions: api-limiter clear()
-  reject behavior, pill-backdrop guard in ytkit.js + theater-split,
+- 258 → 299 JS tests across the iter-5 + iter-6 + iter-7 + iter-8
+  arc (+41 regression assertions): api-limiter clear() reject
+  behavior, pill-backdrop guard in ytkit.js + theater-split,
   direct-innerHTML-SVG detector, locale parity gate, Retry-After
-  honoring, YTKIT_SETTINGS_REPLACED handler presence).
-- `npm run check` continues green; locale-parity gate now runs in
-  CI via the extended `scripts/check-i18n.js`.
+  honoring, YTKIT_SETTINGS_REPLACED handler presence, DOM-shape
+  drift detection + cooldown + re-entry guard + ext-internal
+  channel, storage-quota banner threshold, storage-corruption
+  detector trigger, per-ctx counter resync, MutationObserver
+  consolidation invariants, TrustedHTML core delegation, popup
+  selector-health export schema version, and the M-phase
+  extraction guards (TranscriptService API surface + load order,
+  StorageManager cache semantics + idempotent unload-flush).
+- ~47 → 80 Python tests for AstraDownloader: per-ctx logging
+  smoke, bgutil stale-version comparator, Deno runtime probe
+  parsing, runtime cutoff evaluation, wire-contract shape pins on
+  `/health`.
+- `npm run check` continues green across all four sub-checks
+  (`scripts/check-versions.js` + `check-syntax.js` + `check-i18n.js`
+  + `check-contrast.js`).
 
 ## [4.4.0] - Audit-Pass Hardening
 
