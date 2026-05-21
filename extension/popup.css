@@ -885,6 +885,49 @@ body {
   box-shadow: var(--focus-ring);
 }
 
+/* v4.27.0: string-type inline editor. Two surfaces — a compact text
+   field for free-form strings, and a native <input type="color"> for
+   schema entries whose default looks like a hex colour. Both follow
+   the same square-corner 6 px house-style radius. */
+.schema-overview-list .so-key-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 2px 6px;
+  max-width: 50%;
+  min-width: 90px;
+}
+
+.schema-overview-list .so-key-text:focus-visible {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
+}
+
+.schema-overview-list .so-key-color {
+  appearance: none;
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.schema-overview-list .so-key-color::-webkit-color-swatch-wrapper { padding: 0; }
+.schema-overview-list .so-key-color::-webkit-color-swatch { border: none; border-radius: 5px; }
+.schema-overview-list .so-key-color::-moz-color-swatch    { border: none; border-radius: 5px; }
+
+.schema-overview-list .so-key-color:focus-visible {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
+}
+
 /* ── Data-flow panel (v4.12.0) ───────────────────────────────────────
    Renders extension/core/data-flow.js's catalogue. Schema-gated on the
    privacyDataFlowPanel setting (off by default). Visual lane mirrors
