@@ -23,8 +23,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.17.0 | Second feature peel — `features/video-filters/buildVideoFilterCss()` + isIdentity + clamping + 6 tests | 389 | +6 |
 | v4.18.0 | Third feature peel — `features/blue-light-filter/buildBlueLightRgba()` + OVERLAY_FIXED_CSS + 5 tests | 394 | +5 |
 | v4.19.0 | Bundled theme-css peel (customProgressBarColor + customSelectionColor + grayscaleThumbnails) + 7 tests | 401 | +7 |
+| v4.20.0 | Userscript bundle of 11 v5.0.0 core modules via `sync-userscript.js` + 5 tests | 406 | +5 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs (`features/subtitles/`, `features/video-filters/`, `features/blue-light-filter/`, `features/theme-css/`) covering 6 monolith feature blocks, 1 user-visible popup data-flow surface, 1 new popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, +86 hardening tests (315 → 401), 14 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 6 monolith feature blocks, 1 popup data-flow surface, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface (eliminates the extension↔userscript parity gap), +91 hardening tests (315 → 406), 15 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 
@@ -33,7 +34,7 @@ Carry-forward for the next session (in priority order):
 3. **First feature peel** — pick one bounded category (likely `subtitles` — 8 isolated keys, no SPA coupling) and extract from `ytkit.js` into `extension/features/subtitles/` using the v4.7.0 lifecycle contract.
 4. **`toast.js` extraction** — bundle with the first feature peel.
 5. **Versioned selector packs** — split `core/selectors.js` into per-surface `core/selector-packs/*.js` with capture provenance.
-6. **Userscript build pipeline** — `sync-userscript.js` currently only syncs version metadata; teach it to bundle the new `core/*` modules so the userscript path reaches feature parity with the extension.
+6. ~~Userscript build pipeline~~ — _delivered in v4.20.0._ `sync-userscript.js` now auto-bundles the 11 v5.0.0 core/feature modules between BEGIN/END marker comments inside the userscript's outer IIFE. 5 hardening tests pin name presence, verbatim parity per module, and load-order consistency.
 7. **Data-flow panel translation pass** — the 9 new keys in `_locales/*/messages.json` are currently English-everywhere placeholders; replace with real translations in the next i18n sweep.
 
 Target site: YouTube desktop web (`www.youtube.com`, `youtube-nocookie.com`, `youtu.be`), live-chat iframe (`*.youtube.com/live_chat*`), `i.ytimg.com` thumbnail origin. YouTube Music is opt-in only via `youtubeMusicCompat`. Excluded by design: `m.youtube.com`, `studio.youtube.com`.
