@@ -3,6 +3,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import astra_downloader as ad
@@ -130,6 +131,29 @@ class InstanceCommandTests(unittest.TestCase):
         self.assertTrue(ad.send_instance_command("start", port=port_holder[0], attempts=1))
         thread.join(2)
         self.assertEqual(received, ["start"])
+
+
+class UninstallCleanupTests(unittest.TestCase):
+    def test_delayed_install_dir_removal_only_accepts_app_owned_dir_shape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertTrue(ad.is_safe_install_dir_for_removal(Path(tmp) / "AstraDownloader"))
+            self.assertFalse(ad.is_safe_install_dir_for_removal(Path(tmp) / "NotAstraDownloader"))
+            self.assertFalse(ad.is_safe_install_dir_for_removal(Path(tmp)))
+
+    def test_delayed_install_dir_removal_uses_literal_path_not_cmd_rmdir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "AstraDownloader"
+            target.mkdir()
+            with mock.patch.object(ad.sys, "platform", "win32"), \
+                    mock.patch.object(ad.subprocess, "Popen") as popen:
+                self.assertTrue(ad.spawn_delayed_install_dir_removal(target))
+                args = popen.call_args.args[0]
+
+        self.assertEqual(args[0], "powershell")
+        self.assertTrue(any("Remove-Item -LiteralPath $args[0]" in part for part in args))
+        self.assertNotIn("cmd", args)
+        self.assertNotIn("rmdir", args)
+        self.assertEqual(args[-1], str(target.resolve()))
 
 
 class DownloadManagerTests(unittest.TestCase):

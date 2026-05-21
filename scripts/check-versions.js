@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-// Cross-validate the four canonical version strings before tag/push.
+// Cross-validate the canonical version strings before tag/push.
 //
 // The Build & Release workflow (.github/workflows/build.yml) already
-// runs this comparison on tag push, but a developer who bumps three of
-// four sources locally won't notice the drift until CI fails post-tag.
+// runs this comparison on tag push, but a developer who bumps most sources
+// locally won't notice the drift until CI fails post-tag.
 // Running this in `npm run check` catches it pre-push.
 //
 // Sources of truth (must all match):
@@ -13,8 +13,9 @@
 //   2. extension/manifest.json       → "version"
 //   3. extension/ytkit.js            → const YTKIT_VERSION = '...'
 //   4. YTKit.user.js                 → // @version
+//   5. package-lock.json             → root + packages[""].version
 //
-// Exit 0 if all four agree; exit 1 with a per-source breakdown otherwise.
+// Exit 0 if all sources agree; exit 1 with a per-source breakdown otherwise.
 //
 // Optional: pass --tag <vX.Y.Z> to also validate against an external
 // tag string (e.g. before `git tag` runs in a release recipe).
@@ -27,6 +28,16 @@ const REPO_ROOT = path.join(__dirname, '..');
 function readPackageVersion() {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
     return { source: 'package.json', value: String(pkg.version || '') };
+}
+
+function readPackageLockVersion() {
+    const lock = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package-lock.json'), 'utf8'));
+    const rootVersion = String(lock.version || '');
+    const packageVersion = String(lock.packages?.['']?.version || '');
+    return {
+        source: 'package-lock.json (root + packages[""])',
+        value: rootVersion && rootVersion === packageVersion ? rootVersion : `${rootVersion || '<empty>'} / ${packageVersion || '<empty>'}`
+    };
 }
 
 function readManifestVersion() {
@@ -56,6 +67,7 @@ function parseTagFlag(argv) {
 function main(argv) {
     const sources = [
         readPackageVersion(),
+        readPackageLockVersion(),
         readManifestVersion(),
         readYtkitVersion(),
         readUserscriptVersion(),
