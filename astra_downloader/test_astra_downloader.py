@@ -1064,5 +1064,177 @@ class HealthPoTokenSurfaceTests(unittest.TestCase):
         self.assertIsNone(body["poTokenProvider"])
 
 
+class DenoRuntimeProbeTests(unittest.TestCase):
+    """iter-8 N20: probe_deno_runtime, version-date cutoff parsing, and
+    /health.denoRuntime field shape. The extension's downloadHealthPanel
+    keys the 'Deno: missing' warn pill off exactly this wire contract."""
+
+    def setUp(self):
+        ad.reset_deno_runtime_cache()
+
+    def tearDown(self):
+        ad.reset_deno_runtime_cache()
+
+    def test_parse_ytdlp_release_date_extracts_yyyy_mm_dd(self):
+        self.assertEqual(ad._parse_ytdlp_release_date("2026.04.10"), (2026, 4, 10))
+        self.assertEqual(ad._parse_ytdlp_release_date("2025.10.22"), (2025, 10, 22))
+        # Builds may carry a nightly suffix like 2026.05.03.233852 — should
+        # still parse the leading YYYY.MM.DD prefix.
+        self.assertEqual(ad._parse_ytdlp_release_date("2026.05.03.233852"), (2026, 5, 3))
+
+    def test_parse_ytdlp_release_date_returns_none_on_garbage(self):
+        for bad in ["", "git-sha-abc123", None, "v1.2.3", "not-a-version", "0.0.0"]:
+            self.assertIsNone(ad._parse_ytdlp_release_date(bad))
+
+    def test_parse_ytdlp_release_date_rejects_out_of_range_components(self):
+        # Defensive — out-of-range month / day mean we got something other
+        # than a real release date and the runtime probe should NOT flag it.
+        self.assertIsNone(ad._parse_ytdlp_release_date("2026.13.10"))
+        self.assertIsNone(ad._parse_ytdlp_release_date("2026.04.99"))
+        self.assertIsNone(ad._parse_ytdlp_release_date("2026.00.10"))
+
+    def test_ytdlp_needs_external_runtime_at_or_past_cutoff(self):
+        # Cutoff is 2026.04.01.
+        self.assertTrue(ad.ytdlp_needs_external_runtime("2026.04.01"))
+        self.assertTrue(ad.ytdlp_needs_external_runtime("2026.04.10"))
+        self.assertTrue(ad.ytdlp_needs_external_runtime("2026.05.03.233852"))
+        self.assertTrue(ad.ytdlp_needs_external_runtime("2027.01.01"))
+
+    def test_ytdlp_needs_external_runtime_before_cutoff_returns_false(self):
+        self.assertFalse(ad.ytdlp_needs_external_runtime("2026.03.31"))
+        self.assertFalse(ad.ytdlp_needs_external_runtime("2025.10.22"))
+        self.assertFalse(ad.ytdlp_needs_external_runtime("2024.12.31"))
+
+    def test_ytdlp_needs_external_runtime_unparseable_is_false(self):
+        # Important: we MUST NOT false-positive on first-run when
+        # get_ytdlp_version() returns an empty string before bootstrap.
+        for bad in ["", None, "git-sha", "unknown"]:
+            self.assertFalse(ad.ytdlp_needs_external_runtime(bad))
+
+    def test_probe_deno_runtime_returns_wire_contract_shape(self):
+        # Fake the underlying primitives so the test has no PATH dep.
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        original_run_captured = ad._run_captured
+        ad.shutil.which = lambda binary: '/usr/local/bin/deno' if binary == 'deno' else None
+        ad.get_ytdlp_version = lambda force=False: '2026.05.03.233852'
+        ad._run_captured = lambda args, timeout=5: 'deno 2.4.1 (release, x86_64-pc-windows-msvc)\nv8 13.0.245.25-rusty\ntypescript 5.6.2\n'
+        try:
+            result = ad.probe_deno_runtime(force=True)
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+            ad._run_captured = original_run_captured
+        # Wire-contract shape pin — extension/ytkit.js consumes EXACTLY
+        # these fields. Adding fields is safe (additive); renaming or
+        # dropping any of these would break the downloadHealthPanel.
+        self.assertEqual(set(result.keys()), {
+            'installed', 'version', 'path', 'ytdlpNeedsRuntime', 'advice'
+        })
+        self.assertTrue(result['installed'])
+        self.assertEqual(result['version'], '2.4.1')
+        self.assertEqual(result['path'], '/usr/local/bin/deno')
+        self.assertTrue(result['ytdlpNeedsRuntime'])
+        self.assertEqual(result['advice'], '')
+
+    def test_probe_deno_runtime_surfaces_advice_when_needed_and_missing(self):
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        ad.shutil.which = lambda binary: None  # deno absent
+        ad.get_ytdlp_version = lambda force=False: '2026.05.03.233852'
+        try:
+            result = ad.probe_deno_runtime(force=True)
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+        self.assertFalse(result['installed'])
+        self.assertIsNone(result['version'])
+        self.assertIsNone(result['path'])
+        self.assertTrue(result['ytdlpNeedsRuntime'])
+        self.assertIn('Deno', result['advice'])
+        self.assertIn('yt-dlp', result['advice'])
+
+    def test_probe_deno_runtime_quiet_on_pre_cutoff_ytdlp(self):
+        # Field installs running the pre-Deno-line yt-dlp don't need the
+        # runtime — the pill should stay quiet (ytdlpNeedsRuntime=False)
+        # AND advice should be empty regardless of Deno presence.
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        ad.shutil.which = lambda binary: None
+        ad.get_ytdlp_version = lambda force=False: '2025.10.22'
+        try:
+            result = ad.probe_deno_runtime(force=True)
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+        self.assertFalse(result['ytdlpNeedsRuntime'])
+        self.assertEqual(result['advice'], '')
+
+    def test_probe_deno_runtime_cached_within_ttl(self):
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        call_count = {'n': 0}
+        def counting_which(binary):
+            call_count['n'] += 1
+            return None
+        ad.shutil.which = counting_which
+        ad.get_ytdlp_version = lambda force=False: '2026.05.03'
+        try:
+            ad.probe_deno_runtime(force=True)
+            ad.probe_deno_runtime()  # cached
+            ad.probe_deno_runtime()  # cached
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+        # Only the force=True call should have hit shutil.which; the
+        # other two reads should have come from cache.
+        self.assertEqual(call_count['n'], 1)
+
+
+class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
+    """iter-8 N20: /health.denoRuntime field on the wire."""
+
+    def setUp(self):
+        ad.reset_deno_runtime_cache()
+        ad.reset_po_token_provider_cache()
+
+    def tearDown(self):
+        ad.reset_deno_runtime_cache()
+        ad.reset_po_token_provider_cache()
+
+    def test_health_includes_deno_runtime_field(self):
+        config = FakeConfig({"ServerToken": "f" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        original_po_get = ad.http_requests.get
+        ad.shutil.which = lambda binary: None
+        ad.get_ytdlp_version = lambda force=False: '2025.10.22'
+        ad.http_requests.get = lambda *a, **k: (_ for _ in ()).throw(Exception("offline"))
+        try:
+            resp = api.test_client().get(
+                "/health", headers={"X-MDL-Client": "MediaDL"},
+            )
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+            ad.http_requests.get = original_po_get
+        body = resp.get_json()
+        self.assertIn("denoRuntime", body)
+        self.assertIsInstance(body["denoRuntime"], dict)
+        for key in ("installed", "version", "path", "ytdlpNeedsRuntime", "advice"):
+            self.assertIn(key, body["denoRuntime"])
+
+    def test_api_version_constant_at_2(self):
+        # Adding fields to /health is additive — wire-major stays at 2.
+        # Pin so a future bump is a deliberate, reviewed change.
+        self.assertEqual(ad.SERVICE_API_VERSION, 2)
+
+    def test_app_version_bumped_to_1_5_0(self):
+        # iter-8 N20 ships the denoRuntime field — APP_VERSION must move.
+        self.assertEqual(ad.APP_VERSION, "1.5.0")
+
+
 if __name__ == "__main__":
     unittest.main()

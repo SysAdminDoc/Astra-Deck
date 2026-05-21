@@ -91,12 +91,14 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
-# for bgutil-ytdlp-pot-provider availability. Older clients ignore unknown
-# keys, so the major version stays at 2 (additive, backward-compatible).
+# for bgutil-ytdlp-pot-provider availability; 1.5.0 (iter-8 N20) adds
+# /health.denoRuntime for the external JS runtime that yt-dlp >= 2026.04
+# requires on YouTube extractions. Older clients ignore unknown keys, so
+# the major version stays at 2 (additive, backward-compatible).
 SERVICE_API_VERSION = 2
 SERVER_PORT = 9751
 INSTANCE_CONTROL_HOST = '127.0.0.1'
@@ -199,6 +201,22 @@ _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
 # Compare via the local _compare_semver helper — handles X.Y / X.Y.Z and
 # pre-release suffixes by truncating at the first non-numeric segment.
 BGUTIL_POT_MIN_VERSION = "1.3.0"
+
+# iter-8 N20: yt-dlp >= 2026.04 ships an `external n/sig solver` for YouTube
+# (upstream PR #14157). Without an installed JavaScript runtime — Deno is
+# the documented option — the `web` and `web_safari` clients return empty
+# format lists on a growing share of videos. The /health endpoint surfaces
+# Deno presence so the downloadHealthPanel can render a "Deno: missing"
+# pill when the bundled yt-dlp.exe is recent enough to need it but Deno
+# is absent from the system PATH.
+#
+# Cutoff is the first nightly that flipped the dep from optional to
+# load-bearing — pinned conservatively at 2026.04.01 so newer-than-cutoff
+# yt-dlps are flagged; older ones (the in-field-stable pre-Deno line)
+# don't false-positive on a misconfigured PATH.
+YTDLP_EXTERNAL_RUNTIME_CUTOFF = (2026, 4, 1)
+DENO_RUNTIME_PROBE_TIMEOUT = 1.5
+_DENO_RUNTIME_CACHE_TTL_SECONDS = 60
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
@@ -668,6 +686,112 @@ def reset_po_token_provider_cache():
     with _PO_TOKEN_PROVIDER_CACHE_LOCK:
         _po_token_provider_cache['value'] = None
         _po_token_provider_cache['checked_at'] = 0.0
+
+
+# iter-8 N20: Deno (or other external JS runtime) presence probe + cutoff
+# evaluation for the bundled yt-dlp.exe.
+_deno_runtime_cache = {'value': None, 'checked_at': 0.0}
+_DENO_RUNTIME_CACHE_LOCK = threading.Lock()
+
+
+def _parse_ytdlp_release_date(version_string):
+    """Parse a yt-dlp version like ``2026.04.10`` into a ``(year, month, day)`` tuple.
+
+    Returns ``None`` for unparseable strings (post-format-change builds, git
+    SHAs, blank). The function is conservative — any failure produces None
+    and the call site treats None as "can't determine -> don't flag the
+    runtime as needed."
+    """
+    if not isinstance(version_string, str):
+        return None
+    # Strip any prefix (e.g. nightly tag) and any trailing build suffix.
+    m = re.match(r'(\d{4})\.(\d{1,2})\.(\d{1,2})', version_string.strip())
+    if not m:
+        return None
+    try:
+        year = int(m.group(1))
+        month = int(m.group(2))
+        day = int(m.group(3))
+        if not (1 <= month <= 12 and 1 <= day <= 31):
+            return None
+        return (year, month, day)
+    except (TypeError, ValueError):
+        return None
+
+
+def ytdlp_needs_external_runtime(version_string):
+    """True when the parsed version is at or past the
+    ``YTDLP_EXTERNAL_RUNTIME_CUTOFF``. Conservative on unparseable input:
+    returns False (don't false-positive a noisy banner on field installs
+    where get_ytdlp_version() returns an empty string because yt-dlp.exe
+    hasn't bootstrapped yet)."""
+    parsed = _parse_ytdlp_release_date(version_string)
+    if parsed is None:
+        return False
+    return parsed >= YTDLP_EXTERNAL_RUNTIME_CUTOFF
+
+
+def probe_deno_runtime(force=False):
+    """Best-effort detection of an installed external JavaScript runtime.
+
+    Returns ``{'installed': bool, 'version': str | None, 'path': str | None,
+    'ytdlpNeedsRuntime': bool, 'advice': str}``. Cached for 60 s.
+
+    Detection primitive is ``shutil.which('deno')`` — a Python-conventional
+    way to check PATH that doesn't shell out and has no shell-injection
+    surface. Version is captured via ``deno --version`` and parsed
+    permissively. The advice field is an empty string when the runtime
+    isn't needed; otherwise concrete install hints (winget / direct site).
+
+    Future: when yt-dlp adds wider runtime support, we can probe for
+    other runtimes here (Node, Bun) and surface whichever is present.
+    """
+    with _DENO_RUNTIME_CACHE_LOCK:
+        cache = _deno_runtime_cache
+        now = time.time()
+        if not force and (now - cache['checked_at']) < _DENO_RUNTIME_CACHE_TTL_SECONDS:
+            return cache['value']
+        ytdlp_version = get_ytdlp_version()
+        needs_runtime = ytdlp_needs_external_runtime(ytdlp_version or '')
+        deno_path = shutil.which('deno')
+        installed = deno_path is not None
+        version = None
+        if installed:
+            output = _run_captured([deno_path, '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
+            # Output is multi-line; the first line is the deno semver.
+            if output:
+                first_line = output.strip().splitlines()[0] if output.strip() else ''
+                m = re.search(r'(\d+\.\d+\.\d+)', first_line)
+                if m:
+                    version = m.group(1)
+                elif first_line:
+                    version = first_line[:32]
+        advice = ''
+        if needs_runtime and not installed:
+            advice = (
+                'yt-dlp >= 2026.04 needs an external JavaScript runtime for '
+                'YouTube. Install Deno: winget install DenoLand.Deno OR '
+                'https://deno.com/.'
+            )
+        elif needs_runtime and installed:
+            advice = ''
+        result = {
+            'installed': installed,
+            'version': version,
+            'path': deno_path,
+            'ytdlpNeedsRuntime': needs_runtime,
+            'advice': advice,
+        }
+        cache['value'] = result
+        cache['checked_at'] = now
+        return result
+
+
+def reset_deno_runtime_cache():
+    """Test hook + manual recheck path — clears the cached probe result."""
+    with _DENO_RUNTIME_CACHE_LOCK:
+        _deno_runtime_cache['value'] = None
+        _deno_runtime_cache['checked_at'] = 0.0
 
 
 def build_youtube_extractor_args(url, po_token_provider=None):
@@ -2315,6 +2439,15 @@ def create_api(config, dl_manager, history):
             # the Repair panel" pill when current=false. null = first-run
             # bootstrap before ffmpeg is on disk.
             "ffmpegCapabilities": check_ffmpeg_capabilities(),
+            # v1.5.0 (iter-8 N20): external JavaScript runtime presence.
+            # yt-dlp >= 2026.04 invokes an external Deno runtime to solve
+            # YouTube's n/sig challenges. Without Deno on PATH, recent
+            # yt-dlp builds return empty format lists on a growing share
+            # of YouTube videos. The downloadHealthPanel in ytkit.js
+            # renders a "Deno: missing" warn pill when
+            # ``ytdlpNeedsRuntime && !installed``, and stays quiet when
+            # the bundled yt-dlp predates the cutoff.
+            "denoRuntime": probe_deno_runtime(),
             "rateLimit": {
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
