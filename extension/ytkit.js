@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.41.0';
+    const YTKIT_VERSION = '4.42.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1799,7 +1799,39 @@ return response;
         }
     }
 
+    // v4.42.0: lazy delegation to extension/core/toast-dom.js. The
+    // first call to showToast/dismissToast builds the system once and
+    // caches it on `_toastSystem`. If the module is unavailable
+    // (userscript path, or the module load was skipped) we fall through
+    // to the byte-identical inline implementations below.
+    let _toastSystem = null;
+    function _getToastSystem() {
+        if (_toastSystem) return _toastSystem;
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toastDom
+            && globalThis.YTKitCore.toastDom.createToastSystem);
+        if (typeof mod !== 'function') return null;
+        try {
+            _toastSystem = mod({
+                zIndex: Z.TOAST,
+                inferToastTone,
+                getToastRgb,
+                getToastBadgeLabel
+            });
+        } catch (_) {
+            // reason: factory failure must never break the page.
+            _toastSystem = null;
+        }
+        return _toastSystem;
+    }
+
     function dismissToast(toast, immediate = false) {
+        const sys = _getToastSystem();
+        if (sys) return sys.dismissToast(toast, immediate);
+        // Userscript / module-unavailable fallback. MUST stay
+        // byte-identical to core/toast-dom.js#dismissToast — the
+        // v4.42.0 hardening test pins the parity.
         if (!toast) return;
         if (toast._dismissTimer) {
             clearTimeout(toast._dismissTimer);
@@ -1879,6 +1911,12 @@ return response;
     }
 
     function showToast(message, color = '#22c55e', options = {}) {
+        // v4.42.0: delegate to core/toast-dom.js when available; the
+        // inline body below is the byte-identical fallback for the
+        // userscript / module-unavailable path.
+        const sys = _getToastSystem();
+        if (sys) return sys.showToast(message, color, options);
+
         const existingToast = document.querySelector('.ytkit-global-toast');
         if (existingToast) dismissToast(existingToast, true);
 
