@@ -6,6 +6,41 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.34.0] - 2026-05-21 - v5.1.0 #4: selector-pack file split (batch 4 — player-chrome + sidebar + modals)
+
+Fourth batch of the v5.1.0 selector-pack migration. Four surfaces —
+`playerChrome`, `playerSettings`, `sidebar`, `modals` — move out of
+`INLINE_SURFACES`.
+
+### Added
+
+- `extension/core/selector-packs/playerChrome.js`,
+  `extension/core/selector-packs/playerSettings.js`,
+  `extension/core/selector-packs/sidebar.js`,
+  `extension/core/selector-packs/modals.js`. The `playerChrome`
+  pack inlines a comment explaining why `needsFreshCapture` stays
+  `false` despite the upcoming liquid-glass redesign — flipping
+  the flag would change `selector-health.js` summary counts and
+  belongs in a slice paired with the actual fresh capture.
+- `extension/manifest.json` — both ISOLATED content-script blocks
+  now load all 16 pack files before `core/selectors.js`.
+- `tests/core-foundation.test.js` — vm loader now seeds the 16
+  pack files.
+- `tests/hardening.test.js` — 4 new v4.34.0 regressions covering
+  pack-file schema, registry-vs-inline origin, the
+  legacy + Delhi/new-player fallback bundle on `playerChrome`,
+  and manifest pack-before-selectors load order. The
+  inline-still-resolves canary now uses the next batch
+  (comments / commentComposer / engagementPanels) as the probe.
+
+### Verification
+
+- 470 tests pass (was 466; +4 player-chrome regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` re-bundles v5.0.0 modules at v4.34.0.
+- `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
+  at v4.34.0.
+
 ## [4.33.0] - 2026-05-21 - v5.1.0 #3: selector-pack file split (batch 3 — watch-shell)
 
 Third batch of the v5.1.0 selector-pack migration. The four watch-

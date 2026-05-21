@@ -22,7 +22,11 @@ const selectorPackFiles = [
     'selector-packs/watch.js',
     'selector-packs/relatedSidebar.js',
     'selector-packs/player.js',
-    'selector-packs/mainVideo.js'
+    'selector-packs/mainVideo.js',
+    'selector-packs/playerChrome.js',
+    'selector-packs/playerSettings.js',
+    'selector-packs/sidebar.js',
+    'selector-packs/modals.js'
 ];
 const coreSources = [
     'registry.js',
