@@ -3526,3 +3526,133 @@ test('v5.0.0 manifest content_scripts load new core modules before ytkit.js', ()
         }
     }
 });
+
+// ── v5.1.0 NX1: selector-health + lifecycle singleton ──
+
+function loadSelectorHealthModule() {
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    delete require.cache[require.resolve('../extension/core/selector-health.js')];
+    require('../extension/core/selector-health.js');
+    global.YTKitCore = prev;
+    return stub;
+}
+
+test('v5.1.0 selector-health: summarize aggregates per-surface counts', () => {
+    const { summarizeSelectorHealth } = require('../extension/core/selector-health.js');
+    const snapshot = [
+        { surface: 'feed', hitCount: 90, missCount: 5, errorCount: 0, highChurn: true, needsFreshCapture: false },
+        { surface: 'player', hitCount: 50, missCount: 0, errorCount: 0, highChurn: false, needsFreshCapture: true },
+        { surface: 'comments', hitCount: 0, missCount: 0, errorCount: 0, highChurn: false, needsFreshCapture: false }
+    ];
+    const s = summarizeSelectorHealth(snapshot);
+    assert.equal(s.surfaces, 3);
+    assert.equal(s.highChurnSurfaces, 1);
+    assert.equal(s.needsFreshCapture, 1);
+    assert.equal(s.surfacesWithMisses, 1);
+    assert.equal(s.totalAttempts, 145);
+    assert.equal(s.totalHits, 140);
+    assert.equal(s.totalMisses, 5);
+    assert.equal(s.totalErrors, 0);
+    // 5 misses / 145 attempts ≈ 3.45%
+    assert.ok(s.missRate >= 3.4 && s.missRate <= 3.5);
+});
+
+test('v5.1.0 selector-health: rankProblemSurfaces excludes zero-attempt surfaces', () => {
+    const { rankSelectorProblems } = require('../extension/core/selector-health.js');
+    const snapshot = [
+        { surface: 'untested',   hitCount: 0,  missCount: 0,  errorCount: 0 },
+        { surface: 'healthy',    hitCount: 100, missCount: 0, errorCount: 0 },
+        { surface: 'flaky',      hitCount: 10, missCount: 90, errorCount: 0 },
+        { surface: 'errored',    hitCount: 5,  missCount: 0,  errorCount: 5 }
+    ];
+    const ranked = rankSelectorProblems(snapshot, 10);
+    assert.equal(ranked.length, 2, 'untested and healthy must not appear');
+    assert.equal(ranked[0].surface, 'flaky', 'highest failure rate must rank first');
+    assert.equal(ranked[1].surface, 'errored');
+});
+
+test('v5.1.0 selector-health: copy report begins with product header and lists top problems', () => {
+    const { formatSelectorCopyReport } = require('../extension/core/selector-health.js');
+    const snapshot = [
+        { surface: 'feed', hitCount: 50, missCount: 50, errorCount: 0, highChurn: true, needsFreshCapture: false }
+    ];
+    const report = formatSelectorCopyReport(snapshot, {
+        productVersion: '4.8.0',
+        browserUA: 'unit-test',
+        exportedAt: '2026-05-21T00:00:00Z',
+        topN: 3
+    });
+    assert.match(report, /^Astra Deck selector-health report/);
+    assert.match(report, /product: 4\.8\.0/);
+    assert.match(report, /exportedAt: 2026-05-21T00:00:00Z/);
+    assert.match(report, /miss rate:\s+50%/);
+    assert.match(report, /- feed: 50\/100 attempts failed \(50%\)\s+\[high-churn\]/);
+    // Investigation guidance must always be present in non-clean reports.
+    assert.match(report, /Investigate by:/);
+});
+
+test('v5.1.0 selector-health: copy report announces a clean tracker when no problems exist', () => {
+    const { formatSelectorCopyReport } = require('../extension/core/selector-health.js');
+    const snapshot = [
+        { surface: 'feed', hitCount: 100, missCount: 0, errorCount: 0 }
+    ];
+    const report = formatSelectorCopyReport(snapshot, { productVersion: '4.8.0' });
+    assert.match(report, /No problem surfaces/);
+});
+
+test('v5.1.0 selector-health: createSelectorHealth uses pluggable provider for tests', () => {
+    const core = loadSelectorHealthModule();
+    let providerCalls = 0;
+    const sh = core.createSelectorHealth({
+        snapshotProvider: () => {
+            providerCalls += 1;
+            return [{ surface: 'feed', hitCount: 9, missCount: 1, errorCount: 0 }];
+        },
+        topN: 1
+    });
+    const r1 = sh.getReport();
+    assert.equal(providerCalls, 1);
+    assert.equal(r1.summary.totalAttempts, 10);
+    assert.equal(r1.topProblems.length, 1);
+    const text = sh.getCopyReport({ productVersion: '4.8.0' });
+    assert.equal(providerCalls, 2);
+    assert.match(text, /miss rate:\s+10%/);
+});
+
+test('v5.1.0 feature-lifecycle: getLifecycle returns a stable singleton', () => {
+    delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    require('../extension/core/feature-lifecycle.js');
+    global.YTKitCore = prev;
+    const a = stub.getLifecycle({ logger: { warn() {} } });
+    const b = stub.getLifecycle();
+    assert.equal(a, b, 'getLifecycle must return the same instance on repeated calls');
+    // Reset hook used by tests must drop the singleton so a fresh
+    // factory call seeds a new instance.
+    stub._resetLifecycleForTests();
+    const c = stub.getLifecycle();
+    assert.notEqual(c, a, 'resetLifecycleForTests must release the prior singleton');
+});
+
+test('v5.1.0 manifest content_scripts include selector-health before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const healthIdx = cs.js.indexOf('core/selector-health.js');
+        assert.notEqual(healthIdx, -1, 'manifest content_scripts must include core/selector-health.js');
+        assert.ok(healthIdx < ytkitIdx, 'core/selector-health.js must load before ytkit.js');
+        // Must load AFTER the policy-profile module so the v5.0.0
+        // module load order remains semantically deterministic.
+        const policyIdx = cs.js.indexOf('core/policy-profile.js');
+        assert.ok(policyIdx < healthIdx,
+            'core/selector-health.js must load after core/policy-profile.js');
+    }
+});
