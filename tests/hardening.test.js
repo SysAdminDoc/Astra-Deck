@@ -4359,3 +4359,93 @@ test('v4.16.0 the risk-badge surface on quick toggles stays bounded to the schem
     assert.deepEqual(nonSafe, ['deArrow', 'sponsorBlock', 'transcriptViewer'],
         'risk-badge surface must remain just the three api-touching quick toggles; new non-safe quick toggles require a deliberate canary update');
 });
+
+// ── v4.17.0 NX1: video-filters feature peel ──
+
+test('v4.17.0 features/video-filters exports buildVideoFilterCss + isIdentity + FIELD_BOUNDS', () => {
+    delete require.cache[require.resolve('../extension/features/video-filters/index.js')];
+    const stub = {};
+    const prev = global.YTKitFeatures;
+    global.YTKitFeatures = stub;
+    const mod = require('../extension/features/video-filters/index.js');
+    global.YTKitFeatures = prev;
+    assert.equal(typeof mod.buildVideoFilterCss, 'function');
+    assert.equal(typeof mod.isVideoFilterIdentity, 'function');
+    assert.ok(mod.featureSpec && mod.featureSpec.id === 'videoVisualFilters');
+    assert.equal(mod.featureSpec.category, 'playback-audio');
+    assert.ok(mod.FIELD_BOUNDS && mod.FIELD_BOUNDS.vvfBrightness);
+    // Must register on globalThis.YTKitFeatures so the monolith finds it.
+    assert.ok(stub.videoFilters);
+    assert.equal(typeof stub.videoFilters.buildVideoFilterCss, 'function');
+});
+
+test('v4.17.0 buildVideoFilterCss emits the expected six-channel chain with default values', () => {
+    const { buildVideoFilterCss } = require('../extension/features/video-filters/index.js');
+    const css = buildVideoFilterCss({});
+    assert.match(css, /\.html5-main-video \{/);
+    assert.match(css, /filter:\s*brightness\(100%\)\s*contrast\(100%\)\s*saturate\(100%\)\s*hue-rotate\(0deg\)\s*grayscale\(0%\)\s*sepia\(0%\)\s*!important/);
+});
+
+test('v4.17.0 buildVideoFilterCss clamps out-of-range numeric inputs to declared bounds', () => {
+    const { buildVideoFilterCss } = require('../extension/features/video-filters/index.js');
+    const css = buildVideoFilterCss({
+        vvfBrightness: 9999,
+        vvfContrast:   -50,
+        vvfSaturation: 200,
+        vvfHue:        500,
+        vvfGrayscale:  -100,
+        vvfSepia:      9999
+    });
+    assert.match(css, /brightness\(200%\)/, 'brightness must clamp to max 200');
+    assert.match(css, /contrast\(0%\)/,     'contrast must clamp to min 0');
+    assert.match(css, /saturate\(200%\)/,   'saturation must keep 200');
+    assert.match(css, /hue-rotate\(180deg\)/, 'hue must clamp to max 180');
+    assert.match(css, /grayscale\(0%\)/,    'grayscale must clamp to min 0');
+    assert.match(css, /sepia\(100%\)/,      'sepia must clamp to max 100');
+});
+
+test('v4.17.0 isVideoFilterIdentity returns true only for the all-default settings', () => {
+    const { isVideoFilterIdentity } = require('../extension/features/video-filters/index.js');
+    assert.equal(isVideoFilterIdentity({}), true);
+    assert.equal(isVideoFilterIdentity({
+        vvfBrightness: 100, vvfContrast: 100, vvfSaturation: 100,
+        vvfHue: 0, vvfGrayscale: 0, vvfSepia: 0
+    }), true);
+    assert.equal(isVideoFilterIdentity({ vvfHue: 5 }), false);
+    assert.equal(isVideoFilterIdentity({ vvfSepia: 25 }), false);
+});
+
+test('v4.17.0 ytkit.js retains a byte-identical inline fallback for the userscript path', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    assert.match(src, /v4\.17\.0: CSS construction is owned by/,
+        'ytkit.js must document the v4.17.0 peel');
+    assert.match(src, /globalThis\.YTKitFeatures[^\n]*\n\s*&& globalThis\.YTKitFeatures\.videoFilters/,
+        'ytkit.js must consume the module via globalThis.YTKitFeatures.videoFilters');
+    // The inline fallback must keep emitting the exact six-channel string
+    // the module produces. We grep on the unique brightness/contrast/sat
+    // pattern below the v4.17.0 marker.
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/video-filters\/index\.js/,
+        'ytkit.js must document the byte-identical parity contract');
+});
+
+test('v4.17.0 features/video-filters loads before ytkit.js in both content_script entries', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    let validated = 0;
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const vfIdx = cs.js.indexOf('features/video-filters/index.js');
+        assert.notEqual(vfIdx, -1, 'manifest must include features/video-filters/index.js');
+        assert.ok(vfIdx < ytkitIdx, 'features/video-filters/index.js must load before ytkit.js');
+        const subIdx = cs.js.indexOf('features/subtitles/index.js');
+        assert.ok(subIdx < vfIdx,
+            'features/video-filters/index.js must load after features/subtitles/index.js (alphabetical-adjacent grouping)');
+        validated += 1;
+    }
+    assert.ok(validated >= 1);
+});
