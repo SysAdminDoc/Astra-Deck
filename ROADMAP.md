@@ -1186,22 +1186,23 @@ Goal: make the product maintainable enough to carry the full superset.
 
 Features:
 
-- Extract feature modules from the monolith by category.
-- Introduce `feature-lifecycle.js`.
-- Introduce full settings schema metadata for all 354 observed keys.
-- Build category-driven settings panel with search, profile badges, and diagnostics.
-- Add selector health system and versioned selector packs.
-- Add route-aware observer coordinator.
-- Add data-flow panel v1 with API origins and permission explanations.
-- Add explicit store-safe/full/userscript profile switch.
+- [x] Introduce full settings schema metadata for all 354 observed keys. _(Delivered in v4.6.0 — `extension/core/settings-schema.js` is the single source of truth; `scripts/check-settings.js` is hooked into `npm run check`; 10 hardening tests pin the invariants; `build-extension.js` emits `default-settings.json` from the schema with a drift gate against the legacy `ytkit.js` extractor.)_
+- [ ] Extract feature modules from the monolith by category.
+- [ ] Introduce `feature-lifecycle.js`.
+- [ ] Build category-driven settings panel with search, profile badges, and diagnostics.
+- [ ] Add selector health system and versioned selector packs.
+- [ ] Add route-aware observer coordinator.
+- [ ] Add data-flow panel v1 with API origins and permission explanations.
+- [ ] Add explicit store-safe/full/userscript profile switch.
 
 Acceptance criteria:
 
-- Every current setting has category, label, description, default, type, risk, scope, vehicle, and profile metadata.
-- Every feature can be disabled without leaving DOM/classes/listeners/observers behind.
-- `npm run check`, `npm test`, `npm run build`, `npm run audit:a11y`, and `npm run audit:contrast` pass.
-- Userscript parity tests prove feature metadata bundles correctly.
-- Selector fixtures fail loudly when stable selectors disappear.
+- [x] Every current setting has category, type, defaultValue, risk, scope, vehicle, and profile metadata.
+- [ ] Every entry also carries a localized `label` + `description` sourced from `_locales/`.
+- [ ] Every feature can be disabled without leaving DOM/classes/listeners/observers behind.
+- [x] `npm run check` (including new `check:settings` gate), `npm test`, `npm run build`, `npm run audit:a11y`, and `npm run audit:contrast` pass.
+- [ ] Userscript parity tests prove feature metadata bundles correctly.
+- [ ] Selector fixtures fail loudly when stable selectors disappear.
 
 ### v5.1.0 - Selector Fixture and DOM Churn Hardening
 
