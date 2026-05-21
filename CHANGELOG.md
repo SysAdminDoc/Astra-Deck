@@ -6,6 +6,61 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.8.0] - 2026-05-21 - v5.0.0/v5.1.0 foundation #3: selector-health + lifecycle singleton
+
+Third slice of the v5.0.0 architecture and the first taste of the
+v5.1.0 selector-health system. Adds a small consumer module on top of
+the already-rich per-selector telemetry inside `extension/core/selectors.js`,
+plus a lazy singleton accessor on the lifecycle so future feature
+modules can adopt the contract without each one minting its own
+instance. No existing feature is rewired yet.
+
+### Added
+
+- `extension/core/selector-health.js` — `createSelectorHealth()`
+  factory plus stand-alone helpers `summarizeSelectorHealth`,
+  `rankSelectorProblems`, `formatSelectorCopyReport`. The summarizer
+  aggregates hits/misses/errors/high-churn/needs-fresh-capture
+  counts across all surfaces; the ranker returns worst-N by failure
+  rate while filtering out zero-attempt (untested) surfaces; the
+  copy-report formatter emits a deterministic ASCII text bundle
+  ready for the popup "Copy selector report" button (product
+  version + exported-at + browserUA header, per-surface flags,
+  closing investigation guidance, "no problem surfaces" short-form
+  when the tracker is clean). The module never mutates
+  `core/selectors.js` state — read-only by design so tests can feed
+  synthetic snapshots.
+- `extension/core/feature-lifecycle.js` — `getLifecycle()` lazy
+  singleton accessor and `_resetLifecycleForTests()` helper. First
+  caller seeds the instance with `options`; every later caller in
+  the same world receives the same instance. The original
+  `createLifecycle()` factory remains exposed for tests and for
+  callers that need an isolated instance.
+- `tests/hardening.test.js` — 7 new regressions: summarize counts,
+  rank exclusion of zero-attempt surfaces, copy-report header +
+  problem-surface formatting, "no problems" clean-form copy report,
+  pluggable provider wiring, singleton stability, and the manifest
+  selector-health load-order invariant.
+
+### Changed
+
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries now load `core/selector-health.js` between
+  `core/policy-profile.js` and `ytkit.js`. The relative load order
+  is pinned by a new invariant test.
+
+### Why
+
+`ROADMAP.md` v5.1.0 calls for a runtime selector-health dashboard
+that promotes capture-fixture failures into user-visible
+diagnostics. The data is already there in `core/selectors.js`; the
+v4.8.0 slice supplies the read-side façade the popup diagnostics
+panel + the future "Copy report" affordance will consume, with
+zero risk to the well-tested selectors module. The lifecycle
+singleton lands now (rather than in v4.7.0) because the first real
+consumer — the SPA-navigation bridge that bumps the route token —
+will be staged on top of `core/navigation.js` in the next slice.
+
 ## [4.7.0] - 2026-05-21 - v5.0.0 foundation #2: feature-lifecycle + policy-profile
 
 Second slice of the v5.0.0 architecture from ROADMAP.md. Adds the
