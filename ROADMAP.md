@@ -17,8 +17,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.11.0 | schema↔data-flow coverage gate + Cobalt entry + PARENT_FEATURE map + 3 tests | 356 | +3 |
 | v4.12.0 | popup data-flow panel UI (HTML + CSS + JS + 10-locale i18n + 7 tests) | 363 | +7 |
 | v4.13.0 | First feature peel — `features/subtitles/buildSubtitleCss()` + 6 tests | 369 | +6 |
+| v4.14.0 | Toast helpers peeled into `core/toast.js` (+ `getToastAriaDefaults`) + 6 tests | 375 | +6 |
 
-Net: 6 new `extension/core/` modules, 1 new feature carve-out (`extension/features/subtitles/`), 1 user-visible popup surface, +54 hardening tests (315 → 369), 8 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 1 new feature carve-out (`extension/features/subtitles/`), 1 user-visible popup surface, +60 hardening tests (315 → 375), 9 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 
@@ -1223,7 +1224,7 @@ Features:
 - [x] Add route-aware observer coordinator _(delivered in v4.9.0 — `extension/core/lifecycle-route-bridge.js` self-installs against `core/navigation.js` and `core/feature-lifecycle.js`; every yt-navigate-finish / yt-page-data-updated / popstate / watch-flexy mutation auto-increments the lifecycle route token via `notifyRouteChange()`. 4 hardening tests pin the contract + load order.)_
 - [x] Add data-flow panel v1 with API origins and permission explanations _(complete in v4.12.0 — popup data-flow section bundled with the v5.0.0 core modules, gated on `privacyDataFlowPanel`, reactive to `chrome.storage.onChanged`, no pill backdrops per house style, all 10 locales seeded, 7 new hardening tests including a background.js↔catalogue origin parity gate.)_
 - [~] Extract feature modules from the monolith by category _(first peel landed in v4.13.0 — `extension/features/subtitles/index.js` exports `buildSubtitleCss()` as a pure helper; the monolith's `subtitleStyling._apply()` delegates to it with a byte-identical inline fallback for the userscript path. 6 hardening tests pin the parity. Remaining categories to peel: 17.)_
-- [ ] Extract `showToast` into `core/toast.js` _(non-functional refactor of the existing in-monolith implementation; safe to bundle with the first feature peel)._
+- [~] Extract `showToast` into `core/toast.js` _(pure helpers peeled in v4.14.0 — `inferToastTone`/`getToastRgb`/`getToastBadgeLabel`/`getToastAriaDefaults` + `TONE_RGB`/`TONE_BADGE`. 6 hardening tests pin the parity. DOM-touching showToast/dismissToast still in the monolith; v5.0.0 "single live region" primitive is the next step.)_
 
 Acceptance criteria:
 

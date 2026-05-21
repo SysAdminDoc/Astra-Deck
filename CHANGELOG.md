@@ -6,6 +6,57 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.14.0] - 2026-05-21 - v5.0.0 foundation #9: core/toast.js helper peel
+
+Second peel pass from the `extension/ytkit.js` monolith. The pure
+tone classification + brand-palette RGB + badge label helpers move
+into their own module so the popup, the in-monolith
+`showToast`/`dismissToast`, and any future feature/UI module share
+one semantic-color contract. DOM-touching code (the actual toast
+element + dismiss timer + focus restoration) stays in the monolith
+for now — the v5.0.0 "single live region" overlay primitive will
+land alongside the categorised settings panel.
+
+### Added
+
+- `extension/core/toast.js` — `inferToastTone`, `getToastRgb`,
+  `getToastBadgeLabel`, plus a new `getToastAriaDefaults` helper
+  that returns `{role,ariaLive}` per tone (error → assertive
+  alert; everything else → polite status). Brand palette anchors
+  documented in source: `#35c77f` success / `#ff7480` error /
+  `#ffbe7a` warning / `#6aa9ff` info / `#8b97ab` neutral. Attaches
+  to `globalThis.YTKitCore.toast` so ytkit.js can pick it up.
+- `tests/hardening.test.js` — 6 new regressions covering the full
+  helper surface, deterministic tone mapping (case-insensitive +
+  graceful default), brand-palette parity between module and
+  monolith fallback, ARIA defaults, the byte-stable inline-
+  fallback parity check, and the manifest load-order invariant
+  (toast.js after data-flow.js, before features/subtitles + ytkit.js).
+
+### Changed
+
+- `extension/ytkit.js` — `inferToastTone`, `getToastRgb`, and
+  `getToastBadgeLabel` now delegate to the new `core/toast.js`
+  module when `globalThis.YTKitCore.toast` is present. Inline
+  byte-identical fallbacks remain for the userscript path that
+  doesn't load the module yet; tests pin the parity contract.
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries load `core/toast.js` between `core/data-flow.js` and
+  `features/subtitles/index.js`. Full v4.14.0 load order:
+  `navigation → feature-lifecycle → policy-profile → selector-health
+  → data-flow → toast → features/subtitles → lifecycle-route-bridge
+  → ytkit.js`.
+
+### Why
+
+`ROADMAP.md` v5.0.0 calls for `toast.js` extraction as a v5.0.0
+follow-up. Splitting the pure helpers first (and leaving the DOM
+surface in place) mirrors the v4.13.0 subtitles peel pattern — pure
+logic out, lifecycle/DOM adoption next, monolith inline finally
+retired in a follow-up. The new `getToastAriaDefaults` helper is the
+seed for the v5.0.0 "single live region" overlay primitive that the
+popup data-flow panel + the in-monolith toast will eventually share.
+
 ## [4.13.0] - 2026-05-21 - v5.0.0 foundation #8: first feature peel (subtitles)
 
 First feature carve-out from the 43k-line `extension/ytkit.js`
