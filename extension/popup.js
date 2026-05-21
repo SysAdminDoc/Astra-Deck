@@ -340,6 +340,11 @@ const dataFlowSection = $('#data-flow');
 const dataFlowSummary = $('#data-flow-summary');
 const dataFlowList = $('#data-flow-list');
 
+// v4.23.0: schema-driven category overview refs.
+const schemaOverviewSection = $('#schema-overview');
+const schemaOverviewCount = $('#schema-overview-count');
+const schemaOverviewList = $('#schema-overview-list');
+
 // Storage warning thresholds.
 // Astra Deck declares the `unlimitedStorage` permission so the
 // default 10 MB chrome.storage.local quota is removed — but a
@@ -1364,6 +1369,81 @@ function renderDataFlowPanel() {
     dataFlowSection.hidden = false;
 }
 
+// v4.23.0: schema-driven category overview. Reads SETTINGS_SCHEMA
+// (bundled in popup.html as core/settings-schema.js) and renders a
+// dense per-category roll-up of enabled-vs-total counts. Internal
+// (_-prefixed) entries excluded; counts derive from the live
+// settings bag so the row tone updates as the user toggles features.
+function renderSchemaOverview() {
+    if (!schemaOverviewSection || !schemaOverviewList) return;
+    const scope = window.__YTKIT_SETTINGS_SCHEMA__;
+    if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) {
+        // Schema module didn't load — leave the section collapsed and
+        // empty rather than render a broken UI.
+        schemaOverviewSection.hidden = true;
+        return;
+    }
+    schemaOverviewSection.hidden = false;
+    const settings = popupState.settings || {};
+    const buckets = new Map();
+    let nonInternalTotal = 0;
+    let nonInternalEnabled = 0;
+    for (const entry of scope.SETTINGS_SCHEMA) {
+        if (entry.internal) continue;
+        nonInternalTotal += 1;
+        const isOn = isToggleEnabled(entry, settings);
+        if (isOn) nonInternalEnabled += 1;
+        if (!buckets.has(entry.category)) buckets.set(entry.category, { total: 0, enabled: 0 });
+        const b = buckets.get(entry.category);
+        b.total += 1;
+        if (isOn) b.enabled += 1;
+    }
+    // Render rolled-up counts.
+    if (schemaOverviewCount) {
+        const tpl = t('schemaOverviewCountTpl',
+            '{enabled}/{total} settings on across {categories} categories');
+        schemaOverviewCount.textContent = tpl
+            .replace('{enabled}',    String(nonInternalEnabled))
+            .replace('{total}',      String(nonInternalTotal))
+            .replace('{categories}', String(buckets.size));
+    }
+    // Render per-category rows in CATEGORIES order so the layout stays
+    // stable between renders.
+    schemaOverviewList.textContent = '';
+    const ordered = Array.isArray(scope.CATEGORIES) ? scope.CATEGORIES : [...buckets.keys()];
+    for (const cat of ordered) {
+        const bucket = buckets.get(cat);
+        if (!bucket) continue;
+        const li = document.createElement('li');
+        li.dataset.active = bucket.enabled > 0 ? 'true' : 'false';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'so-category';
+        nameSpan.textContent = cat;
+        const countsSpan = document.createElement('span');
+        countsSpan.className = 'so-counts';
+        countsSpan.textContent = bucket.enabled + '/' + bucket.total;
+        li.appendChild(nameSpan);
+        li.appendChild(countsSpan);
+        schemaOverviewList.appendChild(li);
+    }
+}
+
+// Decide whether a schema entry counts as "enabled" in the popup
+// roll-up. Mirrors the heuristic used by the data-flow panel's
+// isFeatureCurrentlyActive: booleans use truthiness, non-empty
+// strings count, positive numbers count, objects/arrays count
+// when non-empty, null/undefined → off.
+function isToggleEnabled(entry, settings) {
+    const value = settings[entry.key];
+    if (value === undefined || value === null) return false;
+    if (entry.type === 'boolean') return value === true;
+    if (entry.type === 'string')  return typeof value === 'string' && value.length > 0;
+    if (entry.type === 'number')  return Number(value) > 0;
+    if (entry.type === 'array')   return Array.isArray(value) && value.length > 0;
+    if (entry.type === 'object')  return value && Object.keys(value).length > 0;
+    return Boolean(value);
+}
+
 function appendDataFlowMeta(container, label, value) {
     const wrap = document.createElement('span');
     const strong = document.createElement('strong');
@@ -1888,6 +1968,9 @@ function installWheelScrolling() {
         // catalogue. Gated on the privacyDataFlowPanel schema setting so the
         // popup stays compact for users who haven't opted in.
         renderDataFlowPanel();
+        // v4.23.0: schema-driven category overview — read-only roll-up of
+        // every settings-schema category with live enabled/total counts.
+        renderSchemaOverview();
     } catch (error) {
         console.warn('[Astra Deck popup] Failed to load settings:', error);
         render({}, '');
@@ -1938,6 +2021,9 @@ function installWheelScrolling() {
                 // privacyDataFlowPanel from the in-page workspace must
                 // surface in the popup on next render.
                 renderDataFlowPanel();
+                // v4.23.0: keep the schema overview's counts in sync
+                // when settings change from any source.
+                renderSchemaOverview();
             }).catch((error) => {
                 console.warn('[Astra Deck popup] Failed to refresh settings:', error);
             });
