@@ -348,7 +348,37 @@ const schemaOverviewList = $('#schema-overview-list');
 // v4.24.0: which category rows are currently expanded. Stored in a
 // Set so re-renders preserve open state across storage.onChanged
 // without a settings round-trip.
+//
+// v4.29.0: also persisted across popup opens. The expanded set is
+// mirrored into chrome.storage.local under SCHEMA_OVERVIEW_EXPANDED_KEY
+// so the popup remembers which categories the user had open.
+const SCHEMA_OVERVIEW_EXPANDED_KEY = 'ytkit_popup_schema_overview_expanded';
 const schemaOverviewState = { expanded: new Set() };
+
+// v4.29.0: persist popup overview expansion across opens. Stored as a
+// plain string array rather than a Set for chrome.storage compatibility.
+async function persistSchemaOverviewExpanded() {
+    try {
+        await storageSet({ [SCHEMA_OVERVIEW_EXPANDED_KEY]: [...schemaOverviewState.expanded] });
+    } catch (_) {
+        // reason: persistence is best-effort — the user's expansion
+        // is purely UI ergonomics; never break the popup if storage
+        // is unavailable.
+    }
+}
+
+async function restoreSchemaOverviewExpanded() {
+    try {
+        const items = await storageGet([SCHEMA_OVERVIEW_EXPANDED_KEY]);
+        const raw = items[SCHEMA_OVERVIEW_EXPANDED_KEY];
+        if (!Array.isArray(raw)) return;
+        schemaOverviewState.expanded = new Set(
+            raw.filter((entry) => typeof entry === 'string' && entry.length > 0 && entry.length < 64)
+        );
+    } catch (_) {
+        // reason: best-effort — empty Set is the safe default.
+    }
+}
 
 // Storage warning thresholds.
 // Astra Deck declares the `unlimitedStorage` permission so the
@@ -1467,6 +1497,9 @@ function renderSchemaOverview() {
                 schemaOverviewState.expanded.add(cat);
             }
             renderSchemaOverview();
+            // v4.29.0: best-effort persist so the user's chosen
+            // expansion survives the next popup open.
+            void persistSchemaOverviewExpanded();
         });
         li.appendChild(head);
 
@@ -2167,6 +2200,10 @@ function installWheelScrolling() {
     // content script doesn't respond in time.
     void renderSelectorHealthDashboard();
 
+    // v4.29.0: restore the persisted schema-overview expanded set BEFORE
+    // the first render so the user sees their open categories on open.
+    await restoreSchemaOverviewExpanded();
+
     try {
         const settings = await loadSettings();
         render(settings, '');
@@ -2176,6 +2213,7 @@ function installWheelScrolling() {
         renderDataFlowPanel();
         // v4.23.0: schema-driven category overview — read-only roll-up of
         // every settings-schema category with live enabled/total counts.
+        // v4.29.0: expanded-category state restored above.
         renderSchemaOverview();
     } catch (error) {
         console.warn('[Astra Deck popup] Failed to load settings:', error);

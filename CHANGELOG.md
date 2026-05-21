@@ -6,6 +6,45 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.29.0] - 2026-05-21 - v5.0.0 foundation #24: persist popup expansion across opens
+
+Final UX polish on the schema-overview surface. Categories the user
+has open survive popup close + reopen via a new
+`ytkit_popup_schema_overview_expanded` storage key.
+
+### Added
+
+- `extension/popup.js` — `SCHEMA_OVERVIEW_EXPANDED_KEY` storage
+  constant + `persistSchemaOverviewExpanded()` /
+  `restoreSchemaOverviewExpanded()` async helpers routing through
+  the existing `storageGet` / `storageSet` wrappers. Persist
+  serialises the in-memory `Set` to a string `Array`. Restore
+  rejects non-Array stored values and filters entries to safe
+  strings (length 1-63) so a corrupted store can't blow up the UI
+  with a million open categories.
+- `extension/popup.js` — init flow now awaits
+  `restoreSchemaOverviewExpanded()` BEFORE the first
+  `renderSchemaOverview()` call, so the popup opens with the user's
+  last expansion already applied. The click handler dispatches
+  `void persistSchemaOverviewExpanded()` fire-and-forget after
+  every toggle.
+- `tests/hardening.test.js` — 5 new regressions: storage key
+  constant declared, persist + restore helpers route through
+  storageGet/storageSet, restore guards against malformed values
+  (non-array + non-string-entry + length filter), click handler
+  fires the persist promise, and the init flow restores BEFORE
+  the first render.
+
+### Why
+
+The schema overview is now the popup's primary edit surface for
+~340 of 354 schema keys. Forcing every category to re-collapse
+between popup opens punished users who edit one area repeatedly
+(e.g. tweaking SponsorBlock toggles or video-filter sliders). The
+persistence layer is minimal — one storage key, two functions, a
+filter that bounds restore-side input — and the popup keeps
+working unchanged if persistence fails.
+
 ## [4.28.0] - 2026-05-21 - v5.0.0 foundation #23: humanizeSettingKey + popup label upgrade
 
 Generic deterministic fallback labeller for every schema entry. Users
