@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.28.0] - 2026-05-21 - v5.0.0 foundation #23: humanizeSettingKey + popup label upgrade
+
+Generic deterministic fallback labeller for every schema entry. Users
+no longer see raw camelCase keys in the schema overview — the popup
+now displays "Custom progress bar color" instead of
+"customProgressBarColor", with the raw key still surfaced as a
+tooltip for support workflows.
+
+### Added
+
+- `extension/core/settings-schema.js` — `humanizeSettingKey(rawKey)`
+  helper. Strips leading underscores, splits on camel-case
+  boundaries (allowing digits on the left so `vp9Codec` →
+  `VP9 codec`), keeps letter↔digit pairs together so embedded
+  digit short-forms (`h264`, `vp9`, `av1`, `mv3`) round-trip
+  cleanly through a `HUMANISE_SHORT_FORMS` Set with ~50 entries
+  (general short-forms + Astra Deck-specific ones: `vvf`, `sbcat`,
+  `dw`). Defensive on `null` / `undefined` / `''`.
+- `extension/popup.js` — schema-overview key-row label now resolves
+  through `window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey` when
+  available, falling back to the raw key when the schema module
+  didn't load. The raw key remains accessible via `label.title` so
+  users filing support tickets can still cite it.
+- `tests/hardening.test.js` — 6 new regressions: helper exports,
+  camel-case split + first-letter capitalisation, short-form
+  acronyms (VVF, AI, API, DW, CSS, RSS), leading-underscore strip +
+  null/undefined safety, digit-run handling (VP9, AV1), and popup
+  wiring (humanizer resolved through the schema namespace, raw key
+  preserved as tooltip).
+
+### Why
+
+The label backfill carry-forward from the previous session called
+for adding `labelKey`/`descriptionKey` per schema entry plus 708
+new i18n keys. A deterministic humaniser sidesteps that:
+- ≈340 of 354 entries get a reasonable English label "for free".
+- The 14 array+object entries still show their raw key (the in-page
+  workspace owns editing).
+- A future labelKey override field can stack on top — present the
+  i18n string when set, fall back to `humanizeSettingKey(key)`
+  otherwise.
+- No 708 stub i18n keys to maintain across 10 locales.
+
 ## [4.27.0] - 2026-05-21 - v5.0.0 foundation #22: string-type editor (incl. auto color picker)
 
 Extends the v4.24.0 / v4.26.0 schema-overview editor to strings.

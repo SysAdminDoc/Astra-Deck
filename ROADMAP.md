@@ -31,13 +31,14 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.25.0 | Schema-overview search wired through the existing `#q` filter + 5 tests | 431 | +5 |
 | v4.26.0 | Number-type inline editor in schema overview + 4 tests | 435 | +4 |
 | v4.27.0 | String-type inline editor (text + auto color picker for hex defaults) + 5 tests | 440 | +5 |
+| v4.28.0 | `humanizeSettingKey()` helper + popup label upgrade + 6 tests | 446 | +6 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup now ships per-key editors for boolean + number + string (text or color) types — covering ≈340 of the 354 schema keys directly from the popup (the residual ~14 are arrays + objects, still routed to the in-page workspace), 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +125 hardening tests (315 → 440), 22 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup now ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels (no i18n stub backfill required), 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +131 hardening tests (315 → 446), 23 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 
 1. **Full schema-driven settings editor** — the v4.23.0 category overview is read-only. The next slice should make every category section editable in-popup with switches, sliders, color pickers, and dropdowns sourced from `entry.type`. Search + profile badges are queued behind this.
-2. **Localised label + description per schema entry** — extend `settings-schema.js` entries with `labelKey` / `descriptionKey`; backfill `_locales/en/messages.json` for 354 keys (translation deferred — entries fall back to English). Required input for the full editor.
+2. ~~Localised label + description per schema entry~~ — superseded by v4.28.0 `humanizeSettingKey()`. ≈340 of 354 entries now render a deterministic English label without any i18n stub maintenance. A `labelKey`/`descriptionKey` override field can layer on top for translated strings when/if a translator pass happens; not blocking the popup editor.
 3. **Continue feature peels** — 10 monolith blocks peeled so far (subtitles, video-filters, blue-light-filter, customProgressBarColor, customSelectionColor, grayscaleThumbnails, forceDarkEverywhere, themeAccentColor, compactUnfixedHeader, hideVideoEndContent). 190+ blocks still in the monolith — the long tail can be tackled in bulk peels.
 4. **Versioned selector packs** — split `core/selectors.js` into per-surface `core/selector-packs/*.js` with capture provenance.
 5. **DOM-layer toast extraction** — pure helpers shipped in v4.14.0; the `showToast` / `dismissToast` DOM construction is still in the monolith. Move both into the unified live-region overlay primitive the v5.0.0 settings panel needs.

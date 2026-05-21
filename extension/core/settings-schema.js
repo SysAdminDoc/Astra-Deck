@@ -712,17 +712,63 @@ function getGithubFullKeys(schema) {
     return src.filter((e) => e.profile === "github-full").map((e) => e.key);
 }
 
+// v4.28.0: deterministic humanisation helper for settings storage keys.
+// Used by popup surfaces (and any future in-page UI) as the fallback
+// label when an entry's `labelKey` i18n string isn't set. Rules:
+//   1. Drop leading underscores.
+//   2. Split on camel-case boundaries (xByY -> x By y).
+//   3. Insert spaces around digit runs (vvf1 -> vvf 1).
+//   4. Short-form acronyms get all-caps (api -> API, css -> CSS).
+//   5. Lowercase + capitalise the first character of the joined string.
+const HUMANISE_SHORT_FORMS = new Set([
+    "api", "ai", "url", "osd", "rgb", "rgba", "css", "bg", "fps",
+    "hd", "id", "ids", "ip", "json", "kb", "lru", "nsfw",
+    "oss", "pwa", "rest", "rss", "sdk", "svg", "tls", "ttl", "uri",
+    "ui", "uuid", "vod", "vpn", "ascii", "mv3", "spa", "cpu",
+    "cdn", "pip", "dom", "sb", "da", "ryd", "h264", "vp9", "av1",
+    "oled", "usb", "lan", "cors", "csp",
+    // Astra Deck-specific short forms surfaced by the schema:
+    //   vvf = "video visual filter" (videoVisualFilters sub-knobs)
+    //   sbCat = SponsorBlock category, sub-toggle prefix
+    //   da = DeArrow prefix on shape/format sub-toggles
+    //   dw = Digital Wellbeing prefix on break/cap counters
+    "vvf", "sbcat", "dw"
+]);
+
+function humanizeSettingKey(rawKey) {
+    if (typeof rawKey !== "string" || rawKey.length === 0) return "";
+    let s = rawKey;
+    while (s.length && s[0] === "_") s = s.slice(1);
+    // Split on camel-case boundaries only. The regex allows a digit on
+    // the left side so `vp9Codec` splits into `vp9 Codec` (so `vp9`
+    // can round-trip through HUMANISE_SHORT_FORMS as a single token).
+    // We deliberately don't split letter↔digit pairs themselves so
+    // short-forms with embedded digits (h264, vp9, av1, mv3) stay
+    // intact.
+    s = s.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+    const tokens = s.split(/[\s_]+/).filter(Boolean);
+    const out = tokens.map((tok, i) => {
+        const lower = tok.toLowerCase();
+        if (HUMANISE_SHORT_FORMS.has(lower)) return lower.toUpperCase();
+        if (i === 0) return lower.charAt(0).toUpperCase() + lower.slice(1);
+        return lower;
+    });
+    return out.join(" ");
+}
+
 if (typeof module !== "undefined" && module.exports) {
     module.exports = {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
-        isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys
+        isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
+        humanizeSettingKey
     };
 }
 if (typeof window !== "undefined") {
     window.__YTKIT_SETTINGS_SCHEMA__ = {
         SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
         buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
-        isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys
+        isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
+        humanizeSettingKey
     };
 }
