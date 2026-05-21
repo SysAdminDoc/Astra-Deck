@@ -6,6 +6,53 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.38.0] - 2026-05-21 - feature-peel batch (wave-8 CSS-only quintet)
+
+Picks the v5.1.x feature-peel work back up after the selector-pack
+arc closed. Five wave-8 CSS-only features
+(`hideNotificationButton`, `noFrostedGlass`, `hideLatestPosts`,
+`disableMiniPlayer`, `nyanCatProgressBar`) move into
+`extension/features/wave-8-css/index.js`.
+
+### Added
+
+- `extension/features/wave-8-css/index.js` exposing five pure
+  builders. The `nyanCatProgressBar` builder ships the multi-rule
+  CSS + `@keyframes ytkit-nyan-rainbow` block.
+- `extension/ytkit.js` — the five `cssFeature()` callsites now
+  delegate via `globalThis.YTKitFeatures.wave8Css.*` with the
+  inline literal preserved as a byte-identical fallback for
+  userscript / module-unavailable contexts.
+- `extension/manifest.json` — both ISOLATED content-script blocks
+  load `features/wave-8-css/index.js` before `ytkit.js`.
+- `sync-userscript.js` — `V5_BUNDLE_MODULES` extended with the new
+  module so the userscript build inlines it.
+- `tests/hardening.test.js` — 5 new v4.38.0 regressions: module
+  exports five named builders, helper output matches the inline
+  fallback (marker substring), monolith callsite uses the
+  delegation chain (catches accidental literal-reversion),
+  manifest pack-before-ytkit load order, `V5_BUNDLE_MODULES`
+  parity. The v4.20.0 bundle-order canary picks up the new
+  entry in the expected list.
+
+### Why
+
+The wave-8 quintet was the next-cheapest peel after the selector
+pack split: zero parameters, contiguous in the monolith,
+identical injection pattern. Centralising the CSS strings + their
+parity guards makes a future redesign (e.g. updating
+`nyanCatProgressBar`'s palette) a one-file edit instead of an
+inline literal hunt, and gives the upcoming Astra control-center
+"feature preview" surface a single import surface for the same
+CSS.
+
+### Verification
+
+- 489 tests pass (was 484; +5 wave-8 feature-peel regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.38.0.
+
 ## [4.37.0] - 2026-05-21 - v5.1.0 #7: selector-pack migration COMPLETE (final batch — live-chat trio)
 
 Final batch of the v5.1.0 selector-pack migration. The three

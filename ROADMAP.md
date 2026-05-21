@@ -41,6 +41,7 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.35.0 | v5.1.0 #5 — selector-pack batch 5 (engagement: comments, commentComposer, engagementPanels) + 4 tests | 474 | +4 |
 | v4.36.0 | v5.1.0 #6 — selector-pack batch 6 (misc: settingsOverlay, profile+channelProfile, notifications, media) + 5 tests | 479 | +5 |
 | v4.37.0 | v5.1.0 #7 — selector-pack migration COMPLETE (final batch: live-chat trio); INLINE_SURFACES is now `{}` + 5 tests | 484 | +5 |
+| v4.38.0 | feature peel — wave-8 CSS-only quintet (hideNotificationButton, noFrostedGlass, hideLatestPosts, disableMiniPlayer, nyanCatProgressBar) → `features/wave-8-css/` + 5 tests | 489 | +5 |
 
 Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +136 hardening tests (315 → 451), **26 versions shipped (v4.5.3 → v4.30.0)**, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved. **v5.0.0 foundation arc effectively complete.**
 
