@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.13.0';
+    const YTKIT_VERSION = '4.14.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -1744,7 +1744,21 @@ return response;
         }
     `);
 
+    // v4.14.0: tone classification + brand-palette RGB + badge label
+    // moved into extension/core/toast.js (peeled from this monolith).
+    // The thin shims below delegate to globalThis.YTKitCore.toast when
+    // present and fall back to the inline byte-identical implementation
+    // for the userscript path that doesn't load the module yet. The
+    // hardening test pins the parity contract — keep both copies in
+    // sync. Brand palette: --success #35c77f / --error #ff7480 /
+    // --warning #ffbe7a / --info #6aa9ff / --text-muted #8b97ab.
     function inferToastTone(color = '') {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.inferToastTone === 'function') {
+            return mod.inferToastTone(color);
+        }
         const normalized = String(color).toLowerCase();
         if (normalized === '#ef4444') return 'error';
         if (normalized === '#f59e0b' || normalized === '#f97316') return 'warning';
@@ -1753,11 +1767,13 @@ return response;
         return 'success';
     }
 
-    // Toast tone → RGB. Values are the product's brand palette (popup.css
-    // + options.html tokens) so toasts, banners, pills, and cards all share
-    // the same semantic color language. Previously these were Tailwind
-    // defaults which drifted from the rest of the UI.
     function getToastRgb(tone) {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.getToastRgb === 'function') {
+            return mod.getToastRgb(tone);
+        }
         switch (tone) {
             case 'error':   return '255,116,128'; // --error  #ff7480
             case 'warning': return '255,190,122'; // --warning #ffbe7a
@@ -1768,6 +1784,12 @@ return response;
     }
 
     function getToastBadgeLabel(tone) {
+        const mod = (typeof globalThis !== 'undefined'
+            && globalThis.YTKitCore
+            && globalThis.YTKitCore.toast);
+        if (mod && typeof mod.getToastBadgeLabel === 'function') {
+            return mod.getToastBadgeLabel(tone);
+        }
         switch (tone) {
             case 'error': return 'Issue';
             case 'warning': return 'Heads Up';
