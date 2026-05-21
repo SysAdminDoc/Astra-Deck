@@ -1033,105 +1033,42 @@ return response;
         };
     })();
 
-    // Unified Storage Manager
-    const StorageManager = {
-        _cache: {},
-        _dirty: new Set(),
-        _saveTimeout: null,
-        _recentLocalWrites: new Map(),
-
-        _serialize(value) {
-            try {
-                return JSON.stringify(value);
-            } catch (_) {
-                return String(value);
-            }
-        },
-
-        _rememberLocalWrite(key, value) {
-            const serialized = this._serialize(value);
-            this._recentLocalWrites.set(key, serialized);
-            setTimeout(() => {
-                if (this._recentLocalWrites.get(key) === serialized) {
-                    this._recentLocalWrites.delete(key);
-                }
-            }, 1500);
-        },
-
-        consumeLocalEcho(key, value) {
-            const serialized = this._serialize(value);
-            if (this._recentLocalWrites.get(key) === serialized) {
-                this._recentLocalWrites.delete(key);
-                return true;
-            }
-            return false;
-        },
-
-        get(key, defaultVal = null) {
-            if (Object.prototype.hasOwnProperty.call(this._cache, key)) {
-                return this._cache[key];
-            }
-            const val = storageRead(key, defaultVal);
-            this._cache[key] = val;
-            return val;
-        },
-
-        set(key, value) {
-            this._cache[key] = value;
-            this._dirty.add(key);
-            this._rememberLocalWrite(key, value);
-            this._scheduleSave();
-        },
-
-        _scheduleSave() {
-            if (this._saveTimeout) return;
-            this._saveTimeout = setTimeout(() => this._flush(), TIMING.SAVE_DEBOUNCE);
-        },
-
-        _flush() {
-            this._saveTimeout = null;
-            const toSave = [...this._dirty];
-            if (toSave.length === 0) return;
-
-            const payload = {};
-            for (const key of toSave) {
-                payload[key] = this._cache[key];
-                this._dirty.delete(key);
-            }
-
-            void storageWriteMany(payload, { immediate: true });
-        },
-
-        setSync(key, value) {
-            this._cache[key] = value;
-            this._dirty.delete(key);
-            this._rememberLocalWrite(key, value);
-            void storageWrite(key, value, { immediate: true });
-        },
-
-        syncFromExternal(key, value) {
-            if (value === undefined) delete this._cache[key];
-            else this._cache[key] = value;
-            this._dirty.delete(key);
-        },
-
-        // Ensure pending writes are flushed before page unload
-        _initUnloadFlush() {
-            window.addEventListener('beforeunload', () => {
-                if (this._saveTimeout) {
-                    clearTimeout(this._saveTimeout);
-                    this._saveTimeout = null;
-                }
-                if (this._dirty.size > 0) this._flush();
-                void flushPendingStorageWrites();
-            });
-            // Also flush on YouTube SPA navigations
-            document.addEventListener('yt-navigate-start', () => {
-                if (this._dirty.size > 0) this._flush();
-                void flushPendingStorageWrites();
-            });
-        }
-    };
+    // Unified Storage Manager (high-level cache + debounce layer)
+    // iter-8 N19 (N11 M-phase #5): body extracted to
+    // extension/core/storage-manager.js. The new factory is exported as
+    // `createStorageCache` to disambiguate from the low-level
+    // `core/storage.js` functions (storageRead / storageWrite / etc.).
+    // Local variable name stays `StorageManager` so the 20+ existing
+    // call sites in this file (settingsManager, profile import, hidden
+    // videos accounting, etc.) keep working untouched.
+    const StorageManager = (globalThis.YTKitCore && globalThis.YTKitCore.createStorageCache)
+        ? globalThis.YTKitCore.createStorageCache({
+            storageRead: (...args) => storageRead(...args),
+            storageWrite: (...args) => storageWrite(...args),
+            storageWriteMany: (...args) => storageWriteMany(...args),
+            flushPendingStorageWrites: (...args) => flushPendingStorageWrites(...args),
+            getSaveDebounceMs: () => TIMING.SAVE_DEBOUNCE
+        })
+        : (() => {
+            console.error('[YTKit] StorageManager factory missing — core/storage-manager.js failed to load');
+            // Minimal in-memory fallback so the 20+ call sites in ytkit.js
+            // do not NPE if the core module ever fails to load. Persistence
+            // is lost in this degraded path, but the page still functions.
+            const _cache = {};
+            return {
+                _cache,
+                _dirty: new Set(),
+                _serialize(v) { try { return JSON.stringify(v); } catch (_) { return String(v); } },
+                consumeLocalEcho() { return false; },
+                get(key, defaultVal = null) {
+                    return Object.prototype.hasOwnProperty.call(_cache, key) ? _cache[key] : defaultVal;
+                },
+                set(key, value) { _cache[key] = value; },
+                setSync(key, value) { _cache[key] = value; },
+                syncFromExternal(key, value) { if (value === undefined) delete _cache[key]; else _cache[key] = value; },
+                _initUnloadFlush() { /* no-op in fallback */ }
+            };
+        })();
     StorageManager._initUnloadFlush();
 
 
