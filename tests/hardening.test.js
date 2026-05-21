@@ -4728,3 +4728,65 @@ test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the
     assert.match(sync, /BUNDLE_BEGIN_RE = \/\\\/\\\/ ── BEGIN v5\\\.0\\\.0 bundled core modules ──/,
         'sync-userscript.js must define the BEGIN/END marker regex');
 });
+
+// ── v4.21.0 NX1: theme-css extended with forceDark + accentColor builders ──
+
+test('v4.21.0 features/theme-css exports the two new builders', () => {
+    delete require.cache[require.resolve('../extension/features/theme-css/index.js')];
+    const mod = require('../extension/features/theme-css/index.js');
+    assert.equal(typeof mod.buildForceDarkEverywhereCss, 'function');
+    assert.equal(typeof mod.buildAccentColorCss, 'function');
+});
+
+test('v4.21.0 buildForceDarkEverywhereCss emits the four documented rule blocks', () => {
+    const { buildForceDarkEverywhereCss } = require('../extension/features/theme-css/index.js');
+    const css = buildForceDarkEverywhereCss();
+    assert.match(css, /html\[dark\] \{ --yt-spec-base-background: #0f0f0f !important;/);
+    assert.match(css, /ytd-app, ytd-browse, ytd-page-manager, #content \{ background-color: #0f0f0f !important;/);
+    assert.match(css, /body \{ background-color: #0f0f0f !important; color: #f1f1f1 !important;/);
+    assert.match(css, /\.page-container, \.yt-core-attributed-string, \[light\] \{ background: #0f0f0f !important; color: #f1f1f1 !important;/);
+});
+
+test('v4.21.0 buildAccentColorCss returns null for malformed hex, CSS for any valid hex variant', () => {
+    const { buildAccentColorCss } = require('../extension/features/theme-css/index.js');
+    // Empty / undefined / non-hex → null (matches the prior inline skip).
+    assert.equal(buildAccentColorCss({}), null);
+    assert.equal(buildAccentColorCss({ themeAccentColor: '' }), null);
+    assert.equal(buildAccentColorCss({ themeAccentColor: 'rebeccapurple' }), null);
+    assert.equal(buildAccentColorCss({ themeAccentColor: '#GGHHII' }), null);
+    // Valid 3 / 4 / 6 / 8 hex digits all emit CSS.
+    for (const accent of ['#abc', '#abcd', '#aabbcc', '#aabbccdd']) {
+        const css = buildAccentColorCss({ themeAccentColor: accent });
+        assert.ok(css && css.includes('--ytkit-accent: ' + accent + ' !important;'),
+            'accent ' + accent + ' must round-trip into the CSS variable');
+        assert.ok(css.includes('background: ' + accent + ' !important;'),
+            'accent must propagate to the progress-bar background');
+    }
+});
+
+test('v4.21.0 ytkit.js delegates forceDarkEverywhere + themeAccentColor with byte-identical inline fallbacks', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    // Two v4.21.0 marker comments.
+    const markers = src.match(/v4\.21\.0: CSS construction delegated to features\/theme-css\//g) || [];
+    assert.equal(markers.length, 2,
+        'ytkit.js must document two v4.21.0 delegating consumers (was ' + markers.length + ')');
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildForceDarkEverywhereCss/);
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildAccentColorCss/);
+});
+
+test('v4.21.0 the ACCENT_HEX_RE in features/theme-css matches the inline ytkit.js regex byte-for-byte', () => {
+    // Defensive: the validation regex appears in both the module and
+    // the inline fallback. Source-grep both to confirm they stay in
+    // sync.
+    const themeCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'features', 'theme-css', 'index.js'), 'utf8'
+    );
+    const ytkit = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const re = /\^#\(\[0-9a-fA-F\]\{3\}\|\[0-9a-fA-F\]\{4\}\|\[0-9a-fA-F\]\{6\}\|\[0-9a-fA-F\]\{8\}\)\$/;
+    assert.ok(re.test(themeCss), 'features/theme-css/index.js must declare the hex regex');
+    assert.ok(re.test(ytkit),    'ytkit.js inline fallback must declare the same hex regex');
+});
