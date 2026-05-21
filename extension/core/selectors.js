@@ -8,179 +8,180 @@
         return Object.freeze({
             stable: Object.freeze([...(entry.stable || [])]),
             fallback: Object.freeze([...(entry.fallback || [])]),
+            // v4.31.0: capture provenance + last-verified date promoted to
+            // public entry shape so the popup health surface (and any
+            // future selector-pack inspector) can show "verified
+            // 2026-05-19 against 4 captures" alongside the live miss
+            // counts already shown by selector-health.js.
+            captureEvidence: Object.freeze([...(entry.captureEvidence || [])]),
+            lastVerified: entry.lastVerified || null,
             highChurn: !!entry.highChurn,
             needsFreshCapture: !!entry.needsFreshCapture,
             notes: entry.notes || ''
         });
     }
 
-    const SurfaceSelectorMap = Object.freeze({
-        appShell: freezeEntry({
-            stable: ['ytd-app', 'ytd-page-manager'],
-            fallback: ['body > ytd-app', 'ytd-page-manager.style-scope'],
-            notes: 'Primary SPA shell. Mount observers here only until target containers exist.'
-        }),
-        nav: freezeEntry({
-            stable: ['ytd-masthead', '#masthead-container'],
-            fallback: ['ytd-masthead div.style-scope', '#masthead-container div.style-scope'],
-            notes: 'Top navigation and masthead actions.'
-        }),
-        masthead: freezeEntry({
-            stable: ['ytd-masthead', '#masthead-container'],
-            fallback: ['ytd-masthead div.style-scope', '#masthead-container div.style-scope'],
-            notes: 'Alias for nav so feature code can use either term.'
-        }),
-        search: freezeEntry({
-            stable: ['yt-searchbox', 'input#search', 'form[role="search"] input'],
-            fallback: ['yt-searchbox-input', 'ytd-searchbox #container.ytd-searchbox'],
-            highChurn: true,
-            notes: 'Prefer roles and labels where present; avoid raw wrapper classes.'
-        }),
-        leftNav: freezeEntry({
-            stable: ['ytd-guide-renderer', 'ytd-mini-guide-renderer', 'yt-app-drawer'],
-            fallback: ['ytd-mini-guide-entry-renderer.style-scope', 'ytd-guide-entry-renderer.style-scope'],
-            highChurn: true,
-            notes: 'Subscriptions capture has full guide; home often has mini guide.'
-        }),
-        feed: freezeEntry({
+    // v4.31.0 selector-pack file split. The four shell surfaces moved
+    // out to extension/core/selector-packs/*.js — they register
+    // themselves into globalThis.YTKitCore.SurfacePackRegistry before
+    // this file runs (manifest content_scripts ordering enforces it).
+    // The remaining entries below are next on the deck for the
+    // batch-by-batch v5.1.0 selector-pack migration.
+    const INLINE_SURFACES = {
+        feed: {
             stable: ['ytd-browse ytd-rich-grid-renderer', 'ytd-rich-grid-renderer'],
             fallback: ['ytd-rich-grid-renderer.style-scope', '#contents.ytd-rich-grid-renderer'],
             highChurn: true,
             notes: 'Process added nodes only; filter chips can recycle grid content without route events.'
-        }),
-        feedCard: freezeEntry({
+        },
+        feedCard: {
             stable: ['ytd-rich-item-renderer', 'yt-lockup-view-model', 'ytd-video-renderer'],
             fallback: ['yt-lockup-view-model.ytd-rich-item-renderer', 'ytd-rich-item-renderer.style-scope'],
             highChurn: true,
             notes: 'New lockup view-model appears in current captures.'
-        }),
-        thumbnail: freezeEntry({
+        },
+        thumbnail: {
             stable: ['ytd-thumbnail', 'yt-thumbnail-view-model', 'a#thumbnail'],
             fallback: ['ytThumbnailViewModelHost', 'ytd-thumbnail a#thumbnail'],
             highChurn: true,
             notes: 'Resolve from nearest card root before querying document-wide.'
-        }),
-        shortsShelf: freezeEntry({
+        },
+        shortsShelf: {
             stable: ['a[href^="/shorts"]', 'ytd-rich-shelf-renderer'],
             fallback: ['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer'],
             highChurn: true,
             notes: 'URL path is more stable than shelf wrapper names.'
-        }),
-        watch: freezeEntry({
+        },
+        watch: {
             stable: ['ytd-watch-flexy[video-id]', 'ytd-watch-flexy', 'ytd-watch-metadata', '#below'],
             fallback: ['ytd-watch-metadata.watch-active-metadata', 'ytd-watch-flexy[flexy]'],
             highChurn: true,
             notes: 'Route state is best read from ytd-watch-flexy[video-id].'
-        }),
-        relatedSidebar: freezeEntry({
+        },
+        relatedSidebar: {
             stable: ['#secondary ytd-watch-next-secondary-results-renderer', 'ytd-watch-next-secondary-results-renderer'],
             fallback: ['ytd-watch-next-secondary-results-renderer.style-scope', '#related'],
             highChurn: true,
             notes: 'Related and compact cards change often; resolve section root first.'
-        }),
-        player: freezeEntry({
+        },
+        player: {
             stable: ['#movie_player', '.html5-video-player'],
             fallback: ['ytd-player #movie_player', '#player-container #movie_player'],
             highChurn: true,
             notes: 'Use window.movie_player only from the MAIN-world bridge.'
-        }),
-        mainVideo: freezeEntry({
+        },
+        mainVideo: {
             stable: ['video.html5-main-video', '#movie_player video'],
             fallback: ['video.video-stream', '.html5-video-container video'],
             highChurn: true,
             notes: 'Main media element; should stay scoped to the current player.'
-        }),
-        playerChrome: freezeEntry({
+        },
+        playerChrome: {
             stable: ['.ytp-chrome-bottom', '.ytp-right-controls', '.ytp-progress-bar', '.ytp-progress-bar-padding'],
             fallback: ['.ytp-delhi-modern .ytp-chrome-bottom', '.ytp-delhi-modern', '.ytp-overflow-panel', '.ytp-action-pill', '.ytp-actions-container'],
             highChurn: true,
             notes: 'Player redesign transition surface; keep legacy and Delhi/new-player candidates together.'
-        }),
-        playerSettings: freezeEntry({
+        },
+        playerSettings: {
             stable: ['.ytp-settings-button', '.ytp-panel', '.ytp-menuitem'],
             fallback: ['.ytp-popup', '.ytp-panel-menu', '.ytp-overflow-panel', '#movie_player .ytp-panel-menu'],
             highChurn: true,
             notes: 'Avoid forced menu opening where MAIN APIs exist.'
-        }),
-        comments: freezeEntry({
+        },
+        comments: {
             stable: ['ytd-comments', 'ytd-comment-thread-renderer', 'ytd-comment-view-model'],
             fallback: ['ytd-comment-thread-renderer.style-scope', 'ytd-comment-renderer'],
             highChurn: true,
             notes: 'Keep old and new comment shapes during A/B transition.'
-        }),
-        commentComposer: freezeEntry({
+        },
+        commentComposer: {
             stable: ['ytd-comment-simplebox-renderer', 'ytd-commentbox', '#contenteditable-root'],
             fallback: ['ytd-comments ytd-comment-simplebox-renderer div.style-scope', 'ytd-comment-simplebox-renderer #placeholder-area'],
             highChurn: true,
             notes: 'Prefer structural lookup below ytd-comments.'
-        }),
-        engagementPanels: freezeEntry({
+        },
+        engagementPanels: {
             stable: ['ytd-engagement-panel-section-list-renderer', '#panels ytd-engagement-panel-section-list-renderer'],
             fallback: ['ytd-engagement-panel-section-list-renderer.style-scope', 'ytd-engagement-panel-title-header-renderer'],
             highChurn: true,
             notes: 'Chapters, transcript, AI summary, and clips live here.'
-        }),
-        sidebar: freezeEntry({
+        },
+        sidebar: {
             stable: ['#secondary', 'ytd-watch-flexy #secondary'],
             fallback: ['#secondary.style-scope', 'ytd-watch-flexy[is-two-columns_] #secondary'],
             notes: 'Watch sidebar container for related, chat, and secondary panels.'
-        }),
-        modals: freezeEntry({
+        },
+        modals: {
             stable: ['tp-yt-paper-dialog', 'ytd-popup-container tp-yt-paper-dialog', 'tp-yt-iron-dropdown'],
             fallback: ['.ytp-popup', '.ytd-popup-container', 'ytd-popup-container .style-scope'],
             highChurn: true,
             notes: 'Native YouTube popups and dialogs.'
-        }),
-        settingsOverlay: freezeEntry({
+        },
+        settingsOverlay: {
             stable: ['[data-ytkit-surface="control-center"]', '.ytkit-control-center', '#ytkit-panel'],
             fallback: ['.ytkit-panel', '.ytkit-modal'],
             notes: 'Astra-owned UI must remain scoped and removable.'
-        }),
-        profile: freezeEntry({
+        },
+        profile: {
             stable: ['ytd-video-owner-renderer', 'ytd-channel-name', '#channel-name', 'ytd-c4-tabbed-header-renderer', 'ytd-page-header-renderer'],
             fallback: ['yt-avatar-shape', 'yt-decorated-avatar-view-model', 'ytd-browse[page-subtype="channels"] ytd-c4-tabbed-header-renderer'],
             highChurn: true,
             notes: 'Resolve channel ID or handle from links, not visible text.'
-        }),
-        channelProfile: freezeEntry({
+        },
+        channelProfile: {
             stable: ['ytd-video-owner-renderer', 'ytd-channel-name', '#channel-name', 'ytd-c4-tabbed-header-renderer', 'ytd-page-header-renderer'],
             fallback: ['yt-avatar-shape', 'yt-decorated-avatar-view-model', 'ytd-browse[page-subtype="channels"] ytd-c4-tabbed-header-renderer'],
             highChurn: true,
             notes: 'Alias for profile.'
-        }),
-        notifications: freezeEntry({
+        },
+        notifications: {
             stable: ['ytd-notification-topbar-button-renderer', 'yt-icon-badge-shape', 'ytd-notification-renderer'],
             fallback: ['.ytd-notification-topbar-button-renderer .badge-shape-wiz', 'ytd-multi-page-menu-renderer ytd-notification-renderer'],
             highChurn: true,
             notes: 'Wait for popup menu root before sorting or transforming notifications.'
-        }),
-        media: freezeEntry({
+        },
+        media: {
             stable: ['video', 'img', 'ytd-thumbnail', 'yt-thumbnail-view-model'],
             fallback: ['#content video', '#content img', '#content ytd-thumbnail'],
             notes: 'Generic media resolver; prefer feature-specific roots.'
-        }),
-        liveChatFrame: freezeEntry({
+        },
+        liveChatFrame: {
             stable: ['ytd-live-chat-frame#chat', 'ytd-live-chat-frame', 'iframe#chatframe'],
             fallback: ['#chat.ytd-live-chat-frame', 'ytd-live-chat-frame iframe'],
             highChurn: true,
             needsFreshCapture: true,
             notes: 'Watch-page live chat frame; raw captures do not include full live chat internals.'
-        }),
-        liveChat: freezeEntry({
+        },
+        liveChat: {
             stable: ['yt-live-chat-app', 'yt-live-chat-renderer', 'yt-live-chat-item-list-renderer'],
             fallback: ['yt-live-chat-text-message-renderer', 'yt-live-chat-message-input-renderer'],
             highChurn: true,
             needsFreshCapture: true,
             notes: 'Live chat iframe document surface; capture required before major live-chat rewrites.'
-        }),
-        liveChatPlaceholder: freezeEntry({
+        },
+        liveChatPlaceholder: {
             stable: ['ytd-live-chat-frame', '#chat'],
             fallback: ['iframe#chatframe', 'ytd-live-chat-frame iframe'],
             highChurn: true,
             needsFreshCapture: true,
             notes: 'Placeholder canary for top-level pages where the iframe exists but chat DOM is isolated.'
+        }
+    };
+
+    // Build SurfaceSelectorMap from INLINE_SURFACES + every entry that
+    // has registered itself into SurfacePackRegistry from
+    // extension/core/selector-packs/*.js. Packs win when both define a
+    // surface so a v5.1.0+ pack file can override a stale inline entry
+    // without touching this file.
+    const packRegistry = core.SurfacePackRegistry || new Map();
+    const surfaceNames = new Set([...Object.keys(INLINE_SURFACES), ...packRegistry.keys()]);
+    const SurfaceSelectorMap = Object.freeze(Object.fromEntries(
+        [...surfaceNames].map((surface) => {
+            const packEntry = packRegistry.get(surface);
+            const source = packEntry || INLINE_SURFACES[surface];
+            return [surface, freezeEntry(source)];
         })
-    });
+    ));
 
     const SurfaceSelectors = Object.freeze(Object.fromEntries(
         Object.entries(SurfaceSelectorMap).map(([surface, entry]) => [
@@ -647,6 +648,8 @@
             stable: [...entry.stable],
             fallback: [...entry.fallback],
             selectors: [...SurfaceSelectors[surface]],
+            captureEvidence: [...(entry.captureEvidence || [])],
+            lastVerified: entry.lastVerified,
             highChurn: entry.highChurn,
             needsFreshCapture: entry.needsFreshCapture,
             notes: entry.notes
