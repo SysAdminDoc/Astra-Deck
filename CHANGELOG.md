@@ -6,6 +6,55 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.17.0] - 2026-05-21 - v5.0.0 foundation #12: second feature peel (video-filters)
+
+Second feature carve-out from `extension/ytkit.js`, mirroring the
+v4.13.0 subtitles pattern. The video-element CSS-`filter` chain
+moves into `extension/features/video-filters/`; the monolith's
+`videoVisualFilters._apply()` delegates to the module when present
+with a byte-identical inline fallback for the userscript path.
+
+### Added
+
+- `extension/features/video-filters/index.js` — pure helpers
+  `buildVideoFilterCss(settings)` and `isVideoFilterIdentity(settings)`,
+  plus a frozen `featureSpec` ready for the v4.7.0 lifecycle
+  adoption. Exports `FIELD_BOUNDS` (declared min/max/fallback for
+  each of the six filter channels: brightness/contrast/saturation
+  0-200%, hue −180-180 deg, grayscale/sepia 0-100%) so a future
+  popup or in-page slider UI consumes the same clamping rules.
+  Attaches to `globalThis.YTKitFeatures.videoFilters`.
+- `tests/hardening.test.js` — 6 new regressions: module surface
+  exports, default-value six-channel chain, out-of-range clamping
+  per channel, `isVideoFilterIdentity` truthiness for all-default
+  settings, monolith fallback parity contract, and the manifest
+  load order (video-filters after subtitles, before ytkit.js).
+
+### Changed
+
+- `extension/ytkit.js` — `videoVisualFilters._apply()` delegates CSS
+  construction to `globalThis.YTKitFeatures.videoFilters.buildVideoFilterCss`
+  when present. Inline byte-identical fallback preserved for the
+  single-file userscript path; tests pin parity. The DOM-touching
+  `_togglePanel` (slider UI) stays in the monolith for now.
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries load `features/video-filters/index.js` immediately after
+  `features/subtitles/index.js`. Full v4.17.0 load order:
+  `navigation → feature-lifecycle → policy-profile → selector-health
+  → data-flow → toast → features/subtitles → features/video-filters
+  → lifecycle-route-bridge → ytkit.js`.
+
+### Why
+
+`ROADMAP.md` v5.0.0 calls for incremental extraction of feature
+modules from the monolith. After the v4.13.0 subtitles peel proved
+the pure-helper pattern, video-filters is the next obvious
+candidate: 7 schema keys (1 master + 6 sub), no SPA coupling, no
+MAIN bridge, no async, and the CSS construction is a deterministic
+pure function. Splitting it lets the popup eventually render a
+visual-filter preview directly without round-tripping through the
+content script.
+
 ## [4.16.0] - 2026-05-21 - v5.0.0 foundation #11: schema-driven risk badges on popup toggles
 
 First popup surface that consumes the v4.6.0 settings-schema risk
