@@ -6,6 +6,59 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.5.1] - 2026-05-20 — N11 M-phase #6 + N21/N22 architectural regression pins
+
+Test-and-extraction patch on top of v4.5.0. No user-visible behavior
+change. Three additions:
+
+### Modularization (iter-8 extended N11 M-phase #6)
+
+- **ICONS + createSVG extracted to `extension/core/icons.js`**
+  (iter-8 N23-extended). The 404-line inline block (createSVG SVG
+  builder + `_S` default-stroke const + ICONS object with ~80 named
+  factories) moves out of ytkit.js into a focused core module.
+  Library has zero ytkit.js-internal deps — only
+  `document.createElementNS` — so the extraction is a plain
+  top-level move; 29 call sites continue to consume the same
+  `ICONS.foo()` invocation via a local-variable rebinding. Defensive
+  fallback if the core module fails to load: `createSVG` becomes an
+  empty-SVG stub, `ICONS` becomes a Proxy that returns the same stub
+  for any key — page stays renderable with blank icon slots instead
+  of NPE-ing.
+- `extension/ytkit.js` LOC: **43,407 → 43,081 (-326)**. Cumulative
+  N11 M-phase since iter-7 start: **44,264 → 43,081 = -1,183 LOC
+  (-2.67%)**. Six core modules extracted to date.
+
+### Architectural regression pins
+
+- **SponsorBlock event-driven scheduling pinned** (iter-8 N21). Upstream
+  SponsorBlock v6.1.5 (2026-04-21) fixed "segments not skipping when
+  video is scrolled away" — their old path was gated on a `requestAnimationFrame`
+  loop that stops firing when YouTube hides the off-screen video via
+  IntersectionObserver. Our SB has always used event-driven setTimeout
+  boundaries (scheduled from playing / seeked / ratechange), viewport-
+  agnostic. 3 new regression tests fail loudly if a future refactor
+  re-introduces rAF-gating on `_checkSkip` / `_scheduleNextSkip`, OR
+  drops the paused-video early-return, OR consults IntersectionObserver /
+  getBoundingClientRect / offsetParent.
+- **DeArrow selector chain resilience pinned** (iter-8 N22). Upstream
+  DeArrow shipped v2.3.4 / v2.3.5 / v2.3.6 in April 2026 — three rapid
+  patches for YouTube swapping one CSS class at a time on title /
+  thumbnail nodes. Our DeArrow uses durable primitives: custom-element
+  tags, stable IDs, attribute matchers, our own "da"-prefixed marker
+  classes. 2 new regression tests pin the resilient surface and
+  catch any future attempt to lean on a hashed/obfuscated class
+  name (via regex on `.Mb_xyz_abc123`-shaped patterns).
+
+### Tests
+
+- 299 → **311** JS tests (+12 across the three extended additions:
+  N21 SponsorBlock scheduling + viewport-agnostic + paused-pause;
+  N22 DeArrow selector resilience + marker namespacing;
+  N23-extended ICONS factory API surface + shape coverage +
+  options handling + manifest load order + inline-removal guard).
+- All existing tests stay green. Python 80/80 unchanged.
+
 ## [4.5.0] - 2026-05-20 — N11 M-phase #4-#5 + yt-dlp 2026 external runtime surface
 
 Rolling-release cut bundling iter-5 / iter-6 / iter-7 / iter-8 hardening
