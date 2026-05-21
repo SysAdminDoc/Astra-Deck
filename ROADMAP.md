@@ -1,11 +1,11 @@
 # Astra Deck Product Superset Roadmap
 
 > Version convention: `Astra Deck vX.Y.Z`
-> Current repo version observed: `Astra Deck v4.5.0` (cut at iter-8 close, 2026-05-20).
-> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**. Post-milestone hardening cuts v4.1.0 → v4.4.0 shipped same day; v4.5.0 bundles iter-5/6/7/8 hardening, M-phase extractions, and the yt-dlp 2026 external-runtime surface.
+> Current repo version observed: `Astra Deck v4.5.2` (extreme audit hardening cut, 2026-05-21).
+> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**. Post-milestone hardening cuts v4.1.0 -> v4.4.0 shipped same day; v4.5.0 bundles iter-5/6/7/8 hardening, M-phase extractions, and the yt-dlp 2026 external-runtime surface; v4.5.1 pins architecture regressions; v4.5.2 tightens permissions, audits, CI/version gates, pytest reliability, and uninstall cleanup safety.
 > Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
-> Deliverable type for this run: factory-loop maintenance (Iter-8 Now-tier: N18 TranscriptService extraction + N19 StorageManager extraction + N20 Deno runtime /health surface).
-> Generated: 2026-05-20 (iter-8 refresh after Large-Repo Mode state reconciliation + 3-task drain).
+> Deliverable type for this run: extreme audit hardening (permissions, popup diagnostics/a11y, release gates, downloader cleanup safety).
+> Generated: 2026-05-21 (post-v4.5.2 audit refresh).
 
 ## Project Overview
 
@@ -1203,7 +1203,7 @@ Acceptance:
 - [x] No confirmation dialogs. *(Every action applies immediately; toast feedback per the user's universal rule.)*
 - [x] Every feature can be disabled and cleaned up. *(Asserted by the 235 hardening + regression tests across all nine waves.)*
 
-## Iter-8 Maintenance Track (v4.5.0 + v4.5.1)
+## Iter-8 Maintenance Track (v4.5.0 + v4.5.1 + v4.5.2)
 
 ### Now — shipped iter-8 (v4.5.0)
 
@@ -1216,6 +1216,13 @@ Acceptance:
 - [x] **N21 — SponsorBlock scrolled-away verification.** Commit `ef8e807`. Audited the code path: our SB uses event-driven `setTimeout` boundaries scheduled from `playing`/`seeked`/`ratechange`, viewport-agnostic. Already robust — upstream's rAF-stall failure mode cannot reproduce. Added 3 regression tests pinning the architecture: setTimeout (not rAF) scheduling; paused-video early-return; no IntersectionObserver/getBoundingClientRect/offsetParent in `_checkSkip`.
 - [x] **N22 — DeArrow selector chain resilience (static portion).** Commit `1928666`. Audited the code path: DeArrow uses durable primitives (custom-element tags, stable IDs, attribute matchers, "da"-prefixed marker classes) — no hashed-class deps. Added 2 regression tests pinning the resilient surface and blocking any future hashed-class regression. **Dynamic-fixture portion (MHTML refresh) remains an operator-only manual gate.**
 - [x] **N23 — Reframed from TIMING extraction (low-value, 7 LOC) to ICONS+createSVG extraction (M-phase #6).** Commit `ddbc22d`. The original N23 would have *increased* LOC due to module-wrapper overhead; the reframe is documented in `docs/research/iter-8-mediadl-sizing.md` and the swap is explicitly tracked here. ICONS extraction: -326 LOC from ytkit.js, +7 regression tests. Cumulative N11 M-phase since iter-7: **44,264 → 43,081 = -1,183 LOC (-2.67%)**.
+
+### Iter-8 audit/hardening extension — shipped (v4.5.2)
+
+- [x] **N27 — Local bridge permission surface narrowed.** Manifest host permissions removed `localhost` aliases and retained explicit `127.0.0.1` loopback origins for Astra Downloader and local AI endpoints.
+- [x] **N28 — Popup diagnostics and accessibility audits made enforceable.** Popup selector-health metric rendering now uses DOM APIs instead of `innerHTML`; the popup a11y audit parses real buttons, dynamic confirmation states, switch focus styling, dialog semantics, and keyboard hooks as failing checks.
+- [x] **N29 — Validation and release gates made harder to drift.** Syntax checks recursively cover extension/script JavaScript, version checks include `package-lock.json`, `build-extension.js --bump` updates lockfile version fields, and CI delegates tag validation to `scripts/check-versions.js`.
+- [x] **N30 — Downloader dev/test and uninstall cleanup hardened.** `pytest.ini` pins pytest-qt to PyQt6; frozen uninstall delayed cleanup validates the install directory and invokes PowerShell with literal-path arguments rather than string-built recursive deletion.
 
 ### Later — investigated, deferred
 

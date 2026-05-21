@@ -6,6 +6,50 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.5.2] - 2026-05-21 - Extreme audit hardening: permissions, audits, CI, pytest, uninstall cleanup
+
+Deep reliability/security pass on top of v4.5.1. No feature expansion;
+the work tightens trust boundaries, validation coverage, and release
+ergonomics.
+
+### Security and safety
+
+- Removed wildcard `http://localhost:*` extension host permissions.
+  The downloader/Ollama local bridge now exposes only explicit
+  `http://127.0.0.1:*` permission surfaces, matching the background
+  allowlist's existing DNS-rebinding-resistant stance.
+- Replaced popup selector-health metric HTML assembly with DOM/text-node
+  construction so diagnostic text cannot become an `innerHTML` sink.
+- Hardened Astra Downloader frozen-app uninstall cleanup: delayed
+  install-dir removal now validates the install path shape and invokes
+  PowerShell with `Remove-Item -LiteralPath $args[0]` instead of
+  string-built shell deletion.
+
+### Validation and developer experience
+
+- `scripts/audit-popup-a11y.js` now parses actual popup buttons,
+  validates dynamic confirmation labels, and fails on missing switch
+  focus-visible, dialog, or keyboard affordances instead of printing a
+  red finding while exiting successfully.
+- `scripts/check-syntax.js` now recursively checks JavaScript under
+  `extension/` and `scripts/`, plus root build scripts, so extracted
+  core modules cannot fall outside syntax validation.
+- Version drift checks now include `package-lock.json`, and
+  `build-extension.js --bump` updates the lockfile's root/package entry.
+  GitHub Actions delegates tag validation to `scripts/check-versions.js`
+  so CI and local release checks use the same source of truth.
+- Added `pytest.ini` to pin pytest-qt to PyQt6 and keep
+  `python -m pytest astra_downloader` from importing PySide6 before the
+  app imports PyQt6.
+
+### Tests
+
+- Full JS test suite: 311 -> 315 total tests.
+- Python downloader tests: 80 -> 82 with uninstall cleanup coverage.
+- Full validation for this cut: `npm test`, `npm run check`,
+  `python -m pytest astra_downloader`, `npm audit --omit=dev`, and the
+  release build path.
+
 ## [4.5.1] - 2026-05-20 — N11 M-phase #6 + N21/N22 architectural regression pins
 
 Test-and-extraction patch on top of v4.5.0. No user-visible behavior

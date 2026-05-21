@@ -3,6 +3,50 @@
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
 > H20 onward covers v3.23.0 (Pass 19).
 
+## H24 — Extreme audit hardening cut (v4.5.2)
+
+**Scope.** Repo-wide production-readiness pass over extension permissions,
+popup diagnostics/accessibility, release validation, and Astra Downloader
+cleanup/test reliability.
+
+**Issues fixed.**
+
+- **Loopback trust boundary mismatch.** The background local-bridge
+  allowlist had already rejected `localhost` aliases, but the manifest
+  still requested wildcard `http://localhost:*` host permissions. Removed
+  those host permissions and pinned the manifest to `127.0.0.1` loopback
+  origins only.
+- **Popup diagnostic HTML sink.** Selector-health metrics were assembled
+  with `template.innerHTML` even though the values were diagnostic text.
+  Rendering now uses DOM nodes and textContent.
+- **A11y audit false green.** The popup accessibility audit could print a
+  missing focus-visible selector while returning success. The script now
+  parses actual popup buttons and fails on missing button labels,
+  `role="switch"` focus-visible coverage, dialog semantics, and keyboard
+  handlers.
+- **Validation drift.** Syntax checking was a stale hardcoded list and
+  omitted newer extracted modules. It now recursively checks JavaScript in
+  `extension/` and `scripts/`, plus root build scripts. Version checks now
+  include `package-lock.json`, and the build bump path updates the lockfile.
+- **Downloader pytest import race.** `pytest-qt` could import PySide6 before
+  app code imported PyQt6, failing collection with a Qt DLL mismatch.
+  `pytest.ini` pins `qt_api = pyqt6`.
+- **Frozen uninstall shell deletion.** Delayed install-dir cleanup used a
+  string-built shell command. It now validates the install-dir shape and
+  passes the literal path as a PowerShell argument to `Remove-Item`.
+
+**Regression pins.** `tests/hardening.test.js` covers the manifest
+permission boundary, popup DOM metric rendering, recursive syntax check
+coverage, popup switch focus-visible style, package-lock version gating,
+and lockfile bump behavior. `astra_downloader/test_astra_downloader.py`
+covers safe/unsafe delayed uninstall cleanup paths.
+
+**Verified for v4.5.2.** `npm test`, `npm run check`,
+`python -m pytest astra_downloader`, `npm audit --omit=dev`, and the
+five-artifact build path.
+
+---
+
 ## H23 — Subscriptions list-view removal — audit-only (v3.23.0, NX7)
 
 **Trigger.** YouTube removed list-view from Subscriptions in Feb 2026,

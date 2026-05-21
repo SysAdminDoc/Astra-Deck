@@ -89,10 +89,9 @@ if (bumpType) {
         }
     }
 
-    // Keep package.json in sync — the CI tag-version check validates all
-    // four sources (manifest.json, ytkit.js, YTKit.user.js, package.json)
-    // against the git tag, so a manual bump of the other three would still
-    // break the release if package.json drifted.
+    // Keep package.json + package-lock.json in sync. The local/CI version
+    // gate validates all version surfaces, so a bump that leaves the lockfile
+    // stale should fail before artifacts are shipped.
     const pkgPath = path.join(__dirname, 'package.json');
     if (fs.existsSync(pkgPath)) {
         const pkgRaw = fs.readFileSync(pkgPath, 'utf8');
@@ -100,6 +99,23 @@ if (bumpType) {
         if (updated !== pkgRaw) {
             fs.writeFileSync(pkgPath, updated, 'utf8');
             console.log('Updated package.json version');
+        }
+    }
+    const pkgLockPath = path.join(__dirname, 'package-lock.json');
+    if (fs.existsSync(pkgLockPath)) {
+        const lock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+        let changed = false;
+        if (lock.version !== version) {
+            lock.version = version;
+            changed = true;
+        }
+        if (lock.packages && lock.packages[''] && lock.packages[''].version !== version) {
+            lock.packages[''].version = version;
+            changed = true;
+        }
+        if (changed) {
+            fs.writeFileSync(pkgLockPath, JSON.stringify(lock, null, 2) + '\n', 'utf8');
+            console.log('Updated package-lock.json version');
         }
     }
 

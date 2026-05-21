@@ -1222,6 +1222,12 @@ button:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
+[role="switch"]:focus-visible {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
+}
+
 /* ── Switch ── */
 
 .switch {
@@ -1537,6 +1543,7 @@ textarea:focus-visible {
   .switch::after { background: CanvasText; }
 
   .toggle:focus-visible,
+  [role="switch"]:focus-visible,
   .search-row input:focus-visible,
   button:focus-visible {
     outline: 2px solid Highlight;

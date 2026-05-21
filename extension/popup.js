@@ -635,6 +635,20 @@ function showStatus(message = '', type = 'info', durationMs = 2800) {
     }
 }
 
+function appendSelectorMetric(parent, text, className = '') {
+    if (parent.childNodes.length > 0) {
+        parent.appendChild(document.createTextNode(' · '));
+    }
+    if (className) {
+        const span = document.createElement('span');
+        span.className = className;
+        span.textContent = text;
+        parent.appendChild(span);
+        return;
+    }
+    parent.appendChild(document.createTextNode(text));
+}
+
 function isVisibleFocusableElement(element) {
     if (!(element instanceof HTMLElement)) return false;
     if (element.hidden || element.closest('[hidden]')) return false;
@@ -1169,16 +1183,10 @@ async function renderSelectorHealthDashboard() {
                     + (surface.needsFreshCapture ? ' 📷' : '');
                 const stats = document.createElement('span');
                 stats.className = 'sh-stats';
-                const parts = [];
-                parts.push(`${surface.hits || 0} hits`);
-                if (surface.errors > 0) parts.push(`<span class="sh-errors">${surface.errors} err</span>`);
-                if (surface.misses > 0) parts.push(`${surface.misses} miss`);
-                if (surface.shapeDrifts > 0) parts.push(`<span class="sh-drifts">${surface.shapeDrifts} drift</span>`);
-                // Use safe DOM construction (no innerHTML on YT page; this
-                // is the popup so manifest CSP applies, but stay defensive).
-                const tmpl = document.createElement('template');
-                tmpl.innerHTML = parts.join(' · ');
-                stats.appendChild(tmpl.content);
+                appendSelectorMetric(stats, `${surface.hits || 0} hits`);
+                if (surface.errors > 0) appendSelectorMetric(stats, `${surface.errors} err`, 'sh-errors');
+                if (surface.misses > 0) appendSelectorMetric(stats, `${surface.misses} miss`);
+                if (surface.shapeDrifts > 0) appendSelectorMetric(stats, `${surface.shapeDrifts} drift`, 'sh-drifts');
                 li.appendChild(name);
                 li.appendChild(stats);
                 selectorHealthList.appendChild(li);

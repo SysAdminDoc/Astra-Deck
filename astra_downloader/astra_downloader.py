@@ -2884,17 +2884,48 @@ def run_uninstall():
         except Exception:
             write_persistent_log("Install directory will be removed after exit.")
             if is_frozen_app():
-                cleanup_cmd = (
-                    f'ping 127.0.0.1 -n 3 > nul & '
-                    f'rmdir /S /Q {subprocess.list2cmdline([str(INSTALL_DIR)])}'
-                )
-                subprocess.Popen(['cmd', '/C', cleanup_cmd],
-                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                 creationflags=CREATE_NO_WINDOW)
+                spawn_delayed_install_dir_removal(INSTALL_DIR)
 
     QMessageBox.information(None, "Uninstall Complete",
                             "Astra Downloader has been uninstalled.\nYour downloaded videos were not removed.")
     sys.exit(0)
+
+
+def is_safe_install_dir_for_removal(path):
+    """Return True only for the app-owned install directory shape."""
+    try:
+        resolved = Path(path).resolve()
+    except Exception:
+        return False
+    if not resolved.is_absolute():
+        return False
+    if resolved.name != "AstraDownloader":
+        return False
+    # Avoid ever treating a drive root / user profile root as removable.
+    return len(resolved.parts) >= 3
+
+
+def spawn_delayed_install_dir_removal(path=INSTALL_DIR):
+    """Remove the frozen app directory after this process exits."""
+    if not is_safe_install_dir_for_removal(path):
+        write_persistent_log(f"Refused delayed removal for unexpected install dir: {path}")
+        return False
+    target = str(Path(path).resolve())
+    if sys.platform == 'win32':
+        script = "Start-Sleep -Seconds 2; Remove-Item -LiteralPath $args[0] -Recurse -Force"
+        subprocess.Popen(
+            ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script, target],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    else:
+        subprocess.Popen(
+            [sys.executable, '-c', 'import shutil,sys,time; time.sleep(2); shutil.rmtree(sys.argv[1], ignore_errors=True)', target],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    return True
 
 # ══════════════════════════════════════════════════════════════
 # GUI WIDGETS
