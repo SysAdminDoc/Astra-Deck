@@ -6,6 +6,54 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.24.0] - 2026-05-21 - v5.0.0 foundation #19: interactive category expansion + per-key edit
+
+Promotes the v4.23.0 read-only category overview to a real editor.
+Clicking a category row now expands a per-key sub-list. Boolean
+keys render as toggle switches that persist directly through the
+existing `writeSetting` path; non-boolean keys render a read-only
+value badge with a type-aware display (the in-page workspace
+remains the editing surface for non-boolean types).
+
+### Added
+
+- `extension/popup.js` — `schemaOverviewState.expanded` Set
+  tracking which category rows are currently disclosed. The
+  category head becomes a real `<button>` with `aria-expanded` so
+  screen readers + keyboard activation work out of the box.
+  Toggling re-renders the section while preserving open state.
+- `extension/popup.js` — `buildSchemaOverviewKeyRow(entry, settings)`
+  helper. Boolean entries render a `role="switch"` button bound to
+  `writeSetting`; other types render a read-only badge with
+  type-aware display: strings truncate at 24 chars, numbers show
+  raw value, arrays show `[length]`, objects show `{keyCount}`,
+  null/undefined show `—`.
+- `extension/popup.css` — `.so-row-head`, `.so-key-list`,
+  `.so-key-row`, `.so-key-switch`, `.so-key-value` styles. Switch
+  uses 6 px radius (well under half-height of the ~15 px button
+  so it stays distinctly rectangular per house style). Two-column
+  grid retired in favour of a single-column flex layout — needed
+  so expanded rows can grow vertically without breaking layout.
+- `tests/hardening.test.js` — 5 new regressions: state Set is
+  declared, head element is a real button with `aria-expanded`,
+  buildSchemaOverviewKeyRow exists with the right shape (switch
+  path + read-only badge path), switch radius stays ≤8 px (no
+  stadium aesthetic), and writeSetting remains the single write
+  entry-point for both quick-toggle + schema-overview consumers.
+
+### Why
+
+The v4.23.0 read-only overview made the schema visible; v4.24.0
+makes it actually edit-driving. The popup is now the first place
+in the product where every boolean schema key can be toggled —
+the existing QUICK_TOGGLES surface only exposed 18 keys; this
+slice opens up access to all 264 boolean keys (the remaining ~90
+non-boolean entries stay read-only for now since rendering each
+type's right editor — color picker, textarea, multi-select — is
+a follow-up). Keeping `writeSetting` as the single write entry-
+point means the existing `chrome.storage.onChanged` listener fans
+the update out to all open tabs identically.
+
 ## [4.23.0] - 2026-05-21 - v5.0.0 foundation #18: schema-driven category overview in popup
 
 Closes the visible end of the v5.0.0 schema-consumption arc: the

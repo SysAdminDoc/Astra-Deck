@@ -4925,3 +4925,79 @@ test('v4.23.0 schemaOverviewCountTpl placeholders cover enabled/total/categories
     assert.match(tpl, /\{total\}/,      'tpl must reference {total}');
     assert.match(tpl, /\{categories\}/, 'tpl must reference {categories}');
 });
+
+// ── v4.24.0 NX1: interactive category expansion in schema overview ──
+
+test('v4.24.0 popup.js declares schemaOverviewState with an expanded Set', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /const schemaOverviewState = \{ expanded: new Set\(\) \};/,
+        'popup.js must define schemaOverviewState with an expanded Set');
+});
+
+test('v4.24.0 popup.js builds clickable category disclosure rows via <button> head', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // The head must be a real <button> so accessibility comes for free.
+    assert.match(src, /const head = document\.createElement\('button'\)/,
+        'category head must be a real button element');
+    assert.match(src, /head\.setAttribute\('aria-expanded',/,
+        'category head must declare aria-expanded for SR consumers');
+    assert.match(src, /schemaOverviewState\.expanded\.has\(cat\)/,
+        'category head must reflect expanded state from schemaOverviewState');
+});
+
+test('v4.24.0 popup.js defines buildSchemaOverviewKeyRow with boolean switch + read-only badge paths', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /function buildSchemaOverviewKeyRow\(entry, settings\)/,
+        'popup.js must define buildSchemaOverviewKeyRow');
+    // Boolean path uses a role=switch button and calls writeSetting.
+    assert.match(src, /btn\.setAttribute\('role', 'switch'\)/,
+        'boolean rows must use role="switch"');
+    assert.match(src, /await writeSetting\(entry\.key, next\)/,
+        'boolean rows must persist via writeSetting');
+    // Non-boolean rows render a read-only value badge with a type-aware
+    // display (string/number/array/object).
+    assert.match(src, /\['\[' \+ \(Array\.isArray\(value\) \? value\.length : 0\) \+ '\]'\]|'\[' \+ \(Array\.isArray\(value\) \? value\.length : 0\) \+ '\]'/,
+        'array values must render as [length]');
+});
+
+test('v4.24.0 popup.css declares the new disclosure + switch styles without pill backdrops', () => {
+    const css = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(css, /\.so-row-head \{/,
+        'popup.css must define the category head button');
+    assert.match(css, /\.so-key-list \{/,
+        'popup.css must define the per-category key sub-list');
+    assert.match(css, /\.so-key-switch \{/,
+        'popup.css must define the boolean switch');
+    // Switch radius must stay under the stadium ban — schema overview
+    // section may not use border-radius >= 14px (well under the
+    // ~15px-tall switch's half-height).
+    const block = css.slice(css.indexOf('.so-key-switch '));
+    const radiusMatch = block.match(/\.so-key-switch \{[^}]*border-radius:\s*(\d+)px/s);
+    assert.ok(radiusMatch, 'switch must declare a border-radius');
+    const radius = parseInt(radiusMatch[1], 10);
+    assert.ok(radius <= 8,
+        '.so-key-switch radius must stay <= 8px to avoid stadium/pill aesthetic (got ' + radius + 'px)');
+});
+
+test('v4.24.0 popup quickly persists schema-overview toggle writes via the existing writeSetting path', () => {
+    // The schema-overview switch and the QUICK_TOGGLES rows must share
+    // the same write surface (writeSetting → SETTINGS_STORAGE_KEY).
+    // This stops a future refactor from accidentally splitting them
+    // into divergent persistence paths.
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Both consumers must use writeSetting — count occurrences to
+    // catch a future split.
+    const writeCalls = (src.match(/writeSetting\(/g) || []).length;
+    assert.ok(writeCalls >= 2,
+        'writeSetting() must be the single write entry-point (was called ' + writeCalls + 'x — expected >=2)');
+});
