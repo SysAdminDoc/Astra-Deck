@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.17.0",
+  "version": "4.18.0",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
@@ -123,6 +123,7 @@
         "core/lifecycle-route-bridge.js",
         "features/subtitles/index.js",
         "features/video-filters/index.js",
+        "features/blue-light-filter/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -163,6 +164,7 @@
         "core/lifecycle-route-bridge.js",
         "features/subtitles/index.js",
         "features/video-filters/index.js",
+        "features/blue-light-filter/index.js",
         "ytkit.js"
       ],
       "all_frames": true,

@@ -4449,3 +4449,80 @@ test('v4.17.0 features/video-filters loads before ytkit.js in both content_scrip
     }
     assert.ok(validated >= 1);
 });
+
+// ── v4.18.0 NX1: blue-light-filter feature peel ──
+
+test('v4.18.0 features/blue-light-filter exports buildBlueLightRgba + OVERLAY_FIXED_CSS', () => {
+    delete require.cache[require.resolve('../extension/features/blue-light-filter/index.js')];
+    const stub = {};
+    const prev = global.YTKitFeatures;
+    global.YTKitFeatures = stub;
+    const mod = require('../extension/features/blue-light-filter/index.js');
+    global.YTKitFeatures = prev;
+    assert.equal(typeof mod.buildBlueLightRgba, 'function');
+    assert.ok(mod.featureSpec && mod.featureSpec.id === 'blueLightFilter');
+    assert.equal(mod.featureSpec.category, 'playback-audio');
+    assert.ok(mod.OVERLAY_FIXED_CSS && mod.OVERLAY_FIXED_CSS.zIndex === '2147483646',
+        'OVERLAY_FIXED_CSS must lock the z-index at the documented value');
+    assert.ok(stub.blueLightFilter, 'must register on globalThis.YTKitFeatures');
+});
+
+test('v4.18.0 buildBlueLightRgba matches the prior inline curve byte-for-byte at the schema default', () => {
+    const { buildBlueLightRgba } = require('../extension/features/blue-light-filter/index.js');
+    // Schema default is blueLightIntensity = 30. The prior inline rule
+    // computed intensity = 30/100 = 0.3 → rgba(255, 156, 42, 0.105).
+    assert.equal(buildBlueLightRgba({}),                           'rgba(255, 156, 42, 0.105)');
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: 30 }),   'rgba(255, 156, 42, 0.105)');
+    // Alpha arithmetic exposes JS float precision in the rgba payload
+    // (0.1 * 0.35 → 0.034999999999999996). Asserting on the exact tail
+    // keeps the test honest about what CSS receives — a future refactor
+    // that "rounds" precision would also visibly change the rendered
+    // overlay, so the parity should be locked.
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: 10 }),   'rgba(255, 172, 54, 0.034999999999999996)');
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: 80 }),   'rgba(255, 116, 12, 0.27999999999999997)');
+});
+
+test('v4.18.0 buildBlueLightRgba clamps out-of-range intensity to the 10-80 schema bounds', () => {
+    const { buildBlueLightRgba } = require('../extension/features/blue-light-filter/index.js');
+    // Below 10 must clamp to 10 (sliders surface 10..80).
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: 0 }),    buildBlueLightRgba({ blueLightIntensity: 10 }));
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: -50 }),  buildBlueLightRgba({ blueLightIntensity: 10 }));
+    // Above 80 must clamp to 80.
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: 9999 }), buildBlueLightRgba({ blueLightIntensity: 80 }));
+    // Non-numeric / undefined fall back to the schema default of 30.
+    assert.equal(buildBlueLightRgba({ blueLightIntensity: undefined }), buildBlueLightRgba({ blueLightIntensity: 30 }));
+});
+
+test('v4.18.0 ytkit.js delegates to the module and keeps the inline fallback byte-parity', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    assert.match(src, /v4\.18\.0: tint RGBA computation is owned by/,
+        'ytkit.js must document the v4.18.0 peel');
+    assert.match(src, /globalThis\.YTKitFeatures\.blueLightFilter\.buildBlueLightRgba/,
+        'ytkit.js must look up buildBlueLightRgba on the namespace');
+    // Inline fallback's arithmetic must still appear verbatim.
+    assert.match(src, /Math\.round\(180 - intensity \* 80\)/,
+        'inline fallback must preserve the green-channel formula');
+    assert.match(src, /Math\.round\(60 - intensity \* 60\)/,
+        'inline fallback must preserve the blue-channel formula');
+    assert.match(src, /intensity \* 0\.35/,
+        'inline fallback must preserve the alpha-channel formula');
+});
+
+test('v4.18.0 features/blue-light-filter loads before ytkit.js in both content_script entries', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const blIdx = cs.js.indexOf('features/blue-light-filter/index.js');
+        assert.notEqual(blIdx, -1, 'manifest must include features/blue-light-filter/index.js');
+        assert.ok(blIdx < ytkitIdx, 'features/blue-light-filter/index.js must load before ytkit.js');
+        const vfIdx = cs.js.indexOf('features/video-filters/index.js');
+        assert.ok(vfIdx < blIdx,
+            'features/blue-light-filter/index.js must load after features/video-filters/index.js (peel-order grouping)');
+    }
+});

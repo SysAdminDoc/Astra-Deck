@@ -21,8 +21,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.15.0 | Privacy quick-toggles in popup (new `Privacy` group, padlock glyph) + 4 tests | 379 | +4 |
 | v4.16.0 | Schema-driven risk badges on popup toggle rows (api / local-companion / experimental / store-risk) + 4 tests | 383 | +4 |
 | v4.17.0 | Second feature peel — `features/video-filters/buildVideoFilterCss()` + isIdentity + clamping + 6 tests | 389 | +6 |
+| v4.18.0 | Third feature peel — `features/blue-light-filter/buildBlueLightRgba()` + OVERLAY_FIXED_CSS + 5 tests | 394 | +5 |
 
-Net: 7 new `extension/core/` modules, 2 feature carve-outs (`features/subtitles/`, `features/video-filters/`), 1 user-visible popup data-flow surface, 1 new popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, +74 hardening tests (315 → 389), 12 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 3 feature carve-outs (`features/subtitles/`, `features/video-filters/`, `features/blue-light-filter/`), 1 user-visible popup data-flow surface, 1 new popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, +79 hardening tests (315 → 394), 13 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 
@@ -1226,7 +1227,7 @@ Features:
 - [~] Add selector health system and versioned selector packs _(read-side delivered in v4.8.0 — `extension/core/selector-health.js` exports `createSelectorHealth()` + `summarizeSelectorHealth` + `rankSelectorProblems` + `formatSelectorCopyReport`. Versioned selector-packs/ directory split still pending; current `core/selectors.js` continues as the consolidated source.)_
 - [x] Add route-aware observer coordinator _(delivered in v4.9.0 — `extension/core/lifecycle-route-bridge.js` self-installs against `core/navigation.js` and `core/feature-lifecycle.js`; every yt-navigate-finish / yt-page-data-updated / popstate / watch-flexy mutation auto-increments the lifecycle route token via `notifyRouteChange()`. 4 hardening tests pin the contract + load order.)_
 - [x] Add data-flow panel v1 with API origins and permission explanations _(complete in v4.12.0 — popup data-flow section bundled with the v5.0.0 core modules, gated on `privacyDataFlowPanel`, reactive to `chrome.storage.onChanged`, no pill backdrops per house style, all 10 locales seeded, 7 new hardening tests including a background.js↔catalogue origin parity gate.)_
-- [~] Extract feature modules from the monolith by category _(2/18 peeled — v4.13.0 subtitles + v4.17.0 video-filters. Both follow the same pattern: pure CSS-builder helper out, in-monolith delegating consumer with byte-identical fallback for the userscript. 12 hardening tests now pin the two parity contracts. 16 categories still in the monolith.)_
+- [~] Extract feature modules from the monolith by category _(3 peels — v4.13.0 subtitles, v4.17.0 video-filters, v4.18.0 blue-light-filter. Pattern: pure helper out, monolith delegating consumer, byte-identical fallback for the userscript. 17 hardening tests now pin the three parity contracts. 15 monolith feature blocks still to peel.)_
 - [~] Extract `showToast` into `core/toast.js` _(pure helpers peeled in v4.14.0 — `inferToastTone`/`getToastRgb`/`getToastBadgeLabel`/`getToastAriaDefaults` + `TONE_RGB`/`TONE_BADGE`. 6 hardening tests pin the parity. DOM-touching showToast/dismissToast still in the monolith; v5.0.0 "single live region" primitive is the next step.)_
 
 Acceptance criteria:
