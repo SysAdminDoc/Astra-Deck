@@ -18,8 +18,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.12.0 | popup data-flow panel UI (HTML + CSS + JS + 10-locale i18n + 7 tests) | 363 | +7 |
 | v4.13.0 | First feature peel — `features/subtitles/buildSubtitleCss()` + 6 tests | 369 | +6 |
 | v4.14.0 | Toast helpers peeled into `core/toast.js` (+ `getToastAriaDefaults`) + 6 tests | 375 | +6 |
+| v4.15.0 | Privacy quick-toggles in popup (new `Privacy` group, padlock glyph) + 4 tests | 379 | +4 |
 
-Net: 7 new `extension/core/` modules, 1 new feature carve-out (`extension/features/subtitles/`), 1 user-visible popup surface, +60 hardening tests (315 → 375), 9 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 1 new feature carve-out (`extension/features/subtitles/`), 1 user-visible popup data-flow surface, 1 new popup `Privacy` quick-toggle group, +64 hardening tests (315 → 379), 10 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 

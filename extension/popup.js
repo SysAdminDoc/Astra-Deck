@@ -19,6 +19,13 @@ const QUICK_TOGGLES = [
     { key: 'cleanShareUrls',         group: 'Utilities',         name: 'Clean URLs',             desc: 'Remove tracking from share links' },
     { key: 'transcriptViewer',       group: 'Utilities',         name: 'Transcript Sidebar',     desc: 'Read, jump, and export captions' },
     { key: 'debugMode',              group: 'Utilities',         name: 'Debug Mode',             desc: 'Record detailed local diagnostics' },
+    // v4.15.0: privacy + profile toggles surfaced in the popup so the
+    // v4.10.0 data-flow panel + v4.7.0 policy-profile machinery are
+    // actually discoverable. safeStoreProfile stays on by default; the
+    // others are off and become opt-in via the popup.
+    { key: 'privacyDataFlowPanel',   group: 'Privacy',           name: 'Data-Flow Panel',        desc: 'Show every API origin Astra Deck can contact' },
+    { key: 'safeStoreProfile',       group: 'Privacy',           name: 'Store-Safe Profile',     desc: 'Hide github-full toggles + scrub keys on export' },
+    { key: 'githubFullProfile',      group: 'Privacy',           name: 'GitHub-Full Profile',    desc: 'Unlock github-full toggles (e.g. Cobalt, AI keys)' },
 ];
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -40,6 +47,13 @@ const GROUP_ICONS = {
     'Utilities': [
         { tag: 'path',    attrs: { d: 'M11 2l3 3-1.5 1.5a2.5 2.5 0 0 1-3.5 0 2.5 2.5 0 0 1 0-3.5L11 2z' } },
         { tag: 'line',    attrs: { x1: '9.5', y1: '6.5', x2: '3', y2: '13' } },
+    ],
+    // v4.15.0: padlock glyph for the Privacy group. Two pieces: a
+    // rectangular body + a U-shaped shackle. House style — square
+    // corners, no pill backdrop, matches the other group icons.
+    'Privacy': [
+        { tag: 'rect',    attrs: { x: '3.5', y: '7',   width: '9',   height: '7', rx: '1' } },
+        { tag: 'path',    attrs: { d: 'M5.5 7 V5 a2.5 2.5 0 0 1 5 0 V7' } },
     ],
 };
 

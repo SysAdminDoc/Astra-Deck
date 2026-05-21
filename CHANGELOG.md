@@ -6,6 +6,52 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.15.0] - 2026-05-21 - v5.0.0 foundation #10: privacy quick-toggles in popup
+
+Makes the v4.12.0 data-flow panel and the v4.7.0 store-safe vs
+github-full profile machinery discoverable without leaving the
+popup. Three new quick toggles + a new "Privacy" group rendered
+with a padlock glyph (square-cornered, house-style — no pill
+backdrop).
+
+### Added
+
+- `extension/popup.js` — `QUICK_TOGGLES` array gains three entries
+  in a new `Privacy` group:
+  * `privacyDataFlowPanel` — Show every API origin Astra Deck can
+    contact (drives the v4.12.0 popup data-flow section).
+  * `safeStoreProfile` — Hide github-full toggles + scrub keys on
+    export.
+  * `githubFullProfile` — Unlock github-full toggles (e.g. Cobalt,
+    AI keys).
+- `extension/popup.js` — `GROUP_ICONS['Privacy']` declares the
+  padlock glyph (rect body + U-shaped shackle path) so the
+  Privacy group renders consistently alongside the other five
+  groups.
+- `tests/hardening.test.js` — 4 new regressions: QUICK_TOGGLES
+  contains the three new keys under group `Privacy`, GROUP_ICONS
+  defines the padlock body+shackle, popup.html advertises the new
+  total (18 controls), and every new toggle key exists in the
+  v4.6.0 schema.
+
+### Changed
+
+- `extension/popup.html` — `#resultsState` text bumped from "15
+  controls" to "18 controls" to match the new total. (The actual
+  count is computed dynamically by popup.js; the static HTML value
+  is just the initial-paint placeholder before the JS hydrates.)
+
+### Why
+
+The v4.12.0 popup data-flow panel was schema-gated on
+`privacyDataFlowPanel` but there was no popup-level way to flip
+that setting — users had to open the in-page workspace overlay to
+enable it. Adding the three privacy toggles to the popup makes the
+v5.0.0 trust surface a one-click discovery from the toolbar.
+`safeStoreProfile` is already on by default (declared in the
+schema), so the "Privacy: 1/3 enabled" badge gives users a quick
+read on their effective profile.
+
 ## [4.14.0] - 2026-05-21 - v5.0.0 foundation #9: core/toast.js helper peel
 
 Second peel pass from the `extension/ytkit.js` monolith. The pure
