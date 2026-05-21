@@ -5001,3 +5001,77 @@ test('v4.24.0 popup quickly persists schema-overview toggle writes via the exist
     assert.ok(writeCalls >= 2,
         'writeSetting() must be the single write entry-point (was called ' + writeCalls + 'x — expected >=2)');
 });
+
+// ── v4.25.0 NX1: schema-overview search integration ──
+
+test('v4.25.0 renderSchemaOverview reads from q.value and filters categories', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Source-string assertions on the new code paths so a future
+    // refactor can't accidentally split the search wiring.
+    assert.match(src, /const term = \(q && q\.value \? q\.value : ''\)\.toLowerCase\(\)\.trim\(\);/,
+        'renderSchemaOverview must read q.value into a normalised term');
+    assert.match(src, /const matchEntry = \(entry\) =>/,
+        'renderSchemaOverview must declare an inline matchEntry helper');
+    assert.match(src, /entry\.key\.toLowerCase\(\)\.includes\(term\)/,
+        'matchEntry must check the storage key');
+    assert.match(src, /entry\.category\.toLowerCase\(\)\.includes\(term\)/,
+        'matchEntry must check the category name');
+});
+
+test('v4.25.0 categories with zero matches are hidden when a search term is active', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /if \(term && bucket\.matches === 0\) continue;/,
+        'renderSchemaOverview must skip categories with zero matching keys when a term is active');
+});
+
+test('v4.25.0 a search match force-expands the category row', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    assert.match(src, /const isExpanded = \(term && bucket\.matches > 0\) \|\| schemaOverviewState\.expanded\.has\(cat\);/,
+        'renderSchemaOverview must force-expand on a term match');
+});
+
+test('v4.25.0 the existing q.addEventListener input handler also refreshes the schema overview', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // The debounced search input handler must call BOTH render() and
+    // renderSchemaOverview() so the two surfaces stay in sync.
+    const blockStart = src.indexOf("q.addEventListener('input'");
+    assert.ok(blockStart !== -1, 'q input listener must exist');
+    const blockEnd = src.indexOf("});", blockStart);
+    const block = src.slice(blockStart, blockEnd);
+    assert.match(block, /render\(popupState\.settings, q\.value\);/,
+        'input listener must call render()');
+    assert.match(block, /renderSchemaOverview\(\);/,
+        'input listener must also call renderSchemaOverview()');
+});
+
+test('v4.25.0 matchEntry covers booleans and non-booleans alike (key + category fuzzy match)', () => {
+    // Smoke-test the match logic by running it against the live
+    // schema. A search for "subtitle" must find at least the subtitles
+    // category's seven keys; a search for "sponsor" must find the
+    // ~9 SponsorBlock keys; a totally fake term must find zero.
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const matchTerm = (term) => SETTINGS_SCHEMA
+        .filter((e) => !e.internal)
+        .filter((e) => e.key.toLowerCase().includes(term)
+                    || e.category.toLowerCase().includes(term));
+    assert.ok(matchTerm('subtitle').length >= 7,
+        'subtitle search must find at least 7 keys (was ' + matchTerm('subtitle').length + ')');
+    // `vvf` matches the six video-visual-filter sub-knobs by key prefix.
+    assert.ok(matchTerm('vvf').length >= 6,
+        'vvf search must find at least 6 keys (was ' + matchTerm('vvf').length + ')');
+    // Category-name match exercises the second branch of matchEntry —
+    // `downloads` is the v4.6.0 category name housing the local
+    // companion + Cobalt + handoff keys.
+    assert.ok(matchTerm('downloads').length >= 5,
+        'downloads category search must find at least 5 keys (was ' + matchTerm('downloads').length + ')');
+    assert.equal(matchTerm('totally-fake-search-string-xyz').length, 0,
+        'fake search must find zero keys');
+});
