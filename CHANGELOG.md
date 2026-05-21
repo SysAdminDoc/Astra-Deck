@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-05-20 — N11 M-phase #4-#5 + yt-dlp 2026 external runtime surface
+
+Rolling-release cut bundling iter-5 / iter-6 / iter-7 / iter-8 hardening
+plus three iter-8 deliveries: TranscriptService + StorageManager
+extractions out of the 44k-line ytkit.js monolith (M-phase #4 and #5),
+and the AstraDownloader v1.5.0 Deno-runtime presence probe that surfaces
+yt-dlp's 2026 external-JS-runtime dependency on the wire so field
+installs see a "Deno: missing" pill instead of silent YouTube
+download failures.
+
 ### Modularization (iter-8 — N11 M-phase continues)
 
 - **TranscriptService extracted to `extension/core/transcript-service.js`**
