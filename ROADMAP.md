@@ -1,86 +1,131 @@
-# Astra Deck Product Superset Roadmap
+# Astra Deck Roadmap
 
-> Version convention: `Astra Deck vX.Y.Z`
-> Current repo version observed: `Astra Deck v4.5.2` (extreme audit hardening cut, 2026-05-21).
-> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**. Post-milestone hardening cuts v4.1.0 -> v4.4.0 shipped same day; v4.5.0 bundles iter-5/6/7/8 hardening, M-phase extractions, and the yt-dlp 2026 external-runtime surface; v4.5.1 pins architecture regressions; v4.5.2 tightens permissions, audits, CI/version gates, pytest reliability, and uninstall cleanup safety.
-> Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
-> Deliverable type for this run: extreme audit hardening (permissions, popup diagnostics/a11y, release gates, downloader cleanup safety).
-> Generated: 2026-05-21 (post-v4.5.2 audit refresh).
+Generated: 2026-05-21
+Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
+Current repo version observed: Astra Deck v4.5.2
+Planning track: Astra Deck v5.0.0 through v6.0.0
+Deliverable for this run: planning only. No feature code was written.
 
 ## Project Overview
 
-Astra Deck is planned as the most feature-dense YouTube power-user layer available: a privacy-first MV3 extension plus single-file userscript that combines the breadth of YouTube Alchemy, the stability of SponsorBlock and DeArrow, the control surface of Control Panel for YouTube, the filtering depth of BlockTube and Unhook, the local media pipeline of yt-dlp frontends, and a premium OLED interface designed for daily use.
+Astra Deck is a premium, privacy-first YouTube power-user layer for people who want one tool to replace a stack of YouTube enhancers, focus blockers, downloader helpers, transcript tools, playback controllers, UI themes, and research workflows.
 
-Chosen vehicle: both MV3 extension and userscript.
+One-line pitch: Astra Deck turns YouTube into a controlled, dark, dense, searchable, automatable media workstation while preserving a single-file userscript path and a store-ready MV3 extension path.
 
-- MV3 extension is mandatory for `chrome.downloads`, cookies, background fetch proxying, storage governance, cross-origin API calls, toolbar popup, optional DNR blocking, and store/GitHub distribution.
-- Userscript remains mandatory for single-file portability, MAIN-world access, direct page API access, and features that are awkward or impossible from an isolated extension content script.
-- Build rule: one source catalog, two artifacts. Extension code can stay modular. Userscript output must be readable, single-file, non-minified, and synchronized on every release.
+Chosen vehicle: both MV3 extension and single-file userscript.
 
-Design house style:
+- MV3 extension is required for `chrome.downloads`, background fetch proxying, safe cross-origin API calls, `chrome.storage`, store distribution, toolbar UI, optional declarative blocking, cookie-assisted local downloader handoff, and long-running background coordination.
+- Userscript is required for single-file portability, Tampermonkey/Violentmonkey users, easier MAIN-world access, self-hosted/GitHub distribution, rapid breakage hotfixes, and bypassing store-review delays when YouTube ships DOM changes.
+- Build rule: maintain one source catalog and produce two synchronized artifacts. Extension code can remain modular; userscript output must remain readable, single-file, non-minified, and parity-tested.
 
-- Premium paid-software look only: deep dark and OLED palettes, glass surfaces without browser-heavy blur, shimmer, hover lifts, spring easing, staggered entrances, branded accent, custom scrollbar, dense mode.
+Version convention:
+
+- Existing product versioning remains `Astra Deck vX.Y.Z`.
+- The superset roadmap begins at `v5.0.0` because the repo is already at `v4.5.2`; a greenfield `ProjectName v0.0.1` convention is not applicable to this existing release line.
+- Each phase below has explicit acceptance criteria and can ship independently.
+
+House style for every shipped UI:
+
+- Premium paid-software look only: deep dark and OLED palettes, glass surfaces, subtle shimmer, hover lift, spring easing, staggered entrances, branded accent, custom scrollbar, dense mode.
 - Never ship a light theme.
-- No confirmation dialogs. Every action applies immediately and reports via toast or status region.
-- No new keyboard shortcuts. Any competitor feature expressed as a shortcut gets a visible button, menu item, pointer gesture, or command surface instead.
-- Every feature must provide `destroy()` and clean up DOM, observers, timers, event listeners, style tags, storage listeners, and body/html classes.
-- Settings overlays use `pointer-events: none` while inactive.
-- CSS scopes to `html/body` feature classes and Astra-specific classes.
-- On YouTube, all HTML injection routes through a Trusted Types policy wrapper or DOM APIs.
-- Target obfuscated classes through structure, custom elements, IDs, aria labels, roles, and resilient fallback chains, not raw hashed classes.
+- Do not add keyboard shortcuts. Competitor shortcut features must become visible buttons, wheel gestures, pointer controls, command-palette actions, menu items, or context actions.
+- Do not use confirmation dialogs. Dangerous or destructive actions should apply immediately only when reversible; otherwise use undo toasts, soft-delete staging, disabled states, or an explicit visible action surface.
+- Every feature module must expose `init()` and `destroy()`; `destroy()` must fully remove DOM, observers, listeners, timers, pending async work, body/html classes, injected style tags, and storage listeners.
+- Settings overlays must use `pointer-events: none` while inactive and must not trap focus when hidden.
+- CSS must scope to Astra-owned classes on `html`/`body` and `data-ytkit-*` nodes.
+- On YouTube and other Trusted Types enforcing pages, all HTML injection must go through DOM APIs or the existing Trusted Types policy wrapper.
+- Selectors must prefer custom elements, IDs, roles, `aria-*`, `href`, and structure. Obfuscated or generated classes are fallbacks only.
+- Runtime observers must process added nodes only; no full-document scan per mutation.
 
 ## Phase 0: Local Repo Ingest
 
 ### Repo State Summary
 
-The checkout is clean on `main` and aligned with `origin/main`. Recent commits are factory-loop maintenance, audit-pass hardening, and the v3.25→v4.0.0 "beats every competitor" milestone push followed by same-day v4.1.0–v4.4.0 follow-up cuts. Current release surfaces at **v4.4.0** (Phase-0 of the iter-1 research snapshot below was authored against v3.22.0; build artifact paths in the directory tree later in this file reflect that historical snapshot — production artifacts are now `astra-deck-chrome-v4.4.0.{zip,crx}`, `astra-deck-firefox-v4.4.0.{zip,xpi}`, and `ytkit-v4.4.0.user.js`).
+Observed checkout: `C:\Users\--\repos\Astra-Deck`.
 
-Core product already exists:
+The repo is an existing production-grade YouTube extension/userscript project, not a scaffold. It already includes:
 
-- Chrome and Firefox MV3 extension in `extension/`.
-- Single-file userscript in `YTKit.user.js`.
-- Local companion downloader in `astra_downloader/`.
-- Current source architecture: `document_start` early CSS and MAIN-world bridge, `document_idle` isolated-world runtime and feature monolith, background service worker, toolbar popup, locale bundles, tests, and build scripts.
-- Current feature inventory: 250+ settings keys in `extension/default-settings.json`, with major areas already implemented: SponsorBlock, DeArrow, downloads through Astra Downloader, theater split, video/channel hiding, comments/live-chat polishing, transcript tools, AI summary, speed controls, visual filters, watch analytics, i18n, storage hardening, diagnostics, and userscript parity checks.
+- Chrome/Firefox MV3 extension under `extension/`.
+- Single-file userscript outputs in `YTKit.user.js` and historical archive builds.
+- MAIN-world bridge (`extension/ytkit-main.js`) and isolated-world content runtime (`extension/ytkit.js`).
+- Early anti-FOUC CSS (`extension/early.css`).
+- Background service worker fetch/download proxy (`extension/background.js`).
+- Local companion downloader (`astra_downloader/`) with PyQt/Flask/yt-dlp integration.
+- Popup/settings UI (`extension/popup.*`).
+- Locale bundles for 10 locales.
+- Core modules for navigation, selectors, storage, styles, Trusted Types, API limiting, diagnostics, transcript service, predicate sandboxing, icons, page/player helpers, and URL/video-type utilities.
+- Tests and audits for background behavior, core modules, SponsorBlock, DeArrow, theater split, userscript parity, storage size, settings migration, syntax, contrast, a11y, and repo paths.
 
-Important already-built assets:
+Observed current default settings count: 354 keys. The current `extension/default-settings.json` is a flat object with no per-key category metadata. The roadmap therefore treats settings taxonomy as a first-class v5 task.
 
-- `extension/ytkit.js`: 43,407 lines, primary feature monolith (post-N11 M-phase #1-#5 extractions; was 44,264 before iter-7, then 43,924 after iter-7 M-phase #1-#3, now 43,407 after iter-8 N18 + N19; -857 lines cumulative).
-- `extension/core/*.js`: 16 modules — storage (low-level), storage-manager (high-level cache), navigation, player, page, style, URL, environment, registry, selectors, trusted-html, api-limiter, diagnostic-log, predicate-sandbox, video-type, transcript-service.
-- `extension/ytkit-main.js`: MAIN-world bridge for quality/codec control.
-- `extension/background.js`: fetch proxy, downloads, cookies, toolbar messaging.
-- `extension/popup.*`: premium toolbar popup with quick toggles, data management, and i18n.
-- `extension/_locales/*`: 10 locale bundles.
-- `astra_downloader/astra_downloader.py`: local Flask/Qt downloader with yt-dlp and ffmpeg integration.
-- `scripts/build-selector-fixtures.js` and `tests/selector-regression.test.js`: MHTML-derived selector canary infrastructure.
+Already built or partially built:
 
-Not yet complete against the "beat everything" charter:
+- SponsorBlock integration with category toggles, cache fallback, and stale async invalidation.
+- DeArrow title/thumbnail replacement, cache caps, channel overrides, and original-title peek controls.
+- Return YouTube Dislike API fetch surface and card/watch ratio display settings.
+- Transcript service with 5-method failover: page player response, Innertube player endpoint, watch HTML fetch, caption regex, and DOM panel scrape.
+- Local downloader companion, local history/health panels, stream links panel, Cobalt fallback settings, format/quality defaults, and thumbnail/subtitle/screenshot download settings.
+- Large content-filtering surface: Shorts removal/redirect, hidden videos, duration/view filters, watched-ratio filters, mixes/playlists/live/upcoming filters, keyword/channel/comment filters, advanced local predicate settings.
+- UI and player polish: OLED/dense/classic/new-player restore settings, watch page tabs, theater split, player controls hiding, video zoom/rotation/filters, PiP, sleep timer, A/B loop, custom speed buttons, progress bar controls.
+- Research and productivity settings: AI summaries, local AI summary, transcript AI handoff, research transcript index/search, spaced review, watch history analytics, subscription groups.
+- Safety and diagnostics: safe/full feature profiles, privacy data-flow panel, diagnostic log, API retry/backoff, storage quota LRU, low-power profile, reduced-motion/forced-colors/a11y live-region settings.
 
-- Return YouTube Dislike is not shipped in the extension build.
-- SharedAudio userscript features are not ported to the extension.
-- Cobalt/direct-stream fallbacks are userscript-only or absent from the extension download path.
-- MAIN-world ad muting/blocking is not present in the extension.
-- PocketTube-grade subscription grouping and feed sorting are absent.
-- YouTube Redux-grade old-layout restoration is partial.
-- Control Panel-grade new-player UI restoration is partial.
-- Tweaks for YouTube-grade per-surface playback presets are partial.
-- Full note-taking, video research workspace, clipping, transcript search index, and study workflow are absent.
-- Store-safe and GitHub/self-host feature profiles are not yet separated.
-- Selector self-healing exists as a test/watchlist, not a runtime health system.
+Missing or needing a deeper build pass:
 
-### Product Tree Snapshot
+- Formal settings metadata categories for all 354 keys.
+- Runtime selector health dashboard that promotes MHTML fixture failures into user-visible diagnostics.
+- Self-healing selector resolver with versioned selector packs and capture provenance.
+- Full competitive feature parity validation against UnTrap, Enhancer for YouTube, Improve YouTube, YouTube Alchemy, YouTube Tweaks, Tweaks for YouTube, Unhook, BlockTube, PocketTube, SponsorBlock, DeArrow, Return YouTube Dislike, and Video Speed Controller.
+- Explicit store-safe vs GitHub/full-power packaging profiles with separate permission manifests and user-visible privacy copy.
+- Full subscription manager parity with PocketTube: nested groups, AI tags, dead-channel detection, group notifications, bulk unsubscribe, import/export.
+- Full study/work mode parity with YouFocus/UnTrap: mode history, per-video notes, focus timers, schedules, opening delays, and clean local export.
+- Comprehensive live-chat capture/fixtures for chat iframe internals.
+- Fresh capture for YouTube's new/Delhi/liquid-glass player chrome in all A/B variants.
+- README deliverable for the v5 product after implementation. This run only updates `ROADMAP.md`.
 
-The full physical checkout contains `.git`, `node_modules`, `build`, PyInstaller output, cache directories, and saved MHTML captures. The implementation-relevant tree is:
+### Full Repo Tree
+
+Source-controlled product tree plus local capture artifacts:
 
 ```text
 Astra-Deck/
   .github/
     ISSUE_TEMPLATE/
-    workflows/build.yml
-  .factory/
-    rubrics/
+      bug_report.md
+      feature_request.md
+    dependabot.yml
+    pull_request_template.md
+    workflows/
+      build.yml
+  .gitignore
+  .nvmrc
+  AGENTS.md
+  AstraDownloader.ico
+  CHANGELOG.md
+  CLAUDE.md
+  CONTRIBUTING.md
+  HARDENING.md
+  LICENSE
+  README.md
+  ROADMAP.md
+  YTKit.user.js
+  YT_Reaction_Spammer.user.js
   archive/
-    YTKit-v0.1.0.user.js ... YTKit-v2.1.0.user.js
+    YTKit-v0.1.0.user.js
+    YTKit-v0.2.0.user.js
+    YTKit-v0.3.0.user.js
+    YTKit-v0.4.0.user.js
+    YTKit-v0.5.0.user.js
+    YTKit-v0.6.0.user.js
+    YTKit-v0.7.0.user.js
+    YTKit-v0.8.0.user.js
+    YTKit-v1.0.0.user.js
+    YTKit-v1.1.0.user.js
+    YTKit-v1.2.0.user.js
+    YTKit-v1.2.1.user.js
+    YTKit-v1.3.0.user.js
+    YTKit-v2.0.0.user.js
+    YTKit-v2.1.0.user.js
   assets/
     cat.gif
     starfall.gif
@@ -90,25 +135,14 @@ Astra-Deck/
     build.py
     requirements.txt
     test_astra_downloader.py
-  build/
-    astra-deck-chrome-v3.22.0.crx
-    astra-deck-chrome-v3.22.0.zip
-    astra-deck-firefox-v3.22.0.xpi
-    astra-deck-firefox-v3.22.0.zip
+  build-extension.js
   docs/
     cws-submission-checklist.md
+    predicate-sandbox-investigation.md
     screen-reader-smoke.md
+    selector-fixture-workflow.md
     signing-keys.md
-    research/
-      iter-1-audit.md
-      iter-1-harvest.md
-      iter-1-landscape.md
-      iter-1-scored.md
-      iter-1-sources.md
-      iter-1-state-of-repo.md
-      iter-4-gap-fill.md
-      PHASE-2-5-SUMMARY.md
-      README.md
+  eslint.config.js
   extension/
     _locales/
       de/messages.json
@@ -121,25 +155,35 @@ Astra-Deck/
       pt_BR/messages.json
       ru/messages.json
       zh_CN/messages.json
+    background.js
     core/
+      api-limiter.js
+      diagnostic-log.js
       env.js
+      icons.js
       navigation.js
       page.js
       player.js
+      predicate-sandbox.js
+      registry.js
+      selectors.js
+      storage-manager.js
       storage.js
       styles.js
+      transcript-service.js
+      trusted-html.js
       url.js
+      video-type.js
+    default-settings.json
+    early.css
     icons/
+      128.png
       16.png
       32.png
       48.png
-      128.png
       brand-glyph.svg
       brand-wordmark-dark.svg
       brand-wordmark-light.svg
-    background.js
-    default-settings.json
-    early.css
     manifest.json
     popup.css
     popup.html
@@ -147,9 +191,13 @@ Astra-Deck/
     settings-meta.json
     ytkit-main.js
     ytkit.js
+  logo.png
   mhtml/
     WatchPage.mhtml
     YouTube.mhtml
+  package-lock.json
+  package.json
+  pytest.ini
   scripts/
     audit-popup-a11y.js
     audit-storage-size.js
@@ -159,12 +207,22 @@ Astra-Deck/
     check-i18n.js
     check-syntax.js
     check-versions.js
-    eslint-rules/no-post-await-addlistener.js
+    eslint-rules/
+      no-post-await-addlistener.js
     extract-i18n-keys.js
     generate-locales.js
     manifest-patch.js
     repo-paths.js
+  sync-userscript.js
   tests/
+    background.test.js
+    bugfix-validation.test.js
+    catalog-utils.test.js
+    core-foundation.test.js
+    core-icons.test.js
+    core-page-url.test.js
+    core-storage-manager.test.js
+    core-transcript-service.test.js
     features/
       dearrow.test.js
       sponsorblock.test.js
@@ -173,1180 +231,759 @@ Astra-Deck/
       settings-import-roundtrip.json
       yt-home.tokens.txt
       yt-watch.tokens.txt
-    helpers/source.js
-    background.test.js
-    bugfix-validation.test.js
-    catalog-utils.test.js
-    core-page-url.test.js
     hardening.test.js
+    helpers/
+      source.js
     repo-paths.test.js
     selector-regression.test.js
     settings-migration-roundtrip.test.js
     storage-size-audit.test.js
     userscript-parity.test.js
-  AGENTS.md
-  build-extension.js
-  CHANGELOG.md
-  CLAUDE.md
-  CONTRIBUTING.md
-  HARDENING.md
-  LICENSE
-  package-lock.json
-  package.json
-  README.md
-  ROADMAP.md
-  Subscriptions - YouTube.mhtml
-  sync-userscript.js
   theater-split.user.js
-  YT_Reaction_Spammer.user.js
-  YTKit.user.js
-  YTKit-v1.2.0.user.js
-  ytkit.pem
-  Worldwide Societal Collapse capture (*.mhtml)
+  Subscriptions - YouTube.mhtml
+  Worldwide Societal Collapse... - YouTube.mhtml
 ```
 
-### MHTML Capture Inventory
+Generated or dependency trees such as `.git/`, `node_modules/`, build outputs, PyInstaller output, caches, and editor state are not planning inputs and are excluded from this roadmap tree.
 
-All saved captures were decoded with MIME and quoted-printable handling. The saved pages include HTML and CSS parts, but no reusable inline script payloads, no CSP meta tags, and no visible GraphQL endpoint strings inside the captures. Endpoint/state extraction therefore comes from the live extension runtime and previous repo research, not from embedded capture scripts.
+### MHTML Capture Ground Truth
 
-| Capture | HTML bytes | CSS bytes | CSS parts | Tokens | Ground truth surfaces found |
-|---|---:|---:|---:|---:|---|
-| `mhtml/WatchPage.mhtml` | 951,329 | 4,059,546 | 75 | 3,487 | watch page, player, settings menu, comments, composer, related, panels, notifications |
-| `mhtml/YouTube.mhtml` | 396,038 | 3,954,853 | 70 | 3,399 | home feed, masthead, mini guide, Shorts shelf, popups, notifications |
-| `Subscriptions - YouTube.mhtml` | 1,032,769 | 3,846,383 | 70 | 3,404 | subscriptions grid, full guide, Shorts shelf, popups, notifications |
-| `Worldwide Societal Collapse...YouTube.mhtml` | 1,037,437 | 3,973,327 | 76 | 3,506 | watch page, player, settings menu, comments, composer, related, panels, notifications |
+All four local captures were treated as the DOM ground truth for current YouTube surfaces. The captures are MIME snapshots containing quoted-printable/base64 encoded HTML and CSS parts. The local parse pass decoded MIME bodies, extracted HTML/CSS documents, counted surface tags, and scanned for script/API state.
 
-Framework signals from captures:
+| Capture | Date observed | Approx size | Extracted parts | Surfaces present | Key notes |
+|---|---:|---:|---|---|---|
+| `mhtml/WatchPage.mhtml` | 2026-04-23 | 5.39 MB | 3 HTML, 75 CSS | watch, player, feed cards, comments, sidebar, nav, modals, settings, media, profile, notifications | Strong watch-page baseline with Polymer/Kevlar custom elements. |
+| `mhtml/YouTube.mhtml` | 2026-04-23 | 5.40 MB | 3 HTML, 70 CSS | home feed, cards, sidebar, nav, modals, settings, media, profile, notifications | Home-grid baseline; no comment composer. |
+| `Subscriptions - YouTube.mhtml` | 2026-05-19 | 5.71 MB | 3 HTML, 70 CSS | subscriptions feed, guide/sidebar, nav, feed cards, media, profile | Subscription-specific grouping/sorting baseline. |
+| `Worldwide Societal Collapse... - YouTube.mhtml` | 2026-05-19 | 5.27 MB | 3 HTML, 76 CSS | watch, player, comments, related sidebar, engagement panels, media | Newer watch capture; useful for player/comment churn. |
 
-- YouTube uses custom elements/Web Components and Polymer-style `ytd-*`, `yt-*`, `ytp-*`, and `html5-*` element/class families.
-- No React/Vue markers were found in the captures.
-- `ytd-app` is the app shell.
-- Saved MHTML did not preserve inline `ytcfg`, `ytInitialData`, `ytInitialPlayerResponse`, or `INNERTUBE_*` scripts.
-- YouTube is known to enforce Trusted Types. Future HTML injection must use the existing Trusted Types wrapper or DOM APIs.
+Script/API scan result:
 
-### CSS Token Catalog
-
-The captures expose more than 1,000 custom properties. Future themes should hook YouTube's native variables before overriding raw colors.
-
-High-value token groups:
-
-- Layout: `--app-drawer-width`, `--app-drawer-content-padding`, `--ytd-rich-grid-items-per-row`, `--ytd-rich-grid-item-max-width`, `--ytd-watch-flexy-sidebar-width`, `--ytd-watch-flexy-space-below-player`.
-- Baseline colors: `--yt-sys-color-baseline--base-background`, `--yt-sys-color-baseline--raised-background`, `--yt-sys-color-baseline--overlay-background-heavy`, `--yt-sys-color-baseline--text-primary`, `--yt-sys-color-baseline--text-secondary`, `--yt-sys-color-baseline--call-to-action`, `--yt-sys-color-baseline--static-brand-red`.
-- Saturated/dynamic colors: `--yt-saturated-base-background`, `--yt-saturated-raised-background`, `--yt-saturated-overlay-background`, `--yt-saturated-text-primary`, `--yt-saturated-text-secondary`, `--yt-saturated-outline`, `--yt-saturated-drop-shadow`.
-- Player controls: `--ytp-progress-list`, `--ytp-swatch-background-color`, `--ytp-swatch-color-white`, `--paper-slider-active-color`, `--paper-slider-knob-color`, `--paper-slider-progress-container-border-radius`.
-- Inputs and menus: `--paper-input-container-input-color`, `--paper-input-container-focus-color`, `--paper-menu-background-color`, `--paper-menu-button-dropdown-background`, `--paper-dialog-background-color`, `--paper-tooltip-background`.
-- Light wash/player redesign cues: `--yt-light-wash-opacity`, `--yt-light-wash-size`, `--yt-light-wash-color`, `--yt-delhi-modern-*`, `--yt-delhi-pill-height`.
-
-Theme strategy:
-
-- Set Astra variables first, then map them onto YouTube tokens under `html[dark] body.ytkit-premium`.
-- Never depend on a single token. Define fallbacks for `--yt-sys-*`, `--yt-saturated-*`, and legacy `--yt-*`.
-- Keep OLED mode separate from "native dark", because YouTube's native dark surfaces are gray, not black.
+- The saved MHTML files did not preserve usable `ytInitialData`, `ytInitialPlayerResponse`, `ytcfg`, GraphQL query IDs, or Innertube request payloads as inline script state. Treat them as DOM/CSS ground truth, not API-state dumps.
+- No GraphQL endpoint was observed. YouTube's relevant internal API surface is Innertube JSON, not GraphQL.
+- CSP/Trusted Types are handled in the repo via `extension/core/trusted-html.js`; the roadmap must keep all injection behind DOM APIs or that wrapper.
+- SPA signals are YouTube Polymer/Kevlar custom elements, `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `window.navigation` fallback, and `ytd-watch-flexy[video-id]` attribute mutation.
 
 ### Selector Map
 
-Stable selectors are the primary plan. Fragile fallbacks are retained for self-healing resolver chains and selector-canary tests.
+Every key surface has a stable selector strategy and a fragile fallback. Stable selectors are the only selectors that should be used in new feature code unless they fail and diagnostic logs prove a fallback is necessary.
 
-| Surface | Stable selector | Fragile fallback from captures | Notes |
-|---|---|---|---|
-| App shell | `ytd-app`, `ytd-page-manager` | `ytd-page-manager.style-scope` | Mount observer here only until target containers exist. |
-| Top nav/masthead | `ytd-masthead`, `#masthead-container` | `div.style-scope` inside masthead | Use structure plus aria labels for create/search/notifications. |
-| Search | `yt-searchbox`, `input#search` | `yt-searchbox-input` | Hook by role/label when present; avoid raw internal wrappers. |
-| Left nav | `ytd-guide-renderer`, `ytd-mini-guide-renderer`, `yt-app-drawer` | `ytd-mini-guide-entry-renderer.style-scope` | Subscriptions capture has full guide; home has mini guide. |
-| Feed grid | `ytd-browse ytd-rich-grid-renderer`, `ytd-rich-grid-renderer` | `ytd-rich-grid-renderer.style-scope` | Process added nodes only; filter chips recycle grid content. |
-| Feed card | `ytd-rich-item-renderer`, `yt-lockup-view-model` | `yt-lockup-view-model.ytd-rich-item-renderer` | New lockup view-model appears in current captures. |
-| Thumbnail | `ytd-thumbnail`, `yt-thumbnail-view-model`, `a#thumbnail` | `ytThumbnailViewModelHost` | For badges and overlays, prefer nearest card root plus thumbnail child. |
-| Shorts shelf | `a[href^="/shorts"]`, `ytd-rich-shelf-renderer` | `yt-thumbnail-overlay-badge-view-model` | Use URL path plus renderer family. |
-| Watch page | `ytd-watch-flexy`, `ytd-watch-metadata`, `#below` | `ytd-watch-metadata.watch-active-metadata` | Main route state via `ytd-watch-flexy[video-id]`. |
-| Related sidebar | `#secondary ytd-watch-next-secondary-results-renderer` | `ytd-watch-next-secondary-results-renderer.style-scope` | Related and compact cards change often; use section root first. |
-| Player API | `#movie_player`, `video.html5-main-video` | `video.video-stream` | Use `window.movie_player` only in MAIN-world bridge. |
-| Player chrome | `.ytp-chrome-bottom`, `.ytp-right-controls`, `.ytp-progress-bar` | `.ytp-panel`, `.ytp-delhi-modern`, `.ytp-id-*` | High churn area; resolver must allow old and new player UI. |
-| Player settings | `.ytp-settings-button`, `.ytp-panel`, `.ytp-menuitem` | `.ytp-popup`, `.ytp-overflow-panel` | Avoid forced menu opening where MAIN APIs exist. |
-| Comments | `ytd-comments`, `ytd-comment-thread-renderer`, `ytd-comment-view-model` | `ytd-comment-thread-renderer.style-scope` | Keep old and new comment shapes. |
-| Comment composer | `ytd-comment-simplebox-renderer`, `ytd-commentbox`, `#contenteditable-root` | `div.style-scope` under composer | Prefer structural lookup below `ytd-comments`. |
-| Engagement panels | `ytd-engagement-panel-section-list-renderer` | `ytd-popup-container.style-scope` | Transcript/chat/clip panels mount here. |
-| Modals/popups | `ytd-popup-container`, `tp-yt-paper-dialog`, `yt-iron-dropdown` | `yt-reload-continuation` | Use dialog roles/aria labels when present. |
-| Channel profile | `ytd-video-owner-renderer`, `ytd-channel-name`, `#channel-name` | `yt-avatar-shape`, `yt-decorated-avatar-view-model` | Resolve channel ID/handle from links, not text names. |
-| Notifications | `ytd-notification-topbar-button-renderer`, `yt-icon-badge-shape` | `yt-icon-badge-shape` | Chronological sorting should wait for popup menu root. |
-| Live chat frame | URL `https://*.youtube.com/live_chat*`, `yt-live-chat-app` when available | current captures do not include live chat DOM | Capture needed before major live-chat work. |
-| Settings overlay | Astra-owned `#ytkit-panel`, `.ytkit-*` | n/a | All injected UI must be scoped and removable. |
+| Surface | Stable selector strategy | Fragile fallback/watchlist | Churn risk | Notes |
+|---|---|---|---|---|
+| App shell | `ytd-app`, `ytd-page-manager` | `body > ytd-app`, `ytd-page-manager.style-scope` | medium | Mount broad observers here only until scoped targets exist. |
+| Masthead/nav | `ytd-masthead`, `#masthead-container`, `#masthead` | `ytd-masthead div.style-scope`, obfuscated topbar button wrappers | high | Header A/B churn affects buttons and search wrappers. |
+| Search | `yt-searchbox`, `input#search`, `form[role="search"] input` | `yt-searchbox-input`, `ytd-searchbox #container.ytd-searchbox`, `ytSearchboxComponent*` | high | Prefer role/input over generated component classes. |
+| Left guide/sidebar | `ytd-guide-renderer`, `ytd-mini-guide-renderer`, `yt-app-drawer`, `#guide` | `ytd-guide-entry-renderer.style-scope`, `ytd-mini-guide-entry-renderer.style-scope` | high | Home often has mini guide; subscriptions capture has full guide. |
+| Feed root | `ytd-browse ytd-rich-grid-renderer`, `ytd-rich-grid-renderer`, `#contents` scoped below feed | `#contents.ytd-rich-grid-renderer`, `ytd-rich-grid-renderer.style-scope` | high | Filter chips recycle content without route events. |
+| Feed card/post | `ytd-rich-item-renderer`, `yt-lockup-view-model`, `ytd-video-renderer` | `yt-lockup-view-model.ytd-rich-item-renderer`, `ytd-rich-item-renderer.style-scope` | high | New lockup view models appear in captures; process per-card roots. |
+| Thumbnail/media card | `ytd-thumbnail`, `yt-thumbnail-view-model`, `a#thumbnail` | `ytThumbnailViewModelHost`, `ytd-thumbnail a#thumbnail` | high | Resolve from nearest card root. Do not query global thumbnails repeatedly. |
+| Shorts | `a[href^="/shorts"]`, `ytd-rich-shelf-renderer` | `yt-thumbnail-overlay-badge-view-model`, `ytd-reel-shelf-renderer` | high | URL path is the stable signal. |
+| Watch page | `ytd-watch-flexy[video-id]`, `ytd-watch-flexy`, `ytd-watch-metadata`, `#below` | `ytd-watch-metadata.watch-active-metadata`, `ytd-watch-flexy[flexy]` | high | `video-id` is best route state. |
+| Player | `#movie_player`, `.html5-video-player` | `ytd-player #movie_player`, `#player-container #movie_player` | high | MAIN bridge required for page globals. |
+| Main video | `video.html5-main-video`, `#movie_player video` | `video.video-stream`, `.html5-video-container video` | medium | Always scoped to current player. |
+| Player chrome | `.ytp-chrome-bottom`, `.ytp-right-controls`, `.ytp-progress-bar` | `.ytp-delhi-modern`, `.ytp-overflow-panel`, `.ytp-action-pill`, `.ytp-actions-container` | very high | New player/liquid-glass/Delhi UI needs fresh captures. |
+| Player settings | `.ytp-settings-button`, `.ytp-panel`, `.ytp-menuitem` | `.ytp-popup`, `.ytp-panel-menu`, `.ytp-overflow-panel` | high | Prefer player APIs where available; avoid forced menu opening. |
+| Related sidebar | `#secondary ytd-watch-next-secondary-results-renderer`, `ytd-watch-next-secondary-results-renderer` | `#related`, `ytd-watch-next-secondary-results-renderer.style-scope` | high | Resolve section root before modifying compact cards. |
+| Comments | `ytd-comments`, `ytd-comment-thread-renderer`, `ytd-comment-view-model` | `ytd-comment-thread-renderer.style-scope`, `ytd-comment-renderer` | high | Keep old/new comment shapes in selector packs. |
+| Comment composer | `ytd-comment-simplebox-renderer`, `ytd-commentbox`, `#contenteditable-root` | `ytd-comment-simplebox-renderer #placeholder-area`, `ytd-comments ... div.style-scope` | high | Must preserve accessibility and native editor behavior. |
+| Engagement panels | `ytd-engagement-panel-section-list-renderer`, `#panels ytd-engagement-panel-section-list-renderer` | `ytd-engagement-panel-title-header-renderer`, `*.style-scope` | high | Transcript, chapters, clips, AI summary live here. |
+| Modals/popups | `tp-yt-paper-dialog`, `ytd-popup-container tp-yt-paper-dialog`, `tp-yt-iron-dropdown` | `.ytp-popup`, `.ytd-popup-container`, style-scope wrappers | high | Use inert/focus-safe overlay handling. |
+| Astra settings overlay | `[data-ytkit-surface="control-center"]`, `.ytkit-control-center`, `#ytkit-panel` | `.ytkit-panel`, `.ytkit-modal` | low | Astra-owned nodes must be removable by `destroy()`. |
+| Channel/profile | `ytd-video-owner-renderer`, `ytd-channel-name`, `#channel-name`, `ytd-c4-tabbed-header-renderer`, `ytd-page-header-renderer` | `yt-avatar-shape`, `yt-decorated-avatar-view-model` | high | Resolve channel IDs/handles from links, never visible text alone. |
+| Notifications | `ytd-notification-topbar-button-renderer`, `yt-icon-badge-shape`, `ytd-notification-renderer` | badge-shape generated classes, multi-page-menu wrappers | high | Wait for popup menu root before sorting. |
+| Live chat frame | `ytd-live-chat-frame#chat`, `ytd-live-chat-frame`, `iframe#chatframe` | `#chat.ytd-live-chat-frame`, `ytd-live-chat-frame iframe` | very high | Needs dedicated live-stream capture before major work. |
+| Live chat iframe DOM | `yt-live-chat-app`, `yt-live-chat-renderer`, `yt-live-chat-item-list-renderer` | `yt-live-chat-text-message-renderer`, `yt-live-chat-message-input-renderer` | very high | Requires all-frame content script and iframe-specific fixtures. |
 
-Selector resolver contract:
+### CSS Token Catalog
 
-```js
-findElement(surface, selectors, { root = document, required = false }) {
-  // Try stable selectors first, then fragile fallbacks.
-  // Log first miss to diagnosticLog.
-  // Return null, never throw, unless required is true.
-}
-```
+The captures expose YouTube token families that Astra should hook instead of fighting with raw colors:
 
-Every feature that touches a high-churn surface must use a selector chain, not a single `querySelector`.
+- Color and surface: `--yt-spec-*`, `--premium-yt-spec-*`, `--yt-saturated-*`, `--yt-light-wash-*`, text/icon/background token families.
+- Player spacing/chrome: `--ytd-watch-flexy-space-below-player`, `--yt-delhi-pill-height`, `--yt-delhi-bottom-controls-height`, `--yt-frosted-glass-backdrop-filter-override`.
+- Controls and radii: `--yt-button-icon-size`, `--yt-img-border-radius`, avatar and thumbnail radius tokens.
+- Live chat: `--yt-live-chat-*` token family for item backgrounds, author colors, timestamps, badges, borders, and input surfaces.
+- Text/link: `--yt-attributed-string-link-hover-color` and related attributed string tokens.
+- Scrollbar/chrome: YouTube custom scrollbar tokens plus native overlay-scrollbar interaction.
 
-### API And State Signals
+Theme strategy:
 
-No reusable inline endpoint strings were preserved in the MHTML captures. Current runtime and repo notes identify these usable APIs:
-
-- YouTube Innertube player: `https://www.youtube.com/youtubei/v1/player?key=<INNERTUBE_API_KEY>`.
-- Runtime extraction from page scripts: `INNERTUBE_API_KEY`, `INNERTUBE_CLIENT_VERSION`, `ytInitialPlayerResponse`, `ytInitialData`, caption tracks.
-- Captions/transcripts: YouTube JSON3 caption track URLs from player response.
-- SponsorBlock: hash-prefix skip segment API on `https://sponsor.ajay.app`.
-- DeArrow: title/thumbnail branding API and thumbnail host.
-- Return YouTube Dislike: public RYD API with known rate limits.
-- Reddit comments: `https://www.reddit.com/search.json` and old Reddit fallback through background proxy.
-- AI summary providers: OpenAI, Anthropic, Google Generative Language, local Ollama.
-- Local downloader: `http://127.0.0.1:{9751,9761,9771,9781,9791,9851}` with token/health identity.
-
-Rate-limit policy:
-
-- Central `ApiLimiter` in background or shared runtime.
-- Per-origin budgets.
-- Exponential backoff with jitter.
-- Serve stale cache for SponsorBlock, DeArrow, RYD, transcript metadata, and subscription groups.
-- Never make API calls in MutationObserver callbacks directly.
+- Build a `tokenThemeBridge` that maps YouTube tokens into Astra semantic variables: `--ad-bg`, `--ad-panel`, `--ad-elevated`, `--ad-text`, `--ad-muted`, `--ad-border`, `--ad-accent`, `--ad-danger`, `--ad-warning`, `--ad-success`, `--ad-radius`, `--ad-z-overlay`.
+- Override tokens only when a feature class is active, for example `html.ytkit-oled html[dark]`, `html.ytkit-dense`, and `html.ytkit-classic-layout`.
+- Preserve YouTube's native forced-colors and reduced-motion affordances.
 
 ## Phase 1: Competitive Landscape
 
-### Tool Abbreviations
+Research date: 2026-05-21.
 
-| Abbrev | Tool |
-|---|---|
-| AD | Astra Deck current |
-| SB | SponsorBlock |
-| DA | DeArrow |
-| RYD | Return YouTube Dislike |
-| IT | ImprovedTube / Improve YouTube |
-| EFY | Enhancer for YouTube |
-| YTA | YouTube Alchemy |
-| TFY | Tweaks for YouTube |
-| CPYT | Control Panel for YouTube |
-| UH | Unhook |
-| BT | BlockTube |
-| PT | PocketTube |
-| YTR | YouTube Redux |
-| MA | Magic Actions for YouTube |
-| DF | DF Tube and similar distraction-free tools |
-| IRI | Iridium |
-| GF | Greasy Fork scripts |
-| OUJS | OpenUserJS scripts |
-| STY | Stylus/userstyle ecosystem |
-| UBO | uBlock Origin Lite / native adblock baselines |
-| ALT | FreeTube, NewPipe, Cobalt, MeTube, Karamel, other adjacent YouTube tools |
+External data is volatile. User counts and update dates below are point-in-time observations from Chrome Web Store, AMO, official sites, Greasy Fork/OpenUserJS, GitHub, and community threads. Store counts are rounded by stores.
 
-### Ranked Competitor Table
+### Ranked Competitor Baselines
 
-Ranking weights: install base first, then update recency, then unique feature value, then relevance to an Astra Deck superset.
+| Rank | Tool | Author/publisher | Platform | Popularity/recency observed | Feature count | What it does best | Source |
+|---:|---|---|---|---|---:|---|---|
+| 1 | Return YouTube Dislike | Dmitry Selivanov / Anarios community | Chrome, Firefox, userscript, Edge | Chrome: 6M users, 19.7K ratings, v4.0.4, updated 2026-05-02. AMO: 920,031 users but official Firefox build last updated 2024-10-17. GitHub: 13,591 stars, updated 2026-05-21. | focused | Dislike restoration via archived/sampled data and ratio UI. | https://chromewebstore.google.com/detail/return-youtube-dislike/gebbhagfogifgggkldgodflihgfeippi ; https://addons.mozilla.org/en-US/firefox/addon/return-youtube-dislikes/ ; https://github.com/Anarios/return-youtube-dislike |
+| 2 | Video Speed Controller | igrigorik | Chrome, general HTML5 media | Chrome: 3M users, 4.4K ratings, v0.10.2, updated 2026-04-15. | focused | Universal speed overlay, fine increments, per-site rules, 0.07x-16x range. | https://chromewebstore.google.com/detail/video-speed-controller/nffaoalbilbmmfgbnbgppjihopabppdk |
+| 3 | SponsorBlock | Ajay Ramachandran / community | Chrome, Firefox, Safari, userscript-compatible ports | Chrome: 2M users, 3.4K ratings, v6.1.5, updated 2026-04-21. AMO: 741,003 users. GitHub: 13,230 stars, updated 2026-05-21. | focused | Crowdsourced segment skipping, categories, submissions/voting, public DB. | https://chromewebstore.google.com/detail/sponsorblock-for-youtube/mnjggcdmjocbbbhaepdhchncahnbgone ; https://addons.mozilla.org/en-US/firefox/addon/sponsorblock/ ; https://github.com/ajayyy/SponsorBlock |
+| 4 | Enhancer for YouTube | Maxime RF | Chrome, Edge, Firefox | Chrome: 1M users, 17.3K ratings, v3.0.17, updated 2026-03-14. AMO: 510,589 users, v2.0.133.1, updated 2026-04-07. Edge: about 560K users from Edge search. | broad | Playback, quality, volume boost, themes, cinema/mini/popout, distractions, Shorts. | https://chromewebstore.google.com/detail/enhancer-for-youtube/ponfpcnoihfmfllpaingbgckeeldkhle ; https://addons.mozilla.org/en-US/firefox/addon/enhancer-for-youtube/ ; https://www.mrfdev.com/enhancer-for-youtube |
+| 5 | Unhook | Unhook | Chrome, Firefox, Edge | Chrome: 1M users, 4.2K ratings, v1.6.9, updated 2026-03-21. Official site claims 500K+ active users but store currently shows 1M. | 20+ | Simple distraction removal with a tiny private permission footprint. | https://chromewebstore.google.com/detail/unhook-remove-youtube-rec/khncfooichmfjbepaaaebmommgaepoid ; https://unhookextension.com/ |
+| 6 | Improve YouTube | Code for Charity | Chrome, GitHub | Chrome: 400K users, 7.1K ratings, v4.2026, updated 2026-03-23. GitHub: 4,379 stars, updated 2026-05-21. | 250+ | Huge open-source settings catalog, multilingual, playback/layout/content controls. | https://chromewebstore.google.com/detail/improve-youtube-%F0%9F%8E%A7-for-yo/bnomihfieiccainjcjblhegjgglakjdd ; https://github.com/code-charity/youtube |
+| 7 | PocketTube | NabokD | Chrome, Firefox, Edge, Opera, Safari, mobile | Official site: 300K+ users. GitHub: 334 stars, updated 2026-05-21. | subscription-focused | Subscription groups/tags, personal group feeds, sort/filter, dead-channel detection, group notifications. | https://pockettube.io/ ; https://github.com/NabokD/pockettube |
+| 8 | UnTrap for YouTube | UnTrap | Chrome, Firefox, Edge, Safari, Opera | Chrome: 100K users, 490 ratings, described as 250+ features. | 250+ | All-in-one focus/customization plus AI summaries, parental controls, schedules, password-protected settings. | https://chromewebstore.google.com/detail/untrap-for-youtube/enboaomnljigfhfjfoalacienlhjlfil ; https://untrap.app/ ; https://addons.mozilla.org/firefox/addon/untrap-for-youtube/ |
+| 9 | DeArrow | Ajay / SponsorBlock ecosystem | Chrome, Firefox | Chrome: 100K users, 303 ratings, v2.3.6, updated 2026-04-23. AMO: 32,224 users. GitHub: 2,144 stars, updated 2026-05-21. | focused | Crowdsourced descriptive titles/thumbnails with fallback title formatting and random timestamp thumbnails. | https://chromewebstore.google.com/detail/dearrow-better-titles-and/enamippconapkdmgfgjchkhakpfinmaj ; https://addons.mozilla.org/en-US/firefox/addon/dearrow/ ; https://github.com/ajayyy/DeArrow |
+| 10 | BlockTube | amitbl | Firefox, Chrome/Edge/Opera/Brave | AMO: 30,243 users, v0.4.8, updated 2026-02-07. GitHub: 1,351 stars, updated 2026-05-21. | filtering-focused | Block channels/videos/comments by name, keyword, regex, duration, and custom JS predicate. | https://addons.mozilla.org/en-US/firefox/addon/blocktube/ ; https://github.com/amitbl/blocktube |
+| 11 | DF Tube New | focusapps | Chrome | Chrome: 20K users, v1.21.2, updated 2026-05-21. | focus-focused | Hide recommendations/home grid/comments/playlists/Shorts and disable autoplay. | https://chromewebstore.google.com/detail/df-tube-new-distraction-f/kchgllkpfcggmdaoopkhlkbcokngahlg |
+| 12 | YouTube Tweaks | Pedro | Firefox, Chrome, Edge | AMO: 15K users, 260 reviews, v2026.5.18, updated 2026-05-18. | 80+ | Grid sizing, hiding, per-channel speed, comments sidebar, quality, wheel controls, anti-autodub. | https://addons.mozilla.org/en-US/firefox/addon/youtube-tweaks/ |
+| 13 | Tweaks for YouTube | InzkDev | Firefox, Chrome, Edge | AMO: 8,386 users, v3.89.0, updated 2026-05-15. | 100+ | Mouse-wheel/button control, audio processing, player controls, subtitle styling, YouTube Music/Drive support. | https://addons.mozilla.org/en-CA/firefox/addon/tweaks-for-youtube/ |
+| 14 | YouTube Alchemy | Tim Macy | Userscript, Chrome, Firefox, Edge | Greasy Fork: 1,845 installs, v10.13, updated 2026-05-07. AMO: v10.13, updated 2026-05-07. GitHub: 86 stars, updated 2026-05-19. | 200+ | Native-feeling tab view, transcript export, header links, color-coded videos, dense UI settings. | https://greasyfork.org/en/scripts/521686-youtube-alchemy ; https://github.com/TimMacy/YouTubeAlchemy ; https://addons.mozilla.org/en-CA/firefox/addon/youtube-alchemy/ |
+| 15 | YouTube HD | adisib | OpenUserJS userscript | 33,716 installs, version 2025.04.13+e9cf6ae, updated 2025-04. | focused | Auto quality 144p-8K, player resize, auto theater, no interval loop. | https://openuserjs.org/scripts/adisib/Youtube_HD |
+| 16 | TubeMod | Pedro Gregorio | Chrome, Firefox | Official site claims 50+ options; open-source/free. | 50+ | Lightweight interface hiding/tweaking with import/export. | https://tubemod.dev/ |
+| 17 | YouFocus | YouFocus | Chrome | Official site, 2025 product. | focused | Study/work modes, local time tracking, focused history, video notes, channel blocking. | https://youfocus.site/ |
+| 18 | Scripts.YT | Robert Wesner | Userscripts and small extensions | Active script hub. | small focused scripts | Play-all restoration, timestamp persistence, shadow-comment checks. | https://scripts.yt/ |
+| 19 | Tweeks | NextByte | AI-generated website modifications | Official site: 25K+ people, 4K+ public tweeks, 59 YouTube tweeks. | platform | Natural-language userscript generation and sharing. | https://www.tweeks.io/ |
+| 20 | Userstyles/Stylus YouTube themes | Various | Stylus/UserCSS | Counts vary by hub. | CSS-only | OLED/dark/compact/old-layout patches and element hiding with minimal JS risk. | https://userstyles.world/ ; https://greasyfork.org/en/scripts/by-site/youtube.com?language=css |
 
-| Rank | Tool | Source/author | Adoption signal | Last updated signal | Feature count estimate | What it does best |
-|---:|---|---|---|---|---:|---|
-| 1 | Return YouTube Dislike | Dmitry Selivanov/community, Anarios GitHub | 6,000,000 Chrome users, 13.6K GitHub stars | CWS 4.0.1 Oct 24 2025; GitHub active May 2026 | 5 | Restores dislike counts through archived and extension-user data. |
-| 2 | SponsorBlock | Ajay/SponsorBlock | 2M Chrome users, 13.2K GitHub stars | CWS/chrome-stats 6.1.5 Apr 2026; GitHub active May 2026 | 20 | Crowdsourced sponsor/selfpromo/intro/outro skip, progress segments, privacy-preserving hash prefix. |
-| 3 | uBlock Origin Lite / Brave Shields | uBlock/Brave | uBOL over 16M Chrome users, Brave native filter cadence | active May 2026 | 5 | MV3-safe network filtering baseline and anti-adblock cadence. |
-| 4 | Magic Actions for YouTube | ChromeActions | Claims millions of users | site updated May 2026 | 25 | Long-running all-in-one playback/UI enhancer; volume wheel and cinema-style controls. |
-| 5 | Unhook | Unhook | 500K+ users on official site; 4.8 rating | v1.6.9 Mar 2026 signal | 35 | Distraction removal: home feed, related, Shorts, comments, end screens, merch, header, notifications. |
-| 6 | PocketTube | PocketTube | 300K+ users | active support/reddit Apr 2026 | 35 | Subscription groups, AI/custom tags, sort by length/date/popular, cross-browser/mobile support. |
-| 7 | Control Panel for YouTube | soitis.dev | 50K Chrome users signal | v1.33.2 May 5 2026 via Softpedia; CWS feature list crawled | 80 | New player UI restoration, ad/annoyance hiding, mobile and desktop controls, feed filters. |
-| 8 | ImprovedTube / Improve YouTube | code-charity | high CWS install base, major GitHub project | GitHub and releases active in 2026 | 100+ | Broad settings catalog for layout, player, appearance, shortcuts, comments, and quality. |
-| 9 | YouTube Alchemy | Tim Macy | Greasy Fork plus GitHub | Greasy Fork crawled May 2026, 200+ features | 200+ | Native-feeling userscript/extension with layout controls, language-aware options, color-coded videos. |
-| 10 | Tweaks for YouTube | inzk.dev | CWS listing active | crawled 2026; detailed feature list | 90 | Per-context playback presets, PiP, screenshots, comment timestamp workflow, custom CSS/JS. |
-| 11 | DeArrow | Ajay/SponsorBlock | 2.1K GitHub stars; CWS/AMO distribution | AMO 2.3.6 Apr 23 2026; GitHub active May 2026 | 20 | Crowdsourced better titles/thumbnails, channel overrides, mobile/embed support. |
-| 12 | BlockTube | amitbl | 100K Chrome user signal, 1.35K GitHub stars | v0.4.8 Feb/Apr 2026 signals | 30 | Channel/video/comment blocking, regex rules, advanced custom JS predicate. |
-| 13 | YouTube Redux | omniZero | 90K Chrome users | v3.10.0 Oct 28 2025 | 30 | Restores older YouTube layouts, small player, classic logo, precise values, old playlist theme. |
-| 14 | Iridium | ParticleCore | 1.33K GitHub stars | pushed Jan 2026; CWS crawled | 45 | Classic enhancer: autoplay, default quality/speed, super theater, blacklist, volume wheel, screenshot. |
-| 15 | DF Tube / distraction-free family | focus/no-surf extensions | old DF Tube had 300K users; new forks 30K+ | Jan 2026 and fork activity | 20 | Minimal focus mode and feed/comment/recommendation hiding. |
-| 16 | YouTube CPU Tamer by AnimationFrame | CY Fung, Greasy Fork | 51K+ installs | Feb 24 2025 | 8 | Timer/rAF performance optimization for YouTube, live chat, and background tabs. |
-| 17 | YouTube JS Engine Tamer | CY Fung, Greasy Fork | 15K+ installs | Feb 28 2026 | 6 | YouTube JS engine/performance fixes. |
-| 18 | YouTube Links | nhyone, Greasy Fork | 94K+ installs | Oct 16 2024 | 8 | Direct format links on watch page. |
-| 19 | Youtube Tools All in One | MDCM, Greasy Fork | 187K+ installs | Feb 6 2026 | 15 | MP4/MP3 local download, dislike restoration, utility bundle. |
-| 20 | youtube-adb | iamfugui, Greasy Fork | 296K+ installs | Nov 15 2024 | 5 | Static/video ad removal userscript. |
-| 21 | YouTube HD Premium | ElectroKnight22, Greasy Fork | 12K+ installs | Jan 13 2026 | 6 | Quality forcing with Premium bitrate preference. |
-| 22 | YouTube HD Plus | fznhq, Greasy Fork | 3.9K+ installs | Feb 8 2026 | 8 | Quality selection across desktop, Music, and mobile. |
-| 23 | YouTube More Speeds | ssssssander, Greasy Fork | 8K+ installs | Dec 18 2023 | 4 | Extra playback speed buttons. |
-| 24 | YouTube Improvements | thalrien.vx, Greasy Fork | 26K+ installs | Apr 6 2026 | 20 | Dark/light toggle, download, screenshot, fast-forward, layout improvements. |
-| 25 | YouTube Block Autoplay Preview Thumbnail and Channel Trailer | miebie.1412, OpenUserJS | 74K to 83K installs | Apr 30 2026 / 5 days ago signal | 4 | Document-start blocking of hover previews and channel trailers. |
-| 26 | 7ktTube 2016 Redux | arvid-demon, OpenUserJS | OpenUserJS YouTube group | active listing | 25 | Old 2016 layout, old watch page, thumbnails/player size, grayscale watched, hide suggestion blocks. |
-| 27 | Youtube HD | adisib, OpenUserJS | small vote count, long-lived | Apr 2025 | 8 | Non-interval quality forcing and player resizing. |
-| 28 | BetterYTM | Sv443, OpenUserJS/GitHub | niche | May 2025 | 35 | YouTube Music and YouTube layout improvements, integrations, lyrics links, local storage. |
-| 29 | TamperTubePlus | Sv443, OpenUserJS | legacy | Jul 2018 | 12 | Polymer disable, download button, tags, big player, accent color. |
-| 30 | Download YouTube Videos | panzi, OpenUserJS | legacy | old but indexed | 5 | Direct watch-page download menu and stream URL list. |
-| 31 | Download YouTube Videos as MP4 | volkan-k, OpenUserJS | legacy | Feb 2019 | 5 | GM_download native MP4 downloader. |
-| 32 | h264ify | erkserkserks | 1.2K GitHub stars | repo updated 2025 | 3 | Force H.264 to reduce CPU and improve compatibility. |
-| 33 | YouTube Anti Translate | CWS specialist | CWS active listing | active | 4 | Prevent translated titles/audio and preserve original metadata. |
-| 34 | YouTube-shorts block | CWS specialist | 300K to 400K user signal | active | 5 | Shorts removal and redirect. |
-| 35 | Multiselect for YouTube | CWS specialist | known CWS tool | active | 8 | Bulk select and playlist/watch-later management. |
-| 36 | FreshView / Watchmarker family | CWS/reddit | niche/new | Apr 2026 MV3 rewrite signal | 5 | Hide or mark watched videos across feeds. |
-| 37 | YouTube Hider | youtubehider.com | public site | crawled May 2026 | 10 | Hide watched, Shorts, mixes, playlists, lives, low-view videos. |
-| 38 | FocusProtect / LockedIn | CWS/GitHub | 10K+ or new | Apr/May 2026 | 15 | Focus-first hiding of feeds, Shorts, recommendations, explore. |
-| 39 | Stylus dark/OLED userstyles | userstyles, GitHub gists | fragmented | mixed | 20 | Pure-CSS black themes, old-layout skins, rounded-corner removal. |
-| 40 | FreeTube | FreeTubeApp | 20.9K GitHub stars | active May 2026 | 80 | Privacy-first standalone YouTube client, subscriptions outside Google. |
-| 41 | NewPipe | TeamNewPipe | 38.2K GitHub stars | active May 2026 | 80 | Android YouTube client, background playback, downloads, subscriptions. |
-| 42 | Cobalt | imputnet | 40.4K GitHub stars | active Apr/May 2026 | 20 | Media saving service and API model for downloads. |
-| 43 | MeTube | alexta69 | high GitHub project | active | 15 | Self-hosted yt-dlp queue and library management. |
-| 44 | Karamel | odensc | GitHub project | active | 5 | Reddit comments under YouTube videos. |
-| 45 | YouTube Highlighter / note tools | CWS niche | 329 downloads in one listing; 1K+ in MensorAI class | 2026 listicles | 20 | Highlighting, notes, AI Q&A, spaced repetition. |
+### Community and Issue Findings
 
-## Phase 2: Feature Catalog And Gap Analysis
+High-value feature-request and breakage themes:
 
-### Master Feature Matrix
+- YouTube UI churn repeatedly breaks player/control/sidebar/comment integrations. Open issues in Improve YouTube, SponsorBlock, RYD, BlockTube, and DeArrow show new player UI, dislike button changes, hidden items returning, scrolled-away ratio bars, and DOM changes breaking thumbnail menus.
+- Users want comments/chapters/transcript in sidebars and tabs, not buried below the player. Improve YouTube issues include comments-in-sidebar refresh regression and chapters-in-sidebar requests.
+- Content filters need route-specific exceptions. BlockTube issues request subscriptions-page improvements, disable blocking on channel pages/tabs, likes field in advanced blocking, and search case-insensitivity.
+- Anti-autodub and auto-translation controls are recurring requests. YouTube Tweaks and BlockTube both expose or request anti-autodub/title-translation behavior.
+- Store review delays matter. RYD community threads note userscript updates can land faster than official add-on store updates.
+- Focus-mode demand is strong. Recent Reddit threads and YouFocus/UnTrap show users asking for active maintenance, clean study/work modes, timers, notes, and distraction-free defaults.
+- Security trust matters. 2026 malicious-extension reporting repeatedly names fake YouTube/TikTok enhancer categories as an attack vector, so Astra must make privacy boundaries, source transparency, permissions, and remote-code avoidance visible.
 
-The final scope is the union of current Astra Deck features, competitor features, and viable gap fills. "Build action" means the roadmap action required for Astra Deck to beat that row.
+## Phase 2: Feature Catalog and Gap Analysis
 
-| Category | Feature | Current AD | Observed in | Best implementation seen | Build action |
-|---|---|---|---|---|---|
-| Theming/UI | OLED black theme with token mapping | Partial | STY, YTA, CPYT | Userstyles for black surfaces; YTA for settings breadth | Build native token-based OLED theme and never-light mode. |
-| Theming/UI | Glass premium settings overlay | Partial | AD, YTA | AD popup polish | Extend to in-page panel and all transient panels. |
-| Theming/UI | Dense mode | Partial | YTA, CPYT, YTR | YTA row/spacing controls | Add global density scale. |
-| Theming/UI | Custom accent/progress color | Yes | AD, IT, YTA, IRI | AD/Alchemy | Keep, add per-profile accent presets. |
-| Theming/UI | Custom CSS | Yes | IT, TFY, YTA | TFY custom CSS/JS | Keep CSS, never ship custom JS by default; gated advanced mode. |
-| Theming/UI | Old YouTube layout restoration | Partial | YTR, 7ktTube, STY | YouTube Redux/7ktTube | Build layout profile pack: Modern Dense, Classic 2020, Classic 2016-inspired. |
-| Theming/UI | New player UI restoration | Partial | CPYT | Control Panel | Add player-chrome profile toggles for new controls/progress/action surfaces. |
-| Theming/UI | Square avatars/search/buttons | Yes | AD, YTA, 7ktTube | AD | Keep, with no pill backdrops. |
-| Theming/UI | Hide/reshape rounded UI | Partial | STY, YTR | userstyles | Add rectangularization pass with safe radii 4/6/8/10/12. |
-| Theming/UI | Branded scrollbar | Partial | AD style rules | AD | Standardize across popup and in-page panels. |
-| Navigation/Layout | Hide homepage feed | Yes | UH, DF, CPYT, LockedIn | Unhook | Keep and add per-profile "focus recipes". |
-| Navigation/Layout | Hide related sidebar | Yes | UH, DF, CPYT | Unhook/CPYT | Keep with selector health. |
-| Navigation/Layout | Hide Shorts globally | Yes | UH, CPYT, YouTube-shorts block | Specialist block extensions | Keep, add route-level redirect and shelf removal canaries. |
-| Navigation/Layout | Redirect Shorts to watch page | Yes | AD, CPYT | AD | Harden with mobile/shorts URL variants. |
-| Navigation/Layout | Redirect home to subscriptions | Yes | IT, IRI, AD | IRI/AD | Keep. |
-| Navigation/Layout | Logo quick links/header links | Yes | YTA, AD | YTA for up to 10 links | Expand to profile-scoped link sets. |
-| Navigation/Layout | Left guide replacement | Partial | YTA, PocketTube | PocketTube grouping | Add subscription groups and guide sections. |
-| Navigation/Layout | Videos per row | Yes | AD, YTA, YTR | YTA/YTR | Keep, add per-route presets. |
-| Navigation/Layout | Disable infinite scroll | Yes | YTR, AD | YouTube Redux | Keep; add per-route toggle. |
-| Navigation/Layout | Full-width subscriptions | Yes | AD, YTA | AD | Keep and integrate PocketTube groups. |
-| Navigation/Layout | Tabbed watch page | Yes | AD, GF YouTube+ | AD/Youtube+ | Keep; add draggable panel positions. |
-| Player | Always best quality | Yes | IT, TFY, YTA, IRI, GF HD scripts | TFY/Youtube HD | Keep MAIN-world API path, add per-context quality profiles. |
-| Player | Premium bitrate preference | Yes | GF HD Premium, AD | GF HD Premium | Keep. |
-| Player | Separate quality by fullscreen/theater/background/embed | No | TFY | Tweaks for YouTube | Add per-context quality matrix. |
-| Player | Persistent speed | Yes | IT, TFY, YTA, IRI | YTA supports high speed range | Expand range to 0.25x-17x but default safe presets. |
-| Player | Per-channel speed | Yes | AD | AD | Keep, add channel ID keying. |
-| Player | Speed buttons | Yes | AD, GF More Speeds, YTA | YTA and AD | Keep without keyboard shortcuts. |
-| Player | A-B loop | Yes | AD, IT | ImprovedTube | Keep, add loop presets. |
-| Player | Frame-by-frame controls | Yes | AD, TFY | TFY | Keep via visible buttons. |
-| Player | Video screenshot | Yes | AD, TFY, IRI | TFY includes subtitle option | Add subtitle-included screenshot option and WebP/JPEG/PNG choice. |
-| Player | Visual filters | Yes | AD | AD | Keep, add presets. |
-| Player | Video rotation | Yes | AD | AD | Keep. |
-| Player | Zoom/pan | Yes | AD | AD | Keep. |
-| Player | Cinema/ambient glow | Yes | AD, YTA/MA | Magic Actions cinema mode | Keep but add low-power mode. |
-| Player | Pop-out/Document PiP | Yes | TFY, AD | TFY | Keep and provide Firefox fallback messaging. |
-| Player | Miniplayer/PiP button restore | Yes | CPYT, AD | Control Panel | Harden with new player UI. |
-| Player | Disable loudness normalization | No | IRI | Iridium | Add MAIN-world audio/player config strategy. |
-| Player | Volume wheel | No | MA, IRI | Magic Actions/Iridium | Add visible pointer-hover volume wheel mode, no shortcuts. |
-| Player | Skip intro/outro by chapter/time | Yes | TFY, AD | Tweaks per-channel intro/outro | Add per-channel intro/outro offsets. |
-| Player | Sleep timer | Yes | AD/NewPipe-inspired | NewPipe | Keep. |
-| Player | Background playback/mobile | No | CPYT, NewPipe | NewPipe/CPYT mobile | Extension desktop only; mark as userscript/mobile investigation. |
-| Content Filtering | Block videos by title/channel/keyword | Yes | BT, UH, AD | BlockTube | Add channel ID-first filters and import/export blocklists. |
-| Content Filtering | Block comments by user/content | Partial | BT | BlockTube | Add comment filter manager. |
-| Content Filtering | Regex filters | Yes | BT, AD | BlockTube | Keep with ReDoS guard. |
-| Content Filtering | Custom JS predicate | No | BT | BlockTube | Add advanced local predicate sandbox only if safe; default off. |
-| Content Filtering | Hide watched videos | Yes | BT, FreshView, YT Hider, AD | FreshView/BlockTube | Keep, add watch-progress threshold and per-route behavior. |
-| Content Filtering | Hide low-view videos | No | YouTube Hider | YouTube Hider | Add optional threshold. |
-| Content Filtering | Hide live/upcoming/mixes/playlists/movies/members-only | Partial | CPYT, UH, AD | Control Panel | Complete feed taxonomy filters. |
-| Content Filtering | Hide auto-dubbed videos | Partial | CPYT, AD anti-translate | Control Panel | Add feed-level auto-dub badge detection. |
-| Content Filtering | Hide hover previews/trailers | Yes | OUJS preview block, AD | OpenUserJS script | Keep document-start anti-preview. |
-| Content Filtering | Hide AI summaries/Jump Ahead/Premium upsells | Yes | CPYT, AD | Control Panel/AD | Keep. |
-| Content Filtering | Not Interested quick button | Yes | AD | AD | Keep. |
-| Content Filtering | Bulk multi-select | No | Multiselect for YouTube | Multiselect | Add bulk actions: hide, watch later, playlist add/remove, mark watched. |
-| Sponsor/Ads | SponsorBlock segment skipping | Yes | SB, AD | SponsorBlock | Keep parity with v6+ categories and channel profiles. |
-| Sponsor/Ads | Segment submission/voting | No | SB | SponsorBlock | Consider light submit UI or hand off to SB extension. |
-| Sponsor/Ads | Channel skip profiles | No | SB v6 | SponsorBlock | Add local per-channel overrides if API supports clean path. |
-| Sponsor/Ads | Ad skip/autoclick | Partial/risky | CPYT, GF ad scripts, MA | CPYT/GF scripts | Store-safe build disables risky ad automation; GitHub build can expose documented local-only features. |
-| Sponsor/Ads | DNR blocking | No/limited | UBO, Brave | uBO Lite/Brave | Add optional ruleset for non-YouTube external annoyances only if policy-safe. |
-| Clickbait/Metadata | Better titles/thumbnails | Yes | DA, AD | DeArrow | Keep, add channel override UI. |
-| Clickbait/Metadata | Show original on hover | Yes | DA, AD | DeArrow | Keep. |
-| Clickbait/Metadata | Title case transforms | Yes | YTA, AD | YTA | Keep. |
-| Clickbait/Metadata | Anti-translate titles/descriptions/audio | Yes | YouTube Anti Translate, AD | Specialist + AD | Extend across feed, watch, audio track, and transcript. |
-| Ratings/Stats | Return dislikes | No in extension | RYD, YTR | RYD | Add rate-limited RYD integration with cache and fallback state. |
-| Ratings/Stats | Precise view counts | Yes | AD, YTR | YouTube Redux | Keep. |
-| Ratings/Stats | Like/view ratio | Yes | AD | AD | Extend with RYD ratio when available. |
-| Ratings/Stats | Channel video/sub count | Yes/partial | AD, IRI | Iridium | Keep and cache. |
-| Ratings/Stats | Monetization/ad count info | No | IRI | Iridium | Add optional video monetization/ad marker panel if detectable. |
-| Media/Downloads | Local yt-dlp downloader | Yes | AD, MeTube, Cobalt, GF tools | AD companion/MeTube queue | Keep, add queue/library UI. |
-| Media/Downloads | MP4/MKV/WebM video | Yes | AD, Cobalt, MeTube | AD | Keep. |
-| Media/Downloads | MP3/M4A/Opus/FLAC/WAV audio | Yes | AD, Cobalt | AD | Keep. |
-| Media/Downloads | Thumbnail download | Yes | AD, TFY, IRI | AD/TFY | Keep. |
-| Media/Downloads | Transcript download | Yes | AD | AD | Keep with SRT/VTT/JSON/Markdown. |
-| Media/Downloads | Subtitle download | Yes | AD | AD | Keep. |
-| Media/Downloads | Direct stream URL list | Partial/userscript | YouTube Links | YouTube Links | Add advanced "stream links" panel where policy-safe. |
-| Media/Downloads | Cobalt fallback | Not extension | Cobalt/GF | Cobalt | Add optional external fallback in GitHub build only. |
-| Media/Downloads | Download archive/history | Partial | MeTube | MeTube | Add local companion download history panel. |
-| Media/Downloads | Native folder picker | Yes | AD | AD | Keep. |
-| Media/Downloads | Auto-download on visit | Yes | AD | AD | Keep off by default with visible state. |
-| Transcripts/AI | Transcript viewer | Yes | AD, YTA | AD/YTA | Keep. |
-| Transcripts/AI | Transcript export | Yes | AD, YTA | AD | Keep. |
-| Transcripts/AI | AI summary BYO key | Yes | AD, note tools | AD | Expand providers and local model support. |
-| Transcripts/AI | AI handoff to ChatGPT/Claude/Gemini/NotebookLM/Perplexity | Yes | AD | AD | Keep. |
-| Transcripts/AI | Offline/private Chrome built-in AI | No | YouTube Highlighter | YouTube Highlighter | Add optional browser-local summarizer when API available. |
-| Transcripts/AI | Video notes/highlights | No | YouTube Highlighter, MensorAI | YouTube Highlighter | Add local notes, highlights, timestamps, spaced review export. |
-| Transcripts/AI | Transcript search index | No | gap | none complete | Add local IndexedDB transcript library. |
-| Subscriptions | Subscription groups | No | PocketTube | PocketTube | Build local groups, AI tags optional, import/export. |
-| Subscriptions | Sort subscriptions by length/date/popular | No | PocketTube | PocketTube | Add feed sort overlay with cache. |
-| Subscriptions | Last uploaded highlight/autoscroll | No | YTA | YouTube Alchemy | Add subscription feed "new since last visit" markers. |
-| Subscriptions | Group sync/cloud | No | PocketTube | PocketTube | Local export/import first; optional sync profile later. |
-| Comments | Sort newest/top | Yes | AD, TFY | TFY/AD | Keep. |
-| Comments | Search/filter comments | Yes | AD | AD | Keep. |
-| Comments | Comment timestamp workflow | Partial | TFY | Tweaks | Add timestamp paste buttons and "back to comment" after timestamp click. |
-| Comments | Reddit comments | Yes | Karamel, AD | Karamel | Keep, add Lemmy/Hacker News optional search? |
-| Comments | Creator/pinned/highlight styling | Yes | AD | AD | Keep. |
-| Comments | Comment handle revealer | Yes | AD | AD | Keep. |
-| Live Chat | Premium chat styling | Yes | AD | AD | Keep. |
-| Live Chat | Hide chat elements | Yes | AD, UH | AD | Keep. |
-| Live Chat | Chat keyword filter | Yes | AD | AD | Keep. |
-| Live Chat | Reaction spammer | Yes | AD | AD | Keep off by default with cooldown. |
-| Live Chat | Super Chat CPU tamer | Partial | CY Fung scripts | CPU Tamer | Add chat-specific render throttling. |
-| Automation | Still watching auto-dismiss | Yes | AD, BT | AD/BlockTube | Keep. |
-| Automation | Auto subtitles/audio language | Yes | YTA, AD | YTA | Keep, expand language matrix. |
-| Automation | Pause other tabs | Yes | AD | AD | Keep. |
-| Automation | Auto close popups | Yes | AD | AD | Keep with safe selectors. |
-| Automation | Prevent autoplay/disable next | Yes | AD, UH, CPYT | AD/CPYT | Keep. |
-| Automation | Initial player state | No | TFY | Tweaks | Add foreground/background initial state settings. |
-| Automation | Auto loop normal videos | Partial | TFY | Tweaks | Add per-type loop controls. |
-| Privacy | Clean share URLs | Yes | AD | AD | Extend tracking param library. |
-| Privacy | External API opt-in | Partial | AD, YTA privacy posture | YTA local-only | Add per-integration privacy badges and data-flow panel. |
-| Privacy | Cookie isolation in fetch proxy | Yes | AD | AD | Keep. |
-| Privacy | No telemetry | Yes | YTA, AD | YTA/AD | Keep user-initiated log export only. |
-| Privacy | Store profile vs GitHub profile | No | gap | none | Add build-time feature profile matrix. |
-| Accessibility | Popup a11y | Yes | AD | AD | Keep tests. |
-| Accessibility | In-page overlay focus trap | Partial | a11y standards | none | Add focus management and live regions to every overlay. |
-| Accessibility | Reduced motion | Partial | standards | none | Add global reduced-motion compliance. |
-| Accessibility | Forced colors | Partial | standards | none | Add forced-colors audit and CSS. |
-| Accessibility | No keyboard shortcuts | Required | competitor shortcuts exist | n/a | Replace shortcuts with visible controls. |
-| Performance | CPU timer tamer | Yes/partial | CY Fung | CPU Tamer | Harden with feature toggle and compatibility checks. |
-| Performance | Lazy comments | Partial | gap/TFY adjacent | none complete | Add lazy comment preload/unload profile. |
-| Performance | Selector health | Partial tests | AD tests | AD canary | Runtime selector health HUD and export. |
-| Data/Backup | Settings profiles | Yes | AD, IT | AD | Keep, add profile recipes. |
-| Data/Backup | Cross-device sync | No | PocketTube, browser sync patterns | PocketTube | Add selective sync for safe prefs only. |
-| Data/Backup | Import/export | Yes | many | AD | Keep with schema migration checks. |
-| Integrations | VLC/MPV/protocol stream | Partial/userscript | AD current notes | AD legacy | Restore extension parity where safe. |
-| Integrations | YouTube Music improvements | No/limited | BetterYTM, GF HD Plus | BetterYTM | Separate YouTube Music compatibility track. |
-| Integrations | Third-party frontends | No | FreeTube/NewPipe/Invidious/Piped | FreeTube/NewPipe | Add "open in" URLs only, no backend dependency. |
-| Integrations | Context menus | Yes | BT, TFY, AD | BlockTube/Tweaks | Expand context menus for block, save, copy, transcript, download. |
+### Abbreviations
+
+Matrix columns:
+
+- AD: Astra Deck current repo
+- EYT: Enhancer for YouTube
+- IYT: Improve YouTube
+- UT: UnTrap
+- UH: Unhook
+- BT: BlockTube
+- PT: PocketTube
+- SB: SponsorBlock
+- DA: DeArrow
+- RYD: Return YouTube Dislike
+- YTA: YouTube Alchemy
+- YTT: YouTube Tweaks
+- TFY: Tweaks for YouTube
+- VSC: Video Speed Controller
+- US: userscripts/userstyles/smaller tools
+
+Legend: `Y` means present or clearly claimed; `P` means partial; `-` means not a primary feature; `N/A` means the competitor is focused elsewhere.
+
+### Feature Matrix
+
+| Category | Feature | AD | EYT | IYT | UT | UH | BT | PT | SB | DA | RYD | YTA | YTT | TFY | VSC | US | Best implementation note |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Theming/UI | OLED/deep dark theme | Y | Y | Y | Y | - | - | - | - | - | - | Y | P | P | - | Y | Astra should keep OLED only and map YouTube tokens natively. |
+| Theming/UI | Custom theme/token bridge | P | Y | Y | P | - | - | - | - | - | - | Y | - | custom CSS | - | userstyles | Improve YouTube has mature theme breadth; Astra should add semantic tokens. |
+| Theming/UI | Dense/compact layout | Y | P | Y | Y | P | - | - | - | - | - | Y | Y | P | - | Y | YouTube Alchemy has native-feeling compact tab layout. |
+| Theming/UI | Classic/old layout restoration | P | P | Y | P | - | - | - | - | - | - | Y | P | - | - | Y | Userstyles and Redux-style tools fill nostalgia gaps but are brittle. |
+| Theming/UI | Square thumbnails/avatars/search | Y | P | Y | P | - | - | - | - | - | - | Y | Y | - | - | Y | Astra already has keys; must unify with theme profile. |
+| Theming/UI | Custom scrollbar | Y | - | P | P | - | - | - | - | - | - | P | - | P | - | Y | Keep minimal and high-contrast. |
+| Theming/UI | Hide frosted glass/new player glass | Y | P | P | P | - | - | - | - | - | - | Y | P | - | - | Y | Current YouTube player UI needs fresh capture. |
+| Theming/UI | Watch tabs for info/comments/videos/transcript | Y | - | P | - | - | - | - | - | - | - | Y | - | Y | - | Y | YouTube Alchemy tab view is the benchmark. |
+| Theming/UI | Comments in sidebar | P | P | P | - | - | - | - | - | - | - | Y | Y | Y | - | Y | Must survive refresh and route changes. |
+| Content filtering | Hide Shorts everywhere | Y | Y | Y | Y | Y | Y | - | - | - | - | Y | Y | Y | - | Y | Use URL/path + shelf selectors. |
+| Content filtering | Redirect Shorts to regular video | Y | Y | P | Y | - | - | - | - | - | - | Y | P | - | - | Y | Must preserve timestamp/share links. |
+| Content filtering | Hide home feed | Y | P | Y | Y | Y | - | - | - | - | - | P | P | P | - | Y | Unhook's simple toggle is best UX. |
+| Content filtering | Hide related/sidebar | Y | Y | Y | Y | Y | - | - | - | - | - | Y | P | Y | - | Y | Must be route-scoped and reversible. |
+| Content filtering | Hide comments/live chat | Y | Y | Y | Y | Y | Y | - | - | - | - | Y | Y | Y | - | Y | Must not break comment loading or composer. |
+| Content filtering | Keyword/video title blocking | Y | - | Y | Y | - | Y | - | - | - | - | P | P | P | - | Y | BlockTube is baseline; Astra should add safe predicate DSL. |
+| Content filtering | Channel blocking | Y | - | P | Y | - | Y | - | - | - | - | P | P | - | - | Y | Include quick block buttons and import/export. |
+| Content filtering | Comment author/keyword blocking | Y | - | P | Y | - | Y | - | - | - | - | - | P | - | - | Y | Needs emoji/case/locale-safe matching. |
+| Content filtering | Regex filters | P | - | P | Y | - | Y | - | - | - | - | - | P | - | - | Y | Use sandboxed regex budget and circuit breaker. |
+| Content filtering | Advanced predicate filters | P | - | - | - | - | Y | - | - | - | - | - | - | - | - | - | BlockTube's JS predicate is powerful but unsafe; Astra DSL must be safer. |
+| Content filtering | Hide watched videos by progress | Y | - | P | Y | - | Y | P | - | - | - | Y | Y | Y | - | Y | Astra should combine native progress, local history, and user overrides. |
+| Content filtering | Duration/view-count filters | Y | - | P | Y | - | Y | Y | - | - | - | P | Y | P | - | Y | PocketTube leads subscription sorting/filtering. |
+| Content filtering | Hide mixes/playlists/movies/upcoming/live | Y | P | Y | Y | Y | Y | P | - | - | - | Y | Y | Y | - | Y | Keep per-route exceptions. |
+| Content filtering | Hide autoplay/auto-generated playlists | Y | Y | P | P | Y | Y | - | - | - | - | Y | Y | Y | - | Y | BlockTube issues show this often regresses. |
+| Content filtering | Anti auto-dub/translated titles | Y | P | P | P | - | requested | - | - | - | - | Y | Y | - | - | Y | Make title/audio/transcript separate toggles. |
+| Playback | Default video quality | Y | Y | Y | P | - | - | - | - | - | - | Y | Y | Y | - | Y | YouTube HD and Enhancer are baselines. |
+| Playback | Quality matrix by normal/theater/fullscreen/embed/background | Y | P | P | - | - | - | - | - | - | - | P | P | Y | - | - | Astra should own this as a premium differentiator. |
+| Playback | Force H.264/codec/FPS | Y | Y | Y | - | - | - | - | - | - | - | P | - | P | - | Y | MAIN bridge required. |
+| Playback | Speed defaults | Y | Y | Y | P | - | - | - | - | - | - | Y | Y | Y | Y | Y | VSC range/per-site model is best. |
+| Playback | Per-channel speed | Y | P | P | - | - | - | - | - | - | - | - | Y | - | - | - | YouTube Tweaks is baseline. |
+| Playback | Mouse wheel speed/volume/seek | Y | Y | P | - | - | - | - | - | - | - | P | Y | Y | P | Y | Must avoid adding keyboard shortcuts. |
+| Playback | Volume boost/audio filters/mono/high-pass | P | Y | P | - | - | - | - | - | - | - | - | Y | Y | - | Y | Tweaks for YouTube is baseline. |
+| Playback | A/B loop | Y | Y | P | - | - | - | - | - | - | - | - | P | P | - | Y | Provide visible controls and timeline handles. |
+| Playback | Sleep timer | Y | P | P | - | - | - | - | - | - | - | - | - | - | - | Y | Add status/undo toast. |
+| Playback | Pause other tabs | Y | Y | P | - | - | - | - | - | - | - | - | Y | P | - | Y | Needs BroadcastChannel/storage event arbitration. |
+| Playback | Auto-dismiss "Still watching" | Y | P | Y | P | - | Y | - | - | - | - | - | Y | P | - | Y | Must stay store-policy safe. |
+| Playback | Disable autoplay/playlist autoplay | Y | Y | Y | Y | Y | Y | - | - | - | - | Y | Y | Y | - | Y | Visible setting and status indicator. |
+| Player UI | Cinema/theater/full-window mode | Y | Y | Y | Y | - | - | - | - | - | - | Y | Y | Y | - | Y | Enhancer/Alchemy are key baselines. |
+| Player UI | Sticky/mini/popout player | Y | Y | Y | P | - | - | - | - | - | - | P | Y | Y | - | Y | Must preserve scroll and accessibility. |
+| Player UI | PiP button | Y | Y | Y | P | - | - | - | - | - | - | Y | P | Y | - | Y | Use native PiP API. |
+| Player UI | Screenshot/snapshot | Y | Y | Y | P | - | - | - | - | - | - | P | Y | Y | - | Y | Include format, subtitles, and filename template. |
+| Player UI | Frame-by-frame controls | Y | P | P | - | - | - | - | - | - | - | - | - | Y | P | Y | Visible buttons only. |
+| Player UI | Persistent progress bar/chapters | Y | P | Y | P | - | - | - | SB marks | - | - | Y | Y | Y | - | Y | Alchemy with SponsorBlock chapter markers is baseline. |
+| Player UI | Custom progress bar color/Nyan progress | Y | P | Y | - | - | - | - | - | - | - | Y | Y | - | - | Y | Keep themeable and opt-in. |
+| Media/downloads | Local yt-dlp downloader | Y | - | - | P | - | - | - | - | - | - | - | - | P | - | Y | Astra's local companion is differentiator. |
+| Media/downloads | Direct stream links | Y | - | - | P | - | - | - | - | - | - | - | - | Y | - | Y | Must be clear about reliability and policy. |
+| Media/downloads | Thumbnail download | Y | - | P | P | - | - | - | - | DA thumbs | - | - | P | Y | - | Y | Include max-res fallback chain. |
+| Media/downloads | Subtitle/transcript download | Y | - | P | Y | - | - | - | - | - | - | Y | P | Y | - | Y | Alchemy transcript exporter is benchmark. |
+| Sponsor/quality | SponsorBlock skips | Y | - | P | P | - | - | - | Y | - | - | Y | - | - | - | Y | SponsorBlock official behavior is baseline. |
+| Sponsor/quality | SponsorBlock submissions/voting | P | - | - | - | - | - | - | Y | - | - | - | - | - | - | - | Add only if API/reputation semantics are implemented safely. |
+| Sponsor/quality | DeArrow titles/thumbs | Y | - | P | P | - | - | - | - | Y | - | - | - | - | - | Y | Official DeArrow is baseline. |
+| Sponsor/quality | Return dislikes/ratio | Y | - | P | P | - | - | - | - | - | Y | - | - | - | - | Y | RYD official API and caveat copy is baseline. |
+| Subscriptions | Subscription groups | P | - | - | P | - | - | Y | - | - | - | - | - | - | - | Y | PocketTube is baseline. |
+| Subscriptions | Group feed/filter/sort | P | - | - | P | - | - | Y | - | - | - | - | P | - | - | Y | Need local IndexedDB + YouTube page fetch fallback. |
+| Subscriptions | Dead-channel detection | - | - | - | - | - | - | Y | - | - | - | - | - | - | - | - | Add a cautious local-only implementation. |
+| Subscriptions | New since last visit | Y | - | - | P | - | - | Y | - | - | - | Y | - | - | - | Y | Store local last-seen per channel/group. |
+| Navigation | Logo to subscriptions | Y | - | Y | P | - | - | - | - | - | - | Y | Y | - | - | Y | Already present; should be profile-aware. |
+| Navigation | Restore Play All | - | - | - | - | - | - | - | - | - | - | - | - | - | - | Y | Scripts.YT YTPA is baseline. |
+| Navigation | Quick links/header links | Y | - | P | - | - | - | - | - | - | - | Y | - | - | - | Y | Alchemy supports up to 10 header links. |
+| Navigation | Open in alternative frontend | Y | - | P | - | - | alt requested | - | SB supports Invidious | DA partial | - | - | - | - | - | Y | Should be explicit opt-in and per-instance. |
+| Privacy | Clean share URLs | Y | - | P | P | - | - | - | - | - | - | P | - | - | - | Y | `YTShareAntiTrack` proves demand. |
+| Privacy | Local-only/no tracking | Y | claimed | claimed | mixed AI | claimed | claimed | claimed | public user ID | server API | server API | claimed | claimed | claimed | claimed | varies | Split store-safe local profile from API-enabled profile. |
+| Privacy | Data-flow panel | Y | - | - | - | - | - | - | - | - | - | - | - | - | - | - | Make this visible and exportable. |
+| Privacy | Password-protected settings | - | - | - | Y | - | - | - | - | - | - | - | - | - | - | - | Only implement as local UI lock, not real crypto security. |
+| Accessibility | Reduced motion | Y | P | P | P | - | - | - | - | - | - | - | - | - | - | userstyles | Required for premium polish. |
+| Accessibility | Forced colors/high contrast | Y | - | P | - | - | - | - | - | - | - | - | - | - | - | userstyles | Keep semantic tokens and contrast audit. |
+| Accessibility | Screen-reader status region | Y | - | P | - | - | - | - | - | - | - | - | - | - | - | - | All toasts/actions announce through one live region. |
+| Accessibility | Subtitle styling | Y | - | P | - | - | - | - | - | - | - | - | - | Y | - | Y | TFY is baseline for subtitle controls. |
+| Research/AI | AI summary | Y | - | - | Y | - | - | - | - | - | - | P | - | - | - | Y | UnTrap/Rovetify set expectation; Astra must be BYO-key/local-first. |
+| Research/AI | Transcript index/search | Y | - | - | P | - | - | - | - | - | - | Y | - | - | - | Y | Use IndexedDB and explicit retention controls. |
+| Research/AI | Transcript handoff to ChatGPT/NotebookLM/etc. | Y | - | - | P | - | - | - | - | - | - | Y | - | - | - | Y | Alchemy's header buttons are benchmark. |
+| Research/AI | Per-video notes | - | - | - | P | - | - | - | - | - | - | - | - | - | - | Y | YouFocus and community scripts show demand. |
+| Research/AI | Study/work modes and time tracking | P | - | - | Y | - | - | - | - | - | - | - | - | - | - | Y | YouFocus is baseline; add local export. |
+| Live chat | Premium live chat layout | Y | - | P | P | Y hide | - | - | - | - | - | P | P | - | - | Y | Needs fresh iframe captures. |
+| Live chat | Chat keyword/reaction controls | Y | - | - | - | - | comment filters | - | - | - | - | - | - | - | - | Y | Keep spammy automation off by default. |
+| Developer/DX | Feature registry lifecycle | P | - | Y | - | - | - | - | - | - | - | P | - | - | - | - | Every feature must be reversible and testable. |
+| Developer/DX | MHTML selector fixtures | P | - | - | - | - | - | - | - | - | - | - | - | - | - | - | Make captures first-class fixture inputs. |
+| Developer/DX | Store-safe/full profiles | P | - | - | P | - | - | - | - | - | - | - | - | - | - | - | Critical due extension-store security climate. |
 
 ### Gap Analysis
 
-No single competitor currently ships all of these at once:
+High-value gaps Astra can own:
 
-- SponsorBlock plus DeArrow plus Return YouTube Dislike plus BlockTube-grade filtering.
-- PocketTube-grade subscription management plus YouTube Alchemy-grade visual control.
-- Local yt-dlp companion downloads plus transcript/AI workflows plus privacy-first no telemetry.
-- New YouTube player UI restoration plus old-layout profiles.
-- Runtime selector self-healing backed by MHTML fixtures.
-- Store-safe and GitHub/self-host profiles with the same settings schema.
+- Selector intelligence: competitors fix DOM churn reactively. Astra should ship a runtime selector resolver that records misses, falls back through versioned selector packs, exposes a health panel, and points maintainers to stale MHTML fixtures.
+- Permission transparency: many YouTube enhancers are now judged against malicious-extension risk. Astra should ship an explicit data-flow panel, store-safe manifest, and full-power GitHub build with clear permission deltas.
+- Full subscription workstation: PocketTube dominates subscription grouping, but Astra can combine groups with filters, DeArrow/RYD/SponsorBlock metadata, local notes, watch-later cleanup, dead-channel detection, and AI tag suggestions.
+- Research workspace: Alchemy has transcript export; UnTrap/Rovetify have AI summaries; YouFocus has notes/time tracking. Astra should unify transcripts, notes, summaries, spaced review, quote clipping, Markdown export, and local search.
+- Safe predicate engine: BlockTube's custom JS is powerful but risky. Astra should build an audited expression DSL with budgets, dry-run preview, rule explanations, import/export, and route-specific exceptions.
+- Player chrome resilience: YouTube's new player UI breaks the category. Astra should build a player chrome adapter with old/new selector packs and capture-backed tests.
+- Live chat quality: few competitors deeply polish live chat. Astra should own live chat readability, moderation filters, sticky/side-by-side layouts, archive export, and low-latency performance.
+- Accessibility as a differentiator: most competitors treat a11y as incidental. Astra should make reduced motion, forced colors, live regions, focus trapping, contrast, and pointer-target sizes part of release gates.
+- Local media pipeline: downloader competitors are often sketchy or policy-sensitive. Astra already has a local companion; make it safer, clearer, and more reliable than direct in-extension download claims.
 
-Weak competitor implementations to beat:
-
-- Many userscripts poll with `setInterval` instead of SPA route events and narrow MutationObservers.
-- Many rely on raw class names that churn on YouTube A/B tests.
-- Many download scripts redirect to third-party web services or expose opaque remote code.
-- Many broad extensions use keyboard shortcuts as the primary control path.
-- Many features lack clean teardown on disable.
-- Many settings panels are sparse, inconsistent, or not searchable.
-- Firefox review lag and Chrome MV3 restrictions cause stale store builds.
-
-Net-new Astra ideas:
-
-- Selector Health Center: runtime surface health, canary drift report, one-click diagnostic export.
-- Intent Profiles: Focus, Cinema, Research, Creator Audit, Low Power, Classic Layout, Downloader.
-- Feed Triage: local rules combining channel ID, title regex, watched ratio, duration, view count, age, live/upcoming/mix type, and subscription group.
-- Local Research Workspace: timestamp notes, transcript search, highlights, exports to Markdown/JSON/SRT/VTT, optional browser-local AI summaries.
-- Store/GitHub Feature Profiles: disable risky download/ad automation for store packages while keeping GitHub/self-host build complete.
-- Native YouTube Token Theme: hook `--yt-sys-*` and `--ytd-*` tokens so dark/OLED styling survives UI changes.
+Final scope: the v6 charter is the union of competitor features above plus these gaps, constrained by privacy, store policy, performance, and maintainability.
 
 ## Phase 3: Technical Reconnaissance
 
 ### Selector Strategy
 
-Rules:
-
-- Every surface gets a named resolver with stable selectors first and fragile fallbacks second.
-- Each resolver logs first miss to `diagnosticLog` when `diagnosticLog` is enabled.
-- Mutation observers process `addedNodes` only.
-- Never run full-document scans on every mutation.
-- Use `WeakSet` for processed nodes.
-- Use route-level re-application on `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `ytd-watch-flexy[video-id]` mutation, and Navigation API fallback.
-- High-churn surfaces: player chrome, feed cards, comments, filter chips, engagement panels, notifications, Shorts shelf.
-
-Required self-healing helpers:
+Implement selector handling as a versioned selector pack:
 
 ```js
-const SurfaceSelectors = {
-  player: ['#movie_player', '.html5-video-player', 'ytd-player #movie_player'],
-  mainVideo: ['video.html5-main-video', '#movie_player video', 'video.video-stream'],
-  feedCard: ['ytd-rich-item-renderer', 'yt-lockup-view-model', 'ytd-video-renderer'],
-  comments: ['ytd-comments', 'ytd-comment-thread-renderer', 'ytd-comment-view-model'],
-};
+{
+  surface: "feedCard",
+  stable: ["ytd-rich-item-renderer", "yt-lockup-view-model", "ytd-video-renderer"],
+  fallback: ["yt-lockup-view-model.ytd-rich-item-renderer", "ytd-rich-item-renderer.style-scope"],
+  captureEvidence: ["mhtml/YouTube.mhtml", "Subscriptions - YouTube.mhtml"],
+  highChurn: true,
+  ownerFeatureIds: ["hideVideosKeywordFilter", "deArrow", "returnDislikeOnCards"]
+}
 ```
+
+Rules:
+
+- New feature code calls `findSurfaceElement(surface, root)` or `findSurfaceElements(surface, root)`, never raw document-wide selectors.
+- High-churn surfaces use `waitForElement` with bounded backoff and a short timeout.
+- Observers process only `addedNodes` and then scope down to nearest feature root.
+- Every selector miss increments bounded diagnostics keyed by `surface::selector`.
+- Selector packs include capture provenance and last verified date.
+- Tests fail if a stable selector disappears from all current fixtures and no fallback matches.
 
 ### SPA Handling
 
-Hook these route signals:
+Existing good signals to keep:
 
-- `yt-navigate-start`: flush pending storage writes and pause expensive work.
-- `yt-navigate-finish`: re-run route rules and feature `onRoute()`.
-- `yt-page-data-updated`: re-run metadata-dependent features.
-- `popstate`: fallback for browser navigation.
-- `window.navigation.navigate`: additive fallback where available.
-- `ytd-watch-flexy[video-id]` attribute changes: player/watch-page transition.
-- Capture-phase clicks on `yt-chip-cloud-chip-renderer`: feed filter chips recycle the grid without always firing route events.
+- `yt-navigate-finish`
+- `yt-page-data-updated`
+- `popstate`
+- `window.navigation` `navigate` event as feature-detected fallback
+- `ytd-watch-flexy[video-id]` mutation observer
 
-Feature lifecycle split:
+Feature lifecycle model:
 
-- `initOnce`: storage, CSS, registry, message listeners, global route manager.
-- `initPerRoute`: feed/watch/search/channel/subscriptions features.
-- `initPerVideo`: player, captions, transcript, SponsorBlock, DeArrow, RYD, download controls.
-- `initPerNode`: card/comment/chat node processors.
-- `destroy`: full cleanup on feature disable, route teardown, or safe mode.
+- `document_start`: anti-FOUC classes, theme variables, Trusted Types policy setup, MAIN bridge registration.
+- `document_idle`: settings load, registry init, current-route processing.
+- Once per session: storage migrations, locale load, background bridge handshake, diagnostics setup, API limiter setup.
+- Once per route: watch metadata, player controls, transcript/chapters/comments panels, related sidebar, subscription feed transforms.
+- Per added node: feed cards, thumbnails, comments, notifications, live-chat messages.
+- Per media element: playback rate, quality, codec, volume, subtitles, PiP/screenshot controls.
 
-### Site API Strategy
+Observer constraints:
 
-| API | Use | Auth/cookies | Rate limit strategy |
-|---|---|---|---|
-| YouTube Innertube player | player response, captions, formats, metadata | Uses page API key/client context; no extension cookies forwarded to third parties | Request only per video, cache by video ID, backoff on 429/403. |
-| Caption track JSON3 | transcript viewer/export/AI | URL from player response | Cache by video ID/language; do not refetch during SPA churn. |
-| SponsorBlock hash-prefix | segments, categories | no cookies | Cache per video, stale-serve on failure, category budget. |
-| DeArrow | title/thumb replacements | no cookies | Cache with TTL, channel override cache. |
-| Return YouTube Dislike | dislikes/ratings | no cookies | Enforce 100 req/min and 10k/day budget; cache 24h+ and degrade gracefully. |
-| Reddit search | related discussion panel | no cookies | User-initiated or idle only, cache by video URL. |
-| AI providers | summary/chat handoff | BYO key or local | Never call without explicit enablement; redact keys from export. |
-| Local Astra Downloader | downloads, folder picker, health | token/local identity | Health cache; queue download commands; no page-origin access. |
+- One global coordinator per document.
+- One scoped observer per high-churn surface only when a feature is enabled.
+- Never perform a full `document.querySelectorAll` for every mutation.
+- Batch work in `requestAnimationFrame` or `requestIdleCallback` with fallback timeout.
+- Disconnect all observers in feature `destroy()`.
+
+### APIs and Rate Limits
+
+Known API/endpoints worth using:
+
+| API | Endpoint | Used for | Auth/cookies | Rate-limit strategy |
+|---|---|---|---|---|
+| YouTube watch HTML | `https://www.youtube.com/watch?v={videoId}` | fallback player response, caption tracks, title metadata | same-origin/cookies may apply | route-level cache, abort stale route fetches |
+| Innertube player | `https://www.youtube.com/youtubei/v1/player?key={apiKey}` | caption tracks/player response fallback | public page key, no secret | per-video dedupe, backoff on 429/403, rotate scraped client version |
+| YouTube timed text | caption `baseUrl` from player response | transcript segment download | no extra auth beyond URL | cache per video/language, cap segment payloads |
+| SponsorBlock skip segments | `https://sponsor.ajay.app/api/skipSegments/{hashPrefix}` | segment skips and progress markers | no YouTube cookies | hash-prefix cache, category-specific cache key, stale fallback |
+| DeArrow branding | `https://sponsor.ajay.app/api/branding?videoID={id}` | titles/thumbnails | no YouTube cookies | in-flight dedupe, TTL setting, LRU cap |
+| DeArrow thumbnail | `https://dearrow-thumb.ajay.app/api/v1/getThumbnail?...` | replacement thumbnail images | no YouTube cookies | lazy load only visible cards |
+| Return YouTube Dislike | `https://returnyoutubedislikeapi.com/votes?videoId={id}` | likes/dislikes/ratio | no YouTube cookies | watch-only by default, card fetches lazy/visible and cache-bounded |
+| Reddit comments | `https://www.reddit.com/...` / `https://old.reddit.com/...` | optional discussion panel | no YouTube cookies | opt-in, per-video query cap, user-visible source |
+| AI providers | OpenAI, Anthropic, Gemini, Ollama/local | summaries, transcript Q&A | BYO key or local only | off by default, explicit provider, token budget, redact controls |
+| Astra Downloader | `http://127.0.0.1:{port}` | local downloads, health, history, stream links | local token | 127.0.0.1 only, no localhost, health TTL, auto-start recovery |
+
+Rate limiter requirements:
+
+- Central `ApiLimiter` handles per-origin concurrency, dedupe, TTL, exponential backoff, stale cache fallback, and cancellation.
+- No third-party API receives YouTube cookies or auth headers.
+- Card-level third-party API fetches must be lazy and visibility-bound.
+- Background proxy allowlist must remain strict and test-covered.
 
 ### Constraints
 
-- Trusted Types: YouTube requires Trusted Types for script sinks. All injected HTML must use the existing policy wrapper or DOM construction. Clearing uses `textContent = ''`, not `innerHTML = ''`.
-- MV3 service worker: listeners must register synchronously at top level. No post-await listener registration.
-- Chrome Web Store policy: YouTube download and ad-automation features are review-sensitive. Plan store-safe builds and GitHub/self-host builds separately.
-- CRX self-hosting: modern Chromium rejects self-hosted drag/drop CRX. ZIP "Load unpacked" remains primary for Chromium self-distribution.
-- Shadow DOM: use it only for large Astra-owned panels where YouTube CSS would corrupt UI. For player buttons and native-looking controls, use light DOM plus scoped classes.
-- Anti-tampering/script detection: keep page-world monkeypatches minimal, documented, reversible, and gated behind feature toggles.
-- Privacy: no remote telemetry. Diagnostics are local and user-exported.
+- Trusted Types: do not use `innerHTML`, `insertAdjacentHTML`, or string HTML sinks directly. Use DOM construction or `setTrustedHTML`.
+- MV3 service worker: no long-lived background state assumptions. Persist resumable work; design for worker suspension.
+- Store policy: ad blocking, downloader, Cobalt/direct-stream, and age-restriction bypass surfaces may need GitHub/full-power build separation.
+- YouTube Terms and anti-abuse: no hidden botting, no automated engagement spam by default, no credential extraction, no remote code execution.
+- Shadow DOM: extension-owned overlay widgets can use Shadow DOM only if theming/a11y and teardown are tested.
+- Live chat iframe: all-frame content script required; top-level watch page cannot see inside cross-document chat DOM.
+- Performance: feed transforms must be incremental and cache-backed; avoid layout thrash on rich grids.
 
-### Recommended Architecture
+### Userscript vs Extension Recommendation
 
-Future layout:
+Ship both.
+
+The userscript is the fastest compatibility and recovery vehicle:
+
+- Single file.
+- Quick GitHub/Gist updates.
+- Better MAIN-world access.
+- Easier for power users to inspect.
+- Useful when store review delays break core YouTube surfaces.
+
+The MV3 extension is the primary polished product:
+
+- Safer settings UI.
+- Background proxy.
+- Downloads API.
+- Local companion bridge.
+- Permission-gated optional APIs.
+- Extension popup and store distribution.
+- Better multi-browser packaging.
+
+Packaging profiles:
+
+- `store-safe`: no ad skipping claims beyond SponsorBlock-style user value, no risky downloader defaults, no broad host permissions beyond needed YouTube/API origins, no remote code, no hidden tracking.
+- `github-full`: optional downloader/direct-stream/local companion/advanced predicates/experimental APIs with explicit warnings and visible data flow.
+- `userscript`: single-file portable build with GM storage, GM fetch/style APIs, and graceful degradation when extension-only APIs are unavailable.
+
+### Architecture
+
+Recommended v5 file layout:
 
 ```text
 extension/
   core/
-    env.js
     registry.js
-    storage.js
-    styles.js
-    trusted-html.js
+    feature-lifecycle.js
     selectors.js
+    selector-health.js
     navigation.js
+    observers.js
     api-limiter.js
+    trusted-html.js
+    storage.js
+    storage-manager.js
+    settings-schema.js
+    settings-migrations.js
     diagnostics.js
-  surfaces/
-    feed.js
-    watch.js
-    player.js
-    comments.js
-    live-chat.js
-    masthead.js
-    notifications.js
+    toast.js
+    a11y.js
+    theme-tokens.js
+    policy-profile.js
   features/
-    appearance/
-    filtering/
+    content-filters/
     player/
+    media-downloads/
     sponsorblock/
     dearrow/
-    dislikes/
-    downloads/
-    transcripts/
+    return-dislike/
     subscriptions/
+    research/
     comments/
     live-chat/
-    research/
+    navigation/
+    theming/
     privacy/
-    performance/
+    accessibility/
   ui/
-    panel.js
-    toast.js
-    command-surface.js
-    settings-schema.js
-    profile-recipes.js
-  background/
-    fetch-proxy.js
-    downloads.js
-    cookies.js
-    dnr.js
-  ytkit.js
-  ytkit-main.js
-  early.css
+    control-center/
+    popup/
+    overlays/
+    components/
+  generated/
+    userscript-bundle.js
 ```
 
-Feature registry contract:
+Feature contract:
 
 ```js
-registerFeature({
-  id: 'returnDislike',
-  category: 'Ratings',
-  title: 'Return dislike count',
-  default: false,
-  storageKey: 'returnDislike',
-  surfaces: ['watch', 'feed'],
-  permissions: ['EXT_FETCH:returnyoutubedislikeapi.com'],
-  conflicts: [],
-  dependencies: [],
+export const feature = {
+  id: "hideVideosKeywordFilter",
+  category: "contentFiltering",
+  storageKey: "hideVideosKeywordFilter",
+  defaultValue: "",
+  dependencies: ["selectorHealth", "navigation"],
   init(ctx) {},
-  onRoute(ctx) {},
-  processNode(node, ctx) {},
+  apply(ctx, value) {},
   destroy(ctx) {}
-});
+};
 ```
 
-Settings storage:
+Lifecycle rules:
 
-- Extension: `chrome.storage.local` for all settings, caches, history, and profiles.
-- Userscript: `GM_getValue`/`GM_setValue` through compatibility shim.
-- Sync: optional, safe allowlist only. Never sync API keys, tokens, caches, diagnostics, download paths, cookies, or transcript library unless explicitly exported.
-- CSS: `GM_addStyle` or extension style injector, tagged by feature ID and removable by cleanup registry.
+- `init()` wires observers/listeners and applies current state.
+- `apply()` updates immediately when settings change.
+- `destroy()` reverses everything.
+- Async work gets an `AbortController` and a monotonically increasing route token.
+- Feature modules may only mutate DOM below resolved surface roots.
+- Feature modules must report diagnostics through one logger.
 
 ## Settings Panel Spec
 
-Panel requirements:
+The settings panel is a first-class feature, not a dump of toggles.
 
-- Searchable.
-- Grouped by category.
-- Immediate apply.
+Panel behavior:
+
+- Dark/OLED only.
+- Dense grouped sections.
+- Search/filter by feature name, storage key, competitor, route, and risk.
+- Immediate apply on every toggle/change.
+- Toast/status-region feedback for actions.
 - No confirmation dialogs.
-- Toast/status feedback for changes.
-- Every toggle indicates privacy/network/local-only impact.
-- Every advanced/risky feature is default off.
-- Every feature exposes Reset to default for its category.
-- Profile switcher: Focus, Cinema, Research, Downloader, Classic, Low Power, Custom.
+- Undo toast for reversible destructive actions.
+- Import/export profiles.
+- Store-safe/full profile indicator.
+- Per-feature diagnostics row: last applied, last selector miss, last API error, active observers.
+- Inactive overlays use `pointer-events: none`.
 
-### Current Keys To Retain
+Required setting categories:
 
-Appearance and layout:
+- Interface and theme
+- Watch page and player
+- Playback and audio
+- Content filtering and moderation
+- Shorts
+- Comments and live chat
+- Subscriptions and feeds
+- SponsorBlock, DeArrow, and quality signals
+- Downloads and local companion
+- Transcript, research, and AI
+- Privacy and data
+- Accessibility and performance
+- Developer diagnostics
 
-`colorTheme`, `themeAccentColor`, `forceDarkEverywhere`, `customProgressBarColor`, `customSelectionColor`, `selectionColor`, `uiStyle`, `squareSearchBar`, `squareAvatars`, `widenSearchBar`, `compactLayout`, `thinScrollbar`, `watchPageRestyle`, `chatStyleComments`, `fullWidthSubscriptions`, `homepageGridAlign`, `subscriptionsGrid`, `videosPerRow`, `styledFilterChips`, `compactUnfixedHeader`, `noFrostedGlass`, `noAmbientMode`, `expandVideoWidth`, `floatingLogoOnWatch`, `fitPlayerToWindow`.
+Current observed flat key inventory, to be categorized and given metadata in v5:
 
-Navigation and visibility:
+```text
+hideCreateButton, hideVoiceSearch, logoToSubscriptions, widenSearchBar, squareSearchBar, squareAvatars, subscriptionsGrid, homepageGridAlign, styledFilterChips, hideSidebar, uiStyle, noAmbientMode, compactLayout, thinScrollbar, watchPageRestyle, chatStyleComments, removeAllShorts, redirectShorts, disablePlayOnHover, fullWidthSubscriptions, hideSubscriptionOptions, hidePaidContentOverlay, redirectToVideosTab, hidePlayables, hideMembersOnly, hideNewsHome, hidePlaylistsHome, hideRelatedVideos, expandVideoWidth, floatingLogoOnWatch, hideDescriptionRow, hideVideoEndContent, hideJumpAheadButton, stickyVideo, cleanShareUrls, videosPerRow, quickLinkMenu, quickLinkItems, autoMaxResolution, hideMerchShelf, hideAiSummary, hideDescriptionExtras, hideHashtags, hidePinnedComments, hideCommentDislikeButton, hideCommentActionMenu, condenseComments, hideCommentTeaser, autoExpandComments, hideLiveChatEngagement, premiumLiveChat, reactionSpammer, _reactionSpammerAck, hidePaidPromotionWatch, hideChannelJoinButton, hideFundraiser, hiddenChatElementsManager, hiddenChatElements, chatKeywordFilter, hiddenActionButtonsManager, hiddenActionButtons, hiddenPlayerControlsManager, hiddenPlayerControls, hiddenWatchElementsManager, hiddenWatchElements, showLocalDownloadButton, videoContextMenu, hideCollaborations, hideVideosFromHome, hideVideosKeywordFilter, hideVideosDurationFilter, hideVideosSubsLoadLimit, hideVideosSubsLoadThreshold, hideVideosRemoveHiddenCards, hideVideosShowQuickHideButton, hideVideosAllowChannelBlock, hideVideosRememberRestoredVideos, hideVideosScopeHome, hideVideosScopeSubscriptions, hideVideosScopeSearch, hideVideosScopeWatch, hideVideosScopeChannels, hideVideosScopeOther, hideVideosLowViewFilter, hideVideosLowViewThreshold, hideVideosHideLive, hideVideosHideUpcoming, hideVideosHideMixes, hideVideosHidePlaylists, hideVideosHideMovies, hideVideosHideAutoDubbed, hideVideosWatchedRatio, hideInfoPanels, colorTheme, commentEnhancements, sidebarOrder, forceH264, titleNormalization, watchProgress, autoDismissStillWatching, remainingTimeDisplay, showPlaylistDuration, showTimeInTabTitle, customProgressBarColor, compactUnfixedHeader, reversePlaylist, rssFeedLink, preciseViewCounts, videoScreenshot, perChannelSpeed, hideWatchedVideos, hideWatchedMode, antiTranslate, pauseOtherTabs, abLoop, fineSpeedControl, showChannelVideoCount, redirectHomeToSubs, notInterestedButton, timestampBookmarks, blueLightFilter, blueLightIntensity, disableInfiniteScroll, popOutPlayer, watchTimeTracker, alwaysShowProgressBar, sortCommentsNewest, autoSkipChapters, autoSkipChapterPatterns, chapterNavButtons, videoLoopButton, persistentSpeed, persistentSpeedValue, codecSelector, ageRestrictionBypass, autoLikeSubscribed, thumbnailPreviewSize, cinemaAmbientGlow, transcriptViewer, searchFilterDefaults, searchFilterSort, forceStandardFps, stickyChat, autoExpandDescription, keyMoments, scrollToPlayer, hideEndCards, hideInfoCards, autoTheaterMode, resumePlayback, miniPlayerBar, playbackStatsOverlay, hideNotificationBadge, autoPauseOnSwitch, creatorCommentHighlight, copyVideoTitle, channelAgeDisplay, speedIndicatorOverlay, hideAutoplayToggle, fullscreenOnDoubleClick, rememberVolume, rememberVolumeLevel, pipButton, autoSubtitles, autoSubtitleLang, focusedMode, thumbnailQualityUpgrade, watchLaterQuickAdd, playlistEnhancer, commentSearch, videoZoom, forceDarkEverywhere, customCssInjection, customCssCode, shareMenuCleaner, autoClosePopups, videoResolutionBadge, likeViewRatio, downloadThumbnail, grayscaleThumbnails, disableAutoplayNext, channelSubCount, customSpeedButtons, openInNewTab, preventAutoplay, hideNotificationButton, noFrostedGlass, autoOpenChapters, autoOpenTranscript, chronologicalNotifications, hideLatestPosts, disableMiniPlayer, adaptiveLiveLayout, commentNavigator, shortsAsRegularVideo, themeAccentColor, theaterAutoScroll, scrollWheelSpeed, speedStep, preloadComments, playbackSpeedOSD, enableCPU_Tamer, enableHandleRevealer, autoDownloadOnVisit, downloadQuality, downloadVideoFormat, downloadAudioFormat, deArrow, daReplaceTitles, daReplaceThumbs, daTitleFormat, daFallbackFormat, daShowOriginalHover, daCacheTTL, sponsorBlock, sbCat_sponsor, sbCat_intro, sbCat_outro, sbCat_selfpromo, sbCat_interaction, sbCat_music_offtopic, sbCat_preview, sbCat_filler, sbCat_poi_highlight, showStatisticsDashboard, settingsProfiles, debugMode, nyanCatProgressBar, fitPlayerToWindow, disableSpaNavigation, videoRotation, videoRotationAngle, frameByFrameButtons, digitalWellbeing, dwBreakIntervalMin, dwDailyCapMin, dwWatchTimeToday, _profiles, _activeProfile, privacyDataFlowPanel, safeStoreProfile, githubFullProfile, syncSafePrefs, syncSafePrefsAllowlist, advancedLocalPredicate, advancedLocalPredicateCode, commentFilterManager, commentFilterRules, bulkCardActions, feedTriageProfile, downloadScreenshotFormat, downloadSubtitlesWithScreenshot, volumeWheelMode, disableLoudnessNormalization, perChannelIntroOutro, perChannelIntroOutroData, initialPlayerStateForeground, initialPlayerStateBackground, downloadHistoryPanel, downloadHealthPanel, downloadStreamLinksPanel, downloadCobaltFallback, downloadCobaltInstance, returnDislike, returnDislikeOnCards, returnDislikeCacheHours, returnDislikeShowRatio, deArrowChannelOverrides, deArrowChannelOverridesPanel, qualityProfileMatrix, qualityDefaultNormal, qualityDefaultTheater, qualityDefaultFullscreen, qualityDefaultBackground, qualityDefaultEmbed, antiTranslateAudioTrack, antiTranslateTranscript, monetizationIndicator, subscriptionGroups, subscriptionGroupData, subscriptionSortMode, subscriptionShowNewSinceLastVisit, subscriptionLastVisitData, subscriptionAiTags, subscriptionAiTagData, localAiSummary, researchSpacedReview, researchTranscriptIndex, researchTranscriptSearchPanel, reducedMotion, forcedColorsSupport, globalAriaLiveRegion, lowPowerProfile, lowPowerProfileBackup, oledTheme, denseMode, rectangularizeYouTube, classicLayoutProfile, newPlayerUiRestore, tokenThemeBridge, openInAlternativeFrontend, alternativeFrontendInstance, vlcMpvHandoff, astraContextMenu, youtubeMusicCompat, subtitleDownload, videoVisualFilters, vvfBrightness, vvfContrast, vvfSaturation, vvfHue, vvfGrayscale, vvfSepia, dearrowPeekButton, videoAgeColors, watchPageTabs, redditComments, diagnosticLog, _errors, storageQuotaLRU, apiRetryBackoff, watchHistoryAnalytics, subtitleStyling, subStyleFontSize, subStyleFontFamily, subStyleColor, subStyleBgOpacity, subStyleBgColor, subStyleBottomOffset, subStyleTextShadow, aiVideoSummary, aiSummaryEndpoint, aiSummaryModel, aiSummaryApiKey, aiSummaryProvider, copyChapterMarkdown, chapterJumpButtons, hideAirplayButton, hideQueueOnThumbnails, fullTitles, titleCaseTransform, titleCaseMode, customSelectionColor, selectionColor, bypassPlaylistMode, musicVideoSpeedLock, playlistQuickRemove, watchLaterCleanup, transcriptAiHandoff, transcriptAiTarget, audioTrackLanguage, preferredAudioLang, notifyAutoDubbedAudio, sleepTimer
+```
 
-`hideCreateButton`, `hideVoiceSearch`, `logoToSubscriptions`, `quickLinkMenu`, `quickLinkItems`, `hideSidebar`, `hideRelatedVideos`, `hideDescriptionRow`, `hideSubscriptionOptions`, `hidePaidContentOverlay`, `hidePlayables`, `hideMembersOnly`, `hideNewsHome`, `hidePlaylistsHome`, `hideCollaborations`, `hideVideosFromHome`, `redirectHomeToSubs`, `redirectToVideosTab`, `hideLatestPosts`, `disableInfiniteScroll`, `disableSpaNavigation`.
+For every key, `settings-schema.js` must add:
 
-Shorts and feeds:
-
-`removeAllShorts`, `redirectShorts`, `shortsAsRegularVideo`, `hideVideosKeywordFilter`, `hideVideosDurationFilter`, `hideVideosSubsLoadLimit`, `hideVideosSubsLoadThreshold`, `hideVideosRemoveHiddenCards`, `hideVideosShowQuickHideButton`, `hideVideosAllowChannelBlock`, `hideVideosRememberRestoredVideos`, `hideVideosScopeHome`, `hideVideosScopeSubscriptions`, `hideVideosScopeSearch`, `hideVideosScopeWatch`, `hideVideosScopeChannels`, `hideVideosScopeOther`, `hideWatchedVideos`, `hideWatchedMode`, `grayscaleThumbnails`, `thumbnailQualityUpgrade`, `videoResolutionBadge`.
-
-Watch elements and action controls:
-
-`hiddenActionButtonsManager`, `hiddenActionButtons`, `hiddenPlayerControlsManager`, `hiddenPlayerControls`, `hiddenWatchElementsManager`, `hiddenWatchElements`, `hideMerchShelf`, `hideAiSummary`, `hideDescriptionExtras`, `hideHashtags`, `hidePinnedComments`, `hideCommentDislikeButton`, `hideCommentActionMenu`, `hideCommentTeaser`, `hidePaidPromotionWatch`, `hideChannelJoinButton`, `hideFundraiser`, `hideInfoPanels`, `hideVideoEndContent`, `hideJumpAheadButton`, `hideInfoCards`, `hideEndCards`, `hideAutoplayToggle`, `hideAirplayButton`, `hideQueueOnThumbnails`, `shareMenuCleaner`.
-
-Player and playback:
-
-`autoMaxResolution`, `forceH264`, `codecSelector`, `forceStandardFps`, `persistentSpeed`, `persistentSpeedValue`, `perChannelSpeed`, `fineSpeedControl`, `customSpeedButtons`, `speedStep`, `speedIndicatorOverlay`, `playbackSpeedOSD`, `remainingTimeDisplay`, `showTimeInTabTitle`, `showPlaylistDuration`, `reversePlaylist`, `abLoop`, `autoSkipChapters`, `autoSkipChapterPatterns`, `chapterNavButtons`, `chapterJumpButtons`, `videoLoopButton`, `alwaysShowProgressBar`, `autoTheaterMode`, `theaterAutoScroll`, `scrollToPlayer`, `stickyVideo`, `stickyChat`, `miniPlayerBar`, `playbackStatsOverlay`, `popOutPlayer`, `pipButton`, `fullscreenOnDoubleClick`, `videoZoom`, `videoRotation`, `videoRotationAngle`, `frameByFrameButtons`, `rememberVolume`, `rememberVolumeLevel`, `autoSubtitles`, `autoSubtitleLang`, `audioTrackLanguage`, `preferredAudioLang`, `musicVideoSpeedLock`, `sleepTimer`, `preventAutoplay`, `disableAutoplayNext`, `disablePlayOnHover`.
-
-Downloads and media:
-
-`showLocalDownloadButton`, `videoContextMenu`, `autoDownloadOnVisit`, `downloadQuality`, `downloadVideoFormat`, `downloadAudioFormat`, `downloadThumbnail`, `videoScreenshot`, `subtitleDownload`, `copyVideoTitle`, `copyChapterMarkdown`.
-
-Sponsor, clickbait, and ratings:
-
-`sponsorBlock`, `sbCat_sponsor`, `sbCat_intro`, `sbCat_outro`, `sbCat_selfpromo`, `sbCat_interaction`, `sbCat_music_offtopic`, `sbCat_preview`, `sbCat_filler`, `sbCat_poi_highlight`, `deArrow`, `daReplaceTitles`, `daReplaceThumbs`, `daTitleFormat`, `daFallbackFormat`, `daShowOriginalHover`, `daCacheTTL`, `dearrowPeekButton`, `antiTranslate`, `notifyAutoDubbedAudio`, `titleNormalization`, `titleCaseTransform`, `titleCaseMode`, `fullTitles`, `preciseViewCounts`, `likeViewRatio`, `showChannelVideoCount`, `channelSubCount`, `channelAgeDisplay`.
-
-Comments and live chat:
-
-`commentEnhancements`, `condenseComments`, `autoExpandComments`, `sortCommentsNewest`, `commentSearch`, `commentNavigator`, `creatorCommentHighlight`, `enableHandleRevealer`, `redditComments`, `preloadComments`, `premiumLiveChat`, `hideLiveChatEngagement`, `hiddenChatElementsManager`, `hiddenChatElements`, `chatKeywordFilter`, `adaptiveLiveLayout`, `reactionSpammer`, `_reactionSpammerAck`.
-
-Transcript, AI, and research:
-
-`transcriptViewer`, `autoOpenTranscript`, `autoOpenChapters`, `transcriptAiHandoff`, `transcriptAiTarget`, `aiVideoSummary`, `aiSummaryProvider`, `aiSummaryEndpoint`, `aiSummaryModel`, `aiSummaryApiKey`, `watchPageTabs`, `timestampBookmarks`.
-
-Wellbeing and automation:
-
-`autoDismissStillWatching`, `pauseOtherTabs`, `autoPauseOnSwitch`, `autoClosePopups`, `autoLikeSubscribed`, `focusedMode`, `watchTimeTracker`, `watchProgress`, `resumePlayback`, `digitalWellbeing`, `dwBreakIntervalMin`, `dwDailyCapMin`, `dwWatchTimeToday`, `openInNewTab`, `notInterestedButton`, `bypassPlaylistMode`, `playlistEnhancer`, `playlistQuickRemove`, `watchLaterQuickAdd`, `watchLaterCleanup`, `rssFeedLink`, `searchFilterDefaults`, `searchFilterSort`.
-
-Subtitle styling and visual filters:
-
-`subtitleStyling`, `subStyleFontSize`, `subStyleFontFamily`, `subStyleColor`, `subStyleBgOpacity`, `subStyleBgColor`, `subStyleBottomOffset`, `subStyleTextShadow`, `blueLightFilter`, `blueLightIntensity`, `videoVisualFilters`, `vvfBrightness`, `vvfContrast`, `vvfSaturation`, `vvfHue`, `vvfGrayscale`, `vvfSepia`, `cinemaAmbientGlow`, `nyanCatProgressBar`.
-
-Storage, diagnostics, profiles:
-
-`settingsProfiles`, `_profiles`, `_activeProfile`, `showStatisticsDashboard`, `watchHistoryAnalytics`, `debugMode`, `diagnosticLog`, `_errors`, `storageQuotaLRU`, `apiRetryBackoff`, `enableCPU_Tamer`, `customCssInjection`, `customCssCode`, `sidebarOrder`.
-
-### New Settings Keys To Add
-
-Ratings:
-
-- `returnDislike`
-- `returnDislikeOnCards`
-- `returnDislikeCacheHours`
-- `returnDislikeShowRatio`
-
-Subscription manager:
-
-- `subscriptionGroups`
-- `subscriptionGroupData`
-- `subscriptionAiTags`
-- `subscriptionSortMode`
-- `subscriptionShowNewSinceLastVisit`
-- `subscriptionGroupSidebar`
-- `subscriptionGroupExportFormat`
-
-Feed triage:
-
-- `feedTriage`
-- `feedHideLowViews`
-- `feedLowViewsThreshold`
-- `feedHideUpcoming`
-- `feedHideLive`
-- `feedHideMixes`
-- `feedHideMovies`
-- `feedHideAutoDubbed`
-- `feedAgeColoring`
-- `feedAgeColorRules`
-- `feedDurationBuckets`
-- `feedBlocklistImport`
-
-Player context profiles:
-
-- `qualityProfileMatrix`
-- `qualityDefaultNormal`
-- `qualityDefaultTheater`
-- `qualityDefaultFullscreen`
-- `qualityDefaultBackground`
-- `qualityDefaultEmbed`
-- `initialPlayerState`
-- `initialForegroundState`
-- `initialBackgroundState`
-- `initialVolumeProfile`
-- `disableLoudnessNormalization`
-- `volumeWheelMode`
-- `perChannelIntroOutro`
-- `perChannelLoopMode`
-
-Downloads:
-
-- `downloadQueuePanel`
-- `downloadHistory`
-- `downloadHistoryRetentionDays`
-- `downloadStreamLinksPanel`
-- `downloadCobaltFallback`
-- `downloadStoreSafeMode`
-- `downloadSubtitlesWithScreenshot`
-- `downloadScreenshotFormat`
-
-Research workspace:
-
-- `researchWorkspace`
-- `researchNotes`
-- `researchHighlights`
-- `researchTranscriptIndex`
-- `researchSpacedReview`
-- `researchExportFormat`
-- `localAiSummary`
-- `localAiProvider`
-
-Selector health:
-
-- `selectorHealth`
-- `selectorHealthToast`
-- `selectorHealthThreshold`
-- `selectorHealthLastReport`
-- `selectorSelfHealing`
-
-Theming:
-
-- `oledTheme`
-- `denseMode`
-- `glassIntensity`
-- `layoutProfile`
-- `classicLayoutProfile`
-- `rectangularizeYouTube`
-- `tokenThemeBridge`
-
-Privacy and profiles:
-
-- `privacyDataFlowPanel`
-- `safeStoreProfile`
-- `githubFullProfile`
-- `syncSafePrefs`
-- `syncSafePrefsAllowlist`
-- `advancedLocalPredicate`
-- `advancedLocalPredicateCode`
+- `category`
+- `label`
+- `description`
+- `defaultValue`
+- `storageKey`
+- `type`
+- `risk`: `safe`, `api`, `local-companion`, `experimental`, `store-risk`
+- `scope`: `global`, `feed`, `watch`, `player`, `comments`, `live-chat`, `subscriptions`, `downloads`
+- `vehicle`: `extension`, `userscript`, or `both`
+- `profile`: `store-safe`, `github-full`, or `both`
+- `immediateApply`: true unless technically impossible
+- `destroyRequired`: true for all DOM-affecting features
 
 ## Phased Build Plan
 
-### v4.5+ — Iter-5 Factory Loop (Maintenance Track)
+### v5.0.0 - Architecture and Settings Foundation
 
-L1 delta research surfaced 18 candidates (see `docs/research/iter-5-harvest.md`).
-Tier assignments in `docs/research/iter-5-scored.md`. Phase-5 codex-direct
-self-audit verdict was **FAIL** — re-tiered per audit actions:
-
-Now-tier (this iteration, top 3 implementable):
-
-- [x] **N1** `npm audit` rotation — closed by commit `1a101ba` (brace-expansion 5.0.5 → 5.0.6, GHSA-jxxr-4gwj-5jf2, dev-only). 0 vulnerabilities post-fix.
-- [x] **N5** YouTube DOM-shape drift detection — closed across commits `13299f8` (API + selectorStats fields), `76b7670` (live wiring + `hasShapeSample` disambiguation), `dcbfb80` (cooldown + re-entry guard + `chrome.runtime.sendMessage` ext-internal channel).
-- [x] **N8** Doc / version drift sync — closed by commit `fbdd25e` (CHANGELOG `[Unreleased]` backfill, ROADMAP header `v4.0.0` → `v4.4.0`) and `76b7670` (cleaned the remaining `v3.22.0` remnant on L36).
-- [x] **N2** storage.local quota warning — *moved to v4.5+ Next-tier work below; closing this row out as duplicate.*
-
-Verification gates (run as Q1/Q2 postflight greps, not roadmap items per Phase-5 re-tier):
-
-- [x] N12 Chrome 120 `chrome.alarms` compliance — verified iter-5: zero `chrome.alarms` usage in `extension/`.
-- [x] N13 Chrome 118 declarativeNetRequest case-sensitivity — verified iter-5: zero DNR usage in `extension/manifest.json` and content scripts.
-
-Next-tier (carried to iter-6):
-
-- [x] N4 storage corruption recovery — done iter-6: `detectStorageCorruption()` flags wrong-type payloads for the four canonical storage shapes; corruption tier supersedes quota tier in the storage banner; recovery path uses the same destructive-confirm Reset dialog; findings persist to the `_errors` ring under `ctx: 'storage-corruption'` for field-signal collection.
-- [x] N2 storage.local quota warning — done iter-6: two-tier proactive banner (>20 MB soft / >50 MB hard) wired to the existing destructive-confirm Reset flow; 5 i18n keys added across all 10 locales; WCAG AA verified for the new red/orange color lane.
-- [x] N6 per-ctx error rate counters in `DiagnosticLog` — done iter-6: `countsByCtx()` accessor with inline counter bookkeeping (O(1) per `record()`, ring-trim decrement, `clear()` reset, lazy resync from persisted ring on first call). Ready for the popup dashboard surface (N7).
-- [x] N3 popup.html inline CSP `<meta>` belt-and-suspenders — stricter than manifest CSP (no remote connect-src/img-src); regression-tested in `tests/hardening.test.js` (iter-6).
-- [x] N9 consolidate 3 MutationObservers on `<html>` in `ytkit-main.js` — done iter-6: one observer + 3 handlers via a shared `_obsRegister` registry with combined attributeFilter; per-handler try/catch isolation; regression-tested.
-
-Later-tier:
-
-- [x] N7 popup selector-health dashboard — done iter-6: popup queries the active YouTube tab via `YTKIT_GET_SELECTOR_HEALTH`, content-script handler returns top-12 problematic surfaces (sorted by errors×100 + misses + drifts) + DiagnosticLog `countsByCtx()` snapshot (from N6); popup renders top 6 with ⚡ high-churn + 📷 needs-fresh-capture indicators plus a per-ctx chip strip; gracefully hidden on non-YT tabs or 1.5s timeout; 3 i18n keys added across 10 locales.
-- [x] N14 bgutil-pot stale-version notice — done iter-6: `probe_po_token_provider` now includes `stale` + `minVersion` fields in the `/health.poTokenProvider` payload when the running provider reports a version less than `BGUTIL_POT_MIN_VERSION` ("1.3.0"). Comparator is a lightweight semver impl handling `v` prefix, pre-release suffix truncation, and uneven part counts. Python suite +3 tests (67 total green).
-- [x] N10 consolidate parallel TrustedHTML wrappers — done iter-6: `ytkit.js`'s no-policy fallback path now delegates to `core/trusted-html.js`'s `setTrustedHTML` + `toTrustedHTML` when the core module is loaded. Inline DOMParser fallback retained as a last-resort safety net for unit tests that load `ytkit.js` in isolation. Diagnostic-recording surface (`fallbackReason` capture, `logFallbackOnce` → `DiagnosticLog.record('trusted-types', ...)`) preserved.
-
-Under Consideration:
-
-- [~] N11 `extension/ytkit.js` modularization — 44k LOC monolith; requires dedicated multi-run M-phase with `--force-modularization`. **Iter-7 partial M-phase landed (3 extractions):**
-  1. `DiagnosticLog` → `extension/core/diagnostic-log.js` as a `createDiagnosticLog({getSettings, saveSettings, getVersion, cap})` factory. Bug fix carried: `record()` resyncs counters BEFORE the push so cross-session ring entries are counted exactly once (prior inline impl did push→resync→increment, double-counting the first record on a fresh session). Inline-IIFE fallback retained for unit-test isolation.
-  2. `PredicateSandbox` → `extension/core/predicate-sandbox.js` as a `createPredicateSandbox({debugLog})` factory exporting `{compile, PredicateError}`. The 303-line expression-only AST walker (Option C) moved out cleanly with no behavioral change. `ytkit.js` consumes the factory and wires `DebugManager.log` for budget/circuit telemetry. Defensive fallback: a missing core module yields a permanently-failing `compile()` rather than a crash. Hardening invariants (no eval/Function/with, ReDoS guard, 5ms budget, 10-error circuit, ok:false-with-position) now assert against `core/predicate-sandbox.js` instead of `ytkit.js`.
-  3. `VideoTypeDetector` → `extension/core/video-type.js` as a `createVideoTypeDetector({getPlayerResponse, getVideoId, getMainVideoElement, debugLog})` factory. The 76-line live/vod/standard/premiere classifier (used by 7 feature surfaces incl. Theater Split) moved out; `ytkit.js` retains a no-op fallback that classifies everything as 'standard' so feature surfaces don't crash if the core module fails to load. The bugfix-validation invariant pinning the DOM-live-override semantics (`domType === 'live' ? 'live' : (responseType || domType || 'standard')`) now asserts against `core/video-type.js`.
-  
-  Manifest load-order updated (regular + live_chat content_scripts). `ytkit.js` shrunk from 44,264 → 43,924 lines (-340). +9 regression tests total across `tests/core-foundation.test.js`, `tests/hardening.test.js`, and `tests/bugfix-validation.test.js`. Remaining extractions (settings manager, observer registry, MediaDLManager, TranscriptService, feature surfaces) require dedicated future M-phase runs.
-
-Rejected (reasoning persisted so future runs don't resurrect):
-
-- N15 Rust bgutil-pot alternative — feature add; **out of maintenance charter**.
-- N18 generate-locales.js zh_CN coverage — build-pipeline feature creep; current manual zh_CN works.
-
-### v3.23.0: Core Registry And Settings Foundation
+Goal: make the product maintainable enough to carry the full superset.
 
 Features:
 
-- [x] Add `core/registry.js`, `core/selectors.js`, `core/trusted-html.js`, `core/api-limiter.js`.
-- [x] Wrap current feature init/destroy into registry entries without changing behavior.
-- [x] Introduce settings schema generator from registry.
-- [x] Add category-level cleanup registry and feature health state.
-- [x] Add "safe store profile" vs "full GitHub profile" setting model.
+- Extract feature modules from the monolith by category.
+- Introduce `feature-lifecycle.js`.
+- Introduce full settings schema metadata for all 354 observed keys.
+- Build category-driven settings panel with search, profile badges, and diagnostics.
+- Add selector health system and versioned selector packs.
+- Add route-aware observer coordinator.
+- Add data-flow panel v1 with API origins and permission explanations.
+- Add explicit store-safe/full/userscript profile switch.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Added passive core foundation modules and tests. The new modules expose a feature registry with reversible cleanups and health snapshots, stable-first selector chains with first-miss diagnostics, TrustedTypes policy helpers, and bucketed API scheduling. They are loaded before `ytkit.js` in both normal and live-chat isolated content-script contexts without changing existing feature behavior.
-- 2026-05-19: Bridged live feature startup, live-chat startup, popup setting messages, settings-panel toggles, config reinitializers, external storage updates, conflict disables, and SPA page transitions through shared lifecycle helpers. Each live feature is registered with a registry adapter that delegates to the existing `init()` and `destroy()` methods while recording health snapshots.
-- 2026-05-19: Added a registry-backed settings schema generator. The schema combines registered feature metadata with `settingsManager.defaults`, covers default-only/internal keys, and is exposed through `ytkit.settingsSchema()` for future settings-panel and import/export work.
-- 2026-05-19: Added category cleanup buckets, category destroy orchestration, and category health snapshots. `ytkit.categoryHealth()` now summarizes feature counts, initialized counts, cleanup counts, and status totals by category.
-- 2026-05-19: Added the safe-store vs full-GitHub profile model. Settings now normalize profile-mode defaults on load, save, and import; local named profile saves remain full-fidelity; explicit safe-store and full-GitHub export payloads declare their mode, profile model, filtered snapshots, and secret/code exclusion behavior. The storage-size audit now proves the safe-store profile payload fits `storage.sync` while full local settings remain local-only.
+- Every current setting has category, label, description, default, type, risk, scope, vehicle, and profile metadata.
+- Every feature can be disabled without leaving DOM/classes/listeners/observers behind.
+- `npm run check`, `npm test`, `npm run build`, `npm run audit:a11y`, and `npm run audit:contrast` pass.
+- Userscript parity tests prove feature metadata bundles correctly.
+- Selector fixtures fail loudly when stable selectors disappear.
 
-Acceptance:
+### v5.1.0 - Selector Fixture and DOM Churn Hardening
 
-- All current features still initialize.
-- Every migrated feature has `destroy()`.
-- Settings import/export round trip passes.
-- `npm test`, `npm run check`, and `git diff --check` pass.
-
-### v3.24.0: Selector Health And MHTML-Backed Runtime Resilience
+Goal: make YouTube UI changes diagnosable instead of mysterious.
 
 Features:
 
-- [x] Promote selector map into source.
-- [x] Add runtime selector health panel.
-- [x] Add first-miss diagnostics per surface.
-- [x] Add player new-UI transition selector chains.
-- [x] Add fresh-capture fixture workflow to docs.
+- Formal MHTML parser output with HTML/CSS part inventory, selector coverage, token catalog, and API-state scan.
+- Add live-chat iframe capture workflow.
+- Add new player/Delhi/liquid-glass capture workflow.
+- Add selector health dashboard in diagnostics.
+- Add runtime selector miss caps, export, and "copy report" action.
+- Add per-surface smoke tests: home, subscriptions, watch, comments, related sidebar, player, notifications, live chat.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Promoted the roadmap selector map into `extension/core/selectors.js` as structured stable/fallback chains with high-churn and fresh-capture metadata. Selector resolution now records per-surface hit, miss, and error health, dispatches first-miss diagnostics into `diagnosticLog`, exposes `ytkit.selectorHealth()` and `ytkit.exportSelectorHealth()`, and includes player new-UI transition candidates such as `ytp-delhi-modern`, overflow panels, and action container placeholders.
-- 2026-05-19: Added an Advanced settings `Selector Health` panel with live surface totals, miss/error rows, refresh feedback, and one-click JSON export. Added `docs/selector-fixture-workflow.md` and linked it from `CONTRIBUTING.md` so fresh MHTML capture, fixture regeneration, selector promotion, and live health export are documented as a repeatable workflow.
+- Capture parser records all four current captures and produces deterministic JSON fixtures.
+- Each selector pack entry includes capture provenance.
+- Watch/player/comment features still apply after `yt-navigate-finish`, `yt-page-data-updated`, filter-chip recycling, and `ytd-watch-flexy[video-id]` mutation.
+- No observer performs full-document scans per mutation.
 
-Acceptance:
+### v5.2.0 - Content Filtering Superset
 
-- Selector canary covers feed, watch, player, comments, notification, and live-chat placeholder surfaces.
-- Runtime report can be exported as JSON.
-- Mutation observers process added nodes only.
-
-### v3.25.0: Complete Content Filtering Superset
-
-Features:
-
-- [x] BlockTube-grade video/channel/comment filter manager.
-- [x] Channel ID-first blocklist.
-- [x] Regex plus safe predicate sandbox investigation.
-- [x] Low-view, live, upcoming, mix, playlist, movie, auto-dubbed, watched-ratio filters.
-- [x] Bulk card actions inspired by Multiselect.
-- [x] Feed Triage profile.
-
-Progress:
-
-- 2026-05-19: Upgraded Video Hider channel blocks into canonical, ID-first records with handle, vanity path, URL, blockedAt, and legacy-ID fallbacks. Import/export sanitation now preserves the richer records, storage-change refreshes normalize external updates, the manager UI explains the ID-first matching model, and unblock/undo flows compare identity keys instead of brittle string equality.
-- 2026-05-19: Added opt-in metadata filters for low-view cards, live streams, upcoming premieres, YouTube Mixes, playlists, movies, auto-dubbed videos, and watched-ratio resume bars. Defaults remain off; settings now exposes a Content Type Filters section with immediate apply, conservative thresholds, and safe-store profile allowlist coverage.
-- 2026-05-19: Shipped the BlockTube-grade comment filter (`commentFilterManager` + `commentFilterRules` textarea) with author / body / regex rules, ReDoS guard, allowlist override, and SPA-survival via navigate + mutation rules processing `addedNodes` only.
-- 2026-05-19: Landed the advanced predicate sandbox per `docs/predicate-sandbox-investigation.md` (Option C, expression-only AST walker). `PredicateSandbox.compile(source)` returns `{ ok, evaluator, error, position }`; `videoHider._shouldHide` integrates it after metadata filters; per-card 5 ms wall-clock budget; 10-consecutive-error circuit breaker; `ctx` frozen at the call site; no `eval`, no `Function`, no `with` on the predicate path.
-- 2026-05-19: Added `bulkCardActions` feature (Bulk Select toggle, capture-phase click, docked action bar) with Hide / Allow / Copy URLs / Clear actions, delegating to videoHider for storage so there's no second source of truth.
-- 2026-05-19: Added `feedTriageProfile` recipe — a single toggle that flips a curated bundle of feed filters on together and stores a backup snapshot in `ytkit-feed-triage-backup` so toggling off restores the user's prior settings exactly.
-
-Acceptance:
-
-- [x] No full-document mutation scans.
-- [x] Filtered/restored state survives SPA navigation.
-- [x] ReDoS guard covers regex input.
-- [x] Import/export of filter lists works.
-
-### v3.26.0: Player Control Superset
+Goal: beat BlockTube, Unhook, UnTrap, YouTube Tweaks, and uBO-style cosmetic filters for YouTube content control.
 
 Features:
 
-- [x] Tweaks-grade quality matrix by normal/theater/fullscreen/background/embed. *(Shipped in v4.1.0: `qualityProfileMatrix` detects context via fullscreenchange/visibilitychange/theater-attribute observer; MAIN-world bridge consumes `data-ytkit-quality-target` and calls `setPlaybackQualityRange`.)*
-- [x] Initial player state for foreground/background tabs.
-- [x] Disable loudness normalization where technically possible. *(best-effort from ISOLATED world; the html `data-ytkit-disable-loudness="1"` attribute is set so the future MAIN-world bridge can disable the Web Audio gainNode there)*
-- [x] Volume wheel mode with visible hover affordance.
-- [x] Subtitle-included screenshots with PNG/JPEG/WebP.
-- [x] Per-channel intro/outro offsets.
-- [x] Expanded speed range and visible speed palette.
+- Unified filter rules engine for videos, channels, comments, shelves, search results, subscriptions, and related sidebar.
+- Keyword, regex, channel ID, handle, duration, view count, upload age, watched ratio, live/upcoming/mix/movie/playlist/auto-dub filters.
+- Route-specific rule scopes and exceptions.
+- Safe predicate DSL with dry-run preview and budget/circuit breaker.
+- Quick hide/block/not-interested actions on cards and comments.
+- Bulk card actions and feed triage profile.
+- Import/export BlockTube-style filters where safely translatable.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Shipped `downloadScreenshotFormat` (PNG/JPEG/WebP picker) and `downloadSubtitlesWithScreenshot` (bakes the current `.ytp-caption-segment` text into the canvas before encoding). `_capture` threads chosen mime through `_blobFromCanvas` and `_copyBlobToClipboard`; clipboard write stays PNG-only per the ClipboardItem API limitation.
-- 2026-05-19: Expanded `SPEED_OPTIONS` from 10 → 18 entries (0.1× through 16×). Speed popup grid widened to 6 columns. `persistentSpeed` storage and visible palette stay in sync via the existing `_applied` reset path.
-- 2026-05-19: Added `volumeWheelMode` — scroll-over-player adjusts volume in 5% steps with a 1.2 s HUD chip and a persistent hover hint. Wheel listener uses `{ passive: false }` so `preventDefault` stops the page scroll while over the player. No keyboard shortcut added.
-- 2026-05-19: Added `initialPlayerStateForeground` / `initialPlayerStateBackground` selects (inherit/play/pause) gated by `document.visibilityState`. Background-tab play is best-effort since most browsers gate autoplay-in-background behind a prior user gesture.
-- 2026-05-19: Added `disableLoudnessNormalization` — clamps `video.volume` back to 1.0 when YouTube reduces it, and sets `data-ytkit-disable-loudness="1"` on `<html>` so the future MAIN-world bridge can disable the Web Audio gainNode there.
-- 2026-05-19: Added `perChannelIntroOutro` (data under `perChannelIntroOutroData`). Stores `{ introSec, outroSec }` per channel ID; the timeupdate listener fast-forwards past the intro window and seeks to end when the outro cutoff is reached.
+- Filters apply incrementally to added cards/comments.
+- Emoji, apostrophes, casing, and localized metadata do not break matching.
+- Disabled filters fully restore hidden content where possible.
+- Advanced predicates cannot call arbitrary JS, network, storage, DOM mutation, or `eval`.
 
-Acceptance:
+### v5.3.0 - Playback and Player Superset
 
-- [x] MAIN-world bridge handles quality without showing YouTube menus. *(Shipped in v4.1.0 via `ytkit-main.js#applyContextQuality` reading `data-ytkit-quality-target` and calling `movie_player.setPlaybackQualityRange`.)*
-- [x] No keyboard shortcuts added.
-- [x] Every player control can be disabled and fully removed. *(every new feature ships destroy() that removes listeners, HUDs, hints, style tags, and data attributes; covered by 8 v3.26.0 hardening tests)*
-
-### v3.27.0: Downloads And Local Media Library
+Goal: beat Enhancer for YouTube, Video Speed Controller, Tweaks for YouTube, YouTube HD, and YouTube Alchemy in player control without adding keyboard shortcuts.
 
 Features:
 
-- [x] Queue/history UI backed by Astra Downloader. *(History panel shipped; queue indicator was already covered by the existing progress panel)*
-- [x] Stream links panel for advanced users.
-- [x] Cobalt fallback in GitHub/full profile only.
-- [x] Download archive and re-download controls. *(Shipped in Astra Downloader v1.3.0 + extension `skipped` status from v3.20.7)*
-- [x] Better PO token/SABR health surfacing.
-- [x] Thumbnail, subtitle, transcript, screenshot export consolidation. *(All shipped as separate features in prior releases; the new download surfaces sit adjacent to them on the watch-page chrome)*
+- Quality matrix by normal/theater/fullscreen/embed/background.
+- Codec/FPS controls with MAIN bridge diagnostics.
+- Speed presets, per-channel speed, visible custom speed controls, wheel speed/volume/seek zones.
+- Audio boost, mono mix, pan, high-pass, loudness normalization disable.
+- A/B loop timeline handles.
+- Frame buttons and frame capture.
+- PiP, popout, sticky player, mini-player bar.
+- Screenshot with format/subtitle/filename options.
+- Subtitle styling panel.
+- Persistent progress bar with chapters, SponsorBlock marks, and remaining time adjusted for speed/skips.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Shipped `downloadHealthPanel` — pill strip next to the player download button. Polls `/health` every 30 s and surfaces `ytDlpVersion`, `ffmpegCapabilities.current`, and `poTokenProvider` as green/amber/red pills (Astra Downloader exposed these in v1.4.0 already).
-- 2026-05-19: Shipped `downloadStreamLinksPanel` — power-user surface that parses `ytInitialPlayerResponse` and lists combined + adaptive formats. Per-row Copy URL, SABR-only formats render as a disabled pill, empty state explains the `youtube:formats=duplicate` workaround.
-- 2026-05-19: Shipped `downloadCobaltFallback` — GitHub-full profile gated, default off. Only fires when Astra Downloader is unreachable. Opens the returned media URL with `noopener,noreferrer`.
-- 2026-05-19: Shipped `downloadHistoryPanel` — `History` button on watch pages renders the last 50 completed downloads from `/history?limit=50`. Explicit offline state instead of blank panel.
+- No keyboard shortcuts are added.
+- All controls are accessible by pointer and screen reader.
+- Main video element detection survives SPA navigation.
+- Quality/speed settings do not fight YouTube's own async player initialization.
 
-Acceptance:
+### v5.4.0 - Watch Page, Comments, and Live Chat Workstation
 
-- [x] Store-safe profile disables risky download surfaces. *(Cobalt fallback is gated on the github-full profile mode; safe-store profile leaves the toggle inert.)*
-- [x] Local downloader health and token state visible. *(Pills render per the /health response; bearer token is sent on every downloader call but never persisted in extension settings.)*
-- [x] No third-party download redirect runs without explicit opt-in. *(Cobalt fallback is default off and a separate toggle; even when on, only fires when Astra Downloader is offline.)*
-
-### v3.28.0: Ratings, Clickbait, And Metadata Trust
-
-Features:
-
-- [x] Return YouTube Dislike with cache/rate limiter.
-- [x] Dislike/like ratio on watch and cards.
-- [x] DeArrow channel override UI. *(Shipped in v4.1.0: watch-page chip cycles DeArrow → Original → Off; runtime short-circuits `_fetchBranding` for overridden channels.)*
-- [x] Anti-translate feed/watch/audio/transcript expansion. *(Feed/watch shipped in earlier `antiTranslate` work; v3.28 adds the audio track and transcript surfaces via `antiTranslateAudioTrack` and `antiTranslateTranscript`.)*
-- [x] Monetization/ad indicator panel if data is safely detectable.
-
-Progress:
-
-- 2026-05-19: Shipped `returnDislike` with 100 req/min rolling budget, cookieless fetch (`credentials: 'omit'`), LRU-capped cache (500 entries), `returnDislikeCacheHours` TTL setting (default 24 h, 1 h floor), and a pill that renders inside the dislike-button-view-model with cached/fresh/offline tones.
-- 2026-05-19: Added `returnDislikeShowRatio` — surfaces a "% liked" chip next to the dislike pill using RYD's `likes`/`dislikes` (honest ratio, not a like/view proxy). Default on.
-- 2026-05-19: Added `antiTranslateAudioTrack` — switches the player to the original audio track via `movie_player.getAvailableAudioTracks()` + `setAudioTrack()` when an Original track is exposed by YouTube's API. Capped at 5 retries.
-- 2026-05-19: Added `antiTranslateTranscript` — strips `tlang` attributes from the transcript engagement panel so YouTube serves the original-language captions.
-- 2026-05-19: Added `monetizationIndicator` — pill under the watch-page title showing paid promotion / sponsorship / SponsorBlock segment status. Heuristic; uses DOM signals (`ytd-paid-content-overlay-renderer`, `ytd-merch-shelf-renderer`, `ytd-sponsorship-shelf-renderer`, `.ytkit-sb-segment[data-category]`).
-- 2026-05-19: Background `ALLOWED_FETCH_ORIGINS` + manifest `host_permissions` + CSP `connect-src` extended with `https://returnyoutubedislikeapi.com`.
-
-Acceptance:
-
-- [x] RYD respects rate budgets. *(100 req/min rolling window enforced in `_allowFetch`.)*
-- [x] Offline/cache states are visible. *(Pill renders amber "RYD off" when fetch fails or budget is exhausted; tooltip distinguishes cached vs live.)*
-- [x] No cookies forwarded to RYD/DeArrow/SponsorBlock. *(`credentials: 'omit'` on the RYD fetch; SponsorBlock + DeArrow already use the existing cookieless EXT_FETCH path.)*
-
-### v3.29.0: Subscription Manager
+Goal: own the watch-page workflow.
 
 Features:
 
-- [x] PocketTube-grade local groups.
-- [x] Optional AI tags with local/exportable metadata. *(Shipped in v4.3.0: `subscriptionAiTags` toggle + `subscriptionAiTagData` storage. Shift+click any group chip regenerates tags via Chrome's built-in Summarizer — no remote fall-through.)*
-- [x] Sort subscriptions by date, duration, popularity, unwatched, new since last visit. *(All five modes ship: duration / unwatched / new-since-last-visit / date-desc / popular. The popular mode shipped in v4.2.0 — reads view count from card metadata text and sorts descending.)*
-- [x] Guide/sidebar group section. *(Ships as a toolbar atop the subscriptions feed — same data shape can drive a guide-level injection in a follow-up without changing storage.)*
-- [x] Group export/import.
+- Native-feeling tabs for Info, Comments, Videos, Chapters, Transcript, Chat, Notes, Reddit.
+- Comments in sidebar with refresh-safe state.
+- Auto-open transcript/chapters/comments with route-scoped restore.
+- Comment search, comment navigator, creator/pinned/comment highlighting controls.
+- Live-chat iframe polish: OLED theme, compact density, keyword filters, author filters, sticky chat, fullscreen side-by-side chat.
+- Chat replay hiding and engagement clutter cleanup.
+- Engagement panel manager for AI summary, clips, transcript, chapters.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Shipped `subscriptionGroups` with toolbar (All chip + per-group chips + "+ Group" + sort select + Export + Import). Storage at `subscriptionGroupData` keyed by channel ID. Group filter classes use `ytkit-sub-hidden-by-group`; destroy reverses every visual change.
-- 2026-05-19: Added `subscriptionShowNewSinceLastVisit` (default on while parent feature is on) — paints a NEW badge on cards whose channel hasn't been recorded in `subscriptionLastVisitData`. Last-visit stamp is written 8 s after every subscriptions-feed visit.
-- 2026-05-19: Added `subscriptionSortMode` (default / duration-asc / unwatched / new-since-last-visit). Sort runs against `ytd-rich-grid-renderer #contents`.
-- 2026-05-19: Export writes JSON with `schemaVersion: 1`; import validates per-entry shape (name length 80, hex color regex, channelIds array cap 1000).
+- Comments-in-sidebar persists after F5 and SPA navigation.
+- Live chat features are backed by fresh iframe fixtures.
+- Comment composer remains usable and accessible.
+- All panels destroy cleanly and restore native YouTube layout.
 
-Acceptance:
+### v5.5.0 - Subscription and Feed Manager
 
-- [x] Groups key by channel ID. *(`UC…` form extracted from `/channel/UC…` links; `@handle` used as a fallback.)*
-- [x] Works on subscriptions page without breaking native filters. *(The toolbar mounts above `ytd-rich-grid-renderer`; group filter uses a CSS class, so YouTube's own filter chips still apply and clear correctly.)*
-- [x] Data remains local by default. *(No network calls; export is user-initiated; safe-store profile allowlist excludes both data keys.)*
-
-### v3.30.0: Research Workspace
+Goal: exceed PocketTube while staying local-first.
 
 Features:
 
-- [x] Timestamp notes and highlights. *(Already shipped via the existing `timestampBookmarks` feature with inline note editing — v3.5 Wave 2.)*
-- [x] Transcript search index in IndexedDB. *(`researchTranscriptIndex`: stores per-visited-video transcripts in `ytkit-transcript-index`, exposes `window.__ytkitSearchTranscripts` and `__ytkitClearTranscriptIndex`.)*
-- [x] Markdown/JSON/SRT/VTT export. *(Already shipped via the transcript export buttons.)*
-- [x] Local/browser AI summary path when available. *(`localAiSummary` uses Chrome built-in Summarizer; surfaces an explicit modal when not available, never falls through to a remote provider.)*
-- [x] Spaced review export. *(`researchSpacedReview` emits SuperMemo / Anki-style CSV from `timestampBookmarks` data.)*
-- [x] "Open in NotebookLM/ChatGPT/Claude/Gemini/Perplexity" retained as handoff, not silent upload. *(Already shipped as `transcriptAiHandoff` per the v3.17 Wave 10 work.)*
+- Nested subscription groups.
+- AI-suggested tags stored locally and editable.
+- Group feeds with sort by upload date, length, popularity, watched state, and new-since-last-visit.
+- Dead-channel detection.
+- Bulk unsubscribe staging with undo.
+- Group notifications and digest panel.
+- Group import/export.
+- Channel page group chips and quick actions.
+- "Play all" restoration for videos, Shorts, live, popular, and group feeds.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Shipped `localAiSummary` — Chrome built-in Summarizer API consumer. Reuses `aiVideoSummary._fetchTranscriptText` when available, falls back to the engagement-panel transcript text. No network calls in the `_summarize()` path.
-- 2026-05-19: Shipped `researchSpacedReview` — CSV exporter for `timestampBookmarks`. RFC 4180 CSV escaping (double-quote embedded quotes). Filename includes the project prefix and date.
-- 2026-05-19: Shipped `researchTranscriptIndex` — IndexedDB store at `ytkit-transcript-index` keyed by videoId. Bounded search (200 hits cap). Clear helper exposed for the settings panel.
+- All group data is local unless explicit sync/export is enabled.
+- Group feeds work without YouTube Data API keys where possible.
+- Bulk unsubscribe never performs irreversible actions without an undoable staging surface.
+- Import/export round-trip tests cover nested groups and AI tags.
 
-Acceptance:
+### v5.6.0 - Research, Notes, Transcript, and AI Suite
 
-- [x] No API call occurs without explicit enablement. *(Local AI uses only `window.Summarizer` / `window.ai.summarizer` — both must be exposed by the browser. The summarize path contains no fetch/XHR calls.)*
-- [x] API keys are redacted from export. *(`createSettingsProfileSnapshot` already excludes secrets from the safe-store profile; transcript index data lives in IndexedDB outside the settings export path.)*
-- [x] Transcript index can be cleared from settings. *(`window.__ytkitClearTranscriptIndex()` resets the store; can be surfaced as a settings-panel button without changing storage shape.)*
-
-### v3.31.0: Accessibility, Mobile, And Low Power
-
-Features:
-
-- [x] In-page overlay focus traps and ARIA roles. *(Existing overlays already use role/aria-label; `globalAriaLiveRegion` adds the missing live-region sink.)*
-- [x] Live-region toasts. *(`globalAriaLiveRegion` mounts a hidden role=status / aria-live=polite container and exposes `window.__ytkitAnnounce`.)*
-- [x] Reduced-motion support. *(`reducedMotion` feature with `[class*="ytkit-"]` scoped overrides.)*
-- [x] Forced-colors support. *(`forcedColorsSupport` feature hooking `@media (forced-colors: active)` with system colors.)*
-- [x] CPU/chat tamer improvements. *(`enableCPU_Tamer` was already shipped in v3.10; Low Power profile now flips it on automatically.)*
-- [x] Firefox Android smoke path for userscript/extension if feasible. *(Manual QA item — extension manifest already passes `strict_min_version 128.0` per CLAUDE.md; userscript is single-file and works under FF Android via the userscript managers.)*
-
-Progress:
-
-- 2026-05-19: Shipped `reducedMotion` — zeroes animation-duration / transition-duration on every Astra-injected element scoped via `[class*="ytkit-"]`, sets `scroll-behavior: auto`, kills shimmer/pulse/ripple animations.
-- 2026-05-19: Shipped `forcedColorsSupport` — Windows High Contrast / forced-colors mapping. Uses `Canvas`, `CanvasText`, `LinkText`, `Highlight` system colors. Focus outline uses `2px solid Highlight`.
-- 2026-05-19: Shipped `globalAriaLiveRegion` — single role=status, aria-live=polite, aria-atomic=true container. `window.__ytkitAnnounce(message)` clears + sets on rAF so repeated messages still fire screen-reader notifications.
-- 2026-05-19: Shipped `lowPowerProfile` — recipe toggle that disables 8 expensive features and enables CPU Tamer. Backup snapshot at `ytkit-low-power-backup` for exact restore on toggle-off.
-
-Acceptance:
-
-- [x] Popup and in-page panel pass scripted a11y checks. *(Existing `npm run audit:a11y` passes; new features all expose role/aria-label/aria-live where applicable.)*
-- [x] Motion can be reduced globally. *(`reducedMotion` overrides every Astra animation; respects browser `prefers-reduced-motion` automatically.)*
-- [x] Low Power profile measurably reduces timers/observers. *(8 features disabled, including ambient glow's rAF + canvas sampling, playback stats overlay's 1s tick, transcript index's per-page ingest, and visual filters' style re-application.)*
-
-### v3.32.0: Premium Visual System
+Goal: combine YouTube Alchemy, Rovetify, UnTrap AI, and YouFocus into a local-first research workspace.
 
 Features:
 
-- [x] Native YouTube token bridge. *(`tokenThemeBridge` maps Astra accent into `--yt-sys-color-baseline--call-to-action`, `--static-brand-red`, and `--yt-spec-*` siblings.)*
-- [x] OLED-only theme pack. *(`oledTheme` rewrites `--yt-sys-color-baseline--base-background` plus the legacy `--yt-saturated-*` set to true black `#000`. No light theme exists.)*
-- [x] Dense mode. *(`denseMode` tightens padding / gap / font on Astra-injected surfaces only — never touches YouTube's native layout.)*
-- [x] Classic layout profiles. *(`classicLayoutProfile` select: modern / classic-2020 / classic-2016.)*
-- [x] New-player UI restoration profile. *(`newPlayerUiRestore` hides `.ytp-delhi-modern`, `.ytp-overflow-panel-button`, tightens progress bar to 3 px, removes rounded progress fill.)*
-- [x] Rectangularized UI with approved radii only. *(`rectangularizeYouTube` clamps every backdrop to 8 px; avatars / progress rings stay circular via explicit 50% carve-out. No 999 / 100% radii anywhere.)*
+- Per-video notes with timestamps and source links.
+- Transcript search index in IndexedDB.
+- Spaced review queue for saved clips/notes.
+- Transcript export to Markdown, TXT, JSON, SRT/VTT where source permits.
+- Transcript handoff buttons for ChatGPT, NotebookLM, Claude, Gemini, Obsidian URI, local files.
+- BYO-key summaries for OpenAI/Anthropic/Gemini and local Ollama summary.
+- Summary provenance: source transcript language, timestamp range, model/provider, token budget.
+- Top-comment digest with strict opt-in and source attribution.
+- Study/work modes with local time tracking, focused history, notes, and break timer.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: Shipped six new theming features. Token bridge + OLED combo means dark surfaces survive YouTube native theme reshuffles because we hook the tokens themselves, not surface classes.
-- 2026-05-19: `rectangularizeYouTube` matches the user's HARD RULE — no pill / oval / fully-rounded backdrops ever; allowed radii 0/4/6/8/10/12. Regression test asserts the 999 / 100% radii never sneak in.
+- AI is off by default.
+- BYO API keys are never included in exports, diagnostics, logs, or sync-safe profiles.
+- Local/offline mode works without network AI providers.
+- Notes/transcripts/export have deterministic tests.
 
-Acceptance:
+### v5.7.0 - Media and Downloader Reliability
 
-- [x] No light theme. *(All six features assume dark-only; no light fallback exists.)*
-- [x] No pill/stadium backdrops. *(rectangularizeYouTube clamps every backdrop to 8 px; circular carve-out scoped to avatars / progress rings only.)*
-- [x] Theme survives home, subscriptions, watch, search, channel, and live chat. *(Token-bridge approach hooks the `--yt-sys-*` tokens at the `html` element, which all five surfaces inherit. OLED + accent token override is global.)*
-
-### v3.33.0: Integrations And Interop
-
-Features:
-
-- [x] VLC/MPV/protocol stream parity where safe. *(`vlcMpvHandoff` — GitHub-full profile gated, anchor.click() handshake never falls through to window.location.)*
-- [x] YouTube Music compatibility track. *(`youtubeMusicCompat` — OLED + rectangularize on music.youtube.com via `ytmusic-app` / `ytmusic-pill-shape-renderer` hooks.)*
-- [x] Open in FreeTube/Invidious/Piped/NewPipe-style links. *(`openInAlternativeFrontend` — anchor with `target="_blank"` + `rel="noopener noreferrer"`; default instance `https://yewtu.be`, user-configurable.)*
-- [x] Karamel-style comments expansion. *(Already shipped as `redditComments` in v3.9.)*
-- [x] Context menus for block/save/download/copy/transcript. *(`astraContextMenu` — Copy video URL / Copy timestamp link / Open transcript on the player; Hide channel / Copy card URL on feed cards. Early-returns when the click is outside Astra targets so the native menu stays intact.)*
-
-Progress:
-
-- 2026-05-19: Shipped `openInAlternativeFrontend` — handles Invidious, Piped, FreeTube via the configurable instance setting. Default instance `https://yewtu.be`.
-- 2026-05-19: Shipped `vlcMpvHandoff` — anchor-click protocol invocation (never window.location). GitHub-full profile gated. Toast tells the user the handoff fired so they know to register the handler.
-- 2026-05-19: Shipped `astraContextMenu` — capture-phase contextmenu listener; menu only opens when the click hit a player or feed card. Native YouTube right-click stays intact otherwise.
-- 2026-05-19: Shipped `youtubeMusicCompat` — applies OLED + rectangularize hooks on music.youtube.com.
-
-Acceptance:
-
-- [x] Integrations are opt-in and visible. *(Every new feature is default-off; each registers a visible button or surface.)*
-- [x] Protocol handlers never run silently. *(VLC/MPV handoff uses an explicit button + toast feedback; never auto-fires.)*
-- [x] Store-safe profile excludes policy-sensitive handlers. *(VLC/MPV handoff is gated on github-full profile mode; the other three integrations are policy-clean.)*
-
-### v4.0.0: Beats Every Competitor Release
+Goal: make downloads explicit, safe, diagnostic, and better than sketchy downloader extensions.
 
 Features:
 
-- [x] All rows in the feature matrix are either shipped, intentionally store-profile-gated, or documented as technically/policy impossible. *(See per-row links in v3.25 → v3.33 sections above; every row in "Master Feature Matrix" maps to one of the nine release waves.)*
-- [x] README build deliverable written. *(Version badge bumped to 4.0.0; intro rewritten for the 200+ feature surface.)*
-- [x] Chrome ZIP/CRX, Firefox ZIP/XPI, userscript artifact built. *(Five-artifact ship: `astra-deck-chrome-v4.0.0.zip` + `.crx`, `astra-deck-firefox-v4.0.0.zip` + `.xpi`, `ytkit-v4.0.0.user.js`.)*
-- [ ] Fresh MHTML captures and selector fixtures refreshed. *(Open — the v3.24 selector health system can drive a fresh capture pass; not blocking 4.0.0 milestone.)*
-- [x] Security, privacy, a11y, performance audits complete. *(Each release wave shipped its own hardening test set; cumulative 235/235 JS tests pass. Privacy: cookieless RYD, no telemetry, safe-store profile model. a11y: `reducedMotion` + `forcedColorsSupport` + `globalAriaLiveRegion`. Performance: `lowPowerProfile` + existing `enableCPU_Tamer`.)*
-- [ ] Store-review audit complete. *(Manual gate — the safe-store profile excludes risky download/integration handlers; Chrome Web Store / AMO submission is the next operator action.)*
+- Local companion health dashboard v2.
+- Stream link panel with format/quality capability explanation.
+- yt-dlp status, Deno/runtime, ffmpeg, cookies, and PO-token diagnostics.
+- Retry/fallback sequencing: local companion, stream links, Cobalt instance, thumbnail/subtitle-only paths.
+- Download history with local-only retention controls.
+- Safe auto-start recovery for stopped companion.
+- VLC/MPV handoff with user-visible commands.
 
-Progress:
+Acceptance criteria:
 
-- 2026-05-19: v4.0.0 milestone bump records the v3.25 → v3.33 push. Nine waves shipped over the same day; CHANGELOG v4.0.0 entry summarizes each wave and maps every "Definition Of Done" checkbox to the shipping surface.
+- Store-safe profile can disable risky download surfaces.
+- No `localhost` origin is added; only literal `127.0.0.1` loopback is allowed.
+- Downloader cleanup cannot delete outside intended artifact directories.
+- Every failure shows actionable local diagnostics.
 
-Acceptance:
+### v5.8.0 - Privacy, Security, and Store Profile Hardening
 
-- [x] Competitive matrix shows no high-value competitor feature missing without a documented reason. *(Every cell in the v3.25 → v3.33 matrix landed; deferred cells are explicitly listed in the CHANGELOG v4.0.0 "What's deferred" section.)*
-- [ ] Clean-profile Chrome and Firefox smoke tests pass. *(Manual operator gate — automated `npm run check` + `npm test` is green; clean-profile smoke is the next manual action.)*
-- [ ] Userscript installs and runs through Tampermonkey/Violentmonkey where supported. *(Manual operator gate — automated metadata sync is green; install-from-raw verification is the next manual action.)*
-- [x] No telemetry. *(Every external fetch is either user-initiated, cookieless-allowed-origin, or local-only.)*
-- [x] No keyboard shortcuts added. *(Pre-v3.25 surfaces only — `Ctrl+Shift+Y` / `Ctrl+Alt+Y`; every new v3.25 → v3.33 feature uses visible buttons/menus/chips.)*
-- [x] No confirmation dialogs. *(Every action applies immediately; toast feedback per the user's universal rule.)*
-- [x] Every feature can be disabled and cleaned up. *(Asserted by the 235 hardening + regression tests across all nine waves.)*
+Goal: make trust part of the product.
 
-## Iter-8 Maintenance Track (v4.5.0 + v4.5.1 + v4.5.2)
+Features:
 
-### Now — shipped iter-8 (v4.5.0)
+- Permission diff view: store-safe vs GitHub-full vs userscript.
+- API data-flow panel with per-origin purpose, credentials policy, cache TTL, and disable action.
+- Remote-code audit gate.
+- Secret scanner for built artifacts.
+- Extension manifest profile generator.
+- Safer AI-key storage copy.
+- Profile export scrubber.
+- Network activity diagnostics.
 
-- [x] **N18 — TranscriptService extraction into `core/transcript-service.js` (M-phase #4).** Commit `521e336`. -445 LOC from ytkit.js. 7 new regression tests. All 5 callsites in ytkit.js routed through the factory return surface.
-- [x] **N19 — StorageManager cache+debounce extraction into `core/storage-manager.js` as `createStorageCache` (M-phase #5).** Commit `8016e89`. -72 net LOC from ytkit.js. 9 new regression tests. Resolves the long-standing name collision with `core/storage.js` (low-level wrapper).
-- [x] **N20 — yt-dlp 2026 external JS runtime surface.** Commit `b21c48e`. AstraDownloader v1.4.0 → v1.5.0 with new `/health.denoRuntime` field; `downloadHealthPanel` in ytkit.js renders a "Deno: missing" warn pill when `ytdlpNeedsRuntime && !installed`. 13 new Python tests. Conservative cutoff `(2026, 4, 1)` so older yt-dlps don't false-positive. README + CLAUDE.md updated.
+Acceptance criteria:
 
-### Iter-8 extended scope — shipped (v4.5.1)
+- Store-safe artifact has the minimal host permissions needed for its enabled features.
+- Third-party API requests omit YouTube credentials.
+- Build fails if remote code, unexpected host permissions, or API-key leaks appear.
+- Privacy copy is suitable for Chrome Web Store/AMO submission.
 
-- [x] **N21 — SponsorBlock scrolled-away verification.** Commit `ef8e807`. Audited the code path: our SB uses event-driven `setTimeout` boundaries scheduled from `playing`/`seeked`/`ratechange`, viewport-agnostic. Already robust — upstream's rAF-stall failure mode cannot reproduce. Added 3 regression tests pinning the architecture: setTimeout (not rAF) scheduling; paused-video early-return; no IntersectionObserver/getBoundingClientRect/offsetParent in `_checkSkip`.
-- [x] **N22 — DeArrow selector chain resilience (static portion).** Commit `1928666`. Audited the code path: DeArrow uses durable primitives (custom-element tags, stable IDs, attribute matchers, "da"-prefixed marker classes) — no hashed-class deps. Added 2 regression tests pinning the resilient surface and blocking any future hashed-class regression. **Dynamic-fixture portion (MHTML refresh) remains an operator-only manual gate.**
-- [x] **N23 — Reframed from TIMING extraction (low-value, 7 LOC) to ICONS+createSVG extraction (M-phase #6).** Commit `ddbc22d`. The original N23 would have *increased* LOC due to module-wrapper overhead; the reframe is documented in `docs/research/iter-8-mediadl-sizing.md` and the swap is explicitly tracked here. ICONS extraction: -326 LOC from ytkit.js, +7 regression tests. Cumulative N11 M-phase since iter-7: **44,264 → 43,081 = -1,183 LOC (-2.67%)**.
+### v5.9.0 - Accessibility and Performance Release Gate
 
-### Iter-8 audit/hardening extension — shipped (v4.5.2)
+Goal: make quality measurable.
 
-- [x] **N27 — Local bridge permission surface narrowed.** Manifest host permissions removed `localhost` aliases and retained explicit `127.0.0.1` loopback origins for Astra Downloader and local AI endpoints.
-- [x] **N28 — Popup diagnostics and accessibility audits made enforceable.** Popup selector-health metric rendering now uses DOM APIs instead of `innerHTML`; the popup a11y audit parses real buttons, dynamic confirmation states, switch focus styling, dialog semantics, and keyboard hooks as failing checks.
-- [x] **N29 — Validation and release gates made harder to drift.** Syntax checks recursively cover extension/script JavaScript, version checks include `package-lock.json`, `build-extension.js --bump` updates lockfile version fields, and CI delegates tag validation to `scripts/check-versions.js`.
-- [x] **N30 — Downloader dev/test and uninstall cleanup hardened.** `pytest.ini` pins pytest-qt to PyQt6; frozen uninstall delayed cleanup validates the install directory and invokes PowerShell with literal-path arguments rather than string-built recursive deletion.
+Features:
 
-### Later — investigated, deferred
+- Screen-reader smoke tests for popup, settings, watch overlays, toasts, and major controls.
+- Forced-colors and reduced-motion support across all Astra UI.
+- Contrast gate for semantic tokens.
+- Long-session memory leak test.
+- Feed mutation stress test.
+- API rate-limit/backoff tests.
+- Low-power profile that disables expensive animations, thumbnail transforms, AI, and card-level API fetches.
 
-- [x] **N24 — DebugManager extraction (REJECTED on technical merit, 2026-05-21).** Measured at 9 lines + 118 call sites. Extraction would create a +30-line core module and a +12-line wrapper in ytkit.js, **net change +21 LOC vs the inline original**. Confirmed worse than the status quo. Closed; do not resurrect without a substantive deps change.
+Acceptance criteria:
 
-### Under Consideration (multi-run; needs `--force-modularization`)
+- No focus trap remains active when overlays are hidden.
+- All interactive controls have names and reachable focus order.
+- Feed stress test shows bounded observer work and no unbounded diagnostics maps.
+- Low-power profile measurably reduces card-processing work.
 
-- [ ] **N25 — MediaDLManager extraction.** **Sizing measured 2026-05-21**: 353 LOC, 30 call sites in ytkit.js, ~15 external accessor dependencies (extensionFetchJson + showToast + storageWrite + DebugManager.log + t() i18n + 9 install-prompt UI helpers: openExternalUrl / openProtocol / triggerDownload / downloadInstaller / copyInstallCommand / runInstallAssist / setPromptButtonState / setPromptNote / makeBtn). The install-prompt UI helpers would either need to come along (taking the extraction past 500 LOC) OR stay in ytkit.js with the core module calling back via accessors (matching the TranscriptService pattern, but with ~3x the accessor surface). Multi-run M-phase invocation required — invoke factory with `--force-modularization` on a dedicated future run.
-- [ ] **N26 — Bundle Deno runtime alongside yt-dlp.exe in the AstraDownloader installer.** Charter-edge — meaningful scope expansion (we'd be shipping a JS runtime). Defer until the field hit-rate from N20's missing-Deno pill says it's needed.
+### v6.0.0 - "Beats Every Competitor" Release
 
-### Rejected (preserve reasoning so future runs don't resurrect)
+Goal: ship the union of competitor features plus Astra-only differentiators.
 
-- AI-slop contributor tagging product (HN-suggested adjacent product). Reason: charter is YouTube power-user enhancement, not crowdsourced reputation.
-- Cobalt fallback in extension build. Reason: explicit architectural decision — extension is Astra-Downloader-only by design; userscript retains Cobalt.
-- yt-dlp `--netrc-cmd` CVE-2026-26331 remediation. Reason: verified non-applicable to our codepath (we don't use --netrc-cmd).
-- Firefox 149+ scripting/tabs injection scope tightening. Reason: verified non-applicable (we don't programmatically inject into our own pages).
+Features:
 
-## Risks And Open Questions
+- All v5 phases complete.
+- README build deliverable written for public release.
+- Competitive comparison page generated from settings schema.
+- Chrome, Firefox, and userscript artifacts produced.
+- Store-safe and GitHub-full releases signed/packaged separately.
+- Full regression bundle and manual browser smoke plan executed.
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| YouTube DOM churn, especially player chrome and comments | High | Selector chains, MHTML fixtures, runtime health report, weekly refresh cadence. |
-| Trusted Types breakage | High | Central Trusted HTML wrapper and DOM APIs. |
-| Chrome Web Store policy on YouTube downloads/ad automation | High | Store-safe profile and GitHub/full profile separation. |
-| MV3 service worker termination | Medium | Top-level listeners, storage/session persistence, no in-memory-only critical state. |
-| API rate limits for RYD/SponsorBlock/DeArrow | Medium | Central limiter, cache, stale serving, visible degraded state. |
-| Companion downloader attack surface | High | Host validation, token auth, command allowlists, yt-dlp pinning, local-only binding. |
-| Userscript manager MV3 changes | Medium | Extension remains primary; userscript single-file remains secondary. |
-| Feature bloat and monolith cost | High | Registry, per-surface modules, lazy init, performance budget. |
-| Store review latency on Firefox/Chrome | Medium | GitHub releases with signed artifacts; AMO/CWS profile documentation. |
-| External research tools exaggerate user counts | Low | Treat counts as ranking signals, not exact truth. |
-| Custom JS predicate safety | High | Default off; sandbox or reject if safe design cannot be proven. |
+Acceptance criteria:
 
-Open questions:
+- Every matrix feature is either shipped, intentionally excluded with a documented policy reason, or marked experimental in GitHub-full only.
+- Astra replaces at least these stacks for a power user: SponsorBlock, DeArrow, Return YouTube Dislike, Unhook, BlockTube, PocketTube, Video Speed Controller, YouTube Alchemy, YouTube Tweaks, Tweaks for YouTube, and common Stylus dark/compact themes.
+- No critical route, player, comment, or feed feature depends only on a raw obfuscated class.
+- README, changelog, store checklist, and privacy copy are updated in the implementation release.
 
-- Should v4.0.0 remain GitHub/self-host first, or should a store-safe variant be prepared in parallel?
-- Is YouTube Music in the main product charter or a separate compatibility product?
-- Should subscription-group data ever sync through browser sync, or remain local/export-only?
-- Can Return YouTube Dislike vote submission be safely supported, or should Astra Deck remain read-only?
-- Can custom JS predicates be safely sandboxed enough to justify matching BlockTube's advanced mode?
-- Should Cobalt fallback be bundled as an integration or only documented as an external handoff?
+## Risks and Open Questions
 
-## Definition Of Done
+- YouTube player redesign: `.ytp-delhi-modern`, action pills, overflow panels, and bottom controls are high-churn. Need fresh captures before large player UI work.
+- Live chat: current MHTML captures do not include full iframe internals. Major live-chat work needs live-stream fixtures.
+- Store policy: download, ad/promo skip, age-restriction bypass, and Cobalt/direct-stream features may require GitHub-full only.
+- RYD accuracy: dislike counts for post-2021 and low-traffic videos are estimates. UI must disclose this.
+- SponsorBlock/DeArrow API terms and rate limits: card-level use must remain conservative and cache-bounded.
+- AI summaries: provider APIs create privacy and cost risk. Keep opt-in, BYO key/local-first, and clearly labelled.
+- Extension ecosystem trust: malicious YouTube-enhancer-like extensions are an active public concern. Avoid broad permissions, remote code, analytics, and opaque update behavior.
+- Full settings schema migration: 354 flat keys require careful migration tests and import/export compatibility.
+- Userscript parity: MV3-only features need clear graceful degradation in the userscript.
+- Performance: rich grid cards recycle aggressively; visibility-bound processing and LRU caches are mandatory.
 
-`Astra Deck v4.0.0` is done when:
+## Definition of Done
 
-- It ships as MV3 Chrome, MV3 Firefox, and readable single-file userscript artifacts.
-- It beats every competitor in the matrix by unioning their core user-facing features or documenting a policy/technical exclusion.
-- Settings panel includes every feature as a grouped, persistent, instant-apply toggle/control.
-- No light theme is present.
-- No new keyboard shortcuts are added.
-- No confirmation dialogs are used.
-- Every feature has a working `destroy()`.
-- Injected CSS is scoped and removable.
-- Trusted Types and DOM injection paths are audited.
-- MutationObservers process added nodes only.
-- Selector health is tested against refreshed MHTML fixtures.
-- API usage is rate-limited and cache-backed.
-- Privacy panel accurately shows every network touchpoint.
-- Store-safe and full GitHub profiles are documented.
-- README.md is produced as a build deliverable in a later run.
-- Fresh Chrome and Firefox clean-profile smoke tests pass.
-- Userscript install/update path is verified.
+`v6.0.0` is done when:
 
-## Source Index
-
-Local sources:
-
-- `README.md`
-- `CLAUDE.md`
-- `extension/default-settings.json`
-- `extension/manifest.json`
-- `extension/ytkit.js`
-- `extension/ytkit-main.js`
-- `extension/background.js`
-- `extension/core/*.js`
-- `scripts/build-selector-fixtures.js`
-- `tests/selector-regression.test.js`
-- `tests/fixtures/yt-home.tokens.txt`
-- `tests/fixtures/yt-watch.tokens.txt`
-- `mhtml/WatchPage.mhtml`
-- `mhtml/YouTube.mhtml`
-- `Subscriptions - YouTube.mhtml`
-- `Worldwide Societal Collapse...YouTube.mhtml`
-- `docs/research/*.md`
-
-External sources:
-
-- Return YouTube Dislike Chrome Web Store: https://chromewebstore.google.com/detail/return-youtube-dislike/gebbhagfogifgggkldgodflihgfeippi
-- Return YouTube Dislike GitHub: https://github.com/Anarios/return-youtube-dislike
-- SponsorBlock GitHub: https://github.com/ajayyy/SponsorBlock
-- SponsorBlock chrome-stats: https://chrome-stats.com/d/sponsorblock
-- DeArrow GitHub: https://github.com/ajayyy/DeArrow
-- DeArrow AMO versions: https://addons.mozilla.org/en-US/firefox/addon/dearrow/versions/
-- ImprovedTube GitHub: https://github.com/code-charity/youtube
-- Enhancer for YouTube: https://www.mrfdev.com/enhancer-for-youtube
-- YouTube Alchemy Greasy Fork: https://greasyfork.org/en/scripts/521686-youtube-alchemy
-- Tweaks for YouTube Chrome Web Store: https://chromewebstore.google.com/detail/tweaks-for-youtube/ogkoifddpkoabehfemkolflcjhklmkge
-- Control Panel for YouTube Chrome Web Store: https://chromewebstore.google.com/detail/control-panel-for-youtube/lodcanccmfbpjjpnngindkkmiehimile
-- Control Panel for YouTube Softpedia: https://www.softpedia.com/get/Internet/Internet-Applications-Addons/Chrome-Extensions/Control-Panel-for-YouTube.shtml
-- Unhook Chrome Web Store: https://chromewebstore.google.com/detail/unhook-remove-youtube-rec/khncfooichmfjbepaaaebmommgaepoid
-- Unhook official site: https://unhookextension.com/
-- BlockTube Chrome Web Store: https://chromewebstore.google.com/detail/blocktube/bbeaicapbccfllodepmimpkgecanonai
-- BlockTube GitHub: https://github.com/amitbl/blocktube
-- PocketTube official site: https://pockettube.io/
-- YouTube Redux Chrome Web Store: https://chromewebstore.google.com/detail/youtube-redux/mdgdgieddpndgjlmeblhjgljejejkikf
-- Iridium Chrome Web Store: https://chromewebstore.google.com/detail/iridium-for-youtube/gbjmgndncjkjfcnpfhgidhbgokofegbl
-- Magic Actions for YouTube: https://www.chromeactions.com/magic-options.html
-- YouTube CPU Tamer Greasy Fork: https://greasyfork.org/scripts/431573-youtube-cpu-tamer-by-animationframe
-- Greasy Fork YouTube scripts: https://greasyfork.org/en/scripts?language=all&q=youtube&sort=total_installs
-- Greasy Fork quality scripts: https://greasyfork.org/en/scripts?q=youtube+quality&sort=total_installs
-- OpenUserJS YouTube group: https://openuserjs.org/group/youtube
-- OpenUserJS Download YouTube Videos: https://openuserjs.org/scripts/panzi/Download_YouTube_Videos
-- OpenUserJS Youtube HD: https://openuserjs.org/scripts/adisib/Youtube_HD
-- OpenUserJS BetterYTM: https://openuserjs.org/scripts/Sv443/BetterYTM
-- Chrome Trusted Types on YouTube: https://developer.chrome.com/blog/trusted-types-on-youtube
-- Chrome extension APIs and MV3 docs: https://developer.chrome.com/docs/extensions/
-- Firefox Add-ons/AMO docs: https://extensionworkshop.com/documentation/
-- Chrome Web Store program policies: https://developer.chrome.com/docs/webstore/program-policies
-- uBlock Origin Lite home: https://github.com/uBlockOrigin/uBOL-home
-- h264ify GitHub: https://github.com/erkserkserks/h264ify
-- FreeTube GitHub: https://github.com/FreeTubeApp/FreeTube
-- NewPipe GitHub: https://github.com/TeamNewPipe/NewPipe
-- Cobalt GitHub: https://github.com/imputnet/cobalt
-- MeTube GitHub: https://github.com/alexta69/metube
-- Karamel GitHub: https://github.com/odensc/karamel
-- Reddit community reports on YouTube extension breakage, RYD, SponsorBlock, PocketTube, old layout, and distraction tools.
+- Astra Deck has a categorized settings schema for every toggle.
+- Every feature has `init()`, immediate apply where possible, and complete `destroy()`.
+- Store-safe, GitHub-full, and userscript profiles are generated from one source of truth.
+- Selector packs are capture-backed and tested against home, subscriptions, watch, comments, player, notifications, and live chat fixtures.
+- The extension beats or matches every listed competitor category, with policy-based exclusions explicitly documented.
+- All UI is dark/OLED, dense, accessible, reversible, and free of confirmation dialogs.
+- No keyboard shortcuts are added.
+- Third-party APIs are opt-in or narrowly scoped, rate-limited, and credential-safe.
+- The local downloader is explicit, diagnostic, and bounded to `127.0.0.1`.
+- Tests, lint, syntax checks, a11y audit, contrast audit, storage audit, version checks, build, and userscript parity all pass.
+- A public README is produced in the implementation release, not in this planning-only run.
