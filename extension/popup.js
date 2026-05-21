@@ -345,6 +345,11 @@ const schemaOverviewSection = $('#schema-overview');
 const schemaOverviewCount = $('#schema-overview-count');
 const schemaOverviewList = $('#schema-overview-list');
 
+// v4.24.0: which category rows are currently expanded. Stored in a
+// Set so re-renders preserve open state across storage.onChanged
+// without a settings round-trip.
+const schemaOverviewState = { expanded: new Set() };
+
 // Storage warning thresholds.
 // Astra Deck declares the `unlimitedStorage` permission so the
 // default 10 MB chrome.storage.local quota is removed — but a
@@ -1416,16 +1421,106 @@ function renderSchemaOverview() {
         if (!bucket) continue;
         const li = document.createElement('li');
         li.dataset.active = bucket.enabled > 0 ? 'true' : 'false';
+        li.dataset.category = cat;
+
+        // v4.24.0: the row is now a clickable disclosure. Use <button>
+        // so screen readers + keyboard activation work without bespoke
+        // role/tabindex/keydown plumbing.
+        const head = document.createElement('button');
+        head.type = 'button';
+        head.className = 'so-row-head';
+        head.setAttribute('aria-expanded', schemaOverviewState.expanded.has(cat) ? 'true' : 'false');
+        head.dataset.category = cat;
         const nameSpan = document.createElement('span');
         nameSpan.className = 'so-category';
         nameSpan.textContent = cat;
         const countsSpan = document.createElement('span');
         countsSpan.className = 'so-counts';
         countsSpan.textContent = bucket.enabled + '/' + bucket.total;
-        li.appendChild(nameSpan);
-        li.appendChild(countsSpan);
+        head.appendChild(nameSpan);
+        head.appendChild(countsSpan);
+        head.addEventListener('click', () => {
+            if (schemaOverviewState.expanded.has(cat)) {
+                schemaOverviewState.expanded.delete(cat);
+            } else {
+                schemaOverviewState.expanded.add(cat);
+            }
+            renderSchemaOverview();
+        });
+        li.appendChild(head);
+
+        // Render the per-key sub-list only when the row is expanded.
+        // Keeps the popup compact when none are open.
+        if (schemaOverviewState.expanded.has(cat)) {
+            const subList = document.createElement('ul');
+            subList.className = 'so-key-list';
+            subList.setAttribute('role', 'list');
+            const entriesInCat = scope.SETTINGS_SCHEMA
+                .filter((entry) => entry.category === cat && !entry.internal);
+            for (const entry of entriesInCat) {
+                subList.appendChild(buildSchemaOverviewKeyRow(entry, settings));
+            }
+            li.appendChild(subList);
+        }
+
         schemaOverviewList.appendChild(li);
     }
+}
+
+// v4.24.0: per-key row inside an expanded category. Booleans become a
+// real switch button (read + write through chrome.storage.local).
+// Non-booleans show their current value as a read-only badge — the
+// editing surface for non-boolean types lives in the in-page workspace.
+function buildSchemaOverviewKeyRow(entry, settings) {
+    const row = document.createElement('li');
+    row.className = 'so-key-row';
+    row.dataset.key = entry.key;
+
+    const label = document.createElement('span');
+    label.className = 'so-key-name';
+    label.textContent = entry.key;
+    row.appendChild(label);
+
+    if (entry.type === 'boolean') {
+        const on = settings[entry.key] === true;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'so-key-switch' + (on ? ' on' : '');
+        btn.setAttribute('role', 'switch');
+        btn.setAttribute('aria-checked', String(on));
+        btn.setAttribute('aria-label', entry.key + ' (' + (on ? 'on' : 'off') + ')');
+        btn.dataset.key = entry.key;
+        btn.addEventListener('click', async () => {
+            const next = !(popupState.settings[entry.key] === true);
+            btn.disabled = true;
+            try {
+                await writeSetting(entry.key, next);
+                // Re-render the overview to refresh the count + this row.
+                renderSchemaOverview();
+            } catch (err) {
+                console.warn('[Astra Deck popup] schema-overview toggle failed:', err);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+        row.appendChild(btn);
+    } else {
+        // Read-only value badge for non-boolean types.
+        const badge = document.createElement('span');
+        badge.className = 'so-key-value';
+        const value = settings[entry.key];
+        let display;
+        if (value === undefined || value === null) display = '—';
+        else if (entry.type === 'string')  display = value.length > 24 ? value.slice(0, 21) + '…' : value;
+        else if (entry.type === 'number')  display = String(value);
+        else if (entry.type === 'array')   display = '[' + (Array.isArray(value) ? value.length : 0) + ']';
+        else if (entry.type === 'object')  display = '{' + (value && typeof value === 'object' ? Object.keys(value).length : 0) + '}';
+        else display = String(value);
+        badge.textContent = display;
+        badge.title = entry.type + ' (read-only in popup; use in-page workspace to edit)';
+        row.appendChild(badge);
+    }
+    return row;
 }
 
 // Decide whether a schema entry counts as "enabled" in the popup
