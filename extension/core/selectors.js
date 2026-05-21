@@ -28,30 +28,6 @@
     // The remaining entries below are next on the deck for the
     // batch-by-batch v5.1.0 selector-pack migration.
     const INLINE_SURFACES = {
-        feed: {
-            stable: ['ytd-browse ytd-rich-grid-renderer', 'ytd-rich-grid-renderer'],
-            fallback: ['ytd-rich-grid-renderer.style-scope', '#contents.ytd-rich-grid-renderer'],
-            highChurn: true,
-            notes: 'Process added nodes only; filter chips can recycle grid content without route events.'
-        },
-        feedCard: {
-            stable: ['ytd-rich-item-renderer', 'yt-lockup-view-model', 'ytd-video-renderer'],
-            fallback: ['yt-lockup-view-model.ytd-rich-item-renderer', 'ytd-rich-item-renderer.style-scope'],
-            highChurn: true,
-            notes: 'New lockup view-model appears in current captures.'
-        },
-        thumbnail: {
-            stable: ['ytd-thumbnail', 'yt-thumbnail-view-model', 'a#thumbnail'],
-            fallback: ['ytThumbnailViewModelHost', 'ytd-thumbnail a#thumbnail'],
-            highChurn: true,
-            notes: 'Resolve from nearest card root before querying document-wide.'
-        },
-        shortsShelf: {
-            stable: ['a[href^="/shorts"]', 'ytd-rich-shelf-renderer'],
-            fallback: ['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer'],
-            highChurn: true,
-            notes: 'URL path is more stable than shelf wrapper names.'
-        },
         watch: {
             stable: ['ytd-watch-flexy[video-id]', 'ytd-watch-flexy', 'ytd-watch-metadata', '#below'],
             fallback: ['ytd-watch-metadata.watch-active-metadata', 'ytd-watch-flexy[flexy]'],
