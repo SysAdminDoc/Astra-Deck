@@ -4642,6 +4642,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/selector-health.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',
+        'extension/core/toast-dom.js',
         'extension/features/subtitles/index.js',
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
@@ -4706,6 +4707,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/selector-health.js',
         'extension/core/data-flow.js',
         'extension/core/toast.js',
+        'extension/core/toast-dom.js',
         'extension/features/subtitles/index.js',
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
@@ -6147,6 +6149,108 @@ test('v4.41.0 popup CSS declares textarea + error pill with sub-8px radii', () =
     const errorBlock = css.slice(css.indexOf('.so-key-json-error'), css.indexOf('.so-key-json-error') + 400);
     assert.match(errorBlock, /border-radius:\s*4px/,
         '.so-key-json-error must use the house-style 4px radius');
+});
+
+// ── v4.42.0 NX1: DOM-layer toast extraction (core/toast-dom.js) ──
+
+test('v4.42.0 core/toast-dom.js exists and exports createToastSystem', () => {
+    const full = path.join(__dirname, '..', 'extension', 'core', 'toast-dom.js');
+    assert.ok(fs.existsSync(full), 'extension/core/toast-dom.js must exist');
+    const src = fs.readFileSync(full, 'utf8');
+    assert.match(src, /createToastSystem/, 'must export createToastSystem');
+    assert.match(src, /YTKitCore[^=]*=[^=]*\{[^}]*\}/, 'must attach to globalThis.YTKitCore');
+});
+
+test('v4.42.0 toast-dom factory produces showToast + dismissToast', () => {
+    delete require.cache[require.resolve('../extension/core/toast-dom.js')];
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    require('../extension/core/toast-dom.js');
+    global.YTKitCore = prev;
+    assert.ok(stub.toastDom, 'IIFE must populate YTKitCore.toastDom');
+    assert.equal(typeof stub.toastDom.createToastSystem, 'function',
+        'createToastSystem must be a function');
+    const sys = stub.toastDom.createToastSystem({
+        zIndex: 70000,
+        inferToastTone: () => 'success',
+        getToastRgb: () => '53,199,127',
+        getToastBadgeLabel: () => 'Done'
+    });
+    assert.equal(typeof sys.showToast, 'function', 'system must expose showToast');
+    assert.equal(typeof sys.dismissToast, 'function', 'system must expose dismissToast');
+});
+
+test('v4.42.0 monolith showToast + dismissToast delegate via _getToastSystem', () => {
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    assert.match(ytkit, /function _getToastSystem\(\)/,
+        'ytkit.js must declare _getToastSystem helper');
+    assert.match(ytkit, /globalThis\.YTKitCore\.toastDom\.createToastSystem/,
+        '_getToastSystem must reference YTKitCore.toastDom.createToastSystem');
+    // Both functions must short-circuit through the system when available.
+    const showIdx = ytkit.indexOf('function showToast(message, color = ');
+    const dismissIdx = ytkit.indexOf('function dismissToast(toast, immediate');
+    assert.ok(showIdx > -1 && dismissIdx > -1, 'both functions must still exist');
+    const showBody = ytkit.slice(showIdx, showIdx + 600);
+    const dismissBody = ytkit.slice(dismissIdx, dismissIdx + 600);
+    assert.match(showBody, /const sys = _getToastSystem\(\)/,
+        'showToast must consult _getToastSystem');
+    assert.match(showBody, /if \(sys\) return sys\.showToast/,
+        'showToast must delegate to sys.showToast when present');
+    assert.match(dismissBody, /const sys = _getToastSystem\(\)/,
+        'dismissToast must consult _getToastSystem');
+    assert.match(dismissBody, /if \(sys\) return sys\.dismissToast/,
+        'dismissToast must delegate to sys.dismissToast when present');
+});
+
+test('v4.42.0 monolith inline fallback stays byte-stable with the toast-dom implementation', () => {
+    // The fallback's dismissToast body must mirror the module's
+    // dismissToast body. Spot-check key invariants: 180 ms remove
+    // timer, reduced-motion immediate path, class toggle to
+    // is-visible removal. Any of these regressing would silently
+    // change behaviour on the userscript path only.
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const toastDom = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'toast-dom.js'), 'utf8');
+    for (const marker of [
+        "toast._removeTimer = setTimeout",
+        ", 180);",
+        "toast.classList.remove('is-visible')",
+        "matchMedia('(prefers-reduced-motion: reduce)')"
+    ]) {
+        assert.ok(ytkit.includes(marker),
+            `ytkit.js fallback must contain ${marker}`);
+        assert.ok(toastDom.includes(marker),
+            `core/toast-dom.js must contain ${marker}`);
+    }
+});
+
+test('v4.42.0 manifest loads core/toast-dom.js after core/toast.js and before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const toastIdx = cs.js.indexOf('core/toast.js');
+        const toastDomIdx = cs.js.indexOf('core/toast-dom.js');
+        assert.notEqual(toastDomIdx, -1,
+            'manifest content_scripts must include core/toast-dom.js');
+        assert.ok(toastIdx < toastDomIdx,
+            'core/toast-dom.js must load AFTER core/toast.js (it depends on the pure helpers)');
+        assert.ok(toastDomIdx < ytkitIdx,
+            'core/toast-dom.js must load before ytkit.js');
+    }
+});
+
+test('v4.42.0 sync-userscript V5_BUNDLE_MODULES includes core/toast-dom.js after core/toast.js', () => {
+    const sync = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
+    const toastIdx = sync.indexOf("'extension/core/toast.js'");
+    const toastDomIdx = sync.indexOf("'extension/core/toast-dom.js'");
+    assert.notEqual(toastDomIdx, -1,
+        'sync-userscript.js V5_BUNDLE_MODULES must include core/toast-dom.js');
+    assert.ok(toastIdx < toastDomIdx,
+        'core/toast-dom.js must follow core/toast.js in V5_BUNDLE_MODULES');
 });
 
 test('v4.41.0 settings-schema has ≥1 array-typed AND ≥1 object-typed entry (coverage canary)', () => {

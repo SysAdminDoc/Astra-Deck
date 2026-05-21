@@ -6,6 +6,58 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.42.0] - 2026-05-21 - DOM-layer toast extraction (core/toast-dom.js)
+
+Closes carry-forward item #4. The DOM-touching `showToast` /
+`dismissToast` functions move into
+`extension/core/toast-dom.js` behind a `createToastSystem()`
+factory; ytkit.js keeps a byte-identical inline fallback so the
+userscript / module-unavailable path still works exactly as
+before.
+
+### Added
+
+- `extension/core/toast-dom.js` exporting
+  `createToastSystem({ zIndex, inferToastTone, getToastRgb,
+  getToastBadgeLabel })` → `{ showToast, dismissToast }`. The
+  factory takes its dependencies as inputs (rather than reading
+  them off the global) so the module is unit-testable in
+  isolation. Both DOM functions match the prior monolith bodies
+  for the parity check.
+- `extension/ytkit.js` — `_getToastSystem()` builds the system
+  on first call and caches it. `showToast` + `dismissToast`
+  delegate via the cached system; the existing inline bodies
+  remain as the byte-identical fallback when the module isn't
+  loaded.
+- `extension/manifest.json` — both ISOLATED content-script
+  blocks load `core/toast-dom.js` immediately after
+  `core/toast.js` (the pure-helpers module it depends on) and
+  before `ytkit.js`.
+- `sync-userscript.js` — `V5_BUNDLE_MODULES` extended with
+  `core/toast-dom.js` so the userscript ships the module too.
+- `tests/hardening.test.js` — 6 new v4.42.0 regressions: module
+  existence + createToastSystem export, factory produces the
+  showToast + dismissToast pair, monolith wires `_getToastSystem`
+  + delegation, byte-stable parity markers across both
+  implementations, manifest load-order (toast → toast-dom →
+  ytkit), and `V5_BUNDLE_MODULES` ordering.
+
+### Why
+
+`core/toast.js` (v4.14.0) shipped only the pure helpers; the
+DOM-touching code stayed in the 43k-line monolith and was
+untestable in isolation. The DOM peel makes it possible to build
+a control-center toast preview from the same canonical code, and
+matches the per-slice instruction in the v5.1.0 brief ("leave
+the inline byte-stable fallback per the existing peel pattern").
+
+### Verification
+
+- 510 tests pass (was 504; +6 toast-dom regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.42.0.
+
 ## [4.41.0] - 2026-05-21 - array / object JSON editors in the schema overview
 
 Closes carry-forward item #5. The popup schema overview can now
