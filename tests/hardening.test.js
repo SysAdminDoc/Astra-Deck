@@ -4710,6 +4710,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
         'extension/features/theme-css/index.js',
+        'extension/features/wave-8-css/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     assert.deepEqual(bundleOrder, expectedOrder,
@@ -5878,6 +5879,101 @@ test('v4.37.0 every selector pack file is loaded by both ISOLATED content_script
                 `manifest content_scripts (matches ${JSON.stringify(cs.matches)}) must include ${pack}`);
         }
     }
+});
+
+// ── v4.38.0 NX1: feature-peel batch (5 wave-8 CSS-only features) ──
+
+function loadWave8CssModule() {
+    delete require.cache[require.resolve('../extension/features/wave-8-css/index.js')];
+    const stub = {};
+    const prev = global.YTKitFeatures;
+    global.YTKitFeatures = stub;
+    require('../extension/features/wave-8-css/index.js');
+    global.YTKitFeatures = prev;
+    return stub.wave8Css;
+}
+
+test('v4.38.0 wave-8-css module exports five pure builders', () => {
+    const wave8 = loadWave8CssModule();
+    assert.ok(wave8, 'YTKitFeatures.wave8Css must be populated by the IIFE');
+    for (const name of [
+        'buildHideNotificationButtonCss',
+        'buildNoFrostedGlassCss',
+        'buildHideLatestPostsCss',
+        'buildDisableMiniPlayerCss',
+        'buildNyanCatProgressBarCss'
+    ]) {
+        assert.equal(typeof wave8[name], 'function', `wave8Css.${name} must be a function`);
+        const css = wave8[name]();
+        assert.equal(typeof css, 'string', `${name} must return a string`);
+        assert.ok(css.length > 0, `${name} must return a non-empty CSS string`);
+    }
+});
+
+test('v4.38.0 wave-8-css helpers return byte-identical CSS to the monolith fallback', () => {
+    const wave8 = loadWave8CssModule();
+    // For each peeled feature, the module's CSS must appear verbatim
+    // inside the monolith's inline fallback (the literal after the
+    // `||` operator at the cssFeature() call site). The parity check
+    // is a substring assertion rather than equality because the
+    // monolith wraps the literal in a template literal whose
+    // trailing whitespace can differ.
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    const cases = [
+        ['buildHideNotificationButtonCss', 'ytd-notification-topbar-button-renderer'],
+        ['buildNoFrostedGlassCss', 'backdrop-filter: none !important'],
+        ['buildHideLatestPostsCss', 'ytd-backstage-post-thread-renderer'],
+        ['buildDisableMiniPlayerCss', 'ytd-miniplayer[active]'],
+        ['buildNyanCatProgressBarCss', '@keyframes ytkit-nyan-rainbow']
+    ];
+    for (const [fn, marker] of cases) {
+        const css = wave8[fn]();
+        assert.ok(css.includes(marker), `${fn}() output must contain ${marker}`);
+        // The same marker must also appear inside ytkit.js (the
+        // byte-identical inline fallback after the `||`).
+        assert.ok(ytkit.includes(marker), `ytkit.js must keep the inline fallback containing ${marker}`);
+    }
+});
+
+test('v4.38.0 monolith cssFeature() callsites delegate via globalThis.YTKitFeatures.wave8Css', () => {
+    const ytkit = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+    // Each of the five peeled features must reference the wave8Css
+    // delegation chain — proves the call site isn't accidentally
+    // reverted to a plain literal.
+    for (const fn of [
+        'buildHideNotificationButtonCss',
+        'buildNoFrostedGlassCss',
+        'buildHideLatestPostsCss',
+        'buildDisableMiniPlayerCss',
+        'buildNyanCatProgressBarCss'
+    ]) {
+        assert.ok(
+            ytkit.includes(`globalThis.YTKitFeatures.wave8Css.${fn}()`),
+            `ytkit.js must delegate ${fn} via globalThis.YTKitFeatures.wave8Css`
+        );
+    }
+});
+
+test('v4.38.0 manifest content_scripts loads features/wave-8-css/index.js before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const moduleIdx = cs.js.indexOf('features/wave-8-css/index.js');
+        assert.notEqual(moduleIdx, -1,
+            'manifest content_scripts must include features/wave-8-css/index.js');
+        assert.ok(moduleIdx < ytkitIdx,
+            'features/wave-8-css/index.js must load before ytkit.js');
+    }
+});
+
+test('v4.38.0 sync-userscript V5_BUNDLE_MODULES includes features/wave-8-css', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'sync-userscript.js'), 'utf8');
+    assert.ok(src.includes('extension/features/wave-8-css/index.js'),
+        'sync-userscript.js V5_BUNDLE_MODULES must include features/wave-8-css/index.js');
 });
 
 test('v4.37.0 SurfaceSelectorMap surface count matches the pack file count exactly', () => {

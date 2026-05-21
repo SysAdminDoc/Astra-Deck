@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.37.0';
+    const YTKIT_VERSION = '4.38.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -24232,20 +24232,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
 
         // ── CSS-Only Features ──
+        // v4.38.0: five wave-8 CSS-only features peel out to
+        // extension/features/wave-8-css/index.js. The inline literal
+        // stays as a byte-identical fallback for the userscript path
+        // where the module may not be loaded.
         cssFeature('hideNotificationButton', 'Hide Notification Bell', 'Remove the notification bell icon from the header', 'Interface', 'bell-off',
-            `ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }`),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildHideNotificationButtonCss && globalThis.YTKitFeatures.wave8Css.buildHideNotificationButtonCss())
+            || `ytd-notification-topbar-button-renderer, ytd-topbar-menu-button-renderer:has(a[href="/notifications"]) { display: none !important; }`),
 
         cssFeature('noFrostedGlass', 'Disable Frosted Glass', 'Remove blur effects from UI elements', 'Appearance', 'droplet',
-            `* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildNoFrostedGlassCss && globalThis.YTKitFeatures.wave8Css.buildNoFrostedGlassCss())
+            || `* { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }`),
 
         cssFeature('hideLatestPosts', 'Hide Latest Posts', 'Hide community posts and updates sections from feeds', 'Content', 'file-x',
-            `ytd-rich-section-renderer:has(ytd-post-renderer), ytd-rich-section-renderer:has(ytd-backstage-post-thread-renderer), ytd-post-renderer, ytd-backstage-post-thread-renderer, ytd-reel-shelf-renderer:has(ytd-backstage-post-thread-renderer) { display: none !important; }`),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildHideLatestPostsCss && globalThis.YTKitFeatures.wave8Css.buildHideLatestPostsCss())
+            || `ytd-rich-section-renderer:has(ytd-post-renderer), ytd-rich-section-renderer:has(ytd-backstage-post-thread-renderer), ytd-post-renderer, ytd-backstage-post-thread-renderer, ytd-reel-shelf-renderer:has(ytd-backstage-post-thread-renderer) { display: none !important; }`),
 
         cssFeature('disableMiniPlayer', 'Disable Mini Player', 'Prevent the mini player from appearing when navigating away', 'Video Player', 'minimize-2',
-            `ytd-miniplayer[active] { display: none !important; } .ytp-miniplayer-button { display: none !important; }`),
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildDisableMiniPlayerCss && globalThis.YTKitFeatures.wave8Css.buildDisableMiniPlayerCss())
+            || `ytd-miniplayer[active] { display: none !important; } .ytp-miniplayer-button { display: none !important; }`),
 
         cssFeature('nyanCatProgressBar', 'Nyan Cat Progress Bar', 'Replace the video progress bar with a Nyan Cat animation', 'Appearance', 'cat',
-            `.ytp-play-progress {
+            (globalThis.YTKitFeatures && globalThis.YTKitFeatures.wave8Css && globalThis.YTKitFeatures.wave8Css.buildNyanCatProgressBarCss && globalThis.YTKitFeatures.wave8Css.buildNyanCatProgressBarCss())
+            || `.ytp-play-progress {
                 background: linear-gradient(180deg, #ff0000 0%, #ff9900 16.6%, #ffff00 33.3%, #33ff00 50%, #0099ff 66.6%, #6633ff 83.3%, #ff0000 100%) !important;
                 background-size: 100% 600% !important;
                 animation: ytkit-nyan-rainbow 1s linear infinite !important;
