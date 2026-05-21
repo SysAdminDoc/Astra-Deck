@@ -1203,27 +1203,27 @@ Acceptance:
 - [x] No confirmation dialogs. *(Every action applies immediately; toast feedback per the user's universal rule.)*
 - [x] Every feature can be disabled and cleaned up. *(Asserted by the 235 hardening + regression tests across all nine waves.)*
 
-## Iter-8 Maintenance Track (v4.5.0)
+## Iter-8 Maintenance Track (v4.5.0 + v4.5.1)
 
-### Now — shipped iter-8
+### Now — shipped iter-8 (v4.5.0)
 
 - [x] **N18 — TranscriptService extraction into `core/transcript-service.js` (M-phase #4).** Commit `521e336`. -445 LOC from ytkit.js. 7 new regression tests. All 5 callsites in ytkit.js routed through the factory return surface.
 - [x] **N19 — StorageManager cache+debounce extraction into `core/storage-manager.js` as `createStorageCache` (M-phase #5).** Commit `8016e89`. -72 net LOC from ytkit.js. 9 new regression tests. Resolves the long-standing name collision with `core/storage.js` (low-level wrapper).
 - [x] **N20 — yt-dlp 2026 external JS runtime surface.** Commit `b21c48e`. AstraDownloader v1.4.0 → v1.5.0 with new `/health.denoRuntime` field; `downloadHealthPanel` in ytkit.js renders a "Deno: missing" warn pill when `ytdlpNeedsRuntime && !installed`. 13 new Python tests. Conservative cutoff `(2026, 4, 1)` so older yt-dlps don't false-positive. README + CLAUDE.md updated.
 
-### Next (iter-9 candidates — research-traceable)
+### Iter-8 extended scope — shipped (v4.5.1)
 
-- [ ] **N21 — SponsorBlock scrolled-away verification.** Upstream SB v6.1.5 (2026-04-21) fixed segment skip when video scrolls offscreen and rAF stops firing. Our SB uses event-driven `setTimeout` on `playing`/`seeked`/`ratechange`, NOT rAF — likely already robust. Verify with a Playwright reproduction.
-- [ ] **N22 — DeArrow regression test against refreshed MHTML fixtures.** DeArrow v2.3.4/2.3.5 (2026-04-08/04-11) patched YouTube's per-class swap of thumbnail/title nodes. Blocked on H-08 MHTML refresh.
-- [ ] **N23 — `TIMING` constants extraction.** Tiny LOC win, but disambiguates the navigation-debounce / save-debounce / element-timeout triplet from feature scope.
+- [x] **N21 — SponsorBlock scrolled-away verification.** Commit `ef8e807`. Audited the code path: our SB uses event-driven `setTimeout` boundaries scheduled from `playing`/`seeked`/`ratechange`, viewport-agnostic. Already robust — upstream's rAF-stall failure mode cannot reproduce. Added 3 regression tests pinning the architecture: setTimeout (not rAF) scheduling; paused-video early-return; no IntersectionObserver/getBoundingClientRect/offsetParent in `_checkSkip`.
+- [x] **N22 — DeArrow selector chain resilience (static portion).** Commit `1928666`. Audited the code path: DeArrow uses durable primitives (custom-element tags, stable IDs, attribute matchers, "da"-prefixed marker classes) — no hashed-class deps. Added 2 regression tests pinning the resilient surface and blocking any future hashed-class regression. **Dynamic-fixture portion (MHTML refresh) remains an operator-only manual gate.**
+- [x] **N23 — Reframed from TIMING extraction (low-value, 7 LOC) to ICONS+createSVG extraction (M-phase #6).** Commit `ddbc22d`. The original N23 would have *increased* LOC due to module-wrapper overhead; the reframe is documented in `docs/research/iter-8-mediadl-sizing.md` and the swap is explicitly tracked here. ICONS extraction: -326 LOC from ytkit.js, +7 regression tests. Cumulative N11 M-phase since iter-7: **44,264 → 43,081 = -1,183 LOC (-2.67%)**.
 
-### Later
+### Later — investigated, deferred
 
-- [ ] **N24 — DebugManager extraction.** ~12-line module — low value alone, fold into a future grouped polish pass.
+- [x] **N24 — DebugManager extraction (REJECTED on technical merit, 2026-05-21).** Measured at 9 lines + 118 call sites. Extraction would create a +30-line core module and a +12-line wrapper in ytkit.js, **net change +21 LOC vs the inline original**. Confirmed worse than the status quo. Closed; do not resurrect without a substantive deps change.
 
 ### Under Consideration (multi-run; needs `--force-modularization`)
 
-- [ ] **N25 — MediaDLManager extraction.** Large effort; heavily coupled to install-prompt UI + toast. Multi-run M-phase invocation required.
+- [ ] **N25 — MediaDLManager extraction.** **Sizing measured 2026-05-21**: 353 LOC, 30 call sites in ytkit.js, ~15 external accessor dependencies (extensionFetchJson + showToast + storageWrite + DebugManager.log + t() i18n + 9 install-prompt UI helpers: openExternalUrl / openProtocol / triggerDownload / downloadInstaller / copyInstallCommand / runInstallAssist / setPromptButtonState / setPromptNote / makeBtn). The install-prompt UI helpers would either need to come along (taking the extraction past 500 LOC) OR stay in ytkit.js with the core module calling back via accessors (matching the TranscriptService pattern, but with ~3x the accessor surface). Multi-run M-phase invocation required — invoke factory with `--force-modularization` on a dedicated future run.
 - [ ] **N26 — Bundle Deno runtime alongside yt-dlp.exe in the AstraDownloader installer.** Charter-edge — meaningful scope expansion (we'd be shipping a JS runtime). Defer until the field hit-rate from N20's missing-Deno pill says it's needed.
 
 ### Rejected (preserve reasoning so future runs don't resurrect)
