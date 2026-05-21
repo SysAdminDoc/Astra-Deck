@@ -28,24 +28,6 @@
     // The remaining entries below are next on the deck for the
     // batch-by-batch v5.1.0 selector-pack migration.
     const INLINE_SURFACES = {
-        comments: {
-            stable: ['ytd-comments', 'ytd-comment-thread-renderer', 'ytd-comment-view-model'],
-            fallback: ['ytd-comment-thread-renderer.style-scope', 'ytd-comment-renderer'],
-            highChurn: true,
-            notes: 'Keep old and new comment shapes during A/B transition.'
-        },
-        commentComposer: {
-            stable: ['ytd-comment-simplebox-renderer', 'ytd-commentbox', '#contenteditable-root'],
-            fallback: ['ytd-comments ytd-comment-simplebox-renderer div.style-scope', 'ytd-comment-simplebox-renderer #placeholder-area'],
-            highChurn: true,
-            notes: 'Prefer structural lookup below ytd-comments.'
-        },
-        engagementPanels: {
-            stable: ['ytd-engagement-panel-section-list-renderer', '#panels ytd-engagement-panel-section-list-renderer'],
-            fallback: ['ytd-engagement-panel-section-list-renderer.style-scope', 'ytd-engagement-panel-title-header-renderer'],
-            highChurn: true,
-            notes: 'Chapters, transcript, AI summary, and clips live here.'
-        },
         settingsOverlay: {
             stable: ['[data-ytkit-surface="control-center"]', '.ytkit-control-center', '#ytkit-panel'],
             fallback: ['.ytkit-panel', '.ytkit-modal'],

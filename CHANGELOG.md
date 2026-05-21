@@ -6,6 +6,31 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.35.0] - 2026-05-21 - v5.1.0 #5: selector-pack file split (batch 5 — engagement)
+
+Fifth batch of the v5.1.0 selector-pack migration. The three
+engagement surfaces — `comments`, `commentComposer`,
+`engagementPanels` — move out of `INLINE_SURFACES`.
+
+### Added
+
+- `extension/core/selector-packs/comments.js` (keeps both old and
+  new comment-shape selectors during the A/B rollout),
+  `commentComposer.js`, `engagementPanels.js`.
+- `extension/manifest.json` — 19 pack files load before
+  `core/selectors.js`.
+- `tests/core-foundation.test.js` — vm loader seeds the 19 packs.
+- `tests/hardening.test.js` — 4 new v4.35.0 regressions including
+  a parity check that the comments pack keeps both `ytd-comment-
+  view-model` and `ytd-comment-renderer` in the selector chain.
+
+### Verification
+
+- 474 tests pass (was 470; +4 engagement regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` and `node build-extension.js` green
+  at v4.35.0.
+
 ## [4.34.0] - 2026-05-21 - v5.1.0 #4: selector-pack file split (batch 4 — player-chrome + sidebar + modals)
 
 Fourth batch of the v5.1.0 selector-pack migration. Four surfaces —
