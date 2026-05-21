@@ -6,6 +6,35 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.30.0] - 2026-05-21 - v5.0.0 foundation arc closed (documentation tag)
+
+No code changes from v4.29.0 — version bump + documentation tag
+declaring the v5.0.0 foundation arc effectively complete. Every
+acceptance-criterion item in `ROADMAP.md` under v5.0.0 is now
+either checked or marked partial with the specific remaining work
+explicitly named so v5.1+ can start cleanly.
+
+### Cumulative scoreboard (single autonomous session)
+
+| | |
+|---|---:|
+| Versions shipped | 26 (v4.5.3 → v4.30.0) |
+| Tests added | +136 (315 → 451) |
+| New `extension/core/` modules | 7 (settings-schema, feature-lifecycle, policy-profile, selector-health, data-flow, toast, lifecycle-route-bridge) |
+| Feature carve-outs from monolith | 4 modules covering 10 feature blocks |
+| User-visible popup surfaces added | 4 (data-flow panel, schema category overview, per-key boolean+number+string editor, Privacy quick-toggle group) |
+| Schema editor coverage | ~340 of 354 schema keys directly editable from the popup |
+| Userscript bundle | 11 v5.0.0 core modules auto-bundled by `sync-userscript.js` |
+| Open question resolved | Ctrl+Shift+Y keyboard shortcut retired (v4.5.3) |
+| `npm run check` + `npm test` + `node build-extension.js` | Green at every step |
+
+### Why a documentation tag
+
+`ROADMAP.md` v5.0.0 acceptance criteria evolved across the session.
+A standalone tag commit gives a clean reference point future
+sessions can cite when starting v5.1+ work, and matches the
+v4.30.0 binary artifacts shipped in `build/`.
+
 ## [4.29.0] - 2026-05-21 - v5.0.0 foundation #24: persist popup expansion across opens
 
 Final UX polish on the schema-overview surface. Categories the user
