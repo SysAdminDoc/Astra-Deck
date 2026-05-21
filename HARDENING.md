@@ -355,8 +355,9 @@ most valuable.
 - ESLint custom rule flagging `catch (_) {}` without `// reason:`
 - Feature-level init/destroy/init smoke tests for top 20 features
 - `unlimitedStorage` permission decision (trade-off with store review)
-- Firefox-specific `commands` shortcut remap (Firefox reserves
-  `Ctrl+Shift+Y`)
+- ~~Firefox-specific `commands` shortcut remap~~ — moot in v4.5.3: the
+  entire `commands` block was retired per the "no keyboard shortcuts"
+  rule.
 - Broader `selectorChain` adoption across comments, masthead, player
   controls
 
@@ -728,20 +729,17 @@ budgets.
 
 Regression: `manifest declares unlimitedStorage to exceed the 10 MB default quota`.
 
-**P7-D2 — Firefox `Ctrl+Shift+Y` collision**
-Firefox reserves `Ctrl+Shift+Y` for "Show Downloads". Since Astra
-Deck's manifest declared the same key for `toggle-control-center`, no
-command fired on Firefox (the browser-level binding won). MV3
-`commands` can't branch per vendor, so the fix has to happen at
-build-manifest-patch time.
+**P7-D2 — Firefox `Ctrl+Shift+Y` collision (superseded by v4.5.3 removal)**
+Firefox reserves `Ctrl+Shift+Y` for "Show Downloads". The original P7
+fix added a Firefox-only rebind to `Ctrl+Alt+Y` in
+`scripts/manifest-patch.js`. v4.5.3 retires the entire `commands`
+block in keeping with the "no keyboard shortcuts" project rule — there
+is no shortcut left to collide with Firefox's browser-level binding.
+The manifest-patch comment now documents the removal; the regression
+test was rewritten to assert both Chrome and Firefox-patched
+manifests contain no `commands` block.
 
-Fix: `build-extension.js` Firefox patch now also rewrites
-`ffManifest.commands['toggle-control-center'].suggested_key.default`
-to `Ctrl+Alt+Y`. The patch is guarded on the Chrome-side default so
-a future Chrome-side remap stays idempotent. Chrome manifest
-unchanged.
-
-Regression: `Firefox build rewrites Ctrl+Shift+Y (reserved by Firefox Downloads) to Ctrl+Alt+Y`.
+Regression: `v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)`.
 
 ### Still Open (deferred to Pass 8)
 
@@ -1393,12 +1391,13 @@ strings yet.
 **What shipped:**
 
 - `extension/_locales/en/messages.json` — the English message catalog.
-  Four keys for the manifest fields that browsers substitute at load
-  time: `extName`, `extDescription`, `extActionTitle`,
-  `toggleControlCenterDesc`.
-- `extension/manifest.json` updated: `name`, `description`,
-  `action.default_title`, and `commands.toggle-control-center.description`
-  now use `__MSG_<key>__` references; `default_locale: "en"` added.
+  Three keys for the manifest fields that browsers substitute at load
+  time: `extName`, `extDescription`, `extActionTitle`.
+  _(The fourth original key, `toggleControlCenterDesc`, was removed in
+  v4.5.3 together with the entire `commands` keyboard-shortcut block.)_
+- `extension/manifest.json` updated: `name`, `description`, and
+  `action.default_title` use `__MSG_<key>__` references;
+  `default_locale: "en"` added.
 - `scripts/check-i18n.js` — build-time consistency gate. Reads
   `_locales/en/messages.json`, scans all `extension/` JS files for
   `chrome.i18n.getMessage("key")` calls and the manifest for `__MSG_key__`

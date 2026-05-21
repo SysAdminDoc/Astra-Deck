@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.5.3] - 2026-05-21 - Retire keyboard shortcut surface (house-style alignment)
+
+The "no keyboard shortcuts" rule in the v5 roadmap is now enforced in
+code. The only remaining activators for the Astra Deck control center
+are the toolbar action button, the in-page gear icon, and the popup.
+
+### Removed
+
+- `extension/manifest.json` — entire `commands` block (the
+  `toggle-control-center` entry with `Ctrl+Shift+Y`).
+- `extension/background.js` — `chrome.commands.onCommand` listener
+  plus the now-orphaned `togglePanelForTab`/`sendTabMessage` helpers
+  and the `PANEL_MESSAGE.toggle` key.
+- `extension/ytkit.js` — the `Ctrl+Alt+Y` in-page keydown handler, the
+  `SETTINGS_SHORTCUTS` constant, the shortcut label on trigger-button
+  tooltips, the shortcut badge in the panel hero, and the footer
+  shortcut span. The `PANEL_MESSAGE_TYPES.toggle` handler was retired
+  with the rest (the `open`/`close` messages remain in use by the
+  popup).
+- `extension/_locales/{en,de,es,fr,it,ja,ko,pt_BR,ru,zh_CN}/messages.json` —
+  the `toggleControlCenterDesc` message key (10 locales).
+- `scripts/manifest-patch.js` — the Firefox `Ctrl+Shift+Y → Ctrl+Alt+Y`
+  rebind. There is no longer a shortcut to collide with Firefox's
+  reserved "Show Downloads" binding.
+
+### Tests
+
+- `tests/hardening.test.js` — replaced the Firefox-rebind regression
+  test with a positive assertion that neither the Chrome nor the
+  Firefox-patched manifest declares a `commands` block. Updated the
+  i18n required-keys test to assert `toggleControlCenterDesc` is
+  absent, and dropped the `__MSG_toggleControlCenterDesc__` reference
+  assertion from the manifest-i18n test.
+
+### Rationale
+
+The roadmap and `CLAUDE.md` both mandate "no keyboard shortcuts" — every
+competitor shortcut feature must become a visible button, pointer
+gesture, context-menu action, or popup control. The previous shortcut
+was the single in-tree violation; clearing it unblocks v5.0.0
+settings-schema work (which gates on the toolbar action button being
+the visible activator).
+
 ## [4.5.2] - 2026-05-21 - Extreme audit hardening: permissions, audits, CI, pytest, uninstall cleanup
 
 Deep reliability/security pass on top of v4.5.1. No feature expansion;

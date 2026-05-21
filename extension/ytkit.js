@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.5.2';
+    const YTKIT_VERSION = '4.5.3';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -671,14 +671,8 @@ return response;
     });
     const PANEL_OPEN_CLASS = 'ytkit-panel-open';
     const PANEL_MESSAGE_TYPES = Object.freeze({
-        toggle: 'YTKIT_TOGGLE_PANEL',
         open: 'YTKIT_OPEN_PANEL',
         close: 'YTKIT_CLOSE_PANEL'
-    });
-    const SETTINGS_SHORTCUTS = Object.freeze({
-        inline: 'Ctrl+Alt+Y',
-        command: 'Ctrl+Shift+Y',
-        label: 'Ctrl+Alt+Y / Ctrl+Shift+Y'
     });
 
     function getBrandAssetUrl(fileName) {
@@ -4772,11 +4766,6 @@ return response;
             chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 if (!message?.type || window.top !== window) return false;
 
-                if (message.type === PANEL_MESSAGE_TYPES.toggle) {
-                    toggleSettingsPanel();
-                    sendResponse?.({ ok: true, open: isSettingsPanelOpen() });
-                    return false;
-                }
                 if (message.type === PANEL_MESSAGE_TYPES.open) {
                     setSettingsPanelOpen(true);
                     sendResponse?.({ ok: true, open: true });
@@ -32582,7 +32571,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.id = id;
                 btn.type = 'button';
                 btn.className = `ytkit-trigger-btn ytkit-trigger-btn--${variant}`;
-                btn.title = `${BRAND.name} Settings (${SETTINGS_SHORTCUTS.label})`;
+                btn.title = `${BRAND.name} Settings`;
                 btn.setAttribute('aria-label', `Open ${BRAND.name} settings`);
                 btn.setAttribute('aria-haspopup', 'dialog');
                 const glyph = document.createElement('span');
@@ -32700,8 +32689,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         brandBadges.className = 'ytkit-brand-badges';
         [
             `v${YTKIT_VERSION}`,
-            t('panelLiveApplyBadge', 'Live apply'),
-            SETTINGS_SHORTCUTS.label
+            t('panelLiveApplyBadge', 'Live apply')
         ].forEach((label) => {
             const badge = document.createElement('span');
             badge.className = 'ytkit-badge';
@@ -34479,14 +34467,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             };
         }
 
-        const shortcutSpan = document.createElement('span');
-        shortcutSpan.className = 'ytkit-shortcut';
-        shortcutSpan.textContent = SETTINGS_SHORTCUTS.label;
-
         footerLeft.appendChild(githubLink);
         footerLeft.appendChild(ytToolsLink);
         footerLeft.appendChild(versionSpan);
-        footerLeft.appendChild(shortcutSpan);
 
         const footerRight = document.createElement('div');
         footerRight.className = 'ytkit-footer-right';
@@ -35012,11 +34995,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (e.key === 'Tab' && activeDialog) {
                     trapFocusWithin(activeDialog, e);
                 }
-                if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'y') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleSettingsPanel();
-                }
+                // v4.5.3: Ctrl+Alt+Y in-page toggle retired with the rest of
+                // the shortcut surface per the "no keyboard shortcuts" rule.
+                // Activators: toolbar action button, in-page gear icon, popup.
             });
 
             _globalUIListenersAttached = true;

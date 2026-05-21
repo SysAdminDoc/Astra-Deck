@@ -659,10 +659,6 @@
   "toastDlStopped": {
     "message": "Локальный загрузчик остановлен. Перезапуск…"
   },
-  "toggleControlCenterDesc": {
-    "message": "Переключить центр управления Astra Deck на текущей вкладке YouTube",
-    "description": "Description for the keyboard command that opens the Astra Deck control center."
-  },
   "toggleStateOff": {
     "message": "Отключено"
   },
