@@ -28,18 +28,6 @@
     // The remaining entries below are next on the deck for the
     // batch-by-batch v5.1.0 selector-pack migration.
     const INLINE_SURFACES = {
-        playerChrome: {
-            stable: ['.ytp-chrome-bottom', '.ytp-right-controls', '.ytp-progress-bar', '.ytp-progress-bar-padding'],
-            fallback: ['.ytp-delhi-modern .ytp-chrome-bottom', '.ytp-delhi-modern', '.ytp-overflow-panel', '.ytp-action-pill', '.ytp-actions-container'],
-            highChurn: true,
-            notes: 'Player redesign transition surface; keep legacy and Delhi/new-player candidates together.'
-        },
-        playerSettings: {
-            stable: ['.ytp-settings-button', '.ytp-panel', '.ytp-menuitem'],
-            fallback: ['.ytp-popup', '.ytp-panel-menu', '.ytp-overflow-panel', '#movie_player .ytp-panel-menu'],
-            highChurn: true,
-            notes: 'Avoid forced menu opening where MAIN APIs exist.'
-        },
         comments: {
             stable: ['ytd-comments', 'ytd-comment-thread-renderer', 'ytd-comment-view-model'],
             fallback: ['ytd-comment-thread-renderer.style-scope', 'ytd-comment-renderer'],
@@ -57,17 +45,6 @@
             fallback: ['ytd-engagement-panel-section-list-renderer.style-scope', 'ytd-engagement-panel-title-header-renderer'],
             highChurn: true,
             notes: 'Chapters, transcript, AI summary, and clips live here.'
-        },
-        sidebar: {
-            stable: ['#secondary', 'ytd-watch-flexy #secondary'],
-            fallback: ['#secondary.style-scope', 'ytd-watch-flexy[is-two-columns_] #secondary'],
-            notes: 'Watch sidebar container for related, chat, and secondary panels.'
-        },
-        modals: {
-            stable: ['tp-yt-paper-dialog', 'ytd-popup-container tp-yt-paper-dialog', 'tp-yt-iron-dropdown'],
-            fallback: ['.ytp-popup', '.ytd-popup-container', 'ytd-popup-container .style-scope'],
-            highChurn: true,
-            notes: 'Native YouTube popups and dialogs.'
         },
         settingsOverlay: {
             stable: ['[data-ytkit-surface="control-center"]', '.ytkit-control-center', '#ytkit-panel'],

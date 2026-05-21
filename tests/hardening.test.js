@@ -5452,7 +5452,7 @@ test('v4.31.0 inline surfaces still resolve through SurfaceSelectorMap (no regre
     // Still-inline surfaces (next-batch candidates) must continue to
     // resolve correctly after each peel or every feature that uses
     // them silently breaks.
-    for (const surface of ['playerChrome', 'playerSettings', 'comments', 'liveChat']) {
+    for (const surface of ['comments', 'commentComposer', 'engagementPanels', 'liveChat']) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must still be in SurfaceSelectorMap`);
         assert.ok(entry.stable.length >= 1);
@@ -5470,10 +5470,10 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
     assert.equal(entry.lastVerified, '2026-05-19');
-    // A still-inline surface (playerChrome is in batch 4) must round-trip
+    // A still-inline surface (comments is in batch 5) must round-trip
     // with empty captureEvidence + null lastVerified so consumers can
     // iterate without a guard.
-    const inline = core.getSurfaceSelectorEntry('playerChrome');
+    const inline = core.getSurfaceSelectorEntry('comments');
     assert.ok(Array.isArray(inline.captureEvidence), 'inline surface captureEvidence must be an array (empty)');
     assert.equal(inline.captureEvidence.length, 0, 'inline surface captureEvidence must default to empty');
     assert.equal(inline.lastVerified, null);
@@ -5611,6 +5611,72 @@ test('v4.33.0 manifest loads the watch-shell packs before core/selectors.js', ()
         const selectorsIdx = cs.js.indexOf('core/selectors.js');
         if (selectorsIdx === -1) continue;
         for (const pack of V433_WATCH_SHELL_FILES) {
+            const packIdx = cs.js.indexOf(pack);
+            assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
+            assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);
+        }
+    }
+});
+
+// ── v4.34.0 NX1: selector-pack batch 4 (player-chrome + sidebar + modals) ──
+
+const V434_BATCH_SURFACES = ['playerChrome', 'playerSettings', 'sidebar', 'modals'];
+const V434_BATCH_FILES = [
+    'core/selector-packs/playerChrome.js',
+    'core/selector-packs/playerSettings.js',
+    'core/selector-packs/sidebar.js',
+    'core/selector-packs/modals.js'
+];
+
+test('v4.34.0 player-chrome batch pack files exist with the v4.31.0 schema fields', () => {
+    for (const rel of V434_BATCH_FILES) {
+        const full = path.join(__dirname, '..', 'extension', rel);
+        assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
+        const body = fs.readFileSync(full, 'utf8');
+        assert.match(body, /SurfacePackRegistry/, `${rel} must reference SurfacePackRegistry`);
+        assert.match(body, /captureEvidence:/, `${rel} must declare captureEvidence`);
+        assert.match(body, /lastVerified:/, `${rel} must declare lastVerified`);
+        assert.match(body, /highChurn:/, `${rel} must declare highChurn`);
+        assert.match(body, /needsFreshCapture:/, `${rel} must declare needsFreshCapture`);
+        assert.match(body, /registry\.has\(/, `${rel} must guard against double-registration`);
+    }
+});
+
+test('v4.34.0 player-chrome batch surfaces now come from the pack registry', () => {
+    const core = loadSelectorPackContext();
+    for (const surface of V434_BATCH_SURFACES) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
+        assert.ok(entry.captureEvidence.length >= 1,
+            `${surface} must carry capture evidence after the v4.34.0 peel`);
+        assert.equal(entry.lastVerified, '2026-05-19');
+    }
+});
+
+test('v4.34.0 player-chrome fallback list still bundles legacy + Delhi/new-player candidates', () => {
+    const core = loadSelectorPackContext();
+    const chrome = core.SurfaceSelectorMap.playerChrome;
+    // The fallback list is the safety net during the player UI A/B
+    // transition. Specifically: legacy `.ytp-chrome-bottom` (stable),
+    // Delhi `.ytp-delhi-modern` (fallback), action-pill, overflow-panel.
+    const fallback = [...chrome.fallback];
+    assert.ok(fallback.includes('.ytp-delhi-modern'),
+        'playerChrome fallback must include the Delhi modern shell selector');
+    assert.ok(fallback.includes('.ytp-overflow-panel'),
+        'playerChrome fallback must include the new-player overflow panel selector');
+    assert.ok(fallback.includes('.ytp-action-pill'),
+        'playerChrome fallback must include the action-pill selector');
+});
+
+test('v4.34.0 manifest loads the player-chrome batch packs before core/selectors.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const selectorsIdx = cs.js.indexOf('core/selectors.js');
+        if (selectorsIdx === -1) continue;
+        for (const pack of V434_BATCH_FILES) {
             const packIdx = cs.js.indexOf(pack);
             assert.notEqual(packIdx, -1, `manifest content_scripts must include ${pack}`);
             assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);
