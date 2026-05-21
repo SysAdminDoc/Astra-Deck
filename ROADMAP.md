@@ -47,6 +47,7 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.41.0 | array / object JSON editors in the schema overview — textarea + parse-error pill; covers the final 14 schema keys (popup editor now 354/354) + 6 tests | 504 | +6 |
 | v4.42.0 | DOM-layer toast extraction → `core/toast-dom.js` exposes `createToastSystem({ deps })`; ytkit.js delegates via cached system, inline body remains as byte-identical fallback + 6 tests | 510 | +6 |
 | v4.43.0 | feature peel batch 2 — 6 Home / Subs CSS-only features (hideCreateButton, hideVoiceSearch, widenSearchBar, disablePlayOnHover, fullWidthSubscriptions, hideSubscriptionOptions) → `features/home-subs-css/` + 5 tests | 515 | +5 |
+| v4.44.0 | Documentation tag — v5.1.0 carry-forward arc closed (5 of 8 items `[x]`, 3 of 8 `[~]` with v5.2.0+ scope; no code change) | 515 | 0 |
 
 Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +136 hardening tests (315 → 451), **26 versions shipped (v4.5.3 → v4.30.0)**, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved. **v5.0.0 foundation arc effectively complete.**
 
