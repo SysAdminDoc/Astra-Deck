@@ -149,6 +149,24 @@ pip install bgutil-ytdlp-pot-provider
 
 Astra Downloader's `/health` endpoint will surface `poTokenProvider: { ok, port, version }` once the server is reachable. If absent, downloads still work on most videos — the provider is opt-in hardening, not a hard requirement.
 
+### External JavaScript runtime (yt-dlp 2026+)
+
+yt-dlp `>= 2026.04` ships an external n/sig solver for YouTube and requires an external JavaScript runtime on the system PATH (Deno is the documented option). Without it, recent yt-dlp builds return empty format lists on a growing share of YouTube videos.
+
+Install Deno once:
+
+```bash
+# Windows
+winget install DenoLand.Deno
+
+# macOS / Linux
+curl -fsSL https://deno.land/install.sh | sh
+```
+
+(Or grab the installer from `https://deno.com/`.)
+
+Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
+
 ### Comments
 
 | Feature | Default |

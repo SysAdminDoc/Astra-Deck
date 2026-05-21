@@ -29428,6 +29428,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else {
                     this._container.appendChild(this._renderPill('PO Token', 'unreachable', 'err'));
                 }
+                // iter-8 N20: Deno runtime pill — only renders when the
+                // bundled yt-dlp.exe is recent enough to need an external
+                // JS runtime (>= 2026.04). Stays quiet on older yt-dlp
+                // builds so the panel doesn't gain a dead pill in the
+                // field. Tone: 'ok' when installed, 'warn' when needed
+                // but missing (the actionable state). Tooltip carries
+                // the install advice from /health.denoRuntime.advice so
+                // the user can hover instead of opening the popup.
+                const deno = data.denoRuntime;
+                if (deno && deno.ytdlpNeedsRuntime) {
+                    const tone = deno.installed ? 'ok' : 'warn';
+                    const value = deno.installed
+                        ? (deno.version ? `v${deno.version}` : 'installed')
+                        : 'missing';
+                    const pill = this._renderPill('Deno', value, tone);
+                    if (!deno.installed && deno.advice) {
+                        pill.title = deno.advice;
+                    } else if (deno.installed && deno.path) {
+                        pill.title = deno.path;
+                    }
+                    this._container.appendChild(pill);
+                }
             },
 
             _attach() {
