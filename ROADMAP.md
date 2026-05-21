@@ -29,8 +29,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.23.0 | Schema-driven category overview in popup (collapsible, reactive) + 5 tests | 421 | +5 |
 | v4.24.0 | Interactive expansion + per-key boolean editing in popup overview + 5 tests | 426 | +5 |
 | v4.25.0 | Schema-overview search wired through the existing `#q` filter + 5 tests | 431 | +5 |
+| v4.26.0 | Number-type inline editor in schema overview + 4 tests | 435 | +4 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, 3 user-visible popup surfaces (data-flow + category overview + per-key boolean editor) all wired into the existing search input, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +116 hardening tests (315 → 431), 20 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, 4 user-visible popup surfaces (data-flow + category overview + per-key boolean editor + number editor) all wired into the existing search input, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +120 hardening tests (315 → 435), 21 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 
