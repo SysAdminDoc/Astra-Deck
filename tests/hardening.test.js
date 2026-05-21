@@ -3743,3 +3743,117 @@ test('v4.9.0 manifest content_scripts load lifecycle-route-bridge after navigati
         assert.ok(lcIdx > -1 && lcIdx < bridgeIdx, 'bridge must load after core/feature-lifecycle.js');
     }
 });
+
+// ── v4.10.0 NX1: data-flow ──
+
+function loadDataFlowModule() {
+    const stub = {};
+    const prev = global.YTKitCore;
+    global.YTKitCore = stub;
+    delete require.cache[require.resolve('../extension/core/data-flow.js')];
+    require('../extension/core/data-flow.js');
+    global.YTKitCore = prev;
+    return stub;
+}
+
+test('v4.10.0 data-flow catalogue enumerates every external origin', () => {
+    const core = loadDataFlowModule();
+    const df = core.createDataFlow();
+    const origins = df.getOrigins({});
+    // Each entry must declare the minimum required fields.
+    for (const e of origins) {
+        assert.equal(typeof e.origin, 'string');
+        assert.equal(typeof e.purpose, 'string');
+        assert.ok(Array.isArray(e.requiredByFeatures));
+        assert.ok(['no-cookies', 'byo-key', 'local-loopback', 'none'].includes(e.credentialsPolicy));
+        assert.ok(['store-safe', 'github-full'].includes(e.profile));
+        assert.ok(['safe', 'api', 'local-companion', 'experimental', 'store-risk'].includes(e.riskBand));
+    }
+    // Sanity: at least the canonical origins are present.
+    const originStrings = origins.map((e) => e.origin);
+    for (const expected of [
+        'https://*.youtube.com',
+        'https://i.ytimg.com',
+        'https://sponsor.ajay.app',
+        'https://returnyoutubedislikeapi.com',
+        'http://127.0.0.1:11434'
+    ]) {
+        assert.ok(originStrings.includes(expected),
+            'catalogue must include ' + expected);
+    }
+});
+
+test('v4.10.0 data-flow currentlyActive flips based on driving-feature toggles', () => {
+    const core = loadDataFlowModule();
+    const df = core.createDataFlow();
+    const cold = df.getOrigins({});
+    // With no settings, no driving features are active.
+    for (const e of cold) {
+        assert.equal(e.currentlyActive, false, e.origin + ' must be inactive in cold settings');
+    }
+    // Enabling SponsorBlock should activate sponsor.ajay.app.
+    const warm = df.getOrigins({ sponsorBlock: true });
+    const sb = warm.find((e) => e.origin === 'https://sponsor.ajay.app');
+    assert.equal(sb.currentlyActive, true);
+});
+
+test('v4.10.0 data-flow manifestPermission resolves against the live host_permissions list', () => {
+    const core = loadDataFlowModule();
+    const df = core.createDataFlow({
+        hostPermissions: [
+            'https://*.youtube.com/*',
+            'https://sponsor.ajay.app/*'
+        ]
+    });
+    const origins = df.getOrigins({});
+    const youtube = origins.find((e) => e.origin === 'https://*.youtube.com');
+    assert.equal(youtube.manifestPermission, 'https://*.youtube.com/*');
+    const sb = origins.find((e) => e.origin === 'https://sponsor.ajay.app');
+    assert.equal(sb.manifestPermission, 'https://sponsor.ajay.app/*');
+    // The Reddit origin is not in our injected list — must report null.
+    const reddit = origins.find((e) => e.origin === 'https://www.reddit.com');
+    assert.equal(reddit.manifestPermission, null);
+});
+
+test('v4.10.0 data-flow.summarise counts by credentialsPolicy / profile / riskBand', () => {
+    const core = loadDataFlowModule();
+    const df = core.createDataFlow();
+    const s = df.summarise({ sponsorBlock: true, deArrow: true });
+    assert.ok(s.totalCatalogued > 0);
+    assert.ok(s.currentlyActive >= 1, 'sponsor.ajay.app at minimum must be active');
+    // The store-safe vs github-full partition must cover every entry.
+    const byProfile = s.byProfile;
+    assert.equal((byProfile['store-safe'] || 0) + (byProfile['github-full'] || 0), s.totalCatalogued);
+});
+
+test('v4.10.0 data-flow live manifest host_permissions cover every store-safe catalogued origin', () => {
+    const core = loadDataFlowModule();
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    const df = core.createDataFlow({ manifest });
+    const origins = df.getOrigins({});
+    for (const e of origins) {
+        if (e.profile !== 'store-safe') continue;
+        // The 127.0.0.1 port-range placeholder represents 6 manifest entries;
+        // skip it from this gate (it's covered by host_permissions audits
+        // elsewhere) — only validate fixed-host store-safe origins.
+        if (e.origin.startsWith('http://127.0.0.1')) continue;
+        assert.notEqual(e.manifestPermission, null,
+            'store-safe origin ' + e.origin + ' must have a matching host_permission in manifest.json');
+    }
+});
+
+test('v4.10.0 manifest content_scripts include data-flow.js before ytkit.js', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const dfIdx = cs.js.indexOf('core/data-flow.js');
+        assert.notEqual(dfIdx, -1, 'manifest must include core/data-flow.js');
+        assert.ok(dfIdx < ytkitIdx, 'data-flow.js must load before ytkit.js');
+    }
+});

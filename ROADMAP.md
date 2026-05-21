@@ -1192,7 +1192,7 @@ Features:
 - [ ] Build category-driven settings panel with search, profile badges, and diagnostics _(popup work — consumes the new schema + policy-profile + lifecycle modules)._
 - [~] Add selector health system and versioned selector packs _(read-side delivered in v4.8.0 — `extension/core/selector-health.js` exports `createSelectorHealth()` + `summarizeSelectorHealth` + `rankSelectorProblems` + `formatSelectorCopyReport`. Versioned selector-packs/ directory split still pending; current `core/selectors.js` continues as the consolidated source.)_
 - [x] Add route-aware observer coordinator _(delivered in v4.9.0 — `extension/core/lifecycle-route-bridge.js` self-installs against `core/navigation.js` and `core/feature-lifecycle.js`; every yt-navigate-finish / yt-page-data-updated / popstate / watch-flexy mutation auto-increments the lifecycle route token via `notifyRouteChange()`. 4 hardening tests pin the contract + load order.)_
-- [ ] Add data-flow panel v1 with API origins and permission explanations _(consumes `countByProfile` + host_permissions audit)._
+- [~] Add data-flow panel v1 with API origins and permission explanations _(data side delivered in v4.10.0 — `extension/core/data-flow.js` exports `createDataFlow()` + a frozen `ORIGIN_CATALOGUE`. 10 origins covered including BYO-key and 127.0.0.1 loopback. 6 hardening tests pin the store-safe⊂manifest host_permissions coverage. Popup UI still pending — next slice consumes this module.)_
 - [ ] Extract feature modules from the monolith by category _(incremental — each peel adopts feature-lifecycle and policy-profile)._
 - [ ] Extract `showToast` into `core/toast.js` _(non-functional refactor of the existing in-monolith implementation; safe to bundle with the first feature peel)._
 

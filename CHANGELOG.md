@@ -6,6 +6,55 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.10.0] - 2026-05-21 - v5.0.0 foundation #5: data-flow origin catalogue
+
+Fifth foundation slice. Pure-data backing for the v5.0.0/v5.8.0
+data-flow panel: enumerates every external origin Astra Deck can
+contact, why each origin matters, which feature toggles drive
+requests to it, the credentials policy the background proxy applies,
+and the profile under which the origin is available.
+
+### Added
+
+- `extension/core/data-flow.js` — `createDataFlow()` factory plus a
+  frozen `ORIGIN_CATALOGUE`. Each catalogue entry declares
+  `{ origin, purpose, requiredByFeatures, credentialsPolicy
+    ('no-cookies' | 'byo-key' | 'local-loopback' | 'none'), profile,
+    riskBand }`. Helpers: `getOrigins(settings)` resolves
+  `manifestPermission` against the live host_permissions list and
+  flips `currentlyActive` based on whether any driving feature is
+  enabled; `getActiveOrigins`, `getOriginsByProfile`, and
+  `summarise` give the popup panel everything it needs to render
+  per-origin chips + counts in one read. Catalogue covers YouTube,
+  ytimg, SponsorBlock/DeArrow, RYD, Reddit, OpenAI/Anthropic/Gemini
+  BYO endpoints, Ollama loopback, and the Astra Downloader port
+  range.
+- `tests/hardening.test.js` — 6 new regressions: catalogue shape
+  validation, `currentlyActive` toggle flips, manifest-permission
+  resolution, summarise partition rollup, the store-safe ⊂ manifest
+  host_permissions coverage gate, and the manifest load-order
+  invariant.
+
+### Changed
+
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries now load `core/data-flow.js` between
+  `core/selector-health.js` and `core/lifecycle-route-bridge.js`.
+  Full v4.10.0 load order:
+  `navigation → feature-lifecycle → policy-profile → selector-health
+  → data-flow → lifecycle-route-bridge → ytkit.js`.
+
+### Why
+
+`ROADMAP.md` v5.0.0 calls for a data-flow panel v1 with per-API
+origin, purpose, credentials policy, cache TTL, and disable action.
+The data side lands first so the popup work (next slice) can render
+against a stable contract. The store-safe⊂manifest gate test pins
+a hard invariant: every catalogued store-safe origin must already
+appear in `host_permissions`, preventing a future profile-mix
+mistake where a "store-safe" feature silently relies on a
+github-full-gated origin.
+
 ## [4.9.0] - 2026-05-21 - v5.0.0 foundation #4: lifecycle ↔ navigation bridge
 
 Fourth foundation slice. Wires `core/navigation.js`'s SPA-navigation
