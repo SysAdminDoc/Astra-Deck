@@ -28,30 +28,6 @@
     // The remaining entries below are next on the deck for the
     // batch-by-batch v5.1.0 selector-pack migration.
     const INLINE_SURFACES = {
-        watch: {
-            stable: ['ytd-watch-flexy[video-id]', 'ytd-watch-flexy', 'ytd-watch-metadata', '#below'],
-            fallback: ['ytd-watch-metadata.watch-active-metadata', 'ytd-watch-flexy[flexy]'],
-            highChurn: true,
-            notes: 'Route state is best read from ytd-watch-flexy[video-id].'
-        },
-        relatedSidebar: {
-            stable: ['#secondary ytd-watch-next-secondary-results-renderer', 'ytd-watch-next-secondary-results-renderer'],
-            fallback: ['ytd-watch-next-secondary-results-renderer.style-scope', '#related'],
-            highChurn: true,
-            notes: 'Related and compact cards change often; resolve section root first.'
-        },
-        player: {
-            stable: ['#movie_player', '.html5-video-player'],
-            fallback: ['ytd-player #movie_player', '#player-container #movie_player'],
-            highChurn: true,
-            notes: 'Use window.movie_player only from the MAIN-world bridge.'
-        },
-        mainVideo: {
-            stable: ['video.html5-main-video', '#movie_player video'],
-            fallback: ['video.video-stream', '.html5-video-container video'],
-            highChurn: true,
-            notes: 'Main media element; should stay scoped to the current player.'
-        },
         playerChrome: {
             stable: ['.ytp-chrome-bottom', '.ytp-right-controls', '.ytp-progress-bar', '.ytp-progress-bar-padding'],
             fallback: ['.ytp-delhi-modern .ytp-chrome-bottom', '.ytp-delhi-modern', '.ytp-overflow-panel', '.ytp-action-pill', '.ytp-actions-container'],
