@@ -4526,3 +4526,95 @@ test('v4.18.0 features/blue-light-filter loads before ytkit.js in both content_s
             'features/blue-light-filter/index.js must load after features/video-filters/index.js (peel-order grouping)');
     }
 });
+
+// ── v4.19.0 NX1: theme-css bundled peel ──
+
+test('v4.19.0 features/theme-css exports three pure CSS builders', () => {
+    delete require.cache[require.resolve('../extension/features/theme-css/index.js')];
+    const stub = {};
+    const prev = global.YTKitFeatures;
+    global.YTKitFeatures = stub;
+    const mod = require('../extension/features/theme-css/index.js');
+    global.YTKitFeatures = prev;
+    assert.equal(typeof mod.buildProgressBarCss, 'function');
+    assert.equal(typeof mod.buildSelectionColorCss, 'function');
+    assert.equal(typeof mod.buildGrayscaleThumbnailsCss, 'function');
+    assert.ok(stub.themeCss);
+});
+
+test('v4.19.0 buildProgressBarCss returns null for the default color (matches prior skip behaviour)', () => {
+    const { buildProgressBarCss } = require('../extension/features/theme-css/index.js');
+    // Default '#ff0000' / '#FF0000' (any case) must short-circuit so the
+    // monolith doesn't insert a redundant style tag.
+    assert.equal(buildProgressBarCss({}), null);
+    assert.equal(buildProgressBarCss({ customProgressBarColor: '#ff0000' }), null);
+    assert.equal(buildProgressBarCss({ customProgressBarColor: '#FF0000' }), null);
+    // Invalid hex falls back to null (no style emission) too.
+    assert.equal(buildProgressBarCss({ customProgressBarColor: 'red' }), null);
+});
+
+test('v4.19.0 buildProgressBarCss emits the expected swatch rules for non-default colour', () => {
+    const { buildProgressBarCss } = require('../extension/features/theme-css/index.js');
+    const css = buildProgressBarCss({ customProgressBarColor: '#7c3aed' });
+    assert.match(css, /\.ytp-play-progress, \.ytp-swatch-background-color \{ background: #7c3aed !important; \}/);
+    assert.match(css, /\.ytp-volume-slider-foreground::after \{ background: #7c3aed !important; \}/);
+});
+
+test('v4.19.0 buildSelectionColorCss emits both ::selection and ::-moz-selection rules', () => {
+    const { buildSelectionColorCss } = require('../extension/features/theme-css/index.js');
+    const def = buildSelectionColorCss({});
+    assert.match(def, /::selection \{ background: #2dd36f !important;/);
+    assert.match(def, /::-moz-selection \{ background: #2dd36f !important;/);
+    // Invalid input falls back to the v0.1 schema default '#2dd36f'.
+    const bad = buildSelectionColorCss({ selectionColor: 'rebeccapurple' });
+    assert.match(bad, /background: #2dd36f !important;/);
+    // Custom hex is passed through verbatim.
+    const custom = buildSelectionColorCss({ selectionColor: '#ff8585' });
+    assert.match(custom, /::selection \{ background: #ff8585 !important;/);
+});
+
+test('v4.19.0 buildGrayscaleThumbnailsCss covers the four renderer surfaces and hover restore', () => {
+    const { buildGrayscaleThumbnailsCss } = require('../extension/features/theme-css/index.js');
+    const css = buildGrayscaleThumbnailsCss();
+    for (const renderer of [
+        'ytd-rich-item-renderer ytd-thumbnail img',
+        'ytd-video-renderer ytd-thumbnail img',
+        'ytd-grid-video-renderer ytd-thumbnail img',
+        'ytd-compact-video-renderer ytd-thumbnail img'
+    ]) {
+        assert.ok(css.includes(renderer),
+            'thumbnail rule must cover ' + renderer);
+        assert.ok(css.includes(renderer.replace(' ytd-thumbnail', ':hover ytd-thumbnail')),
+            'hover restore must cover ' + renderer);
+    }
+    assert.match(css, /filter: grayscale\(100%\) !important;/);
+    assert.match(css, /filter: grayscale\(0%\) !important;/);
+});
+
+test('v4.19.0 ytkit.js delegates all three theme-css consumers with byte-identical inline fallbacks', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    // Three v4.19.0 marker comments — one per delegating consumer.
+    const markers = src.match(/v4\.19\.0: CSS construction delegated to features\/theme-css\//g) || [];
+    assert.equal(markers.length, 3,
+        'ytkit.js must document three v4.19.0 delegating consumers (was ' + markers.length + ')');
+    // Each delegating block must keep its inline fallback parity grep.
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildProgressBarCss/);
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildSelectionColorCss/);
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildGrayscaleThumbnailsCss/);
+});
+
+test('v4.19.0 features/theme-css loads before ytkit.js in both content_script entries', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const themeIdx = cs.js.indexOf('features/theme-css/index.js');
+        assert.notEqual(themeIdx, -1, 'manifest must include features/theme-css/index.js');
+        assert.ok(themeIdx < ytkitIdx, 'features/theme-css/index.js must load before ytkit.js');
+    }
+});

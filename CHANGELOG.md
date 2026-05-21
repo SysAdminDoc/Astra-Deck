@@ -6,6 +6,52 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.19.0] - 2026-05-21 - v5.0.0 foundation #14: bundled theme-css peels (×3)
+
+Bundled fourth, fifth, and sixth feature peels in a single slice.
+Three small CSS-only theme features in `extension/ytkit.js` share
+the same pattern (read one or two schema settings, return a pure
+CSS string), so they cohabit nicely in a single
+`extension/features/theme-css/index.js` module.
+
+### Added
+
+- `extension/features/theme-css/index.js` — three pure CSS builders:
+  * `buildProgressBarCss(settings)` — returns `null` for the default
+    `#ff0000` colour (preserving the monolith's short-circuit-skip
+    behaviour) and a two-rule string for any other valid hex.
+  * `buildSelectionColorCss(settings)` — emits `::selection` +
+    `::-moz-selection` rules. Falls back to the schema default
+    `#2dd36f` for malformed input.
+  * `buildGrayscaleThumbnailsCss()` — parameter-less constant; covers
+    four feed renderers + their `:hover` restore variants.
+  All three attach to `globalThis.YTKitFeatures.themeCss`.
+- `tests/hardening.test.js` — 7 new regressions covering the helper
+  exports, default-skip behaviour, swatch rule emission for a custom
+  colour, both selection pseudo-elements + fallback, four-renderer
+  coverage + hover restore, monolith parity contracts for all three
+  consumers, and the manifest load order.
+
+### Changed
+
+- `extension/ytkit.js` — three feature blocks (`customProgressBarColor`,
+  `customSelectionColor`, `grayscaleThumbnails`) now delegate CSS
+  construction to `globalThis.YTKitFeatures.themeCss.*`. Inline
+  byte-identical fallbacks remain for the userscript path; tests pin
+  each parity contract.
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries load `features/theme-css/index.js` immediately after
+  `features/blue-light-filter/index.js`.
+
+### Why
+
+The pattern is the same as v4.13.0 / v4.17.0 / v4.18.0 but applied
+in bulk: three small features with no SPA coupling, no async, no
+inter-feature dependencies. Bundling them in a single module keeps
+the `features/` directory tree from sprawling for the long tail of
+"two-line CSS rule" features, and demonstrates the peel pattern
+scales — the next bulk peel can group more.
+
 ## [4.18.0] - 2026-05-21 - v5.0.0 foundation #13: third feature peel (blueLightFilter)
 
 Third feature peel from `extension/ytkit.js`, following the v4.13.0
