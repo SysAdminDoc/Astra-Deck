@@ -14,7 +14,11 @@ const selectorPackFiles = [
     'selector-packs/appShell.js',
     'selector-packs/nav.js',
     'selector-packs/search.js',
-    'selector-packs/leftNav.js'
+    'selector-packs/leftNav.js',
+    'selector-packs/feed.js',
+    'selector-packs/feedCard.js',
+    'selector-packs/thumbnail.js',
+    'selector-packs/shortsShelf.js'
 ];
 const coreSources = [
     'registry.js',

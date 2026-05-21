@@ -6,6 +6,62 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.32.0] - 2026-05-21 - v5.1.0 #2: selector-pack file split (batch 2 — feed-shell)
+
+Second batch of the v5.1.0 selector-pack migration. The four
+feed-shell surfaces — `feed`, `feedCard`, `thumbnail`, `shortsShelf` —
+move out of `INLINE_SURFACES` in `core/selectors.js` into
+per-surface files under `core/selector-packs/`. Each pack carries
+its own `captureEvidence` + `lastVerified` (2026-05-19, against
+the YouTube / Subscriptions / Worldwide-Societal-Collapse captures).
+
+### Added
+
+- `extension/core/selector-packs/feed.js`,
+  `extension/core/selector-packs/feedCard.js`,
+  `extension/core/selector-packs/thumbnail.js`,
+  `extension/core/selector-packs/shortsShelf.js` — four packs
+  following the v4.31.0 schema. The `feed` pack notes the
+  filter-chip recycling gotcha (added nodes only); the `feedCard`
+  pack keeps both the old `ytd-rich-item-renderer` and the new
+  `yt-lockup-view-model` shapes; the `shortsShelf` pack keeps the
+  URL-anchored `a[href^="/shorts"]` selector first because the
+  shelf wrapper class churns constantly.
+- `extension/manifest.json` — both ISOLATED content-script blocks
+  now load all 8 pack files before `core/selectors.js`.
+- `tests/core-foundation.test.js` — vm loader now seeds the 8
+  pack files (was 4) so the foundation `surface selector map`
+  assertion still sees every promoted surface.
+- `tests/hardening.test.js` — 4 new v4.32.0 regressions:
+  pack-file existence + schema, feed-shell surfaces now come from
+  the registry (verified by checking `captureEvidence.length >= 1`),
+  the pre-peel selectors round-trip byte-stably, manifest pack-
+  before-selectors load order. The shared `loadSelectorPackContext`
+  helper now discovers pack files from disk so future batches
+  don't require updating the test setup block.
+- `tests/hardening.test.js` — the v4.31.0 "inline surfaces still
+  resolve" test now checks the still-inline surfaces (watch /
+  player / comments / liveChat) and uses `watch` as the
+  un-packed-yet probe for `getSurfaceSelectorEntry` defaults.
+
+### Why
+
+The v4.31.0 entry-point ships the infrastructure; v4.32.0 proves
+the pattern scales by migrating the next four surfaces with zero
+selector changes. The feed-shell is the right second batch
+because the existing selector-regression fixtures
+(`yt-home.tokens.txt`, `yt-watch.tokens.txt`) already exercise it
+heavily — any regression in the resolver would surface
+immediately.
+
+### Verification
+
+- 462 tests pass (was 458; +4 feed-shell regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` re-bundles v5.0.0 modules at v4.32.0.
+- `node build-extension.js` emits Chrome ZIP/CRX + Firefox ZIP/XPI
+  at v4.32.0.
+
 ## [4.31.0] - 2026-05-21 - v5.1.0 #1: versioned selector-pack file split (batch 1)
 
 First batch of the v5.1.0 selector-pack migration. Four shell
