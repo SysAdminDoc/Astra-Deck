@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.16.0';
+    const YTKIT_VERSION = '4.17.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -26908,16 +26908,36 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
             _apply() {
+                // v4.17.0: CSS construction is owned by
+                // extension/features/video-filters/index.js (peeled from
+                // this monolith). The module is loaded ahead of ytkit.js
+                // via manifest.content_scripts and attaches to
+                // globalThis.YTKitFeatures.videoFilters.buildVideoFilterCss.
+                // The inline fallback preserves the userscript path; the
+                // hardening test pins the parity contract.
                 const s = appState.settings;
-                const f = [
-                    `brightness(${s.vvfBrightness || 100}%)`,
-                    `contrast(${s.vvfContrast || 100}%)`,
-                    `saturate(${s.vvfSaturation || 100}%)`,
-                    `hue-rotate(${s.vvfHue || 0}deg)`,
-                    `grayscale(${s.vvfGrayscale || 0}%)`,
-                    `sepia(${s.vvfSepia || 0}%)`,
-                ].join(' ');
-                const css = `.html5-main-video { filter: ${f} !important; }`;
+                const fromModule = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.videoFilters
+                    && globalThis.YTKitFeatures.videoFilters.buildVideoFilterCss);
+                let css;
+                if (typeof fromModule === 'function') {
+                    css = fromModule(s);
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/video-filters/index.js's
+                    // buildVideoFilterCss — the v4.17.0 hardening test
+                    // pins that parity.
+                    const f = [
+                        `brightness(${s.vvfBrightness || 100}%)`,
+                        `contrast(${s.vvfContrast || 100}%)`,
+                        `saturate(${s.vvfSaturation || 100}%)`,
+                        `hue-rotate(${s.vvfHue || 0}deg)`,
+                        `grayscale(${s.vvfGrayscale || 0}%)`,
+                        `sepia(${s.vvfSepia || 0}%)`,
+                    ].join(' ');
+                    css = `.html5-main-video { filter: ${f} !important; }`;
+                }
                 if (this._styleEl) this._styleEl.textContent = css;
                 else this._styleEl = injectStyle(css, this.id, true);
             },
