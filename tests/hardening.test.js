@@ -4223,3 +4223,64 @@ test('v4.14.0 manifest content_scripts include core/toast.js before features/sub
         assert.ok(dataFlowIdx < toastIdx, 'core/toast.js must load after core/data-flow.js');
     }
 });
+
+// ── v4.15.0 NX1: privacy quick-toggles in popup ──
+
+test('v4.15.0 popup QUICK_TOGGLES surfaces privacy + profile keys in a Privacy group', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    // Find the literal QUICK_TOGGLES array block so we can assert on
+    // the new entries without false positives from comments elsewhere.
+    const start = src.indexOf('const QUICK_TOGGLES = [');
+    assert.ok(start !== -1, 'popup.js must declare QUICK_TOGGLES');
+    const end = src.indexOf('];', start);
+    assert.ok(end !== -1, 'QUICK_TOGGLES must terminate with `];`');
+    const block = src.slice(start, end);
+
+    for (const key of ['privacyDataFlowPanel', 'safeStoreProfile', 'githubFullProfile']) {
+        assert.match(block, new RegExp("key:\\s*'" + key + "'"),
+            'QUICK_TOGGLES must include ' + key);
+        // The toggle must declare group: 'Privacy'.
+        const entryRe = new RegExp("\\{[^}]*key:\\s*'" + key + "'[^}]*group:\\s*'Privacy'", 's');
+        assert.match(block, entryRe,
+            key + ' must be grouped under Privacy');
+    }
+});
+
+test('v4.15.0 popup GROUP_ICONS defines a Privacy padlock glyph', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const start = src.indexOf('const GROUP_ICONS = {');
+    const end = src.indexOf('};', start);
+    const block = src.slice(start, end);
+    assert.match(block, /'Privacy':/, 'GROUP_ICONS must declare a Privacy entry');
+    // Padlock shape: rect body + path shackle. The rect must be at the
+    // declared 9x7 dimensions (square corners, no pill backdrop per
+    // house style — rx=1 is the only allowed rounding here).
+    assert.match(block, /tag:\s*'rect',\s*attrs:\s*\{[^}]*width:\s*'9'/,
+        'Privacy icon must include the padlock body rect');
+    assert.match(block, /M5\.5 7 V5 a2\.5 2\.5 0 0 1 5 0 V7/,
+        'Privacy icon must include the U-shaped shackle path');
+});
+
+test('v4.15.0 popup HTML quick-toggles section advertises the updated total', () => {
+    const html = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    // After v4.15.0 the QUICK_TOGGLES list has 18 entries. Both the
+    // visible "18 controls" string and any future i18n-keyed total
+    // must stay in sync with QUICK_TOGGLES.length.
+    assert.match(html, /id="resultsState">18 controls</,
+        'popup.html must advertise 18 quick controls after v4.15.0');
+});
+
+test('v4.15.0 new popup quick-toggle keys all exist in the v4.6.0 settings schema', () => {
+    const { SETTINGS_SCHEMA } = require('../extension/core/settings-schema');
+    const schemaKeys = new Set(SETTINGS_SCHEMA.map((e) => e.key));
+    for (const k of ['privacyDataFlowPanel', 'safeStoreProfile', 'githubFullProfile']) {
+        assert.ok(schemaKeys.has(k),
+            'Quick-toggle key ' + k + ' must exist in the settings schema');
+    }
+});
