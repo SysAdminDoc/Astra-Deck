@@ -659,10 +659,6 @@
   "toastDlStopped": {
     "message": "Lokaler Downloader gestoppt. Wird neu gestartet…"
   },
-  "toggleControlCenterDesc": {
-    "message": "Astra Deck Control Center im aktuellen YouTube-Tab umschalten",
-    "description": "Description for the keyboard command that opens the Astra Deck control center."
-  },
   "toggleStateOff": {
     "message": "Deaktiviert"
   },

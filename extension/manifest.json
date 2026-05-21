@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.5.2",
+  "version": "4.5.3",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
@@ -166,13 +166,5 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://sponsor.ajay.app https://returnyoutubedislikeapi.com http://127.0.0.1:9751 http://127.0.0.1:9761 http://127.0.0.1:9771 http://127.0.0.1:9781 http://127.0.0.1:9791 http://127.0.0.1:9851 http://127.0.0.1:11434"
-  },
-  "commands": {
-    "toggle-control-center": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+Y"
-      },
-      "description": "__MSG_toggleControlCenterDesc__"
-    }
   }
 }

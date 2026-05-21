@@ -659,10 +659,6 @@
   "toastDlStopped": {
     "message": "ローカルダウンローダーが停止しました。再起動中…"
   },
-  "toggleControlCenterDesc": {
-    "message": "現在の YouTube タブで Astra Deck コントロールセンターを切り替える",
-    "description": "Description for the keyboard command that opens the Astra Deck control center."
-  },
   "toggleStateOff": {
     "message": "無効"
   },

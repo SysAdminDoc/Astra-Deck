@@ -1,11 +1,7 @@
 // Astra Deck - Background Service Worker
-// Handles extension fetch proxying, cookie access, downloads,
-// and control-center commands from the toolbar and keyboard.
-
-const PANEL_MESSAGE = Object.freeze({
-    toggle: 'YTKIT_TOGGLE_PANEL',
-    open: 'YTKIT_OPEN_PANEL'
-});
+// Handles extension fetch proxying, cookie access, and downloads.
+// The toolbar popup owns control-center activation directly via
+// chrome.tabs.sendMessage(YTKIT_OPEN_PANEL) — no background mediation needed.
 
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_FETCH_TIMEOUT_MS = 60000; // 60 seconds
@@ -319,40 +315,15 @@ function sanitizeDownloadFilename(filename) {
     return sanitized || undefined;
 }
 
-function sendTabMessage(tabId, message) {
-    return new Promise((resolve) => {
-        if (!tabId) {
-            resolve(false);
-            return;
-        }
-        try {
-            chrome.tabs.sendMessage(tabId, message, () => {
-                resolve(!chrome.runtime.lastError);
-            });
-        } catch (error) {
-            resolve(false);
-        }
-    });
-}
-
-async function togglePanelForTab(tabId) {
-    const delivered = await sendTabMessage(tabId, { type: PANEL_MESSAGE.toggle });
-    if (!delivered) {
-        // v3.19.0: the standalone options page was removed; full settings now
-        // live in the toolbar popup and the in-page workspace. If the current
-        // tab can't receive the toggle (non-YouTube), open YouTube so the user
-        // has somewhere to land.
-        try {
-            await chrome.tabs.create({ url: 'https://www.youtube.com/' });
-        } catch (_) {
-            // reason: tab creation may be blocked in some browser contexts
-        }
-    }
-}
-
 // chrome.action.onClicked does not fire when default_popup is set in the
 // manifest, so the toolbar click is handled entirely by popup.html/popup.js.
-// The keyboard shortcut (Ctrl+Shift+Y) still needs the commands listener.
+// v4.5.3: the `commands` keyboard shortcut was retired per the project's
+// "no keyboard shortcuts" rule — the toolbar action button is the sole
+// visible activator. The orphaned togglePanelForTab/sendTabMessage helpers
+// (only callers were the removed chrome.commands listener) were also
+// removed; popup.js carries its own sendTabMessage for the OPEN dispatch.
+// Removing the manifest entry also removes the Firefox Ctrl+Shift+Y
+// collision with "Show Downloads" without a per-vendor patch.
 
 // v3.14.0: Fire "show in folder" reveal when the download reaches the
 // complete state, not from a setTimeout. The previous implementation lost
@@ -400,18 +371,6 @@ if (chrome.downloads?.onErased?.addListener) {
         })();
     });
 }
-
-chrome.commands.onCommand.addListener((command) => {
-    void (async () => {
-        if (command !== 'toggle-control-center') return;
-        try {
-            const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-            await togglePanelForTab(tab?.id);
-        } catch (error) {
-            console.warn('[Astra Deck background] Failed to handle keyboard command:', error);
-        }
-    })();
-});
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // Guard: reject malformed messages up front so a missing/non-object `msg`

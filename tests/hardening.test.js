@@ -870,39 +870,32 @@ test('manifest declares unlimitedStorage to exceed the 10 MB default quota', () 
     );
 });
 
-test('Firefox build rewrites Ctrl+Shift+Y (reserved by Firefox Downloads) to Ctrl+Alt+Y', () => {
-    // Chrome manifest is the build input — stays on the original shortcut.
+test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)', () => {
+    // The `commands` block was retired in v4.5.3 per the "no keyboard
+    // shortcuts" project rule. Removing it from the Chrome manifest also
+    // resolves the Firefox Ctrl+Shift+Y collision with "Show Downloads"
+    // without a per-vendor patch — there is no shortcut left to collide.
     const manifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'),
         'utf8'
     ));
     assert.equal(
-        manifest.commands?.['toggle-control-center']?.suggested_key?.default,
-        'Ctrl+Shift+Y',
-        'Chrome manifest must keep Ctrl+Shift+Y as the default (no vendor conflict there)'
+        manifest.commands,
+        undefined,
+        'Chrome manifest must NOT declare a `commands` block (no keyboard shortcuts)'
     );
 
-    // Run the actual patch function on a deep copy of the Chrome manifest —
-    // this catches drift in either the Chrome-side source spelling or the
-    // patch's internal string literals, which a pure source-regex test
-    // would silently no-op through.
     const { patchManifestForFirefox } = require('../scripts/manifest-patch');
     const ffManifest = JSON.parse(JSON.stringify(manifest));
     patchManifestForFirefox(ffManifest);
 
     assert.equal(
-        ffManifest.commands?.['toggle-control-center']?.suggested_key?.default,
-        'Ctrl+Alt+Y',
-        'Firefox-patched manifest must carry Ctrl+Alt+Y'
+        ffManifest.commands,
+        undefined,
+        'Firefox-patched manifest must also be free of `commands`'
     );
-    assert.notEqual(
-        ffManifest.commands?.['toggle-control-center']?.suggested_key?.default,
-        'Ctrl+Shift+Y',
-        'Firefox-patched manifest must NOT retain the reserved Ctrl+Shift+Y default'
-    );
-    // The patch must also apply the Firefox-specific gecko + background
-    // transformations — a regression that dropped those would silently
-    // break Firefox at load time.
+    // The Firefox-specific gecko + background transformations must still
+    // apply — a regression here would silently break Firefox at load time.
     assert.equal(ffManifest.browser_specific_settings?.gecko?.id, 'ytkit@sysadmindoc.github.io');
     assert.equal(ffManifest.browser_specific_settings?.gecko?.strict_min_version, '128.0');
     assert.ok(
@@ -910,15 +903,9 @@ test('Firefox build rewrites Ctrl+Shift+Y (reserved by Firefox Downloads) to Ctr
         'Firefox background must be a scripts[] array, not a service_worker entry'
     );
 
-    // Running the patch twice must stay idempotent — protects against a
-    // re-run on an already-patched manifest (the guard on 'Ctrl+Shift+Y'
-    // ensures the second pass is a no-op for the shortcut).
+    // Running the patch twice must stay idempotent.
     patchManifestForFirefox(ffManifest);
-    assert.equal(
-        ffManifest.commands?.['toggle-control-center']?.suggested_key?.default,
-        'Ctrl+Alt+Y',
-        'Patch must be idempotent — a second application must not flip the shortcut back'
-    );
+    assert.equal(ffManifest.commands, undefined, 'Patch must remain idempotent across re-runs');
 });
 
 test('SponsorBlock never auto-skips poi_highlight (API contract: marker, not skip)', () => {
@@ -1496,10 +1483,12 @@ test('_locales/en/messages.json exists and is valid JSON', () => {
     assert.equal(typeof parsed, 'object', 'Parsed messages must be an object');
 });
 
-test('_locales/en/messages.json contains the four required manifest-level keys', () => {
+test('_locales/en/messages.json contains the three required manifest-level keys', () => {
+    // v4.5.3: toggleControlCenterDesc was removed along with the entire
+    // `commands` keyboard-shortcut surface (no keyboard shortcuts rule).
     const localesPath = path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json');
     const messages = JSON.parse(fs.readFileSync(localesPath, 'utf8'));
-    for (const key of ['extName', 'extDescription', 'extActionTitle', 'toggleControlCenterDesc']) {
+    for (const key of ['extName', 'extDescription', 'extActionTitle']) {
         assert.ok(Object.prototype.hasOwnProperty.call(messages, key),
             `messages.json must define "${key}"`);
         assert.equal(typeof messages[key].message, 'string',
@@ -1507,6 +1496,11 @@ test('_locales/en/messages.json contains the four required manifest-level keys',
         assert.ok(messages[key].message.length > 0,
             `messages.json["${key}"].message must not be empty`);
     }
+    assert.equal(
+        Object.prototype.hasOwnProperty.call(messages, 'toggleControlCenterDesc'),
+        false,
+        'toggleControlCenterDesc must be absent — the keyboard command was retired in v4.5.3'
+    );
 });
 
 test('manifest.json uses __MSG_ references for name, description, and action title', () => {
@@ -1519,11 +1513,8 @@ test('manifest.json uses __MSG_ references for name, description, and action tit
         'manifest.json description must use __MSG_extDescription__ i18n reference');
     assert.equal(manifest.action?.default_title, '__MSG_extActionTitle__',
         'manifest.json action.default_title must use __MSG_extActionTitle__ i18n reference');
-    assert.equal(
-        manifest.commands?.['toggle-control-center']?.description,
-        '__MSG_toggleControlCenterDesc__',
-        'manifest command description must use __MSG_toggleControlCenterDesc__ i18n reference'
-    );
+    assert.equal(manifest.commands, undefined,
+        'manifest.json must NOT declare a commands block (no keyboard shortcuts)');
     assert.equal(manifest.default_locale, 'en',
         'manifest.json must declare default_locale: "en" alongside __MSG_ references');
 });

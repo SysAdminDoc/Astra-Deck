@@ -659,10 +659,6 @@
   "toastDlStopped": {
     "message": "로컬 다운로더가 중지되었습니다. 다시 시작 중…"
   },
-  "toggleControlCenterDesc": {
-    "message": "현재 YouTube 탭에서 Astra Deck 제어 센터 토글",
-    "description": "Description for the keyboard command that opens the Astra Deck control center."
-  },
   "toggleStateOff": {
     "message": "비활성화됨"
   },
