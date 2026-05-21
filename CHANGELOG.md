@@ -6,6 +6,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.22.0] - 2026-05-21 - v5.0.0 foundation #17: theme-css extends (+compactUnfixedHeader, +hideVideoEndContent)
+
+Two more bulk peels into the existing `extension/features/theme-css/`
+module, bringing the theme-css consumer count to seven.
+
+### Added
+
+- `extension/features/theme-css/index.js` —
+  `buildCompactUnfixedHeaderCss()` (parameter-less; masthead height
+  + page-manager margin trims) and `buildHideVideoEndContentCss()`
+  (parameter-less; covers eight end-screen/end-card surfaces +
+  `div.ytp-fullscreen-grid-stills-container`).
+- `tests/hardening.test.js` — 5 new regressions covering the two
+  new builders, surface coverage, monolith fallback parity
+  contracts, and a roster check that pins the seven theme-css
+  builders in alphabetical order.
+
+### Changed
+
+- `extension/ytkit.js` — `compactUnfixedHeader` and
+  `hideVideoEndContent` feature blocks delegate CSS construction to
+  `globalThis.YTKitFeatures.themeCss.*` when present. Inline
+  byte-identical fallbacks remain for the userscript path.
+
 ## [4.21.0] - 2026-05-21 - v5.0.0 foundation #16: theme-css extends (+forceDarkEverywhere, +themeAccentColor)
 
 Two more bulk peels into the existing `extension/features/theme-css/`

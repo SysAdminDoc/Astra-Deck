@@ -77,6 +77,29 @@
             + '                    }\n                ';
     }
 
+    // compactUnfixedHeader: parameter-less rules that shrink the
+    // masthead and let it scroll away. v4.22.0 peel.
+    function buildCompactUnfixedHeaderCss() {
+        return '\n                    ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }\n'
+            + '                    ytd-masthead #container.ytd-masthead { height: 40px !important; }\n'
+            + '                    ytd-masthead #logo { height: 16px !important; }\n'
+            + '                    ytd-masthead #search-form, ytd-masthead #search-input { height: 32px !important; }\n'
+            + '                    ytd-page-manager { margin-top: 0 !important; }\n'
+            + '                    html[dark] #cinematics { top: 40px !important; }\n                ';
+    }
+
+    // hideVideoEndContent: parameter-less rules that suppress every
+    // YouTube end-screen / end-card surface plus the fullscreen video
+    // grid that shows after a video ends. v4.22.0 peel.
+    function buildHideVideoEndContentCss() {
+        return '\n                    .ytp-ce-element, .ytp-ce-covering-overlay, .ytp-ce-element-shadow,\n'
+            + '                    .ytp-ce-covering-image, .ytp-ce-expanding-image,\n'
+            + '                    .ytp-ce-element.ytp-ce-video, .ytp-ce-element.ytp-ce-channel,\n'
+            + '                    .ytp-ce-element.ytp-ce-playlist,\n'
+            + '                    .ytp-endscreen-content,\n'
+            + '                    div.ytp-fullscreen-grid-stills-container { display: none !important; }\n                ';
+    }
+
     // grayscaleThumbnails: pure constant — no parameters. Returned as a
     // function for symmetry with the other builders so the test surface
     // can call them uniformly.
@@ -102,7 +125,9 @@
         buildSelectionColorCss,
         buildGrayscaleThumbnailsCss,
         buildForceDarkEverywhereCss,
-        buildAccentColorCss
+        buildAccentColorCss,
+        buildCompactUnfixedHeaderCss,
+        buildHideVideoEndContentCss
     });
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -111,7 +136,9 @@
             buildSelectionColorCss,
             buildGrayscaleThumbnailsCss,
             buildForceDarkEverywhereCss,
-            buildAccentColorCss
+            buildAccentColorCss,
+            buildCompactUnfixedHeaderCss,
+            buildHideVideoEndContentCss
         };
     }
 })();
