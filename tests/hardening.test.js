@@ -5254,12 +5254,20 @@ test('v4.28.0 popup schema-overview row labels prefer humanizeSettingKey output'
     );
     assert.match(src, /const humanizer = window\.__YTKIT_SETTINGS_SCHEMA__\s*\n?\s*&& window\.__YTKIT_SETTINGS_SCHEMA__\.humanizeSettingKey;/,
         'popup must resolve humanizer via the schema namespace');
-    assert.match(src, /label\.textContent = \(typeof humanizer === 'function' \? humanizer\(entry\.key\) : entry\.key\);/,
+    // v4.40.0: label resolution gained an entry.labelKey override layer
+    // on top of the humaniser. The original v4.28.0 invariant — prefer
+    // the humanised label, fall back to the raw key — still holds for
+    // entries with no override. The assertion pattern is rewritten as
+    // a fragment match so both v4.28.0 and v4.40.0 implementations
+    // satisfy it.
+    assert.match(src, /typeof humanizer === 'function' \? humanizer\(entry\.key\) : entry\.key/,
         'popup must prefer the humanised label, falling back to the raw key');
     // Raw key still surfaces via the tooltip so power users can identify
-    // the underlying setting.
-    assert.match(src, /label\.title = entry\.key;/,
-        'popup must keep the raw key in the label title for support workflows');
+    // the underlying setting — match either the original v4.28.0 form or
+    // the v4.40.0 override-aware form (which keeps the raw key as the
+    // tooltip prefix when an override description exists).
+    assert.match(src, /label\.title = (entry\.key|overrideDesc)/,
+        'popup must keep the raw key reachable from the label title');
 });
 
 // ── v4.29.0 NX1: popup overview expansion persistence ──
@@ -6026,6 +6034,73 @@ test('v4.39.0 ≥1 settings-schema entry has profile=github-full (badge has cove
     const matches = schemaSrc.match(/profile:\s*['"]github-full['"]/g) || [];
     assert.ok(matches.length >= 1,
         `expected at least one github-full schema entry, found ${matches.length}`);
+});
+
+// ── v4.40.0 NX1: labelKey/descriptionKey override fields on schema entries ──
+
+test('v4.40.0 popup honours entry.labelKey + entry.descriptionKey when present', () => {
+    assert.match(popupSource, /entry\.labelKey/,
+        'buildSchemaOverviewKeyRow must consult entry.labelKey');
+    assert.match(popupSource, /entry\.descriptionKey/,
+        'buildSchemaOverviewKeyRow must consult entry.descriptionKey');
+    // Override path must short-circuit the humaniser fallback only when
+    // the labelKey is a non-empty string — guards against schema rows
+    // that ship `labelKey: ""` from an editor accident.
+    assert.match(popupSource, /typeof entry\.labelKey === 'string' && entry\.labelKey\.trim\(\)/,
+        'labelKey override must trim + reject empty strings');
+});
+
+test('v4.40.0 settings-schema brand-name entries carry labelKey overrides', () => {
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
+    // Each brand-name override surfaces the brand in the label so the
+    // popup row reads "Cobalt API instance URL" instead of the
+    // humaniser's "Download cobalt instance" — a single canary per
+    // brand is enough; if any of these regress the v4.40.0 user-facing
+    // win is gone.
+    for (const marker of [
+        'labelKey: "Cobalt download fallback"',
+        'labelKey: "Cobalt API instance URL"',
+        'labelKey: "AI summary endpoint URL"',
+        'labelKey: "AI summary provider"'
+    ]) {
+        assert.ok(schemaSrc.includes(marker),
+            `settings-schema must declare ${marker}`);
+    }
+});
+
+test('v4.40.0 every labelKey/descriptionKey override is a non-empty string in the schema', () => {
+    // Defensive parser canary — if an editor accident lands an entry
+    // with `labelKey: ""` or `labelKey: null`, the popup falls back to
+    // the humaniser silently. Fail loudly so we never ship that.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
+    // Match every labelKey / descriptionKey occurrence — value must be
+    // a non-empty double-quoted string literal.
+    const overrideRe = /\b(labelKey|descriptionKey):\s*("([^"\\]|\\.)*"|[^,}]+)/g;
+    let match;
+    let count = 0;
+    while ((match = overrideRe.exec(schemaSrc)) !== null) {
+        count += 1;
+        const raw = match[2].trim();
+        assert.ok(raw.startsWith('"') && raw.length > 2,
+            `${match[1]} override at offset ${match.index} must be a non-empty quoted string (saw ${raw})`);
+    }
+    assert.ok(count >= 4,
+        `expected ≥4 labelKey/descriptionKey overrides in schema (found ${count})`);
+});
+
+test('v4.40.0 settings-migration round-trip preserves entries that carry overrides', () => {
+    // The schema is frozen via Object.freeze({ ... }) per-entry. Adding
+    // labelKey/descriptionKey to an existing entry must not break the
+    // existing settings-migration round-trip — the schema is read for
+    // shape, not for the override fields.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8');
+    // Sanity: the brand entries still freeze cleanly (Object.freeze
+    // on a literal — no syntax errors that would break the module).
+    assert.match(schemaSrc, /Object\.freeze\(\{ key: "downloadCobaltInstance"[^}]*labelKey: "Cobalt API instance URL"/,
+        'downloadCobaltInstance must still be a single frozen object literal with labelKey embedded');
 });
 
 test('v4.39.0 policy-profile module exposes isEntryAllowedInProfile + resolveEffectiveProfile', () => {

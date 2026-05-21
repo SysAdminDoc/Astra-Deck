@@ -1559,10 +1559,22 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     // "Custom progress bar color" instead of "customProgressBarColor".
     // The raw storage key is still surfaced via the tooltip so power
     // users can identify the underlying setting for support tickets.
+    //
+    // v4.40.0: a schema entry may carry an explicit `labelKey` /
+    // `descriptionKey` override for brand-name / domain-specific
+    // strings where the deterministic humaniser is imprecise
+    // (e.g. "Cobalt API instance URL" beats "Download cobalt instance").
+    // The raw storage key still goes in the tooltip so power users
+    // can identify the underlying setting.
     const humanizer = window.__YTKIT_SETTINGS_SCHEMA__
         && window.__YTKIT_SETTINGS_SCHEMA__.humanizeSettingKey;
-    label.textContent = (typeof humanizer === 'function' ? humanizer(entry.key) : entry.key);
-    label.title = entry.key;
+    const overrideLabel = typeof entry.labelKey === 'string' && entry.labelKey.trim();
+    label.textContent = overrideLabel
+        || (typeof humanizer === 'function' ? humanizer(entry.key) : entry.key);
+    const overrideDesc = typeof entry.descriptionKey === 'string' && entry.descriptionKey.trim();
+    label.title = overrideDesc
+        ? `${entry.key} — ${overrideDesc}`
+        : entry.key;
     row.appendChild(label);
 
     // v4.39.0: profile-badge integration. A `github-full` entry only
