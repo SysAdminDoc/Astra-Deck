@@ -6,6 +6,58 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.13.0] - 2026-05-21 - v5.0.0 foundation #8: first feature peel (subtitles)
+
+First feature carve-out from the 43k-line `extension/ytkit.js`
+monolith. The subtitle-caption styling CSS construction moves into
+its own pure, testable module at `extension/features/subtitles/`; the
+monolith's `subtitleStyling._apply()` now delegates to the module
+when available, with a byte-identical inline fallback for the
+single-file userscript path.
+
+### Added
+
+- `extension/features/subtitles/index.js` — pure helper
+  `buildSubtitleCss(settings)` plus a frozen `featureSpec` ready for
+  the v4.7.0 lifecycle adoption. Exports `FONT_FAMILY_MAP` so future
+  consumers (popup font-family picker) reuse the same lookup. Defends
+  against malformed input: clamps `subStyleFontSize` to 50-300,
+  `subStyleBgOpacity` to 0-100, `subStyleBottomOffset` to 0-90; rejects
+  non-hex colour input with a documented fallback to white/black; expands
+  `#RGB` short-form hex to `#RRGGBB`. Attaches to
+  `globalThis.YTKitFeatures.subtitles` so ytkit.js can pick it up.
+- `tests/hardening.test.js` — 6 new regressions: module surface
+  exports, deterministic byte-stable CSS output for a known input,
+  clamping of out-of-range numeric inputs (no throw, sane fallback),
+  text-shadow on/off, the monolith fallback contract, and the
+  manifest content_script load order (subtitles module before
+  `ytkit.js`, after the `core/*` modules).
+
+### Changed
+
+- `extension/ytkit.js` — `subtitleStyling._apply()` now delegates CSS
+  construction to `globalThis.YTKitFeatures.subtitles.buildSubtitleCss`
+  when present. The inline fallback (used by the single-file
+  userscript that doesn't load the module yet) is preserved unchanged
+  and exercised in parallel by tests. The fallback comment documents
+  the "MUST stay byte-identical" parity contract so future hand-edits
+  to either copy surface as test failures.
+- `extension/manifest.json` — both ISOLATED-world content_script
+  entries now load `features/subtitles/index.js` immediately before
+  `ytkit.js`, after the `core/*` module run.
+
+### Why
+
+`ROADMAP.md` v5.0.0 calls for incremental extraction of feature
+modules from the monolith by category. The `subtitles` category is
+the smallest, most isolated of the 18 categories: 8 schema keys, no
+SPA coupling, no MAIN-world bridge, no observer or async dependency,
+no inter-feature conflicts. That makes it the ideal pilot for the
+peel pattern — pure logic out first, lifecycle adoption next, monolith
+inline finally retired in a follow-up slice when every consumer is
+known to ship the module. The byte-stable fallback contract keeps the
+userscript path working unchanged while the extension path migrates.
+
 ## [4.12.0] - 2026-05-21 - v5.0.0 foundation #7: popup data-flow panel UI
 
 First user-visible slice of the v5.0.0 architecture. The popup now

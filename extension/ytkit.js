@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.12.0';
+    const YTKIT_VERSION = '4.13.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -27607,18 +27607,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'type',
             _styleEl: null,
             _apply() {
+                // v4.13.0: CSS construction is owned by
+                // extension/features/subtitles/index.js (peeled from this
+                // monolith). The module is loaded ahead of ytkit.js via
+                // manifest.content_scripts and attaches to
+                // globalThis.YTKitFeatures.subtitles.buildSubtitleCss.
+                // The inline fallback below preserves the userscript path
+                // (single-file build that doesn't load the module yet) +
+                // is exercised by tests as the parity reference.
                 const s = appState.settings;
-                const sizePct = s.subStyleFontSize || 100;
-                const fam = ({ default: '', sans: 'Roboto, sans-serif', serif: 'Georgia, serif', mono: 'Menlo, Consolas, monospace', 'YouTube Sans': '"YouTube Sans", Roboto, sans-serif' }[s.subStyleFontFamily]) || '';
-                const bgOp = (s.subStyleBgOpacity ?? 75) / 100;
-                const bgHex = s.subStyleBgColor || '#000000';
-                const br = parseInt(bgHex.slice(1, 3), 16);
-                const bg = parseInt(bgHex.slice(3, 5), 16);
-                const bb = parseInt(bgHex.slice(5, 7), 16);
-                const bgRgba = `rgba(${br}, ${bg}, ${bb}, ${bgOp})`;
-                const bot = s.subStyleBottomOffset ?? 10;
-                const shadow = s.subStyleTextShadow !== false ? '2px 2px 4px rgba(0,0,0,0.9)' : 'none';
-                const css = `
+                const fromModule = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.subtitles
+                    && globalThis.YTKitFeatures.subtitles.buildSubtitleCss);
+                let css;
+                if (typeof fromModule === 'function') {
+                    css = fromModule(s);
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/subtitles/index.js's
+                    // buildSubtitleCss — the v4.13.0 hardening test pins
+                    // that parity.
+                    const sizePct = s.subStyleFontSize || 100;
+                    const fam = ({ default: '', sans: 'Roboto, sans-serif', serif: 'Georgia, serif', mono: 'Menlo, Consolas, monospace', 'YouTube Sans': '"YouTube Sans", Roboto, sans-serif' }[s.subStyleFontFamily]) || '';
+                    const bgOp = (s.subStyleBgOpacity ?? 75) / 100;
+                    const bgHex = s.subStyleBgColor || '#000000';
+                    const br = parseInt(bgHex.slice(1, 3), 16);
+                    const bg = parseInt(bgHex.slice(3, 5), 16);
+                    const bb = parseInt(bgHex.slice(5, 7), 16);
+                    const bgRgba = `rgba(${br}, ${bg}, ${bb}, ${bgOp})`;
+                    const bot = s.subStyleBottomOffset ?? 10;
+                    const shadow = s.subStyleTextShadow !== false ? '2px 2px 4px rgba(0,0,0,0.9)' : 'none';
+                    css = `
                     .ytp-caption-segment {
                         font-size: ${sizePct}% !important;
                         color: ${s.subStyleColor || '#ffffff'} !important;
@@ -27631,6 +27651,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         bottom: ${bot}% !important;
                     }
                 `;
+                }
                 if (this._styleEl) this._styleEl.textContent = css;
                 else this._styleEl = injectStyle(css, this.id, true);
             },

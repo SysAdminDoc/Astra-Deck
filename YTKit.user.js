@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YTKit v4.5.2
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.12.0
+// @version      4.13.0
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
