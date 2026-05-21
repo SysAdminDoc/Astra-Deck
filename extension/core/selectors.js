@@ -21,41 +21,17 @@
         });
     }
 
-    // v4.31.0 selector-pack file split. The four shell surfaces moved
-    // out to extension/core/selector-packs/*.js — they register
+    // v4.31.0 → v4.37.0 selector-pack file split. All 28 surfaces now
+    // live in extension/core/selector-packs/<surface>.js and register
     // themselves into globalThis.YTKitCore.SurfacePackRegistry before
     // this file runs (manifest content_scripts ordering enforces it).
-    // The remaining entries below are next on the deck for the
-    // batch-by-batch v5.1.0 selector-pack migration.
-    const INLINE_SURFACES = {
-        liveChatFrame: {
-            stable: ['ytd-live-chat-frame#chat', 'ytd-live-chat-frame', 'iframe#chatframe'],
-            fallback: ['#chat.ytd-live-chat-frame', 'ytd-live-chat-frame iframe'],
-            highChurn: true,
-            needsFreshCapture: true,
-            notes: 'Watch-page live chat frame; raw captures do not include full live chat internals.'
-        },
-        liveChat: {
-            stable: ['yt-live-chat-app', 'yt-live-chat-renderer', 'yt-live-chat-item-list-renderer'],
-            fallback: ['yt-live-chat-text-message-renderer', 'yt-live-chat-message-input-renderer'],
-            highChurn: true,
-            needsFreshCapture: true,
-            notes: 'Live chat iframe document surface; capture required before major live-chat rewrites.'
-        },
-        liveChatPlaceholder: {
-            stable: ['ytd-live-chat-frame', '#chat'],
-            fallback: ['iframe#chatframe', 'ytd-live-chat-frame iframe'],
-            highChurn: true,
-            needsFreshCapture: true,
-            notes: 'Placeholder canary for top-level pages where the iframe exists but chat DOM is isolated.'
-        }
-    };
+    // INLINE_SURFACES remains as the override hook — any future
+    // diagnostic / temporary surface can be declared here without
+    // having to add a pack file. Packs win when both define a surface
+    // so a v5.1.x+ pack file can override an inline entry without
+    // touching this file.
+    const INLINE_SURFACES = {};
 
-    // Build SurfaceSelectorMap from INLINE_SURFACES + every entry that
-    // has registered itself into SurfacePackRegistry from
-    // extension/core/selector-packs/*.js. Packs win when both define a
-    // surface so a v5.1.0+ pack file can override a stale inline entry
-    // without touching this file.
     const packRegistry = core.SurfacePackRegistry || new Map();
     const surfaceNames = new Set([...Object.keys(INLINE_SURFACES), ...packRegistry.keys()]);
     const SurfaceSelectorMap = Object.freeze(Object.fromEntries(

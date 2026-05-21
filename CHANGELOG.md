@@ -6,6 +6,69 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.37.0] - 2026-05-21 - v5.1.0 #7: selector-pack migration COMPLETE (final batch — live-chat trio)
+
+Final batch of the v5.1.0 selector-pack migration. The three
+live-chat surfaces — `liveChatFrame`, `liveChat`,
+`liveChatPlaceholder` — move out of `INLINE_SURFACES`, which is
+now an empty object literal: **every surface lives in its own
+pack file**. Carry-forward item #1 closes.
+
+### Added
+
+- `extension/core/selector-packs/liveChatFrame.js`,
+  `liveChat.js`, `liveChatPlaceholder.js`. All three carry
+  `needsFreshCapture: true` and `lastVerified: null` because the
+  current MHTML captures don't preserve the live-chat iframe
+  contents. The `captureEvidence` field references
+  `ROADMAP.md#live-chat-iframe-capture-workflow` so the popup
+  health surface can link to the spec for the next capture pass.
+
+### Changed
+
+- `extension/core/selectors.js` — `INLINE_SURFACES` is now `{}`.
+  The merge logic stays: any future diagnostic / temporary surface
+  can be declared inline without writing a pack file, and packs
+  still override inline entries when both exist.
+- `extension/manifest.json` — 26 pack files load before
+  `core/selectors.js`. `tests/core-foundation.test.js` mirrors the
+  manifest order.
+
+### Added (tests)
+
+- `tests/hardening.test.js` — 5 new v4.37.0 regressions: pack-file
+  existence + the live-chat needsFreshCapture invariant, registry
+  origin + needsFreshCapture round-trip, an `INLINE_SURFACES = {}`
+  canary that fails loudly if anyone adds an inline surface back
+  without a paired pack file, a global manifest-vs-disk parity
+  check (every pack file on disk must appear in both ISOLATED
+  content_scripts blocks), and a surface-count parity check
+  (pack-file count + 2 aliases = SurfaceSelectorMap size).
+- `tests/hardening.test.js` — the v4.31.0 inline-still-resolves
+  canary is rewritten as an "every-surface-comes-from-a-pack"
+  spot-check (one surface from each of the 7 batches must carry
+  capture evidence).
+
+### Why
+
+The v5.1.0 selector-pack split is the entry point for the rest
+of v5.1.x: per-surface rollback, per-pack capture provenance, and
+the path to the live-chat iframe capture workflow. Closing
+INLINE_SURFACES out today means the next selector-related slice
+can be "add a fresh capture for liveChat" rather than "first
+finish the migration."
+
+Roadmap: carry-forward item #1 moves to `[x]`. The live-chat
+fresh capture is now an explicit v5.1.x follow-up rather than a
+prerequisite.
+
+### Verification
+
+- 484 tests pass (was 479; +5 final-batch regressions).
+- `npm run check` clean.
+- `node sync-userscript.js` + `node build-extension.js` green at
+  v4.37.0.
+
 ## [4.36.0] - 2026-05-21 - v5.1.0 #6: selector-pack file split (batch 6 — misc)
 
 Sixth batch of the v5.1.0 selector-pack migration. Five surfaces

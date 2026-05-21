@@ -33,7 +33,10 @@ const selectorPackFiles = [
     'selector-packs/settingsOverlay.js',
     'selector-packs/profile.js',
     'selector-packs/notifications.js',
-    'selector-packs/media.js'
+    'selector-packs/media.js',
+    'selector-packs/liveChatFrame.js',
+    'selector-packs/liveChat.js',
+    'selector-packs/liveChatPlaceholder.js'
 ];
 const coreSources = [
     'registry.js',

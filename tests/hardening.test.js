@@ -5447,18 +5447,21 @@ test('v4.31.0 freezeEntry preserves captureEvidence and lastVerified on entries 
     assert.equal(appShell.lastVerified, '2026-05-19');
 });
 
-test('v4.31.0 inline surfaces still resolve through SurfaceSelectorMap (no regression)', () => {
+test('v4.31.0 every surface now resolves through SurfaceSelectorMap (no regression after full pack migration)', () => {
     const core = loadSelectorPackContext();
-    // Still-inline surfaces (next-batch candidates) must continue to
-    // resolve correctly after each peel or every feature that uses
-    // them silently breaks.
-    for (const surface of ['liveChatFrame', 'liveChat', 'liveChatPlaceholder']) {
+    // After v4.37.0 every surface comes from a selector-pack file —
+    // INLINE_SURFACES is empty. Spot-check coverage of one surface
+    // from each batch so a regression that drops a pack file (e.g.
+    // accidentally deleting one from manifest.json) surfaces here.
+    const oneFromEachBatch = ['appShell', 'feed', 'watch', 'playerChrome', 'comments', 'profile', 'liveChat'];
+    for (const surface of oneFromEachBatch) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must still be in SurfaceSelectorMap`);
         assert.ok(entry.stable.length >= 1);
+        assert.ok(entry.captureEvidence.length >= 1,
+            `${surface} must carry capture evidence (proves it came from a pack file)`);
     }
-    // Peeled surfaces from prior batches must keep their map-level
-    // flags regardless of which file they live in.
+    // High-churn / fresh-capture flags must survive the peel.
     assert.equal(core.SurfaceSelectorMap.feed.highChurn, true);
     assert.equal(core.SurfaceSelectorMap.watch.highChurn, true);
     assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, true);
@@ -5470,13 +5473,13 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
     assert.equal(entry.lastVerified, '2026-05-19');
-    // A still-inline surface (liveChatFrame is in batch 7) must
-    // round-trip with empty captureEvidence + null lastVerified so
-    // consumers can iterate without a guard.
-    const inline = core.getSurfaceSelectorEntry('liveChatFrame');
-    assert.ok(Array.isArray(inline.captureEvidence), 'inline surface captureEvidence must be an array (empty)');
-    assert.equal(inline.captureEvidence.length, 0, 'inline surface captureEvidence must default to empty');
-    assert.equal(inline.lastVerified, null);
+    // The live-chat trio carries `lastVerified: null` because the
+    // current MHTML captures don't include the iframe contents —
+    // exercises the freezeEntry default path (lastVerified || null).
+    const unverified = core.getSurfaceSelectorEntry('liveChat');
+    assert.ok(Array.isArray(unverified.captureEvidence), 'liveChat captureEvidence must be an array');
+    assert.equal(unverified.lastVerified, null,
+        'liveChat lastVerified must be null until a fresh capture lands');
 });
 
 // ── v4.32.0 NX1: selector-pack batch 2 (feed-shell) ──
@@ -5809,4 +5812,84 @@ test('v4.36.0 manifest loads the misc batch packs before core/selectors.js', () 
             assert.ok(packIdx < selectorsIdx, `${pack} must load BEFORE core/selectors.js`);
         }
     }
+});
+
+// ── v4.37.0 NX1: selector-pack migration COMPLETE (final batch — live-chat trio) ──
+
+const V437_LIVECHAT_SURFACES = ['liveChatFrame', 'liveChat', 'liveChatPlaceholder'];
+const V437_LIVECHAT_FILES = [
+    'core/selector-packs/liveChatFrame.js',
+    'core/selector-packs/liveChat.js',
+    'core/selector-packs/liveChatPlaceholder.js'
+];
+
+test('v4.37.0 live-chat pack files exist with the v4.31.0 schema fields', () => {
+    for (const rel of V437_LIVECHAT_FILES) {
+        const full = path.join(__dirname, '..', 'extension', rel);
+        assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
+        const body = fs.readFileSync(full, 'utf8');
+        assert.match(body, /SurfacePackRegistry/);
+        assert.match(body, /needsFreshCapture: true/,
+            `${rel} must declare needsFreshCapture=true (no usable iframe capture exists)`);
+        assert.match(body, /registry\.has\(/);
+    }
+});
+
+test('v4.37.0 live-chat surfaces come from the pack registry and carry needsFreshCapture=true', () => {
+    const core = loadSelectorPackContext();
+    for (const surface of V437_LIVECHAT_SURFACES) {
+        const entry = core.SurfaceSelectorMap[surface];
+        assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
+        assert.equal(entry.needsFreshCapture, true,
+            `${surface} must keep needsFreshCapture=true after the v4.37.0 peel`);
+        // lastVerified is intentionally null — the live-chat iframe
+        // contents are not preserved in the current MHTML captures.
+        assert.equal(entry.lastVerified, null,
+            `${surface} lastVerified must stay null until a fresh capture workflow lands`);
+    }
+});
+
+test('v4.37.0 selectors.js INLINE_SURFACES is now empty — every surface lives in a pack file', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'selectors.js'), 'utf8'
+    );
+    // Match exactly the empty-literal form so a future regression
+    // that adds an inline surface back without a paired pack file
+    // fails this canary loudly. Whitespace-tolerant.
+    assert.match(src, /const INLINE_SURFACES\s*=\s*\{\s*\}\s*;/,
+        'INLINE_SURFACES must be an empty object literal after the v4.37.0 final peel');
+});
+
+test('v4.37.0 every selector pack file is loaded by both ISOLATED content_scripts entries', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    const packsDir = path.join(__dirname, '..', 'extension', 'core', 'selector-packs');
+    const packFilesOnDisk = fs.readdirSync(packsDir)
+        .filter((f) => f.endsWith('.js'))
+        .map((f) => `core/selector-packs/${f}`);
+    assert.ok(packFilesOnDisk.length >= 23,
+        `expected at least 23 pack files on disk after v4.37.0 (found ${packFilesOnDisk.length})`);
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        if (cs.js.indexOf('core/selectors.js') === -1) continue;
+        for (const pack of packFilesOnDisk) {
+            assert.ok(cs.js.includes(pack),
+                `manifest content_scripts (matches ${JSON.stringify(cs.matches)}) must include ${pack}`);
+        }
+    }
+});
+
+test('v4.37.0 SurfaceSelectorMap surface count matches the pack file count exactly', () => {
+    const core = loadSelectorPackContext();
+    const packsDir = path.join(__dirname, '..', 'extension', 'core', 'selector-packs');
+    const packFilesOnDisk = fs.readdirSync(packsDir).filter((f) => f.endsWith('.js'));
+    // Each pack file registers exactly one surface — except nav.js
+    // and profile.js, which also register their masthead /
+    // channelProfile aliases. After the alias adjustment the surface
+    // count is pack-file count + 2.
+    const expectedSurfaceCount = packFilesOnDisk.length + 2;
+    const actualSurfaceCount = Object.keys(core.SurfaceSelectorMap).length;
+    assert.equal(actualSurfaceCount, expectedSurfaceCount,
+        `SurfaceSelectorMap should have ${expectedSurfaceCount} surfaces (got ${actualSurfaceCount})`);
 });
