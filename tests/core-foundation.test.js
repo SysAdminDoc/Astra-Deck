@@ -29,7 +29,11 @@ const selectorPackFiles = [
     'selector-packs/modals.js',
     'selector-packs/comments.js',
     'selector-packs/commentComposer.js',
-    'selector-packs/engagementPanels.js'
+    'selector-packs/engagementPanels.js',
+    'selector-packs/settingsOverlay.js',
+    'selector-packs/profile.js',
+    'selector-packs/notifications.js',
+    'selector-packs/media.js'
 ];
 const coreSources = [
     'registry.js',
