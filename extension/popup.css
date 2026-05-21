@@ -700,29 +700,26 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* v4.23.0 started as a two-column grid; v4.24.0 switched to a single
+   flex column once rows became expandable. Single column keeps key
+   sub-lists readable on narrow popups. */
 .schema-overview-list {
   list-style: none;
   margin: 6px 0 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .schema-overview-list li {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 3px 6px;
-  border-radius: 8px;
   background: rgba(255, 255, 255, 0.02);
   font-size: 10.5px;
   color: var(--text-secondary);
+  border-radius: 8px;
 }
 
 .schema-overview-list li[data-active="true"] {
-  background: rgba(78, 200, 165, 0.06);
   color: var(--text-primary);
 }
 
@@ -738,6 +735,124 @@ body {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   font-size: 9.5px;
+}
+
+/* v4.24.0: clickable category disclosure + per-key sub-list. The head
+   row is a real <button> so screen readers + keyboard activation work
+   out of the box. House style: 8 px backdrop on rows, 6 px on the on/off
+   switches — both under the half-height threshold so neither reads as a
+   stadium pill. */
+
+.schema-overview-list li[data-active="true"] {
+  background: rgba(78, 200, 165, 0.06);
+}
+
+.schema-overview-list .so-row-head {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.schema-overview-list .so-row-head:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.schema-overview-list .so-row-head[aria-expanded="true"] {
+  background: rgba(78, 200, 165, 0.08);
+}
+
+.schema-overview-list .so-row-head:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.schema-overview-list .so-key-list {
+  list-style: none;
+  margin: 4px 0 2px;
+  padding: 0 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.schema-overview-list .so-key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.01);
+  font-size: 10px;
+}
+
+.schema-overview-list .so-key-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schema-overview-list .so-key-switch {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  /* House style: small button so radius stays well under half-height
+     (target ~15 px tall × 6 px radius ≈ 40 %). Square 0 px also valid;
+     6 px reads as a "deliberate small rounded square", not a pill. */
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.schema-overview-list .so-key-switch::before {
+  content: 'off';
+}
+
+.schema-overview-list .so-key-switch.on {
+  background: rgba(78, 200, 165, 0.12);
+  border-color: rgba(78, 200, 165, 0.32);
+  color: #4ec8a5;
+}
+
+.schema-overview-list .so-key-switch.on::before {
+  content: 'on';
+}
+
+.schema-overview-list .so-key-switch:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.schema-overview-list .so-key-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  color: var(--text-subtle);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Data-flow panel (v4.12.0) ───────────────────────────────────────
