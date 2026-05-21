@@ -1,11 +1,11 @@
 # Astra Deck Product Superset Roadmap
 
 > Version convention: `Astra Deck vX.Y.Z`
-> Current repo version observed: `Astra Deck v4.4.0`
-> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**. Post-milestone hardening cuts v4.1.0 → v4.4.0 shipped same day.
+> Current repo version observed: `Astra Deck v4.5.0` (cut at iter-8 close, 2026-05-20).
+> Planning track: `v3.23.0` through `v4.0.0` — **all closed as of 2026-05-19**. Post-milestone hardening cuts v4.1.0 → v4.4.0 shipped same day; v4.5.0 bundles iter-5/6/7/8 hardening, M-phase extractions, and the yt-dlp 2026 external-runtime surface.
 > Target site: YouTube desktop web, YouTube live chat frames, YouTube embeds where technically safe
-> Deliverable type for this run: factory-loop maintenance (Iter-5 Now-tier: N1 dep audit + N5 DOM-shape drift detection + N8 doc/version drift sync).
-> Generated: 2026-05-19 (iter-5 refresh after Phase-5 self-audit re-tier).
+> Deliverable type for this run: factory-loop maintenance (Iter-8 Now-tier: N18 TranscriptService extraction + N19 StorageManager extraction + N20 Deno runtime /health surface).
+> Generated: 2026-05-20 (iter-8 refresh after Large-Repo Mode state reconciliation + 3-task drain).
 
 ## Project Overview
 
@@ -45,8 +45,8 @@ Core product already exists:
 
 Important already-built assets:
 
-- `extension/ytkit.js`: 43,924 lines, primary feature monolith (post-N11 M-phase #1-#3 partial extractions; was 44,264 before iter-7).
-- `extension/core/*.js`: storage, navigation, player, page, style, URL, environment, registry, selectors, trusted-html, api-limiter, diagnostic-log, predicate-sandbox, video-type helpers.
+- `extension/ytkit.js`: 43,407 lines, primary feature monolith (post-N11 M-phase #1-#5 extractions; was 44,264 before iter-7, then 43,924 after iter-7 M-phase #1-#3, now 43,407 after iter-8 N18 + N19; -857 lines cumulative).
+- `extension/core/*.js`: 16 modules — storage (low-level), storage-manager (high-level cache), navigation, player, page, style, URL, environment, registry, selectors, trusted-html, api-limiter, diagnostic-log, predicate-sandbox, video-type, transcript-service.
 - `extension/ytkit-main.js`: MAIN-world bridge for quality/codec control.
 - `extension/background.js`: fetch proxy, downloads, cookies, toolbar messaging.
 - `extension/popup.*`: premium toolbar popup with quick toggles, data management, and i18n.
@@ -1202,6 +1202,36 @@ Acceptance:
 - [x] No keyboard shortcuts added. *(Pre-v3.25 surfaces only — `Ctrl+Shift+Y` / `Ctrl+Alt+Y`; every new v3.25 → v3.33 feature uses visible buttons/menus/chips.)*
 - [x] No confirmation dialogs. *(Every action applies immediately; toast feedback per the user's universal rule.)*
 - [x] Every feature can be disabled and cleaned up. *(Asserted by the 235 hardening + regression tests across all nine waves.)*
+
+## Iter-8 Maintenance Track (v4.5.0)
+
+### Now — shipped iter-8
+
+- [x] **N18 — TranscriptService extraction into `core/transcript-service.js` (M-phase #4).** Commit `521e336`. -445 LOC from ytkit.js. 7 new regression tests. All 5 callsites in ytkit.js routed through the factory return surface.
+- [x] **N19 — StorageManager cache+debounce extraction into `core/storage-manager.js` as `createStorageCache` (M-phase #5).** Commit `8016e89`. -72 net LOC from ytkit.js. 9 new regression tests. Resolves the long-standing name collision with `core/storage.js` (low-level wrapper).
+- [x] **N20 — yt-dlp 2026 external JS runtime surface.** Commit `b21c48e`. AstraDownloader v1.4.0 → v1.5.0 with new `/health.denoRuntime` field; `downloadHealthPanel` in ytkit.js renders a "Deno: missing" warn pill when `ytdlpNeedsRuntime && !installed`. 13 new Python tests. Conservative cutoff `(2026, 4, 1)` so older yt-dlps don't false-positive. README + CLAUDE.md updated.
+
+### Next (iter-9 candidates — research-traceable)
+
+- [ ] **N21 — SponsorBlock scrolled-away verification.** Upstream SB v6.1.5 (2026-04-21) fixed segment skip when video scrolls offscreen and rAF stops firing. Our SB uses event-driven `setTimeout` on `playing`/`seeked`/`ratechange`, NOT rAF — likely already robust. Verify with a Playwright reproduction.
+- [ ] **N22 — DeArrow regression test against refreshed MHTML fixtures.** DeArrow v2.3.4/2.3.5 (2026-04-08/04-11) patched YouTube's per-class swap of thumbnail/title nodes. Blocked on H-08 MHTML refresh.
+- [ ] **N23 — `TIMING` constants extraction.** Tiny LOC win, but disambiguates the navigation-debounce / save-debounce / element-timeout triplet from feature scope.
+
+### Later
+
+- [ ] **N24 — DebugManager extraction.** ~12-line module — low value alone, fold into a future grouped polish pass.
+
+### Under Consideration (multi-run; needs `--force-modularization`)
+
+- [ ] **N25 — MediaDLManager extraction.** Large effort; heavily coupled to install-prompt UI + toast. Multi-run M-phase invocation required.
+- [ ] **N26 — Bundle Deno runtime alongside yt-dlp.exe in the AstraDownloader installer.** Charter-edge — meaningful scope expansion (we'd be shipping a JS runtime). Defer until the field hit-rate from N20's missing-Deno pill says it's needed.
+
+### Rejected (preserve reasoning so future runs don't resurrect)
+
+- AI-slop contributor tagging product (HN-suggested adjacent product). Reason: charter is YouTube power-user enhancement, not crowdsourced reputation.
+- Cobalt fallback in extension build. Reason: explicit architectural decision — extension is Astra-Downloader-only by design; userscript retains Cobalt.
+- yt-dlp `--netrc-cmd` CVE-2026-26331 remediation. Reason: verified non-applicable to our codepath (we don't use --netrc-cmd).
+- Firefox 149+ scripting/tabs injection scope tightening. Reason: verified non-applicable (we don't programmatically inject into our own pages).
 
 ## Risks And Open Questions
 
