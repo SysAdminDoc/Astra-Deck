@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "4.37.0",
+  "version": "4.38.0",
   "description": "__MSG_extDescription__",
   "author": "Matthew Parker",
   "default_locale": "en",
@@ -151,6 +151,7 @@
         "features/video-filters/index.js",
         "features/blue-light-filter/index.js",
         "features/theme-css/index.js",
+        "features/wave-8-css/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -219,6 +220,7 @@
         "features/video-filters/index.js",
         "features/blue-light-filter/index.js",
         "features/theme-css/index.js",
+        "features/wave-8-css/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
