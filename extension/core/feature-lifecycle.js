@@ -198,9 +198,25 @@
         };
     }
 
+    // Lazy singleton — first caller seeds it, every later caller in the
+    // same world gets the same instance. This is the path consumer code
+    // (feature modules + navigation bridge + popup diagnostics) should
+    // use; the createLifecycle factory remains exposed for tests and
+    // for callers that need an isolated instance.
+    let sharedInstance = null;
+    function getLifecycle(options) {
+        if (!sharedInstance) sharedInstance = createLifecycle(options);
+        return sharedInstance;
+    }
+    function resetLifecycleForTests() {
+        sharedInstance = null;
+    }
+
     core.createLifecycle = createLifecycle;
+    core.getLifecycle = getLifecycle;
+    core._resetLifecycleForTests = resetLifecycleForTests;
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { createLifecycle };
+        module.exports = { createLifecycle, getLifecycle, resetLifecycleForTests };
     }
 })();
