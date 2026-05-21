@@ -6,6 +6,64 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.12.0] - 2026-05-21 - v5.0.0 foundation #7: popup data-flow panel UI
+
+First user-visible slice of the v5.0.0 architecture. The popup now
+ships a "Data flow" section that renders `core/data-flow.js`'s
+catalogue against the live settings bag — every external origin
+Astra Deck can reach, with risk-tone dot + origin + purpose +
+profile/creds/risk/driver metadata, and an active/idle flag based
+on whether any driving feature is currently enabled. Schema-gated
+on `privacyDataFlowPanel` (off by default); when the user enables
+it from the in-page workspace, the popup re-renders reactively via
+`chrome.storage.onChanged`.
+
+### Added
+
+- `extension/popup.html` — `<section class="data-flow">` between the
+  selector-health and health-banner surfaces. Three new bundled
+  `<script>` tags load `core/settings-schema.js` +
+  `core/policy-profile.js` + `core/data-flow.js` before `popup.js`
+  so the popup can call `window.YTKitCore.createDataFlow()` directly
+  without a content-script round-trip.
+- `extension/popup.js` — `dataFlowSection`/`dataFlowSummary`/
+  `dataFlowList` refs + `renderDataFlowPanel()` renderer +
+  `appendDataFlowMeta()` helper. Wired into both the initial
+  `loadSettings()` flow and the `chrome.storage.onChanged` reactive
+  re-render. Section stays hidden whenever
+  `privacyDataFlowPanel !== true` or the core factory failed to load
+  (CSP regression guard).
+- `extension/popup.css` — `.data-flow` surface styled to match the
+  selector-health visual lane: dense, OLED-friendly, dark only. Per
+  the project house style, no pill/stadium backdrops — chips use 8 px
+  radius rectangles; the only `border-radius: 50%` is on a 6 px round
+  risk-tone indicator dot. Five risk-band colour classes
+  (`df-risk-safe`/`api`/`local`/`experimental`/`store-risk`).
+- `extension/_locales/{en,de,es,fr,it,ja,ko,pt_BR,ru,zh_CN}/messages.json` —
+  9 new i18n keys (`dataFlowTitle`, `dataFlowNote`,
+  `dataFlowSummaryTpl`, `dataFlowActive`, `dataFlowInactive`,
+  `dataFlowProfile`, `dataFlowCreds`, `dataFlowRisk`,
+  `dataFlowDriver`). All 10 locales seeded with English fallbacks;
+  translation is a follow-up.
+- `tests/hardening.test.js` — 7 new regressions: popup.html hooks
+  present + default-hidden, popup.html bundles the three core
+  modules before popup.js, popup.js wires refs + gate + factory
+  resolution, renderer is called at init + on storage.onChanged, all
+  10 locales define all 9 keys, popup.css uses no stadium backdrops,
+  and a new background.js ↔ data-flow store-safe origin parity gate
+  (ensures `ALLOWED_FETCH_ORIGINS` never drifts from the catalogue
+  for store-safe origins).
+
+### Why
+
+`ROADMAP.md` v5.0.0/v5.8.0 calls for a data-flow panel that makes
+trust visible: per-API origin + purpose + credentials policy +
+disable action. The v4.10.0 slice landed the data side; v4.12.0
+lands the popup surface that consumes it. Locking in the
+background↔catalogue origin parity at test time means a future
+contributor can't silently add a new fetch target without also
+listing it in the data-flow catalogue (or vice versa).
+
 ## [4.11.0] - 2026-05-21 - v5.0.0 foundation #6: schema ↔ data-flow coverage gate + Cobalt entry
 
 Closes the conceptual gap between the v4.6.0 settings-schema risk
