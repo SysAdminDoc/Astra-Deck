@@ -24,8 +24,9 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.18.0 | Third feature peel — `features/blue-light-filter/buildBlueLightRgba()` + OVERLAY_FIXED_CSS + 5 tests | 394 | +5 |
 | v4.19.0 | Bundled theme-css peel (customProgressBarColor + customSelectionColor + grayscaleThumbnails) + 7 tests | 401 | +7 |
 | v4.20.0 | Userscript bundle of 11 v5.0.0 core modules via `sync-userscript.js` + 5 tests | 406 | +5 |
+| v4.21.0 | theme-css extends (+forceDarkEverywhere, +themeAccentColor) + 5 tests | 411 | +5 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 6 monolith feature blocks, 1 popup data-flow surface, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface (eliminates the extension↔userscript parity gap), +91 hardening tests (315 → 406), 15 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 8 monolith feature blocks, 1 popup data-flow surface, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface (eliminates the extension↔userscript parity gap), +96 hardening tests (315 → 411), 16 versions shipped, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved.
 
 Carry-forward for the next session (in priority order):
 
@@ -1229,7 +1230,7 @@ Features:
 - [~] Add selector health system and versioned selector packs _(read-side delivered in v4.8.0 — `extension/core/selector-health.js` exports `createSelectorHealth()` + `summarizeSelectorHealth` + `rankSelectorProblems` + `formatSelectorCopyReport`. Versioned selector-packs/ directory split still pending; current `core/selectors.js` continues as the consolidated source.)_
 - [x] Add route-aware observer coordinator _(delivered in v4.9.0 — `extension/core/lifecycle-route-bridge.js` self-installs against `core/navigation.js` and `core/feature-lifecycle.js`; every yt-navigate-finish / yt-page-data-updated / popstate / watch-flexy mutation auto-increments the lifecycle route token via `notifyRouteChange()`. 4 hardening tests pin the contract + load order.)_
 - [x] Add data-flow panel v1 with API origins and permission explanations _(complete in v4.12.0 — popup data-flow section bundled with the v5.0.0 core modules, gated on `privacyDataFlowPanel`, reactive to `chrome.storage.onChanged`, no pill backdrops per house style, all 10 locales seeded, 7 new hardening tests including a background.js↔catalogue origin parity gate.)_
-- [~] Extract feature modules from the monolith by category _(6 peels across 4 carve-outs — subtitles (v4.13.0), video-filters (v4.17.0), blue-light-filter (v4.18.0), and the bundled theme-css trio of customProgressBarColor + customSelectionColor + grayscaleThumbnails (v4.19.0). 24 hardening tests now pin the parity contracts across all six. Bulk peel pattern demonstrated.)_
+- [~] Extract feature modules from the monolith by category _(8 peels across 4 carve-outs — subtitles (v4.13.0), video-filters (v4.17.0), blue-light-filter (v4.18.0), and the theme-css bundle now covering 5 consumers: customProgressBarColor + customSelectionColor + grayscaleThumbnails (v4.19.0) + forceDarkEverywhere + themeAccentColor (v4.21.0). 29 hardening tests now pin the parity contracts.)_
 - [~] Extract `showToast` into `core/toast.js` _(pure helpers peeled in v4.14.0 — `inferToastTone`/`getToastRgb`/`getToastBadgeLabel`/`getToastAriaDefaults` + `TONE_RGB`/`TONE_BADGE`. 6 hardening tests pin the parity. DOM-touching showToast/dismissToast still in the monolith; v5.0.0 "single live region" primitive is the next step.)_
 
 Acceptance criteria:

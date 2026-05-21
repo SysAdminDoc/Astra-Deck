@@ -43,6 +43,40 @@
             + '                    ::-moz-selection { background: ' + safe + ' !important; color: #000 !important; }\n                ';
     }
 
+    // forceDarkEverywhere: parameter-less rules to drag YouTube's
+    // non-standard pages (settings, about, embedded) into the same dark
+    // surface tokens the main UI uses. Caller is responsible for the
+    // `dark` attribute + `color-scheme: dark` documentElement bits —
+    // those touch the DOM and stay in the monolith.
+    function buildForceDarkEverywhereCss() {
+        return '\n                    html[dark] { --yt-spec-base-background: #0f0f0f !important; --yt-spec-brand-background-solid: #0f0f0f !important; }\n'
+            + '                    ytd-app, ytd-browse, ytd-page-manager, #content { background-color: #0f0f0f !important; }\n'
+            + '                    body { background-color: #0f0f0f !important; color: #f1f1f1 !important; }\n'
+            + '                    /* Force dark on non-standard pages */\n'
+            + '                    .page-container, .yt-core-attributed-string, [light] { background: #0f0f0f !important; color: #f1f1f1 !important; }\n                ';
+    }
+
+    // themeAccentColor: only emits CSS when the accent is a valid hex
+    // (#RGB / #RRGGBB / #RGBA / #RRGGBBAA, matching the prior inline
+    // validation). Returns `null` otherwise so the monolith can skip the
+    // style-tag insertion.
+    const ACCENT_HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+    function buildAccentColorCss(settings) {
+        const accent = settings && settings.themeAccentColor;
+        if (!accent || !ACCENT_HEX_RE.test(accent)) return null;
+        return '\n                    :root { --ytkit-accent: ' + accent + ' !important; }\n'
+            + '                    .ytp-swatch-background-color, .ytp-play-progress,\n'
+            + '                    #progress.ytd-thumbnail-overlay-resume-playback-renderer {\n'
+            + '                        background: ' + accent + ' !important;\n'
+            + '                    }\n'
+            + '                    yt-chip-cloud-chip-renderer[selected] {\n'
+            + '                        background-color: ' + accent + ' !important;\n'
+            + '                    }\n'
+            + '                    ytd-toggle-button-renderer.style-default-active[is-icon-button] yt-icon {\n'
+            + '                        color: ' + accent + ' !important;\n'
+            + '                    }\n                ';
+    }
+
     // grayscaleThumbnails: pure constant — no parameters. Returned as a
     // function for symmetry with the other builders so the test surface
     // can call them uniformly.
@@ -66,14 +100,18 @@
     features.themeCss = Object.freeze({
         buildProgressBarCss,
         buildSelectionColorCss,
-        buildGrayscaleThumbnailsCss
+        buildGrayscaleThumbnailsCss,
+        buildForceDarkEverywhereCss,
+        buildAccentColorCss
     });
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             buildProgressBarCss,
             buildSelectionColorCss,
-            buildGrayscaleThumbnailsCss
+            buildGrayscaleThumbnailsCss,
+            buildForceDarkEverywhereCss,
+            buildAccentColorCss
         };
     }
 })();

@@ -6,6 +6,45 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.21.0] - 2026-05-21 - v5.0.0 foundation #16: theme-css extends (+forceDarkEverywhere, +themeAccentColor)
+
+Two more bulk peels into the existing `extension/features/theme-css/`
+module, bringing the theme-css consumer count to five.
+
+### Added
+
+- `extension/features/theme-css/index.js` — two more pure CSS
+  builders: `buildForceDarkEverywhereCss()` (parameter-less; emits
+  the four rule blocks that drag YouTube's non-standard pages into
+  dark surface tokens) and `buildAccentColorCss(settings)` (returns
+  `null` for malformed hex, CSS for valid `#RGB` / `#RRGGBB` /
+  `#RGBA` / `#RRGGBBAA`). Both attach to
+  `globalThis.YTKitFeatures.themeCss`. The userscript bundle picks
+  them up automatically on next `node sync-userscript.js`.
+- `tests/hardening.test.js` — 5 new regressions: exports of the two
+  new builders, force-dark four-block rule coverage, accent-color
+  hex validation across all four valid hex variants + null on
+  malformed input, monolith fallback parity contracts for both
+  delegating consumers, and a defensive cross-file regex check.
+
+### Changed
+
+- `extension/ytkit.js` — `forceDarkEverywhere` and `themeAccentColor`
+  feature blocks now delegate CSS construction to
+  `globalThis.YTKitFeatures.themeCss.*`. Inline byte-identical
+  fallbacks remain for the userscript path; tests pin each parity
+  contract.
+
+### Why
+
+Continued monolith peel cadence. Both features are pure CSS with
+no SPA coupling, no async, and tiny code surfaces — the cost of
+keeping them in the monolith is higher than the cost of the
+delegating consumer wrapper. The accent-color hex validation regex
+now also has a hardening test pinning it across both the module
+and the inline fallback so a future hand-edit can't silently allow
+a malformed hex string.
+
 ## [4.20.0] - 2026-05-21 - v5.0.0 foundation #15: userscript bundle of core modules
 
 Closes a major v5.0.0 gap: the YTKit.user.js userscript no longer
