@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         YTKit v4.21.0
+// @name         YTKit v4.22.0
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.21.0
+// @version      4.22.0
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
@@ -54,7 +54,7 @@
         });
     }
 
-                // ── BEGIN v5.0.0 bundled core modules ──
+                    // ── BEGIN v5.0.0 bundled core modules ──
     // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:
     //     node sync-userscript.js
     //
@@ -2134,6 +2134,29 @@
                 + '                    }\n                ';
         }
 
+        // compactUnfixedHeader: parameter-less rules that shrink the
+        // masthead and let it scroll away. v4.22.0 peel.
+        function buildCompactUnfixedHeaderCss() {
+            return '\n                    ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }\n'
+                + '                    ytd-masthead #container.ytd-masthead { height: 40px !important; }\n'
+                + '                    ytd-masthead #logo { height: 16px !important; }\n'
+                + '                    ytd-masthead #search-form, ytd-masthead #search-input { height: 32px !important; }\n'
+                + '                    ytd-page-manager { margin-top: 0 !important; }\n'
+                + '                    html[dark] #cinematics { top: 40px !important; }\n                ';
+        }
+
+        // hideVideoEndContent: parameter-less rules that suppress every
+        // YouTube end-screen / end-card surface plus the fullscreen video
+        // grid that shows after a video ends. v4.22.0 peel.
+        function buildHideVideoEndContentCss() {
+            return '\n                    .ytp-ce-element, .ytp-ce-covering-overlay, .ytp-ce-element-shadow,\n'
+                + '                    .ytp-ce-covering-image, .ytp-ce-expanding-image,\n'
+                + '                    .ytp-ce-element.ytp-ce-video, .ytp-ce-element.ytp-ce-channel,\n'
+                + '                    .ytp-ce-element.ytp-ce-playlist,\n'
+                + '                    .ytp-endscreen-content,\n'
+                + '                    div.ytp-fullscreen-grid-stills-container { display: none !important; }\n                ';
+        }
+
         // grayscaleThumbnails: pure constant — no parameters. Returned as a
         // function for symmetry with the other builders so the test surface
         // can call them uniformly.
@@ -2159,7 +2182,9 @@
             buildSelectionColorCss,
             buildGrayscaleThumbnailsCss,
             buildForceDarkEverywhereCss,
-            buildAccentColorCss
+            buildAccentColorCss,
+            buildCompactUnfixedHeaderCss,
+            buildHideVideoEndContentCss
         });
 
         if (typeof module !== 'undefined' && module.exports) {
@@ -2168,7 +2193,9 @@
                 buildSelectionColorCss,
                 buildGrayscaleThumbnailsCss,
                 buildForceDarkEverywhereCss,
-                buildAccentColorCss
+                buildAccentColorCss,
+                buildCompactUnfixedHeaderCss,
+                buildHideVideoEndContentCss
             };
         }
     })();
@@ -2297,7 +2324,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.21.0';
+    const YTKIT_VERSION = '4.22.0';
 
     // ── Z-Index Hierarchy ──
     const Z = {

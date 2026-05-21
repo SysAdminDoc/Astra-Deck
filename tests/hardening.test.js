@@ -4790,3 +4790,65 @@ test('v4.21.0 the ACCENT_HEX_RE in features/theme-css matches the inline ytkit.j
     assert.ok(re.test(themeCss), 'features/theme-css/index.js must declare the hex regex');
     assert.ok(re.test(ytkit),    'ytkit.js inline fallback must declare the same hex regex');
 });
+
+// ── v4.22.0 NX1: theme-css compactUnfixedHeader + hideVideoEndContent peels ──
+
+test('v4.22.0 features/theme-css exports the two new builders', () => {
+    delete require.cache[require.resolve('../extension/features/theme-css/index.js')];
+    const mod = require('../extension/features/theme-css/index.js');
+    assert.equal(typeof mod.buildCompactUnfixedHeaderCss, 'function');
+    assert.equal(typeof mod.buildHideVideoEndContentCss, 'function');
+});
+
+test('v4.22.0 buildCompactUnfixedHeaderCss shrinks the masthead surface', () => {
+    const { buildCompactUnfixedHeaderCss } = require('../extension/features/theme-css/index.js');
+    const css = buildCompactUnfixedHeaderCss();
+    assert.match(css, /ytd-masthead \{ position: absolute !important; height: 40px !important;/);
+    assert.match(css, /ytd-masthead #container\.ytd-masthead \{ height: 40px !important;/);
+    assert.match(css, /ytd-masthead #logo \{ height: 16px !important;/);
+    assert.match(css, /ytd-page-manager \{ margin-top: 0 !important;/);
+});
+
+test('v4.22.0 buildHideVideoEndContentCss covers every end-screen surface', () => {
+    const { buildHideVideoEndContentCss } = require('../extension/features/theme-css/index.js');
+    const css = buildHideVideoEndContentCss();
+    for (const sel of [
+        '.ytp-ce-element',
+        '.ytp-ce-covering-overlay',
+        '.ytp-ce-element-shadow',
+        '.ytp-ce-covering-image',
+        '.ytp-ce-expanding-image',
+        '.ytp-ce-element.ytp-ce-video',
+        '.ytp-endscreen-content',
+        'div.ytp-fullscreen-grid-stills-container'
+    ]) {
+        assert.ok(css.includes(sel), 'hideVideoEndContent rule must cover ' + sel);
+    }
+    assert.match(css, /display: none !important;/);
+});
+
+test('v4.22.0 ytkit.js delegates the two new theme-css consumers with byte-identical inline fallbacks', () => {
+    const src = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const markers = src.match(/v4\.22\.0: CSS construction delegated to features\/theme-css\//g) || [];
+    assert.equal(markers.length, 2,
+        'ytkit.js must document two v4.22.0 delegating consumers (was ' + markers.length + ')');
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildCompactUnfixedHeaderCss/);
+    assert.match(src, /MUST stay\s*\n\s*\/\/ byte-identical to features\/theme-css\/index\.js's\s*\n\s*\/\/ buildHideVideoEndContentCss/);
+});
+
+test('v4.22.0 theme-css now exposes seven CSS builders (peel count keeps climbing)', () => {
+    const mod = require('../extension/features/theme-css/index.js');
+    const builders = Object.keys(mod).filter((k) => typeof mod[k] === 'function');
+    builders.sort();
+    assert.deepEqual(builders, [
+        'buildAccentColorCss',
+        'buildCompactUnfixedHeaderCss',
+        'buildForceDarkEverywhereCss',
+        'buildGrayscaleThumbnailsCss',
+        'buildHideVideoEndContentCss',
+        'buildProgressBarCss',
+        'buildSelectionColorCss'
+    ], 'theme-css must export the seven v4.22.0 builders alphabetically');
+});

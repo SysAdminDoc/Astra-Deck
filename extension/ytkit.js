@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.21.0';
+    const YTKIT_VERSION = '4.22.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -13997,7 +13997,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'square-x',
             _styleElement: null,
             init() {
-                const css = `
+                // v4.22.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildHideVideoEndContentCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod();
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildHideVideoEndContentCss.
+                    css = `
                     .ytp-ce-element, .ytp-ce-covering-overlay, .ytp-ce-element-shadow,
                     .ytp-ce-covering-image, .ytp-ce-expanding-image,
                     .ytp-ce-element.ytp-ce-video, .ytp-ce-element.ytp-ce-channel,
@@ -14005,6 +14017,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytp-endscreen-content,
                     div.ytp-fullscreen-grid-stills-container { display: none !important; }
                 `;
+                }
                 this._styleElement = injectStyle(css, this.id, true);
             },
             destroy() { this._styleElement?.remove(); this._styleElement = null; }
@@ -18217,7 +18230,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleEl: null,
 
             init() {
-                const css = `
+                // v4.22.0: CSS construction delegated to features/theme-css/.
+                const mod = (typeof globalThis !== 'undefined'
+                    && globalThis.YTKitFeatures
+                    && globalThis.YTKitFeatures.themeCss
+                    && globalThis.YTKitFeatures.themeCss.buildCompactUnfixedHeaderCss);
+                let css;
+                if (typeof mod === 'function') {
+                    css = mod();
+                } else {
+                    // Userscript / module-unavailable fallback. MUST stay
+                    // byte-identical to features/theme-css/index.js's
+                    // buildCompactUnfixedHeaderCss.
+                    css = `
                     ytd-masthead { position: absolute !important; height: 40px !important; min-height: 40px !important; }
                     ytd-masthead #container.ytd-masthead { height: 40px !important; }
                     ytd-masthead #logo { height: 16px !important; }
@@ -18225,6 +18250,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     ytd-page-manager { margin-top: 0 !important; }
                     html[dark] #cinematics { top: 40px !important; }
                 `;
+                }
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
