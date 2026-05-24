@@ -6,6 +6,78 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.46.0] - 2026-05-24 - extreme audit cut (H25): SW + popup + Python downloader hardening
+
+Deep audit pass across the three production-critical surfaces (service
+worker, toolbar popup, Astra Downloader companion). Three defensive
+gaps closed, four regression tests pinned, plus a developer-experience
+fix for the Python test suite.
+
+### Service worker (`extension/background.js`)
+
+- **Hydration bypass of `PENDING_REVEALS_CAP`** — `_pendingRevealsReady`
+  loaded the persisted "show in folder" id list from
+  `chrome.storage.session` straight into the in-memory `Set` with an
+  unbounded `for (const id of ids) _pendingReveals.add(id)`. The runtime
+  add path (`_addPendingReveal`) was already cap-enforced, but the
+  hydration path was a hole: a corrupted or oversized session-storage
+  payload (older release, partial-write race, manual edit) would
+  re-introduce the runaway memory growth the cap was added to defend
+  against. Hydration now `Math.max(0, ids.length - PENDING_REVEALS_CAP)`
+  slices from the tail and validates each entry is a `number` before
+  inserting.
+- **Silent fallthrough on unknown `msg.type`** — the
+  `chrome.runtime.onMessage` listener used to return implicitly when no
+  `if (msg.type === ...)` branch matched, leaving the caller's
+  `chrome.runtime.sendMessage` Promise to reject with the generic
+  *"The message port closed before a response was received."* An
+  in-extension typo (`EXT_FECTH` for `EXT_FETCH`) was hard to diagnose
+  in practice. The listener now responds explicitly with `{ error:
+  'Unknown message type: <type>' }`.
+
+### Toolbar popup (`extension/popup.js`)
+
+- **Firefox export anchor fallback** — when
+  `chrome.downloads.download` is unavailable, the export flow falls
+  back to an `<a download>` click. The anchor was previously created
+  via `Object.assign(document.createElement('a'), …)` and clicked
+  without being appended to the DOM — historically a no-op on Firefox.
+  In production the fallback is unreachable (the manifest declares the
+  `downloads` permission so `chrome.downloads.download` is always
+  available), but defensive coding mandates the fallback work on both
+  engines. Anchor is now `document.body.appendChild`-ed, clicked, and
+  `.remove()`-d in a `try / finally` so the DOM stays clean.
+
+### Python test suite (`pytest.ini`)
+
+- **`asyncio_default_fixture_loop_scope` deprecation** — pytest-asyncio
+  ≥0.23 warns on every test run that the value is unset; the upcoming
+  1.0 release will change the default. Pinned the value to `function`
+  (the future default) so every `python -m pytest astra_downloader`
+  invocation now runs cleanly without the warning preamble.
+
+### Verification
+
+- **`npm test`** → **519 / 519 passing** (+4 new regression tests in
+  `tests/hardening.test.js` covering the three SW/popup fixes and the
+  pytest.ini pin).
+- **`npm run check`** → lint + a11y audit + WCAG-AA contrast + i18n +
+  version + syntax — all green.
+- **`python -m pytest astra_downloader -q`** → **82 / 82 passing**, no
+  deprecation warnings.
+- **`node build-extension.js --bump minor`** → all four artifacts
+  (Chrome ZIP/CRX, Firefox ZIP/XPI) produced.
+
+### Files audited but not changed
+
+Read deeply during this pass and found no actionable issues at the
+current quality bar: `extension/core/trusted-html.js` (TT policy is
+correctly scoped), `extension/core/storage-manager.js` (debounce +
+echo dedupe invariants hold), `extension/core/predicate-sandbox.js`
+(AST evaluator already rejects every JS-unsafe pattern),
+`astra_downloader/astra_downloader.py` cookie/path/URL normalisers
+(consistent input validation across the bridge boundary).
+
 ## [4.45.0] - 2026-05-24 - premium UX polish: rectangular toggles + typography rhythm
 
 Aggressive premium-polish pass on the two primary user surfaces (the
