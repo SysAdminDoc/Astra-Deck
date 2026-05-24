@@ -2163,8 +2163,18 @@ async function exportSettings() {
                 });
             });
         } else {
-            const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-            a.click();
+            // Firefox historically requires the anchor to be in the document
+            // before .click() will trigger the download dialog. Chrome accepts
+            // a detached anchor. Append + remove keeps the DOM clean and works
+            // on both engines. The popup may unload immediately after; the
+            // synchronous removeChild + click pair runs before any GC.
+            const a = Object.assign(document.createElement('a'), { href: url, download: filename, rel: 'noopener' });
+            document.body.appendChild(a);
+            try {
+                a.click();
+            } finally {
+                a.remove();
+            }
         }
         setTimeout(() => URL.revokeObjectURL(url), 60000);
         showStatus(t('statusBackupExported', 'Backup exported.'), 'success');

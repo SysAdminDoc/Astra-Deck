@@ -1,7 +1,97 @@
-# Astra Deck — Hardening Audit (v3.14.0 → v3.23.0)
+# Astra Deck — Hardening Audit (v3.14.0 → v4.46.0)
 
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
-> H20 onward covers v3.23.0 (Pass 19).
+> H20 onward covers v3.23.0 (Pass 19). H25 covers v4.46.0 (extreme audit pass).
+
+## H25 — Extreme audit cut (v4.46.0)
+
+**Scope.** Deep audit of the three production-critical surfaces — the
+extension service worker, the toolbar popup, and the Python Astra
+Downloader companion — for hidden failure modes that an aggressive
+senior-engineer review would flag before approval. Three real defensive
+gaps closed; deep reads of four core modules turned up no actionable
+issues at the current quality bar.
+
+**Issues fixed.**
+
+- **SW reveal-set cap bypass on hydration.** The in-memory
+  `_pendingReveals` Set is cap-enforced at runtime via `_addPendingReveal`
+  (defends against runaway growth if a flood of "show in folder"
+  downloads stalls in a non-terminal state). The `_pendingRevealsReady`
+  IIFE that hydrates from `chrome.storage.session` on SW cold-start was
+  NOT cap-enforced — it iterated the persisted id list and called
+  `.add(id)` directly. A corrupted / pre-cap-era / partial-write
+  session-storage payload would re-introduce the runaway-growth class
+  of bug the cap was added to prevent. Hydration now slices from the
+  tail (`Math.max(0, ids.length - PENDING_REVEALS_CAP)`) and validates
+  each entry is `typeof === 'number'`.
+- **SW silent fallthrough on unknown message types.** The
+  `chrome.runtime.onMessage` listener returned implicitly when none of
+  the typed branches matched, leaving the caller's `sendMessage`
+  Promise to reject with the unhelpful *"The message port closed
+  before a response was received."* An in-extension typo
+  (`EXT_FECTH` vs `EXT_FETCH`) was therefore much harder to diagnose
+  than it should be. Listener now responds explicitly with
+  `{ error: 'Unknown message type: <type>' }`.
+- **Popup export anchor fallback Firefox safety.** The
+  `chrome.downloads.download` path is always taken in production (the
+  `downloads` permission is in the manifest), so the legacy anchor
+  fallback only runs in degraded environments. Even so, the anchor was
+  created via `Object.assign(document.createElement('a'), …)` and
+  `.click()`-ed without being appended to the DOM — historically a
+  no-op on Firefox. Anchor is now appended to `document.body`,
+  clicked, and `.remove()`-d in a `try / finally` so the DOM stays
+  clean.
+- **Python test suite deprecation noise.** Every
+  `python -m pytest astra_downloader` run printed a
+  `PytestDeprecationWarning` about an unset
+  `asyncio_default_fixture_loop_scope`. Pinned the value to `function`
+  (the upcoming pytest-asyncio 1.0 default) in `pytest.ini` so the
+  suite output is clean.
+
+**Regression pins.** Four new `tests/hardening.test.js` blocks under
+the `v4.46.0` banner:
+
+- *background.js hydration respects PENDING_REVEALS_CAP* — asserts the
+  `Math.max(0, ids.length - PENDING_REVEALS_CAP)` clamp + the
+  `typeof ids[i] === 'number'` validation are both present in the
+  hydration IIFE.
+- *background.js returns an explicit error for unknown message types* —
+  asserts the `Unknown message type:` string is present and the
+  fallthrough returns `false` (no async work left).
+- *popup.js export anchor fallback is attached to the document* —
+  asserts the fallback path appends to `document.body` and removes
+  after click.
+- *pytest.ini pins asyncio_default_fixture_loop_scope* — asserts the
+  ini file carries `asyncio_default_fixture_loop_scope = function`.
+
+**Files audited but not changed.** Read deeply during this pass with
+no actionable issues found at the current quality bar:
+
+- `extension/core/trusted-html.js` — TrustedTypes policy is correctly
+  name-scoped + falls back gracefully when `trustedTypes.createPolicy`
+  throws (collision with another policy on the same page).
+- `extension/core/storage-manager.js` — debounce + dirty-set + echo
+  dedupe invariants hold under all observable interleavings of
+  `set` / `_flush` / `beforeunload`.
+- `extension/core/predicate-sandbox.js` — Option-C AST evaluator that
+  explicitly rejects `eval`, `Function`, `with`, and arbitrary method
+  calls. The allowlist (`includes` / `startsWith` / `endsWith` /
+  `match` / `test`) and ReDoS guard cover the documented surface.
+- `astra_downloader/astra_downloader.py` cookie/path/URL normalisers —
+  `normalize_url` rejects non-http(s) and whitespace-bearing URLs;
+  `normalize_output_dir` resolves + confines under `allowed_roots`
+  before `mkdir`; `_sanitize_cookie_field` strips control + tab + CR +
+  LF before emitting Netscape format; `ps_single_quote` correctly
+  escapes the only PowerShell single-quote literal escape sequence.
+
+**Verified for v4.46.0.** `npm test` (519/519, +4 new), `npm run check`
+(lint + a11y + WCAG-AA contrast + i18n + version + syntax all green),
+`python -m pytest astra_downloader` (82/82, no warnings),
+`npm audit --omit=dev` (0 vulns), and the four-artifact build path
+(Chrome ZIP/CRX, Firefox ZIP/XPI).
+
+---
 
 ## H24 — Extreme audit hardening cut (v4.5.2)
 
