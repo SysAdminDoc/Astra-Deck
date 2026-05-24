@@ -6392,3 +6392,76 @@ test('v4.37.0 SurfaceSelectorMap surface count matches the pack file count exact
     assert.equal(actualSurfaceCount, expectedSurfaceCount,
         `SurfaceSelectorMap should have ${expectedSurfaceCount} surfaces (got ${actualSurfaceCount})`);
 });
+
+// ── v4.46.0 — extreme audit pass ──
+
+test('v4.46.0 background.js hydration respects PENDING_REVEALS_CAP', () => {
+    // The `_pendingRevealsReady` IIFE that hydrates the in-memory Set from
+    // chrome.storage.session must NOT bypass the same cap that runtime
+    // adds (_addPendingReveal) enforce. Otherwise a corrupted/over-sized
+    // session-storage payload re-introduces the runaway memory growth the
+    // cap was added to defend against.
+    const start = backgroundSource.indexOf('_pendingRevealsReady');
+    assert.ok(start > -1, 'background.js must define _pendingRevealsReady');
+    const block = backgroundSource.slice(start, start + 1400);
+    // The fix takes ids.slice from the tail, bounded by PENDING_REVEALS_CAP.
+    assert.match(
+        block,
+        /Math\.max\(0,\s*ids\.length\s*-\s*PENDING_REVEALS_CAP\)/,
+        'hydration must clamp the imported id count via Math.max(0, ids.length - PENDING_REVEALS_CAP)'
+    );
+    assert.match(
+        block,
+        /typeof ids\[i\]\s*===\s*'number'/,
+        'hydration must also validate that each id is a number before adding'
+    );
+});
+
+test('v4.46.0 background.js returns an explicit error for unknown message types', () => {
+    // The chrome.runtime.onMessage listener used to fall through silently
+    // when msg.type didn't match any handler, causing the caller's
+    // sendMessage Promise to reject with the generic "The message port
+    // closed before a response was received." That made an in-extension
+    // typo (e.g. `EXT_FECTH` for `EXT_FETCH`) hard to diagnose. The
+    // listener now responds explicitly with { error: 'Unknown message
+    // type: <type>' } so the sender sees an actionable message.
+    assert.match(
+        backgroundSource,
+        /Unknown message type:/,
+        'background.js must produce an explicit "Unknown message type" error response'
+    );
+    // The fallthrough sits AFTER every typed handler and returns false
+    // (no async work left).
+    const lastEnd = backgroundSource.lastIndexOf('Unknown message type:');
+    const tail = backgroundSource.slice(lastEnd);
+    assert.match(tail, /return false;/,
+        'unknown-type fallthrough must return false from the listener (no async work pending)');
+});
+
+test('v4.46.0 popup.js export anchor fallback is attached to the document', () => {
+    // The chrome.downloads.download path is preferred (and is the only
+    // path actually taken in production builds because the "downloads"
+    // permission is always declared). The legacy anchor fallback only
+    // runs when chrome.downloads is unavailable — historically a problem
+    // on Firefox unless the anchor is appended to document.body first.
+    // Defensive coding: keep the fallback Firefox-safe.
+    const start = popupSource.indexOf('Firefox historically requires the anchor');
+    assert.ok(start > -1, 'popup.js must comment the Firefox anchor requirement');
+    const block = popupSource.slice(start, start + 800);
+    assert.match(block, /document\.body\.appendChild\(a\)/,
+        'export anchor fallback must be appended to document.body before .click()');
+    assert.match(block, /a\.remove\(\)/,
+        'export anchor must be removed after click to keep the DOM clean');
+});
+
+test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
+    // pytest-asyncio 0.23+ deprecates the unset default. Setting it
+    // explicitly to "function" matches the upcoming 1.0 default and
+    // silences the PytestDeprecationWarning that otherwise pollutes
+    // every test run.
+    const ini = fs.readFileSync(
+        path.join(__dirname, '..', 'pytest.ini'), 'utf8'
+    );
+    assert.match(ini, /asyncio_default_fixture_loop_scope\s*=\s*function/,
+        'pytest.ini must set asyncio_default_fixture_loop_scope = function');
+});

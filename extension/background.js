@@ -52,7 +52,16 @@ const _pendingRevealsReady = (async () => {
         const stored = await chrome.storage.session.get(_PENDING_REVEALS_KEY);
         const ids = stored?.[_PENDING_REVEALS_KEY];
         if (Array.isArray(ids)) {
-            for (const id of ids) _pendingReveals.add(id);
+            // Respect the same cap on hydration that _addPendingReveal enforces
+            // for runtime adds. If the persisted set was somehow > cap (older
+            // version, manual edit, partial-write race), an unbounded
+            // `_pendingReveals.add(id)` loop would re-introduce the runaway
+            // memory growth defended against at runtime. Take the most recent
+            // ids (Set preserves insertion order, so slice from the tail).
+            const start = Math.max(0, ids.length - PENDING_REVEALS_CAP);
+            for (let i = start; i < ids.length; i++) {
+                if (typeof ids[i] === 'number') _pendingReveals.add(ids[i]);
+            }
         }
     } catch (_) {
         // reason: chrome.storage.session is MV3+ (Chrome 102, Firefox 115);
@@ -671,4 +680,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         });
         return true;
     }
+
+    // Unknown message type — respond explicitly so the caller sees an
+    // actionable error instead of the generic Chrome "The message port closed
+    // before a response was received." Without this fallthrough an in-extension
+    // typo (e.g. `msg.type = 'EXT_FECTH'`) silently times out the sender's
+    // promise after the runtime's idle threshold, which is hard to debug.
+    try {
+        sendResponse({ error: `Unknown message type: ${msg.type}` });
+    } catch (_) {
+        // reason: sender may have disconnected before response is delivered
+    }
+    return false;
 });
