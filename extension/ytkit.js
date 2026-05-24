@@ -641,7 +641,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.44.0';
+    const YTKIT_VERSION = '4.45.0';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -35828,7 +35828,7 @@ body.ytkit-panel-open {
 
 #ytkit-settings-panel ::-webkit-scrollbar { width: 6px; height: 6px; }
 #ytkit-settings-panel ::-webkit-scrollbar-track { background: transparent; }
-#ytkit-settings-panel ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+#ytkit-settings-panel ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
 #ytkit-settings-panel ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.24); }
 
 #ytkit-settings-panel {
@@ -36780,13 +36780,17 @@ body.ytkit-panel-open #ytkit-settings-panel {
     z-index: 1;
 }
 
+/* House style: rectangular toggle (6 px). The previous 10 px radius on
+   a 20 px tall track read as a stadium pill at base size and even more
+   pronounced at the 22-24 px tablet/desktop breakpoints below. Thumb
+   stays a true circle — explicitly allowed by the no-pill rule. */
 .ytkit-switch-track {
     position: absolute;
     inset: 0;
     background: rgba(255,255,255,0.08);
     border-color: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
+    border-radius: 6px;
     transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
