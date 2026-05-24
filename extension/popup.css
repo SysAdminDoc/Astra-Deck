@@ -53,13 +53,17 @@
   --error-soft: rgba(255, 116, 128, 0.1);
   --error-border: rgba(255, 116, 128, 0.26);
 
-  /* ── Radii ── */
+  /* ── Radii ──
+     House style: 0/4/6/8/10/12 only. No stadium/pill backdrops.
+     --radius-chip is for small inline chips/badges (replaces the
+     misleading --radius-pill token from earlier releases). */
   --radius-xs: 8px;
   --radius-sm: 10px;
   --radius-md: 12px;
   --radius-lg: 12px;
   --radius-xl: 12px;
-  --radius-pill: 10px;
+  --radius-chip: 6px;
+  --radius-tight: 4px;
 
   /* ── Elevation ── */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.28);
@@ -179,7 +183,7 @@ body {
   color: var(--text-muted);
   letter-spacing: 0.04em;
   padding: 2px 7px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   background: var(--surface-raised);
   border: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
@@ -195,7 +199,7 @@ body {
   gap: 6px;
   min-height: 26px;
   padding: 0 10px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border);
   background: var(--surface-raised);
   color: var(--text-secondary);
@@ -294,7 +298,7 @@ body {
   color: var(--text-primary);
   font-size: 16px;
   line-height: 1.15;
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0;
 }
 
@@ -316,21 +320,22 @@ body {
 
 .stat-card {
   min-width: 0;
-  padding: 8px 8px;
+  padding: 10px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)),
     rgba(12, 16, 24, 0.72);
   transition: border-color var(--dur-quick) var(--ease-out),
-              background-color var(--dur-quick) var(--ease-out);
+              background-color var(--dur-quick) var(--ease-out),
+              transform var(--dur-quick) var(--ease-out);
   text-align: center;
 }
 
 .stat-card:hover {
   border-color: var(--border-hover);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
     rgba(14, 19, 28, 0.8);
 }
 
@@ -338,7 +343,7 @@ body {
   display: block;
   color: var(--text-primary);
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 800;
   line-height: 1;
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
@@ -349,11 +354,11 @@ body {
 
 .stat-card-label {
   display: block;
-  margin-top: 5px;
+  margin-top: 6px;
   color: var(--text-subtle);
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1;
 }
@@ -1338,16 +1343,15 @@ button:focus-visible {
   -webkit-appearance: none;
   height: 32px;
   padding: 0 28px 0 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border-subtle);
   background-color: rgba(8, 11, 16, 0.74);
-  background-image:
-    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.62) 50%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.62) 50%, transparent 50%);
-  background-position:
-    calc(100% - 12px) 50%,
-    calc(100% - 8px) 50%;
-  background-size: 5px 5px, 5px 5px;
+  /* Crisp inline-SVG chevron — renders sharp at any DPI, unlike the
+     two diagonal gradients used previously which softened on hi-DPI
+     popups. Stroke color matches --text-muted at ~75% opacity. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238f9bb0' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-position: right 10px center;
+  background-size: 10px 10px;
   background-repeat: no-repeat;
   color: var(--text-primary);
   font-size: var(--fs-xs);
@@ -1360,21 +1364,19 @@ button:focus-visible {
   white-space: nowrap;
   overflow: hidden;
   transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
+    border-color var(--dur-quick) var(--ease-out),
+    box-shadow var(--dur-quick) var(--ease-out),
+    background-color var(--dur-quick) var(--ease-out);
 }
 
 #languageSelect:hover {
-  border-color: rgba(255, 107, 74, 0.32);
+  border-color: var(--accent-border);
   background-color: rgba(12, 16, 22, 0.84);
 }
 
 #languageSelect:focus-visible {
-  border-color: rgba(255, 107, 74, 0.5);
-  box-shadow:
-    0 0 0 3px rgba(255, 107, 74, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
 }
 
 #languageSelect option {
@@ -1430,7 +1432,7 @@ button:focus-visible {
 
 .section-title strong {
   color: var(--text-primary);
-  font-weight: 850;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1493,7 +1495,7 @@ button:focus-visible {
   height: 22px;
   min-height: 22px;
   padding: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   border: 0;
   background: transparent;
   color: var(--text-muted);
@@ -1502,6 +1504,9 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   font-size: 14px;
+  transition:
+    background-color var(--dur-quick) var(--ease-out),
+    color var(--dur-quick) var(--ease-out);
 }
 
 .clear-search:hover {
@@ -1525,11 +1530,11 @@ button:focus-visible {
   scrollbar-gutter: stable;
 }
 
-.toggles::-webkit-scrollbar { width: 5px; }
+.toggles::-webkit-scrollbar { width: 6px; }
 .toggles::-webkit-scrollbar-track { background: transparent; }
 .toggles::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-pill);
+  border-radius: 3px;
 }
 .toggles::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
 
@@ -1591,7 +1596,7 @@ button:focus-visible {
   font-variant-numeric: tabular-nums;
   line-height: 1;
   padding: 3px 6px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-tight);
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   transition: color var(--dur-calm) var(--ease-out),
@@ -1736,7 +1741,7 @@ button:focus-visible {
 
 .toggle .desc {
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -1756,12 +1761,16 @@ button:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
-/* ── Switch ── */
+/* ── Switch ──
+   House style: rectangular toggle (6 px radius). The previous 10 px
+   radius on a 20 px tall track resolved to a stadium-pill shape; this
+   keeps the toggle deliberate-rounded-square instead. The thumb stays
+   a true circle — the no-pill rule explicitly allows that. */
 
 .switch {
   width: 34px;
   height: 20px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.08)),
     rgba(0, 0, 0, 0.35);
@@ -1783,10 +1792,10 @@ button:focus-visible {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #e2e7ef, #b4bac7);
+  background: linear-gradient(180deg, #f4f6fb, #c6ccd8);
   box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
   transition:
     transform var(--dur-calm) var(--ease-spring),
     background var(--dur-calm) var(--ease-out);
@@ -1817,7 +1826,7 @@ button:focus-visible {
   content: "";
   width: 34px;
   height: 20px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -1828,7 +1837,7 @@ button:focus-visible {
 
 .skeleton-line {
   height: 9px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-tight);
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.03),
@@ -1967,7 +1976,7 @@ button:focus-visible {
   margin-bottom: 8px;
   color: #ffb59f;
   font-size: var(--fs-micro);
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1;
@@ -1996,7 +2005,7 @@ button:focus-visible {
   color: var(--text-primary);
   font-size: 15px;
   line-height: 1.2;
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0;
 }
 
