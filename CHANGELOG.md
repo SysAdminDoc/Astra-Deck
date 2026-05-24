@@ -6,6 +6,69 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.45.0] - 2026-05-24 - premium UX polish: rectangular toggles + typography rhythm
+
+Aggressive premium-polish pass on the two primary user surfaces (the
+toolbar popup and the in-page settings panel) — no feature changes,
+no behaviour changes, just a tighter, more intentional finish.
+
+### Pill-backdrop hard-rule sweep
+
+The house style allows backdrop radii of `0/4/6/8/10/12` only. Earlier
+releases left a handful of borderline stadium/pill shapes (radius ≥ ½
+of element height) that read as "default AI styling" instead of
+deliberate design. This pass replaces every one with a rectangular
+small-radius equivalent — thumbs, dots, and avatars stay circular as
+the rule allows.
+
+- **`.switch` toolbar toggle** — 20 px tall track, was `border-radius:
+  10px` (exact stadium-pill ratio); now `6 px` rectangular. Thumb stays
+  a true circle.
+- **`.ytkit-switch-track` in-page toggle** (visible on every feature
+  card in the settings panel — the single most-touched control in the
+  product) — same fix: `10 px` → `6 px`. Settings panel scrollbar thumb
+  follows down from `10 px` → `3 px`.
+- **Popup chips** — `.brand-version` (`10 px` → `6 px`), `.app-status`
+  (`10 px` → `8 px`), `.toggle-group-count` (`10 px` → `4 px`),
+  `.clear-search` (`10 px` → `6 px`), `.toggle-skeleton::after`,
+  `.skeleton-line` all updated.
+- **Tokens** — retired the misleading `--radius-pill: 10px` token. The
+  new explicit scale is `--radius-tight: 4px`, `--radius-chip: 6px`,
+  `--radius-xs: 8px`, `--radius-sm: 10px`, `--radius-md/lg/xl: 12px`.
+  Future surfaces grab a value with intent, not "the round one".
+
+### Typography rhythm
+
+- **Font weights** normalised to standard CSS values. The `850`
+  weight (Aptos Variable resolves it to `~825`, every other font
+  rounds to `800`) is replaced with explicit `800` across the popup
+  for a stable cross-browser render.
+- **Stat-card labels** bumped from `9 px` to `9.5 px` with `0.1 em`
+  letter-spacing for better tabular legibility; padding nudged from
+  `8 8` → `10 8` so the value/label pair has more breathing room.
+- **Quick-toggle description** `10.5 px` → `11 px` — easier to scan
+  the secondary line without crowding the title row.
+
+### Language select chevron
+
+The `<select>` dropdown indicator was two diagonal CSS gradients
+combined into a triangle — sharp at 100 % zoom, fuzzy everywhere
+else. Replaced with an inline-SVG chevron data URI so it stays crisp
+at any DPI, plus a switch to the shared `--accent-border` +
+`--focus-ring` tokens so its hover/focus state matches the rest of
+the popup (was hand-rolled rgba values).
+
+### Verification
+
+- `npm test` → **515 / 515 passing** (no regressions in the existing
+  hardening pill-rule tests at `tests/hardening.test.js:2480` and
+  `:3971`).
+- `npm run check` → lint + a11y audit + WCAG-AA contrast audit + i18n
+  all green. Contrast ratios on the touched colours: primary text
+  18.4 : 1, banner text 8 : 1+ — well above target.
+- `node build-extension.js --bump minor` → all four artifacts (Chrome
+  ZIP/CRX, Firefox ZIP/XPI) produced.
+
 ## [4.44.0] - 2026-05-21 - v5.1.0 carry-forward arc closed (documentation tag)
 
 No code changes from v4.43.0 — version bump + documentation tag
