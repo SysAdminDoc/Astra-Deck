@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **`CONFLICT_MAP` now flags `forceH264 ↔ codecSelector`.** Closes the silent-
+  override bug in `_syncMainWorldCodec` (`ytkit.js:1143-1146`) where the user
+  could set `codecSelector = 'av1'` while `forceH264` was also on and silently
+  get H.264 with no UI feedback. Now the popup toast surfaces the conflict
+  and auto-disables one of the pair. New hardening test
+  `v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs` pins
+  the full map shape AND pins the cooperative-pair comment block (focusedMode,
+  autoPauseOnSwitch + pauseOtherTabs, popOutPlayer + pipButton +
+  fullscreenOnDoubleClick, hideEndCards parent/sub of hideVideoEndContent) so
+  a future audit doesn't mechanically re-add pairs whose mutual exclusion has
+  been intentionally engineered away. CLAUDE.md §Architecture Notes synced
+  to match the actual code (was claiming 6 conflict pairs that the in-code
+  comments explicitly named as cooperative). 521/521 tests pass (+1).
+
 - **`npm run check` now runs `npm audit --omit=dev --audit-level=moderate`**
   via a new `audit:deps` script. Closes the G4 finding from
   RESEARCH_FEATURE_PLAN — vulnerability advisories were spot-checked per

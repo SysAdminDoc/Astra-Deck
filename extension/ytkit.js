@@ -4964,18 +4964,38 @@ return response;
         };
 
     // ─── Conflict Detection Map ───
+    // INVARIANT: this map enumerates only pairs that are *mutually exclusive*
+    // in the underlying mechanism. Pairs that look like conflicts but were
+    // decoupled to cooperate are listed in the comments below so future
+    // audits don't accidentally re-add them. The shape is pinned by
+    // `v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs`
+    // in tests/hardening.test.js.
     const CONFLICT_MAP = {
         hideRelatedVideos: { conflicts: [], note: 'expandVideoWidth depends on this' },
         hideSidebar: { conflicts: ['hiddenChatElementsManager'], reason: 'Sidebar hidden removes chat access' },
         removeAllShorts: { conflicts: ['redirectShorts'], reason: 'Removed shorts cannot be redirected' },
         persistentSpeed: { conflicts: ['perChannelSpeed'], reason: 'Global speed overrides per-channel speed' },
         perChannelSpeed: { conflicts: ['persistentSpeed'], reason: 'Per-channel speed overrides global speed' },
-        // focusedMode now hides only related videos, not all of #secondary — cooperates with transcriptViewer/timestampBookmarks/stickyVideo
-        // forceH264 and codecSelector share MAIN world canPlayType bridge via _syncMainWorldCodec()
-        // autoPauseOnSwitch and pauseOtherTabs now tag pause reasons — cooperate cleanly
-        // popOutPlayer sets __ytkit_videoPopped flag — pipButton/fullscreenOnDoubleClick check it
+        // forceH264 silently overrides codecSelector via _syncMainWorldCodec() —
+        // user sets codecSelector=AV1 but gets H.264 with no UI feedback. Declared
+        // as a hard conflict so the popup toast surfaces the silent override.
+        forceH264: { conflicts: ['codecSelector'], reason: 'forceH264 silently overrides codecSelector — disabled for predictability' },
+        codecSelector: { conflicts: ['forceH264'], reason: 'codecSelector and forceH264 fight for the MAIN-world canPlayType bridge' },
         fitPlayerToWindow: { conflicts: ['stickyVideo'], reason: 'Both control player positioning on watch pages' },
         stickyVideo: { conflicts: ['fitPlayerToWindow'], reason: 'Both control player positioning on watch pages' },
+        // The following pairs LOOK like conflicts but were intentionally
+        // decoupled and now cooperate. Do not re-add to the map without
+        // also undoing the mechanism that made them safe:
+        //   • focusedMode now hides only related videos, not all of #secondary —
+        //     cooperates with transcriptViewer / timestampBookmarks / stickyVideo.
+        //   • autoPauseOnSwitch and pauseOtherTabs tag pause reasons — both can
+        //     fire on the same media element without competing.
+        //   • popOutPlayer sets __ytkit_videoPopped; pipButton and
+        //     fullscreenOnDoubleClick check it before activating.
+        //   • hideEndCards is a *sub-feature* of hideVideoEndContent (see
+        //     `{ isSubFeature: true, parentId: 'hideVideoEndContent' }` on the
+        //     hideEndCards definition) — redundant when the parent is on,
+        //     never conflicting.
     };
 
 
