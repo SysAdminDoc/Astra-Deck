@@ -43,12 +43,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Polish / parity (P1-P2 batch from 2026-05-25 audit)
 
-- **P1 / M — DeArrow channel-override chip + per-channel UI (NF28)**
-  - Why: data model shipped (`deArrowChannelOverrides`); lookup at `ytkit.js:26174`. UI was deferred per `CLAUDE.md:438` and never re-tracked.
-  - Touches: new `extension/features/de-arrow-overrides/index.js`, consumer in `ytkit.js#deArrow`.
-
-
-
 - **P2 / L — `stickyVideo` unify chat observer lifecycle (NF32)**
   - Why: `_chatWatcherObs` (`ytkit.js:9768`) and `_pendingChatObs` (`ytkit.js:9451`) are independent observers with separate stop timers — double-observer leak risk on rapid SPA nav.
   - Touches: `ytkit.js#stickyVideo` init + destroy.
@@ -153,19 +147,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 ---
 
 ### Polish and competitive parity
-
-- **P2 / S — Capability-probe popup integration (NF10 follow-up)**
-  - Why: the `extension/core/capability-probe.js` module shipped in v4.47.0
-    with full PROBES coverage + isEntryAvailable helper + hardening tests.
-    The popup row renderer should consume it at boot and render an
-    "Unavailable in this browser" chip on rows whose schema `requires:`
-    field declares an unavailable capability.
-  - Touches: `popup.js` schema-overview row builder; popup boot path
-    awaits `capabilityProbe.runAll()` once; popup.css adds an
-    `.unavailable-chip` rule using the existing risk-band palette.
-  - Acceptance: synthetic test sets `summarizerApi` false, asserts
-    `localAiSummary` row carries the chip; setting true clears it.
-
 
 - **P2 / M — First-run welcome card + profile picker + What's New (NF21)**
   - Touches: `popup.html`, `popup.js`, `extension/whatsnew/` (new dir).
