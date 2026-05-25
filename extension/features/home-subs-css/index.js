@@ -45,6 +45,20 @@
         return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
     }
 
+    // v4.47.0 NF5 wave 1: lifecycle specs for the six home-subs CSS-only
+    // feature ids this module owns. Register-only; inline ytkit.js
+    // cssFeature() blocks still own init/destroy. Categories sourced
+    // from settings-schema (verified via scripts/check-settings.js
+    // parity gate).
+    const LIFECYCLE_SPECS = Object.freeze([
+        { id: 'hideCreateButton',        category: 'nav'           },
+        { id: 'hideVoiceSearch',         category: 'nav'           },
+        { id: 'widenSearchBar',          category: 'shell'         },
+        { id: 'disablePlayOnHover',      category: 'shorts'        },
+        { id: 'fullWidthSubscriptions',  category: 'shell'         },
+        { id: 'hideSubscriptionOptions', category: 'watch-player'  },
+    ]);
+
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.homeSubsCss = Object.freeze({
         buildHideCreateButtonCss,
@@ -52,8 +66,29 @@
         buildWidenSearchBarCss,
         buildDisablePlayOnHoverCss,
         buildFullWidthSubscriptionsCss,
-        buildHideSubscriptionOptionsCss
+        buildHideSubscriptionOptionsCss,
+        LIFECYCLE_SPECS
     });
+
+    try {
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+            const lc = globalThis.YTKitCore.getLifecycle();
+            for (const spec of LIFECYCLE_SPECS) {
+                try {
+                    lc.defineFeature({
+                        id: spec.id,
+                        category: spec.category,
+                        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+                        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
+                    });
+                } catch (_) {
+                    // reason: duplicate id from a prior load — safe to skip
+                }
+            }
+        }
+    } catch (_) {
+        // reason: lifecycle unavailable in this context (e.g. test harness)
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
@@ -62,7 +97,8 @@
             buildWidenSearchBarCss,
             buildDisablePlayOnHoverCss,
             buildFullWidthSubscriptionsCss,
-            buildHideSubscriptionOptionsCss
+            buildHideSubscriptionOptionsCss,
+            LIFECYCLE_SPECS
         };
     }
 })();
