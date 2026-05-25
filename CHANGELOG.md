@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CONTRIBUTING.md — document the two manual dev scripts (NF13).**
+  Closes NF13 from RESEARCH_FEATURE_PLAN. The audit flagged
+  `scripts/_gen-schema.js` and `scripts/generate-locales.js` as
+  unreferenced by any `npm` script. After reading both, they are
+  intentional one-shot generators kept for on-demand re-runs, not dead
+  code — but a contributor reading the repo cold has no way to know
+  that. CONTRIBUTING.md now carries a "Dev Scripts (Manual, Not in
+  `npm run check`)" section that documents what each script does, how
+  to run it, and when to run it.
+
 - **extension/core/runtime-flags.js — typed accessors for the three
   internal coordination flags (NF12).** Closes NF12 from
   RESEARCH_FEATURE_PLAN. The flags `__ytkit_videoPopped` (popOutPlayer
