@@ -709,6 +709,25 @@ return response;
         return `icons/${fileName}`;
     }
 
+    // v4.47.0 NF23: bundled-asset URL helper. The nyan-cat theme used
+    // to load assets/cat.gif from a hardcoded GitHub raw URL, which
+    // was both a remote-content surface and a CSP escape hatch. The
+    // asset is already in-repo at extension/assets/cat.gif and
+    // web_accessible_resources covers it. Extension context resolves
+    // via chrome.runtime.getURL so the asset stays inside the
+    // extension origin; userscript context falls back to the GitHub
+    // raw URL (no other distribution channel reaches the asset there).
+    function getRepoAssetUrl(fileName) {
+        try {
+            if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
+                return chrome.runtime.getURL(`assets/${fileName}`);
+            }
+        } catch (_) {
+            // reason: userscript context lacks chrome.runtime; fall back below
+        }
+        return `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/assets/${fileName}`;
+    }
+
     const BRAND_ASSETS = Object.freeze({
         glyph: getBrandAssetUrl('32.png'),
         wordmarkDark: getBrandAssetUrl('brand-wordmark-dark.svg'),
@@ -5316,9 +5335,12 @@ return response;
     background: rgba(255,255,255,0.15) !important;
 }
 
-/* Nyan Cat scrubber */
+/* Nyan Cat scrubber — v4.47.0 NF23: bundled-asset URL resolves via
+   chrome.runtime.getURL in extension contexts so the asset stays on
+   the extension origin (no remote fetch); userscript context falls
+   back to the GitHub raw URL via getRepoAssetUrl. */
 .html5-scrubber-button, .ytp-scrubber-button {
-    background: url("https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/refs/heads/main/assets/cat.gif") no-repeat center / contain !important;
+    background: url("${getRepoAssetUrl('cat.gif')}") no-repeat center / contain !important;
     border: none !important;
 }
 

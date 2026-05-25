@@ -7103,6 +7103,101 @@ test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
         'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
 });
 
+test('v4.47.0 NF23 — nyan-cat theme asset resolves via getRepoAssetUrl, not a hardcoded GitHub raw URL', () => {
+    // The nyan-cat theme used to load assets/cat.gif from a hardcoded
+    // raw.githubusercontent.com URL inside its CSS. That was both a
+    // remote-content surface (no extension-origin guarantee) and a
+    // CSP escape hatch (the extension's manifest CSP can't blanket-
+    // forbid raw GitHub fetches without breaking other things). NF23
+    // routes the URL through the getRepoAssetUrl() helper which uses
+    // chrome.runtime.getURL in extension contexts.
+
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+
+    // The helper exists with the documented fallback chain.
+    assert.match(ytkitSrc, /function getRepoAssetUrl\(fileName\)/,
+        'ytkit.js must define getRepoAssetUrl helper');
+    assert.match(ytkitSrc, /chrome\.runtime\.getURL\(`assets\/\$\{fileName\}`\)/,
+        'getRepoAssetUrl must prefer chrome.runtime.getURL for extension context');
+
+    // The nyan-cat scrubber CSS interpolates the URL helper instead of
+    // hardcoding raw.githubusercontent.com. The _rawThemes block is the
+    // anchor; the 'nyan-cat' theme literal lives right after it.
+    const rawThemesIdx = ytkitSrc.indexOf('_rawThemes:');
+    assert.ok(rawThemesIdx > -1, '_rawThemes block must exist in ytkit.js');
+    const nyanSlice = ytkitSrc.slice(rawThemesIdx, rawThemesIdx + 3000);
+    assert.match(nyanSlice, /\$\{getRepoAssetUrl\('cat\.gif'\)\}/,
+        'nyan-cat scrubber CSS must interpolate getRepoAssetUrl, not hardcode the URL');
+    assert.doesNotMatch(nyanSlice, /raw\.githubusercontent\.com[^"]*cat\.gif/,
+        'nyan-cat scrubber CSS must not hardcode a raw.githubusercontent.com URL anymore');
+
+    // The asset is bundled inside the extension/ tree.
+    const bundledAsset = path.join(__dirname, '..', 'extension', 'assets', 'cat.gif');
+    assert.ok(fs.existsSync(bundledAsset),
+        'extension/assets/cat.gif must exist so chrome.runtime.getURL resolves');
+
+    // The manifest's web_accessible_resources covers assets/*.
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    const resources = manifest.web_accessible_resources
+        .flatMap((r) => r.resources || []);
+    assert.ok(resources.includes('assets/*'),
+        'manifest.json web_accessible_resources must include assets/*');
+});
+
+test('v4.47.0 R6 — policy-profile scrub regex catches the broader API-key shapes', () => {
+    // The previous scrub regex matched only the *suffix* `apiKey$` /
+    // `token$` plus the exact `aiSummaryApiKey`. R6 broadens coverage
+    // to catch `apikey_v2`, `bearerToken`, `webhookSecret`,
+    // `authToken`, etc. Pin the new shapes so a future refactor
+    // can't silently narrow the scrubber.
+    delete require.cache[require.resolve('../extension/core/policy-profile.js')];
+    const ppMod = require('../extension/core/policy-profile.js');
+    const profile = ppMod.createPolicyProfile({});
+
+    // Build a fake settings object that mixes secret-shaped keys
+    // with benign ones, then assert the export snapshot drops the
+    // sensitive keys and preserves the benign ones.
+    const fakeSettings = {
+        // Should be scrubbed:
+        apiKey: 'sk-xxxxx',
+        aiSummaryApiKey: 'sk-yyyyy',
+        sessionToken: 'tok-1',
+        apikey_v2: 'sk-zzz',
+        bearerToken: 'bear-1',
+        accessBearer: 'bear-2',
+        webhookSecret: 'whsec_1',
+        authToken: 'auth-1',
+        userAuth: 'auth-2',
+        // Should NOT be scrubbed (benign / unrelated):
+        aiSummaryProvider: 'openai',
+        autoMaxResolution: true,
+        videosPerRow: 0,
+        // Edge: a key with "apiKeyId" — under the old anchored regex
+        // this would also be scrubbed (matches apiKey$); we accept
+        // that here because storing an api-key-id is rare and erring
+        // on the side of scrubbing is safer.
+    };
+    const snap = profile.buildExportSnapshot(fakeSettings, { effective: 'github-full' });
+    const exported = Object.keys(snap.settings);
+
+    // Scrubbed keys must be absent.
+    for (const sensitive of ['apiKey', 'aiSummaryApiKey', 'sessionToken',
+        'apikey_v2', 'bearerToken', 'accessBearer', 'webhookSecret',
+        'authToken', 'userAuth']) {
+        assert.ok(!exported.includes(sensitive),
+            `${sensitive} must be scrubbed from the export snapshot`);
+    }
+    // Benign keys must survive.
+    for (const benign of ['aiSummaryProvider', 'autoMaxResolution', 'videosPerRow']) {
+        assert.ok(exported.includes(benign),
+            `${benign} must NOT be scrubbed (it carries no secret)`);
+    }
+});
+
 test('v4.47.0 NF20 — check-no-eval gate is wired and rejects eval / Function / string-timer patterns', () => {
     // The extension's CSP forbids unsafe-eval. NF20 ships a
     // belt-and-suspenders source-level grep so a contributor adding
