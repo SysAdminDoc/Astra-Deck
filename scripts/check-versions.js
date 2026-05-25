@@ -8,14 +8,20 @@
 // locally won't notice the drift until CI fails post-tag.
 // Running this in `npm run check` catches it pre-push.
 //
-// Sources of truth (must all match):
+// PRODUCT-VERSION sources of truth (must all match):
 //   1. package.json                  → "version"
 //   2. extension/manifest.json       → "version"
 //   3. extension/ytkit.js            → const YTKIT_VERSION = '...'
 //   4. YTKit.user.js                 → // @version
 //   5. package-lock.json             → root + packages[""].version
 //
-// Exit 0 if all sources agree; exit 1 with a per-source breakdown otherwise.
+// SETTINGS-VERSION sources of truth (v4.47.0 NF25 — must all match):
+//   1. extension/ytkit.js            → SETTINGS_VERSION: N (in settingsManager)
+//   2. extension/popup.js            → const SETTINGS_VERSION_FALLBACK = N
+//   3. extension/settings-meta.json  → { "settingsVersion": N }
+//
+// Exit 0 only if BOTH product-version AND settings-version checks
+// pass; exit 1 with a per-source breakdown otherwise.
 //
 // Optional: pass --tag <vX.Y.Z> to also validate against an external
 // tag string (e.g. before `git tag` runs in a release recipe).
@@ -57,6 +63,31 @@ function readUserscriptVersion() {
     return { source: 'YTKit.user.js (@version)', value: m ? m[1] : '' };
 }
 
+// v4.47.0 NF25 — SETTINGS_VERSION parity sources.
+//
+// The product version (above) bumps every release; SETTINGS_VERSION
+// bumps only when the storage shape changes (currently 7 after v3.23
+// reaction-spammer default-OFF migration). The popup keeps a fallback
+// constant in case settings-meta.json fails to load; that fallback
+// must match ytkit.js or a partial-storage user can silently
+// downgrade their schema version on import.
+function readYtkitSettingsVersion() {
+    const src = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'ytkit.js'), 'utf8');
+    const m = src.match(/SETTINGS_VERSION:\s*(\d+)/);
+    return { source: 'extension/ytkit.js (SETTINGS_VERSION)', value: m ? m[1] : '' };
+}
+
+function readPopupSettingsVersionFallback() {
+    const src = fs.readFileSync(path.join(REPO_ROOT, 'extension', 'popup.js'), 'utf8');
+    const m = src.match(/const\s+SETTINGS_VERSION_FALLBACK\s*=\s*(\d+)/);
+    return { source: 'extension/popup.js (SETTINGS_VERSION_FALLBACK)', value: m ? m[1] : '' };
+}
+
+function readSettingsMetaVersion() {
+    const meta = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'extension', 'settings-meta.json'), 'utf8'));
+    return { source: 'extension/settings-meta.json (settingsVersion)', value: String(meta.settingsVersion || '') };
+}
+
 function parseTagFlag(argv) {
     const idx = argv.indexOf('--tag');
     if (idx === -1 || idx + 1 >= argv.length) return null;
@@ -79,26 +110,54 @@ function main(argv) {
     }
 
     const distinct = new Set(sources.map((s) => s.value));
+    const productOk = distinct.size === 1 && sources[0].value !== '';
     // distinct.size === 1 means every read returned the same string; the
     // empty-string check ensures we don't pass when every regex failed
     // and produced ''. (Earlier draft used .includes('') which is always
     // true on any string and silently broke the happy path.)
-    if (distinct.size === 1 && sources[0].value !== '') {
+    if (productOk) {
         const v = sources[0].value;
-        console.log(`[check-versions] All ${sources.length} sources agree at v${v}`);
+        console.log(`[check-versions] All ${sources.length} product-version sources agree at v${v}`);
         for (const s of sources) console.log(`  - ${s.source}`);
-        process.exit(0);
+    } else {
+        console.error('[check-versions] Product-version drift detected — sources disagree:');
+        for (const s of sources) {
+            console.error(`  ${s.value || '<empty>'}  ←  ${s.source}`);
+        }
+        console.error('');
+        console.error('Fix every source then re-run. Useful one-liners:');
+        console.error('  node sync-userscript.js               # syncs YTKit.user.js to ytkit.js');
+        console.error('  npm install --package-lock-only       # refreshes package-lock.json');
     }
 
-    console.error('[check-versions] Version drift detected — sources disagree:');
-    for (const s of sources) {
-        console.error(`  ${s.value || '<empty>'}  ←  ${s.source}`);
+    // v4.47.0 NF25 — SETTINGS_VERSION parity check (independent of
+    // product version). The popup's fallback constant, ytkit.js's
+    // SETTINGS_VERSION, and settings-meta.json's settingsVersion all
+    // describe the same schema version namespace; any drift between
+    // them risks silent profile-import corruption when one source
+    // fails to load and another picks up.
+    const settingsSources = [
+        readYtkitSettingsVersion(),
+        readPopupSettingsVersionFallback(),
+        readSettingsMetaVersion(),
+    ];
+    const settingsDistinct = new Set(settingsSources.map((s) => s.value));
+    const settingsOk = settingsDistinct.size === 1 && settingsSources[0].value !== '';
+    if (settingsOk) {
+        console.log(`[check-versions] All ${settingsSources.length} SETTINGS_VERSION sources agree at v${settingsSources[0].value}`);
+        for (const s of settingsSources) console.log(`  - ${s.source}`);
+    } else {
+        console.error('[check-versions] SETTINGS_VERSION drift detected — sources disagree:');
+        for (const s of settingsSources) {
+            console.error(`  ${s.value || '<empty>'}  ←  ${s.source}`);
+        }
+        console.error('');
+        console.error('Fix every source then re-run. The three SETTINGS_VERSION sources');
+        console.error('must all hold the same integer (currently independent of product');
+        console.error('version; bumps when storage shape changes).');
     }
-    console.error('');
-    console.error('Fix every source then re-run. Useful one-liners:');
-    console.error('  node sync-userscript.js               # syncs YTKit.user.js to ytkit.js');
-    console.error('  npm install --package-lock-only       # refreshes package-lock.json');
-    process.exit(1);
+
+    process.exit(productOk && settingsOk ? 0 : 1);
 }
 
 if (require.main === module) {
