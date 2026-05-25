@@ -41,10 +41,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Polish / parity (P1-P2 batch from 2026-05-25 audit)
 
-- **P1 / S — RYD budget-exhaustion observability (NF30)**
-  - Why: `ytkit.js:30240` silently returns false on rate-limit. Pill shows "RYD off" with no copy. Users assume the feature is broken.
-  - Touches: pill render path in `ytkit.js#returnDislike`.
-
 - **P1 / M — DeArrow channel-override chip + per-channel UI (NF28)**
   - Why: data model shipped (`deArrowChannelOverrides`); lookup at `ytkit.js:26174`. UI was deferred per `CLAUDE.md:438` and never re-tracked.
   - Touches: new `extension/features/de-arrow-overrides/index.js`, consumer in `ytkit.js#deArrow`.
