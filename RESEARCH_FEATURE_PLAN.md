@@ -178,7 +178,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Risks (carried over from R-series)
 
-- **R3 (LOW)** — `chrome.downloads.show` failure swallowed silently. Consider toast.
 - **R4 (MED)** — `videoNotes` / `timestampBookmarks` / `videoHistory` storage unbounded between 5-min LRU sweeps.
 - **R6 (LOW)** — `policy-profile.js` scrub regex set incomplete (see Polish above).
 - **R8 (LOW)** — Cobalt fallback defaults to public instance; surface "unreachable" diagnostic.
