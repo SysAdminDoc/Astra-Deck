@@ -7567,6 +7567,57 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
     }
 });
 
+test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session baseline', () => {
+    // Before NF34: _sessionStart was set once via `this._sessionStart ||
+    // today.seconds` and never reset. When midnight crossed, _loadToday
+    // returned a fresh {date, seconds:0} bucket but _sessionStart still
+    // held yesterday's value. sessionElapsed = today.seconds - _sessionStart
+    // went negative and every break-reminder was suppressed for the rest
+    // of the day.
+    //
+    // After NF34: _tick captures _todayKey() before calling _loadToday;
+    // when the key changes between ticks, _sessionStart is reset to 0
+    // and _todayCache is cleared. The next iteration anchors the session
+    // baseline to the new day's accumulator.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const dwIdx = ytkitSrc.indexOf("id: 'digitalWellbeing'");
+    assert.ok(dwIdx > -1, 'digitalWellbeing feature must exist');
+    const slice = ytkitSrc.slice(dwIdx, dwIdx + 22000);
+
+    // 1. _lastTodayKey field is declared on the feature object so the
+    //    boundary check has somewhere to remember the last seen key.
+    assert.match(slice, /_lastTodayKey:\s*null/,
+        'digitalWellbeing must declare _lastTodayKey: null on the feature object');
+
+    // 2. _tick captures the current day key + compares to _lastTodayKey
+    //    before doing anything else; on flip, resets _sessionStart + clears
+    //    _todayCache.
+    assert.match(slice, /const currentTodayKey = this\._todayKey\(\);/,
+        '_tick must capture the day key from _todayKey() at the top');
+    assert.match(slice, /this\._lastTodayKey && this\._lastTodayKey !== currentTodayKey/,
+        '_tick must detect a day-key flip across ticks');
+    assert.match(slice, /Day rolled over \(\$\{this\._lastTodayKey\} -> \$\{currentTodayKey\}\)/,
+        '_tick must log the day-rollover transition via DebugManager');
+    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._todayCache = null;/,
+        '_tick must reset _sessionStart AND clear _todayCache on day flip');
+    // The last-seen key must be updated regardless of whether a flip
+    // occurred, otherwise the next tick can't tell.
+    assert.match(slice, /this\._lastTodayKey = currentTodayKey;/,
+        '_tick must update _lastTodayKey on every tick');
+
+    // 3. _sessionStart initialization uses ?? (nullish-coalesce) so
+    //    today.seconds === 0 still initializes correctly.
+    assert.match(slice, /if \(!this\._sessionStart\) this\._sessionStart = today\.seconds \?\? 0;/,
+        '_tick must initialize _sessionStart with nullish-coalesce against today.seconds');
+
+    // 4. destroy() resets _lastTodayKey alongside _sessionStart so the
+    //    next init() starts fresh.
+    assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._lastTodayKey = null;/,
+        'destroy() must reset both _sessionStart and _lastTodayKey for symmetry');
+});
+
 test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age title', () => {
     // Before NF30: any null from _fetch (whether 100/min budget cap or
     // network error) collapsed into a single "RYD off" pill with no

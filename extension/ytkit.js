@@ -26726,6 +26726,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _overlay: null,
             _overlayKeyHandler: null,
             _sessionStart: 0,
+            // v4.47.0 NF34: track the day key across tick calls so we can
+            // detect midnight / DST boundaries and reset _sessionStart.
+            // Without this, after midnight `today.seconds` flips to 0
+            // (because _loadToday returns a fresh bucket) but _sessionStart
+            // still holds yesterday's value, so `sessionElapsed` goes
+            // negative and the "take a break" reminder never fires for the
+            // rest of the day.
+            _lastTodayKey: null,
             _capDismissKey: 'ytkit_dw_cap_dismissed_date',
 
             _todayKey() {
@@ -26871,12 +26879,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _tick() {
                 const video = document.querySelector('video');
                 if (!video || video.paused || document.hidden) return;
+                // v4.47.0 NF34: midnight / DST boundary detection. When
+                // the local day key changes between two ticks we must
+                // reset _sessionStart so the next break-reminder window
+                // is anchored to the new day's accumulator. Without
+                // this, sessionElapsed = today.seconds - _sessionStart
+                // becomes negative across midnight, suppressing every
+                // break reminder for the rest of the day.
+                const currentTodayKey = this._todayKey();
+                if (this._lastTodayKey && this._lastTodayKey !== currentTodayKey) {
+                    DebugManager.log('DigitalWellbeing',
+                        `Day rolled over (${this._lastTodayKey} -> ${currentTodayKey}); resetting session baseline.`);
+                    this._sessionStart = 0;
+                    this._todayCache = null;
+                }
+                this._lastTodayKey = currentTodayKey;
                 const today = this._loadToday();
                 today.seconds = (today.seconds || 0) + 1;
                 // Batch saves every 30s to avoid thrashing chrome.storage.local
                 if (today.seconds % 30 === 0) this._saveToday(today);
                 else this._todayCache = today;
-                this._sessionStart = this._sessionStart || today.seconds;
+                // NF34: use `??` so today.seconds === 0 (first tick of a
+                // new day) correctly initializes _sessionStart instead of
+                // letting the OR fall through to the next tick.
+                if (!this._sessionStart) this._sessionStart = today.seconds ?? 0;
                 const sessionElapsed = today.seconds - this._sessionStart;
                 const breakEvery = (parseInt(appState.settings.dwBreakIntervalMin) || 0) * 60;
                 const dailyCap   = (parseInt(appState.settings.dwDailyCapMin) || 0) * 60;
@@ -27068,6 +27094,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._overlay?.remove(); this._overlay = null;
                 this._styleEl?.remove(); this._styleEl = null;
                 this._sessionStart = 0;
+                this._lastTodayKey = null;
             }
         },
 
