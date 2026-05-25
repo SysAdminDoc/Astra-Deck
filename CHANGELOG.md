@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **feature_request issue template asks for the risk profile + competitive
+  parity reference (EXIST-8, Pass 3).** Feature requests previously
+  didn't tell triagers what profile to assign. The schema's `risk:` +
+  `profile:` fields gate what ships to the Chrome/Firefox stores vs
+  the GitHub-Full build, so a new request that quietly assumed
+  store-safe behavior could collide with store-review policy. The
+  template now carries a checkbox list mapping directly to the
+  schema's risk taxonomy (safe / api / local-companion / experimental
+  / store-risk + byo-key as a shorthand for "github-full + API key
+  required") plus a competitive-parity prompt that points back at
+  the competitor table in `ROADMAP.md` § Phase 1. Branding also
+  updated YTKit → Astra Deck. Pinned by a new `v4.47.0 EXIST-8`
+  hardening test asserting the rebrand, the risk-profile section,
+  every risk band as a checkbox option, and the competitive-parity
+  prompt. 568/568 JS tests pass (+1 new).
+
 - **Service-worker lifecycle ring (NEW-7).**
   MV3 service workers restart unpredictably — ~30 s idle kill,
   suspension on memory pressure, post-install restarts. Several

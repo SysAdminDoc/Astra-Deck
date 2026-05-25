@@ -8027,6 +8027,36 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 EXIST-8 — feature_request issue template asks for the risk profile so triage maps to schema profiles', () => {
+    // EXIST-8: feature requests previously didn't tell triagers what
+    // profile to assign. The schema's risk: + profile: fields gate
+    // what ships to the stores vs the GitHub-Full build, so a new
+    // request that quietly assumes store-safe behavior can collide
+    // with store policy on review. Templated checkbox list maps
+    // directly to the schema's risk taxonomy
+    // (safe / api / local-companion / experimental / store-risk +
+    // byo-key as a shorthand for "github-full + api key required").
+    const featureTpl = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'ISSUE_TEMPLATE', 'feature_request.md'), 'utf8'
+    );
+    assert.match(featureTpl, /Astra Deck/,
+        'feature_request.md must be rebranded from YTKit to Astra Deck');
+    assert.match(featureTpl, /Intended audience \/ risk profile/,
+        'feature_request.md must surface a risk-profile / audience section');
+    // Every risk band from the schema must be enumerated so the
+    // checkbox list is complete. If a future risk band is added
+    // to settings-schema.js the maintainer should also add it here.
+    for (const band of ['safe', 'api', 'local-companion', 'experimental', 'store-risk', 'byo-key']) {
+        assert.match(featureTpl, new RegExp(`\\*\\*${band.replace(/[-]/g, '\\-')}\\*\\*`),
+            `feature_request.md must list the ${band} risk band as a checkbox option`);
+    }
+    // Competitive parity prompt keeps the maintainer's competitor
+    // table in ROADMAP § Phase 1 useful — a new request can attach
+    // a competitor reference and the maintainer can spec from there.
+    assert.match(featureTpl, /Competitive parity/,
+        'feature_request.md must surface a competitive parity / reference prompt');
+});
+
 test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.session and is readable via GET_SW_LIFECYCLE', () => {
     // NEW-7: MV3 service workers restart unpredictably (~30s idle
     // kill, suspension on memory pressure, post-install). Several
