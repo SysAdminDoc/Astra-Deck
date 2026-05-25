@@ -1326,6 +1326,21 @@ button.danger:hover {
   color: #ffe6e9;
 }
 
+/* v4.47.0 EI2: Undo Reset action. Sits next to the Reset button and
+   only renders when a `_resetSnapshot` exists in chrome.storage.session.
+   Visually softer than the danger button so it reads as a recovery
+   affordance rather than a second destructive action. */
+button.undo-action {
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+  margin-right: 6px;
+}
+button.undo-action:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+button.undo-action[hidden] { display: none; }
+
 button:focus-visible {
   box-shadow: var(--focus-ring);
   border-color: var(--accent-border);
