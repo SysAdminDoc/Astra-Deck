@@ -33,12 +33,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### CI / DX close-outs
 
-- **P0 / S — Split CI for PR-time validation (NF11)**
-  - Why: today CI runs only on tag push (`.github/workflows/build.yml`); regressions land before discovery.
-  - Touches: `.github/workflows/validate.yml` (new), `.github/workflows/build.yml` (slim to release-only).
-  - Acceptance: `npm test && npm run check && python -m pytest astra_downloader` run on every PR + push to main.
-  - Verify: open a deliberately-broken draft PR; the validation check goes red.
-
 - **P1 / S — Stale-script audit (NF13)**
   - Why: `scripts/_gen-schema.js` and `scripts/generate-locales.js` are unreferenced by any `npm` script or other source.
   - Touches: read each; if useful → document in CONTRIBUTING.md "Dev scripts"; if abandoned → delete.
