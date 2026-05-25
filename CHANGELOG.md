@@ -6,6 +6,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CI: PR-time validation workflow (.github/workflows/validate.yml).**
+  Closes NF11 from RESEARCH_FEATURE_PLAN. The release workflow
+  (build.yml) runs only on `v*` tag pushes, so a regression used to
+  land on `main` before any CI run caught it. The new workflow runs on
+  every `pull_request: branches: [main]` and `push: branches: [main]`
+  and executes the same two gates the release path runs (`npm test`
+  and `npm run check`) plus a Python job that installs the
+  astra_downloader requirements pinned in requirements.txt and runs
+  `python -m pytest astra_downloader`. Tag-triggered build.yml stays
+  unchanged so the release path remains self-validating; tag pushes
+  skip the validate workflow by design (the `push: branches: [main]`
+  trigger does not fire on tag-only refs).
+
+- **RESEARCH_FEATURE_PLAN.md — consolidated active backlog.** Folds the
+  2026-05-25 reconciliation companion back into the canonical research
+  plan. The file is now an open-items-only backlog organised by
+  readiness (browser-bounded captures, CI/DX, lint widening, lifecycle
+  adoption, companion hardening, subscription manager v2, research
+  workspace, polish/parity, quality gates, store/docs, residual
+  risks); completed items live in this CHANGELOG, the long-arc plan
+  stays in ROADMAP.md, contributor orientation stays in
+  docs/architecture.md. The dated companion file
+  RESEARCH_FEATURE_PLAN_2026-05-25.md is deleted (folded back in).
+
 - **docs/architecture.md — contributor orientation map.** Covers the
   four moving parts (MV3 extension, userscript, Astra Downloader
   Python companion, toolbar popup), end-to-end data flow for a watch
