@@ -5015,14 +5015,22 @@ test('v4.25.0 renderSchemaOverview reads from q.value and filters categories', (
     );
     // Source-string assertions on the new code paths so a future
     // refactor can't accidentally split the search wiring.
-    assert.match(src, /const term = \(q && q\.value \? q\.value : ''\)\.toLowerCase\(\)\.trim\(\);/,
-        'renderSchemaOverview must read q.value into a normalised term');
+    // v4.47.0: the canonical line was renamed `term` → `rawTerm` and the
+    // raw input now flows through parseSearchQuery so the mini-DSL can
+    // pick out field filters before free-text matching. The invariant
+    // (q.value drives the schema-overview filter) is unchanged.
+    assert.match(src, /const rawTerm = \(q && q\.value \? q\.value : ''\)\.toLowerCase\(\)\.trim\(\);/,
+        'renderSchemaOverview must read q.value into a normalised rawTerm');
+    assert.match(src, /const parsed = parseSearchQuery\(rawTerm\);/,
+        'rawTerm must flow through parseSearchQuery so the mini-DSL applies to the schema overview');
     assert.match(src, /const matchEntry = \(entry\) =>/,
         'renderSchemaOverview must declare an inline matchEntry helper');
-    assert.match(src, /entry\.key\.toLowerCase\(\)\.includes\(term\)/,
-        'matchEntry must check the storage key');
-    assert.match(src, /entry\.category\.toLowerCase\(\)\.includes\(term\)/,
-        'matchEntry must check the category name');
+    // matchEntry now operates on freeTerm (the DSL-stripped free-text
+    // remainder) instead of the raw term so `risk:api` doesn't double-match.
+    assert.match(src, /entry\.key\.toLowerCase\(\)\.includes\(freeTerm\)/,
+        'matchEntry must check the storage key against the free-text remainder');
+    assert.match(src, /entry\.category\.toLowerCase\(\)\.includes\(freeTerm\)/,
+        'matchEntry must check the category name against the free-text remainder');
 });
 
 test('v4.25.0 categories with zero matches are hidden when a search term is active', () => {
@@ -6464,6 +6472,70 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
     );
     assert.match(ini, /asyncio_default_fixture_loop_scope\s*=\s*function/,
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
+});
+
+test('v4.47.0 popup search mini-DSL parses field filters and forwards free text', () => {
+    // The popup search filter accepts a small DSL for filtering by schema
+    // metadata: `risk:api`, `category:downloads`, `scope:watch`,
+    // `profile:store-safe`. Comma-separated values within a field act as
+    // OR; multiple fields AND. Unknown fields fall back to free text.
+    // Exercise the parser via a sandboxed eval of the function source so
+    // the test doesn't have to ship a full popup harness.
+    const popupCode = popupSource;
+    const fnStart = popupCode.indexOf('function parseSearchQuery(');
+    assert.ok(fnStart > -1, 'popup.js must expose parseSearchQuery');
+    const fnEnd = popupCode.indexOf('\n}\n', fnStart) + 2;
+    const passesStart = popupCode.indexOf('function entryPassesFilters(');
+    assert.ok(passesStart > -1, 'popup.js must expose entryPassesFilters');
+    const passesEnd = popupCode.indexOf('\n}\n', passesStart) + 2;
+    const constStart = popupCode.indexOf('const SEARCH_FILTER_FIELDS');
+    const constEnd = popupCode.indexOf(';', constStart) + 1;
+    const sandbox = popupCode.slice(constStart, constEnd) + '\n'
+        + popupCode.slice(fnStart, fnEnd) + '\n'
+        + popupCode.slice(passesStart, passesEnd) + '\n'
+        + 'this.__parse = parseSearchQuery; this.__passes = entryPassesFilters;';
+    const ctx = {};
+    new Function(sandbox).call(ctx);
+
+    // Free text only.
+    let r = ctx.__parse('blue light filter');
+    assert.deepEqual(Object.keys(r.filters), [], 'no field filters when only free text');
+    assert.equal(r.freeText, 'blue light filter');
+
+    // Single field filter.
+    r = ctx.__parse('risk:api');
+    assert.equal(r.freeText, '');
+    assert.ok(r.filters.risk instanceof Set);
+    assert.ok(r.filters.risk.has('api'));
+
+    // Comma-separated values inside a field (OR within field).
+    r = ctx.__parse('risk:api,local-companion');
+    assert.equal(r.filters.risk.size, 2);
+    assert.ok(r.filters.risk.has('local-companion'));
+
+    // Multiple field clauses (AND across fields) + free text.
+    r = ctx.__parse('risk:api category:enrichment sponsor');
+    assert.equal(r.freeText, 'sponsor');
+    assert.ok(r.filters.category.has('enrichment'));
+    assert.ok(r.filters.risk.has('api'));
+
+    // Unknown field falls back to free text — don't swallow user input.
+    r = ctx.__parse('riks:api dearrow');
+    assert.equal(Object.keys(r.filters).length, 0,
+        'unknown field token must NOT register as a filter (typo defense)');
+    assert.match(r.freeText, /riks:api/,
+        'unknown field token must fall through to free text so user sees no-result instead of silent swallow');
+
+    // entryPassesFilters AND semantics.
+    const entry = { key: 'sponsorBlock', risk: 'api', category: 'enrichment', scope: 'watch', profile: 'both' };
+    assert.ok(ctx.__passes(entry, ctx.__parse('risk:api').filters), 'risk match should pass');
+    assert.ok(!ctx.__passes(entry, ctx.__parse('risk:safe').filters), 'risk mismatch should fail');
+    assert.ok(ctx.__passes(entry, ctx.__parse('risk:api category:enrichment').filters),
+        'AND across fields should pass when both match');
+    assert.ok(!ctx.__passes(entry, ctx.__parse('risk:api category:downloads').filters),
+        'AND across fields should fail when one mismatches');
+    assert.ok(ctx.__passes(entry, ctx.__parse('risk:api,safe').filters),
+        'OR within field should pass on either value');
 });
 
 test('v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs', () => {

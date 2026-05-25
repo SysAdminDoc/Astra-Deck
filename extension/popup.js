@@ -82,6 +82,64 @@ function createGroupIcon(groupName) {
 }
 
 // ── i18n (Phase A) ──
+// v4.47.0: Filter mini-DSL. A search term can be plain free text OR a
+// mix of free-text tokens and `field:value` filters. Recognised fields
+// are `risk`, `category`, `scope`, and `profile` — each maps to a
+// metadata field on the settings-schema entry. Comma-separated values
+// inside a filter (`risk:api,local-companion`) act as OR within the
+// field; multiple `field:` clauses are ANDed. Field values are
+// case-insensitive and trim whitespace. Unknown fields fall back to
+// free text so a typo (`riks:api`) still does something useful instead
+// of swallowing the user's input.
+const SEARCH_FILTER_FIELDS = Object.freeze(['risk', 'category', 'scope', 'profile']);
+function parseSearchQuery(raw) {
+    const filters = Object.create(null); // { field: Set<lowercase value> }
+    const freeTokens = [];
+    const term = (raw || '').toLowerCase().trim();
+    if (!term) return { filters, freeText: '', tokens: [] };
+    for (const token of term.split(/\s+/)) {
+        if (!token) continue;
+        const colon = token.indexOf(':');
+        if (colon > 0 && colon < token.length - 1) {
+            const field = token.slice(0, colon);
+            const valueRaw = token.slice(colon + 1);
+            if (SEARCH_FILTER_FIELDS.includes(field)) {
+                const set = filters[field] || (filters[field] = new Set());
+                for (const v of valueRaw.split(',')) {
+                    const trimmed = v.trim();
+                    if (trimmed) set.add(trimmed);
+                }
+                continue;
+            }
+        }
+        freeTokens.push(token);
+    }
+    return { filters, freeText: freeTokens.join(' '), tokens: freeTokens };
+}
+function entryPassesFilters(entry, filters) {
+    if (!entry) return Object.keys(filters).length === 0;
+    for (const field of SEARCH_FILTER_FIELDS) {
+        const allowed = filters[field];
+        if (!allowed || allowed.size === 0) continue;
+        const value = entry[field];
+        if (typeof value !== 'string') return false;
+        if (!allowed.has(value.toLowerCase())) return false;
+    }
+    return true;
+}
+// Lookup a schema entry by storage key. Lazily memoised because the
+// schema is frozen and ~354 entries — a Map keyed by `key` keeps the
+// per-toggle filter check at O(1).
+let _schemaIndex = null;
+function getSchemaIndex() {
+    if (_schemaIndex) return _schemaIndex;
+    const scope = (typeof window !== 'undefined') && window.__YTKIT_SETTINGS_SCHEMA__;
+    if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return null;
+    _schemaIndex = new Map();
+    for (const e of scope.SETTINGS_SCHEMA) _schemaIndex.set(e.key, e);
+    return _schemaIndex;
+}
+
 // Resolves user-facing strings via chrome.i18n by default. A manual
 // override (popup language dropdown) writes to chrome.storage.local
 // `_localeOverride`; when set, we fetch that locale's bundled
@@ -945,23 +1003,35 @@ function createSchemaRiskBadge(key) {
 }
 
 function render(settings, filter) {
-    const term = (filter || '').toLowerCase().trim();
+    const rawTerm = (filter || '').toLowerCase().trim();
+    const parsed = parseSearchQuery(rawTerm);
+    const hasFilters = Object.keys(parsed.filters).length > 0;
+    const freeTerm = parsed.freeText;
+    const schemaIdx = (hasFilters) ? getSchemaIndex() : null;
     const totalCount = QUICK_TOGGLES.length;
     const items = QUICK_TOGGLES.filter((item) => {
-        if (!term) return true;
+        // v4.47.0: mini-DSL field filters (risk:/category:/scope:/profile:)
+        // act as a hard AND gate on top of free-text matching. The
+        // metadata lives on the schema entry, not the quick-toggle row.
+        if (hasFilters) {
+            const entry = schemaIdx ? schemaIdx.get(item.key) : null;
+            if (!entryPassesFilters(entry, parsed.filters)) return false;
+        }
+        if (!freeTerm) return true;
         // Match against both the source English text AND the translated
         // text so a user filtering in either language finds the toggle.
         const tName = t(`qt_${item.key}_name`, item.name);
         const tDesc = t(`qt_${item.key}_desc`, item.desc);
         const tGroup = t(`qtGroup_${item.group.replace(/\W+/g, '_')}`, item.group);
-        return item.name.toLowerCase().includes(term)
-            || item.desc.toLowerCase().includes(term)
-            || item.key.toLowerCase().includes(term)
-            || item.group.toLowerCase().includes(term)
-            || tName.toLowerCase().includes(term)
-            || tDesc.toLowerCase().includes(term)
-            || tGroup.toLowerCase().includes(term);
+        return item.name.toLowerCase().includes(freeTerm)
+            || item.desc.toLowerCase().includes(freeTerm)
+            || item.key.toLowerCase().includes(freeTerm)
+            || item.group.toLowerCase().includes(freeTerm)
+            || tName.toLowerCase().includes(freeTerm)
+            || tDesc.toLowerCase().includes(freeTerm)
+            || tGroup.toLowerCase().includes(freeTerm);
     });
+    const term = rawTerm; // keep below-the-loop callers stable
     list.textContent = '';
     updateSummary(settings);
     updateSearchState();
@@ -1448,11 +1518,31 @@ function renderSchemaOverview() {
     // any category that contains a matching key + filters keys within
     // those categories to only the matches. Empty filter restores the
     // user's manually-toggled state.
-    const term = (q && q.value ? q.value : '').toLowerCase().trim();
+    // v4.47.0: parse the mini-DSL so `risk:api`, `category:downloads`,
+    // `scope:watch`, `profile:store-safe` narrow the overview by
+    // metadata. Free-text tokens still match key/category/label/desc.
+    const rawTerm = (q && q.value ? q.value : '').toLowerCase().trim();
+    const parsed = parseSearchQuery(rawTerm);
+    const hasFilters = Object.keys(parsed.filters).length > 0;
+    const freeTerm = parsed.freeText;
+    const term = rawTerm; // preserve downstream callers
+    const humanizerLocal = scope && scope.humanizeSettingKey;
     const matchEntry = (entry) => {
-        if (!term) return true;
-        return entry.key.toLowerCase().includes(term)
-            || entry.category.toLowerCase().includes(term);
+        if (hasFilters && !entryPassesFilters(entry, parsed.filters)) return false;
+        if (!freeTerm) return true;
+        if (entry.key.toLowerCase().includes(freeTerm)) return true;
+        if (entry.category.toLowerCase().includes(freeTerm)) return true;
+        // v4.47.0: also search the humanised label and any description
+        // field so a user looking for "auto download" can find
+        // `autoDownloadOnVisit` without remembering the exact camelCase.
+        if (typeof humanizerLocal === 'function') {
+            const label = String(humanizerLocal(entry.key) || '').toLowerCase();
+            if (label.includes(freeTerm)) return true;
+        }
+        if (entry.description && String(entry.description).toLowerCase().includes(freeTerm)) {
+            return true;
+        }
+        return false;
     };
 
     const buckets = new Map();

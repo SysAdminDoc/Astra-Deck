@@ -298,13 +298,12 @@ What to **intentionally avoid**:
 - **Verification**: round-trip reset → undo → state restored byte-identical; expiry test fast-forwards `Date.now()`.
 - **Complexity**: M. **Priority**: P1.
 
-### EI3 — Search filter expands to descriptions / risk / category
-- **Current behavior**: popup `#q` filter matches label, description (English), storage key, group name (subagent popup audit §9).
-- **Problem**: typing "api" doesn't surface all API-risk toggles; typing "live" doesn't surface live-chat-scope toggles.
-- **Recommended change**: extend the matcher in `popup.js:947–964` to also match `risk` (`api`, `local-companion`, etc.), `category` (kebab-case + humanized), and `scope`. Add `q:risk=api` mini-DSL: tokens like `risk:api`, `category:downloads`, `scope:watch` filter narrowly.
-- **Touches**: `extension/popup.js` (matcher); schema overview consumer.
-- **Verification**: hardening test that asserts `risk:api` returns the SponsorBlock / DeArrow / RYD / Reddit / OpenAI set.
-- **Complexity**: S. **Priority**: P2.
+### EI3 — Search filter expands to descriptions / risk / category _[shipped]_
+- Shipped: `parseSearchQuery` + `entryPassesFilters` helpers in `popup.js` add a mini-DSL — `risk:api`, `category:downloads`, `scope:watch`, `profile:store-safe`. Comma-separated values inside a field act as OR; multiple field clauses AND. Unknown fields fall back to free text so typos don't silently swallow the user's input.
+- Wired into both the quick-toggle list (`render`) and the schema overview (`renderSchemaOverview`) — the quick-toggle path joins each row to its schema entry by storage key so field filters work even on the curated 18-item list.
+- Schema overview free-text now also matches the humanised label and the schema entry's `description`.
+- Popup placeholder updated to surface the syntax (`Filter — try risk:api or category:downloads`); full grammar in the `title` tooltip.
+- Pinned by `v4.47.0 popup search mini-DSL parses field filters and forwards free text` hardening test (parser + entryPassesFilters AND/OR semantics).
 
 ### EI4 — Top-3 monolith peel
 - **Current behavior**: `stickyVideo` (3,779 lines), `chatStyleComments` (1,337 lines), `floatingLogoOnWatch` (525 lines) — together 12.7 % of `ytkit.js`.
@@ -715,7 +714,7 @@ These can land in a single ≤200-line PR each; pick any of them if blocked on b
 - **QW4** — Selector-health "Copy report" button (NF3).
 - **QW5** — `prefers-reduced-motion` guard in popup.css (NF8). _[shipped — invariant pin]_
 - **QW6** — Reset action: snapshot + undo (EI2).
-- **QW7** — Search filter mini-DSL (EI3).
+- **QW7** — Search filter mini-DSL (EI3). _[shipped]_
 - **QW8** — Popup "flush on beforeunload" (EI7). _[wontfix — popup uses synchronous chrome.storage.local, no debounce to flush]_
 - **QW9** — `npm audit` gate in `npm run check` (G4). _[shipped]_
 - **QW10** — `docs/` cross-link section in README (subagent audit Part B §5). _[shipped]_
