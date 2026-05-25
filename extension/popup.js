@@ -2437,16 +2437,65 @@ if (healthSaveBtn) {
 // because settings can be cleared via Reset and we don't want Reset
 // to re-trigger the welcome card.
 //
+// Audit pass: upgrade-from-pre-NF21 must NOT show the welcome card.
+// Existing users have a populated SETTINGS_STORAGE_KEY but no
+// FIRST_RUN_SEEN_KEY (the sentinel only exists in builds that ship
+// NF21). Without an upgrade guard every existing user would see the
+// welcome card on their first popup open after the upgrade — a
+// regression. The guard treats "SETTINGS_STORAGE_KEY contains at
+// least one non-internal key" as the upgrade signal and silently
+// stamps both the run-seen sentinel and the last-seen-version key.
+// The user then experiences the popup as they always have, and the
+// What's New banner fires correctly on their *next* version bump.
+//
 // What's New uses LAST_SEEN_VERSION_KEY: when it differs from the
 // current manifestVersion we render a banner. Dismissing the banner
 // or clicking "Read changelog" sets the key to the current version.
 async function renderFirstRunSurfaces() {
     try {
-        const items = await storageGet([FIRST_RUN_SEEN_KEY, LAST_SEEN_VERSION_KEY]);
-        const firstRunSeen = items[FIRST_RUN_SEEN_KEY] === true;
+        const items = await storageGet([
+            FIRST_RUN_SEEN_KEY,
+            LAST_SEEN_VERSION_KEY,
+            SETTINGS_STORAGE_KEY,
+        ]);
+        let firstRunSeen = items[FIRST_RUN_SEEN_KEY] === true;
         const lastSeen = typeof items[LAST_SEEN_VERSION_KEY] === 'string'
             ? items[LAST_SEEN_VERSION_KEY]
             : '';
+
+        // Upgrade guard. A user who had Astra Deck installed before
+        // NF21 shipped has a populated SETTINGS_STORAGE_KEY but no
+        // FIRST_RUN_SEEN_KEY. Treat them as already-onboarded and
+        // stamp the sentinels silently so neither surface fires today.
+        // "Populated" means at least one user-authored setting key
+        // is present — diagnostic-only keys (`_errors`,
+        // `_settingsVersion`, `_activeProfile`) are excluded because
+        // a barely-touched install could carry just those.
+        const storedSettings = isPlainObject(items[SETTINGS_STORAGE_KEY])
+            ? items[SETTINGS_STORAGE_KEY]
+            : null;
+        const looksLikeExistingInstall = storedSettings
+            && Object.keys(storedSettings).some(
+                (k) => !k.startsWith('_'),
+            );
+        if (!firstRunSeen && looksLikeExistingInstall) {
+            try {
+                await storageSet({
+                    [FIRST_RUN_SEEN_KEY]: true,
+                    [LAST_SEEN_VERSION_KEY]:
+                        manifestVersion && manifestVersion !== '—'
+                            ? manifestVersion
+                            : '',
+                });
+                firstRunSeen = true;
+            } catch (err) {
+                // reason: storage write failures are non-fatal — the
+                // worst case is the welcome card shows once on the
+                // next open, which is still better than crashing.
+                console.warn('[Astra Deck popup] upgrade-guard stamp failed:', err);
+            }
+        }
+
         if (!firstRunSeen) {
             showWelcomeCard();
         }
@@ -2454,7 +2503,11 @@ async function renderFirstRunSurfaces() {
         // fresh install shows the welcome flow, not a What's New
         // banner that says "Welcome to v4.47.0 (the only version
         // you've ever seen)." Once firstRunSeen flips true, we treat
-        // every subsequent open as an upgrade candidate.
+        // every subsequent open as an upgrade candidate — but skip
+        // the banner when lastSeen was stamped THIS render by the
+        // upgrade guard above (same version → no diff → already
+        // handled by the firstRunSeen && lastSeen !== manifestVersion
+        // gate below).
         if (firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion) {
             showWhatsNew(lastSeen);
         }
@@ -2496,7 +2549,20 @@ async function dismissWelcomeCard(reason) {
     }
 }
 
+// Audit pass: serialize welcome-button clicks so a double-tap can't
+// fire two writeSetting + storageSet pairs in flight. The buttons
+// are visible only on a fresh install — the rapid-double-click is
+// the failure mode where a user clicks while the UI is still
+// settling. We disable BOTH profile buttons + the dismiss link
+// while a pick is in flight; the welcome card hide happens at the
+// end so visual feedback is immediate.
+let _welcomePickInFlight = false;
 async function pickWelcomeProfile(profile) {
+    if (_welcomePickInFlight) return;
+    _welcomePickInFlight = true;
+    if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = true;
+    if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = true;
+    if (welcomeDismissBtn) welcomeDismissBtn.disabled = true;
     // Apply profile by writing the gating boolean directly. Reuses
     // the existing writeSetting path so the policy-profile resolver
     // sees the change and refreshes the schema overview.
@@ -2516,6 +2582,12 @@ async function pickWelcomeProfile(profile) {
     } catch (err) {
         showStatus(t('statusWelcomeProfileFail',
             'Could not apply profile') + ': ' + err.message, 'error', 4200);
+        // Re-enable so the user can retry on failure.
+        if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = false;
+        if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = false;
+        if (welcomeDismissBtn) welcomeDismissBtn.disabled = false;
+    } finally {
+        _welcomePickInFlight = false;
     }
 }
 

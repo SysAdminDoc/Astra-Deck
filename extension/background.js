@@ -101,34 +101,45 @@ function _persistPendingReveals() {
 const SW_LIFECYCLE_KEY = '_swLifecycle';
 const SW_LIFECYCLE_CAP = 50;
 
-async function _recordSwLifecycle(event) {
+// Audit pass: serialize lifecycle writes so concurrent
+// _recordSwLifecycle calls (e.g. sw-start firing alongside an
+// immediate reveal-failed for a download that was in-flight when
+// the SW restarted) cannot lose entries via a read-modify-write
+// race on chrome.storage.session. The SW is single-threaded JS,
+// but async/await yields between `get` and `set` create the
+// interleaving window. Chaining each call onto the previous one
+// guarantees the get→push→set sequence is observed atomically per
+// caller. Catch-rethrow-undefined keeps the chain alive even when
+// a write rejects (storage quota, browser shutdown mid-write).
+let _swLifecycleChain = Promise.resolve();
+
+function _recordSwLifecycle(event) {
     if (!chrome.storage?.session) return;
-    try {
-        // Wait for the pending-reveals hydration so the in-flight count
-        // we record reflects the persisted state, not just whatever the
-        // freshly-restarted SW happens to have in memory.
-        try { await _pendingRevealsReady; } catch (_) { /* reason: ring records even if hydration failed */ }
-        const stored = await chrome.storage.session.get(SW_LIFECYCLE_KEY);
-        const arr = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
-            ? stored[SW_LIFECYCLE_KEY]
-            : [];
-        arr.push({
-            ts: Date.now(),
-            event,
-            inFlightReveals: _pendingReveals.size,
+    _swLifecycleChain = _swLifecycleChain
+        .catch(() => undefined)
+        .then(async () => {
+            try {
+                // Wait for the pending-reveals hydration so the in-flight count
+                // we record reflects the persisted state, not just whatever the
+                // freshly-restarted SW happens to have in memory.
+                try { await _pendingRevealsReady; } catch (_) { /* reason: ring records even if hydration failed */ }
+                const stored = await chrome.storage.session.get(SW_LIFECYCLE_KEY);
+                const arr = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
+                    ? stored[SW_LIFECYCLE_KEY]
+                    : [];
+                arr.push({
+                    ts: Date.now(),
+                    event,
+                    inFlightReveals: _pendingReveals.size,
+                });
+                // Trim from the head so the most recent events survive.
+                while (arr.length > SW_LIFECYCLE_CAP) arr.shift();
+                await chrome.storage.session.set({ [SW_LIFECYCLE_KEY]: arr });
+            } catch (_) {
+                // reason: storage.session may be unavailable on older Firefox or under quota pressure;
+                // the SW itself is not affected by ring-record failure.
+            }
         });
-        // Trim from the head so the most recent events survive.
-        while (arr.length > SW_LIFECYCLE_CAP) arr.shift();
-        const writePromise = chrome.storage.session.set({ [SW_LIFECYCLE_KEY]: arr });
-        if (writePromise && typeof writePromise.catch === 'function') {
-            writePromise.catch(() => {
-                // reason: best-effort lifecycle ring; SW continues normally on persist failure.
-            });
-        }
-    } catch (_) {
-        // reason: storage.session may be unavailable on older Firefox or under quota pressure;
-        // the SW itself is not affected by ring-record failure.
-    }
 }
 
 // Fire once at module load — this IS the SW boot. Every fresh SW
