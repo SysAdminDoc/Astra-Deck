@@ -387,6 +387,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
 | [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |
+| [docs/architecture.md](docs/architecture.md) | Trust boundaries, data flow, where things live, conventions a new contributor needs |
 | [docs/cws-submission-checklist.md](docs/cws-submission-checklist.md) | Chrome Web Store submission preflight (manifest, privacy policy, screenshots) |
 | [docs/selector-fixture-workflow.md](docs/selector-fixture-workflow.md) | How to refresh MHTML captures when YouTube DOM changes |
 | [docs/screen-reader-smoke.md](docs/screen-reader-smoke.md) | NVDA / JAWS / VoiceOver release-gate checklist |
