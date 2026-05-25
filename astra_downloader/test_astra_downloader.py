@@ -1262,6 +1262,145 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         self.assertEqual(ad.APP_VERSION, "1.5.1")
 
 
+class EndToEndDownloadTests(unittest.TestCase):
+    """v1.5.1 / RESEARCH_FEATURE_PLAN EI14: end-to-end download flow with
+    a faked yt-dlp subprocess.
+
+    The 80 prior tests cover normalisation, security, rate-limiting, etc.
+    but the full /download → spawn yt-dlp → parse progress → mark complete
+    → write history flow was never exercised. A regression in the parsing
+    loop (filename detection, progress regex, status transitions) would
+    ship silently. This test exercises the whole flow with a fake
+    subprocess.Popen — no real yt-dlp invocation — so it stays
+    deterministic, sub-second, and hermetic.
+    """
+
+    def _make_fake_popen(self, lines, returncode=0):
+        """Build a subprocess.Popen replacement that yields the given
+        progress lines as if from yt-dlp stdout, then "exits" with
+        returncode.
+        """
+        class FakeProc:
+            def __init__(self, lines, rc):
+                self._lines = list(lines)
+                self.stdout = iter([line + "\n" for line in self._lines])
+                self.returncode = rc
+                self._waited = False
+
+            def wait(self):
+                self._waited = True
+                return self.returncode
+
+            def poll(self):
+                return self.returncode if self._waited else None
+
+            def terminate(self):
+                # reason: cancel() path may call this; satisfy the API
+                pass
+
+            def kill(self):
+                # reason: same as terminate
+                pass
+
+        def factory(args, **kwargs):
+            return FakeProc(lines, returncode)
+        return factory
+
+    def _wait_for_terminal(self, dl, timeout=2.0):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if dl.status in ad.DOWNLOAD_TERMINAL_STATES:
+                return True
+            time.sleep(0.01)
+        return False
+
+    def test_full_download_flow_marks_complete_and_writes_history(self):
+        # Fake yt-dlp output: structured progress lines that the parsing
+        # loop knows how to decode + a Merger line (sets filename) + a
+        # final "100%" line. The real flow then waits on the process
+        # and stamps "complete".
+        token = "i" * 32
+        fake_lines = [
+            'MDLP_JSON {"downloaded_bytes": 5000, "total_bytes": 10000, "_speed_str": "1.2MiB/s", "_eta_str": "00:01"}',
+            'MDLP_JSON {"downloaded_bytes": 10000, "total_bytes": 10000, "_speed_str": "1.2MiB/s", "_eta_str": "00:00"}',
+            '[Merger] Merging formats into "fake-video.mp4"',
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "ServerToken": token,
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+            })
+            history = FakeHistory()
+            manager = ad.DownloadManager(config, history)
+
+            popen_factory = self._make_fake_popen(fake_lines, returncode=0)
+            with mock.patch.object(ad.subprocess, 'Popen', popen_factory), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                dl_id, err = manager.start_download(
+                    url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    audio_only=False,
+                    fmt="mp4",
+                    quality="best",
+                )
+                self.assertIsNone(err, f"start_download must succeed: {err}")
+                self.assertIsNotNone(dl_id)
+                dl = manager.downloads[dl_id]
+                self.assertTrue(self._wait_for_terminal(dl),
+                    f"download must reach a terminal state within timeout; status={dl.status}")
+
+            self.assertEqual(dl.status, "complete",
+                f"download must terminate as complete; got {dl.status} (error={dl.error})")
+            self.assertEqual(dl.progress, 100, "complete download must have progress=100")
+            self.assertEqual(dl.filename, "fake-video.mp4",
+                "Merger line must be parsed into dl.filename")
+            self.assertEqual(len(history.entries), 1,
+                "completed download must write exactly one history entry")
+            entry = history.entries[0]
+            self.assertEqual(entry["id"], dl_id)
+            self.assertEqual(entry["url"], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            self.assertEqual(entry["filename"], "fake-video.mp4")
+            self.assertEqual(entry["format"], "mp4")
+            self.assertFalse(entry["audioOnly"])
+
+    def test_yt_dlp_nonzero_exit_with_error_marks_failed(self):
+        # When the subprocess exits non-zero and progress never reached
+        # 99 %, the download must transition to "failed" with the error
+        # text taken from the last ERROR line (truncated to 240 chars
+        # per the audit-pass fix).
+        token = "j" * 32
+        fake_lines = [
+            'MDLP_JSON {"downloaded_bytes": 100, "total_bytes": 10000, "_speed_str": "10KiB/s", "_eta_str": "01:00"}',
+            'ERROR: Sign in to confirm your age',
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "ServerToken": token,
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+            })
+            history = FakeHistory()
+            manager = ad.DownloadManager(config, history)
+            popen_factory = self._make_fake_popen(fake_lines, returncode=1)
+            with mock.patch.object(ad.subprocess, 'Popen', popen_factory), \
+                 mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                 mock.patch.object(ad, 'write_persistent_log', return_value=None):
+                dl_id, err = manager.start_download(
+                    url="https://www.youtube.com/watch?v=ageGated",
+                )
+                self.assertIsNone(err)
+                dl = manager.downloads[dl_id]
+                self.assertTrue(self._wait_for_terminal(dl))
+
+            self.assertEqual(dl.status, "failed",
+                f"non-zero exit with low progress must fail; got {dl.status}")
+            self.assertIn("Sign in to confirm", dl.error or "",
+                "error must surface the yt-dlp ERROR text")
+            self.assertEqual(len(history.entries), 0,
+                "failed download must NOT write a history entry")
+
+
 class ResponseSizeCapTests(unittest.TestCase):
     """v1.5.1 / RESEARCH_FEATURE_PLAN EI12: bounded HTTP surface.
 
