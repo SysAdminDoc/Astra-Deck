@@ -564,6 +564,7 @@ body {
 }
 
 .welcome-profile-btn {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -571,8 +572,8 @@ body {
   text-align: left;
   padding: 9px 11px;
   border-radius: var(--radius-sm, 6px);
-  border: 1px solid rgba(255, 184, 77, 0.28);
-  background: rgba(255, 184, 77, 0.06);
+  border: 1px solid rgba(255, 217, 168, 0.18);
+  background: rgba(255, 217, 168, 0.04);
   color: var(--text-primary, #f4f6fb);
   font-family: inherit;
   cursor: pointer;
@@ -580,14 +581,44 @@ body {
               border-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
               transform var(--dur-quick, 120ms) var(--ease-out, ease-out);
 }
+/* The Store-Safe pick is the safe default — give it a stronger
+   accent + a "Recommended" pill so the welcome flow visually
+   guides users toward the lower-risk choice. The other button
+   keeps a quieter palette so the contrast reads as intentional
+   rather than accidental drift. */
+.welcome-profile-btn.is-recommended {
+  border-color: rgba(255, 184, 77, 0.45);
+  background: rgba(255, 184, 77, 0.1);
+}
 .welcome-profile-btn:hover {
   background: rgba(255, 184, 77, 0.12);
   border-color: rgba(255, 184, 77, 0.5);
   transform: translateY(-1px);
 }
+.welcome-profile-btn.is-recommended:hover {
+  background: rgba(255, 184, 77, 0.18);
+  border-color: rgba(255, 184, 77, 0.65);
+}
 .welcome-profile-btn:focus-visible {
   outline: 2px solid rgba(255, 184, 77, 0.75);
   outline-offset: 1px;
+}
+
+.welcome-profile-rec {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(78, 200, 165, 0.18);
+  color: #6fe0bc;
+  border: 1px solid rgba(78, 200, 165, 0.42);
+  pointer-events: none;
 }
 
 .welcome-profile-title {
