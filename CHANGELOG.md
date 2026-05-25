@@ -6,6 +6,26 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **End-to-end download test with mocked yt-dlp.** Closes EI14 from
+  RESEARCH_FEATURE_PLAN. The 80 prior Python tests covered
+  normalisation, security, rate-limiting, etc. but never invoked the
+  full `/download → spawn yt-dlp → parse progress → mark complete →
+  write history` flow. A regression in the parsing loop (filename
+  detection, MDLP_JSON progress regex, status transitions, ERROR-line
+  truncation) would ship silently. New `EndToEndDownloadTests` class
+  uses `unittest.mock.patch` to replace `subprocess.Popen` with a
+  fake that yields synthetic yt-dlp stdout lines + a controlled
+  returncode — no real yt-dlp invocation, no fixture file, sub-second
+  hermetic. Two cases:
+    • `test_full_download_flow_marks_complete_and_writes_history` —
+      3 progress lines + a Merger line; asserts status=complete,
+      progress=100, filename parsed, history entry written with the
+      right url/format/audioOnly.
+    • `test_yt_dlp_nonzero_exit_with_error_marks_failed` — returncode=1
+      with an ERROR line; asserts status=failed, error surfaces the
+      yt-dlp text, no history entry written.
+  88/88 Python tests pass (+2 new).
+
 - **Astra Downloader v1.5.1 — HTTP-surface size cap (both directions).**
   Closes EI12 from RESEARCH_FEATURE_PLAN. The Flask process previously
   had no explicit Content-Length cap on either incoming bodies or
