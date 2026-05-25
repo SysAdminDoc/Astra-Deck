@@ -239,7 +239,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/*"
+        "icons/*",
+        "assets/*"
       ],
       "matches": [
         "https://*.youtube.com/*",

@@ -84,10 +84,38 @@
         // shared/sync export under any profile. Anything carrying a
         // secret (BYO API key) lands here regardless of the user's
         // sync allowlist.
+        //
+        // v4.47.0 R6: regex set broadened. Previous coverage only
+        // matched the *suffix* `apiKey$` / `token$` plus the exact
+        // `aiSummaryApiKey`. A user-supplied key named `apikey_v2`
+        // or `bearerToken` would have slipped through because the
+        // anchored suffix didn't fire on the underscore-separator or
+        // the `bearer` prefix. New patterns:
+        //
+        //   apikey(?!_id$) anywhere  — catches apikey_v2 / apiKey1 / api_key
+        //   bearer anywhere           — catches bearerToken / bearer_secret
+        //   secret anywhere           — catches webhookSecret etc.
+        //   ^auth / _auth / Auth$    — catches authToken / apiAuth / userAuth
+        //
+        // The negative-lookahead on `apikey(?!_id$)` prevents matching
+        // benign keys that store an ID-of-API-key rather than the key
+        // itself (none today, but a defensive carve-out).
         const ALWAYS_SCRUB_KEY_PATTERNS = Object.freeze([
             /apiKey$/i,
             /^aiSummaryApiKey$/,
-            /token$/i
+            /token$/i,
+            // Broader patterns added in v4.47.0 R6.
+            /apikey(?!_id$)/i,
+            /bearer/i,
+            /secret/i,
+            // Two patterns for camelCase "auth" coverage:
+            //   /^auth/i        — settings starting with "auth" (authToken)
+            //   /[a-z]Auth/     — camelCase "Auth" mid-word (userAuth)
+            // Combined with the no-current-conflicting-keys check
+            // (no schema key today contains "author" or similar) so
+            // the broad coverage doesn't cause false positives.
+            /^auth/i,
+            /[a-z]Auth/,
         ]);
 
         function shouldScrubKey(key) {

@@ -148,13 +148,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 ### Quality / safety gates
 
 
-- **P3 / S — Locale-coverage report (NF24)**
-  - Touches: `scripts/check-i18n.js`, `docs/i18n-coverage.md` (new).
-
-- **P3 / S — Nyan asset path lockdown (NF23)**
-
-- **P3 / S — `policy-profile.js` API-key scrub regex set extension (R6)**
-  - Add `apikey_v2`, `bearer`, and similar shapes.
 
 ---
 
