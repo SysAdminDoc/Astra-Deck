@@ -950,9 +950,9 @@ async function broadcast(key, value) {
                 chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTING_CHANGED', key, value }, () => {
                     void chrome.runtime.lastError;
                 });
-            } catch { /* tab closing or no receiver */ }
+            } catch { /* reason: tab closing or no receiver — fine to skip */ }
         }
-    } catch { /* extension suspended */ }
+    } catch { /* reason: extension suspended — chrome.tabs.query rejected */ }
 }
 
 // Bulk variant for import / reset paths where dozens or hundreds of settings
@@ -969,9 +969,9 @@ async function broadcastSettingsReplaced(settings) {
                 chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTINGS_REPLACED', settings }, () => {
                     void chrome.runtime.lastError;
                 });
-            } catch { /* tab closing or no receiver */ }
+            } catch { /* reason: tab closing or no receiver — fine to skip */ }
         }
-    } catch { /* extension suspended */ }
+    } catch { /* reason: extension suspended — chrome.tabs.query rejected */ }
 }
 
 // v4.16.0: schema-driven risk-band badge for the popup toggle list.
@@ -2110,8 +2110,9 @@ async function recordCorruptionDiagnostic(corruption) {
         settings._errors = arr;
         await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
     } catch (_) {
-        // Best-effort — if even writing the diagnostic fails the popup
-        // banner is still surfaced, which is the user-facing recovery.
+        // reason: best-effort — if even writing the diagnostic fails the
+        // popup banner is still surfaced, which is the user-facing
+        // recovery path.
     }
 }
 
