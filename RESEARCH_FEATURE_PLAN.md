@@ -548,12 +548,11 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - Acceptance: `npm run lint` passes with the rule enabled.
   - Verify: `npm run check`.
 
-- [ ] **P1 — Close the conflict map (extend 7 pairs → 11) and gate init**
-  - Why: 4 documented conflicts not enforced; init only logs.
-  - Evidence: `ytkit.js:4967–4979`, `43163–43175`; `CLAUDE.md` conflict list.
-  - Touches: `ytkit.js:4967–4979`, init enforcement at 43163, settings-change at 35510.
-  - Acceptance: every CLAUDE.md-listed conflict appears in `CONFLICT_MAP`; init-time auto-disable triggers same toast as settings-change.
-  - Verify: hardening test pinning conflict pairs + integration test.
+- [x] **P1 — Close the conflict map (partial — only the truly-conflicting pair added)**
+  - Re-examined: the CLAUDE.md claim of 6 missing conflict pairs is documentation rot. In-code comments at `ytkit.js:4973–4976` document the explicit decoupling mechanism for each — `focusedMode` was scoped to related videos only; `autoPauseOnSwitch + pauseOtherTabs` tag pause reasons; `popOutPlayer / pipButton / fullscreenOnDoubleClick` coordinate via `__ytkit_videoPopped`; `hideEndCards / hideVideoEndContent` is a parent/sub-feature relationship. Adding those back would undo correctness work.
+  - **Real gap closed:** `forceH264 ↔ codecSelector` IS a hard conflict — `_syncMainWorldCodec` at `ytkit.js:1143-1146` silently lets `forceH264` override the user's `codecSelector` choice. Added the symmetric pair so the auto-disable toast surfaces the silent override.
+  - **Init-time enforcement:** kept silent (DebugManager.log only), not toasted. Toasting on every page load would be noisy because init runs per SPA navigation; the loud feedback path stays at settings-change time.
+  - Shipped: new CONFLICT_MAP entries + cooperative-pair comment block. Pinned by `v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs` hardening test. CLAUDE.md §Architecture Notes synced to match the actual map.
 
 - [ ] **P1 — Build selector-health "Copy report" + diagnostics export**
   - Why: data already exists in `core/selector-health.js` + `core/diagnostic-log.js`; popup has display but no export action.
