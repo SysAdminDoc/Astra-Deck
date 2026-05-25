@@ -5,7 +5,7 @@
 <h1 align="center">Astra Deck</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.5.2-ff4e45?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/github/v/release/SysAdminDoc/Astra-Deck?style=flat-square&color=ff4e45&label=release" alt="Latest Release">
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/manifest-V3-blue?style=flat-square" alt="Manifest V3">
   <img src="https://img.shields.io/badge/YouTube-Desktop-ff0000?style=flat-square&logo=youtube&logoColor=white" alt="YouTube">
@@ -358,6 +358,40 @@ Outputs in `build/`:
 - `ytkit-v*.user.js` (with `--with-userscript`)
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
+
+---
+
+## Power-User Console Helpers
+
+Most controls live in the settings panel; a few advanced flows are exposed only on `window.*` for power users:
+
+| Entry point | What it does |
+|-------------|--------------|
+| `?ytkit=safe` URL parameter | Append to any YouTube URL to load with all features disabled (recovery mode). |
+| `ytkit.unsafe()` | Exit safe mode from the DevTools console. |
+| `window.__ytkitOpenAnalytics()` | Open the Watch History Analytics modal (30-day bar chart of `watchTimeTracker` data). |
+| `window.__ytkitSearchTranscripts(query)` | Full-text search over the local IndexedDB transcript index (`researchTranscriptIndex` setting). Returns up to 200 hits. |
+| `window.__ytkitClearTranscriptIndex()` | Wipe the local transcript index. |
+| `window.__ytkitDiagnostics.download()` | Download a JSON bug report containing the diagnostic log ring buffer, selector-health snapshot, and active feature list. |
+| `window.__ytkitProfiles` | Settings profile manager — `.save(name)`, `.load(name)`, `.delete(name)`, `.export()`, `.import(json)`. |
+| `window.__ytkitAnnounce(message)` | Push a string into the polite screen-reader live region (requires `globalAriaLiveRegion`). |
+
+---
+
+## Documentation
+
+| Doc | Audience |
+|-----|----------|
+| [ROADMAP.md](ROADMAP.md) | v5.0.0 → v6.0.0 product plan, competitive matrix, full per-toggle settings schema |
+| [RESEARCH_FEATURE_PLAN.md](RESEARCH_FEATURE_PLAN.md) | v4.46.0+ code-audit punch list (Phases A–H, Quick Wins, Larger Bets) |
+| [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
+| [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |
+| [docs/cws-submission-checklist.md](docs/cws-submission-checklist.md) | Chrome Web Store submission preflight (manifest, privacy policy, screenshots) |
+| [docs/selector-fixture-workflow.md](docs/selector-fixture-workflow.md) | How to refresh MHTML captures when YouTube DOM changes |
+| [docs/screen-reader-smoke.md](docs/screen-reader-smoke.md) | NVDA / JAWS / VoiceOver release-gate checklist |
+| [docs/predicate-sandbox-investigation.md](docs/predicate-sandbox-investigation.md) | Threat model and design of the safe expression DSL for `advancedLocalPredicate` |
+| [docs/signing-keys.md](docs/signing-keys.md) | CRX3 packaging key management |
 
 ---
 
