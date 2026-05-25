@@ -8027,6 +8027,72 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and includes capability map', () => {
+    // The existing healthSave button in the popup writes a diagnostic
+    // JSON file. NEW-1 expands the payload into a proper bug-report
+    // bundle by adding sanitized settings + capability map, with
+    // BYO-key / endpoint-URL / custom-CSS fields redacted so an issue
+    // bundle never leaks a user's API key. The hardening test pins
+    // the redaction list + the marker key + the payload shape.
+
+    // 1. BUG_REPORT_REDACTED_KEYS exists and lists every sensitive key.
+    assert.match(popupSource, /const\s+BUG_REPORT_REDACTED_KEYS\s*=\s*Object\.freeze\(\[/,
+        'popup.js must declare BUG_REPORT_REDACTED_KEYS as a frozen array');
+    const listStart = popupSource.indexOf('BUG_REPORT_REDACTED_KEYS');
+    const listBlock = popupSource.slice(listStart, listStart + 600);
+    for (const key of ['aiSummaryApiKey', 'aiSummaryEndpoint', 'customCssCode',
+                       'downloadCobaltInstance', 'alternativeFrontendInstance']) {
+        assert.match(listBlock, new RegExp(`'${key}'`),
+            `BUG_REPORT_REDACTED_KEYS must include ${key}`);
+    }
+
+    // 2. redactBugReportSettings function is declared and replaces the
+    //    value with a "[redacted — N chars]" sentinel that preserves the
+    //    fact that the field was set without leaking the content.
+    assert.match(popupSource, /function\s+redactBugReportSettings\(/,
+        'popup.js must define redactBugReportSettings()');
+    const redactStart = popupSource.indexOf('function redactBugReportSettings');
+    const redactBlock = popupSource.slice(redactStart, redactStart + 800);
+    assert.match(redactBlock, /\[redacted/,
+        'redactBugReportSettings must replace the value with a [redacted...] placeholder');
+    assert.match(redactBlock, /v\.length\s*>\s*0/,
+        'redactBugReportSettings must skip empty strings (no need to mark an unset field)');
+
+    // 3. healthSave payload now carries the bug-report marker, schema
+    //    version, capability map, sanitized settings, AND the errors
+    //    ring. The marker is a stable identifier the issue triager
+    //    can grep for.
+    const saveStart = popupSource.indexOf('healthSaveBtn.addEventListener');
+    assert.ok(saveStart > -1, 'popup.js must wire healthSaveBtn');
+    const saveBlock = popupSource.slice(saveStart, saveStart + 2500);
+    assert.match(saveBlock, /astraDeckBugReport:\s*true/,
+        'healthSave payload must carry the astraDeckBugReport: true marker');
+    assert.match(saveBlock, /schemaVersion:\s*1/,
+        'healthSave payload must carry schemaVersion: 1');
+    // Payload uses shorthand property syntax (`capabilities,` not
+    // `capabilities: capabilities`); the local variable comes from
+    // `popupState._capabilities || null` two lines up.
+    assert.match(saveBlock, /const capabilities\s*=\s*popupState\._capabilities/,
+        'healthSave must read the capability map from popupState._capabilities');
+    assert.match(saveBlock, /\n\s+capabilities,/,
+        'healthSave payload must include the capabilities map (shorthand property)');
+    assert.match(saveBlock, /settings:\s*sanitized/,
+        'healthSave payload must include sanitized settings');
+    assert.match(saveBlock, /redactBugReportSettings\(settings\)/,
+        'healthSave must redact the settings snapshot before bundling');
+    assert.match(saveBlock, /delete sanitized\._errors/,
+        'healthSave must avoid double-shipping _errors (already in errors field)');
+
+    // 4. Issue template references the bundle.
+    const bugTpl = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'ISSUE_TEMPLATE', 'bug_report.md'), 'utf8'
+    );
+    assert.match(bugTpl, /Astra Deck bug-report bundle/,
+        'bug_report.md must document the bug-report bundle attachment');
+    assert.match(bugTpl, /astra-deck-diagnostics/,
+        'bug_report.md must reference the diagnostics filename pattern');
+});
+
 test('v4.47.0 NF10 follow-up — popup renders capability-probe Unavailable chip on rows whose requires: is unsatisfied', () => {
     // NF10 (the probe module + isEntryAvailable helper) shipped in
     // v4.47.0. The popup consumer was deferred to a follow-up. The

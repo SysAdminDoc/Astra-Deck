@@ -6,6 +6,35 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Bug-report bundle: diagnostic save expanded into a self-identifying
+  bundle with sanitized settings + capability map (NEW-1, Pass 3).**
+  The existing healthSave button used to write a JSON file containing
+  only the extension version, user agent, and `_errors` ring buffer —
+  not enough context for an issue triager to diagnose most bugs. The
+  bundle now carries:
+  `{ astraDeckBugReport: true, schemaVersion: 1, exportedAt,
+     extensionVersion, userAgent, capabilities, settings, errors }`
+  where `capabilities` is the cached `capabilityProbe.runAll()` result
+  (summarizerApi / mediaDL / ollama presence) and `settings` is the
+  full settings snapshot with five sensitive fields redacted via
+  `redactBugReportSettings()`:
+  `aiSummaryApiKey`, `aiSummaryEndpoint`, `customCssCode`,
+  `downloadCobaltInstance`, `alternativeFrontendInstance`. Each
+  redacted value becomes `[redacted — N chars]` so triagers can still
+  tell that the field was set (signal: "user had a key configured")
+  without leaking the content. The `_errors` ring is dropped out of
+  the sanitized settings object because it ships separately in the
+  `errors` field — avoids double-shipping. The `astraDeckBugReport`
+  marker key lets the issue template + future tooling identify the
+  payload at a glance. Bug report issue template updated to reference
+  the bundle by name + filename pattern and to skip the manual
+  environment fields when the bundle is attached. Pinned by a new
+  `v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS`
+  hardening test asserting the redaction list, the redaction helper
+  shape (`[redacted — N chars]` placeholder + skip-empty guard), the
+  payload marker + schema version + capability/settings fields, and
+  the issue-template references. 550/550 JS tests pass (+1 new).
+
 - **Popup capability-probe chip render (NF10 follow-up).**
   NF10 shipped the runtime `capability-probe` module + tests in
   v4.47.0. The popup consumer was deferred. This change wires it up:
