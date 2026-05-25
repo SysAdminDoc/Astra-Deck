@@ -180,6 +180,7 @@
   "thumbnailPreviewSize": false,
   "cinemaAmbientGlow": false,
   "transcriptViewer": false,
+  "transcriptPreferredLanguage": "auto",
   "searchFilterDefaults": false,
   "searchFilterSort": "upload_date",
   "forceStandardFps": false,
