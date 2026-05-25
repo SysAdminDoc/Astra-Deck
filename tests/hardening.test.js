@@ -6465,3 +6465,31 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
     assert.match(ini, /asyncio_default_fixture_loop_scope\s*=\s*function/,
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
+
+test('v4.47.0 popup.css honours prefers-reduced-motion globally', () => {
+    // Project design policy endorses reduced motion (see ROADMAP house style:
+    // "preserve YouTube's native forced-colors and reduced-motion affordances")
+    // and the popup ships several keyframes (status-pulse, spin, fade-down,
+    // backdrop-in, modal-in, shimmer) plus dozens of transitions. The
+    // global "*" reset under @media (prefers-reduced-motion: reduce) is the
+    // single guard that disables every one of them at once; if a future
+    // refactor removes or scopes it, every animated surface becomes a
+    // motion-sensitivity regression. Pin the rule shape so the guard
+    // can't drift silently.
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    const guardStart = popupCss.indexOf('@media (prefers-reduced-motion: reduce)');
+    assert.ok(guardStart > -1,
+        'popup.css must declare @media (prefers-reduced-motion: reduce) for the global motion guard');
+    // The guard body must zero out animation AND transition on the universal
+    // selector. Anything narrower (e.g. scoped to a single class) would leave
+    // sibling keyframes uncovered.
+    const guardBody = popupCss.slice(guardStart, guardStart + 320);
+    assert.match(guardBody, /\*\s*,\s*\*::before\s*,\s*\*::after/,
+        'reduced-motion guard must target *, *::before, *::after (universal coverage)');
+    assert.match(guardBody, /animation:\s*none\s*!important/,
+        'reduced-motion guard must zero animation with !important to override per-element rules');
+    assert.match(guardBody, /transition:\s*none\s*!important/,
+        'reduced-motion guard must zero transition with !important to override per-element rules');
+});

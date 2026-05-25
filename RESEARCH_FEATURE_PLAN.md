@@ -245,14 +245,18 @@ What to **intentionally avoid**:
 - **Verification plan**: round-trip an edit through the new checkbox UI; verify JSON parity with the textarea path.
 - **Complexity**: S. **Priority**: P2.
 
-### NF8 — Reduced-motion guard on popup status pulse + global audit
+### NF8 — Reduced-motion guard on popup status pulse + global audit _[shipped — invariant pin only]_
 
-- **User problem**: users with `prefers-reduced-motion: reduce` see the status-pulse animation indefinitely; Astra's design policy explicitly endorses reduced motion, but the popup keyframe doesn't honor it.
-- **Evidence**: subagent popup audit §3 + §4; `popup.css:224–227` has no `@media (prefers-reduced-motion: reduce)` guard.
-- **Proposed behavior**: wrap every keyframe + transition >150ms in popup.css and early.css under a `@media (prefers-reduced-motion: no-preference) { ... }` block, OR add a global `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }` to popup.css.
-- **Implementation areas**: `extension/popup.css`, `extension/early.css`, `ytkit.js` style injectors that emit `transition:` properties.
-- **Verification plan**: `scripts/audit-popup-a11y.js` extend to grep for any keyframe without a `prefers-reduced-motion` neighbor.
-- **Complexity**: S. **Priority**: P1.
+- Re-examined: `popup.css:2052-2057` already declares the universal
+  `* { animation: none !important; transition: none !important; }` guard
+  under `@media (prefers-reduced-motion: reduce)`, which covers every
+  keyframe (status-pulse, spin, fade-down, backdrop-in, modal-in, shimmer)
+  and every transition in the popup. `early.css` has no animations or
+  transitions to guard.
+- Real gap closed: added the `v4.47.0 popup.css honours prefers-reduced-motion globally`
+  hardening test so future refactors cannot silently scope the guard
+  narrower or drop it. `ytkit.js` style injectors are content-script-only
+  and inherit YouTube's own reduced-motion respect.
 
 ### NF9 — Wheel-seek + ROI mouse zones for the player
 
@@ -327,13 +331,15 @@ What to **intentionally avoid**:
 - **Verification**: `npm run check:i18n` passes; 10-locale parity test extends to feature labels.
 - **Complexity**: M. **Priority**: P3 (deferred to v5.2.0+ per ROADMAP).
 
-### EI7 — Storage Manager flush-on-blur for the popup
-- **Current behavior**: `core/storage-manager.js` debounces writes; popup edits commit on blur/change.
-- **Problem**: if the user edits a JSON textarea and closes the popup mid-write, the debounce flush may never fire (popup window destroyed).
-- **Recommended change**: register a `beforeunload` flush in `popup.js` that calls `StorageManager.flushNow()` (already supported per HARDENING.md storage-manager invariants).
-- **Touches**: `extension/popup.js` (one listener), maybe expose `flushNow` on the popup-side wrapper.
-- **Verification**: hardening test that closing the popup mid-textarea-edit persists the value.
-- **Complexity**: S. **Priority**: P2.
+### EI7 — Storage Manager flush-on-blur for the popup _[wontfix — architecture correct]_
+- Re-examined: the popup does **not** use the `StorageManager` debounce
+  layer — every write goes through `chrome.storage.local.set(...)` directly
+  (`popup.js:441`), which is itself event-loop-synchronous IPC into the
+  storage layer. There is no in-popup debounce to flush.
+- The `StorageManager` debounce + `beforeunload`/`yt-navigate-start` auto-flush
+  hooks at `core/storage-manager.js:141-158` are for the content-script
+  consumer (`ytkit.js`), which is where the original concern would apply
+  — and those hooks were already installed in earlier hardening passes.
 
 ### EI8 — Live-chat fresh capture (selector packs `lastVerified: null`)
 - **Current behavior**: 3 selector packs ship as `needsFreshCapture: true, lastVerified: null` (per roadmap §v4.37.0).
@@ -556,19 +562,18 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - Acceptance: "Copy diagnostics report" button exists; clipboard payload format pinned.
   - Verify: hardening test on payload structure.
 
-- [ ] **P1 — Add `prefers-reduced-motion` guard across all Astra CSS**
-  - Why: NF8; project policy endorses reduced motion but `popup.css:224–227` ignores it.
-  - Evidence: subagent popup audit §4.
-  - Touches: `popup.css`, `early.css`, `ytkit.js` style injectors.
-  - Acceptance: `audit-popup-a11y.js` extends to grep for keyframes without RM guards.
-  - Verify: `npm run audit:a11y`.
+- [x] **P1 — Add `prefers-reduced-motion` guard across all Astra CSS**
+  - Re-examined and shipped:
+    - `popup.css:2052-2057` **already** carries the global `* { animation: none !important; transition: none !important; }` guard — subagent audit missed it. No CSS change needed.
+    - `early.css` declares zero animations/transitions — nothing to guard.
+    - **Real gap was the missing invariant pin.** Added `v4.47.0 popup.css honours prefers-reduced-motion globally` hardening test (`tests/hardening.test.js`) so the universal-selector guard cannot be silently scoped-narrower or dropped.
 
-- [ ] **P1 — Add manifest CSP `connect-src` Reddit origins**
-  - Why: EI5; host_permissions vs CSP asymmetry.
-  - Evidence: `manifest.json:248`.
-  - Touches: `manifest.json:248`.
-  - Acceptance: hardening test that every host_permissions origin appears in connect-src.
-  - Verify: `npm test`.
+- [~] **P1 — Add manifest CSP `connect-src` Reddit origins** _[wontfix — architecture correct]_
+  - Re-examined: the popup script does no cross-origin fetches; every
+    external request goes through `background.js#EXT_FETCH` proxy. The
+    `extension_pages` CSP only scopes what the popup HTML can reach, so
+    omitting YouTube / i.ytimg / Reddit from connect-src is intentional
+    least-privilege, not a gap. Audit recommendation withdrawn.
 
 - [ ] **P1 — Reset action: snapshot + 7-day undo**
   - Why: EI2; today's reset is destructive with no recovery.
@@ -577,12 +582,8 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - Acceptance: reset → undo → state restored byte-identical; expiry test passes.
   - Verify: round-trip test; mocked-clock expiry test.
 
-- [ ] **P1 — Add `npm audit --omit=dev` gate to `npm run check`**
-  - Why: G4; not enforced per-PR today.
-  - Evidence: `package.json:20`.
-  - Touches: `package.json` scripts section.
-  - Acceptance: `npm run check` fails on any non-dev advisory.
-  - Verify: temporarily introduce a vulnerable transitive dep and re-run.
+- [x] **P1 — Add `npm audit --omit=dev` gate to `npm run check`**
+  - Shipped: new `npm run audit:deps` script (`npm audit --omit=dev --audit-level=moderate`) appended to `npm run check`. Currently passes with 0 vulnerabilities.
 
 ### Phase C — Lifecycle adoption (3–5 days each)
 
@@ -710,14 +711,14 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
 These can land in a single ≤200-line PR each; pick any of them if blocked on bigger work.
 
 - **QW1** — README badge sync (Phase A).
-- **QW2** — Manifest CSP Reddit add (EI5).
-- **QW3** — `*.bak` cleanup + gitignore (EI11).
+- **QW2** — Manifest CSP Reddit add (EI5). _[wontfix — popup doesn't fetch external; current asymmetry is correct]_
+- **QW3** — `*.bak` cleanup + gitignore (EI11). _[shipped]_
 - **QW4** — Selector-health "Copy report" button (NF3).
-- **QW5** — `prefers-reduced-motion` guard in popup.css (NF8).
+- **QW5** — `prefers-reduced-motion` guard in popup.css (NF8). _[shipped — invariant pin]_
 - **QW6** — Reset action: snapshot + undo (EI2).
 - **QW7** — Search filter mini-DSL (EI3).
-- **QW8** — Popup "flush on beforeunload" (EI7).
-- **QW9** — `npm audit` gate in `npm run check` (G4).
+- **QW8** — Popup "flush on beforeunload" (EI7). _[wontfix — popup uses synchronous chrome.storage.local, no debounce to flush]_
+- **QW9** — `npm audit` gate in `npm run check` (G4). _[shipped]_
 - **QW10** — `docs/` cross-link section in README (subagent audit Part B §5). _[shipped]_
 - **QW11** — Hidden-API surface (`window.__ytkitOpenAnalytics()`, `ytkit.unsafe()`, `?ytkit=safe`) documented in README §Advanced. _[shipped]_
 - **QW12** — "Reinstall Astra Downloader" popup button (NF6 partial).

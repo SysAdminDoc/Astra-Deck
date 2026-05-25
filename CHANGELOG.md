@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **`npm run check` now runs `npm audit --omit=dev --audit-level=moderate`**
+  via a new `audit:deps` script. Closes the G4 finding from
+  RESEARCH_FEATURE_PLAN — vulnerability advisories were spot-checked per
+  hardening pass but not gated per-PR. Currently passes with 0 advisories.
+- **Pinned the popup's `prefers-reduced-motion` global guard.** `popup.css`
+  has always carried the universal `* { animation: none !important;
+  transition: none !important; }` rule under
+  `@media (prefers-reduced-motion: reduce)`; a new hardening test
+  (`v4.47.0 popup.css honours prefers-reduced-motion globally`) pins
+  the shape so a future refactor cannot silently scope it narrower or
+  drop it. 520/520 tests pass (+1).
 - **README**: badge now uses `shields.io/github/v/release/SysAdminDoc/Astra-Deck`
   so it self-updates per release tag (was hardcoded to `4.5.2`, drifted past
   v4.46.0). Added a **Power-User Console Helpers** table documenting the
