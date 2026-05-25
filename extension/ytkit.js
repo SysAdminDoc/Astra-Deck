@@ -30334,10 +30334,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const data = await this._fetch(videoId);
                 this._pillEl?.remove();
                 if (!data) {
+                    // v4.47.0 NF30: budget-vs-network differentiation.
+                    // _fetch returns null on both rate-limited and network
+                    // failure paths. Surface the difference so users
+                    // don't read "RYD off" as "feature is broken" when
+                    // the real cause is the 100/min sliding-window cap.
                     const offline = document.createElement('span');
                     offline.className = 'ytkit-ryd-pill';
                     offline.dataset.tone = 'offline';
-                    offline.textContent = 'RYD off';
+                    const now = Date.now();
+                    const windowAge = now - this._budgetWindow.start;
+                    const rateLimited = this._budgetWindow.count >= this._BUDGET_PER_MIN
+                        && windowAge < 60000;
+                    if (rateLimited) {
+                        const remainingSec = Math.max(1, Math.ceil((60000 - windowAge) / 1000));
+                        offline.textContent = 'RYD paused';
+                        offline.title = `Return YouTube Dislike paused — rate-limited (${this._budgetWindow.count}/${this._BUDGET_PER_MIN}/min). Resumes in ${remainingSec}s.`;
+                    } else {
+                        offline.textContent = 'RYD off';
+                        offline.title = 'Return YouTube Dislike unavailable — the API did not return a usable response. Check your network or try again later.';
+                    }
                     dislikeButton.appendChild(offline);
                     this._pillEl = offline;
                     return;
@@ -30346,9 +30362,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 pill.className = 'ytkit-ryd-pill';
                 pill.dataset.tone = data.fromCache ? 'cached' : 'fresh';
                 pill.textContent = this._formatCount(data.dislikes);
-                pill.title = data.fromCache
-                    ? `Cached dislike count from Return YouTube Dislike.`
-                    : `Live dislike count from Return YouTube Dislike.`;
+                if (data.fromCache) {
+                    // v4.47.0 NF30: cache-age indicator. Entries can be
+                    // up to returnDislikeCacheHours (default 24h) old;
+                    // power users want to know how stale the count is.
+                    const ageMs = Date.now() - (this._cache?.[videoId]?.ts || Date.now());
+                    const ageH = Math.floor(ageMs / 3600000);
+                    pill.title = ageH >= 1
+                        ? `Cached dislike count from Return YouTube Dislike (${ageH}h old).`
+                        : `Cached dislike count from Return YouTube Dislike (<1h old).`;
+                } else {
+                    pill.title = `Live dislike count from Return YouTube Dislike (${this._budgetWindow.count}/${this._BUDGET_PER_MIN}/min used).`;
+                }
                 dislikeButton.appendChild(pill);
                 this._pillEl = pill;
 

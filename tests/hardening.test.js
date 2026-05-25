@@ -7567,6 +7567,47 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
     }
 });
 
+test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age title', () => {
+    // Before NF30: any null from _fetch (whether 100/min budget cap or
+    // network error) collapsed into a single "RYD off" pill with no
+    // actionable copy. Users assumed the feature was broken.
+    //
+    // After NF30: render() checks _budgetWindow to differentiate. The
+    // pill text says "RYD paused" + title carries seconds-until-reset
+    // when rate-limited; "RYD off" + network-error title otherwise.
+    // The cached-fresh path adds an age suffix (Xh old) and the live
+    // path shows the running quota counter.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const renderIdx = ytkitSrc.indexOf('id: \'returnDislike\'');
+    assert.ok(renderIdx > -1, 'returnDislike feature must exist');
+    // Slice the whole feature block (up to next "id:" entry).
+    const slice = ytkitSrc.slice(renderIdx, renderIdx + 10000);
+
+    // The differentiation logic must check the budget window state.
+    assert.match(slice, /const rateLimited = this\._budgetWindow\.count >= this\._BUDGET_PER_MIN/,
+        'render must compute rateLimited from _budgetWindow + _BUDGET_PER_MIN');
+    assert.match(slice, /windowAge < 60000/,
+        'render must respect the 60s sliding window for rate-limit detection');
+    // Rate-limited branch surfaces a "RYD paused" pill with countdown.
+    assert.match(slice, /offline\.textContent = 'RYD paused'/,
+        'rate-limited path must show "RYD paused" pill');
+    assert.match(slice, /Resumes in \$\{remainingSec\}s/,
+        'rate-limited title must include the seconds-until-reset countdown');
+    // Network-error branch keeps the old "RYD off" pill but with copy.
+    assert.match(slice, /offline\.textContent = 'RYD off'/,
+        'network-error path must still surface "RYD off" pill');
+    assert.match(slice, /API did not return a usable response/,
+        'network-error title must explain the cause');
+    // Cached-data path surfaces age in hours.
+    assert.match(slice, /Cached dislike count from Return YouTube Dislike \(\$\{ageH\}h old\)/,
+        'cached-data title must include the entry age in hours');
+    // Live-fetch path shows running quota counter.
+    assert.match(slice, /\$\{this\._budgetWindow\.count\}\/\$\{this\._BUDGET_PER_MIN\}\/min used/,
+        'live-fetch title must show running quota counter');
+});
+
 test('v4.47.0 NF29 — pickTranscriptTrack honors transcriptPreferredLanguage with documented precedence', () => {
     // Precedence chain (per the helper's JSDoc + the schema entry):
     //   1. exact languageCode match for transcriptPreferredLanguage
