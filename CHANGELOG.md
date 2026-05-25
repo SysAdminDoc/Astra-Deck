@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **README**: badge now uses `shields.io/github/v/release/SysAdminDoc/Astra-Deck`
+  so it self-updates per release tag (was hardcoded to `4.5.2`, drifted past
+  v4.46.0). Added a **Power-User Console Helpers** table documenting the
+  `?ytkit=safe` URL parameter, `ytkit.unsafe()` console toggle, the four
+  `window.__ytkit*` entry points (`OpenAnalytics`, `SearchTranscripts`,
+  `ClearTranscriptIndex`, `Diagnostics.download`), `window.__ytkitProfiles`,
+  and `window.__ytkitAnnounce`. Added a **Documentation** index cross-linking
+  ROADMAP, RESEARCH_FEATURE_PLAN, CHANGELOG, HARDENING, CONTRIBUTING, and
+  the five `docs/*.md` references that were previously buried.
+- **Repo cleanup**: removed orphan `*.bak` editor backups and a duplicate
+  `YTKit-v1.2.0.user.js` from the repo root. `*.bak` was already in
+  `.gitignore`; canonical archive copy lives at `archive/YTKit-v1.2.0.user.js`.
+- **Research companion**: `RESEARCH_FEATURE_PLAN.md` added as the v4.46.0+
+  code-audit punch list. Phases A–H with Quick-Wins and Larger-Bets sections;
+  references but does not duplicate `ROADMAP.md`.
+
 ## [4.46.0] - 2026-05-24 - extreme audit cut (H25): SW + popup + Python downloader hardening
 
 Deep audit pass across the three production-critical surfaces (service
