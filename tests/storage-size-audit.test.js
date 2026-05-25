@@ -41,7 +41,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // another 36 bytes.
     // v4.47.0 EI-NEW3: adding `reactionSpammerMinIntervalMs: 500`
     // added another 35 bytes.
-    assert.equal(assessment.totalBytes, 177862);
+    // v4.47.0 NF9: adding `wheelSeek: false` + `wheelSeekStepSec: 5`
+    // added another 39 bytes.
+    assert.equal(assessment.totalBytes, 177901);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
