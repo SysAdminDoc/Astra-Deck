@@ -347,8 +347,32 @@ const popupState = {
     // v4.39.0: policy-profile instance — populated lazily on first
     // schema-overview render so the badge code can read profile
     // visibility without rebuilding the resolver on every key row.
-    _policyProfile: null
+    _policyProfile: null,
+    // v4.47.0 NF10 follow-up: capability map populated once at popup
+    // boot via capabilityProbe.runAll(). Schema rows whose `requires:`
+    // field declares an unavailable capability surface an inline
+    // "Unavailable" chip so users understand why a flip would no-op.
+    // Null until the probe resolves; treated as "all available" until
+    // then so the popup never blocks on the probe (it can fall through
+    // to chip-less rendering if the probe rejects or times out).
+    _capabilities: null
 };
+
+async function ensureCapabilityMap() {
+    if (popupState._capabilities !== null) return popupState._capabilities;
+    const probe = window.YTKitCore && window.YTKitCore.capabilityProbe;
+    if (!probe || typeof probe.runAll !== 'function') {
+        popupState._capabilities = {};
+        return popupState._capabilities;
+    }
+    try {
+        popupState._capabilities = await probe.runAll();
+    } catch (err) {
+        console.warn('[Astra Deck popup] capability-probe runAll failed:', err);
+        popupState._capabilities = {};
+    }
+    return popupState._capabilities;
+}
 
 function ensurePolicyProfile() {
     if (popupState._policyProfile) return popupState._policyProfile;
@@ -1820,6 +1844,36 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         }
     }
 
+    // v4.47.0 NF10 follow-up: capability-probe chip. Schema entries
+    // with a `requires:` array declare runtime browser capabilities
+    // (e.g. ['summarizerApi'] for localAiSummary, ['mediaDL'] for the
+    // download* family, ['ollama'] for the local-LLM provider). If
+    // the capability map is populated and the entry's required set
+    // is not satisfied, render an "Unavailable" chip with the missing
+    // capability names in the tooltip so users understand the no-op.
+    // The chip uses the same compact pill geometry as the profile
+    // badge above; styling lives in popup.css under .so-key-unavailable.
+    if (Array.isArray(entry.requires) && entry.requires.length > 0) {
+        const probe = window.YTKitCore && window.YTKitCore.capabilityProbe;
+        const caps = popupState._capabilities;
+        // Skip the chip while the probe is still resolving (caps === null)
+        // so we don't flash "Unavailable" on every row at boot. Once
+        // ensureCapabilityMap() resolves and renderSchemaOverview()
+        // re-runs, the chip surfaces on the entries that actually
+        // lack a required capability.
+        if (caps && probe && typeof probe.isEntryAvailable === 'function'
+            && !probe.isEntryAvailable(entry, caps)) {
+            const missing = entry.requires.filter((cap) => caps[cap] !== true);
+            const chip = document.createElement('span');
+            chip.className = 'so-key-profile-badge so-key-unavailable';
+            chip.textContent = 'unavailable';
+            chip.title = 'This setting requires a capability not available in this browser: '
+                + missing.join(', ')
+                + '. Toggling the setting has no effect until the capability becomes available.';
+            row.appendChild(chip);
+        }
+    }
+
     if (entry.type === 'boolean') {
         const on = settings[entry.key] === true;
         const btn = document.createElement('button');
@@ -2756,6 +2810,18 @@ function installWheelScrolling() {
     // v4.29.0: restore the persisted schema-overview expanded set BEFORE
     // the first render so the user sees their open categories on open.
     await restoreSchemaOverviewExpanded();
+
+    // v4.47.0 NF10 follow-up: kick off capability probe in parallel with
+    // settings load. We do NOT await it inline — the popup must remain
+    // responsive even if a probe (mediaDL fetch, ollama fetch) takes
+    // ~1.5s to time out. When the probe resolves we re-render the
+    // schema overview to surface the "Unavailable" chips on rows whose
+    // requires: declares a capability that came back false.
+    void ensureCapabilityMap().then((caps) => {
+        if (caps && Object.keys(caps).length > 0) {
+            renderSchemaOverview();
+        }
+    });
 
     try {
         const settings = await loadSettings();

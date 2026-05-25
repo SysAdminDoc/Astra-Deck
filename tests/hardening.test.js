@@ -8027,6 +8027,63 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 NF10 follow-up — popup renders capability-probe Unavailable chip on rows whose requires: is unsatisfied', () => {
+    // NF10 (the probe module + isEntryAvailable helper) shipped in
+    // v4.47.0. The popup consumer was deferred to a follow-up. The
+    // follow-up wires three things: (1) popup.html loads
+    // core/capability-probe.js BEFORE popup.js, (2) popup.js boots
+    // an ensureCapabilityMap() helper that runs the probe once and
+    // caches { capability: bool } on popupState, (3) the schema-
+    // overview row builder consults the cache and renders a
+    // .so-key-unavailable chip when entry.requires has at least one
+    // unsatisfied capability.
+
+    // 1. popup.html script load order: capability-probe.js must
+    //    appear before popup.js.
+    const popupHtml = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    const probeIdx = popupHtml.indexOf('core/capability-probe.js');
+    const popupJsIdx = popupHtml.indexOf('"popup.js"');
+    assert.ok(probeIdx > -1,
+        'popup.html must load core/capability-probe.js');
+    assert.ok(popupJsIdx > -1,
+        'popup.html must load popup.js');
+    assert.ok(probeIdx < popupJsIdx,
+        'capability-probe.js must load BEFORE popup.js so window.YTKitCore.capabilityProbe is defined at boot');
+
+    // 2. popupState carries a _capabilities slot + ensureCapabilityMap
+    //    helper that calls probe.runAll() once and caches the result.
+    assert.match(popupSource, /_capabilities:\s*null/,
+        'popupState must declare _capabilities slot (null until probe resolves)');
+    assert.match(popupSource, /async function ensureCapabilityMap\(\)/,
+        'popup.js must define ensureCapabilityMap() helper');
+    assert.match(popupSource, /probe\.runAll\(\)/,
+        'ensureCapabilityMap must call capabilityProbe.runAll() to populate the map');
+    // The boot path must kick the probe off (void promise) and
+    // re-render the schema overview when it resolves.
+    assert.match(popupSource, /void ensureCapabilityMap\(\)\.then/,
+        'popup boot must fire ensureCapabilityMap().then() in the background');
+
+    // 3. Row builder consults the cache and isEntryAvailable.
+    const rowStart = popupSource.indexOf('function buildSchemaOverviewKeyRow');
+    assert.ok(rowStart > -1, 'popup.js must define buildSchemaOverviewKeyRow');
+    const rowBlock = popupSource.slice(rowStart, rowStart + 6000);
+    assert.match(rowBlock, /Array\.isArray\(entry\.requires\)/,
+        'row builder must check entry.requires is a non-empty array before consulting the probe');
+    assert.match(rowBlock, /probe\.isEntryAvailable\(entry,\s*caps\)/,
+        'row builder must consult capabilityProbe.isEntryAvailable');
+    assert.match(rowBlock, /so-key-unavailable/,
+        'row builder must apply the .so-key-unavailable class on chips');
+
+    // 4. The chip styling exists in popup.css.
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(popupCss, /\.so-key-profile-badge\.so-key-unavailable/,
+        'popup.css must declare the .so-key-unavailable variant');
+});
+
 test('v4.47.0 stickyVideo — fullscreen handler hides positioned overlays on live/previously-live videos', () => {
     // Class of bug: ytd-live-chat-frame is positioned via _positionOverRight
     // with position:fixed; z-index:10001. Native fullscreen used to leave
