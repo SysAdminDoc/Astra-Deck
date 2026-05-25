@@ -2,6 +2,8 @@
 
 Last consolidated: 2026-05-25 (2nd pass) at HEAD `c1ffe18` (v4.46.0 + 24 autonomous-loop commits). The 2nd pass folded in the 2026-05-25 post-loop deep-audit findings (NF25-NF35 + EI-NEW1-6 + Phase V matrix sync) from `docs/research/2026-05-25-postloop-audit.md`, which was then deleted (folded back in here).
 
+Companion: [RESEARCH_FEATURE_PLAN_PASS3.md](RESEARCH_FEATURE_PLAN_PASS3.md) — 2026-05-25 external research pass (Pass 3). Adds NEW-1..NEW-10 opportunities (bug-report bundle, userscript drift check, E2E Playwright gate, GUI smoke tests, long-session leak detector, per-key reset, SW lifecycle ring buffer, CHANGELOG rotation, live-chat archive export, README rewrite) and three new Open Questions. Carry-back into this file as items are picked up.
+
 This file is the **single source of truth for what's left to ship.** It folds in the original v4.46.0 punch list and the 2026-05-25 reconciliation pass. Completed items live in [CHANGELOG.md](CHANGELOG.md); long-arc architecture lives in [ROADMAP.md](ROADMAP.md); contributor orientation lives in [docs/architecture.md](docs/architecture.md).
 
 If you finish an item below, **delete it from this file and add a one-line entry under `[Unreleased]` in `CHANGELOG.md`** — don't leave it as a `[x]` checkbox.
@@ -59,9 +61,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Observability + competitive sync (P3 batch from 2026-05-25 audit)
 
-- **P3 / S — FolderPickerService timeout watchdog (NF35)**
-  - Why: slow GUI thread silently fails the 120s timeout. Users see "Could not open folder picker" with no root cause.
-  - Touches: `astra_downloader.py:1915-1948`.
 
 - **P3 / M — `chatStyleComments` `@supports(selector(...))` fallbacks (EI-NEW1)**
   - Why: ~4500 lines of brittle CSS chains; YouTube class renames break the entire layout.
@@ -167,9 +166,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Acceptance: synthetic test sets `summarizerApi` false, asserts
     `localAiSummary` row carries the chip; setting true clears it.
 
-- **P2 / M — Add `likes` + `subsCount` to predicate ctx (NF16)**
-  - Why: BlockTube parity (`likes`), PocketTube parity (`subsCount`).
-  - Touches: `ytkit.js` `_buildPredicateCtx`, `tests/hardening.test.js` ctx-shape pin.
 
 - **P2 / M — First-run welcome card + profile picker + What's New (NF21)**
   - Touches: `popup.html`, `popup.js`, `extension/whatsnew/` (new dir).
