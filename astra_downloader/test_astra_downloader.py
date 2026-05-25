@@ -1,4 +1,5 @@
 import socket
+import subprocess
 import tempfile
 import threading
 import time
@@ -1757,6 +1758,143 @@ class ResponseSizeCapTests(unittest.TestCase):
             "cors_response must set status_code = 413 when the body exceeds the cap")
         self.assertIn("resp.get_data()", src,
             "cors_response must measure the actual serialised body length, not the input dict")
+
+
+class UpdateYtdlpEndpointTests(unittest.TestCase):
+    """v4.47.0 NF18 — on-demand `yt-dlp -U` via `/update-ytdlp` so a
+    user can fix a broken-on-YouTube yt-dlp build without waiting up
+    to 24 h for the auto-update throttle (NF26). Endpoint shares the
+    `_run_ytdlp_self_update` runner with the auto-update path so a
+    successful manual update also stamps the throttle marker and
+    invalidates the version cache.
+    """
+
+    TOKEN = "u" * 32
+
+    def _client(self, *, in_flight=0, ytdlp_present=True):
+        config = FakeConfig({"ServerToken": self.TOKEN})
+
+        class _FakeManager:
+            downloads = {}
+            _lock = threading.Lock()
+
+            def active_count(_self):
+                return in_flight
+
+        manager = _FakeManager()
+        api = ad.create_api(config, manager, FakeHistory())
+
+        # Patch YTDLP_PATH.exists() so the endpoint can branch on
+        # presence without an actual yt-dlp.exe on disk.
+        patch = mock.patch.object(
+            ad.YTDLP_PATH.__class__, 'exists', return_value=ytdlp_present
+        )
+        patch.start()
+        self.addCleanup(patch.stop)
+
+        return api.test_client()
+
+    def test_unauthenticated_request_is_rejected(self):
+        client = self._client()
+        resp = client.post("/update-ytdlp")
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn("rejected", resp.get_json()["error"])
+
+    def test_missing_ytdlp_returns_503(self):
+        client = self._client(ytdlp_present=False)
+        resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
+        self.assertEqual(resp.status_code, 503)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertIn("not installed", body["error"])
+
+    def test_in_flight_downloads_block_update_with_409(self):
+        client = self._client(in_flight=2)
+        resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
+        self.assertEqual(resp.status_code, 409)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("inFlight"), 2)
+        # Error must explain WHY the update is blocked so the popup
+        # can render an actionable status string. The phrase
+        # references the atomic-replace race documented in NF26.
+        self.assertIn("in flight", body["error"])
+        self.assertIn("atomically replaces", body["error"])
+
+    def test_successful_self_update_returns_200_with_version_delta(self):
+        client = self._client()
+        completed = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="Updated yt-dlp to version 2026.05.10",
+            stderr="",
+        )
+        version_seq = iter(['2026.04.01', '2026.05.10'])
+        with mock.patch.object(ad.subprocess, 'run', return_value=completed), \
+             mock.patch.object(ad, 'get_ytdlp_version',
+                               side_effect=lambda force=False: next(version_seq, '2026.05.10')):
+            resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertEqual(body.get("exit_code"), 0)
+        self.assertEqual(body.get("version_before"), '2026.04.01')
+        self.assertEqual(body.get("version_after"), '2026.05.10')
+        self.assertEqual(body.get("source"), 'manual')
+
+    def test_nonzero_exit_returns_500_with_stderr(self):
+        client = self._client()
+        completed = subprocess.CompletedProcess(
+            args=[],
+            returncode=1,
+            stdout="",
+            stderr="Update failed: network unreachable",
+        )
+        with mock.patch.object(ad.subprocess, 'run', return_value=completed), \
+             mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
+            resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("exit_code"), 1)
+        self.assertIn("network unreachable", body.get("error"))
+        # version_before == version_after on failure (no replacement happened).
+        self.assertEqual(body.get("version_before"), body.get("version_after"))
+
+    def test_subprocess_timeout_returns_500_with_timeout_error(self):
+        client = self._client()
+        with mock.patch.object(
+            ad.subprocess, 'run',
+            side_effect=subprocess.TimeoutExpired(cmd=['yt-dlp', '-U'], timeout=120),
+        ), mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
+            resp = client.post("/update-ytdlp", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("exit_code"), -1)
+        self.assertIn("timed out", body.get("error"))
+
+    def test_shared_runner_returns_structured_dict(self):
+        # _run_ytdlp_self_update is the shared subprocess runner used
+        # by both the manual endpoint and the background auto-update
+        # path. Asserting the exact key set keeps the wire schema
+        # stable for the popup consumer.
+        config = FakeConfig({"ServerToken": self.TOKEN, "LastYtDlpUpdateCheck": ""})
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="ok", stderr="",
+        )
+        with mock.patch.object(ad.subprocess, 'run', return_value=completed), \
+             mock.patch.object(ad, 'get_ytdlp_version', return_value='2026.04.01'):
+            result = ad._run_ytdlp_self_update(config.data, source_tag='unit-test')
+
+        for required in ('ok', 'exit_code', 'stdout', 'stderr',
+                         'version_before', 'version_after', 'source'):
+            self.assertIn(required, result,
+                          f"_run_ytdlp_self_update result must carry {required!r}")
+        self.assertEqual(result['source'], 'unit-test')
 
 
 if __name__ == "__main__":

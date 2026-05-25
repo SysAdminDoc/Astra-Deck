@@ -215,6 +215,13 @@
              chrome.storage.local. Recovery path for users who change
              their mind after dismissing the prompt. -->
         <button id="reenable-mediadl-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="reenableMediadlAria" aria-label="Re-enable Astra Downloader install prompts" data-i18n="reenableMediadlBtn">Enable Downloader Prompts</button>
+        <!-- v4.47.0 NF18: on-demand yt-dlp self-update. When YouTube
+             breaks the user's current yt-dlp build, this fixes it
+             without waiting up to 24 h for the auto-update throttle.
+             Always visible; the click handler probes MediaDL via the
+             active YouTube tab's content script and surfaces the
+             structured server response. -->
+        <button id="update-ytdlp-btn" class="undo-action" type="button" data-i18n-attr-aria-label="updateYtdlpAria" aria-label="Force yt-dlp self-update" data-i18n="updateYtdlpBtn">Update yt-dlp</button>
         <button id="reset-btn" class="danger" type="button" data-i18n="resetBtn">Reset</button>
       </div>
     </nav>
