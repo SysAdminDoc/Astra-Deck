@@ -218,6 +218,12 @@
      existing `core.createSelectorHealth` first so it's a no-op on
      content-script pages where ytkit.js already loaded it. -->
 <script src="core/selector-health.js"></script>
+<!-- v4.47.0 NF10 follow-up: capability-probe surfaces runtime browser
+     capabilities (summarizer API, MediaDL, Ollama) so the schema-overview
+     row builder can render an "Unavailable" chip on entries whose
+     `requires:` field declares an unavailable capability. The popup
+     awaits capabilityProbe.runAll() once at boot. -->
+<script src="core/capability-probe.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

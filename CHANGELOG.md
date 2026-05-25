@@ -6,6 +6,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Popup capability-probe chip render (NF10 follow-up).**
+  NF10 shipped the runtime `capability-probe` module + tests in
+  v4.47.0. The popup consumer was deferred. This change wires it up:
+  `popup.html` now loads `core/capability-probe.js` before `popup.js`;
+  `popupState._capabilities` slot holds the probe result; an async
+  `ensureCapabilityMap()` helper calls `capabilityProbe.runAll()` once
+  at boot and caches the `{capability: bool}` map. The boot path fires
+  the probe in the background (not awaited inline — `mediaDL` and
+  `ollama` probes do HTTP fetches with a 1.5s timeout) and re-renders
+  the schema overview once it resolves. `buildSchemaOverviewKeyRow`
+  consults the cache via `capabilityProbe.isEntryAvailable(entry, caps)`
+  and renders a red `.so-key-unavailable` chip on rows whose
+  `requires:` array declares an unsatisfied capability (e.g.
+  `localAiSummary` with `requires: ['summarizerApi']` in Chrome
+  without the Summarizer origin trial; download* rows with
+  `requires: ['mediaDL']` when the Astra Downloader companion isn't
+  running). Tooltip lists the missing capability names so users
+  understand the no-op. Same compact-pill geometry as the v4.39.0
+  `.so-key-profile-gated` chip; red tone instead of amber. Pinned by
+  a new `v4.47.0 NF10 follow-up — popup renders capability-probe
+  Unavailable chip` hardening test that asserts script load order,
+  the boot wiring, the row-builder hook, and the CSS variant.
+  549/549 JS tests pass (+1 new).
+
 - **stickyVideo + theater-split.user.js: fullscreen on live / previously-live videos no longer leaks the chat overlay.**
   Class of bug: `ytd-live-chat-frame` is positioned via `_positionOverRight`
   with `position:fixed; z-index:10001`. The old fullscreen handler in

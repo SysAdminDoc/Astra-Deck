@@ -931,6 +931,16 @@ body {
   flex-shrink: 0;
 }
 
+/* v4.47.0 NF10 follow-up: capability-probe chip. Reuses the profile-badge
+   geometry but with a red tone — the row's setting will no-op until the
+   browser exposes the required capability. Tooltip lists the missing
+   capability names. House-style 4 px radius, same as the gated chip. */
+.schema-overview-list .so-key-profile-badge.so-key-unavailable {
+  background: rgba(245, 87, 87, 0.14);
+  color: #ff8585;
+  border-color: rgba(245, 87, 87, 0.36);
+}
+
 .schema-overview-list .so-key-switch {
   appearance: none;
   background: rgba(255, 255, 255, 0.04);
