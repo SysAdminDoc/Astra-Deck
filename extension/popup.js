@@ -2207,12 +2207,52 @@ if (healthCopyBtn) {
     });
 }
 
+// v4.47.0 NEW-1: keys whose values are user-private and MUST NOT
+// leak into a bug report bundle. The BYO-key fields and any free-text
+// endpoint URL go here (an endpoint URL may contain a personal/self-
+// hosted hostname). The keys map to the corresponding schema entries
+// at settings-schema.js (search for risk:"api" / risk:"store-risk").
+const BUG_REPORT_REDACTED_KEYS = Object.freeze([
+    'aiSummaryApiKey',
+    'aiSummaryEndpoint',
+    'customCssCode',
+    'downloadCobaltInstance',
+    'alternativeFrontendInstance',
+]);
+
+// v4.47.0 NEW-1: redact in place so the bug-report bundle never ships
+// a user's BYO API key, a self-hosted endpoint, or pasted custom CSS.
+// Returns a NEW object — callers must NOT use the input afterwards.
+// "[redacted]" placeholder preserves the key for diagnostics (presence
+// is signal: e.g. confirms that an API key WAS set) without leaking
+// the value.
+function redactBugReportSettings(settings) {
+    if (!isPlainObject(settings)) return {};
+    const out = { ...settings };
+    for (const key of BUG_REPORT_REDACTED_KEYS) {
+        if (key in out) {
+            const v = out[key];
+            if (typeof v === 'string' && v.length > 0) {
+                out[key] = `[redacted — ${v.length} chars]`;
+            }
+        }
+    }
+    return out;
+}
+
 // v3.23.0 (L9): Save the full DiagnosticLog ring buffer as a JSON file.
 // The Copy button drops a compact summary on the clipboard; Save lets
 // the user attach the raw structured payload to a bug report. Uses
 // chrome.downloads.download when available so the file lands in the
 // user's Downloads folder even after the popup closes; falls back to
 // an a[download] click for Firefox builds without downloads permission.
+//
+// v4.47.0 NEW-1: payload expanded into a full bug-report bundle. Adds
+// sanitized settings snapshot (BYO API keys + endpoint URLs + custom
+// CSS redacted via redactBugReportSettings) and the capability-probe
+// map so issue triagers can see what was configured + what the
+// browser environment supports. A new top-level `astraDeckBugReport`
+// marker makes the bundle self-identifying for the issue template.
 if (healthSaveBtn) {
     healthSaveBtn.addEventListener('click', async () => {
         try {
@@ -2221,10 +2261,19 @@ if (healthSaveBtn) {
                 ? items[SETTINGS_STORAGE_KEY]
                 : {};
             const errors = Array.isArray(settings._errors) ? settings._errors : [];
+            const sanitized = redactBugReportSettings(settings);
+            // Drop the errors array out of sanitized — already in `errors`
+            // above; carrying it twice would just bloat the bundle.
+            delete sanitized._errors;
+            const capabilities = popupState._capabilities || null;
             const payload = {
+                astraDeckBugReport: true,
+                schemaVersion: 1,
                 exportedAt: new Date().toISOString(),
                 extensionVersion: manifestVersion,
                 userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
+                capabilities,
+                settings: sanitized,
                 errors,
             };
             const json = JSON.stringify(payload, null, 2);
