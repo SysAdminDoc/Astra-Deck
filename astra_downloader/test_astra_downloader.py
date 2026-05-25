@@ -817,6 +817,68 @@ class AutoUpdateActiveDownloadGuardTests(unittest.TestCase):
                          "Update must still fire when no active_count_fn provided")
 
 
+class FolderPickerWatchdogTests(unittest.TestCase):
+    """v4.47.0 NF35 — the folder picker dialog can hang on slow file
+    systems or stalled Qt event loops. Previously the Flask handler
+    timed out at 120s with no GUI-side diagnostic pointing at the
+    cause. The watchdog times the QFileDialog.exec() call and emits
+    a persistent log line when the dialog blocks past the documented
+    threshold (60s).
+    """
+
+    def test_threshold_constant_is_60_seconds(self):
+        # Pin the threshold so it can't be silently raised to the
+        # point of uselessness or lowered to spam the log.
+        self.assertEqual(
+            ad.FolderPickerService.DIALOG_WATCHDOG_THRESHOLD_SECONDS,
+            60,
+            "Watchdog threshold must be 60 seconds — leaves a 60s "
+            "margin before the Flask handler's 120s timeout, so the "
+            "log line gets written before the HTTP request gives up.",
+        )
+
+    def test_watchdog_emits_log_when_dialog_blocks_past_threshold(self):
+        # Source-pin the log emission shape: when dialog_elapsed exceeds
+        # the threshold, write_persistent_log must be called with a
+        # message that names the elapsed time and the threshold so an
+        # operator reading the log can correlate.
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        self.assertIn(
+            "dialog_elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS",
+            src,
+            "FolderPickerService._tick must check dialog_elapsed against the threshold",
+        )
+        self.assertIn(
+            "FolderPickerService: dialog blocked for",
+            src,
+            "Watchdog log message must use the documented prefix so log scraping works",
+        )
+        self.assertIn(
+            "Possible Qt event-loop or file-system hang.",
+            src,
+            "Watchdog log message must surface the suspected cause",
+        )
+
+    def test_watchdog_does_not_log_for_fast_dialogs(self):
+        # The threshold gate ensures fast dialog interactions don't
+        # spam the log. We pin this via source-shape rather than a
+        # live Qt test — the gate is a single boolean check.
+        src = Path(ad.__file__).read_text(encoding='utf-8')
+        # The log call must sit INSIDE the `if dialog_elapsed > ...`
+        # block, not outside. We test this by ensuring the log line
+        # is preceded by the watchdog conditional within a reasonable
+        # window.
+        log_line = "FolderPickerService: dialog blocked for"
+        cond_line = "dialog_elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS"
+        log_idx = src.find(log_line)
+        cond_idx = src.find(cond_line)
+        self.assertGreater(log_idx, cond_idx,
+                           "Log line must appear after the threshold check, not before")
+        # And within 500 characters — proving they're in the same block.
+        self.assertLess(log_idx - cond_idx, 500,
+                        "Log line and threshold check must be in the same control block")
+
+
 class DenoRuntimeHardGateTests(unittest.TestCase):
     """v4.47.0 NF27 — yt-dlp >= 2026.04.01 needs Deno to solve YouTube's
     signature challenges. Without it, every download returns empty
