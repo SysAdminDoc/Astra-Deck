@@ -54,7 +54,7 @@
         });
     }
 
-                                                                                                                        // ── BEGIN v5.0.0 bundled core modules ──
+                                                                                                                            // ── BEGIN v5.0.0 bundled core modules ──
     // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:
     //     node sync-userscript.js
     //
@@ -101,6 +101,43 @@
     const SCOPES = Object.freeze(['global', 'feed', 'watch', 'player', 'comments', 'live-chat', 'subscriptions', 'downloads', 'popup']);
     const VEHICLES = Object.freeze(['extension', 'userscript', 'both']);
     const TYPES = Object.freeze(['boolean', 'string', 'number', 'array', 'object', 'null']);
+
+    // v4.47.0 NF17: well-known runtime capability names that an entry can
+    // declare via an optional `requires:` array. Each name corresponds to a
+    // platform/runtime affordance the feature *cannot* work without — the
+    // NF10 capability probe (still pending) will detect each at session
+    // start and gate the popup row from being enabled when missing. Keep
+    // this list narrow and well-grounded — only add a capability when the
+    // feature has no graceful in-code fallback. Features that *do* fall
+    // back (e.g. popOutPlayer's Document PiP → standard PiP cascade) stay
+    // off the gated list because the toggle works on every browser, just
+    // at different fidelity.
+    //
+    // Adding a capability name here requires (a) updating the well-known
+    // allowlist below, (b) declaring it on every entry that strictly
+    // requires it, and (c) wiring the future capability-probe module
+    // (extension/core/capability-probe.js — see RESEARCH_FEATURE_PLAN NF10).
+    const CAPABILITIES = Object.freeze([
+        // Chrome 138+ built-in window.ai.Summarizer (origin trial gated).
+        // Used by localAiSummary and subscriptionAiTags. Firefox + Safari +
+        // older Chrome lack this API; the popup chip should render
+        // "Unavailable in this browser" when probe returns false.
+        'summarizerApi',
+        // Astra Downloader companion service on 127.0.0.1:9751 (with 5
+        // fallback ports). Probe is MediaDLManager.check(). Features that
+        // *require* the companion (rather than degrade gracefully) gate on
+        // this; legacy paths like `downloadCobaltFallback` stay off the
+        // list because they have an explicit Cobalt path when companion is
+        // unreachable.
+        'mediaDL',
+        // Local Ollama HTTP server at 127.0.0.1:11434. Drives the local AI
+        // summary path when `aiSummaryProvider === 'ollama'`. The probe
+        // pings /api/version. Toggling `aiVideoSummary` itself doesn't
+        // require Ollama (BYO key works fine); per-provider gating is a
+        // value-level concern, not a toggle-level one, so this capability
+        // is reserved for future Ollama-only features.
+        'ollama',
+    ]);
 
     const SETTINGS_SCHEMA = Object.freeze([
 
@@ -582,8 +619,8 @@
         Object.freeze({ key: "initialPlayerStateBackground", category: "quality-codec", type: "string", defaultValue: "inherit", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── downloads ───
-        Object.freeze({ key: "downloadHistoryPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "downloadHealthPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "downloadHistoryPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["mediaDL"]) }),
+        Object.freeze({ key: "downloadHealthPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["mediaDL"]) }),
         Object.freeze({ key: "downloadStreamLinksPanel", category: "downloads", type: "boolean", defaultValue: false, risk: "local-companion", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "downloadCobaltFallback", category: "downloads", type: "boolean", defaultValue: false, risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", labelKey: "Cobalt download fallback", descriptionKey: "When the Astra Downloader companion is unreachable, fall back to the Cobalt API." }),
         Object.freeze({ key: "downloadCobaltInstance", category: "downloads", type: "string", defaultValue: "https://api.cobalt.tools/api/json", risk: "api", profile: "github-full", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0", labelKey: "Cobalt API instance URL", descriptionKey: "Custom Cobalt API endpoint — leave default unless self-hosting." }),
@@ -617,11 +654,11 @@
         Object.freeze({ key: "subscriptionSortMode", category: "subscriptions", type: "string", defaultValue: "default", risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "subscriptionShowNewSinceLastVisit", category: "subscriptions", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "subscriptionLastVisitData", category: "subscriptions", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "subscriptionAiTags", category: "subscriptions", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "subscriptionAiTags", category: "subscriptions", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
         Object.freeze({ key: "subscriptionAiTagData", category: "subscriptions", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "subscriptions", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── research-ai ───
-        Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
         Object.freeze({ key: "researchSpacedReview", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "researchTranscriptIndex", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "researchTranscriptSearchPanel", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -828,6 +865,7 @@
     if (typeof module !== "undefined" && module.exports) {
         module.exports = {
             SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
+            CAPABILITIES,
             buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
             isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
             humanizeSettingKey
@@ -836,6 +874,7 @@
     if (typeof window !== "undefined") {
         window.__YTKIT_SETTINGS_SCHEMA__ = {
             SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, VEHICLES, TYPES,
+            CAPABILITIES,
             buildDefaultsFromSchema, getKeysByCategory, findSettingEntry,
             isInternalSettingKey, getStoreSafeKeys, getGithubFullKeys,
             humanizeSettingKey

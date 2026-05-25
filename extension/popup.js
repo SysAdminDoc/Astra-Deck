@@ -798,8 +798,9 @@ function getFocusableElements(root = document.body) {
 }
 
 function getActiveFocusRoot() {
-    const confirmShell = $('#confirm-shell');
-    if (confirmShell && !confirmShell.hidden) return confirmShell;
+    // v4.47.0 NF14: the confirm-shell modal was retired in favor of the
+    // immediate-apply + undo-toast pattern. The Tab-trap below now
+    // always rotates within the document body.
     return document.body;
 }
 
@@ -2203,15 +2204,9 @@ if (healthSaveBtn) {
 }
 
 async function clearDiagnosticLog() {
-    const confirmed = await confirmAction({
-        eyebrow: t('confirmEyebrow', 'Confirm'),
-        title: t('clearLogTitle', 'Clear diagnostic log?'),
-        message: t('clearLogMessage', 'This removes all recorded diagnostic events from extension storage.'),
-        confirmLabel: t('healthClearBtn', 'Clear'),
-        tone: 'default'
-    });
-    if (!confirmed) return;
-
+    // v4.47.0 NF14: applies immediately — the diagnostic log is a ring
+    // buffer of runtime errors, not user-authored data. No confirm
+    // dialog needed (project policy bans them).
     try {
         const items = await storageGet([SETTINGS_STORAGE_KEY]);
         const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
@@ -2352,65 +2347,19 @@ function buildExportData(allStorage) {
     };
 }
 
-// ── Confirmation dialog ──
-
-function confirmAction({
-    eyebrow,
-    title,
-    message,
-    confirmLabel,
-    cancelLabel,
-    tone = 'default'
-}) {
-    if (eyebrow == null) eyebrow = t('confirmEyebrow', 'Confirm');
-    if (confirmLabel == null) confirmLabel = t('confirmContinue', 'Continue');
-    if (cancelLabel == null) cancelLabel = t('confirmCancel', 'Cancel');
-    const shell = $('#confirm-shell');
-    const dialog = $('#confirm-dialog');
-    const eyebrowEl = $('#confirm-eyebrow');
-    const titleEl = $('#confirm-title');
-    const copyEl = $('#confirm-copy');
-    const cancelBtn = $('#confirm-cancel-btn');
-    const acceptBtn = $('#confirm-accept-btn');
-    const backdrop = shell.querySelector('[data-close-confirm]');
-
-    return new Promise((resolve) => {
-        const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-        eyebrowEl.textContent = eyebrow;
-        titleEl.textContent = title;
-        copyEl.textContent = message;
-        cancelBtn.textContent = cancelLabel;
-        acceptBtn.textContent = confirmLabel;
-        dialog.classList.toggle('is-danger', tone === 'danger');
-        acceptBtn.className = tone === 'danger' ? 'danger' : 'primary';
-        shell.hidden = false;
-
-        const finish = (confirmed) => {
-            shell.hidden = true;
-            shell.removeEventListener('keydown', handleKeydown);
-            backdrop.removeEventListener('click', onCancel);
-            cancelBtn.removeEventListener('click', onCancel);
-            acceptBtn.removeEventListener('click', onConfirm);
-            requestAnimationFrame(() => previousFocus?.focus?.());
-            resolve(confirmed);
-        };
-        const onCancel = () => finish(false);
-        const onConfirm = () => finish(true);
-        function handleKeydown(event) {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                finish(false);
-            }
-        }
-
-        backdrop.addEventListener('click', onCancel);
-        cancelBtn.addEventListener('click', onCancel);
-        acceptBtn.addEventListener('click', onConfirm);
-        shell.addEventListener('keydown', handleKeydown);
-        requestAnimationFrame(() => (tone === 'danger' ? cancelBtn : acceptBtn).focus());
-    });
-}
+// ── Confirmation dialog (retired in v4.47.0 NF14) ──
+//
+// The confirmAction() helper and its supporting #confirm-shell modal
+// were removed because project policy explicitly bans confirmation
+// dialogs in favor of immediate-apply + undo-toast / soft-delete
+// patterns. The two former callers (clearDiagnosticLog, resetAllData)
+// now apply immediately:
+//   - clearDiagnosticLog: the diagnostic log is a ring buffer of
+//     runtime errors, not user-authored data
+//   - resetAllData: the EI2 session-scoped snapshot + Undo Reset
+//     button provides the recovery surface
+//
+// See ROADMAP.md house style and docs/architecture.md §Conventions.
 
 // ── Export / Import / Reset ──
 
@@ -2658,15 +2607,11 @@ async function refreshUndoResetVisibility() {
 }
 
 async function resetAllData() {
-    const confirmed = await confirmAction({
-        eyebrow: t('confirmDestructiveEyebrow', 'Destructive action'),
-        title: t('resetAllTitle', 'Reset all local data?'),
-        message: t('resetAllMessage', `This clears ${BRAND_NAME} settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage.`).replace('{brand}', BRAND_NAME),
-        confirmLabel: t('resetBtn', 'Reset'),
-        tone: 'danger'
-    });
-    if (!confirmed) return;
-
+    // v4.47.0 NF14: applies immediately. EI2's Undo Reset button
+    // already provides the recovery surface — clicking Reset stages a
+    // session-scoped snapshot in chrome.storage.session, surfaces the
+    // Undo button, and dies with the browser session. Project policy
+    // bans confirmation dialogs in favor of this pattern.
     resetButton.setAttribute('aria-busy', 'true');
     resetButton.disabled = true;
     try {

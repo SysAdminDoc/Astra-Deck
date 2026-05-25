@@ -8,26 +8,8 @@
   "clearFilterBtn": {
     "message": "清除筛选"
   },
-  "clearLogMessage": {
-    "message": "这将从扩展存储中删除所有已记录的诊断事件。"
-  },
-  "clearLogTitle": {
-    "message": "清除诊断日志？"
-  },
   "closeBtnAria": {
     "message": "关闭"
-  },
-  "confirmCancel": {
-    "message": "取消"
-  },
-  "confirmContinue": {
-    "message": "继续"
-  },
-  "confirmDestructiveEyebrow": {
-    "message": "破坏性操作"
-  },
-  "confirmEyebrow": {
-    "message": "确认"
   },
   "contextNoteAnyTab": {
     "message": "打开 YouTube 标签页后，快捷开关将开始同步。"
@@ -541,12 +523,6 @@
   },
   "quickTogglesEyebrow": {
     "message": "快捷开关"
-  },
-  "resetAllMessage": {
-    "message": "这将从扩展存储中清除 {brand} 设置、隐藏的视频、视频例外、屏蔽的频道和书签。"
-  },
-  "resetAllTitle": {
-    "message": "重置所有本地数据？"
   },
   "resetBtn": {
     "message": "重置"
