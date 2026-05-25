@@ -1946,9 +1946,13 @@ test('videoHider integrates predicate evaluator between metadata and duration ch
     const ctxIdx = ytkitSource.indexOf('_buildPredicateCtx(');
     assert.ok(ctxIdx > -1, 'videoHider must build a ctx surface for the predicate');
     // The ctx must be frozen at the call site per the investigation doc.
+    // v4.47.0 NF16: predicate-ctx gained _extractSubsCount + _readRydLikes
+    // helpers between the call site and the declaration, so the slice
+    // window needs to be larger to span both helpers AND the declaration
+    // body that contains Object.freeze(ctx).
     const buildSig = ytkitSource.indexOf('_buildPredicateCtx(element, videoId, channelInfo)');
     assert.ok(buildSig > -1, '_buildPredicateCtx must accept (element, videoId, channelInfo)');
-    const buildBlock = ytkitSource.slice(buildSig, buildSig + 4000);
+    const buildBlock = ytkitSource.slice(buildSig, buildSig + 8000);
     assert.match(buildBlock, /Object\.freeze\(ctx\)/,
         '_buildPredicateCtx must return a frozen ctx object');
 });
@@ -7573,6 +7577,81 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
     }
 });
 
+test('v4.47.0 NF16 — predicate ctx exposes likes (from RYD cache) + subsCount (parsed from card text)', () => {
+    // BlockTube ships `likes` in advanced blocking; PocketTube exposes
+    // subscriber count. NF16 brings parity by extending the predicate
+    // ctx with both fields. Both are null-tolerant: predicates can
+    // write `likes != null && likes > 100000` (explicit) or just rely
+    // on null-as-falsy in standard comparisons.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+
+    // Helpers exist:
+    assert.match(ytkitSrc, /_extractSubsCount\(metadataText\)/,
+        'videoHider must declare _extractSubsCount(metadataText) helper');
+    assert.match(ytkitSrc, /_readRydLikes\(videoId\)/,
+        'videoHider must declare _readRydLikes(videoId) helper');
+
+    // _extractSubsCount parses "1.2M subscribers" / "950K subscribers" /
+    // "42 subscribers" / "5B subscribers" forms case-insensitively.
+    const subsRegexLine = ytkitSrc.match(/_extractSubsCount\([^)]*\) \{[\s\S]*?return Math\.round\(num \* mult\);\s*\}/);
+    assert.ok(subsRegexLine, '_extractSubsCount body must be extractable');
+    assert.match(subsRegexLine[0], /\(\\d\+\(\?:\\\.\\d\+\)\?\)\\s\*\(\[kmb\]\)\?\\s\*subscriber/,
+        '_extractSubsCount regex must match optional decimal + K/M/B suffix before "subscriber"');
+
+    // _readRydLikes consults the cached `ytkit-ryd-cache` key with a
+    // 5s in-memory refresh so predicate evaluation doesn't thrash
+    // storage during a feed scan.
+    const rydFn = ytkitSrc.match(/_readRydLikes\([^)]*\) \{[\s\S]*?return Number\.isFinite\(entry\.likes\) \? entry\.likes : null;\s*\}/);
+    assert.ok(rydFn, '_readRydLikes body must be extractable');
+    assert.match(rydFn[0], /storageReadJSON\('ytkit-ryd-cache', null\)/,
+        '_readRydLikes must read from the ytkit-ryd-cache storage key');
+    assert.match(rydFn[0], /now - this\._rydCacheLoadedAt > 5000/,
+        '_readRydLikes must refresh its in-memory cache no more than every 5s');
+
+    // _buildPredicateCtx wires both fields onto the frozen ctx.
+    // Whole-file search rather than slicing because the call site +
+    // declaration share the same signature and the slice anchor was
+    // brittle. These assertions are unique enough to only match
+    // inside the predicate-ctx construction path.
+    assert.match(ytkitSrc, /likes: this\._readRydLikes\(videoId\),/,
+        'ctx.likes must be sourced from this._readRydLikes(videoId)');
+    assert.match(ytkitSrc, /subsCount: this\._extractSubsCount\(metadata\?\.metadataText\),/,
+        'ctx.subsCount must be sourced from this._extractSubsCount(metadata?.metadataText)');
+    // BlockTube/PocketTube parity comment anchor.
+    assert.match(ytkitSrc, /v4\.47\.0 NF16: BlockTube\/PocketTube parity additions/,
+        'predicate ctx must carry the NF16 parity comment');
+
+    // Sandbox-eval the subs-count parser to lock in the parsing
+    // contract end-to-end.
+    const vm = require('node:vm');
+    const sandbox = {};
+    vm.createContext(sandbox);
+    vm.runInContext(`
+        function extract(metadataText) {
+            if (!metadataText) return null;
+            const m = metadataText.match(/(\\d+(?:\\.\\d+)?)\\s*([kmb])?\\s*subscriber/i);
+            if (!m) return null;
+            const num = parseFloat(m[1]);
+            if (!Number.isFinite(num)) return null;
+            const suffix = (m[2] || '').toLowerCase();
+            const mult = suffix === 'b' ? 1e9 : suffix === 'm' ? 1e6 : suffix === 'k' ? 1e3 : 1;
+            return Math.round(num * mult);
+        }
+        globalThis.extract = extract;
+    `, sandbox);
+    const extract = sandbox.extract;
+
+    assert.equal(extract('1.2M subscribers'), 1_200_000, '"1.2M subscribers" parses to 1.2M');
+    assert.equal(extract('950K subscribers'), 950_000, '"950K subscribers" parses to 950K');
+    assert.equal(extract('42 subscribers'), 42, '"42 subscribers" (no suffix) parses to 42');
+    assert.equal(extract('3.5B subscribers'), 3_500_000_000, '"3.5B subscribers" parses to 3.5B');
+    assert.equal(extract('Subscribe to channel'), null, 'no number prefix returns null');
+    assert.equal(extract(''), null, 'empty string returns null');
+    assert.equal(extract(null), null, 'null input returns null');
+});
+
 test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', () => {
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
@@ -7946,4 +8025,43 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
     // so a future code reviewer sees the invariant at the constant.
     assert.match(popupSrc, /NF25.*ytkit\.js#SETTINGS_VERSION/s,
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
+});
+
+test('v4.47.0 stickyVideo — fullscreen handler hides positioned overlays on live/previously-live videos', () => {
+    // Class of bug: ytd-live-chat-frame is positioned via _positionOverRight
+    // with position:fixed; z-index:10001. Native fullscreen used to leave
+    // it visible because the fullscreen handler only hid _splitWrapper and
+    // _splitLiveHeader. On live and previously-live videos (the only types
+    // where setupChat runs and pushes the chat frame into _positionedEls)
+    // the chat overlay painted over the fullscreen player. Fix: stash
+    // visibility and force visibility:hidden on every positioned element
+    // when entering fullscreen, restore on exit. Same shape as the
+    // fix in theater-split.user.js#onFullscreenChange (companion userscript).
+    const start = ytkitSource.indexOf("id: 'stickyVideo'");
+    assert.ok(start > -1, "stickyVideo feature definition must exist");
+    const handlerStart = ytkitSource.indexOf('_fullscreenHandler = () =>', start);
+    assert.ok(handlerStart > -1, 'stickyVideo must declare _fullscreenHandler arrow function');
+    const block = ytkitSource.slice(handlerStart, handlerStart + 3000);
+
+    // On entry: positioned overlays get visibility:hidden via a stash array.
+    assert.match(block, /this\._fullscreenOverlayStash\s*=\s*\[\]/,
+        'fullscreen-enter branch must initialise _fullscreenOverlayStash to []');
+    assert.match(block, /\(this\._positionedEls\s*\|\|\s*\[\]\)\.forEach/,
+        'fullscreen-enter branch must iterate _positionedEls defensively');
+    assert.match(block, /el\.style\.setProperty\(['"]visibility['"],\s*['"]hidden['"],\s*['"]important['"]\)/,
+        'fullscreen-enter branch must hide overlays with visibility:hidden !important');
+
+    // On exit: restore prior visibility.
+    assert.match(block, /\(this\._fullscreenOverlayStash\s*\|\|\s*\[\]\)\.forEach/,
+        'fullscreen-exit branch must iterate the stashed overlays');
+    assert.match(block, /this\._fullscreenOverlayStash\s*=\s*null/,
+        'fullscreen-exit branch must clear _fullscreenOverlayStash so a re-enter starts fresh');
+
+    // Destroy cleans up the stash so a teardown-during-fullscreen leaves no
+    // dangling references.
+    const destroyStart = ytkitSource.indexOf("removeEventListener('fullscreenchange'", start);
+    assert.ok(destroyStart > -1, 'stickyVideo must remove fullscreenchange listener on destroy');
+    const destroyTail = ytkitSource.slice(destroyStart, destroyStart + 800);
+    assert.match(destroyTail, /this\._fullscreenOverlayStash\s*=\s*null/,
+        'destroy/teardown must clear _fullscreenOverlayStash');
 });

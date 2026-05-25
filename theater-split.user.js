@@ -1336,6 +1336,11 @@
     let splitHeaderMovedLogo = null;
     let splitLiveHeader = null;
     let splitLiveActionPinned = null;
+    // Fullscreen stash: during native fullscreen we move the player out of
+    // #ts-wrapper so we can safely hide the wrapper, and we record visibility
+    // on positioned overlays (chat frame, #below) so they don't paint over
+    // the fullscreen video. Restored on fullscreen exit.
+    let fullscreenStash = null;
     // v1.0.7: in-flight divider drag state. The drag attaches `mousemove`
     // and `mouseup` listeners to `window` and a position:fixed shield to
     // `document.body`. If yt-navigate-finish fires mid-drag the splitWrapper
@@ -3101,6 +3106,9 @@
 
         origPlayerParent = null;
         origPlayerNextSibling = null;
+        // Drop any pending fullscreen-stash bookkeeping — unpositionAll above
+        // already cleared the visibility:hidden it would have restored.
+        fullscreenStash = null;
 
         setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }
@@ -3138,19 +3146,74 @@
     }
 
     // ── Fullscreen detection ────────────────────────────────────────────────
+    function enterFullscreenStash() {
+        if (fullscreenStash || !isActive) return;
+        const player = getPlayer();
+        const stash = { player: null, parent: null, nextSibling: null, overlays: [] };
+        // Move the player out of #ts-wrapper so hiding the wrapper doesn't
+        // trip Chromium's "ancestor display:none → exit fullscreen" rule.
+        if (player && splitWrapper && splitWrapper.contains(player)) {
+            stash.player = player;
+            stash.parent = player.parentElement;
+            stash.nextSibling = player.nextSibling;
+            document.body.appendChild(player);
+        }
+        // Hide every positioned overlay (chat frame, #below) so nothing
+        // paints over the fullscreen video — chat frames carry z-index 10001.
+        positionedEls.forEach(el => {
+            if (!el) return;
+            stash.overlays.push({ el, visibility: el.style.visibility });
+            el.style.setProperty('visibility', 'hidden', 'important');
+        });
+        fullscreenStash = stash;
+    }
+
+    function exitFullscreenStash() {
+        const stash = fullscreenStash;
+        if (!stash) return;
+        fullscreenStash = null;
+        // Put the player back into #ts-left where mountOverlay placed it.
+        if (stash.player && splitWrapper && splitWrapper.isConnected) {
+            const left = splitWrapper.querySelector('#ts-left');
+            const closeBtn = splitWrapper.querySelector('#ts-close');
+            if (left) {
+                if (closeBtn && closeBtn.parentElement === left) {
+                    left.insertBefore(stash.player, closeBtn);
+                } else {
+                    left.appendChild(stash.player);
+                }
+            } else if (stash.parent && stash.parent.isConnected) {
+                if (stash.nextSibling && stash.nextSibling.parentNode === stash.parent) {
+                    stash.parent.insertBefore(stash.player, stash.nextSibling);
+                } else {
+                    stash.parent.appendChild(stash.player);
+                }
+            }
+        }
+        stash.overlays.forEach(({ el, visibility }) => {
+            if (!el) return;
+            if (visibility) el.style.setProperty('visibility', visibility, 'important');
+            else el.style.removeProperty('visibility');
+        });
+    }
+
     function onFullscreenChange() {
         const flexy = document.querySelector('ytd-watch-flexy');
         if (flexy?.hasAttribute('fullscreen') || document.fullscreenElement) {
+            enterFullscreenStash();
             if (splitWrapper) splitWrapper.style.display = 'none';
             if (splitLiveHeader) splitLiveHeader.style.display = 'none';
             setLiveHeaderActionPinsHidden(true);
         } else {
             if (splitWrapper && isActive) {
                 splitWrapper.style.display = 'flex';
+                exitFullscreenStash();
                 if (splitLiveHeader) splitLiveHeader.style.display = '';
                 setLiveHeaderActionPinsHidden(false);
                 layoutLiveHeaderActions();
                 setTimeout(() => triggerPlayerResize(), 200);
+            } else {
+                exitFullscreenStash();
             }
         }
     }
