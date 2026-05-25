@@ -978,11 +978,26 @@ def mark_ytdlp_update_check(config):
         write_persistent_log(f"Could not persist yt-dlp update timestamp: {e}")
 
 
-def maybe_auto_update_ytdlp(config):
+def maybe_auto_update_ytdlp(config, active_count_fn=None):
     """Background-run yt-dlp -U when more than a day has passed.
 
     Fire-and-forget in a daemon thread so startup isn't blocked. The exit code
     is logged (previously swallowed entirely).
+
+    v4.47.0 NF26: when ``active_count_fn`` is provided and returns > 0, the
+    update is deferred. yt-dlp's ``-U`` flag atomically replaces the binary,
+    and on Windows the in-flight ``subprocess.Popen([YTDLP_PATH, ...])`` of
+    an active download can race the replace with file-in-use errors. Callers
+    in the GUI / server path pass ``dl_manager.active_count`` so the check
+    consults the live queue without coupling this function to the manager
+    instance.
+
+    The check is racy by design — we accept that a download started during
+    the millisecond between ``active_count_fn()`` returning 0 and ``-U``
+    spawning the replacement process can still race. Mitigation in practice
+    is that ``-U`` runs ahead of any user download (server-start hook), and
+    a download starting in that micro-window is so unlikely we don't pay the
+    cost of a hard cross-process lock.
     """
     if not YTDLP_PATH.exists():
         return
@@ -990,6 +1005,21 @@ def maybe_auto_update_ytdlp(config):
         return
     if not should_check_ytdlp_update(config):
         return
+    if active_count_fn is not None:
+        try:
+            in_flight = int(active_count_fn() or 0)
+        except Exception as e:  # noqa: BLE001
+            # reason: active_count_fn is caller-supplied; if it raises we
+            # must NOT block the update, since the caller's failure mode
+            # is at least as bad as racing a self-replace.
+            write_persistent_log(f"yt-dlp auto-update active-count probe failed: {e}")
+            in_flight = 0
+        if in_flight > 0:
+            write_persistent_log(
+                f"yt-dlp auto-update deferred — {in_flight} active download(s); "
+                f"next check at the configured 24h throttle."
+            )
+            return
 
     def run():
         try:
@@ -3755,7 +3785,10 @@ class MainWindow(QMainWindow):
         # Auto-update yt-dlp — throttled (once per 24h) so we don't re-run
         # it on every single launch. Logs exit code instead of silently
         # discarding it.
-        maybe_auto_update_ytdlp(self.config)
+        #
+        # v4.47.0 NF26: pass the manager's active_count so an in-flight
+        # download isn't raced by a yt-dlp.exe self-replace.
+        maybe_auto_update_ytdlp(self.config, self.dl_manager.active_count)
 
     def _stop_server(self):
         if self.server_obj:

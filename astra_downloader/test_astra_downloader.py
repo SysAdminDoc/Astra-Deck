@@ -693,6 +693,130 @@ class AutoUpdateThrottleTests(unittest.TestCase):
         self.assertTrue(ad.should_check_ytdlp_update(_C()))
 
 
+class AutoUpdateActiveDownloadGuardTests(unittest.TestCase):
+    """v4.47.0 NF26 — yt-dlp's ``-U`` flag atomically replaces the binary.
+    On Windows an in-flight ``subprocess.Popen([YTDLP_PATH, ...])`` of an
+    active download can race the replace with file-in-use errors. The
+    guard takes a caller-supplied ``active_count_fn`` and defers the
+    update when the function reports any in-flight downloads.
+    """
+
+    def _fake_config(self, last_check_stamp=""):
+        # Empty stamp triggers should_check_ytdlp_update -> True.
+        class _C:
+            def __init__(self, stamp):
+                self._d = {
+                    "AutoUpdateYtDlp": True,
+                    "LastYtDlpUpdateCheck": stamp,
+                }
+            def get(self, key, default=None):
+                return self._d.get(key, default)
+            def set(self, key, value):
+                self._d[key] = value
+            def save(self):
+                pass
+        return _C(last_check_stamp)
+
+    def test_update_fires_when_no_active_downloads(self):
+        # active_count_fn returning 0 must NOT defer the update; the
+        # threading.Thread must be spawned (we mock it to track the spawn
+        # without actually running yt-dlp).
+        spawned = {"count": 0}
+        orig_thread = ad.threading.Thread
+        try:
+            class _FakeThread:
+                def __init__(self, target=None, daemon=None):
+                    self._target = target
+                def start(self):
+                    spawned["count"] += 1
+                    # Don't actually run -U; this tests the guard, not the
+                    # subprocess invocation.
+            ad.threading.Thread = _FakeThread
+            # YTDLP_PATH must exist for the guard to fall through to the
+            # active-count check; patch its existence check.
+            ad.YTDLP_PATH = type(ad.YTDLP_PATH)(ad.YTDLP_PATH)
+            with mock.patch.object(ad.YTDLP_PATH.__class__, 'exists', return_value=True):
+                ad.maybe_auto_update_ytdlp(self._fake_config(), active_count_fn=lambda: 0)
+        finally:
+            ad.threading.Thread = orig_thread
+        self.assertEqual(spawned["count"], 1,
+                         "Update thread must spawn when active_count == 0")
+
+    def test_update_defers_when_active_downloads_in_flight(self):
+        # active_count_fn returning > 0 must defer the update; no thread
+        # should spawn.
+        spawned = {"count": 0}
+        log_lines = []
+        orig_thread = ad.threading.Thread
+        orig_log = ad.write_persistent_log
+        try:
+            class _FakeThread:
+                def __init__(self, target=None, daemon=None):
+                    pass
+                def start(self):
+                    spawned["count"] += 1
+            ad.threading.Thread = _FakeThread
+            ad.write_persistent_log = lambda msg: log_lines.append(msg)
+            with mock.patch.object(ad.YTDLP_PATH.__class__, 'exists', return_value=True):
+                ad.maybe_auto_update_ytdlp(self._fake_config(), active_count_fn=lambda: 3)
+        finally:
+            ad.threading.Thread = orig_thread
+            ad.write_persistent_log = orig_log
+        self.assertEqual(spawned["count"], 0,
+                         "Update thread must NOT spawn when active_count > 0")
+        self.assertTrue(any("auto-update deferred" in line for line in log_lines),
+                        f"Defer log line must surface in persistent log; got {log_lines!r}")
+        self.assertTrue(any("3 active download" in line for line in log_lines),
+                        f"Defer log must include the count; got {log_lines!r}")
+
+    def test_update_proceeds_when_active_count_fn_raises(self):
+        # Caller-supplied probe failure must not block the update.
+        # Failure mode of an under-construction probe is at least as bad
+        # as racing a self-replace, so we prefer "proceed with warning".
+        spawned = {"count": 0}
+        log_lines = []
+        orig_thread = ad.threading.Thread
+        orig_log = ad.write_persistent_log
+        try:
+            class _FakeThread:
+                def __init__(self, target=None, daemon=None):
+                    pass
+                def start(self):
+                    spawned["count"] += 1
+            ad.threading.Thread = _FakeThread
+            ad.write_persistent_log = lambda msg: log_lines.append(msg)
+
+            def broken_probe():
+                raise RuntimeError("probe boom")
+            with mock.patch.object(ad.YTDLP_PATH.__class__, 'exists', return_value=True):
+                ad.maybe_auto_update_ytdlp(self._fake_config(), active_count_fn=broken_probe)
+        finally:
+            ad.threading.Thread = orig_thread
+            ad.write_persistent_log = orig_log
+        self.assertEqual(spawned["count"], 1,
+                         "Update thread must still spawn when probe raises")
+        self.assertTrue(any("probe failed" in line for line in log_lines),
+                        f"Probe-failure log line must surface; got {log_lines!r}")
+
+    def test_update_without_active_count_fn_proceeds(self):
+        # Back-compat: existing callers without the new arg must still work.
+        spawned = {"count": 0}
+        orig_thread = ad.threading.Thread
+        try:
+            class _FakeThread:
+                def __init__(self, target=None, daemon=None):
+                    pass
+                def start(self):
+                    spawned["count"] += 1
+            ad.threading.Thread = _FakeThread
+            with mock.patch.object(ad.YTDLP_PATH.__class__, 'exists', return_value=True):
+                ad.maybe_auto_update_ytdlp(self._fake_config())
+        finally:
+            ad.threading.Thread = orig_thread
+        self.assertEqual(spawned["count"], 1,
+                         "Update must still fire when no active_count_fn provided")
+
+
 class NoArchiveLockTests(unittest.TestCase):
     """v1.3.0 removed the download-archive lock so re-downloads always
     run. These tests pin the invariants so the lock can't be silently

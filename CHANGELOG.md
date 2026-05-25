@@ -6,6 +6,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **astra_downloader: yt-dlp auto-update active-download guard (NF26).**
+  `maybe_auto_update_ytdlp()` (astra_downloader.py:981) used to fire
+  fire-and-forget; `yt-dlp.exe -U` atomically replaces the binary, and
+  on Windows an in-flight `subprocess.Popen([YTDLP_PATH, ...])` could
+  race the replace with file-in-use errors. New optional
+  `active_count_fn` parameter — when supplied and returns > 0, the
+  update is deferred and the next 24h throttle window picks it up.
+  Caller in the GUI server-start path now passes
+  `self.dl_manager.active_count` so the check consults the live queue
+  without coupling the function to the manager instance. Probe
+  failures (raising callable) fall through to "proceed with warning"
+  — failure mode of an under-construction probe is at least as bad
+  as racing the self-replace. Back-compat preserved: calling
+  `maybe_auto_update_ytdlp(config)` without the new arg still works
+  exactly as before. Pinned by four new `AutoUpdateActiveDownloadGuardTests`
+  in `test_astra_downloader.py`:
+  fires-when-zero / defers-when-positive / proceeds-when-probe-raises
+  / back-compat-no-arg. 92/92 Python tests pass (+4 new).
+
 - **check-versions: SETTINGS_VERSION parity gate (NF25).** The product
   version is enforced across 5 sources by `scripts/check-versions.js`;
   the schema-version namespace was not. Drift caught: `popup.js`
