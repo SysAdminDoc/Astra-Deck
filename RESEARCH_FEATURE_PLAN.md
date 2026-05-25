@@ -37,11 +37,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Settings / downloader hardening (P0 batch from 2026-05-25 audit)
 
-- **P0 / M — yt-dlp auto-update active-download guard (NF26)**
-  - Why: `astra_downloader.py:981-1018` `maybe_auto_update_ytdlp()` fires fire-and-forget at `:3758` with no `active_count() == 0` guard. Windows file-locking can fail an in-flight download mid-`-U`.
-  - Touches: `astra_downloader/astra_downloader.py`, `astra_downloader/test_astra_downloader.py`.
-  - Acceptance: pytest with `active_count` mock returning >0 → update deferred; ==0 → update fires.
-
 - **P0 / M — Deno cutoff hard-gate on `/download` (NF27)**
   - Why: yt-dlp ≥ 2026.04.01 requires Deno. The `denoRuntime` probe at `astra_downloader.py:751-804` reports state but `/download` doesn't consult it; yt-dlp returns empty format lists with an opaque error.
   - Touches: `astra_downloader.py` (`/download` handler), `extension/ytkit.js` MediaDLManager error path.
