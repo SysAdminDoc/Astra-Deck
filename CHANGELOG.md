@@ -6,6 +6,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Popup search filter gains a mini-DSL.** Free-text matching still
+  works, but now `risk:api`, `category:downloads`, `scope:watch`, and
+  `profile:store-safe` narrow by settings-schema metadata. Comma-
+  separated values inside a field act as OR (`risk:api,local-companion`);
+  multiple field clauses AND. Unknown fields (typos) fall back to free
+  text so user input is never silently swallowed. Wired into both the
+  quick-toggle list (joins each toggle to its schema entry by key) and
+  the schema overview (`renderSchemaOverview`). Schema overview free-
+  text also now matches humanised labels and `description`. Placeholder
+  copy + English locale string + tooltip updated to surface the syntax.
+  New `v4.47.0 popup search mini-DSL parses field filters and forwards
+  free text` hardening test pins the parser shape and AND/OR semantics.
+  522/522 tests pass (+1).
+
 - **`CONFLICT_MAP` now flags `forceH264 ↔ codecSelector`.** Closes the silent-
   override bug in `_syncMainWorldCodec` (`ytkit.js:1143-1146`) where the user
   could set `codecSelector = 'av1'` while `forceH264` was also on and silently
