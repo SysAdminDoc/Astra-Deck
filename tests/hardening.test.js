@@ -8149,6 +8149,97 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'bug-report bundle payload must include swLifecycle (shorthand property)');
 });
 
+test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup button round-trips through MediaDLManager', () => {
+    // NF18: when YouTube breaks the user's current yt-dlp build, the
+    // user should be able to fix it without waiting up to 24 h for
+    // the auto-update throttle (NF26). Server exposes /update-ytdlp;
+    // content-script MediaDLManager.updateYtdlp() wraps the discovery
+    // dance; popup button round-trips through the active YouTube
+    // tab's content script so the popup never has to do its own
+    // token handling.
+
+    // 1. ytkit.js: MediaDLManager.updateYtdlp() exists and calls
+    //    /update-ytdlp with the token from a freshly-probed health
+    //    response.
+    const updateMethodStart = ytkitSource.indexOf('async updateYtdlp()');
+    assert.ok(updateMethodStart > -1,
+        'MediaDLManager must define an async updateYtdlp() method');
+    const updateBlock = ytkitSource.slice(updateMethodStart, updateMethodStart + 1800);
+    assert.match(updateBlock, /await this\.check\(true\)/,
+        'updateYtdlp must force-probe health (true) before the POST so the cached token is fresh');
+    assert.match(updateBlock, /\/update-ytdlp/,
+        'updateYtdlp must hit the /update-ytdlp endpoint');
+    assert.match(updateBlock, /['"]X-Auth-Token['"]:\s*probe\.token/,
+        'updateYtdlp must forward the per-install token in the X-Auth-Token header');
+    assert.match(updateBlock, /timeout:\s*130000/,
+        'updateYtdlp must use a 130 s timeout (130 s server cap + small buffer for the round-trip)');
+
+    // 2. ytkit.js: content-script message handler dispatches
+    //    YTKIT_UPDATE_YTDLP to MediaDLManager.updateYtdlp() and
+    //    returns the structured result async.
+    const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_YTDLP'");
+    assert.ok(handlerStart > -1,
+        'ytkit.js must handle the YTKIT_UPDATE_YTDLP message type');
+    const handlerBlock = ytkitSource.slice(handlerStart, handlerStart + 600);
+    assert.match(handlerBlock, /MediaDLManager\.updateYtdlp\(\)/,
+        'YTKIT_UPDATE_YTDLP handler must call MediaDLManager.updateYtdlp()');
+    assert.match(handlerBlock, /return true;/,
+        'YTKIT_UPDATE_YTDLP handler must return true so sendResponse channel stays open for the async path');
+
+    // 3. popup.html: button surfaces (always-visible, not hidden).
+    const popupHtml = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    assert.match(popupHtml, /id="update-ytdlp-btn"/,
+        'popup.html must declare the update-ytdlp button');
+    // The button is NOT hidden by default (unlike reenable-mediadl-btn
+    // which gates on the dismissed flag). Always-visible because the
+    // failure mode (yt-dlp broken by a YouTube change) is unannounced.
+    const updateBtnMatch = popupHtml.match(/<button[^>]*id="update-ytdlp-btn"[^>]*>/);
+    assert.ok(updateBtnMatch, 'update-ytdlp button declaration must exist');
+    assert.ok(!/\bhidden\b/.test(updateBtnMatch[0]),
+        'update-ytdlp button must NOT carry the hidden attribute — always visible (yt-dlp breakage is unannounced)');
+
+    // 4. popup.js: handler routes through chrome.tabs.sendMessage to
+    //    a YouTube tab; surfaces a friendly status on no-tab; maps the
+    //    structured result into a status string (version_before ->
+    //    version_after on success).
+    assert.match(popupSource, /async function updateYtdlpNow\(\)/,
+        'popup.js must define updateYtdlpNow handler');
+    const popupHandlerStart = popupSource.indexOf('async function updateYtdlpNow');
+    const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
+    assert.match(popupHandlerBlock, /YOUTUBE_TAB_URLS/,
+        'updateYtdlpNow must query YouTube tabs to find a MediaDLManager-loaded content script');
+    assert.match(popupHandlerBlock, /type:\s*['"]YTKIT_UPDATE_YTDLP['"]/,
+        'updateYtdlpNow must send the YTKIT_UPDATE_YTDLP message');
+    assert.match(popupHandlerBlock, /version_before/,
+        'updateYtdlpNow must surface the version_before field in the status message');
+    assert.match(popupHandlerBlock, /version_after/,
+        'updateYtdlpNow must surface the version_after field in the status message');
+    // Button is disabled during the in-flight call so a rapid second
+    // click can't fire a second update while the server is mid-replace.
+    assert.match(popupHandlerBlock, /updateYtdlpButton\.disabled\s*=\s*true/,
+        'updateYtdlpNow must disable the button while the update is in flight');
+
+    // 5. Python: /update-ytdlp endpoint exists in astra_downloader.py
+    //    and gates on active_count > 0 with a 409 + actionable error.
+    const downloaderSource = fs.readFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'), 'utf8'
+    );
+    assert.match(downloaderSource, /@api\.route\(['"]\/update-ytdlp['"],\s*methods=\['POST'\]\)/,
+        'astra_downloader.py must declare /update-ytdlp as a POST route');
+    assert.match(downloaderSource, /def _run_ytdlp_self_update\(config,\s*source_tag\)/,
+        'astra_downloader.py must extract _run_ytdlp_self_update as the shared subprocess runner');
+    const endpointStart = downloaderSource.indexOf("@api.route('/update-ytdlp'");
+    const endpointBlock = downloaderSource.slice(endpointStart, endpointStart + 1800);
+    assert.match(endpointBlock, /in_flight = dl_manager\.active_count\(\)/,
+        '/update-ytdlp must consult dl_manager.active_count to gate against in-flight downloads');
+    assert.match(endpointBlock, /409/,
+        '/update-ytdlp must return 409 when active downloads block the update');
+    assert.match(endpointBlock, /atomically replaces/,
+        '/update-ytdlp 409 message must explain WHY (atomic replace race)');
+});
+
 test('v4.47.0 NF9 — wheelSeek hooks the progress bar (not the player root) so volumeWheelMode does not conflict', () => {
     // NF9: scroll over the progress bar to seek. Hooked at the
     // .ytp-progress-bar level (not .html5-video-player) with

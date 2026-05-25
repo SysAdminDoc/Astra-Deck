@@ -2405,6 +2405,44 @@ return response;
             return { ok: false };
         },
 
+        // v4.47.0 NF18: on-demand yt-dlp self-update via the
+        // companion's /update-ytdlp endpoint. Wraps the discovery
+        // dance (health check first so we have a fresh token + the
+        // correct port) and returns a structured result that the
+        // popup consumer can render verbatim:
+        //   { ok, exit_code?, error?, version_before?, version_after?, status }
+        // where `status` is the HTTP status (so the popup can branch
+        // on "no server running" vs "in-flight blocked" vs "exit fail").
+        async updateYtdlp() {
+            const probe = await this.check(true);
+            if (!probe.ok) {
+                return {
+                    ok: false,
+                    status: 0,
+                    error: 'Astra Downloader is not running. Start it and try again.',
+                };
+            }
+            try {
+                const { response, data } = await extensionFetchJson({
+                    method: 'POST',
+                    url: this.baseUrl() + '/update-ytdlp',
+                    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': probe.token },
+                    data: '{}',
+                    // 130 s: server caps its own subprocess at 120 s; give a
+                    // small buffer so the HTTP round-trip never times out
+                    // before the server's structured-error response lands.
+                    timeout: 130000,
+                });
+                if (data && typeof data === 'object') {
+                    return { ...data, status: response.status };
+                }
+                return { ok: false, status: response.status, error: 'Empty response from /update-ytdlp.' };
+            } catch (e) {
+                DebugManager.log('MediaDL', `updateYtdlp failed: ${e.message}`);
+                return { ok: false, status: 0, error: e.message || 'Network error while calling /update-ytdlp.' };
+            }
+        },
+
         // Try to auto-start the server via mediadl:// protocol and wait for it.
         // Attempts the protocol launch once per page load, then polls health up to
         // `retries` times. If the protocol handler isn't registered, the browser
@@ -5012,6 +5050,27 @@ return response;
                         sendResponse?.({ ok: false, error: String(e?.message || e) });
                     }
                     return false;
+                }
+
+                // v4.47.0 NF18: popup-triggered on-demand yt-dlp -U via
+                // the Astra Downloader /update-ytdlp endpoint. The popup
+                // cannot reach 127.0.0.1 directly (CSP + no per-popup
+                // token cache), so it round-trips through this listener;
+                // we already have MediaDLManager.check() warm and the
+                // per-install token cached. Returns the structured
+                // server response verbatim so the popup can render
+                // version_before -> version_after on success or the
+                // exit_code + error on failure.
+                if (message.type === 'YTKIT_UPDATE_YTDLP') {
+                    (async () => {
+                        try {
+                            const result = await MediaDLManager.updateYtdlp();
+                            sendResponse?.(result);
+                        } catch (e) {
+                            sendResponse?.({ ok: false, status: 0, error: String(e?.message || e) });
+                        }
+                    })();
+                    return true; // async response
                 }
 
                 // v3.8.0: live setting updates from the toolbar popup without reload.

@@ -2959,6 +2959,8 @@ async function importSettings(file) {
 // the prompt without manually editing storage.
 const MEDIADL_DISMISSED_KEY = 'ytkit_mediadl_prompt_dismissed';
 const reenableMediadlButton = $('#reenable-mediadl-btn');
+// v4.47.0 NF18: on-demand yt-dlp self-update button.
+const updateYtdlpButton = $('#update-ytdlp-btn');
 
 async function readMediadlDismissed() {
     if (!chrome?.storage?.local) return false;
@@ -3014,6 +3016,57 @@ async function reenableMediadlPrompts() {
     } finally {
         reenableMediadlButton.removeAttribute('aria-busy');
         reenableMediadlButton.disabled = false;
+    }
+}
+
+// v4.47.0 NF18: on-demand yt-dlp self-update. Round-trips through
+// the active YouTube tab's content script (which has
+// MediaDLManager.check() warm + the per-install token cached) so
+// the popup never has to do its own discovery or token handling.
+// User-visible status string maps the structured server response:
+//   - 200 ok:true                 -> "yt-dlp updated to vX (was vY)"
+//   - 409 ok:false (in-flight)   -> "N download(s) in flight — try again"
+//   - 503 ok:false (no yt-dlp)   -> "Astra Downloader has no yt-dlp yet"
+//   - 500 ok:false (exit code)   -> "yt-dlp -U failed: <stderr>"
+//   - status=0  (no MediaDL/SW)  -> "Start Astra Downloader and try again"
+async function updateYtdlpNow() {
+    if (!updateYtdlpButton) return;
+    updateYtdlpButton.setAttribute('aria-busy', 'true');
+    updateYtdlpButton.disabled = true;
+    try {
+        // Find any YouTube tab where MediaDLManager is loaded.
+        let tabs = [];
+        try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
+        catch (_) { /* reason: extension suspended or tabs API unavailable */ }
+        if (!tabs || tabs.length === 0) {
+            showStatus(t('statusUpdateYtdlpNoTab',
+                'Open a YouTube tab first — the popup needs it to reach the Astra Downloader.'),
+                'error', 5200);
+            return;
+        }
+        const tab = tabs[0];
+        const result = await new Promise((resolve) => {
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_UPDATE_YTDLP' }, (r) => {
+                    void chrome.runtime.lastError;
+                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
+                });
+            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
+        });
+        if (result && result.ok) {
+            const before = result.version_before || '?';
+            const after = result.version_after || '?';
+            const detail = before === after
+                ? `yt-dlp is already at v${after}.`
+                : `yt-dlp updated v${before} → v${after}.`;
+            showStatus(t('statusUpdateYtdlpOk', detail), 'success', 5200);
+        } else {
+            const err = (result && (result.error || result.stderr)) || 'Update failed.';
+            showStatus(t('statusUpdateYtdlpFail', 'yt-dlp update failed: ' + err), 'error', 6200);
+        }
+    } finally {
+        updateYtdlpButton.removeAttribute('aria-busy');
+        updateYtdlpButton.disabled = false;
     }
 }
 
@@ -3360,6 +3413,9 @@ function installWheelScrolling() {
         // currently set in chrome.storage.local. Hidden otherwise — most
         // users will never see this.
         void refreshReenableMediadlVisibility();
+    }
+    if (updateYtdlpButton) {
+        updateYtdlpButton.addEventListener('click', () => { void updateYtdlpNow(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
     // iter-6 N2: storage-banner Reset shares the same destructive-confirm
