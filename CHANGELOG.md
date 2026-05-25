@@ -6,6 +6,23 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **New ESLint rule `local/require-catch-reason`.** Pins the v3.14.0
+  hardening invariant — every empty catch body must carry a
+  `// reason:` (or `/* reason: */`) comment explaining why swallowing
+  the error is correct, otherwise it must contain at least one
+  executable statement (logging, returning, anything that leaves a
+  trail). Non-empty catches always pass. Wired into `eslint.config.js`
+  as `error` on `extension/background.js`, which is now 100 %
+  compliant (one inner `catch (__) { /* */ }` at `background.js:414`
+  got the `// reason:` it was missing). Wider rollout to popup.js
+  (41 catches), ytkit.js (175), and core/*.js (50) is gated behind
+  a per-file violation audit + bulk annotation pass — the rule itself
+  is identical for each file. New
+  `v4.47.0 ESLint require-catch-reason rule is wired and enforces
+  v3.14.0 invariant` hardening test exercises six contract cases
+  against synthetic source via the ESLint Linter API. 524/524 tests
+  pass (+1).
+
 - **Popup ships a "Copy report" button on the selector-health dashboard.**
   Bundles `core/selector-health.js` into `popup.html` so
   `formatSelectorCopyReport` runs client-side, then fetches the same

@@ -280,14 +280,10 @@ What to **intentionally avoid**:
 
 ## Existing Feature Improvements
 
-### EI1 — `// reason:` catch invariant enforcement
-- **Current behavior**: 22 of 175 catch blocks in `ytkit.js` carry the `// reason:` comment required by the v3.14.0 hardening pass; 153 are silent.
-- **Problem**: silent catches hide real bugs (i18n failures, RPC drops, URL-open failures); the eslint rule was promised as a follow-up but never shipped.
-- **Recommended change**: write `scripts/eslint-rules/require-catch-reason.js` (companion to `no-post-await-addlistener.js` already in that dir); enable it in `eslint.config.js`; fix the 153 violations in one bulk PR (annotate each).
-- **Touches**: `scripts/eslint-rules/require-catch-reason.js` (new), `eslint.config.js`, `extension/ytkit.js`, `extension/background.js`, `extension/popup.js`.
-- **Backward compat**: none; comment-only changes.
-- **Verification**: `npm run lint` passes with no warnings.
-- **Complexity**: M. **Priority**: P1.
+### EI1 — `// reason:` catch invariant enforcement _[partial — shipped + scoped to background.js]_
+- Rule shipped at `scripts/eslint-rules/require-catch-reason.js` and wired into `eslint.config.js` as `error` on `extension/background.js` (which is currently 100 % compliant after one annotation fix at `background.js:414`). Rule matches the empty-catch-without-reason pattern only — non-empty catches (logging, returning, anything) pass regardless of comment.
+- Pinned by `v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant` hardening test which exercises 6 contract cases (empty without/with reason, case-insensitivity, leading/indented comments, non-empty body) via the ESLint Linter API.
+- **Deferred (still tracked):** popup.js (41 catches), ytkit.js (175 catches), core/*.js (50 catches) need a per-file violation audit + bulk annotation pass before the rule can extend to them. The rule itself doesn't change — only `eslint.config.js` `files:` widens.
 
 ### EI2 — Reset action: staging + undo grace period
 - **Current behavior**: popup Reset wipes `chrome.storage.local` after one confirm dialog; no rollback (subagent popup audit §7).
@@ -540,12 +536,8 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
 
 ### Phase B — Hardening invariants (1–3 days each)
 
-- [ ] **P1 — Ship the `// reason:` ESLint rule and fix the 153 violations**
-  - Why: v3.14.0 hardening invariant; 22/175 catches currently comply.
-  - Evidence: subagent ytkit audit §10.
-  - Touches: `scripts/eslint-rules/require-catch-reason.js` (new), `eslint.config.js`, `extension/*.js`.
-  - Acceptance: `npm run lint` passes with the rule enabled.
-  - Verify: `npm run check`.
+- [x] **P1 — Ship the `// reason:` ESLint rule (partial — background.js scoped)**
+  - Shipped: see EI1. Rule + wiring + hardening test all in place; background.js compliant. Bulk popup.js / ytkit.js / core/* rollout deferred behind a per-file annotation audit.
 
 - [x] **P1 — Close the conflict map (partial — only the truly-conflicting pair added)**
   - Re-examined: the CLAUDE.md claim of 6 missing conflict pairs is documentation rot. In-code comments at `ytkit.js:4973–4976` document the explicit decoupling mechanism for each — `focusedMode` was scoped to related videos only; `autoPauseOnSwitch + pauseOtherTabs` tag pause reasons; `popOutPlayer / pipButton / fullscreenOnDoubleClick` coordinate via `__ytkit_videoPopped`; `hideEndCards / hideVideoEndContent` is a parent/sub-feature relationship. Adding those back would undo correctness work.
