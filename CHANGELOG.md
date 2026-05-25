@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Premium-polish pass on the first-run + update surfaces.** Three
+  small but real quality improvements to features from this arc:
+  - **Welcome card: Store-Safe is now visibly the recommended
+    default.** The two profile-picker buttons used to look identical
+    despite representing very different choices (one ships on
+    extension stores; the other unlocks the download companion,
+    Cobalt fallback, custom CSS, BYO AI keys). The Store-Safe button
+    now carries a small green `Recommended` pill in the top-right
+    + a stronger accent border + brighter hover. The GitHub-Full
+    button keeps a quieter palette so the contrast reads as
+    intentional design rather than accidental drift. Both buttons
+    remain keyboard-focusable with the same outline; the
+    `aria-describedby` link from the safe button to the pill lets
+    a screen reader voice "Store-Safe, Recommended" as the focus
+    target.
+  - **Microcopy normalization on the NF18 + NF21 dynamic status
+    strings.** The previous strings mixed three formats:
+    `"yt-dlp is already at v${after}."` (full sentence),
+    `"yt-dlp updated v${before} → v${after}."` (arrow + period),
+    `"Astra Deck updated from v${lastSeen} to v${manifestVersion}.
+    See what changed."` (brand-prefixed). The `→` character
+    translates poorly and screen readers either skip it or
+    announce "right arrow" inconsistently. Polished forms:
+    `yt-dlp already at v${after}` (no terminal period — outcome
+    state, not a sentence); `yt-dlp updated to v${after} (from
+    v${before})` (parenthetical for the prior version, easier to
+    parse than an arrow); `Updated to v${manifestVersion} (from
+    v${lastSeen}). See what changed.` (brand name removed — the
+    popup header already carries it; redundant). All three were
+    also incorrectly routed through `t(key, fallback)`, whose
+    helper does NOT interpolate placeholders — so a translation
+    key would have erased the version delta in any localized
+    build. Dynamic-content strings now render directly with a
+    comment explaining the deliberate t()-bypass, with the static
+    label-only strings still going through t().
+  - **Hardening test slice for the welcome-card flow extended.**
+    The existing NF21 hardening test continues to pin the HTML
+    element IDs + storage keys + boot wiring + mutual-exclusion
+    gate; the polish pass adds no new tests but verifies the
+    existing 574-JS-test suite still passes. `npm run check`
+    clean (lint + syntax + version parity + schema + no-eval +
+    a11y + contrast + audit:deps).
+
 - **Quick Links menu caps at 10 slots (YouTube Alchemy parity).**
   Closes the P3/S backlog item. The launcher's add-form previously
   had no cap, so a stored `quickLinkItems` setting with 50 entries
