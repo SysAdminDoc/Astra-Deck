@@ -33,11 +33,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### CI / DX close-outs
 
-- **P1 / S — Schema `requires:` field + 5–8 seed entries (NF17)**
-  - Why: NF10 capability probe needs the schema field. Currently no `requires:` field anywhere in `extension/core/settings-schema.js`.
-  - Touches: `core/settings-schema.js` (field shape + 5–8 entries), `scripts/check-settings.js` (well-known capability allowlist), `tests/core-foundation.test.js`.
-  - Acceptance: `npm run check:settings` validates the new field.
-
 - **P1 / M — Confirm-dialog removal (NF14)**
   - Why: project policy bans confirmation dialogs in favor of undo toasts / soft-delete staging, but `popup.html:200–211` ships a fully styled `confirm-shell` modal.
   - Touches: `popup.html`, `popup.js`, `popup.css`, plus undo-toast paths for every caller.
