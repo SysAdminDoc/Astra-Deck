@@ -3659,6 +3659,11 @@ return response;
             // v3.2.0 wave 4
             cinemaAmbientGlow: false,
             transcriptViewer: false,
+            // v4.47.0 NF29: language preference for transcript fetch.
+            // 'auto' resolves from navigator.language; empty string also
+            // treated as auto. See pickTranscriptTrack() for the full
+            // precedence chain.
+            transcriptPreferredLanguage: 'auto',
             searchFilterDefaults: false,
             searchFilterSort: 'upload_date',
             forceStandardFps: false,
@@ -4462,6 +4467,35 @@ return response;
         if (!settings || typeof settings !== 'object') return def;
         const value = settings[key];
         return value === undefined ? def : value;
+    }
+
+    // v4.47.0 NF29: transcript track selection by language preference.
+    // Used by the transcriptViewer panel, the transcript download path,
+    // and the transcript-AI handoff to pick a single track from the
+    // playerResponse caption-tracks list.
+    //
+    // Precedence:
+    //   1. exact `languageCode` match for the user's
+    //      `transcriptPreferredLanguage` setting (when not 'auto' / '')
+    //   2. exact `languageCode` match for navigator.language base
+    //      (e.g. 'es-MX' -> 'es')
+    //   3. 'en' (the v4.46.0 hardcoded fallback — preserved so the
+    //      behaviour change is opt-in for non-English users)
+    //   4. first available track
+    //
+    // The codeMatch is strict equality so `pt-BR` doesn't match `pt`.
+    // YouTube's `languageCode` is consistently 2-letter ISO 639-1 with
+    // a regional suffix when needed; we don't try to be cleverer than
+    // the upstream choice.
+    function pickTranscriptTrack(tracks) {
+        if (!Array.isArray(tracks) || tracks.length === 0) return null;
+        const byCode = (code) => code && tracks.find((t) => t && t.languageCode === code);
+        const navLang = (typeof navigator !== 'undefined' && navigator.language)
+            ? String(navigator.language).split('-')[0]
+            : '';
+        const prefRaw = String(getSetting('transcriptPreferredLanguage', 'auto') || '').trim();
+        const pref = prefRaw && prefRaw !== 'auto' ? prefRaw : '';
+        return byCode(pref) || byCode(navLang) || byCode('en') || tracks[0];
     }
 
     // v3.14.0: Selector chain with first-miss diagnostics. Used at the
@@ -21044,7 +21078,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         body.setAttribute('aria-busy', 'false');
                         return;
                     }
-                    const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
+                    // v4.47.0 NF29: language preference for transcript fetch.
+                    // Precedence: explicit `transcriptPreferredLanguage` setting
+                    // → navigator.language base → 'en' (legacy fallback) → first
+                    // track. 'auto' / empty / undefined skip step 1.
+                    const track = pickTranscriptTrack(tracks);
                     const trackLabel = this._getTrackLabel(track);
                     const { response, data } = await extensionFetchJson({
                         url: track.baseUrl + '&fmt=json3'
@@ -27072,7 +27110,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
                     if (!tracks || !tracks.length) { showToast('No captions available', '#ef4444'); return; }
-                    const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
+                    // v4.47.0 NF29: language preference for transcript fetch.
+                    // Precedence: explicit `transcriptPreferredLanguage` setting
+                    // → navigator.language base → 'en' (legacy fallback) → first
+                    // track. 'auto' / empty / undefined skip step 1.
+                    const track = pickTranscriptTrack(tracks);
                     showToast('Fetching captions…', '#3b82f6');
                     const { response, data } = await extensionFetchJson({
                         url: track.baseUrl + '&fmt=json3'
@@ -27969,7 +28011,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
                     if (!tracks?.length) throw new Error('No captions available');
-                    const track = tracks.find(t => t.languageCode === 'en') || tracks[0];
+                    // v4.47.0 NF29: language preference for transcript fetch.
+                    // Precedence: explicit `transcriptPreferredLanguage` setting
+                    // → navigator.language base → 'en' (legacy fallback) → first
+                    // track. 'auto' / empty / undefined skip step 1.
+                    const track = pickTranscriptTrack(tracks);
                     const { response, data } = await extensionFetchJson({
                         url: track.baseUrl + '&fmt=json3'
                     });

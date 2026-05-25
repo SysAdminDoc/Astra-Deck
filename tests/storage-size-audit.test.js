@@ -35,7 +35,9 @@ test('typical local payload is not storage.sync eligible', () => {
     const { typicalLocal } = buildAuditPayloads();
     const assessment = assessSyncEligibility(typicalLocal);
 
-    assert.equal(assessment.totalBytes, 177754);
+    // v4.47.0 NF29: adding `transcriptPreferredLanguage: "auto"` to the
+    // settings catalogue bumped this baseline by 37 bytes.
+    assert.equal(assessment.totalBytes, 177791);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

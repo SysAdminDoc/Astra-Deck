@@ -3241,8 +3241,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 354,
-        'SETTINGS_SCHEMA must cover all 354 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 355,
+        'SETTINGS_SCHEMA must cover all 355 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7565,6 +7565,97 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
         assert.ok(flagsIdx < ytkitIdx,
             'core/runtime-flags.js must load before ytkit.js so the module is on globalThis.YTKitCore when ytkit.js runs');
     }
+});
+
+test('v4.47.0 NF29 — pickTranscriptTrack honors transcriptPreferredLanguage with documented precedence', () => {
+    // Precedence chain (per the helper's JSDoc + the schema entry):
+    //   1. exact languageCode match for transcriptPreferredLanguage
+    //   2. exact languageCode match for navigator.language base
+    //   3. 'en' (legacy fallback so the change is opt-in for non-EN users)
+    //   4. first available track
+    //
+    // 'auto' / '' / undefined setting values skip step 1.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+
+    // 1. Helper declaration + comment block carry the invariant.
+    assert.match(ytkitSrc, /function pickTranscriptTrack\(tracks\)/,
+        'ytkit.js must declare pickTranscriptTrack(tracks)');
+    assert.match(ytkitSrc, /NF29: transcript track selection by language preference/,
+        'pickTranscriptTrack must carry the NF29 invariant comment');
+    // The precedence chain must remain pref -> navLang -> 'en' -> tracks[0].
+    assert.match(ytkitSrc, /return byCode\(pref\) \|\| byCode\(navLang\) \|\| byCode\('en'\) \|\| tracks\[0\]/,
+        'pickTranscriptTrack must implement the documented 4-tier precedence');
+
+    // 2. The setting key exists in the schema with auto default.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8'
+    );
+    assert.match(schemaSrc, /key:\s*"transcriptPreferredLanguage"/,
+        'settings-schema must declare transcriptPreferredLanguage');
+    assert.match(schemaSrc, /key:\s*"transcriptPreferredLanguage".*defaultValue:\s*"auto"/,
+        'transcriptPreferredLanguage default must be "auto"');
+
+    // 3. Every transcript-track selection call site uses the helper —
+    //    no remaining `tracks.find(t => t.languageCode === 'en')`
+    //    hardcodes from the v4.46.0 era.
+    assert.doesNotMatch(ytkitSrc, /tracks\.find\(t => t\.languageCode === 'en'\) \|\| tracks\[0\]/,
+        'ytkit.js must not have any remaining hardcoded English-first track selection');
+
+    // 4. Sandbox-eval the helper to verify the contract end-to-end.
+    // We can't load the full ytkit.js IIFE in a Node sandbox (too many
+    // chrome.* dependencies), so we extract the helper body via regex
+    // and eval it inside a synthetic settings + navigator context.
+    const helperMatch = ytkitSrc.match(/function pickTranscriptTrack\(tracks\) \{[\s\S]*?return byCode\(pref\) \|\| byCode\(navLang\) \|\| byCode\('en'\) \|\| tracks\[0\];\s*\}/);
+    assert.ok(helperMatch, 'helper body must be extractable');
+    const helperBody = helperMatch[0];
+    const vm = require('node:vm');
+    const sandbox = {
+        navigator: { language: 'es-MX' },
+        appState: { settings: { transcriptPreferredLanguage: 'ja' } },
+        // getSetting shim mirroring ytkit.js semantics.
+        getSetting(key, def) {
+            const value = sandbox.appState.settings[key];
+            return value === undefined ? def : value;
+        },
+    };
+    vm.createContext(sandbox);
+    vm.runInContext(helperBody + '\nglobalThis.__pick = pickTranscriptTrack;', sandbox);
+    const pick = sandbox.__pick;
+
+    const tracks = [
+        { languageCode: 'en', name: 'English' },
+        { languageCode: 'es', name: 'Spanish' },
+        { languageCode: 'ja', name: 'Japanese' },
+        { languageCode: 'fr', name: 'French' },
+    ];
+
+    // Step 1: pref wins.
+    assert.equal(pick(tracks).languageCode, 'ja',
+        'pref="ja" must return Japanese');
+
+    // Step 2: navLang wins when pref unset.
+    sandbox.appState.settings.transcriptPreferredLanguage = 'auto';
+    assert.equal(pick(tracks).languageCode, 'es',
+        'pref="auto" must fall through to navigator.language base es');
+
+    // Step 3: 'en' wins when pref and navLang both miss.
+    sandbox.navigator.language = 'pt-BR';
+    assert.equal(pick(tracks).languageCode, 'en',
+        'pref="auto" + navLang=pt-BR (no pt track) must fall through to en');
+
+    // Step 4: first track wins when everything else misses.
+    const noEnglish = [
+        { languageCode: 'de', name: 'German' },
+        { languageCode: 'it', name: 'Italian' },
+    ];
+    assert.equal(pick(noEnglish).languageCode, 'de',
+        'no en + no pref + no navLang match must return first track');
+
+    // Empty / null tracks return null defensively.
+    assert.equal(pick([]), null, 'empty tracks must return null');
+    assert.equal(pick(null), null, 'null tracks must return null');
 });
 
 test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and settings-meta.json', () => {

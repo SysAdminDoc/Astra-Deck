@@ -322,6 +322,16 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── watch-player ───
     Object.freeze({ key: "cinemaAmbientGlow", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "transcriptViewer", category: "watch-player", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    // v4.47.0 NF29: language preference for the transcript viewer.
+    // 'auto' = derive from navigator.language (default); empty string
+    // also treated as auto. Otherwise a 2-letter ISO 639-1 code
+    // ('es', 'fr', 'ja', 'pt', etc.). Selection precedence inside
+    // ytkit.js#transcriptViewer._loadTranscript:
+    //   1. exact languageCode match for the preference
+    //   2. exact languageCode match for navigator.language base
+    //   3. exact 'en' (the v4.46.0 hardcoded fallback)
+    //   4. first available track
+    Object.freeze({ key: "transcriptPreferredLanguage", category: "watch-player", type: "string", defaultValue: "auto", risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
     // ─── playback-audio ───
     Object.freeze({ key: "searchFilterDefaults", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

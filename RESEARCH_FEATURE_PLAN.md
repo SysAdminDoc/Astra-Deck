@@ -41,10 +41,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Polish / parity (P1-P2 batch from 2026-05-25 audit)
 
-- **P1 / S — `transcriptViewer` honors `navigator.language` + new `transcriptPreferredLanguage` setting (NF29)**
-  - Why: `ytkit.js:21035` hardcodes English. Non-English users always get English captions.
-  - Touches: `extension/core/settings-schema.js`, `ytkit.js#transcriptViewer._loadTranscript`.
-
 - **P1 / S — RYD budget-exhaustion observability (NF30)**
   - Why: `ytkit.js:30240` silently returns false on rate-limit. Pill shows "RYD off" with no copy. Users assume the feature is broken.
   - Touches: pill render path in `ytkit.js#returnDislike`.
