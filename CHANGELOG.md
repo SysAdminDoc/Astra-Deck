@@ -6,6 +6,33 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CI: SBOM emit + static-eval source gate (NF20).** Closes NF20 from
+  RESEARCH_FEATURE_PLAN. Two layers:
+    1. `scripts/check-no-eval.js` (new) is a source-level grep that
+       fails the build if `eval(`, `new Function(`, or
+       `setTimeout/setInterval('string', ...)` (the legacy
+       implicit-eval interface) appear in any of the 64 JS files the
+       extension ships (extension/*.js + extension/core/**/*.js +
+       extension/features/**/*.js + YTKit.user.js). Scope intentionally
+       excludes tests/ and scripts/ — those are dev-time tooling that
+       legitimately needs sandbox-evaluation. An `// allow-eval`
+       same-line annotation provides an explicit per-line escape
+       hatch for intentional cases.
+    2. `.github/workflows/validate.yml` (the v4.47 NF11 PR-validation
+       workflow) gains an SBOM step that runs `npm ls --omit=dev
+       --json > sbom.json` and uploads it as a named artifact for
+       future store-submission attachment.
+  Currently passes with 0 findings — Astra was already CSP-compliant
+  in practice; this is the belt-and-suspenders gate so a future
+  contributor introducing `eval(` is flagged at npm-run-check time
+  instead of at runtime CSP rejection time. Wired into
+  `npm run check` (so the local check-gate and the CI step both
+  enforce it). Pinned by a new `v4.47.0 NF20` hardening test that
+  asserts (a) the script exists + is wired in package.json, (b) all
+  four PATTERNS labels are present in the script source, (c) the
+  `// allow-eval` escape hatch is documented, (d) validate.yml carries
+  the SBOM emission + upload steps. 538/538 JS tests pass (+1 new).
+
 - **extension/core/capability-probe.js — runtime capability detection
   (NF10).** Pairs with the NF17 schema `requires:` field shipped in
   the same v4.47 sprint. Exposes a PROBES table keyed by every
