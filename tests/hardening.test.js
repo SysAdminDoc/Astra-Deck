@@ -7075,6 +7075,91 @@ test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
         'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
 });
 
+test('v4.47.0 NF17 — schema exposes CAPABILITIES enum and requires: field is well-formed', () => {
+    // CAPABILITIES is the well-known allowlist of runtime capability
+    // names an entry can declare via the optional `requires:` array.
+    // The future capability-probe module (RESEARCH_FEATURE_PLAN NF10)
+    // will gate UI on these probe results, so the allowlist must be
+    // narrow + auditable.
+    delete require.cache[require.resolve('../extension/core/settings-schema.js')];
+    const schemaModule = require('../extension/core/settings-schema.js');
+    const { SETTINGS_SCHEMA, CAPABILITIES } = schemaModule;
+
+    // 1. CAPABILITIES is a non-empty frozen array of unique strings.
+    assert.ok(Array.isArray(CAPABILITIES), 'CAPABILITIES must be an array');
+    assert.ok(CAPABILITIES.length > 0, 'CAPABILITIES must not be empty');
+    assert.ok(Object.isFrozen(CAPABILITIES), 'CAPABILITIES must be frozen');
+    const seen = new Set();
+    for (const cap of CAPABILITIES) {
+        assert.equal(typeof cap, 'string', 'capability names must be strings');
+        assert.ok(/^[a-z][A-Za-z0-9]*$/.test(cap),
+            `capability "${cap}" must be lowerCamelCase`);
+        assert.ok(!seen.has(cap), `capability "${cap}" must be unique`);
+        seen.add(cap);
+    }
+    // 2. The initial allowlist covers the three platform affordances
+    // identified in RESEARCH_FEATURE_PLAN. Future additions are fine,
+    // but these three must remain — the seed entries below depend on
+    // them.
+    for (const expected of ['summarizerApi', 'mediaDL', 'ollama']) {
+        assert.ok(seen.has(expected),
+            `CAPABILITIES must include "${expected}" (seeded by NF17)`);
+    }
+
+    // 3. Every entry's `requires:` field, if present, is a frozen
+    // non-empty array of strings drawn from CAPABILITIES with no
+    // duplicates. (The scripts/check-settings.js gate enforces this
+    // at npm-run-check time; we mirror the contract here so a refactor
+    // can't silently change the field shape.)
+    const validCaps = new Set(CAPABILITIES);
+    const entriesWithRequires = [];
+    for (const entry of SETTINGS_SCHEMA) {
+        if (entry.requires === undefined) continue;
+        entriesWithRequires.push(entry.key);
+        assert.ok(Array.isArray(entry.requires),
+            `entry "${entry.key}" requires must be an array`);
+        assert.ok(entry.requires.length > 0,
+            `entry "${entry.key}" requires must omit the field when empty`);
+        const seenCaps = new Set();
+        for (const cap of entry.requires) {
+            assert.equal(typeof cap, 'string',
+                `entry "${entry.key}" requires entries must be strings`);
+            assert.ok(validCaps.has(cap),
+                `entry "${entry.key}" declares unknown capability "${cap}"`);
+            assert.ok(!seenCaps.has(cap),
+                `entry "${entry.key}" lists capability "${cap}" twice`);
+            seenCaps.add(cap);
+        }
+    }
+    // 4. Seed entries are present. These three keys are the initial
+    // NF17 plant; adding more is fine, removing without justification
+    // would weaken the future capability-probe surface.
+    for (const seededKey of ['localAiSummary', 'subscriptionAiTags', 'downloadHistoryPanel', 'downloadHealthPanel']) {
+        assert.ok(entriesWithRequires.includes(seededKey),
+            `seed entry "${seededKey}" must declare a requires: field`);
+    }
+});
+
+test('v4.47.0 NF17 — check-settings.js validates the requires: field', () => {
+    // The npm-run-check gate (scripts/check-settings.js) is responsible
+    // for refusing PRs that smuggle in a typo'd capability name.
+    // Mirror the contract here so the script can't silently lose this
+    // validation in a future refactor.
+    const checkSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'check-settings.js'), 'utf8'
+    );
+    assert.match(checkSrc, /const validCapabilities = new Set\(CAPABILITIES\);/,
+        'check-settings.js must build a validCapabilities Set from CAPABILITIES');
+    assert.match(checkSrc, /e\.requires !== undefined/,
+        'check-settings.js must validate the requires: field per entry');
+    assert.match(checkSrc, /Array\.isArray\(e\.requires\)/,
+        'check-settings.js must enforce requires: is an array');
+    assert.match(checkSrc, /requires unknown capability/,
+        'check-settings.js must reject unknown capability names');
+    assert.match(checkSrc, /requires lists capability "/,
+        'check-settings.js must reject duplicate capabilities in a single entry');
+});
+
 test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every content-script group', () => {
     const manifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'

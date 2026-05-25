@@ -6,6 +6,30 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **settings-schema: CAPABILITIES enum + optional `requires:` field
+  (NF17).** Closes NF17 from RESEARCH_FEATURE_PLAN. Lays the foundation
+  for the NF10 capability probe (still pending) by extending the
+  per-entry schema shape with an optional `requires: string[]` field
+  drawn from a new well-known `CAPABILITIES` enum
+  (`summarizerApi`, `mediaDL`, `ollama`). Four initial entries are
+  seeded: `localAiSummary` + `subscriptionAiTags` declare
+  `requires: ["summarizerApi"]` (Chrome Built-in window.ai.Summarizer
+  origin trial), `downloadHistoryPanel` + `downloadHealthPanel`
+  declare `requires: ["mediaDL"]` (Astra Downloader companion).
+  Features that fall back gracefully (e.g. `popOutPlayer`'s
+  Document PiP → standard PiP cascade) stay off the gated list. The
+  npm-run-check gate (`scripts/check-settings.js`) now enforces field
+  shape: must be a non-empty array of unique strings, every entry
+  must be in the CAPABILITIES allowlist; the empty `[]` sentinel is
+  banned (omit the field entirely instead). Pinned by two new
+  `v4.47.0 NF17` hardening tests: (1) schema-side — CAPABILITIES
+  enum shape + frozen-ness + lowerCamelCase + uniqueness, every
+  `requires:` field well-formed, seeded entries present;
+  (2) script-side — check-settings.js carries the validation block
+  shape + the four banned-shape assertions. 382/382 JS tests pass
+  (+2 new). check-settings still reports 354 entries match
+  default-settings.json byte-for-byte.
+
 - **CONTRIBUTING.md — document the two manual dev scripts (NF13).**
   Closes NF13 from RESEARCH_FEATURE_PLAN. The audit flagged
   `scripts/_gen-schema.js` and `scripts/generate-locales.js` as

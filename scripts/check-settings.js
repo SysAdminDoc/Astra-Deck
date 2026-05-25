@@ -46,8 +46,8 @@ try {
     process.exit(1);
 }
 
-const { SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, TYPES, buildDefaultsFromSchema } = schemaModule;
-for (const named of ['SETTINGS_SCHEMA', 'CATEGORIES', 'RISKS', 'PROFILES', 'SCOPES', 'TYPES', 'buildDefaultsFromSchema']) {
+const { SETTINGS_SCHEMA, CATEGORIES, RISKS, PROFILES, SCOPES, TYPES, CAPABILITIES, buildDefaultsFromSchema } = schemaModule;
+for (const named of ['SETTINGS_SCHEMA', 'CATEGORIES', 'RISKS', 'PROFILES', 'SCOPES', 'TYPES', 'CAPABILITIES', 'buildDefaultsFromSchema']) {
     if (!schemaModule[named]) issues.push('settings-schema.js missing export: ' + named);
 }
 if (!Array.isArray(SETTINGS_SCHEMA)) issues.push('SETTINGS_SCHEMA is not an array');
@@ -60,6 +60,7 @@ const validRisks = new Set(RISKS);
 const validProfiles = new Set(PROFILES);
 const validScopes = new Set(SCOPES);
 const validTypes = new Set(TYPES);
+const validCapabilities = new Set(CAPABILITIES);
 
 for (let i = 0; i < SETTINGS_SCHEMA.length; i++) {
     const e = SETTINGS_SCHEMA[i];
@@ -85,6 +86,33 @@ for (let i = 0; i < SETTINGS_SCHEMA.length; i++) {
 
     // Internal keys must be prefixed _; non-internal must not be.
     if (e.internal !== e.key.startsWith('_')) issues.push(ctx + ' internal flag does not match `_` prefix');
+
+    // v4.47.0 NF17: optional `requires:` field declares the runtime
+    // capabilities the feature strictly needs. Validate shape +
+    // membership in CAPABILITIES.
+    if (e.requires !== undefined) {
+        if (!Array.isArray(e.requires)) {
+            issues.push(ctx + ' requires must be an array of capability names');
+        } else {
+            if (e.requires.length === 0) {
+                issues.push(ctx + ' requires must be omitted entirely when empty (no [] sentinel)');
+            }
+            const seenCaps = new Set();
+            for (const cap of e.requires) {
+                if (typeof cap !== 'string') {
+                    issues.push(ctx + ' requires entries must be strings, got ' + typeof cap);
+                    continue;
+                }
+                if (!validCapabilities.has(cap)) {
+                    issues.push(ctx + ' requires unknown capability "' + cap + '" (allowlist: ' + Array.from(validCapabilities).join(', ') + ')');
+                }
+                if (seenCaps.has(cap)) {
+                    issues.push(ctx + ' requires lists capability "' + cap + '" more than once');
+                }
+                seenCaps.add(cap);
+            }
+        }
+    }
 }
 
 // 3-4. Schema <-> default-settings parity (set + order)
