@@ -84,7 +84,11 @@ test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () 
 
 test('settings backups include filtered video posts and import the alias', () => {
     const popupExportStart = popupSource.indexOf('function buildExportData');
-    const popupExportEnd = popupSource.indexOf('function confirmAction');
+    // v4.47.0 NF14: previously used `function confirmAction` as the
+    // slice end; that function was retired alongside the confirm-shell
+    // modal. The retirement comment block immediately follows
+    // buildExportData and is a stable boundary marker.
+    const popupExportEnd = popupSource.indexOf('// ── Confirmation dialog (retired');
     assert.ok(popupExportStart > -1 && popupExportEnd > popupExportStart, 'popup buildExportData should exist');
     const popupExportBody = popupSource.slice(popupExportStart, popupExportEnd);
     assert.match(
@@ -1551,12 +1555,15 @@ test('popup.js defines clearDiagnosticLog and wires the health-clear-btn', () =>
         'popup.js must hold a reference to health-clear-btn');
     assert.match(popupSource, /healthClearBtn\.addEventListener\s*\(\s*'click'/,
         'popup.js bootstrap must wire the click listener on healthClearBtn');
-    // Clear path must ask for confirmation before deleting _errors.
+    // v4.47.0 NF14: the confirmAction() dialog was retired in favor of
+    // immediate-apply behavior. The diagnostic log is a runtime ring
+    // buffer of past errors, not user-authored data, so no undo path
+    // is needed. Clearing applies on click.
     const clearFnStart = popupSource.indexOf('async function clearDiagnosticLog');
     assert.ok(clearFnStart > -1, 'clearDiagnosticLog must exist');
     const clearFnBody = popupSource.slice(clearFnStart, clearFnStart + 1000);
-    assert.match(clearFnBody, /confirmAction\s*\(/,
-        'clearDiagnosticLog must present a confirmation dialog before clearing');
+    assert.doesNotMatch(clearFnBody, /confirmAction\s*\(/,
+        'clearDiagnosticLog must apply immediately — confirmAction was retired in v4.47.0 NF14');
     assert.match(clearFnBody, /delete settings\._errors/,
         'clearDiagnosticLog must delete _errors from the stored settings object');
     assert.match(clearFnBody, /renderHealthBanner\s*\(\s*null\s*\)/,
@@ -1631,18 +1638,21 @@ test('popup carries dialog semantics with focus trap, Tab wrap, Escape close', (
 });
 
 test('all popup buttons carry aria-label or visible text for a11y', () => {
-    const dynamicButtonIds = new Set(['confirm-cancel-btn', 'confirm-accept-btn']);
+    // v4.47.0 NF14: previously this allowed `confirm-cancel-btn` and
+    // `confirm-accept-btn` to satisfy the a11y rule via dynamically
+    // assigned text content. Those buttons + the modal that hosted
+    // them were retired alongside the confirm-shell removal. No
+    // remaining popup button sets its text dynamically without a
+    // static aria-label or visible text fallback.
     const buttons = [...popupHtmlSource.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/gi)];
     assert.ok(buttons.length >= 10, 'popup.html should expose every static button to the audit');
     for (const [, attrs, body] of buttons) {
         const id = (attrs.match(/\bid="([^"]+)"/) || [])[1] || '(anonymous button)';
         const hasAriaLabel = /\baria-label="[^"]+"/.test(attrs);
         const hasVisibleText = body.replace(/<[^>]+>/g, '').replace(/&times;/g, 'x').trim().length > 0;
-        const hasDynamicText = dynamicButtonIds.has(id) && new RegExp(`${id.replace(/-/g, '[-]')}|${id}`).test(popupHtmlSource)
-            && (id === 'confirm-cancel-btn' ? /cancelBtn\.textContent\s*=/.test(popupSource) : /acceptBtn\.textContent\s*=/.test(popupSource));
         assert.ok(
-            hasAriaLabel || hasVisibleText || hasDynamicText,
-            `Button ${id} must have aria-label, visible text, or audited dynamic text`
+            hasAriaLabel || hasVisibleText,
+            `Button ${id} must have aria-label or visible text`
         );
     }
 });
@@ -7073,6 +7083,75 @@ test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
     );
     assert.match(syncSrc, /'extension\/core\/runtime-flags\.js'/,
         'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
+});
+
+test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pattern wins)', () => {
+    // Project policy (ROADMAP house style + docs/architecture.md
+    // §Conventions) bans confirmation dialogs in favor of
+    // immediate-apply + undo-toast / soft-delete staging. The
+    // previous confirm-shell modal in popup.html violated that
+    // contract; this test pins the absence so a future refactor can't
+    // silently bring it back.
+    const popupHtml = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    const popupJs = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+
+    // 1. The shell DIV + its inner controls are gone from the HTML.
+    assert.doesNotMatch(popupHtml, /<div\s+class="confirm-shell"/,
+        'popup.html must not declare a confirm-shell modal');
+    assert.doesNotMatch(popupHtml, /id="confirm-shell"/,
+        'popup.html must not declare an element with id="confirm-shell"');
+    assert.doesNotMatch(popupHtml, /id="confirm-dialog"/,
+        'popup.html must not declare an element with id="confirm-dialog"');
+    assert.doesNotMatch(popupHtml, /id="confirm-accept-btn"/,
+        'popup.html must not declare the confirm-accept-btn — confirm dialog was retired');
+    assert.doesNotMatch(popupHtml, /id="confirm-cancel-btn"/,
+        'popup.html must not declare the confirm-cancel-btn — confirm dialog was retired');
+
+    // 2. The confirmAction() helper is gone from popup.js.
+    assert.doesNotMatch(popupJs, /function confirmAction\s*\(/,
+        'popup.js must not declare confirmAction() — it was retired in v4.47.0 NF14');
+    assert.doesNotMatch(popupJs, /await confirmAction\s*\(/,
+        'popup.js must not call confirmAction() — every former caller was migrated to immediate-apply');
+
+    // 3. Both former callers still exist but no longer await
+    // confirmation.
+    const resetFnStart = popupJs.indexOf('async function resetAllData');
+    assert.ok(resetFnStart > -1, 'resetAllData must still exist');
+    const resetFnBody = popupJs.slice(resetFnStart, resetFnStart + 2000);
+    assert.doesNotMatch(resetFnBody, /confirmAction/,
+        'resetAllData must apply immediately (EI2 Undo Reset is the recovery path)');
+    // EI2 invariant: resetAllData must still take a snapshot before
+    // wiping so Undo Reset can restore byte-identical. This test
+    // belongs to EI2 conceptually but we pin it here too so the NF14
+    // pass can't silently remove the snapshot path.
+    assert.match(resetFnBody, /chrome\.storage\.local\.get\(null/,
+        'resetAllData must snapshot all local storage before wiping (EI2 Undo path)');
+
+    const clearFnStart = popupJs.indexOf('async function clearDiagnosticLog');
+    assert.ok(clearFnStart > -1, 'clearDiagnosticLog must still exist');
+    const clearFnBody = popupJs.slice(clearFnStart, clearFnStart + 600);
+    assert.doesNotMatch(clearFnBody, /confirmAction/,
+        'clearDiagnosticLog must apply immediately (the diagnostic log is a runtime ring buffer, not user data)');
+
+    // 4. The supporting CSS rules are gone from popup.css.
+    assert.doesNotMatch(popupCss, /\.confirm-shell\s*\{/,
+        'popup.css must not declare .confirm-shell — retired in NF14');
+    assert.doesNotMatch(popupCss, /\.confirm-dialog\s*\{/,
+        'popup.css must not declare .confirm-dialog — retired in NF14');
+    assert.doesNotMatch(popupCss, /\.confirm-backdrop\s*\{/,
+        'popup.css must not declare .confirm-backdrop — retired in NF14');
+
+    // 5. The retirement marker comment is present in popup.js so a
+    // future audit pass sees the explicit policy reference.
+    assert.match(popupJs, /retired in v4\.47\.0 NF14/,
+        'popup.js must carry the NF14 retirement marker comment');
 });
 
 test('v4.47.0 NF17 — schema exposes CAPABILITIES enum and requires: field is well-formed', () => {

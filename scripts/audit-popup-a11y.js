@@ -33,10 +33,11 @@ function strippedText(html) {
         .trim();
 }
 
-const dynamicButtonTextById = new Map([
-    ['confirm-cancel-btn', /cancelBtn\.textContent\s*=/],
-    ['confirm-accept-btn', /acceptBtn\.textContent\s*=/],
-]);
+// v4.47.0 NF14: the confirm-cancel-btn / confirm-accept-btn entries
+// that lived here previously were retired alongside the confirm-shell
+// modal. No remaining button in popup.html sets its text dynamically
+// from JS without a static aria-label or visible text fallback.
+const dynamicButtonTextById = new Map([]);
 
 console.log('Button Accessibility Check:');
 for (const match of buttonMatches) {
@@ -86,14 +87,15 @@ if (!hasDialogRole) issues.push('Popup body is missing role="dialog"');
 if (!hasAriaModal) issues.push('Popup body is missing aria-modal="true"');
 if (!hasAriaLabelledBy) issues.push('Popup body is missing aria-labelledby');
 
-// 4. Check focus trap logic in JS
+// 4. Check focus trap logic in JS. v4.47.0 NF14: the confirm-dialog
+// modal was retired; the Escape close + Tab trap now apply to the
+// popup body itself via handlePopupDialogKeydown.
 const hasFocusTrap = popupJs.includes('Tab') || popupJs.includes('focusable');
 const hasEscapeClose = popupJs.includes("key === 'Escape'");
 console.log('\nKeyboard Navigation:');
 console.log(`${popupJs.includes('FOCUSABLE_SELECTOR') ? '✓' : '✗'} FOCUSABLE_SELECTOR defined`);
-console.log(`${hasEscapeClose ? '✓' : '✗'} Escape close in confirmAction`);
-// The focus trap for Tab/Shift-Tab is on the confirm dialog, not the main popup
-console.log(`✓ Confirm dialog has focus trap (visible in confirmAction)`);
+console.log(`${hasEscapeClose ? '✓' : '✗'} Escape close on the popup body`);
+console.log(`${hasFocusTrap ? '✓' : '✗'} Tab focus rotation on the popup body (handlePopupDialogKeydown)`);
 if (!popupJs.includes('FOCUSABLE_SELECTOR')) issues.push('FOCUSABLE_SELECTOR is not defined');
 if (!hasEscapeClose) issues.push('Escape close handling is missing');
 
