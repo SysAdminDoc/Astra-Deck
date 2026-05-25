@@ -6,6 +6,27 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF5 wave 1 — feature-lifecycle module is no longer unused.** The
+  v4.7.0 `core/feature-lifecycle.js` shipped `createLifecycle()` +
+  `defineFeature()` but had zero callers anywhere in the codebase
+  until now. All 6 CSS-only peel modules
+  (`features/subtitles`, `features/video-filters`,
+  `features/blue-light-filter`, `features/theme-css`,
+  `features/wave-8-css`, `features/home-subs-css`) now register their
+  21 feature ids with the lifecycle singleton via
+  `getLifecycle().defineFeature(spec)` at module-evaluation time. Each
+  spec carries the canonical id + category (verified against
+  `core/settings-schema.js` so the categories don't drift) + no-op
+  `init`/`destroy` for now. This is a "register-only" wave —
+  `ytkit.js`'s inline `cssFeature()` blocks still own the real
+  `injectStyle` / cleanup. Wave 2 will flip the inline blocks to
+  delegate via `lifecycle.start(id)` / `lifecycle.destroy(id)` one
+  category at a time without touching the registration glue. Pinned
+  by `v4.47.0 NF5 wave 1 — every CSS-only peel module registers with
+  the lifecycle` hardening test (source-level call-site checks for
+  every peel + a sandboxed `snapshot()` round-trip against the
+  lifecycle module). 525/525 tests pass (+1).
+
 - **New ESLint rule `local/require-catch-reason`.** Pins the v3.14.0
   hardening invariant — every empty catch body must carry a
   `// reason:` (or `/* reason: */`) comment explaining why swallowing

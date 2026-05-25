@@ -6474,6 +6474,67 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifecycle', () => {
+    // The v4.7.0 lifecycle module shipped but had zero defineFeature
+    // callers until v4.47.0. Wave 1 is "register-only": each peel module
+    // exposes a featureSpec with init/destroy no-ops and calls
+    // defineFeature() at module-evaluation time. ytkit.js's inline
+    // cssFeature() blocks still own the real mount/teardown — wave 2
+    // will flip them to delegate via lifecycle.start/.destroy.
+    //
+    // Pin the call-site shape so future refactors can't silently drop a
+    // module's registration. Loading the modules under Node loses the
+    // globalThis.YTKitCore.getLifecycle path (no manifest content_script
+    // order), so we assert at the source level instead.
+    const features = [
+        { path: 'extension/features/subtitles/index.js',          ids: ['subtitleStyling'] },
+        { path: 'extension/features/video-filters/index.js',      ids: ['videoVisualFilters'] },
+        { path: 'extension/features/blue-light-filter/index.js',  ids: ['blueLightFilter'] },
+        { path: 'extension/features/theme-css/index.js',          ids: ['customProgressBarColor', 'customSelectionColor', 'grayscaleThumbnails', 'forceDarkEverywhere', 'themeAccentColor', 'compactUnfixedHeader', 'hideVideoEndContent'] },
+        { path: 'extension/features/wave-8-css/index.js',         ids: ['hideNotificationButton', 'noFrostedGlass', 'hideLatestPosts', 'disableMiniPlayer', 'nyanCatProgressBar'] },
+        { path: 'extension/features/home-subs-css/index.js',      ids: ['hideCreateButton', 'hideVoiceSearch', 'widenSearchBar', 'disablePlayOnHover', 'fullWidthSubscriptions', 'hideSubscriptionOptions'] },
+    ];
+    for (const { path: relPath, ids } of features) {
+        const src = fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+        assert.match(src, /YTKitCore\.getLifecycle\s*===\s*'function'/,
+            `${relPath} must guard the lifecycle call with the getLifecycle availability check`);
+        assert.match(src, /defineFeature\(/,
+            `${relPath} must call defineFeature() on the shared lifecycle instance`);
+        for (const id of ids) {
+            // The id must appear as a string literal in the module source —
+            // either on a featureSpec object or inside the LIFECYCLE_SPECS
+            // array of multi-id modules. Single-quoted because all peel
+            // modules use single quotes for ids.
+            assert.match(src, new RegExp(`['"]${id}['"]`),
+                `${relPath} must reference feature id "${id}" so its lifecycle spec gets registered`);
+        }
+    }
+
+    // Also exercise the contract: when getLifecycle() IS available, the
+    // singleton instance must accept the spec shape the peels produce.
+    // Sandboxed eval of the v4.7.0 lifecycle module + a synthetic spec.
+    const lifecycleSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'feature-lifecycle.js'), 'utf8'
+    );
+    const sandbox = `
+        const globalThis = this;
+        const console = { warn: () => {}, log: () => {}, error: () => {} };
+        ${lifecycleSrc}
+        this.__lc = globalThis.YTKitCore.getLifecycle();
+        this.__lc.defineFeature({
+            id: 'test-css-only-spec', category: 'shell',
+            init() {}, destroy() {}
+        });
+        this.__snap = this.__lc.snapshot();
+    `;
+    const ctx = {};
+    new Function(sandbox).call(ctx);
+    const registered = ctx.__snap.find((r) => r.id === 'test-css-only-spec');
+    assert.ok(registered, 'lifecycle.snapshot() must include the just-defined spec');
+    assert.equal(registered.started, false,
+        'wave-1 specs are register-only — snapshot must show started:false until start() is called');
+});
+
 test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant', () => {
     // The rule must exist on disk, be required from eslint.config.js,
     // and be enabled as `error` on the background.js file group. The

@@ -212,15 +212,12 @@ What to **intentionally avoid**:
 - **Verification plan**: hardening test that asserts every CLAUDE.md-listed conflict appears in `CONFLICT_MAP`; integration test that forces both halves of a pair on and verifies one is disabled.
 - **Complexity**: S. **Priority**: P1.
 
-### NF5 — First wave of `feature-lifecycle.js` adoption
+### NF5 — First wave of `feature-lifecycle.js` adoption _[wave 1 shipped]_
 
-- **User problem**: the lifecycle module shipped in v4.7.0 but no feature uses it; the discipline it enforces (AbortController, route token, full destroy()) never materialized.
-- **Evidence**: `core/feature-lifecycle.js` exports `createLifecycle()` + `defineFeature()`; grep for `defineFeature` in `ytkit.js` returns zero matches; the 6 `extension/features/*` modules don't use it either.
-- **Proposed behavior**: pick the 6 already-peeled features (subtitles, video-filters, blue-light-filter, theme-css, wave-8-css, home-subs-css) and rewrite them to use `createLifecycle().defineFeature({ ... })`. They're CSS-only so the destroy() contract is trivial — they're the safest starting point.
-- **Implementation areas**: each `extension/features/*/index.js`; the calling sites in `ytkit.js` (lines 5015, 14052, 18254, etc.).
-- **Risks**: minor regression in CSS feature lifecycle ordering; pin via the existing hardening tests.
-- **Verification plan**: existing 34 hardening tests on the 6 peeled features must still pass; add 1 new test per feature confirming `defineFeature` is called.
-- **Complexity**: M. **Priority**: P1.
+- Shipped: all 6 peel modules (`subtitles`, `video-filters`, `blue-light-filter`, `theme-css`, `wave-8-css`, `home-subs-css`) now call `getLifecycle().defineFeature()` at module-evaluation time with a featureSpec carrying the canonical id + category + no-op `init` / `destroy`. 21 feature ids total are now registered with the lifecycle module that previously had zero callers.
+- ytkit.js's inline `cssFeature()` blocks still own the real `injectStyle` / cleanup — this is "register only", not "delegate". The contract shape is now exercised in production; future waves can flip the inline blocks to call `lifecycle.start(id)` / `lifecycle.destroy(id)` one category at a time without touching the registration glue.
+- Pinned by `v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifecycle` hardening test which (a) source-checks every peel module for the `getLifecycle` guard + `defineFeature(` call + each feature id literal, and (b) sandbox-evals `core/feature-lifecycle.js` to confirm the singleton `snapshot()` includes a freshly-defined spec with `started: false`.
+- **Future waves:** convert the inline blocks for these 21 features to delegate via `lifecycle.start/destroy`, then peel + register more feature ids beyond the current CSS-only set. Both are per-category passes.
 
 ### NF6 — Astra Downloader trust + recoverable install flow
 
@@ -574,12 +571,8 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
 
 ### Phase C — Lifecycle adoption (3–5 days each)
 
-- [ ] **P1 — Wire the 6 peeled features through `defineFeature()`**
-  - Why: NF5; lifecycle module shipped but unused.
-  - Evidence: `core/feature-lifecycle.js`; no `defineFeature` calls in `ytkit.js`.
-  - Touches: each `extension/features/*/index.js`, calling sites in `ytkit.js`.
-  - Acceptance: each peeled feature's init/destroy goes through `createLifecycle()` + `defineFeature()`; existing 34 hardening tests still pass + 6 new tests pin the call.
-  - Verify: `npm test`.
+- [x] **P1 — Wire the 6 peeled features through `defineFeature()` (wave 1: register-only)**
+  - Shipped: see NF5. 21 feature ids across all 6 peel modules now register with the lifecycle singleton; specs carry the canonical id + category + no-op `init`/`destroy`. ytkit.js inline blocks still own real init/destroy — wave 2 (delegate) is the next slice.
 
 - [ ] **P2 — Peel `stickyVideo` (3,779 lines) into `features/theater-split/`**
   - Why: EI4; top peel candidate.
