@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Popup ships a "Copy report" button on the selector-health dashboard.**
+  Bundles `core/selector-health.js` into `popup.html` so
+  `formatSelectorCopyReport` runs client-side, then fetches the same
+  `YTKIT_GET_SELECTOR_HEALTH` payload that already drives the dashboard
+  and formats it into a multi-line ASCII bug-report-ready block
+  (product version, exportedAt, browser UA, summary, top problem
+  surfaces, ctx counts, active tab URL). Clipboard write prefers
+  `navigator.clipboard.writeText` with `execCommand('copy')` fallback
+  for tightly-locked-down contexts. An aria-live status line announces
+  outcome to screen readers. `_selectorHealthCopyInFlight` guard
+  prevents duplicate posts on rapid double-clicks. 7 new i18n keys
+  added to en + 9 non-EN locales (English placeholders pending a
+  future locale sweep). New `v4.47.0 popup ships selector-health
+  "Copy report" wiring end-to-end` hardening test. 523/523 tests
+  pass (+1).
+
 - **Popup search filter gains a mini-DSL.** Free-text matching still
   works, but now `risk:api`, `category:downloads`, `scope:watch`, and
   `profile:store-safe` narrow by settings-schema metadata. Comma-

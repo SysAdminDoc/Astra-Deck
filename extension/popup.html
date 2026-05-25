@@ -103,9 +103,11 @@
       <header class="selector-health-head">
         <strong class="selector-health-title" data-i18n="selectorHealthTitle">Selector health</strong>
         <span class="selector-health-total" id="selector-health-total" aria-live="polite"></span>
+        <button type="button" class="selector-health-copy-btn" id="selector-health-copy-btn" data-i18n-attr-aria-label="selectorHealthCopyAria" aria-label="Copy selector-health report to clipboard" data-i18n="selectorHealthCopyBtn">Copy report</button>
       </header>
       <ul class="selector-health-list" id="selector-health-list" role="list"></ul>
       <div class="selector-health-ctx" id="selector-health-ctx" aria-live="polite"></div>
+      <div class="selector-health-copy-status" id="selector-health-copy-status" aria-live="polite"></div>
     </section>
 
     <aside class="health-banner" id="health-banner" role="status" aria-live="polite" hidden>
@@ -207,6 +209,12 @@
 <script src="core/settings-schema.js"></script>
 <script src="core/policy-profile.js"></script>
 <script src="core/data-flow.js"></script>
+<!-- v4.47.0: selector-health bundled into the popup so the "Copy
+     report" button can format the diagnostic payload locally without
+     a second round-trip into the content script. The IIFE checks for
+     existing `core.createSelectorHealth` first so it's a no-op on
+     content-script pages where ytkit.js already loaded it. -->
+<script src="core/selector-health.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>
