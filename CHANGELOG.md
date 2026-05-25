@@ -6,6 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Quick Links menu caps at 10 slots (YouTube Alchemy parity).**
+  Closes the P3/S backlog item. The launcher's add-form previously
+  had no cap, so a stored `quickLinkItems` setting with 50 entries
+  could overflow the dropdown. The fix introduces
+  `_QL_MAX_ITEMS: 10` on the feature object:
+  - **`_parseItems`** truncates the rendered list at the cap and
+    slices defensively (`items.slice(0, this._QL_MAX_ITEMS)`).
+    Excess entries are intentionally left in `quickLinkItems` so a
+    future cap-bump can re-expose them without data loss.
+  - **`validateForm`** computes the current count + `atCap` boolean
+    on every input event and (a) disables the Add button when at
+    cap, (b) surfaces `Limit reached (N/MAX). Remove an entry above
+    to add a new one.` when at cap, (c) shows `(N/MAX used)` in
+    the normal hint so the user always sees the budget. Re-evaluated
+    on every keystroke so a delete-then-add flow re-enables
+    cleanly.
+  - **`addBtn.onclick`** has a defensive re-check at click time:
+    rapid double-clicks that both passed `validateForm` before
+    either persisted can no longer slip past the cap. The race
+    path surfaces a toast pointing the user at the
+    remove-to-add workflow.
+  Pinned by a new `v4.47.0 — Quick Links menu caps at 10 slots`
+  hardening test asserting the constant value, the `_parseItems`
+  truncate, the `validateForm` cap-gate + status copy, and the
+  defensive click-time re-check + toast. 574/574 JS tests pass
+  (+1 new); npm run check clean. Backlog item retired from
+  RESEARCH_FEATURE_PLAN.md.
+
 - **PyQt6 GUI smoke tests for the downloader (NF22).** Previously the
   GUI side had only source-shape pins (FolderPickerWatchdogTests) —
   a regression in the dialog code-path would only surface via the

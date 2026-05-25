@@ -8149,6 +8149,49 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'bug-report bundle payload must include swLifecycle (shorthand property)');
 });
 
+test('v4.47.0 — Quick Links menu caps at 10 slots (YouTube Alchemy parity)', () => {
+    // Backlog P3/S: cap the quick-links list at 10 entries — matches
+    // YouTube Alchemy's header-links UX + keeps the launcher dropdown
+    // visually bounded. The cap lives on the feature object as
+    // _QL_MAX_ITEMS so the value is testable + co-locates with the
+    // documentation comment.
+    const start = ytkitSource.indexOf("id: 'quickLinkMenu'");
+    assert.ok(start > -1, 'quickLinkMenu feature must exist');
+    const block = ytkitSource.slice(start, start + 30000);
+
+    // 1. Constant exists and equals 10.
+    assert.match(block, /_QL_MAX_ITEMS:\s*10/,
+        'quickLinkMenu must declare _QL_MAX_ITEMS: 10');
+
+    // 2. _parseItems truncates excess entries at the cap. Stored
+    //    excess is intentionally left intact in `quickLinkItems` so a
+    //    future cap-bump can re-expose entries.
+    assert.match(block, /if \(items\.length > this\._QL_MAX_ITEMS\)/,
+        '_parseItems must check the cap before slicing');
+    assert.match(block, /items\.slice\(0,\s*this\._QL_MAX_ITEMS\)/,
+        '_parseItems must slice at _QL_MAX_ITEMS to enforce the cap on the rendered list');
+
+    // 3. The add-form's validateForm helper disables the Add button
+    //    when the list is at capacity and surfaces a "Limit reached"
+    //    message. Re-evaluated on every input event so a delete-then-
+    //    add flow re-enables cleanly.
+    assert.match(block, /const atCap = currentCount >= self\._QL_MAX_ITEMS/,
+        'validateForm must compute atCap from the current parsed-items count');
+    assert.match(block, /addBtn\.disabled = !name \|\| !url \|\| !isValidUrl \|\| atCap/,
+        'validateForm must disable the Add button when atCap is true');
+    assert.match(block, /Limit reached \(\$\{currentCount\}\/\$\{self\._QL_MAX_ITEMS\}\)/,
+        'validateForm must surface a "Limit reached (N/MAX)" message when atCap');
+
+    // 4. addBtn.onclick has a defensive re-check at click time —
+    //    handles the race between two rapid clicks that both passed
+    //    validateForm before either persisted. Toast guidance points
+    //    the user at the remove-to-add path.
+    assert.match(block, /if \(self\._parseItems\(\)\.length >= self\._QL_MAX_ITEMS\)/,
+        'addBtn.onclick must re-check the cap at click time (defensive against rapid double-click)');
+    assert.match(block, /Quick Links limit reached \(\$\{self\._QL_MAX_ITEMS\}\)/,
+        'addBtn.onclick must surface a toast on the cap-race path');
+});
+
 test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup button round-trips through MediaDLManager', () => {
     // NF18: when YouTube breaks the user's current yt-dlp build, the
     // user should be able to fix it without waiting up to 24 h for
