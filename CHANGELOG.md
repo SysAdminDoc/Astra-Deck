@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Array settings get a checkbox-grid editor.** Previously, array-type
+  schema entries like `hiddenChatElements`, `hiddenActionButtons`,
+  `hiddenPlayerControls`, and `hiddenWatchElements` were edited in the
+  popup as raw JSON textareas (v4.41.0 surface) — power-user-only UX
+  for what is conceptually a multi-select. New optional `knownValues`
+  field on a schema entry declares the canonical enumeration; the
+  popup's array-editor branch now forks on knownValues presence and
+  renders a flex-wrap checkbox grid (one box per token, click to
+  add/remove from the array). The 4 hidden-* entries now carry
+  knownValues; `syncSafePrefsAllowlist` (70+ items) deliberately keeps
+  the JSON path. Persist is order-preserving — known-values order
+  first (deterministic for export/import round-trips), unknown tokens
+  preserved at the tail so a saved value with deprecated tokens
+  doesn't lose them. New `v4.47.0 NF7 — array schema entries with
+  knownValues render checkbox grids` hardening test pins the schema
+  invariant (knownValues must be a superset of defaultValue), the
+  popup branch ordering, and the CSS surface. 528/528 tests pass (+1).
+
 - **Popup "Enable Downloader Prompts" action surfaces after "Skip for now".**
   `MediaDLManager.showInstallPrompt` writes `ytkit_mediadl_prompt_dismissed
   = true` to `chrome.storage.local` when the user clicks "Skip for now"

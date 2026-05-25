@@ -6474,6 +6474,69 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
+    // NF7: the array-type editor was a raw JSON textarea, which is
+    // power-user-only UX for the four hidden* entries whose tokens
+    // are a fixed enumeration. v4.47.0 adds an optional `knownValues`
+    // field to schema entries; when present, the popup renders a
+    // checkbox grid (one box per known token) instead of the JSON
+    // textarea. Other array entries (e.g. syncSafePrefsAllowlist with
+    // ~70 entries) keep the JSON path.
+    //
+    // Pin: the four hidden* entries must carry knownValues whose
+    // contents are a SUPERSET of the defaultValue (so a fresh install
+    // can deselect any default item AND the editor offers options the
+    // user hasn't enabled yet).
+    const schema = require(path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'));
+    const enumerableArrayKeys = [
+        'hiddenChatElements',
+        'hiddenActionButtons',
+        'hiddenPlayerControls',
+        'hiddenWatchElements',
+    ];
+    for (const key of enumerableArrayKeys) {
+        const entry = schema.SETTINGS_SCHEMA.find((e) => e.key === key);
+        assert.ok(entry, `schema must declare ${key}`);
+        assert.equal(entry.type, 'array', `${key} must be type=array`);
+        assert.ok(Array.isArray(entry.knownValues),
+            `${key} must declare knownValues so the popup renders the checkbox grid`);
+        assert.ok(entry.knownValues.length > 0,
+            `${key}.knownValues must be non-empty`);
+        const known = new Set(entry.knownValues);
+        for (const token of entry.defaultValue) {
+            assert.ok(known.has(token),
+                `${key}: every defaultValue token ("${token}") must appear in knownValues so the user can deselect it`);
+        }
+    }
+    // syncSafePrefsAllowlist (~70 entries) must NOT acquire knownValues —
+    // the checkbox UI would be unusable at that scale and the JSON path
+    // is the right fallback for power users.
+    const sync = schema.SETTINGS_SCHEMA.find((e) => e.key === 'syncSafePrefsAllowlist');
+    assert.ok(sync, 'schema must declare syncSafePrefsAllowlist');
+    assert.equal(sync.knownValues, undefined,
+        'syncSafePrefsAllowlist must NOT carry knownValues — JSON textarea is the right UX for the long list');
+
+    // Popup-side wiring: the array branch must fork on knownValues
+    // BEFORE the JSON branch so enumerable arrays never fall into the
+    // textarea path.
+    assert.match(popupSource, /entry\.type === 'array' && Array\.isArray\(entry\.knownValues\)/,
+        'popup.js must check entry.knownValues on the array branch');
+    assert.match(popupSource, /so-key-checks/,
+        'popup.js must declare the so-key-checks CSS class for the grid');
+    assert.match(popupSource, /knownSet = new Set\(known\)/,
+        'persist handler must rebuild the array preserving unknown tokens at the tail');
+
+    // CSS surface for the grid + checkbox styling must be present
+    // (cross-checks the editor isn't unstyled).
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(popupCss, /\.so-key-checks/,
+        'popup.css must style the .so-key-checks grid container');
+    assert.match(popupCss, /\.so-key-check\b/,
+        'popup.css must style the per-token .so-key-check label');
+});
+
 test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismissed flag', () => {
     // NF6 partial: ytkit.js's MediaDLManager.showInstallPrompt sets
     // `ytkit_mediadl_prompt_dismissed = true` in chrome.storage.local
