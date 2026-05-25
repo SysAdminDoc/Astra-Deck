@@ -37,11 +37,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Lint surface widening
 
-- **P1 / M — `require-catch-reason` to `popup.js`**
-  - Prereq: one-time per-file annotation pass on the 41 popup catches.
-  - Touches: `popup.js` (annotate), `eslint.config.js` (add file to rule scope).
-  - Acceptance: `npm run lint` includes popup.js; passes.
-
 - **P2 / M — `require-catch-reason` to `extension/core/*.js`**
   - Prereq: per-file annotation pass on ~50 catches.
 
