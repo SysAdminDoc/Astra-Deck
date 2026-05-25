@@ -148,10 +148,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Polish and competitive parity
 
-- **P2 / M — First-run welcome card + profile picker + What's New (NF21)**
-  - Touches: `popup.html`, `popup.js`, `extension/whatsnew/` (new dir).
-  - Acceptance: clean install → welcome card; profile picker applies with undo-toast.
-
 - **P2 / S — Inline trust signal on AI provider rows**
   - "Key stored locally only" inline on the `aiSummaryApiKey` row (currently only in privacy-data-flow panel which is off by default).
 
