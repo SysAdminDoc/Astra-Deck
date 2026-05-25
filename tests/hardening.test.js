@@ -4674,6 +4674,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'core/selector-health.js':              'function createSelectorHealth(options',
         'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
         'core/toast.js':                        'function inferToastTone(color)',
+        'core/runtime-flags.js':                'core.runtimeFlags = flags;',
         'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
         'features/video-filters/index.js':      'function buildVideoFilterCss(settings)',
         'features/blue-light-filter/index.js':  'function buildBlueLightRgba(settings)',
@@ -4708,6 +4709,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/runtime-flags.js',
         'extension/features/subtitles/index.js',
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
@@ -6962,4 +6964,129 @@ test('v4.47.0 popup.css honours prefers-reduced-motion globally', () => {
         'reduced-motion guard must zero animation with !important to override per-element rules');
     assert.match(guardBody, /transition:\s*none\s*!important/,
         'reduced-motion guard must zero transition with !important to override per-element rules');
+});
+
+test('v4.47.0 NF12 — runtime-flags module exposes typed accessors and ytkit.js uses them', () => {
+    // The three internal coordination flags (__ytkit_videoPopped,
+    // __ytkit_cpu_tamer, __ytkit_debug) used to be untyped globals
+    // written directly on `window`. A misspelled flag at a write site
+    // would silently break the popOutPlayer / pipButton /
+    // fullscreenOnDoubleClick cooperation chain (videoPopped), the
+    // CPU Tamer re-entry guard (cpu_tamer), or the debug-mode banner
+    // (debug). The module gives every flag a typed get/set and the
+    // hardening invariant is that ytkit.js only writes through it.
+
+    const modSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'runtime-flags.js'), 'utf8'
+    );
+    // Module must expose six accessor methods — get + set for each of
+    // the three flags.
+    for (const method of [
+        'getVideoPopped', 'setVideoPopped',
+        'getCpuTamerActive', 'setCpuTamerActive',
+        'getDebugActive', 'setDebugActive',
+    ]) {
+        assert.match(modSrc, new RegExp(method + '\\s*\\('),
+            `runtime-flags.js must expose ${method}`);
+    }
+    // Module must attach to the shared YTKitCore namespace as
+    // `runtimeFlags` so ytkit.js + the userscript bundle can pick it
+    // up via the same idempotent guard used by other core helpers.
+    assert.match(modSrc, /core\.runtimeFlags\s*=/,
+        'runtime-flags.js must attach as core.runtimeFlags');
+    assert.match(modSrc, /if \(core\.runtimeFlags\) return/,
+        'runtime-flags.js must short-circuit on re-load');
+
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    // ytkit.js must capture the module reference once at top-level
+    // and gate the rest of the file on it (same pattern as the other
+    // core helpers).
+    assert.match(ytkitSrc, /const RuntimeFlags = \(globalThis\.YTKitCore && globalThis\.YTKitCore\.runtimeFlags\) \|\| null;/,
+        'ytkit.js must capture RuntimeFlags from globalThis.YTKitCore.runtimeFlags');
+    assert.match(ytkitSrc, /!RuntimeFlags\s*\n?\s*\) \{\s*\n\s*console\.error\(\'\[YTKit\] Core helpers missing\./s,
+        'ytkit.js must include !RuntimeFlags in the missing-core-helpers guard');
+
+    // No raw `window.__ytkit_videoPopped = …` / `__ytkit_cpu_tamer = …` /
+    // `__ytkit_debug = …` writes outside the runtime-flags module itself.
+    // We allow reads-from-comment (documentation about the underlying
+    // primitives) but ban executable writes. Each banned pattern below
+    // is the exact assignment shape the previous code used.
+    const ytkitBannedWrites = [
+        /window\.__ytkit_videoPopped\s*=\s*/,
+        /window\.__ytkit_cpu_tamer\s*=\s*/,
+        /window\.__ytkit_debug\s*=\s*/,
+        /win\.__ytkit_videoPopped\s*=\s*/,
+        /win\.__ytkit_cpu_tamer\s*=\s*/,
+        /win\.__ytkit_debug\s*=\s*/,
+    ];
+    for (const banned of ytkitBannedWrites) {
+        assert.doesNotMatch(ytkitSrc, banned,
+            `ytkit.js must not write ${banned} directly — go through RuntimeFlags.set*`);
+    }
+    // Same for reads. `if (window.__ytkit_videoPopped)` etc. must use
+    // the typed getter instead.
+    const ytkitBannedReads = [
+        /if \(\s*window\.__ytkit_videoPopped\s*\)/,
+        /if \(\s*window\.__ytkit_cpu_tamer\s*\)/,
+        /if \(\s*window\.__ytkit_debug\s*\)/,
+    ];
+    for (const banned of ytkitBannedReads) {
+        assert.doesNotMatch(ytkitSrc, banned,
+            `ytkit.js must not read ${banned} directly — go through RuntimeFlags.get*`);
+    }
+
+    // Sandbox eval the module so we have proof the contract works end
+    // to end. Mock `window` with a plain object; check that get/set
+    // round-trips through the underlying primitive name (so a console
+    // power user reading `window.__ytkit_videoPopped` after the
+    // setter still sees the same boolean).
+    const fakeWindow = {};
+    const sandbox = {
+        globalThis: {},
+        window: fakeWindow,
+    };
+    const vm = require('node:vm');
+    vm.createContext(sandbox);
+    vm.runInContext(modSrc, sandbox);
+    const flags = sandbox.globalThis.YTKitCore.runtimeFlags;
+    assert.equal(flags.getVideoPopped(), false, 'initial videoPopped is false');
+    flags.setVideoPopped(true);
+    assert.equal(flags.getVideoPopped(), true, 'setVideoPopped(true) round-trips');
+    assert.equal(fakeWindow.__ytkit_videoPopped, true,
+        'setter writes to the underlying window primitive so external readers see it');
+    flags.setCpuTamerActive(1); // truthy non-boolean coerces
+    assert.strictEqual(flags.getCpuTamerActive(), true,
+        'getCpuTamerActive coerces the underlying primitive to a strict boolean');
+    flags.setDebugActive(false);
+    assert.equal(flags.getDebugActive(), false, 'setDebugActive(false) round-trips');
+});
+
+test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
+    // sync-userscript.js bundles the v5.0.0 core modules into the
+    // userscript build. runtime-flags.js must ride alongside the
+    // existing core helpers so the userscript vehicle stays at parity
+    // with the MV3 extension.
+    const syncSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'sync-userscript.js'), 'utf8'
+    );
+    assert.match(syncSrc, /'extension\/core\/runtime-flags\.js'/,
+        'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
+});
+
+test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every content-script group', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const flagsIdx = cs.js.indexOf('core/runtime-flags.js');
+        assert.notEqual(flagsIdx, -1,
+            'manifest must include core/runtime-flags.js in every content_scripts group that loads ytkit.js');
+        assert.ok(flagsIdx < ytkitIdx,
+            'core/runtime-flags.js must load before ytkit.js so the module is on globalThis.YTKitCore when ytkit.js runs');
+    }
 });

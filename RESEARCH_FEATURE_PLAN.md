@@ -38,11 +38,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Touches: read each; if useful → document in CONTRIBUTING.md "Dev scripts"; if abandoned → delete.
   - Acceptance: every file in `scripts/` is referenced from `package.json` or documented.
 
-- **P1 / S — Runtime flags module (NF12)**
-  - Why: `window.__ytkit_videoPopped`, `__ytkit_debug`, `__ytkit_cpu_tamer` are cross-feature coordination primitives with no typed owner, no documentation, no hardening test.
-  - Touches: `extension/core/runtime-flags.js` (new), grep-replace assignments in `ytkit.js`, `manifest.json` content_scripts arrays, `docs/architecture.md`, `tests/hardening.test.js`.
-  - Acceptance: every `window.__ytkit_*` internal flag routes through the module; hardening test pins.
-
 - **P1 / S — Schema `requires:` field + 5–8 seed entries (NF17)**
   - Why: NF10 capability probe needs the schema field. Currently no `requires:` field anywhere in `extension/core/settings-schema.js`.
   - Touches: `core/settings-schema.js` (field shape + 5–8 entries), `scripts/check-settings.js` (well-known capability allowlist), `tests/core-foundation.test.js`.

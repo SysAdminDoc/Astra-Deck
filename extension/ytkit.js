@@ -52,6 +52,14 @@
         waitForPageContent
     } = globalThis.YTKitCore || {};
 
+    // v4.47.0 NF12: typed accessors for the internal window.__ytkit_*
+    // coordination flags (__ytkit_videoPopped, __ytkit_cpu_tamer,
+    // __ytkit_debug). The module is loaded ahead of ytkit.js via the
+    // manifest content_scripts arrays and bundled into the userscript
+    // build via sync-userscript.js; both vehicles see the same singleton
+    // on globalThis.YTKitCore.runtimeFlags.
+    const RuntimeFlags = (globalThis.YTKitCore && globalThis.YTKitCore.runtimeFlags) || null;
+
     if (
         !addMutationRule ||
         !addNavigateRule ||
@@ -94,7 +102,8 @@
         !storageWrite ||
         !storageWriteJSON ||
         !waitForElement ||
-        !waitForPageContent
+        !waitForPageContent ||
+        !RuntimeFlags
     ) {
         console.error('[YTKit] Core helpers missing. Reload the extension.');
         return;
@@ -20044,7 +20053,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         controls.appendChild(playBtn);
                         controls.appendChild(timeEl);
                         this._pipWindow.document.body.appendChild(controls);
-                        window.__ytkit_videoPopped = true;
+                        RuntimeFlags.setVideoPopped(true);
                         // Single pagehide handler merges the three things that
                         // need to happen when the PiP window closes:
                         //   1. Stop the time-display interval that was polling
@@ -20061,7 +20070,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             }
                             if (origNext) origParent.insertBefore(video, origNext);
                             else origParent.appendChild(video);
-                            window.__ytkit_videoPopped = false;
+                            RuntimeFlags.setVideoPopped(false);
                             this._pipWindow = null;
                         });
                         showToast('Video popped out', '#22c55e');
@@ -20071,8 +20080,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Fallback to standard PiP API
                 try {
                     await video.requestPictureInPicture();
-                    window.__ytkit_videoPopped = true;
-                    video.addEventListener('leavepictureinpicture', () => { window.__ytkit_videoPopped = false; }, { once: true });
+                    RuntimeFlags.setVideoPopped(true);
+                    video.addEventListener('leavepictureinpicture', () => { RuntimeFlags.setVideoPopped(false); }, { once: true });
                     showToast('Picture-in-Picture active', '#22c55e');
                 } catch(e) {
                     // v3.23.0 (L3): more helpful failure message for
@@ -22257,7 +22266,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._handler = (e) => {
                     // Skip if video is in a pop-out window
-                    if (window.__ytkit_videoPopped) return;
+                    if (RuntimeFlags.getVideoPopped()) return;
                     const player = document.querySelector('#movie_player');
                     if (!player) return;
                     // Only respond to double clicks on the video element or its container
@@ -22361,7 +22370,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 btn.addEventListener('click', async () => {
                     // Skip if video is in a Document PiP pop-out
-                    if (window.__ytkit_videoPopped) {
+                    if (RuntimeFlags.getVideoPopped()) {
                         showToast('Video is already in pop-out mode', '#f59e0b');
                         return;
                     }
@@ -25235,7 +25244,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _pumpInterval: null,
             _patched: false,
             init() {
-                if (window.__ytkit_cpu_tamer) return;
+                if (RuntimeFlags.getCpuTamerActive()) return;
                 const win = window;
                 const PromiseCtor = (async () => {})().constructor;
                 let canvas;
@@ -25249,7 +25258,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearInterval: win.clearInterval
                 };
                 const { setTimeout: origSetTimeout, setInterval: origSetInterval } = this._originals;
-                win.__ytkit_cpu_tamer = true;
+                RuntimeFlags.setCpuTamerActive(true);
                 let afHandler = null;
                 const rafPromise = (resolve) => requestAnimationFrame(afHandler = resolve);
                 let p1 = { resolved: true }, p2 = { resolved: true };
@@ -25305,7 +25314,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 this._originals = null;
                 this._patched = false;
-                window.__ytkit_cpu_tamer = false;
+                RuntimeFlags.setCpuTamerActive(false);
             }
         },
 
@@ -26394,11 +26403,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Advanced',
             icon: 'bug',
             init() {
-                window.__ytkit_debug = true;
+                RuntimeFlags.setDebugActive(true);
                 console.log('%c[YTKit Debug] Debug mode enabled', 'color: #f59e0b; font-weight: bold;');
             },
             destroy() {
-                window.__ytkit_debug = false;
+                RuntimeFlags.setDebugActive(false);
                 console.log('%c[YTKit Debug] Debug mode disabled', 'color: #6b7280;');
             }
         },

@@ -54,7 +54,7 @@
         });
     }
 
-                                                                                                                    // ── BEGIN v5.0.0 bundled core modules ──
+                                                                                                                        // ── BEGIN v5.0.0 bundled core modules ──
     // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:
     //     node sync-userscript.js
     //
@@ -200,16 +200,21 @@
 
         // ─── live-chat ───
         Object.freeze({ key: "hiddenChatElementsManager", category: "live-chat", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"], risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        // v4.47.0: `knownValues` is the canonical enumeration the popup's
+        // array-type editor renders as a checkbox grid (replacing the raw
+        // JSON textarea). Optional — entries without `knownValues` keep
+        // the JSON path. The array MUST be a superset of the default value
+        // so a fresh install can deselect any element.
+        Object.freeze({ key: "hiddenChatElements", category: "live-chat", type: "array", defaultValue: ["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"], knownValues: Object.freeze(["header","menu","popout","timestamps","polls","ticker","leaderboard","support","banner","emoji","topFan","superChats","levelUp","bots"]), risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "chatKeywordFilter", category: "live-chat", type: "string", defaultValue: "", risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── watch-player ───
         Object.freeze({ key: "hiddenActionButtonsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "hiddenActionButtons", category: "watch-player", type: "array", defaultValue: ["like","share","ask","clip","thanks","save","sponsor","moreActions"], risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "hiddenActionButtons", category: "watch-player", type: "array", defaultValue: ["like","share","ask","clip","thanks","save","sponsor","moreActions"], knownValues: Object.freeze(["like","dislike","share","ask","clip","thanks","save","sponsor","moreActions"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hiddenPlayerControlsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "hiddenPlayerControls", category: "watch-player", type: "array", defaultValue: ["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"], risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "hiddenPlayerControls", category: "watch-player", type: "array", defaultValue: ["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"], knownValues: Object.freeze(["next","autoplay","subtitles","captions","miniplayer","pip","theater","fullscreen"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hiddenWatchElementsManager", category: "watch-player", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-        Object.freeze({ key: "hiddenWatchElements", category: "watch-player", type: "array", defaultValue: ["joinButton","askButton","saveButton","moreActions","askAISection","podcastSection","transcriptSection","channelInfoCards"], risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "hiddenWatchElements", category: "watch-player", type: "array", defaultValue: ["joinButton","askButton","saveButton","moreActions","askAISection","podcastSection","transcriptSection","channelInfoCards"], knownValues: Object.freeze(["joinButton","askButton","saveButton","moreActions","askAISection","podcastSection","transcriptSection","channelInfoCards"]), risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
         // ─── downloads ───
         Object.freeze({ key: "showLocalDownloadButton", category: "downloads", type: "boolean", defaultValue: true, risk: "local-companion", profile: "both", scope: "downloads", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -1968,6 +1973,74 @@
         }
     })();
 
+    // ── bundled module: extension/core/runtime-flags.js ──
+    (() => {
+        'use strict';
+
+        // extension/core/runtime-flags.js
+        //
+        // v4.47.0 NF12 — typed accessors for the three internal
+        // window.__ytkit_* coordination primitives. These flags govern
+        // cross-feature behavior:
+        //
+        //   __ytkit_videoPopped — popOutPlayer sets it on Document-PiP /
+        //     standard-PiP enter; clears on pagehide / leavepictureinpicture.
+        //     pipButton and fullscreenOnDoubleClick read it to skip work
+        //     when the video has been popped to a separate window.
+        //
+        //   __ytkit_cpu_tamer — CPU Tamer init re-entry guard + destroy
+        //     state. Set true when init patches the native timer functions;
+        //     cleared on destroy after the originals are restored.
+        //
+        //   __ytkit_debug — Debug Mode on/off marker. Read by any feature
+        //     that wants to gate verbose logging.
+        //
+        // Why a module? Until now these were untyped global assignments. A
+        // misspelled flag at a write site (e.g. `__ytkit_video_popped`)
+        // would silently break cooperation without firing any test or
+        // lint. The wrapper gives every flag a single typed accessor and
+        // lets the hardening test pin that no new internal flag gets
+        // smuggled in through bare window.__ytkit_* writes.
+        //
+        // Back-compat: the storage is still window.__ytkit_*, so console
+        // power users and the userscript build's globalThis-bound code
+        // continue to see the same values. The module just owns the typed
+        // read/write contract.
+
+        const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+        if (core.runtimeFlags) return;
+
+        const win = typeof window !== 'undefined' ? window : globalThis;
+
+        const flags = Object.freeze({
+            // popOutPlayer / pipButton / fullscreenOnDoubleClick coordination.
+            getVideoPopped() {
+                return Boolean(win.__ytkit_videoPopped);
+            },
+            setVideoPopped(value) {
+                win.__ytkit_videoPopped = Boolean(value);
+            },
+
+            // CPU Tamer init guard + destroy marker.
+            getCpuTamerActive() {
+                return Boolean(win.__ytkit_cpu_tamer);
+            },
+            setCpuTamerActive(value) {
+                win.__ytkit_cpu_tamer = Boolean(value);
+            },
+
+            // Debug Mode on/off.
+            getDebugActive() {
+                return Boolean(win.__ytkit_debug);
+            },
+            setDebugActive(value) {
+                win.__ytkit_debug = Boolean(value);
+            },
+        });
+
+        core.runtimeFlags = flags;
+    })();
+
     // ── bundled module: extension/features/subtitles/index.js ──
     (() => {
         'use strict';
@@ -2066,14 +2139,22 @@
                     `;
         }
 
-        // Lifecycle-ready spec. Not yet wired into the existing feature
-        // registry (the in-monolith block still owns init/destroy), but
-        // exported so a follow-up slice can flip to the v4.7.0 contract
-        // without touching the buildSubtitleCss function again.
+        // Lifecycle-ready spec. The buildSubtitleCss helper lives in this
+        // peel module; the actual DOM mount/teardown still runs in the
+        // monolith's inline subtitleStyling block. v4.47.0 NF5 wave 1
+        // registers the spec with the v4.7.0 lifecycle module so the
+        // contract is exercised + the future adoption wave can flip to
+        // delegating init/destroy here without changing the surface.
         const featureSpec = Object.freeze({
             id: 'subtitleStyling',
             category: 'subtitles',
-            buildCss: buildSubtitleCss
+            buildCss: buildSubtitleCss,
+            // No-op for wave 1 — ytkit.js inline block still owns the real
+            // injectStyle / cleanup. Wave 2 will replace these with the
+            // actual mount/remove and ytkit.js will delegate via
+            // lifecycle.start / .destroy.
+            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
         });
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -2082,6 +2163,20 @@
             featureSpec,
             FONT_FAMILY_MAP
         });
+
+        // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module so
+        // snapshot() can see this feature. Defensive — the lifecycle module
+        // is loaded before the peels in manifest content_scripts, but the
+        // userscript build path may inline things differently, so we check
+        // for the global first and silently skip if absent.
+        try {
+            if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+                globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
+            }
+        } catch (_) {
+            // reason: defineFeature throws on duplicate id; multiple loads of this
+            // IIFE (extension + userscript context) must not break boot.
+        }
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = { buildSubtitleCss, featureSpec, FONT_FAMILY_MAP };
@@ -2167,7 +2262,10 @@
             id: 'videoVisualFilters',
             category: 'playback-audio',
             buildCss: buildVideoFilterCss,
-            isIdentity: isVideoFilterIdentity
+            isIdentity: isVideoFilterIdentity,
+            // v4.47.0 NF5 wave 1: register-only.
+            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
         });
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -2177,6 +2275,15 @@
             featureSpec,
             FIELD_BOUNDS
         });
+
+        // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module.
+        try {
+            if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+                globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
+            }
+        } catch (_) {
+            // reason: defineFeature throws on duplicate id; ignore re-registers
+        }
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = {
@@ -2256,7 +2363,11 @@
             id: 'blueLightFilter',
             category: 'playback-audio',
             buildRgba: buildBlueLightRgba,
-            OVERLAY_FIXED_CSS
+            OVERLAY_FIXED_CSS,
+            // v4.47.0 NF5 wave 1: register-only; inline ytkit.js owns
+            // mount/remove of the warm-tint overlay element.
+            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
         });
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -2265,6 +2376,15 @@
             OVERLAY_FIXED_CSS,
             featureSpec
         });
+
+        // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module.
+        try {
+            if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+                globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
+            }
+        } catch (_) {
+            // reason: defineFeature throws on duplicate id; ignore re-registers
+        }
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = { buildBlueLightRgba, OVERLAY_FIXED_CSS, featureSpec };
@@ -2393,6 +2513,22 @@
                 + '                    }\n                ';
         }
 
+        // v4.47.0 NF5 wave 1: lifecycle specs for the seven theme-css
+        // feature ids this module owns. All register-only (init / destroy
+        // no-op); inline ytkit.js cssFeature() blocks still own the actual
+        // injectStyle / cleanup. The categories below match the
+        // settings-schema entries — schema parity is pinned by the
+        // hardening test.
+        const LIFECYCLE_SPECS = Object.freeze([
+            { id: 'customProgressBarColor', category: 'shell' },
+            { id: 'customSelectionColor',   category: 'shell' },
+            { id: 'grayscaleThumbnails',    category: 'shell' },
+            { id: 'forceDarkEverywhere',    category: 'shell' },
+            { id: 'themeAccentColor',       category: 'shell' },
+            { id: 'compactUnfixedHeader',   category: 'shell' },
+            { id: 'hideVideoEndContent',    category: 'watch-player' },
+        ]);
+
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
         features.themeCss = Object.freeze({
             buildProgressBarCss,
@@ -2401,8 +2537,29 @@
             buildForceDarkEverywhereCss,
             buildAccentColorCss,
             buildCompactUnfixedHeaderCss,
-            buildHideVideoEndContentCss
+            buildHideVideoEndContentCss,
+            LIFECYCLE_SPECS
         });
+
+        try {
+            if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+                const lc = globalThis.YTKitCore.getLifecycle();
+                for (const spec of LIFECYCLE_SPECS) {
+                    try {
+                        lc.defineFeature({
+                            id: spec.id,
+                            category: spec.category,
+                            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+                            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
+                        });
+                    } catch (_) {
+                        // reason: duplicate id from a prior load — safe to skip
+                    }
+                }
+            }
+        } catch (_) {
+            // reason: lifecycle unavailable in this context (e.g. test harness)
+        }
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = {
@@ -2412,7 +2569,8 @@
                 buildForceDarkEverywhereCss,
                 buildAccentColorCss,
                 buildCompactUnfixedHeaderCss,
-                buildHideVideoEndContentCss
+                buildHideVideoEndContentCss,
+                LIFECYCLE_SPECS
             };
         }
     })();
@@ -2473,14 +2631,47 @@
                 @keyframes ytkit-nyan-rainbow { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }`;
         }
 
+        // v4.47.0 NF5 wave 1: lifecycle specs for the five wave-8 CSS-only
+        // feature ids this module owns. Register-only; inline ytkit.js
+        // cssFeature() blocks still own init/destroy. Category sourced
+        // from the settings-schema entries.
+        const LIFECYCLE_SPECS = Object.freeze([
+            { id: 'hideNotificationButton', category: 'comments'      },
+            { id: 'noFrostedGlass',         category: 'shell'         },
+            { id: 'hideLatestPosts',        category: 'feed'          },
+            { id: 'disableMiniPlayer',      category: 'watch-player'  },
+            { id: 'nyanCatProgressBar',     category: 'shell'         },
+        ]);
+
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
         features.wave8Css = Object.freeze({
             buildHideNotificationButtonCss,
             buildNoFrostedGlassCss,
             buildHideLatestPostsCss,
             buildDisableMiniPlayerCss,
-            buildNyanCatProgressBarCss
+            buildNyanCatProgressBarCss,
+            LIFECYCLE_SPECS
         });
+
+        try {
+            if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+                const lc = globalThis.YTKitCore.getLifecycle();
+                for (const spec of LIFECYCLE_SPECS) {
+                    try {
+                        lc.defineFeature({
+                            id: spec.id,
+                            category: spec.category,
+                            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+                            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
+                        });
+                    } catch (_) {
+                        // reason: duplicate id from a prior load — safe to skip
+                    }
+                }
+            }
+        } catch (_) {
+            // reason: lifecycle unavailable in this context (e.g. test harness)
+        }
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = {
@@ -2488,7 +2679,8 @@
                 buildNoFrostedGlassCss,
                 buildHideLatestPostsCss,
                 buildDisableMiniPlayerCss,
-                buildNyanCatProgressBarCss
+                buildNyanCatProgressBarCss,
+                LIFECYCLE_SPECS
             };
         }
     })();
@@ -2541,6 +2733,20 @@
             return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
         }
 
+        // v4.47.0 NF5 wave 1: lifecycle specs for the six home-subs CSS-only
+        // feature ids this module owns. Register-only; inline ytkit.js
+        // cssFeature() blocks still own init/destroy. Categories sourced
+        // from settings-schema (verified via scripts/check-settings.js
+        // parity gate).
+        const LIFECYCLE_SPECS = Object.freeze([
+            { id: 'hideCreateButton',        category: 'nav'           },
+            { id: 'hideVoiceSearch',         category: 'nav'           },
+            { id: 'widenSearchBar',          category: 'shell'         },
+            { id: 'disablePlayOnHover',      category: 'shorts'        },
+            { id: 'fullWidthSubscriptions',  category: 'shell'         },
+            { id: 'hideSubscriptionOptions', category: 'watch-player'  },
+        ]);
+
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
         features.homeSubsCss = Object.freeze({
             buildHideCreateButtonCss,
@@ -2548,8 +2754,29 @@
             buildWidenSearchBarCss,
             buildDisablePlayOnHoverCss,
             buildFullWidthSubscriptionsCss,
-            buildHideSubscriptionOptionsCss
+            buildHideSubscriptionOptionsCss,
+            LIFECYCLE_SPECS
         });
+
+        try {
+            if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+                const lc = globalThis.YTKitCore.getLifecycle();
+                for (const spec of LIFECYCLE_SPECS) {
+                    try {
+                        lc.defineFeature({
+                            id: spec.id,
+                            category: spec.category,
+                            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+                            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
+                        });
+                    } catch (_) {
+                        // reason: duplicate id from a prior load — safe to skip
+                    }
+                }
+            }
+        } catch (_) {
+            // reason: lifecycle unavailable in this context (e.g. test harness)
+        }
 
         if (typeof module !== 'undefined' && module.exports) {
             module.exports = {
@@ -2558,7 +2785,8 @@
                 buildWidenSearchBarCss,
                 buildDisablePlayOnHoverCss,
                 buildFullWidthSubscriptionsCss,
-                buildHideSubscriptionOptionsCss
+                buildHideSubscriptionOptionsCss,
+                LIFECYCLE_SPECS
             };
         }
     })();
