@@ -60,6 +60,20 @@
     // on globalThis.YTKitCore.runtimeFlags.
     const RuntimeFlags = (globalThis.YTKitCore && globalThis.YTKitCore.runtimeFlags) || null;
 
+    // v4.47.0 NF5 wave 2: feature-lifecycle observability hook. The peel
+    // modules in extension/features/*/index.js register their feature
+    // ids at module-eval via getLifecycle().defineFeature(spec) (wave 1
+    // shipped at commit 3f22e0e). Wave 2 keeps the CSS-injection work
+    // in cssFeature() below but routes the state transitions through
+    // lifecycle.start(id) / lifecycle.destroy(id) so snapshot() reflects
+    // the actual started state in production instead of perpetual
+    // started:false. Optional — when the lifecycle module isn't loaded
+    // (test harness with no core/feature-lifecycle.js bundle) the
+    // cssFeature flow still works directly.
+    const Lifecycle = (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function')
+        ? globalThis.YTKitCore.getLifecycle()
+        : null;
+
     if (
         !addMutationRule ||
         !addNavigateRule ||
@@ -4381,10 +4395,23 @@ return response;
             init() {
                 this._styleElement = injectStyle(css, this.id, isRaw);
                 document.body.classList.add(bodyClass);
+                // v4.47.0 NF5 wave 2: notify the lifecycle module if it
+                // knows this id (a features/*/index.js peel registered
+                // it at wave 1). The peel's spec.init() is a no-op so
+                // lifecycle.start() only bumps the started flag —
+                // making snapshot() reflect production reality.
+                if (Lifecycle && Lifecycle._features && Lifecycle._features.has(this.id)) {
+                    try { Lifecycle.start(this.id); }
+                    catch (_) { /* reason: lifecycle start failure must not block cssFeature init */ }
+                }
             },
             destroy() {
                 this._styleElement?.remove(); this._styleElement = null;
                 document.body.classList.remove(bodyClass);
+                if (Lifecycle && Lifecycle._features && Lifecycle._features.has(this.id)) {
+                    try { Lifecycle.destroy(this.id); }
+                    catch (_) { /* reason: lifecycle destroy is best-effort; must not block cssFeature teardown */ }
+                }
             }
         };
         if (extra) Object.assign(f, extra);

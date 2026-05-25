@@ -6,6 +6,27 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **ytkit.js: cssFeature notifies the feature-lifecycle on init/destroy
+  (NF5 wave 2).** Wave 1 (commit `3f22e0e`) registered 21 peeled
+  CSS-only feature ids with the v4.7.0 lifecycle module but kept the
+  inline `cssFeature()` blocks as the sole source of init/destroy
+  work — so `lifecycle.snapshot()` always returned `started:false`
+  even when the feature was visibly active. Wave 2 routes the state
+  transitions through the lifecycle: `cssFeature.init` now calls
+  `Lifecycle.start(id)` after the CSS is injected, and
+  `cssFeature.destroy` calls `Lifecycle.destroy(id)` after teardown.
+  Production state and `snapshot()` state now match. The CSS injection
+  + body-class toggle still happens in the cssFeature closure (full
+  delegate — moving `injectStyle` into the peel modules or passing it
+  through ctx — stays a wave-3 refactor). Guarded on
+  `Lifecycle._features.has(id)` so unregistered feature ids skip the
+  notification path. Pinned by a new `v4.47.0 NF5 wave 2` hardening
+  test that asserts (a) the lifecycle singleton capture site,
+  (b) the notify-on-init wiring inside cssFeature, (c) the notify-on
+  -destroy wiring, plus (d) a sandboxed lifecycle start/destroy
+  round-trip that verifies snapshot() transitions correctly. 535/535
+  JS tests pass (+1 new).
+
 - **popup: confirm-shell modal retired (NF14).** Closes NF14 from
   RESEARCH_FEATURE_PLAN. Project policy (ROADMAP house style +
   docs/architecture.md §Conventions) bans confirmation dialogs in
