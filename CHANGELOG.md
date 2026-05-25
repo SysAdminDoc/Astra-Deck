@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **extension/core/runtime-flags.js — typed accessors for the three
+  internal coordination flags (NF12).** Closes NF12 from
+  RESEARCH_FEATURE_PLAN. The flags `__ytkit_videoPopped` (popOutPlayer
+  ↔ pipButton ↔ fullscreenOnDoubleClick coordination),
+  `__ytkit_cpu_tamer` (CPU Tamer re-entry guard), and `__ytkit_debug`
+  (Debug Mode marker) used to live as untyped writes directly on
+  `window`. A misspelled flag would silently break the cooperation
+  chain — and the `// reason:` ESLint rule couldn't catch a silent
+  global typo. The new module exposes typed get/set for each flag
+  while keeping `window.__ytkit_*` as the underlying storage (so
+  console power users and the userscript build's globalThis-bound
+  reads still see the same values). Twelve call sites in ytkit.js
+  migrated from `window.__ytkit_X = …` / `if (window.__ytkit_X)` to
+  `RuntimeFlags.setX(…)` / `if (RuntimeFlags.getX())`. Module is
+  loaded ahead of ytkit.js via `manifest.json` content_scripts and
+  bundled into YTKit.user.js via `sync-userscript.js#V5_BUNDLE_MODULES`.
+  Pinned by three new `v4.47.0 NF12` hardening tests: (1) module
+  surface + ytkit.js capture + ban on direct `window.__ytkit_*` writes
+  and reads + sandbox-eval round-trip; (2) sync-userscript bundle
+  inclusion; (3) manifest content-script load order before ytkit.js.
+  Existing v4.20.0 bundle-order and verbatim-fingerprint tests
+  extended to cover the new module. 531/531 JS tests pass (+3 new).
+
 - **CI: PR-time validation workflow (.github/workflows/validate.yml).**
   Closes NF11 from RESEARCH_FEATURE_PLAN. The release workflow
   (build.yml) runs only on `v*` tag pushes, so a regression used to
