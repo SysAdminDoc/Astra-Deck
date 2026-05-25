@@ -2365,13 +2365,34 @@ if (healthSaveBtn) {
             // above; carrying it twice would just bloat the bundle.
             delete sanitized._errors;
             const capabilities = popupState._capabilities || null;
+            // v4.47.0 NEW-7: pull the SW lifecycle ring out of the
+            // background script. Best-effort — if the SW is non-
+            // responsive or the message handler is absent (older
+            // build), we still ship the bundle without the ring.
+            let swLifecycle = null;
+            try {
+                const resp = await new Promise((resolve) => {
+                    try {
+                        chrome.runtime.sendMessage({ type: 'GET_SW_LIFECYCLE' }, (r) => {
+                            // Swallow chrome.runtime.lastError so a missing
+                            // listener (very old SW) doesn't reject the bundle.
+                            void chrome.runtime.lastError;
+                            resolve(r || null);
+                        });
+                    } catch (_) { resolve(null); /* reason: extension context invalid mid-call */ }
+                });
+                if (resp && Array.isArray(resp.entries)) swLifecycle = resp.entries;
+            } catch (_) {
+                // reason: SW lifecycle ring is supplemental; bundle ships without it on failure
+            }
             const payload = {
                 astraDeckBugReport: true,
-                schemaVersion: 1,
+                schemaVersion: 2,
                 exportedAt: new Date().toISOString(),
                 extensionVersion: manifestVersion,
                 userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
                 capabilities,
+                swLifecycle,
                 settings: sanitized,
                 errors,
             };

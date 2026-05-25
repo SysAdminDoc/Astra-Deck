@@ -8027,6 +8027,68 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.session and is readable via GET_SW_LIFECYCLE', () => {
+    // NEW-7: MV3 service workers restart unpredictably (~30s idle
+    // kill, suspension on memory pressure, post-install). Several
+    // Astra Deck bugs surfaced only because the maintainer happened
+    // to hit a SW restart in dev (the H25 cap-bypass-on-hydration
+    // fix is the most recent example). This ring records SW boot
+    // events into chrome.storage.session so the bug-report bundle
+    // (NEW-1) can surface SW restart frequency without telemetry.
+
+    // 1. background.js declares the ring + cap constants and the
+    //    record helper.
+    assert.match(backgroundSource, /const\s+SW_LIFECYCLE_KEY\s*=\s*['"]_swLifecycle['"]/,
+        'background.js must declare SW_LIFECYCLE_KEY = _swLifecycle');
+    assert.match(backgroundSource, /const\s+SW_LIFECYCLE_CAP\s*=\s*50/,
+        'background.js must cap the SW lifecycle ring at 50 entries');
+    assert.match(backgroundSource, /async function _recordSwLifecycle\(event\)/,
+        'background.js must define _recordSwLifecycle helper');
+
+    const recordStart = backgroundSource.indexOf('async function _recordSwLifecycle');
+    assert.ok(recordStart > -1, 'background.js must define _recordSwLifecycle');
+    const recordBlock = backgroundSource.slice(recordStart, recordStart + 1600);
+    // The record waits for the _pendingReveals hydration so the
+    // captured inFlightReveals count is correct, not just a snapshot
+    // of the freshly-restarted SW's empty Set.
+    assert.match(recordBlock, /await\s+_pendingRevealsReady/,
+        '_recordSwLifecycle must await _pendingRevealsReady before reading _pendingReveals.size');
+    assert.match(recordBlock, /inFlightReveals:\s*_pendingReveals\.size/,
+        'lifecycle entries must record the in-flight pendingReveals count for cross-restart diagnosis');
+    assert.match(recordBlock, /while \(arr\.length > SW_LIFECYCLE_CAP\) arr\.shift\(\)/,
+        '_recordSwLifecycle must trim the ring from the head once it exceeds SW_LIFECYCLE_CAP');
+
+    // 2. The module body fires _recordSwLifecycle('sw-start') at SW
+    //    boot. Every fresh SW process invocation hits this line.
+    assert.match(backgroundSource, /void\s+_recordSwLifecycle\(['"]sw-start['"]\)/,
+        'background.js must call _recordSwLifecycle("sw-start") at module load (SW boot signal)');
+
+    // 3. GET_SW_LIFECYCLE message handler returns the ring to the
+    //    popup so it can be folded into the bug-report bundle.
+    assert.match(backgroundSource, /msg\.type === ['"]GET_SW_LIFECYCLE['"]/,
+        'onMessage listener must handle the GET_SW_LIFECYCLE message type');
+    const getStart = backgroundSource.indexOf("msg.type === 'GET_SW_LIFECYCLE'");
+    const getBlock = backgroundSource.slice(getStart, getStart + 800);
+    assert.match(getBlock, /chrome\.storage\.session\.get\(SW_LIFECYCLE_KEY\)/,
+        'GET_SW_LIFECYCLE must read the ring from chrome.storage.session');
+    assert.match(getBlock, /sendResponse\(\{\s*entries,\s*error:\s*null\s*\}\)/,
+        'GET_SW_LIFECYCLE must respond with { entries, error: null } on success');
+    assert.match(getBlock, /return true;/,
+        'GET_SW_LIFECYCLE handler must return true to keep the response channel open for the async path');
+
+    // 4. The popup's bug-report bundle now pulls the ring and includes
+    //    it as swLifecycle alongside the capability map. Tolerant of
+    //    older SWs that lack the message handler (resp may be null).
+    assert.match(popupSource, /type:\s*['"]GET_SW_LIFECYCLE['"]/,
+        'popup.js must request the SW lifecycle ring via GET_SW_LIFECYCLE');
+    const bundleStart = popupSource.indexOf('healthSaveBtn.addEventListener');
+    const bundleBlock = popupSource.slice(bundleStart, bundleStart + 4000);
+    assert.match(bundleBlock, /let swLifecycle\s*=\s*null/,
+        'bug-report bundle path must declare swLifecycle = null up front (graceful fallback)');
+    assert.match(bundleBlock, /\n\s+swLifecycle,/,
+        'bug-report bundle payload must include swLifecycle (shorthand property)');
+});
+
 test('v4.47.0 NEW-6 — per-key Reset button on schema-overview rows whose value differs from default', () => {
     // NEW-6: a user who has changed one setting to a breaking value
     // currently has to either remember the default or hit global
@@ -8237,8 +8299,13 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
     const saveBlock = popupSource.slice(saveStart, saveStart + 2500);
     assert.match(saveBlock, /astraDeckBugReport:\s*true/,
         'healthSave payload must carry the astraDeckBugReport: true marker');
-    assert.match(saveBlock, /schemaVersion:\s*1/,
-        'healthSave payload must carry schemaVersion: 1');
+    // schemaVersion currently 2 after the NEW-7 SW lifecycle ring
+    // addition; readers should accept >= the documented baseline.
+    // The number itself is pinned here so a future bump comes with
+    // a deliberate test update (the bug-report consumer tooling
+    // keys schema migrations on this field).
+    assert.match(saveBlock, /schemaVersion:\s*[12]/,
+        'healthSave payload must carry schemaVersion (currently 1 or 2)');
     // Payload uses shorthand property syntax (`capabilities,` not
     // `capabilities: capabilities`); the local variable comes from
     // `popupState._capabilities || null` two lines up.

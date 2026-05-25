@@ -6,6 +6,44 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Service-worker lifecycle ring (NEW-7).**
+  MV3 service workers restart unpredictably — ~30 s idle kill,
+  suspension on memory pressure, post-install restarts. Several
+  Astra Deck bugs surfaced only because the maintainer happened to
+  hit a SW restart in dev (H25's cap-bypass-on-hydration is the
+  most recent example). This ring records SW boot events into
+  `chrome.storage.session` so the bug-report bundle (NEW-1) can
+  surface "how often did the SW restart in this browsing session?"
+  without depending on telemetry. Implementation:
+  - `SW_LIFECYCLE_KEY = '_swLifecycle'` + `SW_LIFECYCLE_CAP = 50`
+    (head-trim on overflow) in `extension/background.js`.
+  - `_recordSwLifecycle(event)` awaits `_pendingRevealsReady`
+    before snapshotting `_pendingReveals.size` so the recorded
+    `inFlightReveals` count reflects the persisted state, not
+    just the freshly-restarted SW's empty in-memory Set.
+  - Module body fires `_recordSwLifecycle('sw-start')` at SW boot
+    — every fresh SW process invocation hits that line, which is
+    the signal that distinguishes "SW restarted between user
+    actions" from "SW was alive across the user's whole session."
+  - New `GET_SW_LIFECYCLE` message handler returns the ring to
+    the popup as `{ entries, error }`, gated through the existing
+    sender validation in the onMessage listener.
+  - The popup's bug-report bundle (NEW-1) now sends
+    `GET_SW_LIFECYCLE` before assembling the payload, includes
+    the result as `swLifecycle`, and tolerates a null response
+    (older SW build without the handler) by shipping the bundle
+    without it. Bundle `schemaVersion` bumped 1 → 2 to reflect
+    the shape addition; the bug-report consumer tooling keys
+    schema migrations on this field.
+  Pinned by a new `v4.47.0 NEW-7 — SW lifecycle ring` hardening
+  test asserting the storage key + cap constants, the record
+  helper (hydration wait + size capture + head-trim), the
+  sw-start boot call, the message handler shape (storage read +
+  response shape + return-true async path), and the popup
+  consumer wiring (swLifecycle null-fallback + payload field).
+  Existing NEW-1 test updated to tolerate `schemaVersion: [12]`.
+  567/567 JS tests pass (+1 new).
+
 - **Per-key Reset affordance on schema-overview rows (NEW-6).**
   A user who set one feature to a breaking value (e.g. pasted CSS
   into `customCssCode` that broke rendering, or set `vvfBrightness`
