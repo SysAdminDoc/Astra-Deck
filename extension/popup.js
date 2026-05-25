@@ -2470,6 +2470,73 @@ async function importSettings(file) {
     }
 }
 
+// v4.47.0 NF6 (partial): Astra Downloader "Skip for now" recovery.
+// ytkit.js's MediaDLManager.showInstallPrompt sets
+// `ytkit_mediadl_prompt_dismissed = true` in chrome.storage.local
+// when the user clicks "Skip for now". That dismiss is permanent —
+// the prompt never reappears on its own. Surface a small recovery
+// action in the popup so users who change their mind can re-enable
+// the prompt without manually editing storage.
+const MEDIADL_DISMISSED_KEY = 'ytkit_mediadl_prompt_dismissed';
+const reenableMediadlButton = $('#reenable-mediadl-btn');
+
+async function readMediadlDismissed() {
+    if (!chrome?.storage?.local) return false;
+    return new Promise((resolve) => {
+        try {
+            chrome.storage.local.get(MEDIADL_DISMISSED_KEY, (items) => {
+                if (chrome.runtime.lastError) { resolve(false); return; }
+                resolve(items && items[MEDIADL_DISMISSED_KEY] === true);
+            });
+        } catch (_) {
+            // reason: chrome.storage.local unavailable; treat as not dismissed
+            resolve(false);
+        }
+    });
+}
+
+async function clearMediadlDismissed() {
+    if (!chrome?.storage?.local) return false;
+    return new Promise((resolve) => {
+        try {
+            chrome.storage.local.remove(MEDIADL_DISMISSED_KEY, () => {
+                resolve(!chrome.runtime.lastError);
+            });
+        } catch (_) {
+            // reason: chrome.storage.local.remove unavailable; report failure
+            resolve(false);
+        }
+    });
+}
+
+async function refreshReenableMediadlVisibility() {
+    if (!reenableMediadlButton) return;
+    const dismissed = await readMediadlDismissed();
+    reenableMediadlButton.hidden = !dismissed;
+}
+
+async function reenableMediadlPrompts() {
+    if (!reenableMediadlButton) return;
+    reenableMediadlButton.setAttribute('aria-busy', 'true');
+    reenableMediadlButton.disabled = true;
+    try {
+        const ok = await clearMediadlDismissed();
+        if (ok) {
+            reenableMediadlButton.hidden = true;
+            showStatus(t('statusMediadlReenabled',
+                'Astra Downloader install prompts re-enabled — reload a YouTube tab to see them.'),
+                'success', 4200);
+        } else {
+            showStatus(t('statusMediadlReenableFail',
+                'Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload.'),
+                'error', 4200);
+        }
+    } finally {
+        reenableMediadlButton.removeAttribute('aria-busy');
+        reenableMediadlButton.disabled = false;
+    }
+}
+
 // v4.47.0 EI2: undo grace period for Reset. The snapshot lives in
 // chrome.storage.session — survives popup close/reopen but is wiped
 // when the browser quits. That's the right shape for "you misclicked
@@ -2792,6 +2859,13 @@ function installWheelScrolling() {
         // reopened it). Best-effort — failure leaves the button hidden which
         // is the safe default.
         void refreshUndoResetVisibility();
+    }
+    if (reenableMediadlButton) {
+        reenableMediadlButton.addEventListener('click', () => { void reenableMediadlPrompts(); });
+        // Boot visibility: only show the button if the dismissed flag is
+        // currently set in chrome.storage.local. Hidden otherwise — most
+        // users will never see this.
+        void refreshReenableMediadlVisibility();
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
     // iter-6 N2: storage-banner Reset shares the same destructive-confirm

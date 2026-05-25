@@ -162,6 +162,12 @@
              unhid when a `_resetSnapshot` exists in chrome.storage.session
              (set by resetAllData, cleared on Undo or browser-close). -->
         <button id="undo-reset-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="undoResetAria" aria-label="Restore data from the most recent Reset" data-i18n="undoResetBtn">Undo Reset</button>
+        <!-- v4.47.0 NF6: re-enable Astra Downloader install prompts when
+             the user previously hit "Skip for now". Hidden by default;
+             shown when `ytkit_mediadl_prompt_dismissed === true` in
+             chrome.storage.local. Recovery path for users who change
+             their mind after dismissing the prompt. -->
+        <button id="reenable-mediadl-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="reenableMediadlAria" aria-label="Re-enable Astra Downloader install prompts" data-i18n="reenableMediadlBtn">Enable Downloader Prompts</button>
         <button id="reset-btn" class="danger" type="button" data-i18n="resetBtn">Reset</button>
       </div>
     </nav>
