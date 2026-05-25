@@ -37,11 +37,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Settings / downloader hardening (P0 batch from 2026-05-25 audit)
 
-- **P0 / M — Deno cutoff hard-gate on `/download` (NF27)**
-  - Why: yt-dlp ≥ 2026.04.01 requires Deno. The `denoRuntime` probe at `astra_downloader.py:751-804` reports state but `/download` doesn't consult it; yt-dlp returns empty format lists with an opaque error.
-  - Touches: `astra_downloader.py` (`/download` handler), `extension/ytkit.js` MediaDLManager error path.
-  - Acceptance: `/download` returns 422 with explicit advice when yt-dlp ≥ cutoff + Deno absent.
-
 ---
 
 ### Polish / parity (P1-P2 batch from 2026-05-25 audit)

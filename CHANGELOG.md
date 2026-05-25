@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **astra_downloader v1.5.2: Deno cutoff hard-gate on `/download`
+  (NF27).** yt-dlp ≥ 2026.04.01 ships an external n/sig solver and
+  shells out to a JavaScript runtime (Deno is the documented option)
+  to solve YouTube's signature challenges. Without Deno on PATH,
+  recent yt-dlp builds silently return empty format lists and the
+  download fails late with an opaque error. The `/health` probe
+  already exposed `denoRuntime.ytdlpNeedsRuntime` + `installed`, and
+  the extension rendered a "Deno: missing" warn pill — but `/download`
+  accepted the request anyway. NF27 turns this into an actionable
+  upfront 422 with `code: "deno-runtime-missing"` and an `advice`
+  field carrying the Deno install command. The extension MediaDL
+  download flow now detects the code and shows a 15-second amber
+  toast with the install advice instead of the generic 5-second
+  error toast. Pinned by three new
+  `DenoRuntimeHardGateTests`: rejected_when_yt_dlp_needs_runtime_and_deno_absent /
+  allowed_when_deno_installed / allowed_when_runtime_not_needed.
+  95/95 Python tests pass (+3 new). 541/541 JS tests still pass.
+
 - **astra_downloader: yt-dlp auto-update active-download guard (NF26).**
   `maybe_auto_update_ytdlp()` (astra_downloader.py:981) used to fire
   fire-and-forget; `yt-dlp.exe -U` atomically replaces the binary, and
