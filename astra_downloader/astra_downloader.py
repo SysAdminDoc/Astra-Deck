@@ -978,6 +978,96 @@ def mark_ytdlp_update_check(config):
         write_persistent_log(f"Could not persist yt-dlp update timestamp: {e}")
 
 
+def _run_ytdlp_self_update(config, source_tag):
+    """Synchronously run ``yt-dlp -U`` and return a structured result.
+
+    Shared runner used by both the background ``maybe_auto_update_ytdlp``
+    (NF26) and the on-demand ``/update-ytdlp`` endpoint (NF18). Captures
+    stdout/stderr, invalidates the version cache on success so ``/health``
+    reflects the new build, and stamps the throttle marker so a
+    successful force-update also resets the auto-update clock.
+
+    Returns a dict with keys:
+      - ``ok``: bool
+      - ``exit_code``: int (-1 on subprocess exception / timeout)
+      - ``stdout``: trimmed, ≤ 200 chars
+      - ``stderr``: trimmed, ≤ 200 chars
+      - ``error``: optional human-readable error string when ok is False
+      - ``version_before``: cached version at start of run (best-effort)
+      - ``version_after``: cached version refreshed post-run (best-effort)
+      - ``source``: caller-provided tag (logged for support traceability)
+    """
+    version_before = get_ytdlp_version() or ''
+    try:
+        result = subprocess.run(
+            [str(YTDLP_PATH), '-U'],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    except subprocess.TimeoutExpired:
+        write_persistent_log(
+            f"yt-dlp {source_tag} update timed out after 120 s — yt-dlp may be "
+            f"blocked on a download.yt-dlp.org request."
+        )
+        return {
+            'ok': False,
+            'exit_code': -1,
+            'stdout': '',
+            'stderr': '',
+            'error': 'yt-dlp -U timed out after 120 s',
+            'version_before': version_before,
+            'version_after': version_before,
+            'source': source_tag,
+        }
+    except Exception as e:  # noqa: BLE001
+        write_persistent_log(f"yt-dlp {source_tag} update error: {e}")
+        return {
+            'ok': False,
+            'exit_code': -1,
+            'stdout': '',
+            'stderr': str(e),
+            'error': f'yt-dlp -U could not be launched: {e}',
+            'version_before': version_before,
+            'version_after': version_before,
+            'source': source_tag,
+        }
+
+    stdout = (result.stdout or '').strip()[:200]
+    stderr = (result.stderr or '').strip()[:200]
+    if result.returncode == 0:
+        mark_ytdlp_update_check(config)
+        # Invalidate version cache so /health reports the new version.
+        _version_cache['ytdlp']['checked_at'] = 0.0
+        version_after = get_ytdlp_version(force=True) or version_before
+        write_persistent_log(
+            f"yt-dlp {source_tag} update ok ({version_before} -> {version_after}): {stdout}"
+        )
+        return {
+            'ok': True,
+            'exit_code': 0,
+            'stdout': stdout,
+            'stderr': stderr,
+            'version_before': version_before,
+            'version_after': version_after,
+            'source': source_tag,
+        }
+    write_persistent_log(
+        f"yt-dlp {source_tag} update failed (exit {result.returncode}): {stderr or stdout}"
+    )
+    return {
+        'ok': False,
+        'exit_code': result.returncode,
+        'stdout': stdout,
+        'stderr': stderr,
+        'error': stderr or stdout or f'yt-dlp -U exited with code {result.returncode}',
+        'version_before': version_before,
+        'version_after': version_before,
+        'source': source_tag,
+    }
+
+
 def maybe_auto_update_ytdlp(config, active_count_fn=None):
     """Background-run yt-dlp -U when more than a day has passed.
 
@@ -998,6 +1088,10 @@ def maybe_auto_update_ytdlp(config, active_count_fn=None):
     is that ``-U`` runs ahead of any user download (server-start hook), and
     a download starting in that micro-window is so unlikely we don't pay the
     cost of a hard cross-process lock.
+
+    v4.47.0 NF18: the subprocess runner was extracted into
+    ``_run_ytdlp_self_update`` so the on-demand ``/update-ytdlp`` endpoint
+    can share the same logging + version-cache + throttle-marker semantics.
     """
     if not YTDLP_PATH.exists():
         return
@@ -1021,31 +1115,10 @@ def maybe_auto_update_ytdlp(config, active_count_fn=None):
             )
             return
 
-    def run():
-        try:
-            result = subprocess.run(
-                [str(YTDLP_PATH), '-U'],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                creationflags=CREATE_NO_WINDOW,
-            )
-            if result.returncode == 0:
-                mark_ytdlp_update_check(config)
-                # Invalidate version cache so /health reports the new version.
-                _version_cache['ytdlp']['checked_at'] = 0.0
-                write_persistent_log(
-                    f"yt-dlp auto-update ok: {(result.stdout or '').strip()[:200]}"
-                )
-            else:
-                write_persistent_log(
-                    f"yt-dlp auto-update failed (exit {result.returncode}): "
-                    f"{(result.stderr or result.stdout or '').strip()[:200]}"
-                )
-        except Exception as e:
-            write_persistent_log(f"yt-dlp auto-update error: {e}")
-
-    threading.Thread(target=run, daemon=True).start()
+    threading.Thread(
+        target=lambda: _run_ytdlp_self_update(config, source_tag='auto'),
+        daemon=True,
+    ).start()
 
 
 # ── v1.2.0: integrations stamp (idempotent shortcut/protocol/task registration) ──
@@ -2709,6 +2782,46 @@ def create_api(config, dl_manager, history):
         if exists:
             return cors_response({"error": "Download is already finished and cannot be cancelled."}, 409)
         return cors_response({"error": "Download no longer exists in the active queue."}, 404)
+
+    @api.route('/update-ytdlp', methods=['POST'])
+    def update_ytdlp():
+        """v4.47.0 NF18: on-demand ``yt-dlp -U`` so a user can fix a
+        broken-on-YouTube yt-dlp build without waiting up to 24 h for
+        the auto-update throttle (NF26).
+
+        Gates:
+        - 401 when the per-install token doesn't match.
+        - 409 when at least one download is in flight; the user-visible
+          error explains the reason. yt-dlp's ``-U`` atomically replaces
+          the binary, and on Windows an in-flight
+          ``subprocess.Popen([YTDLP_PATH, ...])`` can race the replace
+          with a file-in-use error.
+        - 503 when yt-dlp.exe is not present.
+
+        Returns the structured result from ``_run_ytdlp_self_update``
+        so the popup can show ``version_before -> version_after`` and
+        the exit code on failure.
+        """
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        if not YTDLP_PATH.exists():
+            return cors_response({"error": "yt-dlp is not installed yet — finish the Astra Downloader setup first.", "ok": False}, 503)
+        in_flight = dl_manager.active_count()
+        if in_flight > 0:
+            return cors_response(
+                {
+                    "error": f"{in_flight} download(s) in flight — wait for them to finish, then try again. "
+                             f"yt-dlp -U atomically replaces the binary and would race the active subprocess.",
+                    "ok": False,
+                    "inFlight": in_flight,
+                },
+                409,
+            )
+        result = _run_ytdlp_self_update(config.data, source_tag='manual')
+        # 200 with ok:true on success; 500 with ok:false otherwise so the
+        # popup can branch on HTTP status as well as the body field.
+        status = 200 if result.get('ok') else 500
+        return cors_response(result, status)
 
     @api.route('/shutdown')
     def shutdown():

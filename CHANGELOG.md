@@ -6,6 +6,55 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **On-demand yt-dlp self-update (NF18): `/update-ytdlp` endpoint +
+  popup button.** When YouTube breaks the current yt-dlp build, the
+  user previously had to wait up to 24 h for the auto-update throttle
+  (NF26) or manually replace the binary. This adds a force-update
+  path end-to-end:
+  - **Server**: new `POST /update-ytdlp` route on the Astra
+    Downloader. Gates: `401` without the per-install token; `503`
+    when `yt-dlp.exe` is not present; `409` when
+    `dl_manager.active_count() > 0` (the error message explains the
+    atomic-replace race documented in NF26 so the user understands
+    the gate); `200` with `ok:true` on a successful self-update,
+    carrying `version_before -> version_after`; `500` with
+    `ok:false` on non-zero exit / subprocess timeout. The subprocess
+    runner was extracted into a shared `_run_ytdlp_self_update`
+    helper so the manual endpoint and the background auto-update
+    path (`maybe_auto_update_ytdlp`) emit identical persistent-log
+    lines + invalidate the version cache + stamp the throttle marker
+    on success.
+  - **Content script**: new `MediaDLManager.updateYtdlp()` method
+    runs a fresh `/health` probe to refresh the token + locate the
+    correct port (yt-dlp self-update doesn't change either, but a
+    cached token from 30 s ago may have rotated), then POSTs to
+    `/update-ytdlp` with a 130 s timeout (server caps its own
+    subprocess at 120 s, +10 s buffer for the round trip).
+  - **Popup**: new "Update yt-dlp" button alongside the existing
+    Reset / Enable Downloader Prompts row. Always-visible (yt-dlp
+    breakage is unannounced so a deferred / dismissed surface
+    wouldn't help). Click finds any active YouTube tab and sends a
+    new `YTKIT_UPDATE_YTDLP` message; the content-script handler
+    routes to `MediaDLManager.updateYtdlp()` and returns the
+    structured response. Status string maps the server response
+    verbatim: `yt-dlp updated v2026.04.01 → v2026.05.10` on success,
+    `yt-dlp update failed: <stderr>` on failure, or "Open a YouTube
+    tab first" when no tab is loaded. Button is disabled in-flight
+    so a rapid second click can't fire a second update while the
+    server is mid-replace.
+  Pinned by a new `v4.47.0 NF18` hardening test asserting the
+  content-script method (POST + token forwarding + 130 s timeout),
+  the YTKIT_UPDATE_YTDLP listener (async return-true semantics),
+  the popup button (always-visible, not hidden), the popup handler
+  (YouTube-tab routing + version-delta status), and the server route
+  (POST registration, shared runner, 409 gate with the
+  atomically-replaces explanation). Six new Python tests cover the
+  endpoint (401 reject, 503 when missing, 409 with the in-flight
+  count, 200 with the version delta on success, 500 with stderr on
+  non-zero exit, 500 with timeout-message on subprocess timeout,
+  plus a shape pin on the shared runner). 573/573 JS + 105/105
+  Python tests pass.
+
 - **Wheel-seek on the progress bar (NF9).** Scroll the mouse wheel
   over the YouTube progress bar to seek forward/backward by
   `wheelSeekStepSec` seconds (default 5 — matches YouTube's

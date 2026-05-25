@@ -107,9 +107,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Acceptance: semver compare, atomic replace, restart succeeds.
   - Verify: pytest semver compare; manual install of older .exe + click "Update".
 
-- **P2 / M — `/update-ytdlp` endpoint + popup action (NF18)**
-  - Why: 24-hour auto-update throttle leaves no force-update path when YouTube breaks the current yt-dlp build.
-  - Touches: `astra_downloader.py` (new endpoint, gate on `active_count() == 0`), `popup.html` action, `popup.js` handler, pytest.
 
 - **P2 / L — Astra Downloader signed installer + .msi + Add/Remove Programs entry**
   - From NF6. Cost-aware: defer until CWS submission intent is resolved (Open Question 2).
