@@ -10,6 +10,8 @@ Thanks for your interest in contributing to Astra Deck! This guide will help you
 4. Run `npm ci`
 5. If you are testing the userscript build, install [Tampermonkey](https://www.tampermonkey.net/) (Chrome) or [Violentmonkey](https://violentmonkey.github.io/) (Firefox). Note: Chrome 138+ moved the "Allow User Scripts" toggle to a per-extension control; fresh Tampermonkey installs default OFF and must be enabled manually under `chrome://extensions` → Tampermonkey → Details
 
+> **New contributor?** Start with [docs/architecture.md](docs/architecture.md) — it walks the four moving parts (MV3 extension, userscript, Astra Downloader, popup), end-to-end data flow on a watch page load and a download, where things live, the five trust boundaries, conventions, and a worked example of adding a CSS-only feature.
+
 ## Project Structure
 
 ```

@@ -648,14 +648,11 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
 
 ### Phase H — Store and contributor docs (1 week)
 
-- [ ] **P2 — Contributor architecture map**
-  - Why: subagent audit Part B §5.
-  - Touches: `docs/architecture.md` (new) — flowchart from extension → downloader → yt-dlp → file output.
-  - Acceptance: includes load order, world boundaries, message contracts, key tests.
+- [x] **P2 — Contributor architecture map** _[shipped]_
+  - Shipped: `docs/architecture.md` covers the four moving parts, end-to-end data flow (watch page load + download), where things live, the five trust boundaries, conventions, and a worked CSS-only-feature walkthrough. Linked from README docs index + CONTRIBUTING.md.
 
-- [ ] **P2 — "How to add a feature" walkthrough**
-  - Why: subagent audit Part B §5.
-  - Touches: `docs/adding-a-feature.md` (new) — worked example using a real CSS feature.
+- [x] **P2 — "How to add a feature" walkthrough** _[folded into docs/architecture.md]_
+  - Shipped: the architecture map carries two worked examples (CSS-only feature, DOM-observation feature) inline rather than a separate file — both flows are short enough to live next to the trust-boundary discussion they reference.
 
 - [ ] **P3 — Store-safe vs GitHub-full separate build artifacts**
   - Why: subagent §release gaps.
