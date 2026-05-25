@@ -431,6 +431,27 @@ const storageBanner = $('#storage-banner');
 const storageBannerDetail = $('#storage-banner-detail');
 const storageBannerResetBtn = $('#storage-banner-reset-btn');
 
+// v4.47.0 NF21: first-run welcome card + What's New banner refs.
+const welcomeCard = $('#welcome-card');
+const welcomeDismissBtn = $('#welcome-dismiss-btn');
+const welcomeProfileSafeBtn = $('#welcome-profile-safe');
+const welcomeProfileFullBtn = $('#welcome-profile-full');
+const whatsNewBanner = $('#whats-new');
+const whatsNewDetail = $('#whats-new-detail');
+const whatsNewOpenBtn = $('#whats-new-open');
+const whatsNewDismissBtn = $('#whats-new-dismiss');
+
+// v4.47.0 NF21: dedicated storage keys outside SETTINGS_STORAGE_KEY so
+// settings export/import + Reset don't clobber them. _firstRunSeen is
+// a boolean sentinel set on welcome-card dismiss / profile pick;
+// _lastSeenVersion records the manifest version the popup was last
+// opened against so the What's New banner only fires once per bump.
+const FIRST_RUN_SEEN_KEY = 'ytkit_first_run_seen';
+const LAST_SEEN_VERSION_KEY = 'ytkit_last_seen_version';
+// Anchor pattern documented in CHANGELOG.md: GitHub renders the
+// version inside ## brackets as #<lowercase-major-minor-patch>.
+const CHANGELOG_BASE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md';
+
 // iter-6 N7: selector-health dashboard refs.
 const selectorHealthSection = $('#selector-health');
 const selectorHealthTotal = $('#selector-health-total');
@@ -2310,6 +2331,151 @@ if (healthSaveBtn) {
     });
 }
 
+// v4.47.0 NF21: first-run welcome card + What's New banner.
+//
+// Detection signal for "first run" is the absence of FIRST_RUN_SEEN_KEY
+// in chrome.storage.local — NOT the absence of SETTINGS_STORAGE_KEY,
+// because settings can be cleared via Reset and we don't want Reset
+// to re-trigger the welcome card.
+//
+// What's New uses LAST_SEEN_VERSION_KEY: when it differs from the
+// current manifestVersion we render a banner. Dismissing the banner
+// or clicking "Read changelog" sets the key to the current version.
+async function renderFirstRunSurfaces() {
+    try {
+        const items = await storageGet([FIRST_RUN_SEEN_KEY, LAST_SEEN_VERSION_KEY]);
+        const firstRunSeen = items[FIRST_RUN_SEEN_KEY] === true;
+        const lastSeen = typeof items[LAST_SEEN_VERSION_KEY] === 'string'
+            ? items[LAST_SEEN_VERSION_KEY]
+            : '';
+        if (!firstRunSeen) {
+            showWelcomeCard();
+        }
+        // What's New is mutually exclusive with the welcome card: a
+        // fresh install shows the welcome flow, not a What's New
+        // banner that says "Welcome to v4.47.0 (the only version
+        // you've ever seen)." Once firstRunSeen flips true, we treat
+        // every subsequent open as an upgrade candidate.
+        if (firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion) {
+            showWhatsNew(lastSeen);
+        }
+    } catch (err) {
+        console.warn('[Astra Deck popup] first-run surface render failed:', err);
+    }
+}
+
+function showWelcomeCard() {
+    if (!welcomeCard) return;
+    welcomeCard.hidden = false;
+}
+
+function hideWelcomeCard() {
+    if (welcomeCard) welcomeCard.hidden = true;
+}
+
+async function dismissWelcomeCard(reason) {
+    hideWelcomeCard();
+    try {
+        await storageSet({ [FIRST_RUN_SEEN_KEY]: true });
+        // Also stamp the current version so the user doesn't get a
+        // What's New banner on the very next popup open (they just
+        // walked through the welcome flow — they know this is fresh).
+        if (manifestVersion && manifestVersion !== '—') {
+            await storageSet({ [LAST_SEEN_VERSION_KEY]: manifestVersion });
+        }
+    } catch (err) {
+        console.warn('[Astra Deck popup] welcome dismiss persist failed:', err);
+    }
+    if (reason === 'profile-store-safe') {
+        showStatus(t('statusWelcomeProfileSafe',
+            'Store-safe profile active. Open Full Settings to explore features.'),
+            'ok', 4200);
+    } else if (reason === 'profile-github-full') {
+        showStatus(t('statusWelcomeProfileFull',
+            'GitHub-Full profile enabled. The download companion and AI providers are now available.'),
+            'ok', 4200);
+    }
+}
+
+async function pickWelcomeProfile(profile) {
+    // Apply profile by writing the gating boolean directly. Reuses
+    // the existing writeSetting path so the policy-profile resolver
+    // sees the change and refreshes the schema overview.
+    try {
+        if (profile === 'github-full') {
+            await writeSetting('githubFullProfile', true);
+        } else {
+            // store-safe is the default (githubFullProfile=false). Set
+            // it explicitly anyway so the user's choice is recorded —
+            // matters for the popup overview's profile-badge logic
+            // and for any export+import round-trip downstream.
+            await writeSetting('githubFullProfile', false);
+        }
+        await dismissWelcomeCard(`profile-${profile}`);
+        // Re-render the overview so any profile-gating badges refresh.
+        renderSchemaOverview();
+    } catch (err) {
+        showStatus(t('statusWelcomeProfileFail',
+            'Could not apply profile') + ': ' + err.message, 'error', 4200);
+    }
+}
+
+function showWhatsNew(lastSeen) {
+    if (!whatsNewBanner || !whatsNewDetail) return;
+    const fromLabel = lastSeen ? `from v${lastSeen} ` : '';
+    whatsNewDetail.textContent = t('whatsNewDetail',
+        'Astra Deck updated ' + fromLabel + 'to v' + manifestVersion + '. See what changed.');
+    whatsNewBanner.hidden = false;
+}
+
+function hideWhatsNew() {
+    if (whatsNewBanner) whatsNewBanner.hidden = true;
+}
+
+async function dismissWhatsNew() {
+    hideWhatsNew();
+    try {
+        if (manifestVersion && manifestVersion !== '—') {
+            await storageSet({ [LAST_SEEN_VERSION_KEY]: manifestVersion });
+        }
+    } catch (err) {
+        console.warn('[Astra Deck popup] whats-new dismiss persist failed:', err);
+    }
+}
+
+if (welcomeDismissBtn) {
+    welcomeDismissBtn.addEventListener('click', () => { void dismissWelcomeCard('skip'); });
+}
+if (welcomeProfileSafeBtn) {
+    welcomeProfileSafeBtn.addEventListener('click', () => { void pickWelcomeProfile('store-safe'); });
+}
+if (welcomeProfileFullBtn) {
+    welcomeProfileFullBtn.addEventListener('click', () => { void pickWelcomeProfile('github-full'); });
+}
+if (whatsNewDismissBtn) {
+    whatsNewDismissBtn.addEventListener('click', () => { void dismissWhatsNew(); });
+}
+if (whatsNewOpenBtn) {
+    whatsNewOpenBtn.addEventListener('click', () => {
+        // Anchor pattern matches GitHub's auto-generated heading slugs
+        // for CHANGELOG.md '## [Unreleased]' or '## [x.y.z]'. We link
+        // to the top of the file because anchor stability across
+        // CHANGELOG rewrites is not guaranteed — the user lands on
+        // the changelog and scrolls to the top entry.
+        const url = CHANGELOG_BASE_URL;
+        try {
+            if (chrome.tabs?.create) {
+                chrome.tabs.create({ url, active: true });
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+            void dismissWhatsNew();
+        } catch (err) {
+            console.warn('[Astra Deck popup] whats-new open failed:', err);
+        }
+    });
+}
+
 async function clearDiagnosticLog() {
     // v4.47.0 NF14: applies immediately — the diagnostic log is a ring
     // buffer of runtime errors, not user-authored data. No confirm
@@ -2855,6 +3021,12 @@ function installWheelScrolling() {
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
     void renderSelectorHealthDashboard();
+
+    // v4.47.0 NF21: render the first-run welcome card + What's New
+    // banner in parallel with the rest of boot. Both are best-effort —
+    // failures fall through to hidden surfaces so the popup never
+    // blocks on either.
+    void renderFirstRunSurfaces();
 
     // v4.29.0: restore the persisted schema-overview expanded set BEFORE
     // the first render so the user sees their open categories on open.

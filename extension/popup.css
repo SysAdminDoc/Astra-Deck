@@ -495,6 +495,197 @@ body {
   line-height: 1.35;
 }
 
+/* v4.47.0 NF21: first-run welcome card. Premium dark surface, accent
+   border, 2-column profile picker. Hidden by default — popup.js
+   reveals it only when the FIRST_RUN_SEEN_KEY sentinel is absent. */
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid rgba(255, 184, 77, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 184, 77, 0.08), rgba(255, 184, 77, 0.02)),
+    rgba(18, 14, 8, 0.86);
+  color: var(--text-primary, #f4f6fb);
+}
+.welcome-card[hidden] { display: none; }
+
+.welcome-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.welcome-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffd9a8;
+}
+
+.welcome-dismiss {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(255, 217, 168, 0.28);
+  color: #ffd9a8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              border-color var(--dur-quick, 120ms) var(--ease-out, ease-out);
+}
+.welcome-dismiss:hover { background: rgba(255, 217, 168, 0.08); }
+.welcome-dismiss:focus-visible {
+  outline: 2px solid rgba(255, 217, 168, 0.65);
+  outline-offset: 1px;
+}
+
+.welcome-body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #ffd9a8;
+}
+
+.welcome-profile-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.welcome-profile-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid rgba(255, 184, 77, 0.28);
+  background: rgba(255, 184, 77, 0.06);
+  color: var(--text-primary, #f4f6fb);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              border-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              transform var(--dur-quick, 120ms) var(--ease-out, ease-out);
+}
+.welcome-profile-btn:hover {
+  background: rgba(255, 184, 77, 0.12);
+  border-color: rgba(255, 184, 77, 0.5);
+  transform: translateY(-1px);
+}
+.welcome-profile-btn:focus-visible {
+  outline: 2px solid rgba(255, 184, 77, 0.75);
+  outline-offset: 1px;
+}
+
+.welcome-profile-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffd9a8;
+}
+
+.welcome-profile-desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted, #c7cad1);
+}
+
+/* v4.47.0 NF21: What's New banner. Same geometry as storage-banner /
+   health-banner, accent tone matches the welcome card so the
+   relationship reads visually. */
+.whats-new {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid rgba(255, 184, 77, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 184, 77, 0.06), rgba(255, 184, 77, 0.02)),
+    rgba(18, 14, 8, 0.82);
+  color: #ffd9a8;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.whats-new[hidden] { display: none; }
+
+.whats-new-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.whats-new-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.whats-new-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffb84d;
+}
+
+.whats-new-detail {
+  font-size: 12px;
+  color: #ffd9a8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whats-new-btn,
+.whats-new-dismiss {
+  appearance: none;
+  padding: 4px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.whats-new-btn {
+  border: 1px solid rgba(255, 184, 77, 0.45);
+  background: rgba(255, 184, 77, 0.1);
+  color: #ffd9a8;
+}
+.whats-new-btn:hover {
+  background: rgba(255, 184, 77, 0.18);
+  border-color: rgba(255, 184, 77, 0.62);
+}
+.whats-new-dismiss {
+  border: 1px solid rgba(255, 217, 168, 0.22);
+  background: transparent;
+  color: #ffd9a8;
+}
+.whats-new-dismiss:hover { background: rgba(255, 217, 168, 0.08); }
+.whats-new-btn:focus-visible,
+.whats-new-dismiss:focus-visible {
+  outline: 2px solid rgba(255, 184, 77, 0.75);
+  outline-offset: 1px;
+}
+
 .storage-banner[hidden] { display: none; }
 
 .storage-banner-icon {

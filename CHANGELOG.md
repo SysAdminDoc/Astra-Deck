@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **First-run welcome card + profile picker + What's New banner (NF21).**
+  Opening the popup on a fresh install used to dump the full 354-key
+  editor with no guidance. This adds two mutually-exclusive surfaces:
+  - **Welcome card.** Rendered when the `ytkit_first_run_seen`
+    sentinel is absent from `chrome.storage.local`. Carries a short
+    intro plus two profile picker buttons (Store-Safe / GitHub-Full)
+    and a "Skip" dismiss. Picking a profile writes
+    `githubFullProfile` (true for GitHub-Full, explicit false for
+    Store-Safe — recording the user's choice matters for the popup
+    overview's profile-gating badges + future export round-trips)
+    via the existing `writeSetting` choke point, sets the sentinel,
+    stamps `ytkit_last_seen_version` so the very next open doesn't
+    fire a What's New banner against a user who just walked through
+    welcome, and surfaces an undo-toast-style status message
+    confirming the choice. No confirmation dialog (house style
+    bans them).
+  - **What's New banner.** Renders when the sentinel is present
+    AND `ytkit_last_seen_version` differs from the current
+    `manifestVersion`. Two buttons: "Read changelog" opens
+    `https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md`
+    in a new tab via `chrome.tabs.create` (falls back to
+    `window.open` with `noopener,noreferrer`); "Dismiss" just stamps
+    the seen-version. Either path dismisses the banner. Links to
+    the top of the file because anchor stability across CHANGELOG
+    rewrites is not guaranteed (NEW-8 in the Pass-3 research
+    proposes annual rotation).
+  Both surfaces ship `hidden` by default in the markup; the
+  `renderFirstRunSurfaces` boot helper (called as a `void` Promise
+  from the bootstrap IIFE, in parallel with the rest of init)
+  reveals whichever applies. Dedicated storage keys
+  (`ytkit_first_run_seen`, `ytkit_last_seen_version`) live outside
+  `SETTINGS_STORAGE_KEY` so settings export/import + Reset don't
+  clobber the first-run state. The CSS uses the existing amber
+  accent palette (matching the schema-overview profile-gating
+  chip from v4.39.0) so the relationship reads visually. WCAG
+  contrast audit passes against the new surfaces. Pinned by a new
+  `v4.47.0 NF21 — first-run welcome card + What's New banner`
+  hardening test that asserts the HTML element ids + hidden-by-
+  default, the storage-key + URL constants, the boot wiring, the
+  mutual-exclusion gate, the profile-pick writes, the dismiss
+  persistence, and the CSS declarations. 565/565 JS tests pass
+  (+1 new); `npm run check` clean.
+
 - **Userscript drift health check (NEW-2, Pass 3).**
   Three top-level userscripts exist in the repo — `YTKit.user.js`
   (auto-synced by `build-extension.js`), `theater-split.user.js` and
