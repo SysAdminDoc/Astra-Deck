@@ -6,6 +6,35 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Inline "local only" trust signal on credential-bearing schema-overview
+  rows.** The privacy data-flow panel (v4.12.0) explained the
+  storage-locality guarantee, but it ships off-by-default — a user
+  pasting a BYO API key into the schema-overview editor had no visible
+  reassurance about where the key lives. A small green `.so-key-trust-local`
+  chip now surfaces on the `aiSummaryApiKey` + `aiSummaryEndpoint` rows
+  (the AI endpoint URL can embed a key as a query param, so it gets the
+  same treatment). Tooltip enumerates the guarantees:
+  `chrome.storage.local` is origin-scoped and never synced to a Google
+  account, never sent to Astra Deck servers, and the value is redacted
+  from the bug-report bundle (Diagnostics → Save) via
+  `BUG_REPORT_REDACTED_KEYS`. New `TRUST_SIGNAL_LOCAL_ONLY_KEYS` is a
+  strict subset of `BUG_REPORT_REDACTED_KEYS` so the chip's "redacted
+  from bundle" claim stays true; pinned at test time so adding a key
+  to one set without the other fails CI. Public default URLs (Cobalt
+  instance, alternative frontend, custom CSS) are redacted from
+  bundles but don't get the chip — the "local only" reassurance is
+  specifically about secrets. CSS adds the green-tone variant to the
+  existing `.so-key-profile-badge` pattern (matches the v4.16.0 risk-
+  badge palette: amber for gated, red for unavailable, green for
+  trusted). Pinned by a new `v4.47.0 — schema-overview rows for
+  credential-bearing keys carry an inline "local only" trust signal`
+  hardening test asserting the set declaration, the subset relationship
+  with BUG_REPORT_REDACTED_KEYS, the well-known BYO-key entries, the
+  row-builder hook, and the CSS variant. Existing NEW-1 test anchor
+  hardened from `indexOf('BUG_REPORT_REDACTED_KEYS')` to a regex
+  search so future comments referencing the symbol can't fool the
+  slice window. 570/570 JS tests pass (+1 new).
+
 - **Audit pass: three real bugs fixed in the just-shipped Pass-3 batch.**
   Deep audit of the autonomous-loop's recent ships caught two real
   defects + one polish gap before they reached users:
