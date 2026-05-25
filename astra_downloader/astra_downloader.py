@@ -91,7 +91,7 @@ import requests as http_requests
 # CONSTANTS
 # ══════════════════════════════════════════════════════════════
 APP_NAME = "Astra Downloader"
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.5.1"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
@@ -168,6 +168,23 @@ RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS = 60
 # v1.2.0: CORS preflight cache horizon — keeps browsers from re-asking OPTIONS
 # for every POST /download during a multi-video session.
 CORS_MAX_AGE_SECONDS = 600
+# v1.5.1 / RESEARCH_FEATURE_PLAN EI12: bounds on the HTTP surface so the
+# Flask process can't be OOM'd by either side of an oversized payload.
+#
+# Incoming: 1 MB caps the body of POST /download / /config / /pick-folder.
+# Real payloads are <2 KB (a yt-dlp URL + flags); 1 MB is a generous
+# defensive margin that still blocks "POST a 1 GB blob" memory blowups.
+# Flask honours this via app.config['MAX_CONTENT_LENGTH'] and emits 413
+# itself before any handler sees the body.
+#
+# Outgoing: 10 MB caps the jsonify'd payload from cors_response. /history
+# already caps to 500 entries (each ~500 bytes), /health is small,
+# /config is bounded — but a future endpoint that streams logs or
+# format-listings could blow past. cors_response checks the serialised
+# body length and swaps oversized payloads for a 413 error response so
+# the wire never carries the bloated content.
+MAX_REQUEST_BYTES = 1 * 1024 * 1024
+MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 # v1.2.0: upstream publishes per-release checksum sidecars. We verify when
 # reachable and log + continue when the sidecar is missing so a sidecar
 # outage doesn't block legitimate installs.
@@ -2340,6 +2357,11 @@ def create_api(config, dl_manager, history):
     api.logger.disabled = True
     import logging
     logging.getLogger('werkzeug').disabled = True
+    # v1.5.1 EI12: cap request bodies BEFORE any route handler sees them.
+    # Flask emits 413 itself when this is exceeded; we don't need a
+    # custom errorhandler because all legitimate clients (the extension
+    # popup + ytkit.js EXT_FETCH) post tiny payloads (<2 KB).
+    api.config['MAX_CONTENT_LENGTH'] = MAX_REQUEST_BYTES
 
     token = config.get("ServerToken")
     # v1.2.0: token-bucket rate limit on /download. Other endpoints are
@@ -2380,6 +2402,25 @@ def create_api(config, dl_manager, history):
     def cors_response(data, status=200, extra_headers=None):
         resp = jsonify(data)
         resp.status_code = status
+        # v1.5.1 EI12: outgoing-payload size guard. Replace oversized
+        # bodies with a 413 error response — the user-facing API
+        # contract is "small JSON responses only"; a 10 MB ceiling
+        # never trips for any current endpoint but stops a future
+        # /streamlinks / /logs surface from streaming megabytes
+        # through the Flask process unnoticed.
+        try:
+            body_len = len(resp.get_data())
+        except Exception:
+            # reason: get_data may fail on a non-bytes response; treat as
+            # within-bound and let the wire layer surface any anomaly.
+            body_len = 0
+        if body_len > MAX_RESPONSE_BYTES:
+            resp = jsonify({
+                "error": "Response body exceeds the {} byte limit ({} bytes built).".format(
+                    MAX_RESPONSE_BYTES, body_len
+                )
+            })
+            resp.status_code = 413
         origin = request.headers.get("Origin", "")
         if is_extension_origin(origin):
             resp.headers["Access-Control-Allow-Origin"] = origin

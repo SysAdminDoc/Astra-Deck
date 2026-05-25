@@ -6,6 +6,27 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Astra Downloader v1.5.1 — HTTP-surface size cap (both directions).**
+  Closes EI12 from RESEARCH_FEATURE_PLAN. The Flask process previously
+  had no explicit Content-Length cap on either incoming bodies or
+  outgoing responses — relied entirely on Waitress's internal limits.
+  Two new constants harden both edges:
+    • `MAX_REQUEST_BYTES = 1 MB` — wired into Flask via
+      `app.config['MAX_CONTENT_LENGTH']` so an oversized POST gets a
+      413 before any handler runs (all legitimate payloads — the
+      extension popup + ytkit.js EXT_FETCH — are <2 KB; 1 MB is the
+      defensive margin)
+    • `MAX_RESPONSE_BYTES = 10 MB` — enforced inside `cors_response`,
+      which measures `len(resp.get_data())` and swaps oversized
+      payloads for a 413 error body before the wire layer transmits
+      anything. /history already caps to 500 entries and /health is
+      tiny, so the ceiling never trips today — but a future
+      /streamlinks or /logs endpoint can't silently stream megabytes.
+  APP_VERSION bumps 1.5.0 → 1.5.1; `SERVICE_API_VERSION` stays at 2
+  (additive, backward-compatible). 4 new pytest cases pin the
+  constants, the Flask wiring, the real 413 round-trip, and the
+  outgoing guard source shape. 86/86 Python tests pass (+4 new).
+
 - **Array settings get a checkbox-grid editor.** Previously, array-type
   schema entries like `hiddenChatElements`, `hiddenActionButtons`,
   `hiddenPlayerControls`, and `hiddenWatchElements` were edited in the

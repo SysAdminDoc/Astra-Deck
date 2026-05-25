@@ -1255,9 +1255,80 @@ class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
         # Pin so a future bump is a deliberate, reviewed change.
         self.assertEqual(ad.SERVICE_API_VERSION, 2)
 
-    def test_app_version_bumped_to_1_5_0(self):
-        # iter-8 N20 ships the denoRuntime field — APP_VERSION must move.
-        self.assertEqual(ad.APP_VERSION, "1.5.0")
+    def test_app_version_bumped_to_1_5_1(self):
+        # v1.5.1 adds the EI12 HTTP-surface size cap (MAX_REQUEST_BYTES +
+        # MAX_RESPONSE_BYTES). APP_VERSION must move so the /health
+        # surface advertises the bumped service.
+        self.assertEqual(ad.APP_VERSION, "1.5.1")
+
+
+class ResponseSizeCapTests(unittest.TestCase):
+    """v1.5.1 / RESEARCH_FEATURE_PLAN EI12: bounded HTTP surface.
+
+    Both sides of the wire must be capped so the Flask process can't be
+    OOM'd by an oversized payload:
+
+      • incoming: MAX_REQUEST_BYTES = 1 MB, enforced by Flask itself via
+        app.config['MAX_CONTENT_LENGTH']
+      • outgoing: MAX_RESPONSE_BYTES = 10 MB, enforced by cors_response
+        replacing oversized payloads with a 413 error body before the
+        wire layer transmits anything
+    """
+
+    def test_constants_declared_with_expected_values(self):
+        # The values themselves are policy — assert the documented
+        # numbers so a silent drift to 1 GB doesn't sneak through.
+        self.assertEqual(ad.MAX_REQUEST_BYTES, 1 * 1024 * 1024)
+        self.assertEqual(ad.MAX_RESPONSE_BYTES, 10 * 1024 * 1024)
+
+    def test_request_size_cap_wired_into_flask(self):
+        # Flask's MAX_CONTENT_LENGTH gates the body BEFORE the route
+        # handler sees it, so an oversized POST gets a generic 413
+        # without exercising our auth / validation logic. Assert
+        # create_api wires the cap into app.config.
+        token = "f" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        self.assertEqual(api.config['MAX_CONTENT_LENGTH'], ad.MAX_REQUEST_BYTES,
+            "create_api must seed MAX_CONTENT_LENGTH so Flask itself caps incoming bodies")
+
+    def test_request_body_exceeding_cap_returns_413(self):
+        # End-to-end: send a body > MAX_REQUEST_BYTES against /download
+        # and verify Flask emits 413 before our handler runs. The body
+        # is just oversized JSON; the auth + validation logic in the
+        # /download handler is never reached.
+        token = "g" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        oversized = "x" * (ad.MAX_REQUEST_BYTES + 1024)
+        resp = api.test_client().post(
+            "/download",
+            data=oversized,
+            headers={
+                "X-Auth-Token": token,
+                "Content-Type": "application/json",
+                "Host": "127.0.0.1:9751",
+            },
+        )
+        self.assertEqual(resp.status_code, 413,
+            "POST body > MAX_REQUEST_BYTES must return 413 (RequestEntityTooLarge)")
+
+    def test_cors_response_has_outgoing_size_guard(self):
+        # cors_response is an inner closure inside create_api, so we
+        # can't call it directly from a test. Pin the guard at the
+        # source level so a future refactor that drops the check fails
+        # CI. The shape pinned here: len(resp.get_data()) > MAX_RESPONSE_BYTES
+        # must short-circuit into a 413 jsonify response.
+        import inspect
+        src = inspect.getsource(ad.create_api)
+        self.assertIn("MAX_RESPONSE_BYTES", src,
+            "create_api must reference MAX_RESPONSE_BYTES in cors_response")
+        self.assertIn("status_code = 413", src,
+            "cors_response must set status_code = 413 when the body exceeds the cap")
+        self.assertIn("resp.get_data()", src,
+            "cors_response must measure the actual serialised body length, not the input dict")
 
 
 if __name__ == "__main__":

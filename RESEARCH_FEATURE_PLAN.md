@@ -357,13 +357,13 @@ What to **intentionally avoid**:
 - **Verification**: `git status` shows clean tree.
 - **Complexity**: S. **Priority**: P2.
 
-### EI12 — `astra_downloader` response-size cap
-- **Current behavior**: subagent audit Part A §2 found no explicit Content-Length cap on HTTP responses from `astra_downloader.py`; relies on Waitress's internal limits.
-- **Problem**: a future endpoint that streams big payloads (e.g., download progress logs) could OOM the Flask process.
-- **Recommended change**: add `MAX_RESPONSE_BYTES = 10 * 1024 * 1024` constant, wrap every `flask.Response` builder in a size guard, return 413 if exceeded.
-- **Touches**: `astra_downloader/astra_downloader.py`, new test in `test_astra_downloader.py`.
-- **Verification**: pytest that POSTs a 12 MB payload to a future endpoint and asserts 413.
-- **Complexity**: S. **Priority**: P2.
+### EI12 — `astra_downloader` HTTP-surface size cap _[shipped]_
+- Shipped: both directions are now bounded.
+  - **Incoming**: `MAX_REQUEST_BYTES = 1 MB`, enforced by Flask itself via `app.config['MAX_CONTENT_LENGTH']` so an oversized POST returns 413 before any handler runs.
+  - **Outgoing**: `MAX_RESPONSE_BYTES = 10 MB`, enforced inside `cors_response` — measures the serialised body length via `resp.get_data()` and swaps oversized payloads for a 413 error response.
+- `APP_VERSION` bumped 1.5.0 → 1.5.1 so the /health surface advertises the bumped service.
+- Pinned by 4 new `ResponseSizeCapTests` in `test_astra_downloader.py`: constants are present at the documented values, Flask receives the cap via create_api, an oversized real POST is rejected with 413, and `cors_response` source carries the outgoing guard shape.
+- 86/86 Python tests pass (+4 new).
 
 ### EI13 — Downloader: parallelize concurrent yt-dlp invocations
 - **Current behavior**: `MAX_CONCURRENT = 3` in the queue, but yt-dlp invocations are serialized inside `_run_download` per the subagent audit.
@@ -605,11 +605,8 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - Acceptance: 3 concurrent `/download` calls all reach `downloading` within 200ms.
   - Verify: pytest.
 
-- [ ] **P2 — Response-size cap (10 MB) on all Flask responses**
-  - Why: EI12.
-  - Touches: `astra_downloader/astra_downloader.py`.
-  - Acceptance: 12 MB payload returns 413.
-  - Verify: pytest.
+- [x] **P2 — Response-size cap (10 MB) on all Flask responses** _[shipped — both directions bounded]_
+  - Shipped: MAX_REQUEST_BYTES = 1 MB via Flask's MAX_CONTENT_LENGTH + MAX_RESPONSE_BYTES = 10 MB inside cors_response. APP_VERSION 1.5.0 → 1.5.1. See EI12.
 
 ### Phase E — Subscription manager v2 (2–3 weeks)
 
