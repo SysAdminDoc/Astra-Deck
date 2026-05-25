@@ -614,6 +614,24 @@
   "statusAllDataCleared": {
     "message": "All data cleared."
   },
+  "statusAllDataClearedUndo": {
+    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
+  },
+  "statusResetUndone": {
+    "message": "Reset undone — all data restored."
+  },
+  "statusResetUndoExpired": {
+    "message": "Undo no longer available — snapshot expired with the browser session."
+  },
+  "statusResetUndoFail": {
+    "message": "Undo failed"
+  },
+  "undoResetBtn": {
+    "message": "Undo Reset"
+  },
+  "undoResetAria": {
+    "message": "Restore data from the most recent Reset"
+  },
   "statusBackupExported": {
     "message": "Backup exported."
   },

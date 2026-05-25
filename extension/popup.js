@@ -2470,6 +2470,72 @@ async function importSettings(file) {
     }
 }
 
+// v4.47.0 EI2: undo grace period for Reset. The snapshot lives in
+// chrome.storage.session — survives popup close/reopen but is wiped
+// when the browser quits. That's the right shape for "you misclicked
+// 30 seconds ago" while keeping the recovery window bounded; the
+// previous behaviour wiped everything with no path back. The undo
+// button is auto-shown when a snapshot exists and auto-hidden when
+// it's consumed or absent.
+const RESET_SNAPSHOT_KEY = '_resetSnapshot';
+const undoResetButton = $('#undo-reset-btn');
+
+function sessionStorageAvailable() {
+    return !!(chrome && chrome.storage && chrome.storage.session);
+}
+
+async function readResetSnapshot() {
+    if (!sessionStorageAvailable()) return null;
+    return new Promise((resolve) => {
+        try {
+            chrome.storage.session.get(RESET_SNAPSHOT_KEY, (items) => {
+                if (chrome.runtime.lastError) { resolve(null); return; }
+                const snap = items && items[RESET_SNAPSHOT_KEY];
+                resolve(snap && typeof snap === 'object' ? snap : null);
+            });
+        } catch (_) {
+            // reason: session API may be unavailable in some Firefox versions
+            resolve(null);
+        }
+    });
+}
+
+async function writeResetSnapshot(snapshot) {
+    if (!sessionStorageAvailable()) return false;
+    return new Promise((resolve) => {
+        try {
+            chrome.storage.session.set({ [RESET_SNAPSHOT_KEY]: snapshot }, () => {
+                resolve(!chrome.runtime.lastError);
+            });
+        } catch (_) {
+            // reason: session API write failed; treat as no-snapshot, undo unavailable
+            resolve(false);
+        }
+    });
+}
+
+async function clearResetSnapshot() {
+    if (!sessionStorageAvailable()) return;
+    return new Promise((resolve) => {
+        try {
+            chrome.storage.session.remove(RESET_SNAPSHOT_KEY, () => resolve());
+        } catch (_) {
+            // reason: session.remove failure is benign — snapshot evicts on browser close
+            resolve();
+        }
+    });
+}
+
+function setUndoResetVisible(visible) {
+    if (!undoResetButton) return;
+    undoResetButton.hidden = !visible;
+}
+
+async function refreshUndoResetVisibility() {
+    const snap = await readResetSnapshot();
+    setUndoResetVisible(!!snap && Object.keys(snap).length > 0);
+}
+
 async function resetAllData() {
     const confirmed = await confirmAction({
         eyebrow: t('confirmDestructiveEyebrow', 'Destructive action'),
@@ -2483,16 +2549,80 @@ async function resetAllData() {
     resetButton.setAttribute('aria-busy', 'true');
     resetButton.disabled = true;
     try {
+        // Snapshot everything in storage.local BEFORE clearing so an
+        // Undo can restore byte-identical. Session storage is the right
+        // home — the snapshot must not survive a browser restart (that
+        // would let stale snapshots overwrite later real edits) but
+        // must survive a popup close/reopen so the user sees the Undo
+        // button on the next launch.
+        const snapshot = await new Promise((resolve, reject) => {
+            try {
+                chrome.storage.local.get(null, (items) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else {
+                        resolve(items || {});
+                    }
+                });
+            } catch (err) { reject(err); }
+        });
+        await writeResetSnapshot(snapshot);
         await storageClear();
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
-        showStatus(t('statusAllDataCleared', 'All data cleared.'), 'success');
+        await refreshUndoResetVisibility();
+        showStatus(t('statusAllDataClearedUndo',
+            'All data cleared. Click Undo Reset to restore (until you close the browser).'),
+            'success', 6000);
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);
     } finally {
         resetButton.removeAttribute('aria-busy');
         resetButton.disabled = false;
+    }
+}
+
+async function undoResetAllData() {
+    if (!undoResetButton) return;
+    undoResetButton.setAttribute('aria-busy', 'true');
+    undoResetButton.disabled = true;
+    try {
+        const snap = await readResetSnapshot();
+        if (!snap || Object.keys(snap).length === 0) {
+            // Snapshot vanished (browser restart, session.remove from another
+            // surface). Hide the button and report.
+            setUndoResetVisible(false);
+            showStatus(t('statusResetUndoExpired',
+                'Undo no longer available — snapshot expired with the browser session.'),
+                'error', 4200);
+            return;
+        }
+        // Wipe-and-replace so any new keys added between reset and undo
+        // don't pollute the restored payload. The snapshot is the
+        // single source of truth.
+        await storageClear();
+        await new Promise((resolve, reject) => {
+            try {
+                chrome.storage.local.set(snap, () => {
+                    if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+                    else resolve();
+                });
+            } catch (err) { reject(err); }
+        });
+        await clearResetSnapshot();
+        await renderStorageInfo();
+        await loadSettings();
+        render(popupState.settings, q.value);
+        renderDataFlowPanel();
+        renderSchemaOverview();
+        setUndoResetVisible(false);
+        showStatus(t('statusResetUndone', 'Reset undone — all data restored.'), 'success', 3200);
+    } catch (error) {
+        showStatus(t('statusResetUndoFail', 'Undo failed') + ': ' + error.message, 'error', 4200);
+    } finally {
+        undoResetButton.removeAttribute('aria-busy');
+        undoResetButton.disabled = false;
     }
 }
 
@@ -2655,6 +2785,14 @@ function installWheelScrolling() {
         if (file) void importSettings(file);
     });
     resetButton.addEventListener('click', () => { void resetAllData(); });
+    if (undoResetButton) {
+        undoResetButton.addEventListener('click', () => { void undoResetAllData(); });
+        // Boot visibility: surface the Undo button if a prior reset's snapshot
+        // is still in storage.session (e.g. user reset, closed the popup, then
+        // reopened it). Best-effort — failure leaves the button hidden which
+        // is the safe default.
+        void refreshUndoResetVisibility();
+    }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
     // iter-6 N2: storage-banner Reset shares the same destructive-confirm
     // dialog as the primary Reset button so accidental clicks stay guarded.

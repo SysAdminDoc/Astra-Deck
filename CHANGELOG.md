@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Reset action is now reversible (within the browser session).**
+  Previously, the popup Reset wiped `chrome.storage.local` after one
+  confirm dialog and there was no recovery — a misclick destroyed all
+  354 settings, hidden lists, blocked channels, and bookmarks. Now
+  `resetAllData` snapshots every key in `chrome.storage.local` into a
+  `_resetSnapshot` entry on `chrome.storage.session` BEFORE the wipe,
+  and an "Undo Reset" button (hidden by default, auto-revealed when a
+  snapshot exists) restores the snapshot byte-for-byte. Session
+  storage is the right home — the snapshot deliberately does NOT
+  survive a browser restart (stale snapshots overwriting later real
+  edits would be worse than the original problem) but does survive a
+  popup close/reopen so the user sees the Undo button on the next
+  launch. 6 new i18n keys added to en + 9 non-EN locales. New
+  `v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo
+  restores it` hardening test pins the snapshot-before-wipe ordering,
+  the snapshot-key constant, the click-listener wiring, and the
+  locale parity. 526/526 tests pass (+1).
+
 - **NF5 wave 1 — feature-lifecycle module is no longer unused.** The
   v4.7.0 `core/feature-lifecycle.js` shipped `createLifecycle()` +
   `defineFeature()` but had zero callers anywhere in the codebase
