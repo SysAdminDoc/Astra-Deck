@@ -6,6 +6,23 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **returnDislike: budget-vs-network observability + cache-age titles
+  (NF30).** Before NF30: any null from `_fetch` (whether 100/min budget
+  cap or network error) collapsed into a single "RYD off" pill with no
+  actionable copy — users assumed the feature was broken. After NF30:
+  `_render` consults `_budgetWindow` to differentiate the two cases.
+  Rate-limited path shows "RYD paused" + a title with the running
+  counter (`<count>/100/min`) and seconds-until-window-reset
+  countdown. Network-error path keeps "RYD off" but adds an
+  explanatory title. The cached-data path adds an entry-age suffix
+  (`<X>h old` or `<1h old`) so users see how stale the count is when
+  the 24h-default TTL has been in play. The live-fetch path's title
+  also shows the running quota counter so power users can pace their
+  RYD-eligible browsing. Pinned by a new `v4.47.0 NF30` hardening
+  test that asserts the budget check shape, the rate-limited /
+  network-error / cached-age / live-quota title fragments. 543/543
+  JS tests pass (+1 new).
+
 - **transcriptViewer: language preference (NF29).** Non-English users
   always got English captions because `ytkit.js:21047` hardcoded
   `tracks.find(t => t.languageCode === 'en')`. NF29 ships a new
