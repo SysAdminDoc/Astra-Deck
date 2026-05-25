@@ -2140,7 +2140,85 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         badge.title = entry.type + ' (no inline editor)';
         row.appendChild(badge);
     }
+
+    // v4.47.0 NEW-6: per-key Reset affordance. A user who has changed
+    // one setting to a non-default value (e.g. pasted breaking CSS
+    // into customCssCode, or set vvfBrightness to 0 making the page
+    // invisible) currently has to either remember the default or hit
+    // global Reset (which nukes everything). Per-key reset is a
+    // one-click recovery scoped to this row.
+    //
+    // Only rendered when (a) the schema declares a defaultValue and
+    // (b) the current value differs from it. Internal entries
+    // (`_activeProfile`, `_settingsVersion`, etc.) get the affordance
+    // too — they're already filtered out of the schema overview by
+    // the rendering layer.
+    if (Object.prototype.hasOwnProperty.call(entry, 'defaultValue')) {
+        const currentValue = settings[entry.key];
+        if (!isDefaultValue(currentValue, entry.defaultValue)) {
+            const resetBtn = document.createElement('button');
+            resetBtn.type = 'button';
+            resetBtn.className = 'so-key-reset-btn';
+            resetBtn.textContent = '↺';
+            resetBtn.title = `Reset ${entry.key} to default (${describeDefaultForTooltip(entry.defaultValue)})`;
+            resetBtn.setAttribute('aria-label',
+                `Reset ${entry.key} to default value`);
+            resetBtn.addEventListener('click', async () => {
+                resetBtn.disabled = true;
+                try {
+                    await writeSetting(entry.key, entry.defaultValue);
+                    showStatus(t('statusPerKeyReset',
+                        `${entry.key} reset to default.`), 'ok', 2400);
+                    renderSchemaOverview();
+                } catch (err) {
+                    showStatus(t('statusPerKeyResetFail',
+                        'Could not reset') + ': ' + err.message, 'error', 3600);
+                } finally {
+                    resetBtn.disabled = false;
+                }
+            });
+            row.appendChild(resetBtn);
+        }
+    }
+
     return row;
+}
+
+// v4.47.0 NEW-6: deep-equality check for the per-key reset gate.
+// Booleans / numbers / strings compare with ===. Arrays + objects
+// fall through to a JSON-string comparison — slow but correct for
+// the small payloads the schema overview deals with (the heaviest
+// is `hiddenChatElements` at ~10 short strings). Null / undefined
+// are treated as equivalent so a never-set storage slot doesn't
+// surface a reset button against the schema default.
+function isDefaultValue(currentValue, defaultValue) {
+    if (currentValue === defaultValue) return true;
+    if ((currentValue == null) && (defaultValue == null)) return true;
+    if (currentValue == null || defaultValue == null) return false;
+    if (typeof currentValue !== typeof defaultValue) return false;
+    if (typeof currentValue === 'object') {
+        try {
+            return JSON.stringify(currentValue) === JSON.stringify(defaultValue);
+        } catch (_) { /* reason: cyclic refs are not expected in settings */ return false; }
+    }
+    return false;
+}
+
+// v4.47.0 NEW-6: short pretty-print of the default value for the
+// reset button's tooltip. Truncates anything over 48 chars so the
+// tooltip stays readable.
+function describeDefaultForTooltip(value) {
+    if (value === null) return 'null';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'string') {
+        if (value.length === 0) return '(empty)';
+        return value.length > 48 ? `"${value.slice(0, 45)}…"` : `"${value}"`;
+    }
+    try {
+        const json = JSON.stringify(value);
+        return json.length > 48 ? json.slice(0, 45) + '…' : json;
+    } catch (_) { /* reason: cyclic refs are not expected in settings */ return '<value>'; }
 }
 
 // Decide whether a schema entry counts as "enabled" in the popup

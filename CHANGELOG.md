@@ -6,6 +6,39 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Per-key Reset affordance on schema-overview rows (NEW-6).**
+  A user who set one feature to a breaking value (e.g. pasted CSS
+  into `customCssCode` that broke rendering, or set `vvfBrightness`
+  to 0 making the page invisible) previously had to either remember
+  the schema default or hit global Reset — which nukes every other
+  setting too. The schema overview now renders a compact `↺` button
+  at the end of every row whose current value differs from the
+  schema-declared `defaultValue`. Click calls the same
+  `writeSetting(key, defaultValue)` choke point every other inline
+  editor uses, surfaces a confirmation status (`<key> reset to
+  default.`), and re-renders the overview so the (now-default) row
+  drops its reset button. Two helpers underpin the gate:
+  - `isDefaultValue(currentValue, defaultValue)` — short-circuits
+    on `===` for booleans / numbers / strings; falls through to
+    `JSON.stringify` deep-compare for arrays + objects (cheap +
+    correct for the small payloads the schema overview deals
+    with; the heaviest is `hiddenChatElements` at ~10 short
+    strings). `null` / `undefined` treated as equivalent so an
+    unset storage slot doesn't surface a spurious reset button.
+  - `describeDefaultForTooltip(value)` — pretty-prints the default
+    in the button's tooltip (`Reset <key> to default (<value>)`)
+    and truncates anything over 48 chars so the tooltip stays
+    readable.
+  CSS adds `.so-key-reset-btn` — square 6px radius (house style:
+  no pill backdrops), amber hover accent matching the existing
+  schema-overview gating chips, disabled-state dimming while a
+  write is in flight. Pinned by a new `v4.47.0 NEW-6 — per-key
+  Reset button` hardening test asserting the gate (defaultValue
+  + isDefaultValue check), the click handler (writeSetting +
+  re-render), the helpers (strict-equality short-circuit + JSON
+  deep-compare + 48-char truncation), and the CSS rules. 566/566
+  JS tests pass (+1 new).
+
 - **First-run welcome card + profile picker + What's New banner (NF21).**
   Opening the popup on a fresh install used to dump the full 354-key
   editor with no guidance. This adds two mutually-exclusive surfaces:
