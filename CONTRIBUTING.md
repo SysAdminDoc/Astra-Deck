@@ -91,6 +91,38 @@ npm run build
 For YouTube DOM drift or refreshed MHTML captures, follow
 `docs/selector-fixture-workflow.md` before changing selector canaries.
 
+## Dev Scripts (Manual, Not in `npm run check`)
+
+The `scripts/` directory holds two manual generators that are
+intentionally not wired into `package.json` because they're run on
+demand, not on every commit:
+
+- **`scripts/_gen-schema.js`** — One-shot ROADMAP → settings-schema
+  re-generator. Re-extracts the per-category schema embedded in
+  `ROADMAP.md §Full Per-Toggle Settings Schema` and emits a draft
+  `extension/core/settings-schema.js`. Used to re-validate the
+  canonical schema against the ROADMAP narrative when either changes
+  significantly. The repo's working source-of-truth is the existing
+  `extension/core/settings-schema.js`; this script is the
+  re-derivation path.
+  - Run: `node scripts/_gen-schema.js`
+  - When to run: after a meaningful ROADMAP schema-section edit, or
+    when sanity-checking the schema after a large refactor.
+
+- **`scripts/generate-locales.js`** — Translation-table → locale-file
+  generator. Reads `extension/_locales/en/messages.json`, applies the
+  inline per-locale translation tables embedded in the script, and
+  writes `extension/_locales/<lang>/messages.json` for every non-EN
+  locale (de, es, fr, it, ja, ko, pt_BR, ru, zh_CN). Brand names
+  (Astra Deck, Astra Downloader, DeArrow, SponsorBlock, YouTube) and
+  technical formats (MP4, M4A, VP9, AV1, H.264, TrustedTypes, ETA)
+  are intentionally preserved as English.
+  - Run: `node scripts/generate-locales.js`
+  - When to run: after adding new EN strings to
+    `_locales/en/messages.json` (extend the translation tables first,
+    then re-run); reviewers should treat the generated locales as
+    machine-authored and queue native-speaker proofing.
+
 ## Code Style
 
 - Avoid new dependencies unless they solve a clear, high-value problem

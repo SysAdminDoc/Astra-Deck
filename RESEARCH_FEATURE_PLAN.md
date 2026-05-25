@@ -33,11 +33,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### CI / DX close-outs
 
-- **P1 / S — Stale-script audit (NF13)**
-  - Why: `scripts/_gen-schema.js` and `scripts/generate-locales.js` are unreferenced by any `npm` script or other source.
-  - Touches: read each; if useful → document in CONTRIBUTING.md "Dev scripts"; if abandoned → delete.
-  - Acceptance: every file in `scripts/` is referenced from `package.json` or documented.
-
 - **P1 / S — Schema `requires:` field + 5–8 seed entries (NF17)**
   - Why: NF10 capability probe needs the schema field. Currently no `requires:` field anywhere in `extension/core/settings-schema.js`.
   - Touches: `core/settings-schema.js` (field shape + 5–8 entries), `scripts/check-settings.js` (well-known capability allowlist), `tests/core-foundation.test.js`.
@@ -218,5 +213,4 @@ Carried over from the prior research file; still binding.
 4. **Lifecycle migration cadence** — peel 1/week, 1/month, or batch?
 5. **Live-chat capture availability** — fixture refresh needs a maintainer-side active live stream. Schedule window?
 6. **Confirm-dialog callers (NF14)** — which actions in `popup.js` currently invoke it? Need a 30-min trace before designing the undo-toast replacement.
-7. **`_gen-schema.js` + `generate-locales.js` (NF13)** — keep or delete? Maintainer read.
-8. **i18n coverage policy (NF24)** — at what % "translated keys identical to EN" should we warn vs accept?
+7. **i18n coverage policy (NF24)** — at what % "translated keys identical to EN" should we warn vs accept?
