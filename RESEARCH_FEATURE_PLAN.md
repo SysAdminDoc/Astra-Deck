@@ -45,9 +45,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Why: data model shipped (`deArrowChannelOverrides`); lookup at `ytkit.js:26174`. UI was deferred per `CLAUDE.md:438` and never re-tracked.
   - Touches: new `extension/features/de-arrow-overrides/index.js`, consumer in `ytkit.js#deArrow`.
 
-- **P2 / S — `digitalWellbeing` DST + midnight + tab-hidden persist (NF34)**
-  - Why: long-session watch-time skew across DST; persist runs while `document.hidden`. `ytkit.js:26670-26920`.
-  - Touches: `ytkit.js#digitalWellbeing` init + tick.
 
 - **P2 / M — `hideVideosFromHome` 80%-streak pause threshold (NF33)**
   - Why: any 3-batch 100%-hidden streak halts pagination at `ytkit.js:15690`. Should be `(hiddenRatio > 0.8 && streak >= 3)`.

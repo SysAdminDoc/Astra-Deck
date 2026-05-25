@@ -6,6 +6,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **digitalWellbeing: midnight / DST boundary detection (NF34).**
+  Before NF34: `_sessionStart` was set once via
+  `this._sessionStart || today.seconds` and never reset. When midnight
+  crossed, `_loadToday` returned a fresh `{date, seconds:0}` bucket
+  but `_sessionStart` still held yesterday's value;
+  `sessionElapsed = today.seconds - _sessionStart` went negative and
+  every break reminder was suppressed for the rest of the day.
+  After NF34: `_tick` captures `_todayKey()` at the top, compares to
+  a new `_lastTodayKey` instance field, and on flip resets both
+  `_sessionStart = 0` and `_todayCache = null` so the next iteration
+  anchors to the new day's accumulator. The OR initialization at
+  `if (!this._sessionStart) this._sessionStart = today.seconds ?? 0;`
+  now uses nullish-coalesce so today.seconds === 0 (first tick of a
+  new day) correctly initializes. `destroy()` resets
+  `_lastTodayKey = null` alongside `_sessionStart = 0` for symmetry.
+  Rollover transitions emit a DebugManager line so the diagnostic
+  ring buffer surfaces day-flips for ops. Pinned by a new
+  `v4.47.0 NF34` hardening test that asserts the field declaration,
+  the day-key capture, the flip detection, the reset shape, the
+  nullish-coalesce init, the rollover log, and the destroy
+  symmetry. 544/544 JS tests pass (+1 new).
+
 - **returnDislike: budget-vs-network observability + cache-age titles
   (NF30).** Before NF30: any null from `_fetch` (whether 100/min budget
   cap or network error) collapsed into a single "RYD off" pill with no
