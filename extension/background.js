@@ -411,7 +411,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     } catch (_) {
         // reason: chrome.runtime.id should always exist in a SW context,
         // but if reading it throws we conservatively reject the message.
-        try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* */ }
+        try { sendResponse({ error: 'Sender validation failed.' }); } catch (__) { /* reason: sender may already be disconnected; we've already returned false */ }
         return false;
     }
 
