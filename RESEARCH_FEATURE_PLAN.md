@@ -52,10 +52,10 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Lifecycle adoption
 
-- **P1 / M — Wave 2: delegate the 21 already-registered CSS-only feature ids**
-  - Why: NF5 wave 1 shipped registration only (commit `3f22e0e`). Wave 2 makes the inline `cssFeature(...)` blocks in `ytkit.js` call `lifecycle.start(id)` / `lifecycle.destroy(id)`.
-  - Touches: `ytkit.js` `cssFeature(...)` blocks for the 21 ids in `features/*/index.js`.
-  - Acceptance: byte-identical CSS string output; parity tests pass; lifecycle `snapshot()` shows `started: true` after SPA nav.
+- **P2 / L — Wave 3: full delegate (move CSS injection ownership into the peel modules)**
+  - Why: NF5 wave 2 (shipped) has cssFeature notify the lifecycle on init/destroy, so `snapshot()` matches production state. Full delegate means the peel-module spec OWNS the inject/cleanup work and `cssFeature` becomes a thin lifecycle pass-through. Requires moving `injectStyle` to a core helper or passing it via the lifecycle ctx.
+  - Touches: `core/styles.js` (export injectStyle for non-ytkit consumers), `extension/features/*/index.js` (each spec's init/destroy does real work), `ytkit.js` `cssFeature` (simplified to register CSS string + delegate to lifecycle).
+  - Acceptance: parity tests still byte-identical; lifecycle.start runs the real init; lifecycle.destroy runs the real destroy.
 
 - **P2 / XL — Top-3 monolith peel (NF15-corrected order)**
   - Order: `stickyVideo` (4,780 lines) → `hideVideosFromHome` (1,367) → `chatStyleComments` (1,338).

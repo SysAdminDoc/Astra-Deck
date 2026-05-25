@@ -7085,6 +7085,71 @@ test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
         'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
 });
 
+test('v4.47.0 NF5 wave 2 — ytkit.js cssFeature notifies the lifecycle on init/destroy', () => {
+    // Wave 1 (commit 3f22e0e) registered the 21 peeled CSS-only
+    // feature ids with the v4.7.0 lifecycle module but kept the
+    // inline cssFeature() blocks as the source of truth for
+    // init/destroy work. The lifecycle snapshot() therefore showed
+    // started:false for every registered id even when the feature
+    // was visibly active on the page.
+    //
+    // Wave 2 adds a notify-on-state-change hook inside cssFeature so
+    // lifecycle.start(id) fires when the style is injected and
+    // lifecycle.destroy(id) fires when it is removed. The actual
+    // CSS injection + body-class toggle still happens in the closure
+    // (full delegate is a wave-3 refactor — needs injectStyle
+    // accessible from peel modules). What this wave guarantees is
+    // that production state matches snapshot() state.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+
+    // 1. ytkit.js captures the lifecycle singleton near the RuntimeFlags
+    // capture site.
+    assert.match(ytkitSrc, /const Lifecycle = \(globalThis\.YTKitCore && typeof globalThis\.YTKitCore\.getLifecycle === 'function'\)\s*\n?\s*\? globalThis\.YTKitCore\.getLifecycle\(\)\s*\n?\s*: null;/s,
+        'ytkit.js must capture the lifecycle singleton via getLifecycle()');
+
+    // 2. cssFeature.init notifies the lifecycle on style injection.
+    const cssFeatureStart = ytkitSrc.indexOf('function cssFeature(');
+    assert.ok(cssFeatureStart > -1, 'cssFeature factory must exist');
+    const cssFeatureBody = ytkitSrc.slice(cssFeatureStart, cssFeatureStart + 1600);
+    assert.match(cssFeatureBody, /this\._styleElement = injectStyle\(css, this\.id, isRaw\);/,
+        'cssFeature.init must still inject the CSS via injectStyle');
+    assert.match(cssFeatureBody, /document\.body\.classList\.add\(bodyClass\);/,
+        'cssFeature.init must still add the body class');
+    assert.match(cssFeatureBody, /Lifecycle && Lifecycle\._features && Lifecycle\._features\.has\(this\.id\)/,
+        'cssFeature.init must guard the lifecycle notification on registration');
+    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id\);/,
+        'cssFeature.init must call Lifecycle.start(id) after the CSS is injected');
+
+    // 3. cssFeature.destroy notifies the lifecycle on teardown.
+    assert.match(cssFeatureBody, /this\._styleElement\?\.remove\(\); this\._styleElement = null;/,
+        'cssFeature.destroy must still remove the style element');
+    assert.match(cssFeatureBody, /Lifecycle\.destroy\(this\.id\);/,
+        'cssFeature.destroy must call Lifecycle.destroy(id) after teardown');
+
+    // 4. Sandbox the contract: spin up an isolated lifecycle
+    // singleton, define a feature with a wave-1 no-op spec, then
+    // exercise start/destroy and check the snapshot transitions.
+    delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
+    const lifecycleModule = require('../extension/core/feature-lifecycle.js');
+    const lc = lifecycleModule.createLifecycle();
+    lc.defineFeature({
+        id: 'sandbox-feat',
+        category: 'shell',
+        init() { /* reason: wave-1 register-only no-op */ },
+        destroy() { /* reason: wave-1 register-only no-op */ },
+    });
+    let snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+    assert.equal(snap.started, false, 'sandbox feature must start as not-started');
+    lc.start('sandbox-feat');
+    snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+    assert.equal(snap.started, true, 'after lifecycle.start, snapshot must show started:true');
+    lc.destroy('sandbox-feat');
+    snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+    assert.equal(snap.started, false, 'after lifecycle.destroy, snapshot must show started:false again');
+});
+
 test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pattern wins)', () => {
     // Project policy (ROADMAP house style + docs/architecture.md
     // §Conventions) bans confirmation dialogs in favor of
