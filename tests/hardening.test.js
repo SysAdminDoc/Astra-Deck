@@ -6466,6 +6466,58 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs', () => {
+    // CONFLICT_MAP enumerates ONLY truly mutually-exclusive feature pairs.
+    // Pairs that were intentionally decoupled to cooperate live in the
+    // comment block below the map (focusedMode, autoPauseOnSwitch +
+    // pauseOtherTabs, popOutPlayer + pipButton + fullscreenOnDoubleClick,
+    // hideEndCards parent/sub of hideVideoEndContent). The test pins the
+    // current shape so a future audit doesn't silently re-add pairs that
+    // would undo the cooperative mechanism.
+    const mapStart = ytkitSource.indexOf('const CONFLICT_MAP = {');
+    assert.ok(mapStart > -1, 'ytkit.js must declare CONFLICT_MAP');
+    const mapEnd = ytkitSource.indexOf('};', mapStart);
+    const mapSrc = ytkitSource.slice(mapStart, mapEnd + 2);
+
+    // Each canonical pair must be present in both directions (X conflicts
+    // with Y, Y conflicts with X) so the auto-disable lookup at settings-
+    // change time is symmetric.
+    const symmetricPairs = [
+        ['persistentSpeed', 'perChannelSpeed'],
+        ['forceH264', 'codecSelector'],
+        ['fitPlayerToWindow', 'stickyVideo'],
+    ];
+    for (const [a, b] of symmetricPairs) {
+        const aBlock = mapSrc.match(new RegExp(`${a}:\\s*\\{[^}]*\\}`));
+        const bBlock = mapSrc.match(new RegExp(`${b}:\\s*\\{[^}]*\\}`));
+        assert.ok(aBlock, `${a} must be a CONFLICT_MAP key`);
+        assert.ok(bBlock, `${b} must be a CONFLICT_MAP key`);
+        assert.match(aBlock[0], new RegExp(`'${b}'`),
+            `${a}.conflicts must include '${b}' for symmetric auto-disable`);
+        assert.match(bBlock[0], new RegExp(`'${a}'`),
+            `${b}.conflicts must include '${a}' for symmetric auto-disable`);
+    }
+
+    // Asymmetric / one-direction pairs.
+    assert.match(mapSrc, /hideSidebar:.*'hiddenChatElementsManager'/,
+        'hideSidebar -> hiddenChatElementsManager conflict must remain');
+    assert.match(mapSrc, /removeAllShorts:.*'redirectShorts'/,
+        'removeAllShorts -> redirectShorts conflict must remain');
+
+    // The cooperative-pair comment block must remain so future readers see
+    // why these pairs aren't conflicts. Removing the comments without
+    // unwinding the cooperation mechanism would invite re-introducing
+    // the conflicts mechanically.
+    assert.match(mapSrc, /focusedMode now hides only related videos/,
+        'comment explaining focusedMode cooperation must remain');
+    assert.match(mapSrc, /popOutPlayer sets __ytkit_videoPopped/,
+        'comment explaining popOutPlayer / pipButton cooperation must remain');
+    assert.match(mapSrc, /autoPauseOnSwitch and pauseOtherTabs tag pause reasons/,
+        'comment explaining autoPauseOnSwitch / pauseOtherTabs cooperation must remain');
+    assert.match(mapSrc, /hideEndCards is a \*sub-feature\* of hideVideoEndContent/,
+        'comment explaining hideEndCards parent/sub relationship must remain');
+});
+
 test('v4.47.0 popup.css honours prefers-reduced-motion globally', () => {
     // Project design policy endorses reduced motion (see ROADMAP house style:
     // "preserve YouTube's native forced-colors and reduced-motion affordances")
