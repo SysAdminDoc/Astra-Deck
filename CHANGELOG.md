@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Audit pass: three real bugs fixed in the just-shipped Pass-3 batch.**
+  Deep audit of the autonomous-loop's recent ships caught two real
+  defects + one polish gap before they reached users:
+  - **NF21 upgrade regression — existing users were going to see
+    the welcome card on every popup open after upgrading.** The
+    first-run detection was `firstRunSeen = items[FIRST_RUN_SEEN_KEY] === true`,
+    and the sentinel only exists in builds that ship NF21 — every
+    pre-NF21 user had `firstRunSeen=false` after upgrading. Fix:
+    `renderFirstRunSurfaces` now also reads `SETTINGS_STORAGE_KEY`,
+    detects "at least one non-internal key" (anything not starting
+    with `_`) as the upgrade signal, and silently stamps both
+    `FIRST_RUN_SEEN_KEY=true` and `LAST_SEEN_VERSION_KEY=<current>`
+    so neither surface fires for the upgraded user. They experience
+    the popup as they always have, and the What's New banner fires
+    correctly on their *next* version bump.
+  - **NEW-7 read-modify-write race on `chrome.storage.session`.**
+    Concurrent `_recordSwLifecycle` calls (e.g. `sw-start` firing
+    alongside an immediate `reveal-failed` for a download that was
+    in flight when the SW restarted) could lose entries via
+    interleaved `get` → `set` sequences. The SW is single-threaded
+    JS but the `await` between get and set creates the window.
+    Fix: serialize lifecycle writes through a new `_swLifecycleChain`
+    promise (same pattern popup.js uses for `_pendingWriteChain`).
+    Catch-rethrow-undefined keeps the chain alive across rejections.
+    `_recordSwLifecycle` is now a sync entry that schedules onto
+    the chain; the async work happens inside the chained `.then`.
+  - **Welcome profile pick double-click defense.** On a fresh
+    install a rapid double-tap on the Store-Safe / GitHub-Full
+    button could fire two writeSetting + storageSet pairs in
+    flight. New `_welcomePickInFlight` guard disables both
+    profile buttons + the dismiss link for the duration of the
+    pick; on success the welcome card hides and the guards
+    release naturally with the surface; on failure the buttons
+    re-enable so the user can retry.
+  Test updates: existing NF21 hardening test extended with a 6b
+  block asserting the upgrade guard (reads SETTINGS_STORAGE_KEY,
+  computes `looksLikeExistingInstall`, excludes `_`-prefixed
+  keys, stamps the sentinel); existing NEW-7 test relaxed to
+  accept the now-sync `_recordSwLifecycle` signature and gains a
+  new pin on `let _swLifecycleChain = Promise.resolve()` so a
+  future refactor can't quietly drop the serialization. 569/569
+  JS tests pass; `npm run check` clean.
+
 - **chrome.downloads.show reveal failures now log + record into the
   SW lifecycle ring (R3, Pass 3).** `chrome.downloads.show` is
   fire-and-forget; if the reveal failed (file moved between download

@@ -8092,12 +8092,19 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'background.js must declare SW_LIFECYCLE_KEY = _swLifecycle');
     assert.match(backgroundSource, /const\s+SW_LIFECYCLE_CAP\s*=\s*50/,
         'background.js must cap the SW lifecycle ring at 50 entries');
-    assert.match(backgroundSource, /async function _recordSwLifecycle\(event\)/,
+    // _recordSwLifecycle is the sync entry point — under the hood it
+    // chains onto _swLifecycleChain so concurrent records can't lose
+    // entries via R-M-W race on chrome.storage.session (audit-pass
+    // fix). The function itself may be either `async` or sync (the
+    // chain owns the async work either way).
+    assert.match(backgroundSource, /function _recordSwLifecycle\(event\)/,
         'background.js must define _recordSwLifecycle helper');
+    assert.match(backgroundSource, /let _swLifecycleChain\s*=\s*Promise\.resolve\(\)/,
+        'background.js must serialize lifecycle writes via _swLifecycleChain so concurrent records cannot race');
 
-    const recordStart = backgroundSource.indexOf('async function _recordSwLifecycle');
+    const recordStart = backgroundSource.indexOf('function _recordSwLifecycle');
     assert.ok(recordStart > -1, 'background.js must define _recordSwLifecycle');
-    const recordBlock = backgroundSource.slice(recordStart, recordStart + 1600);
+    const recordBlock = backgroundSource.slice(recordStart, recordStart + 2000);
     // The record waits for the _pendingReveals hydration so the
     // captured inFlightReveals count is correct, not just a snapshot
     // of the freshly-restarted SW's empty Set.
@@ -8264,7 +8271,10 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
     //    when !firstRunSeen; whats-new fires when firstRunSeen AND
     //    lastSeen !== manifestVersion.
     const renderStart = popupSource.indexOf('async function renderFirstRunSurfaces');
-    const renderBlock = popupSource.slice(renderStart, renderStart + 1400);
+    // Slice wide enough to cover the upgrade guard + the welcome show
+    // gate + the What's New show gate. The function grew during audit
+    // pass when the upgrade guard was added (~1k chars of new logic).
+    const renderBlock = popupSource.slice(renderStart, renderStart + 3500);
     assert.match(renderBlock, /if \(!firstRunSeen\)/,
         'renderFirstRunSurfaces must show the welcome card only when firstRunSeen is false');
     assert.match(renderBlock, /firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion/,
@@ -8296,6 +8306,23 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
         'dismissWelcomeCard must persist FIRST_RUN_SEEN_KEY=true');
     assert.match(dismissBlock, /\[LAST_SEEN_VERSION_KEY\]:\s*manifestVersion/,
         'dismissWelcomeCard must stamp LAST_SEEN_VERSION_KEY with the current manifestVersion');
+
+    // 6b. Audit-pass upgrade guard: a user who installed Astra Deck
+    //     before NF21 shipped has a populated SETTINGS_STORAGE_KEY
+    //     but no FIRST_RUN_SEEN_KEY. Without an upgrade guard every
+    //     such user would see the welcome card on their first popup
+    //     open after upgrading — a regression. The guard must read
+    //     SETTINGS_STORAGE_KEY alongside the sentinels, detect at
+    //     least one non-internal key (anything not starting with `_`),
+    //     and silently stamp both sentinels so neither surface fires.
+    assert.match(renderBlock, /SETTINGS_STORAGE_KEY/,
+        'renderFirstRunSurfaces must read SETTINGS_STORAGE_KEY to detect upgraded users');
+    assert.match(renderBlock, /looksLikeExistingInstall/,
+        'renderFirstRunSurfaces must compute looksLikeExistingInstall before deciding to show the welcome card');
+    assert.match(renderBlock, /\.startsWith\(['"]_['"]\)/,
+        'upgrade guard must exclude internal keys (those starting with `_`) when detecting existing installs');
+    assert.match(renderBlock, /\[FIRST_RUN_SEEN_KEY\]:\s*true/,
+        'upgrade guard must stamp FIRST_RUN_SEEN_KEY=true so the welcome card never shows for upgraded users');
 
     // 7. CSS exposes both surfaces.
     const popupCss = fs.readFileSync(
