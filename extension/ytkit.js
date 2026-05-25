@@ -2796,6 +2796,18 @@ return response;
                 DebugManager.log('MediaDL', `Download response: ${response.status} - ${response.responseText}`);
                 if (resp.id) {
                     showDownloadProgress(resp.id, token, audioOnly);
+                } else if (resp.code === 'deno-runtime-missing') {
+                    // v4.47.0 NF27: Astra Downloader refused the download
+                    // because yt-dlp >= 2026.04.01 needs Deno on PATH and
+                    // it's not installed. Show a longer-duration toast
+                    // with the install advice the server provided
+                    // verbatim so the user can copy/paste.
+                    const advice = String(resp.advice || 'Install Deno (https://deno.com/) and restart Astra Downloader.').slice(0, 200);
+                    showToast(
+                        'Deno required for downloads — ' + advice,
+                        '#f59e0b',
+                        { duration: 15 }
+                    );
                 } else {
                     showToast('MediaDL: ' + (resp.error || 'Unknown error'), '#ef4444', { duration: 5 });
                 }
