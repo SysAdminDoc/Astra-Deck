@@ -4685,6 +4685,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
         'core/toast.js':                        'function inferToastTone(color)',
         'core/runtime-flags.js':                'core.runtimeFlags = flags;',
+        'core/capability-probe.js':             'core.capabilityProbe = surface;',
         'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
         'features/video-filters/index.js':      'function buildVideoFilterCss(settings)',
         'features/blue-light-filter/index.js':  'function buildBlueLightRgba(settings)',
@@ -4720,6 +4721,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
         'extension/core/runtime-flags.js',
+        'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
@@ -7099,6 +7101,98 @@ test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
     );
     assert.match(syncSrc, /'extension\/core\/runtime-flags\.js'/,
         'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
+});
+
+test('v4.47.0 NF10 — capability-probe module covers every CAPABILITIES enum entry', () => {
+    // NF17 added the CAPABILITIES enum to settings-schema.js plus an
+    // optional `requires:` field on entries. NF10 pairs that with a
+    // runtime probe so the popup can render an "unavailable" chip for
+    // features whose required capability is missing.
+    //
+    // Contract: capability-probe.js exposes a PROBES table keyed by
+    // every name in CAPABILITIES, exports a runAll() that returns
+    // {name: boolean}, an isEntryAvailable(entry, map) helper that
+    // returns true iff every required capability is present.
+    delete require.cache[require.resolve('../extension/core/settings-schema.js')];
+    delete require.cache[require.resolve('../extension/core/capability-probe.js')];
+    const schemaModule = require('../extension/core/settings-schema.js');
+    const probe = require('../extension/core/capability-probe.js');
+    const { CAPABILITIES } = schemaModule;
+
+    // 1. PROBES keys === CAPABILITIES entries (set-equal).
+    const probeKeys = Object.keys(probe.PROBES).sort();
+    const capList = [...CAPABILITIES].sort();
+    assert.deepEqual(probeKeys, capList,
+        'capability-probe PROBES keys must match the settings-schema CAPABILITIES enum exactly');
+
+    // 2. Each probe entry has the documented shape.
+    for (const name of capList) {
+        const entry = probe.PROBES[name];
+        assert.equal(typeof entry, 'object', `${name} probe must be an object`);
+        assert.equal(typeof entry.async, 'boolean',
+            `${name} probe must declare async: boolean`);
+        assert.equal(typeof entry.run, 'function',
+            `${name} probe must expose run() function`);
+    }
+
+    // 3. isEntryAvailable contract — entries without requires: always
+    // return true; entries with requires: must have all keys present.
+    assert.equal(probe.isEntryAvailable({}, {}), true,
+        'entry without requires: must be considered available regardless of map');
+    assert.equal(probe.isEntryAvailable({ requires: [] }, {}), true,
+        'entry with empty requires: must be considered available');
+    assert.equal(
+        probe.isEntryAvailable({ requires: ['summarizerApi'] }, { summarizerApi: false }),
+        false,
+        'missing capability must mark entry unavailable',
+    );
+    assert.equal(
+        probe.isEntryAvailable({ requires: ['summarizerApi'] }, { summarizerApi: true }),
+        true,
+        'present capability must mark entry available',
+    );
+    assert.equal(
+        probe.isEntryAvailable({ requires: ['mediaDL', 'ollama'] }, { mediaDL: true, ollama: false }),
+        false,
+        'multi-capability requires: must AND across every name',
+    );
+
+    // 4. summarizerApi sync probe works without network. Without
+    // window.ai present, must return false.
+    const savedAi = globalThis.ai;
+    delete globalThis.ai;
+    assert.equal(probe.PROBES.summarizerApi.run(), false,
+        'summarizerApi must return false when window.ai is absent');
+    globalThis.ai = { Summarizer: function () {} };
+    assert.equal(probe.PROBES.summarizerApi.run(), true,
+        'summarizerApi must return true when window.ai.Summarizer is a function');
+    if (savedAi === undefined) delete globalThis.ai;
+    else globalThis.ai = savedAi;
+
+    // 5. The Media-DL probe walks the documented six fallback ports.
+    assert.deepEqual(
+        [...probe._MEDIA_DL_PORTS],
+        [9751, 9761, 9771, 9781, 9791, 9851],
+        'capability-probe must walk the documented six Astra Downloader fallback ports',
+    );
+    assert.equal(probe._OLLAMA_PORT, 11434,
+        'capability-probe must use Ollama port 11434');
+});
+
+test('v4.47.0 NF10 — manifest loads capability-probe.js before ytkit.js in every content-script group', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    for (const cs of manifest.content_scripts) {
+        if (!Array.isArray(cs.js)) continue;
+        const ytkitIdx = cs.js.indexOf('ytkit.js');
+        if (ytkitIdx === -1) continue;
+        const probeIdx = cs.js.indexOf('core/capability-probe.js');
+        assert.notEqual(probeIdx, -1,
+            'manifest must include core/capability-probe.js in every content_scripts group that loads ytkit.js');
+        assert.ok(probeIdx < ytkitIdx,
+            'core/capability-probe.js must load before ytkit.js');
+    }
 });
 
 test('v4.47.0 NF5 wave 2 — ytkit.js cssFeature notifies the lifecycle on init/destroy', () => {

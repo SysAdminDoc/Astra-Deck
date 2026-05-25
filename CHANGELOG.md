@@ -6,6 +6,51 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **extension/core/capability-probe.js — runtime capability detection
+  (NF10).** Pairs with the NF17 schema `requires:` field shipped in
+  the same v4.47 sprint. Exposes a PROBES table keyed by every
+  CAPABILITIES enum entry (`summarizerApi`, `mediaDL`, `ollama`), a
+  `runAll()` that resolves the full {name: boolean} map (async probes
+  run in parallel), and an `isEntryAvailable(entry, capabilityMap)`
+  helper that ANDs across every required capability. Probes are
+  capability checks only — they never invoke the API, which keeps
+  the probe surface store-policy-safe.
+
+  Probe internals:
+    - summarizerApi: synchronous existence check for
+      `window.ai.Summarizer` (Chrome 138+ origin trial)
+    - mediaDL: AbortController-bounded HTTP GET to /health on each of
+      the six Astra Downloader fallback ports (9751/9761/9771/9781/
+      9791/9851), with a strict 1500 ms per-port timeout so a hung
+      server can't pin the probe
+    - ollama: same AbortController pattern against
+      127.0.0.1:11434/api/version
+
+  Loaded ahead of ytkit.js via manifest content_scripts (after
+  runtime-flags.js) and bundled into YTKit.user.js via
+  sync-userscript.js#V5_BUNDLE_MODULES so both vehicles see the same
+  singleton on globalThis.YTKitCore.capabilityProbe.
+
+  Pinned by two new `v4.47.0 NF10` hardening tests:
+    1. PROBES keys === CAPABILITIES enum (set-equal); per-entry shape
+       (async:boolean + run:function); isEntryAvailable contract for
+       no-requires, empty-requires, single-required, and multi-required
+       cases; summarizerApi sync probe round-trip via window.ai mock;
+       documented port list pinned.
+    2. manifest content-script groups load capability-probe.js before
+       ytkit.js.
+
+  Existing v4.20.0 userscript bundle-order + verbatim-fingerprint
+  tests extended to cover the new module. 537/537 JS tests pass
+  (+2 new).
+
+  Future work (carry-forward): popup row renderer consults
+  `capabilityProbe.runAll()` at boot and renders an
+  "Unavailable in this browser" chip on rows whose schema entry
+  declares an unavailable capability. The probe is shipped + tested;
+  the popup wiring stays as a follow-up so the chip can be designed
+  alongside the schema-overview visual language.
+
 - **lint: require-catch-reason rule widened to extension/popup.js
   (Phase L).** Closes the popup.js scope item from RESEARCH_FEATURE_PLAN
   Phase L. The v4.47.0 ESLint rule was previously enforced only on
