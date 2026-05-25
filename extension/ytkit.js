@@ -17335,6 +17335,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Adds a compact quick-links menu in the masthead with customizable links',
             group: 'Home / Subscriptions',
             icon: 'menu',
+            // v4.47.0: cap the quick-links list at 10 slots to match
+            // YouTube Alchemy's header-links UX. The cap protects the
+            // launcher's visual budget (10 rows fits cleanly in the
+            // dropdown without scrolling on a 720p viewport) and gives
+            // the add-form a clear "you're full" state. Excess entries
+            // already saved in `quickLinkItems` are silently truncated
+            // at parse time — they're preserved in the underlying
+            // setting so a future cap-bump doesn't lose data.
+            _QL_MAX_ITEMS: 10,
             _wrapper: null,
             _styleEl: null,
             _iconMap: {
@@ -17462,7 +17471,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _parseItems() {
                 const raw = appState.settings.quickLinkItems || '';
-                return raw.split('\n').map(line => {
+                const items = raw.split('\n').map(line => {
                     const sep = line.indexOf('|');
                     if (sep === -1) return null;
                     const text = line.substring(0, sep).trim();
@@ -17474,6 +17483,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const icon = this._iconMap[url] || this._iconMap['_default'];
                     return { text, url, icon };
                 }).filter(Boolean);
+                // v4.47.0: cap at _QL_MAX_ITEMS so a stored list with
+                // 50 entries can't overflow the launcher dropdown. The
+                // underlying setting is left intact (a future cap-bump
+                // can re-expose entries) but the rendered list stops
+                // at the cap.
+                if (items.length > this._QL_MAX_ITEMS) {
+                    return items.slice(0, this._QL_MAX_ITEMS);
+                }
+                return items;
             },
             _buildMenu(parentEl, dropId) {
                 const existing = parentEl.querySelector('#' + dropId);
@@ -17615,11 +17633,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const name = nameInput.value.trim();
                                 const url = urlInput.value.trim();
                                 const isValidUrl = !url || url.startsWith('/') || /^https?:\/\//i.test(url);
-                                addBtn.disabled = !name || !url || !isValidUrl;
-                                formNote.textContent = isValidUrl
-                                    ? 'Use a site path like /feed/history or a full https:// URL.'
-                                    : 'Use a path that starts with / or a full https:// URL.';
-                                return isValidUrl;
+                                // v4.47.0: enforce the 10-slot Alchemy-parity cap.
+                                // When the user is at the limit, disable the
+                                // Add button and surface a "Limit reached"
+                                // message instead of the standard path-hint
+                                // copy. Re-validated on every input event so
+                                // a delete-then-add flow re-enables cleanly.
+                                const currentCount = self._parseItems().length;
+                                const atCap = currentCount >= self._QL_MAX_ITEMS;
+                                addBtn.disabled = !name || !url || !isValidUrl || atCap;
+                                if (atCap) {
+                                    formNote.textContent = `Limit reached (${currentCount}/${self._QL_MAX_ITEMS}). Remove an entry above to add a new one.`;
+                                } else if (!isValidUrl) {
+                                    formNote.textContent = 'Use a path that starts with / or a full https:// URL.';
+                                } else {
+                                    formNote.textContent = `Use a site path like /feed/history or a full https:// URL. (${currentCount}/${self._QL_MAX_ITEMS} used)`;
+                                }
+                                return isValidUrl && !atCap;
                             };
                             nameInput.addEventListener('input', validateForm);
                             urlInput.addEventListener('input', validateForm);
@@ -17634,6 +17664,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const name = nameInput.value.trim();
                                 const url = urlInput.value.trim();
                                 if (!name || !url || !validateForm()) return;
+                                // v4.47.0: defensive re-check at click time —
+                                // validateForm's atCap gate handles the
+                                // common path but a race between two clicks
+                                // could let a stale add slip past.
+                                if (self._parseItems().length >= self._QL_MAX_ITEMS) {
+                                    showToast(
+                                        `Quick Links limit reached (${self._QL_MAX_ITEMS}). Remove one to add a new entry.`,
+                                        '#f59e0b',
+                                    );
+                                    validateForm();
+                                    return;
+                                }
                                 const current = appState.settings.quickLinkItems || '';
                                 appState.settings.quickLinkItems = current + (current ? '\n' : '') + `${name} | ${url}`;
                                 settingsManager.save(appState.settings);
