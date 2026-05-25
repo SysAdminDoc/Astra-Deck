@@ -8027,6 +8027,75 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 NEW-6 — per-key Reset button on schema-overview rows whose value differs from default', () => {
+    // NEW-6: a user who has changed one setting to a breaking value
+    // currently has to either remember the default or hit global
+    // Reset (which nukes everything). Per-key Reset is a one-click
+    // recovery scoped to the offending row.
+    //
+    // Implementation invariants pinned here:
+    // - The reset button is only rendered when the schema entry
+    //   declares a defaultValue AND the current value differs from it.
+    // - The click handler calls writeSetting with entry.defaultValue
+    //   (the same choke point every other inline editor uses), then
+    //   re-renders the overview to refresh the count + clear the
+    //   now-default row's reset button.
+    // - The equality check is a deep-equality helper (isDefaultValue)
+    //   so arrays + objects with identical content don't surface a
+    //   spurious reset button.
+
+    // 1. Row builder appends the reset button at the end after the
+    //    type-specific editor.
+    const rowStart = popupSource.indexOf('function buildSchemaOverviewKeyRow');
+    assert.ok(rowStart > -1, 'popup.js must define buildSchemaOverviewKeyRow');
+    // Cap the slice generously — the row builder is ~400 lines + the
+    // reset block at the tail.
+    const rowEnd = popupSource.indexOf('return row;', rowStart);
+    assert.ok(rowEnd > -1, 'buildSchemaOverviewKeyRow must end with return row');
+    const rowBlock = popupSource.slice(rowStart, rowEnd);
+    assert.match(rowBlock, /Object\.prototype\.hasOwnProperty\.call\(entry,\s*['"]defaultValue['"]\)/,
+        'reset gate must check that the schema entry declares a defaultValue');
+    assert.match(rowBlock, /isDefaultValue\(currentValue,\s*entry\.defaultValue\)/,
+        'reset gate must call isDefaultValue(currentValue, entry.defaultValue)');
+    assert.match(rowBlock, /so-key-reset-btn/,
+        'reset button must carry the so-key-reset-btn class');
+    assert.match(rowBlock, /writeSetting\(entry\.key,\s*entry\.defaultValue\)/,
+        'reset click must writeSetting(entry.key, entry.defaultValue)');
+    assert.match(rowBlock, /renderSchemaOverview\(\)/,
+        'reset click must re-render the schema overview after persistence');
+
+    // 2. isDefaultValue is a deep-equality helper that handles arrays
+    //    and objects via JSON.stringify (cheap + correct for the
+    //    small payloads schema-overview deals with).
+    assert.match(popupSource, /function\s+isDefaultValue\(currentValue,\s*defaultValue\)/,
+        'popup.js must define isDefaultValue helper');
+    const isDefStart = popupSource.indexOf('function isDefaultValue(');
+    const isDefBlock = popupSource.slice(isDefStart, isDefStart + 800);
+    assert.match(isDefBlock, /currentValue === defaultValue/,
+        'isDefaultValue must short-circuit on strict equality (boolean/number/string)');
+    assert.match(isDefBlock, /JSON\.stringify\(currentValue\)\s*===\s*JSON\.stringify\(defaultValue\)/,
+        'isDefaultValue must deep-compare objects via JSON.stringify');
+
+    // 3. describeDefaultForTooltip pretty-prints the default value
+    //    for the tooltip and truncates anything over 48 chars so
+    //    the tooltip stays readable.
+    assert.match(popupSource, /function\s+describeDefaultForTooltip\(value\)/,
+        'popup.js must define describeDefaultForTooltip helper');
+    const descStart = popupSource.indexOf('function describeDefaultForTooltip(');
+    const descBlock = popupSource.slice(descStart, descStart + 800);
+    assert.match(descBlock, /length\s*>\s*48/,
+        'describeDefaultForTooltip must truncate long values at ~48 chars');
+
+    // 4. CSS for the affordance exists.
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(popupCss, /\.so-key-reset-btn\s*\{/,
+        'popup.css must declare .so-key-reset-btn');
+    assert.match(popupCss, /\.so-key-reset-btn:disabled\s*\{/,
+        'popup.css must dim the reset button while it is disabled (mid-write)');
+});
+
 test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through popup', () => {
     // NF21: opening the popup on a fresh install used to dump the
     // full 354-key editor with no guidance. This adds (a) a welcome
