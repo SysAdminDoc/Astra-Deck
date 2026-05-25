@@ -6,6 +6,28 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **lint: require-catch-reason rule widened to extension/popup.js
+  (Phase L).** Closes the popup.js scope item from RESEARCH_FEATURE_PLAN
+  Phase L. The v4.47.0 ESLint rule was previously enforced only on
+  `extension/background.js`; the prior research file estimated 41
+  catches in popup.js. An audit found that the rule only triggers on
+  empty / comment-only bodies — popup.js carries 8 such catches total,
+  7 already documented and 1 (line 2112, the diagnostic-log writeback
+  best-effort guard) annotated in the same commit, plus 4 in the
+  broadcast / broadcastSettingsReplaced fan-out helpers that had
+  existing inline comments updated to use the `reason:` prefix.
+  `eslint.config.js` factored the browser globals into a shared
+  `sharedBrowserGlobals` constant and added a new file-group for
+  popup.js with the rule enabled at `error`; `package.json#scripts.lint`
+  passes both files to eslint. Further widening to
+  `extension/core/*.js` and `ytkit.js` stays gated behind their own
+  per-file annotation passes (~50 + ~175 catches respectively).
+  Existing `v4.47.0 ESLint require-catch-reason rule is wired`
+  hardening test extended to assert both file-group declarations and
+  both lint-script entries. 535/535 JS tests still pass; `npm run
+  check` green end-to-end (lint, a11y, contrast, npm audit, syntax,
+  versions, i18n, settings).
+
 - **ytkit.js: cssFeature notifies the feature-lifecycle on init/destroy
   (NF5 wave 2).** Wave 1 (commit `3f22e0e`) registered 21 peeled
   CSS-only feature ids with the v4.7.0 lifecycle module but kept the

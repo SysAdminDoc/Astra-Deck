@@ -6729,10 +6729,10 @@ test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifec
 
 test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant', () => {
     // The rule must exist on disk, be required from eslint.config.js,
-    // and be enabled as `error` on the background.js file group. The
-    // existence of the rule is the load-bearing piece — bulk rollout
-    // to popup.js / ytkit.js / core/* is a follow-up that requires a
-    // per-file violation audit + annotation pass first.
+    // and be enabled as `error` on the background.js file group plus
+    // (v4.47.0 Phase L) the popup.js file group. Further widening to
+    // extension/core/*.js and ytkit.js stays gated behind a per-file
+    // annotation pass.
     const eslintConfig = fs.readFileSync(
         path.join(__dirname, '..', 'eslint.config.js'), 'utf8'
     );
@@ -6740,6 +6740,22 @@ test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 inv
         'eslint.config.js must register the require-catch-reason rule');
     assert.match(eslintConfig, /'local\/require-catch-reason':\s*'error'/,
         'require-catch-reason must be enabled as error (not warn) so CI fails on regression');
+    // Phase L: the popup.js file group must be present and the rule
+    // must be active on it. The two `files: [...]` arrays are the
+    // canonical scope declarations.
+    assert.match(eslintConfig, /files:\s*\['extension\/background\.js'\]/,
+        'eslint.config.js must declare the extension/background.js file group');
+    assert.match(eslintConfig, /files:\s*\['extension\/popup\.js'\]/,
+        'eslint.config.js must declare the extension/popup.js file group (Phase L)');
+    // The npm-lint script must pass both files to eslint so the rule
+    // actually runs on both during npm run check.
+    const pkg = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'package.json'), 'utf8'
+    ));
+    assert.match(pkg.scripts.lint, /extension\/background\.js/,
+        'package.json lint script must include background.js');
+    assert.match(pkg.scripts.lint, /extension\/popup\.js/,
+        'package.json lint script must include popup.js (Phase L)');
 
     const rulePath = path.join(__dirname, '..', 'scripts', 'eslint-rules', 'require-catch-reason.js');
     assert.ok(fs.existsSync(rulePath), 'rule source must exist at scripts/eslint-rules/require-catch-reason.js');
