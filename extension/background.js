@@ -407,8 +407,18 @@ if (chrome.downloads?.onChanged?.addListener) {
             if (state === 'complete') {
                 try {
                     chrome.downloads.show(delta.id);
-                } catch (_) {
-                    // reason: Explorer reveal may fail if file was moved before reveal
+                } catch (err) {
+                    // v4.47.0 R3: surface the reveal failure into the SW
+                    // lifecycle ring (NEW-7) + console so the bug-report
+                    // bundle picks it up. Common causes: file was moved
+                    // between download completion and the reveal call,
+                    // the user revoked downloads access (Firefox), or
+                    // the path traversed a removable volume that was
+                    // detached. Previously a silent swallow that hid
+                    // the failure from support diagnostics.
+                    try { console.warn('[Astra Deck] chrome.downloads.show failed for id', delta.id, err); }
+                    catch (_) { /* reason: console may be unavailable in some SW contexts */ }
+                    void _recordSwLifecycle('reveal-failed:' + (err?.message || 'unknown'));
                 }
             }
         })();

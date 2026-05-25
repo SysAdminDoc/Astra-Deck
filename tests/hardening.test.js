@@ -8027,6 +8027,26 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 R3 — chrome.downloads.show failures log to console + SW lifecycle ring instead of silent swallow', () => {
+    // R3: chrome.downloads.show is fire-and-forget; if the reveal
+    // fails (file moved, user revoked permission, volume detached)
+    // the only signal a maintainer used to get was the user-facing
+    // "nothing happened." The catch now (a) console.warn's with
+    // context and (b) drops a reveal-failed:<msg> entry into the
+    // SW lifecycle ring (NEW-7) so the bug-report bundle surfaces
+    // it without any new telemetry.
+    const revealStart = backgroundSource.indexOf('chrome.downloads.show(delta.id)');
+    assert.ok(revealStart > -1,
+        'background.js must call chrome.downloads.show(delta.id)');
+    const revealBlock = backgroundSource.slice(revealStart, revealStart + 1200);
+    assert.match(revealBlock, /catch \(err\)/,
+        'reveal call must capture the error binding (not the previous silent `catch (_)` swallow)');
+    assert.match(revealBlock, /console\.warn\(['"]\[Astra Deck\] chrome\.downloads\.show failed/,
+        'reveal failure must console.warn with the [Astra Deck] prefix so support sees the context');
+    assert.match(revealBlock, /_recordSwLifecycle\(['"]reveal-failed:/,
+        'reveal failure must drop a reveal-failed:<msg> entry into the SW lifecycle ring');
+});
+
 test('v4.47.0 EXIST-8 — feature_request issue template asks for the risk profile so triage maps to schema profiles', () => {
     // EXIST-8: feature requests previously didn't tell triagers what
     // profile to assign. The schema's risk: + profile: fields gate
