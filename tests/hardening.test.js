@@ -7103,6 +7103,48 @@ test('v4.47.0 NF12 — runtime-flags is bundled into the userscript', () => {
         'sync-userscript.js V5_BUNDLE_MODULES must include extension/core/runtime-flags.js');
 });
 
+test('v4.47.0 NF20 — check-no-eval gate is wired and rejects eval / Function / string-timer patterns', () => {
+    // The extension's CSP forbids unsafe-eval. NF20 ships a
+    // belt-and-suspenders source-level grep so a contributor adding
+    // `eval(` or `new Function(` is flagged at npm-run-check time
+    // instead of at runtime CSP rejection time.
+
+    // 1. The script exists and is wired into the check gate.
+    const scriptPath = path.join(__dirname, '..', 'scripts', 'check-no-eval.js');
+    assert.ok(fs.existsSync(scriptPath), 'scripts/check-no-eval.js must exist');
+    const pkg = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'package.json'), 'utf8'
+    ));
+    assert.match(pkg.scripts.check, /scripts\/check-no-eval\.js/,
+        'npm run check must invoke check-no-eval.js');
+
+    // 2. The script's PATTERNS array covers the documented set.
+    // Each assertion checks for the literal pattern label inside the
+    // script source (the script declares `name: 'eval('` etc on each
+    // PATTERNS entry).
+    const src = fs.readFileSync(scriptPath, 'utf8');
+    assert.match(src, /name:\s*'eval\('/,
+        "check-no-eval must declare the 'eval(' pattern");
+    assert.match(src, /name:\s*'new Function\('/,
+        "check-no-eval must declare the 'new Function(' pattern");
+    assert.match(src, /name:\s*'setTimeout\(string\)'/,
+        "check-no-eval must declare the 'setTimeout(string)' pattern");
+    assert.match(src, /name:\s*'setInterval\(string\)'/,
+        "check-no-eval must declare the 'setInterval(string)' pattern");
+    // The "allow-eval" escape hatch must be honored.
+    assert.match(src, /\/\/ allow-eval/,
+        'check-no-eval must honor the // allow-eval same-line escape hatch');
+
+    // 3. The validate.yml CI workflow emits an SBOM artifact.
+    const ciSrc = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
+    );
+    assert.match(ciSrc, /npm ls --omit=dev --json > sbom\.json/,
+        'validate.yml must emit an npm SBOM via npm ls --omit=dev');
+    assert.match(ciSrc, /name: astra-deck-sbom/,
+        'validate.yml must upload the SBOM as a named artifact');
+});
+
 test('v4.47.0 NF10 — capability-probe module covers every CAPABILITIES enum entry', () => {
     // NF17 added the CAPABILITIES enum to settings-schema.js plus an
     // optional `requires:` field on entries. NF10 pairs that with a

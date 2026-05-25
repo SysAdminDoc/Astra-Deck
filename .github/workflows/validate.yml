@@ -39,6 +39,21 @@ jobs:
       - name: npm run check
         run: npm run check
 
+      # v4.47.0 NF20: emit an npm SBOM artifact so a future store
+      # submission has a software-bill-of-materials to attach. The
+      # static-eval gate already runs inside `npm run check` via
+      # scripts/check-no-eval.js.
+      - name: Emit npm SBOM
+        run: npm ls --omit=dev --json > sbom.json
+        continue-on-error: true
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: astra-deck-sbom
+          path: sbom.json
+          if-no-files-found: ignore
+
   python:
     name: Python downloader tests
     runs-on: ubuntu-latest
