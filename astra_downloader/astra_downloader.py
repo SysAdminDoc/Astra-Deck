@@ -1945,6 +1945,16 @@ _folder_picker_service = None  # set in main() once QApplication exists
 class FolderPickerService(QObject):
     """Bridges Flask worker threads to the GUI thread's QFileDialog."""
 
+    # v4.47.0 NF35: log a watchdog line when a single dialog
+    # exec() blocks longer than this many seconds. Real folder
+    # pickers complete in <30s in the worst case (slow drive, large
+    # directory enumeration); blocking past 60s signals a hang in
+    # the Qt event loop, file system, or user-side OS dialog that
+    # the prior implementation swallowed silently. The Flask side
+    # times out at 120s (see /pick-folder handler), so 60s gives a
+    # mid-flight diagnostic before the HTTP request gives up.
+    DIALOG_WATCHDOG_THRESHOLD_SECONDS = 60
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._timer = QTimer(self)
@@ -1968,7 +1978,22 @@ class FolderPickerService(QObject):
             dlg.setWindowFlags(dlg.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
             dlg.activateWindow()
             dlg.raise_()
-            if dlg.exec() == QFileDialog.DialogCode.Accepted:
+            # v4.47.0 NF35: dialog watchdog. Time the .exec() call and
+            # log a persistent diagnostic line if the dialog blocked
+            # longer than DIALOG_WATCHDOG_THRESHOLD_SECONDS. Previously
+            # the dialog could hang silently and the Flask handler would
+            # time out at 120s with no GUI-side log entry pointing at
+            # the cause.
+            dialog_started_at = time.time()
+            exec_result = dlg.exec()
+            dialog_elapsed = time.time() - dialog_started_at
+            if dialog_elapsed > self.DIALOG_WATCHDOG_THRESHOLD_SECONDS:
+                write_persistent_log(
+                    f"FolderPickerService: dialog blocked for {dialog_elapsed:.1f}s "
+                    f"(threshold {self.DIALOG_WATCHDOG_THRESHOLD_SECONDS}s; "
+                    f"initial='{initial}'). Possible Qt event-loop or file-system hang."
+                )
+            if exec_result == QFileDialog.DialogCode.Accepted:
                 paths = dlg.selectedFiles()
                 response_q.put({'path': paths[0] if paths else None,
                                 'cancelled': not bool(paths)})

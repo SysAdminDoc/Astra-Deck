@@ -6,6 +6,71 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **stickyVideo + theater-split.user.js: fullscreen on live / previously-live videos no longer leaks the chat overlay.**
+  Class of bug: `ytd-live-chat-frame` is positioned via `_positionOverRight`
+  with `position:fixed; z-index:10001`. The old fullscreen handler in
+  `stickyVideo` (`extension/ytkit.js`) and the parallel one in
+  `theater-split.user.js` only hid `_splitWrapper` and `_splitLiveHeader`
+  on `fullscreenchange`, leaving every entry in `_positionedEls` (chat
+  frame on live + previously-live; `#below` on plain VODs) painting
+  over the native fullscreen player. On live and previously-live videos
+  this looked like "fullscreen doesn't work" — the player went
+  fullscreen but the chat panel overlaid the right third of the screen.
+  Fix: on enter, stash each positioned overlay's current `visibility`
+  in a `_fullscreenOverlayStash` array and force
+  `visibility:hidden !important`; on exit, restore the prior value.
+  Destroy/teardown clears the stash so a teardown-during-fullscreen
+  leaves no dangling references. The userscript got an equivalent
+  patch (`fullscreenStash` state + `enterFullscreenStash` /
+  `exitFullscreenStash` helpers, plus an extra step that moves the
+  player out of `#ts-wrapper` before hiding the wrapper, because in
+  the userscript the player IS a child of the wrapper — the extension
+  already mounts the player at `position:fixed` from its natural-flow
+  location so wrapper `display:none` doesn't trip Chromium's
+  ancestor-display-none → exit-fullscreen rule). Pinned by a new
+  `v4.47.0 stickyVideo — fullscreen handler hides positioned overlays`
+  hardening test that asserts the enter branch initialises the stash +
+  iterates `_positionedEls` + sets visibility hidden important, the
+  exit branch iterates the stash + clears it, and destroy nulls the
+  stash. 548/548 JS tests pass (+1 new).
+
+- **videoHider: predicate ctx exposes `likes` + `subsCount` (NF16).**
+  BlockTube ships `likes` in advanced blocking; PocketTube exposes
+  subscriber count. Astra's predicate sandbox ctx now carries both
+  for parity. `ctx.likes` comes from the cached `ytkit-ryd-cache`
+  entry by videoId (or null when RYD is off or no entry exists),
+  refreshed in-memory every 5s so predicate evaluation doesn't
+  thrash storage during a feed scan. `ctx.subsCount` is best-effort
+  parsed from the card's metadata text via a regex catching
+  `<num><K|M|B|>?\s*subscriber` shapes (case-insensitive), returning
+  null when no subscriber metadata is rendered. Predicates can now
+  write rules like `likes != null && likes > 100000` or
+  `subsCount != null && subsCount < 1000` (BlockTube + PocketTube
+  parity). Two new helpers (`_extractSubsCount`, `_readRydLikes`)
+  live next to `_extractVideoMetadata` in the videoHider feature.
+  Pinned by a new `v4.47.0 NF16` hardening test (helpers exist;
+  regex shape; storage key + 5s cache refresh; ctx wiring; parity
+  comment; sandbox-evaluates the subs parser against 7 input
+  patterns). Existing v3.25.0 "videoHider integrates predicate
+  evaluator" test had its slice window extended from 4000 to 8000
+  bytes to accommodate the two new helper functions sitting between
+  the call site and the declaration. 547/547 JS tests pass (+1 new).
+
+- **astra_downloader: FolderPickerService dialog watchdog (NF35).**
+  `QFileDialog.exec()` blocks the Qt event loop while open. On slow
+  file systems or stalled OS dialogs, the Flask handler that
+  enqueued the request used to time out at 120s with no GUI-side
+  diagnostic pointing at the cause. The watchdog times each `exec()`
+  call and writes a persistent log line if the dialog blocked past
+  the documented threshold (60 seconds — leaves a 60s margin before
+  the Flask 120s timeout so the log gets written before the HTTP
+  request gives up). Threshold lives on
+  `FolderPickerService.DIALOG_WATCHDOG_THRESHOLD_SECONDS = 60` so a
+  future operator can audit it. Pinned by three new
+  `FolderPickerWatchdogTests`: threshold-constant-pin /
+  log-emission-shape / threshold-gate-prevents-fast-dialog-spam.
+  98/98 Python tests pass (+3 new).
+
 - **Polish batch: EI-NEW2 / EI-NEW3 / EI-NEW4 / Phase V.** Four small
   fixes shipped together because each is under 200 lines:
     - **EI-NEW2 — `youtubeMusicCompat` exact-hostname match.** Replaced

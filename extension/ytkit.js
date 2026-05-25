@@ -8367,6 +8367,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _keyHandler: null,
             _fullscreenHandler: null,
             _fullscreenHidden: false,
+            _fullscreenOverlayStash: null, // saved visibility for _positionedEls during native fullscreen
             _playerResizeObs: null,
             _playerResizeDebounceTimer: null,
             _chatWatcherStopTimer: null,
@@ -10001,6 +10002,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         wrapper.style.display = 'none';
                         if (this._splitLiveHeader) this._splitLiveHeader.style.display = 'none';
                         this._setSplitLiveHeaderActionPinsHidden(true);
+                        // Hide positioned overlays (chat frame, #below) — they carry
+                        // position:fixed z-index:10001 and would paint over the
+                        // fullscreen player on live / previously-live videos.
+                        this._fullscreenOverlayStash = [];
+                        (this._positionedEls || []).forEach(el => {
+                            if (!el) return;
+                            this._fullscreenOverlayStash.push({ el, visibility: el.style.visibility });
+                            el.style.setProperty('visibility', 'hidden', 'important');
+                        });
                         // Restore player to natural sizing so fullscreen works
                         const player = this._getPlayer();
                         if (player) {
@@ -10013,6 +10023,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         wrapper.style.display = 'flex';
                         if (this._splitLiveHeader) this._splitLiveHeader.style.display = '';
                         this._setSplitLiveHeaderActionPinsHidden(false);
+                        (this._fullscreenOverlayStash || []).forEach(({ el, visibility }) => {
+                            if (!el) return;
+                            if (visibility) el.style.setProperty('visibility', visibility, 'important');
+                            else el.style.removeProperty('visibility');
+                        });
+                        this._fullscreenOverlayStash = null;
                         this._layoutSplitLiveHeaderActions();
                         // Re-fix player in place
                         const player = this._getPlayer();
@@ -10339,6 +10355,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._fullscreenHandler = null;
                 }
                 this._fullscreenHidden = false;
+                this._fullscreenOverlayStash = null;
                 if (!keepClass) {
                     const masth = document.querySelector('ytd-masthead, #masthead');
                     if (masth && this._mastheadDisplay !== undefined) {
@@ -16386,6 +16403,49 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return compiled.evaluator;
             },
 
+            // v4.47.0 NF16: best-effort sub-count parser for predicate
+            // ctx. YouTube occasionally renders "1.2M subscribers" in
+            // card hover metadata; when present we parse it so power
+            // users can write `subsCount < 1000` style rules
+            // (BlockTube + PocketTube parity). Returns null when no
+            // such metadata is rendered so predicates can distinguish
+            // "no data" from "0 subscribers".
+            _extractSubsCount(metadataText) {
+                if (!metadataText) return null;
+                const m = metadataText.match(/(\d+(?:\.\d+)?)\s*([kmb])?\s*subscriber/i);
+                if (!m) return null;
+                const num = parseFloat(m[1]);
+                if (!Number.isFinite(num)) return null;
+                const suffix = (m[2] || '').toLowerCase();
+                const mult = suffix === 'b' ? 1e9 : suffix === 'm' ? 1e6 : suffix === 'k' ? 1e3 : 1;
+                return Math.round(num * mult);
+            },
+
+            // v4.47.0 NF16: like-count lookup from the RYD cache. Cached
+            // by videoId in chrome.storage.local under 'ytkit-ryd-cache'
+            // when the returnDislike feature has hit the API. Returns
+            // null when no entry exists so predicates can distinguish
+            // "no RYD data" from "0 likes". Cached per call inside
+            // _rydCacheForPredicates to avoid re-reading storage on
+            // every card during a feed scan.
+            _rydCacheForPredicates: null,
+            _rydCacheLoadedAt: 0,
+            _readRydLikes(videoId) {
+                if (!videoId) return null;
+                const now = Date.now();
+                // Refresh in-memory cache no more than every 5s; aligns
+                // with the RYD feature's own caching cadence so a fresh
+                // fetch surfaces quickly without thrashing storage.
+                if (!this._rydCacheForPredicates || now - this._rydCacheLoadedAt > 5000) {
+                    try { this._rydCacheForPredicates = storageReadJSON('ytkit-ryd-cache', null) || {}; }
+                    catch (_) { /* reason: predicate ctx must not throw on cache read failure */ this._rydCacheForPredicates = {}; }
+                    this._rydCacheLoadedAt = now;
+                }
+                const entry = this._rydCacheForPredicates[videoId];
+                if (!entry) return null;
+                return Number.isFinite(entry.likes) ? entry.likes : null;
+            },
+
             _buildPredicateCtx(element, videoId, channelInfo) {
                 const metadata = this._extractVideoMetadata(element);
                 const path = window.location.pathname;
@@ -16403,6 +16463,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     channelName: (channelInfo?.name || '').toLowerCase(),
                     durationSec: this._extractDuration(element) || 0,
                     viewCount: metadata?.views || 0,
+                    // v4.47.0 NF16: BlockTube/PocketTube parity additions.
+                    // `likes` is null when RYD data is unavailable;
+                    // `subsCount` is null when the card does not render
+                    // subscriber metadata. Predicates can write
+                    // `likes != null && likes > 100000` for explicit-
+                    // data checks, or rely on the null-as-falsy
+                    // semantics of the existing comparison operators.
+                    likes: this._readRydLikes(videoId),
+                    subsCount: this._extractSubsCount(metadata?.metadataText),
                     ageDays: 0,
                     isLive: !!metadata?.isLive,
                     isUpcoming: !!metadata?.isUpcoming,
