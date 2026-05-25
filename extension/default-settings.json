@@ -368,6 +368,8 @@
   "downloadScreenshotFormat": "png",
   "downloadSubtitlesWithScreenshot": false,
   "volumeWheelMode": false,
+  "wheelSeek": false,
+  "wheelSeekStepSec": 5,
   "disableLoudnessNormalization": false,
   "perChannelIntroOutro": false,
   "perChannelIntroOutroData": {},
