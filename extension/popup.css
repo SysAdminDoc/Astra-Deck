@@ -1132,6 +1132,45 @@ body {
   border-color: rgba(245, 87, 87, 0.36);
 }
 
+/* v4.47.0 NEW-6: per-key reset affordance. Only rendered when the
+   schema entry has a defaultValue AND the current setting value
+   differs from it. Compact circular button with the ↺ glyph — wraps
+   naturally to the right of the row's editor. Hover lifts the
+   accent. Square-ish radius keeps house style (no pill backdrops). */
+.schema-overview-list .so-key-reset-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted, #c7cad1);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 4px;
+  transition: background-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              border-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
+              color var(--dur-quick, 120ms) var(--ease-out, ease-out);
+}
+.schema-overview-list .so-key-reset-btn:hover {
+  background: rgba(255, 184, 77, 0.12);
+  border-color: rgba(255, 184, 77, 0.42);
+  color: #ffd9a8;
+}
+.schema-overview-list .so-key-reset-btn:focus-visible {
+  outline: 2px solid rgba(255, 184, 77, 0.75);
+  outline-offset: 1px;
+}
+.schema-overview-list .so-key-reset-btn:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
 .schema-overview-list .so-key-switch {
   appearance: none;
   background: rgba(255, 255, 255, 0.04);
