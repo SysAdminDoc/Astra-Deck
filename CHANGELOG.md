@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **docs/architecture.md — contributor orientation map.** Covers the
+  four moving parts (MV3 extension, userscript, Astra Downloader
+  Python companion, toolbar popup), end-to-end data flow for a watch
+  page load and a download, where things live (settings schema,
+  feature definitions, selector packs, lifecycle module, etc.), the
+  five trust boundaries with what each is allowed to touch, ten
+  conventions a contributor needs (no keyboard shortcuts, no confirm
+  dialogs, dark only, init/destroy contract, TrustedTypes safety,
+  stable-selector-first, `// reason:` invariant, no
+  Co-Authored-By, schema parity, version-drift gate), worked
+  examples for adding a CSS-only feature and a DOM-observation
+  feature, and a debugging primer. Linked from README's
+  Documentation index and CONTRIBUTING's preface. Closes the
+  Phase H contributor-architecture-map item from
+  RESEARCH_FEATURE_PLAN.
+
 - **End-to-end download test with mocked yt-dlp.** Closes EI14 from
   RESEARCH_FEATURE_PLAN. The 80 prior Python tests covered
   normalisation, security, rate-limiting, etc. but never invoked the
