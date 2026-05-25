@@ -1,7 +1,9 @@
 # Project Research and Feature Plan — Pass 3 (External Research)
 
 > Authored 2026-05-25 against HEAD `394a494` (v4.46.0 shipped + v4.47.0-equivalent in `[Unreleased]`).
-> This is a **companion** to [RESEARCH_FEATURE_PLAN.md](../../RESEARCH_FEATURE_PLAN.md) (the active backlog) and [ROADMAP.md](../../ROADMAP.md) (the v5→v6 long arc). It validates the active backlog, flags re-prioritizations, and proposes **new opportunities** the maintainer has not already written down. It does not duplicate items already present in those files except where evidence changed.
+> This is a **companion** to [RESEARCH_FEATURE_PLAN.md](RESEARCH_FEATURE_PLAN.md) (the active backlog) and [ROADMAP.md](ROADMAP.md) (the v5→v6 long arc). It validates the active backlog, flags re-prioritizations, and proposes **new opportunities** the maintainer has not already written down. It does not duplicate items already present in those files except where evidence changed.
+>
+> **Pass-3 autonomous-loop addendum (2026-05-25 same day):** Several Pass-3 roadmap items shipped in the same loop and are now reflected in `[Unreleased]`. Specifically: theater-split fullscreen overlay stash (EXIST-1, both userscript and extension `stickyVideo`), capability-probe popup chip (EXIST-2 / NF10 follow-up), bug-report bundle expansion (NEW-1), and userscript drift health check (NEW-2). NF28 (DeArrow channel-override chip) was discovered already-shipped in `ytkit.js` at lines 26319 + 26350 + 30842 — the backlog entry was stale and has been removed from `RESEARCH_FEATURE_PLAN.md`.
 
 ---
 
