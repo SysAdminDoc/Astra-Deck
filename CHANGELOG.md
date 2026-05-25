@@ -6,6 +6,42 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Userscript drift health check (NEW-2, Pass 3).**
+  Three top-level userscripts exist in the repo — `YTKit.user.js`
+  (auto-synced by `build-extension.js`), `theater-split.user.js` and
+  `YT_Reaction_Spammer.user.js` (both hand-maintained). The hand-
+  maintained pair could drift silently against YouTube DOM changes
+  and metadata-block conventions; the Pass-3 audit caught one such
+  drift (the `theater-split.user.js` fullscreen-overlay-stash bug
+  had been latent because no test covered the live-video fullscreen
+  path). New test file `tests/userscript-health.test.js` pins, for
+  each standalone userscript:
+  - Metadata block well-formedness (`==UserScript==` to
+    `==/UserScript==`, required keys `@name`, `@version`, `@match`,
+    `@run-at`, `@grant`).
+  - `@match` / `@exclude` scope matches declared role: general-
+    purpose scripts must exclude `m.youtube.com` and
+    `studio.youtube.com`; the live-chat-only reaction spammer must
+    `@match` only `/live_chat` routes.
+  - Header `@version` matches the version suffix embedded in
+    `@name` when present (closes the v1.0.5/v1.0.6 silent-drift
+    class CLAUDE.md flagged 2026-04-24 — Tampermonkey keys some
+    update-check paths on `@name` and a desynced bump never
+    lands).
+  - `@version` is a clean `x.y.z` semver triple.
+  - `@namespace` / `@updateURL` / `@downloadURL` (when present)
+    point at a `SysAdminDoc/*` repo so a fork can't hijack auto-
+    updates.
+  Plus two regression pins:
+  - `theater-split.user.js` retains the Pass-3 `fullscreenStash`
+    + `enterFullscreenStash` + `exitFullscreenStash` helpers,
+    including the `document.body.appendChild(player)` move-out and
+    the `visibility:hidden !important` overlay hide.
+  - `YT_Reaction_Spammer.user.js` retains the v0.3.0 N3 safety
+    floor `MIN_INTERVAL_MS = 500` (faster spam rates risk YouTube's
+    automated-behavior heuristics).
+  14 new tests; 564/564 JS tests pass.
+
 - **Bug-report bundle: diagnostic save expanded into a self-identifying
   bundle with sanitized settings + capability map (NEW-1, Pass 3).**
   The existing healthSave button used to write a JSON file containing
