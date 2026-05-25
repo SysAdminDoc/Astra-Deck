@@ -374,13 +374,11 @@ What to **intentionally avoid**:
 - **Verification**: pytest forcing 3 concurrent `/download` calls; assert all 3 reach `downloading` state within 200ms.
 - **Complexity**: M. **Priority**: P2.
 
-### EI14 — End-to-end download test (mocked yt-dlp)
-- **Current behavior**: `test_astra_downloader.py` exhaustively unit-tests normalizers, security, and config but never invokes a full download flow.
-- **Problem**: regressions in the `/download → yt-dlp argv → status callback → history persist` chain go undetected until a user reports a failure.
-- **Recommended change**: add `EndToEndDownloadTests` class that uses a fake yt-dlp binary (a tiny Python script that prints fake progress lines and writes a 1 KB output file); exercise the full state machine.
-- **Touches**: `astra_downloader/test_astra_downloader.py`, `astra_downloader/fixtures/fake_yt_dlp.py` (new).
-- **Verification**: pytest passes; integration coverage delta visible in CI.
-- **Complexity**: M. **Priority**: P2.
+### EI14 — End-to-end download test _[shipped]_
+- Shipped: new `EndToEndDownloadTests` class exercises the full state machine via a `subprocess.Popen` mock (no real yt-dlp invocation needed — deterministic, hermetic, sub-second).
+  - `test_full_download_flow_marks_complete_and_writes_history`: 3 fake yt-dlp progress lines including a Merger line; verifies status=complete, progress=100, filename parsed, single history entry written with the right url/format/audioOnly.
+  - `test_yt_dlp_nonzero_exit_with_error_marks_failed`: returncode=1 with an ERROR line; verifies status=failed, error truncated to the yt-dlp ERROR text, no history entry written.
+- 88/88 Python tests pass (+2 new). No fixture file needed (fake_yt_dlp.py wasn't required — Popen mock is enough).
 
 ### EI15 — MHTML capture inventory expansion
 - **Current behavior**: 4 captures (Home, Watch, Subscriptions, Watch long-form) per ROADMAP §Phase 0 capture table.
@@ -593,11 +591,8 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - Shipped: new `#reenable-mediadl-btn` (hidden by default, surfaced on popup boot when the flag is set) calls `chrome.storage.local.remove('ytkit_mediadl_prompt_dismissed')` — subsequent YouTube page loads naturally re-enable the install prompt via `MediaDLManager.showInstallPrompt`. 4 new i18n keys added across en + 9 non-EN locales. Pinned by `v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismissed flag` hardening test (button + aria-label + i18n hook, popup-side key constant matching ytkit.js write site, click listener wiring, EN locale parity).
   - **Still pending in the broader NF6 scope:** auto-update `/update` endpoint on AstraDownloader, signed installer (.exe + .msi), code-signing certificate cost decision, Add/Remove Programs entry. Tracked but out of scope for this slice.
 
-- [ ] **P2 — End-to-end download test with fake yt-dlp**
-  - Why: EI14.
-  - Touches: `astra_downloader/test_astra_downloader.py`, `astra_downloader/fixtures/fake_yt_dlp.py` (new).
-  - Acceptance: full `/download → progress → history` flow asserted.
-  - Verify: `python -m pytest astra_downloader`.
+- [x] **P2 — End-to-end download test with fake yt-dlp** _[shipped — subprocess.Popen mock instead of fixture script]_
+  - Shipped: `EndToEndDownloadTests` class with the complete and the failed-exit paths. See EI14. No external fixture file needed.
 
 - [ ] **P2 — Parallel concurrent yt-dlp downloads (configurable cap)**
   - Why: EI13.
