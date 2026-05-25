@@ -6,6 +6,25 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **chrome.downloads.show reveal failures now log + record into the
+  SW lifecycle ring (R3, Pass 3).** `chrome.downloads.show` is
+  fire-and-forget; if the reveal failed (file moved between download
+  completion and the reveal call, user revoked downloads access on
+  Firefox, removable volume detached) the only signal the maintainer
+  used to get from a user report was "nothing happened" — the catch
+  was a silent `catch (_)` swallow. The handler now (a) console.warn's
+  with the `[Astra Deck]` prefix + the download id + the error so
+  support traces see the context, and (b) drops a
+  `reveal-failed:<msg>` entry into the SW lifecycle ring (NEW-7) so
+  the bug-report bundle surfaces it without any new telemetry. No
+  user-facing toast — the failure is rare enough that an explicit
+  banner would be more noise than signal, and the bundle path is
+  already wired through the diagnostics flow. Pinned by a new
+  `v4.47.0 R3` hardening test asserting the binding capture (was
+  `catch (_)`, now `catch (err)`), the prefixed console.warn shape,
+  and the reveal-failed lifecycle drop. 569/569 JS tests pass
+  (+1 new).
+
 - **feature_request issue template asks for the risk profile + competitive
   parity reference (EXIST-8, Pass 3).** Feature requests previously
   didn't tell triagers what profile to assign. The schema's `risk:` +
