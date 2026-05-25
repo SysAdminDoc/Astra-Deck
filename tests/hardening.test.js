@@ -8027,6 +8027,107 @@ test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and se
         'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
 });
 
+test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through popup', () => {
+    // NF21: opening the popup on a fresh install used to dump the
+    // full 354-key editor with no guidance. This adds (a) a welcome
+    // card with two profile picker buttons (Store-Safe / GitHub-Full)
+    // and a Skip dismiss, gated on the FIRST_RUN_SEEN_KEY sentinel,
+    // and (b) a What's New banner that fires when LAST_SEEN_VERSION_KEY
+    // differs from the current manifestVersion. The two surfaces are
+    // mutually exclusive — a fresh install gets the welcome card,
+    // subsequent upgrades get the What's New banner.
+
+    // 1. popup.html declares both surfaces.
+    const popupHtml = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
+    );
+    assert.match(popupHtml, /id="welcome-card"/,
+        'popup.html must declare the welcome-card section');
+    assert.match(popupHtml, /id="welcome-profile-safe"/,
+        'popup.html must declare the store-safe profile picker button');
+    assert.match(popupHtml, /id="welcome-profile-full"/,
+        'popup.html must declare the github-full profile picker button');
+    assert.match(popupHtml, /id="welcome-dismiss-btn"/,
+        'popup.html must declare the welcome dismiss button');
+    assert.match(popupHtml, /id="whats-new"/,
+        'popup.html must declare the whats-new banner');
+    assert.match(popupHtml, /id="whats-new-open"/,
+        'popup.html must declare the whats-new open-changelog button');
+    assert.match(popupHtml, /id="whats-new-dismiss"/,
+        'popup.html must declare the whats-new dismiss button');
+    // Both surfaces ship hidden by default — popup.js reveals on the
+    // appropriate boot signal. A user landing on the popup without
+    // having installed Astra Deck (e.g. a screenshot harness) must
+    // not see either.
+    assert.match(popupHtml, /id="welcome-card"[\s\S]{0,60}hidden/,
+        'welcome-card must be hidden by default');
+    assert.match(popupHtml, /id="whats-new"[\s\S]{0,60}hidden/,
+        'whats-new banner must be hidden by default');
+
+    // 2. popup.js declares the storage keys + URL constants.
+    assert.match(popupSource, /const\s+FIRST_RUN_SEEN_KEY\s*=\s*['"]ytkit_first_run_seen['"]/,
+        'popup.js must declare FIRST_RUN_SEEN_KEY = ytkit_first_run_seen');
+    assert.match(popupSource, /const\s+LAST_SEEN_VERSION_KEY\s*=\s*['"]ytkit_last_seen_version['"]/,
+        'popup.js must declare LAST_SEEN_VERSION_KEY = ytkit_last_seen_version');
+    assert.match(popupSource, /const\s+CHANGELOG_BASE_URL\s*=\s*['"]https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/blob\/main\/CHANGELOG\.md['"]/,
+        'popup.js must declare CHANGELOG_BASE_URL pointing at the project changelog');
+
+    // 3. renderFirstRunSurfaces is the boot entry point and is fired
+    //    from the bootstrap IIFE in parallel with the rest of init.
+    assert.match(popupSource, /async function renderFirstRunSurfaces\(\)/,
+        'popup.js must define renderFirstRunSurfaces');
+    assert.match(popupSource, /void renderFirstRunSurfaces\(\)/,
+        'bootstrap must call renderFirstRunSurfaces');
+
+    // 4. The two surfaces are mutually exclusive: welcome-card fires
+    //    when !firstRunSeen; whats-new fires when firstRunSeen AND
+    //    lastSeen !== manifestVersion.
+    const renderStart = popupSource.indexOf('async function renderFirstRunSurfaces');
+    const renderBlock = popupSource.slice(renderStart, renderStart + 1400);
+    assert.match(renderBlock, /if \(!firstRunSeen\)/,
+        'renderFirstRunSurfaces must show the welcome card only when firstRunSeen is false');
+    assert.match(renderBlock, /firstRunSeen && manifestVersion && manifestVersion !== '—' && lastSeen !== manifestVersion/,
+        'renderFirstRunSurfaces must gate whats-new on firstRunSeen && version mismatch');
+
+    // 5. pickWelcomeProfile writes githubFullProfile (true or false)
+    //    via the existing writeSetting choke point so the schema
+    //    overview re-renders with refreshed profile-gating badges.
+    assert.match(popupSource, /async function pickWelcomeProfile\(profile\)/,
+        'popup.js must define pickWelcomeProfile');
+    const pickStart = popupSource.indexOf('async function pickWelcomeProfile');
+    const pickBlock = popupSource.slice(pickStart, pickStart + 1200);
+    assert.match(pickBlock, /writeSetting\(['"]githubFullProfile['"],\s*true\)/,
+        'github-full pick must writeSetting githubFullProfile=true');
+    assert.match(pickBlock, /writeSetting\(['"]githubFullProfile['"],\s*false\)/,
+        'store-safe pick must explicitly writeSetting githubFullProfile=false (records the user choice)');
+    assert.match(pickBlock, /renderSchemaOverview\(\)/,
+        'pickWelcomeProfile must re-render the schema overview to refresh profile-gating badges');
+
+    // 6. dismissWelcomeCard persists FIRST_RUN_SEEN_KEY and stamps
+    //    LAST_SEEN_VERSION_KEY so the very next popup open doesn't
+    //    fire a What's New banner against a user who just walked
+    //    through the welcome flow.
+    assert.match(popupSource, /async function dismissWelcomeCard\(reason\)/,
+        'popup.js must define dismissWelcomeCard');
+    const dismissStart = popupSource.indexOf('async function dismissWelcomeCard');
+    const dismissBlock = popupSource.slice(dismissStart, dismissStart + 800);
+    assert.match(dismissBlock, /\[FIRST_RUN_SEEN_KEY\]:\s*true/,
+        'dismissWelcomeCard must persist FIRST_RUN_SEEN_KEY=true');
+    assert.match(dismissBlock, /\[LAST_SEEN_VERSION_KEY\]:\s*manifestVersion/,
+        'dismissWelcomeCard must stamp LAST_SEEN_VERSION_KEY with the current manifestVersion');
+
+    // 7. CSS exposes both surfaces.
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(popupCss, /\.welcome-card\s*\{/,
+        'popup.css must declare .welcome-card');
+    assert.match(popupCss, /\.welcome-profile-btn\s*\{/,
+        'popup.css must declare .welcome-profile-btn');
+    assert.match(popupCss, /\.whats-new\s*\{/,
+        'popup.css must declare .whats-new');
+});
+
 test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and includes capability map', () => {
     // The existing healthSave button in the popup writes a diagnostic
     // JSON file. NEW-1 expands the payload into a proper bug-report

@@ -31,6 +31,53 @@
   </header>
 
   <main class="options-workspace" aria-labelledby="popup-title">
+
+    <!-- v4.47.0 NF21: first-run welcome card. Rendered on first popup
+         open after install (detected via the absence of the
+         _firstRunSeen sentinel in chrome.storage.local). The profile
+         picker writes githubFullProfile and sets the sentinel; the
+         "Skip" link sets the sentinel without changing settings. All
+         three paths apply with an undo-toast — no confirmation dialog
+         per house style. -->
+    <section class="welcome-card" id="welcome-card" hidden aria-labelledby="welcome-title">
+      <header class="welcome-head">
+        <strong class="welcome-title" id="welcome-title" data-i18n="welcomeTitle">Welcome to Astra Deck</strong>
+        <button type="button" class="welcome-dismiss" id="welcome-dismiss-btn"
+                data-i18n-attr-aria-label="welcomeDismissAria" aria-label="Dismiss welcome card"
+                data-i18n="welcomeDismiss">Skip</button>
+      </header>
+      <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
+      <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
+        <button type="button" class="welcome-profile-btn" id="welcome-profile-safe" data-profile="store-safe">
+          <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
+          <span class="welcome-profile-desc" data-i18n="welcomeProfileSafeDesc">Everything that ships on extension stores. No download companion, no BYO AI keys.</span>
+        </button>
+        <button type="button" class="welcome-profile-btn" id="welcome-profile-full" data-profile="github-full">
+          <strong class="welcome-profile-title" data-i18n="welcomeProfileFullTitle">GitHub-Full</strong>
+          <span class="welcome-profile-desc" data-i18n="welcomeProfileFullDesc">Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers.</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- v4.47.0 NF21: What's New banner. Renders when the stored
+         _lastSeenVersion differs from the current manifestVersion.
+         Single button: "Read changelog" opens the CHANGELOG anchor
+         for the new version on GitHub. Dismissing the banner sets
+         _lastSeenVersion to the current version so the banner stays
+         quiet until the next bump. -->
+    <aside class="whats-new" id="whats-new" hidden role="status" aria-live="polite">
+      <span class="whats-new-icon" aria-hidden="true">✨</span>
+      <span class="whats-new-copy">
+        <strong class="whats-new-title" data-i18n="whatsNewTitle">Updated</strong>
+        <span class="whats-new-detail" id="whats-new-detail"></span>
+      </span>
+      <button type="button" class="whats-new-btn" id="whats-new-open"
+              data-i18n="whatsNewOpen">Read changelog</button>
+      <button type="button" class="whats-new-dismiss" id="whats-new-dismiss"
+              data-i18n-attr-aria-label="whatsNewDismissAria" aria-label="Dismiss"
+              data-i18n="whatsNewDismiss">Dismiss</button>
+    </aside>
+
     <section class="workspace-command">
       <div class="workspace-copy">
         <span class="workspace-eyebrow" data-i18n="workspaceEyebrow">Settings workspace</span>
