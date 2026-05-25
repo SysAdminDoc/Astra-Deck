@@ -195,20 +195,13 @@
 
 </div>
 
-<!-- Inline confirmation dialog — avoids native confirm() and matches the
-     rest of the popup's theme. -->
-<div class="confirm-shell" id="confirm-shell" hidden>
-  <div class="confirm-backdrop" data-close-confirm></div>
-  <section class="confirm-dialog" id="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-copy">
-    <span class="confirm-eyebrow" id="confirm-eyebrow" data-i18n="confirmEyebrow">Confirm</span>
-    <h2 class="confirm-title" id="confirm-title"></h2>
-    <p class="confirm-copy" id="confirm-copy"></p>
-    <div class="confirm-actions">
-      <button type="button" id="confirm-cancel-btn"></button>
-      <button type="button" id="confirm-accept-btn"></button>
-    </div>
-  </section>
-</div>
+<!-- v4.47.0 NF14: the confirm-shell modal that used to live here was
+     retired. Project policy ([ROADMAP.md house style] + [docs/
+     architecture.md §Conventions]) bans confirmation dialogs in favor
+     of immediate-apply + undo toasts. Reset's undo path shipped in
+     v4.47.0 EI2 (Undo Reset button); clearDiagnosticLog now applies
+     immediately because the diagnostic log is a ring buffer of
+     runtime errors, not user-authored data. -->
 
 <!-- v4.12.0: bundle the v5.0.0 read-only core modules into the popup so
      the data-flow panel can render the live origin catalogue without

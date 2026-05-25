@@ -33,12 +33,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### CI / DX close-outs
 
-- **P1 / M — Confirm-dialog removal (NF14)**
-  - Why: project policy bans confirmation dialogs in favor of undo toasts / soft-delete staging, but `popup.html:200–211` ships a fully styled `confirm-shell` modal.
-  - Touches: `popup.html`, `popup.js`, `popup.css`, plus undo-toast paths for every caller.
-  - Risk: import / profile-delete are genuinely destructive — undo path must exist before the dialog disappears.
-  - Acceptance: hardening test pins absence of `confirm-shell`; every former caller has an undo-toast.
-
 ---
 
 ### Lint surface widening
@@ -194,7 +188,7 @@ Carried over from the prior research file; still binding.
 - **YouTube Studio / YouTube Music as first-class** — Studio excluded; Music opt-in only.
 - **Auto-engagement features** beyond existing `autoLikeSubscribed` (already `store-risk`).
 - **Keyboard shortcuts** — house style ban; pointer/wheel/buttons only.
-- **Confirmation dialogs** — house style ban; undo toasts only (drives NF14).
+- **Confirmation dialogs** — house style ban; undo toasts only (NF14 retired the popup confirm-shell).
 - **EI13 — Parallel yt-dlp via threading pool** — already shipped at `astra_downloader.py:2035`; prior audit was wrong.
 - **EI5 — Manifest CSP `connect-src` Reddit addition** — popup is strict-by-design; background proxy handles Reddit. Asymmetry is correct.
 
@@ -207,5 +201,4 @@ Carried over from the prior research file; still binding.
 3. **Subscription dead-channel detection method** — RSS feed vs channel page scrape. Maintainer call.
 4. **Lifecycle migration cadence** — peel 1/week, 1/month, or batch?
 5. **Live-chat capture availability** — fixture refresh needs a maintainer-side active live stream. Schedule window?
-6. **Confirm-dialog callers (NF14)** — which actions in `popup.js` currently invoke it? Need a 30-min trace before designing the undo-toast replacement.
-7. **i18n coverage policy (NF24)** — at what % "translated keys identical to EN" should we warn vs accept?
+6. **i18n coverage policy (NF24)** — at what % "translated keys identical to EN" should we warn vs accept?

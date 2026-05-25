@@ -6,6 +6,36 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **popup: confirm-shell modal retired (NF14).** Closes NF14 from
+  RESEARCH_FEATURE_PLAN. Project policy (ROADMAP house style +
+  docs/architecture.md §Conventions) bans confirmation dialogs in
+  favor of immediate-apply + undo-toast / soft-delete staging. The
+  popup nonetheless shipped a fully styled `<div class="confirm-shell">`
+  modal in popup.html with a `confirmAction()` helper in popup.js +
+  ~100 lines of supporting CSS. Two callers existed:
+    - `resetAllData` — now safe to apply immediately because EI2's
+      Undo Reset button (shipped in the same v4.47 sprint) provides
+      the recovery surface via a session-scoped storage snapshot.
+    - `clearDiagnosticLog` — applies immediately because the
+      diagnostic log is a runtime ring buffer of past errors, not
+      user-authored data.
+  Removed: the confirm-shell HTML, the confirmAction() function, the
+  `.confirm-*` CSS rules, the eight i18n keys that fed the modal
+  (`confirmEyebrow`, `confirmContinue`, `confirmCancel`,
+  `confirmDestructiveEyebrow`, `clearLogTitle`, `clearLogMessage`,
+  `resetAllTitle`, `resetAllMessage`) from all 10 locale bundles
+  (en + 9 generated). `scripts/audit-popup-a11y.js` was updated to
+  drop the confirm button dynamic-text exceptions; the Escape close
+  + Tab focus rotation that used to live on the modal now applies to
+  the popup body itself via the existing `handlePopupDialogKeydown`.
+  Pinned by a new `v4.47.0 NF14` hardening test that asserts every
+  former marker is gone (HTML, JS, CSS) and both former callers no
+  longer await `confirmAction`. Existing tests that pinned the
+  confirm-shell shape (popup-buttons-aria audit, clearDiagnosticLog
+  caller assertion, buildExportData slice end) were updated to the
+  new shape. 534/534 JS tests pass (+1 net new vs the 531 baseline:
+  +3 NF12/NF14/NF17 wave, -0 retired tests).
+
 - **settings-schema: CAPABILITIES enum + optional `requires:` field
   (NF17).** Closes NF17 from RESEARCH_FEATURE_PLAN. Lays the foundation
   for the NF10 capability probe (still pending) by extending the

@@ -8,26 +8,8 @@
   "clearFilterBtn": {
     "message": "Очистить фильтр"
   },
-  "clearLogMessage": {
-    "message": "Это удалит все записанные события диагностики из хранилища расширения."
-  },
-  "clearLogTitle": {
-    "message": "Очистить журнал диагностики?"
-  },
   "closeBtnAria": {
     "message": "Закрыть"
-  },
-  "confirmCancel": {
-    "message": "Отмена"
-  },
-  "confirmContinue": {
-    "message": "Продолжить"
-  },
-  "confirmDestructiveEyebrow": {
-    "message": "Деструктивное действие"
-  },
-  "confirmEyebrow": {
-    "message": "Подтвердить"
   },
   "contextNoteAnyTab": {
     "message": "Quick toggles are saved now and sync when YouTube is open."
@@ -267,7 +249,7 @@
     "message": "Фильтр быстрых переключателей"
   },
   "filterTogglesPlaceholder": {
-    "message": "Фильтр переключателей…"
+    "message": "Filter — try risk:api or category:downloads"
   },
   "groupQuickControls": {
     "message": "Быстрые элементы"
@@ -298,6 +280,27 @@
   },
   "selectorHealthEmpty": {
     "message": "Поверхности ещё не зафиксированы."
+  },
+  "selectorHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "selectorHealthCopyAria": {
+    "message": "Copy selector-health report to clipboard"
+  },
+  "selectorHealthCopyPending": {
+    "message": "Building report…"
+  },
+  "selectorHealthCopyDone": {
+    "message": "Copied — paste into a GitHub issue."
+  },
+  "selectorHealthCopyFail": {
+    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
+  },
+  "selectorHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "selectorHealthCopyNoSnap": {
+    "message": "No snapshot available — the page may still be loading."
   },
   "storageBannerReset": {
     "message": "Сбросить"
@@ -542,12 +545,6 @@
   "quickTogglesEyebrow": {
     "message": "Быстрые переключатели"
   },
-  "resetAllMessage": {
-    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
-  },
-  "resetAllTitle": {
-    "message": "Сбросить все локальные данные?"
-  },
   "resetBtn": {
     "message": "Сбросить"
   },
@@ -592,6 +589,36 @@
   },
   "statusAllDataCleared": {
     "message": "Все данные очищены."
+  },
+  "statusAllDataClearedUndo": {
+    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
+  },
+  "statusResetUndone": {
+    "message": "Reset undone — all data restored."
+  },
+  "statusResetUndoExpired": {
+    "message": "Undo no longer available — snapshot expired with the browser session."
+  },
+  "statusResetUndoFail": {
+    "message": "Undo failed"
+  },
+  "undoResetBtn": {
+    "message": "Undo Reset"
+  },
+  "undoResetAria": {
+    "message": "Restore data from the most recent Reset"
+  },
+  "reenableMediadlBtn": {
+    "message": "Enable Downloader Prompts"
+  },
+  "reenableMediadlAria": {
+    "message": "Re-enable Astra Downloader install prompts"
+  },
+  "statusMediadlReenabled": {
+    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+  },
+  "statusMediadlReenableFail": {
+    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
   },
   "statusBackupExported": {
     "message": "Резервная копия экспортирована."
@@ -715,56 +742,5 @@
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} settings on across {categories} categories"
-  },
-  "selectorHealthCopyBtn": {
-    "message": "Copy report"
-  },
-  "selectorHealthCopyAria": {
-    "message": "Copy selector-health report to clipboard"
-  },
-  "selectorHealthCopyPending": {
-    "message": "Building report…"
-  },
-  "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
-  },
-  "selectorHealthCopyFail": {
-    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
-  },
-  "selectorHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
-  },
-  "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
-  },
-  "statusAllDataClearedUndo": {
-    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
-  },
-  "statusResetUndone": {
-    "message": "Reset undone — all data restored."
-  },
-  "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
-  },
-  "statusResetUndoFail": {
-    "message": "Undo failed"
-  },
-  "undoResetBtn": {
-    "message": "Undo Reset"
-  },
-  "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
-  },
-  "reenableMediadlBtn": {
-    "message": "Enable Downloader Prompts"
-  },
-  "reenableMediadlAria": {
-    "message": "Re-enable Astra Downloader install prompts"
-  },
-  "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
-  },
-  "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
   }
 }

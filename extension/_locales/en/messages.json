@@ -8,26 +8,8 @@
   "clearFilterBtn": {
     "message": "Clear Filter"
   },
-  "clearLogMessage": {
-    "message": "This removes all recorded diagnostic events from extension storage."
-  },
-  "clearLogTitle": {
-    "message": "Clear diagnostic log?"
-  },
   "closeBtnAria": {
     "message": "Close"
-  },
-  "confirmCancel": {
-    "message": "Cancel"
-  },
-  "confirmContinue": {
-    "message": "Continue"
-  },
-  "confirmDestructiveEyebrow": {
-    "message": "Destructive action"
-  },
-  "confirmEyebrow": {
-    "message": "Confirm"
   },
   "contextNoteAnyTab": {
     "message": "Quick toggles are saved now and sync when YouTube is open."
@@ -562,12 +544,6 @@
   },
   "quickTogglesEyebrow": {
     "message": "Quick toggles"
-  },
-  "resetAllMessage": {
-    "message": "This clears … settings, hidden videos, allowed video exceptions, blocked channels, and bookmarks from extension storage."
-  },
-  "resetAllTitle": {
-    "message": "Reset all local data?"
   },
   "resetBtn": {
     "message": "Reset"
