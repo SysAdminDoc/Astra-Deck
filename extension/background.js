@@ -84,6 +84,59 @@ function _persistPendingReveals() {
     }
 }
 
+// v4.47.0 NEW-7: service-worker lifecycle ring. MV3 service workers
+// restart unpredictably (~30 s idle kill, suspension on memory
+// pressure, post-install). Several Astra Deck bugs surfaced only
+// because the maintainer happened to hit a SW restart in development;
+// the H25 cap-bypass-on-hydration fix is the most recent example.
+// This ring records SW boot events into `chrome.storage.session` so
+// the bug-report bundle (NEW-1) can surface "how often did the SW
+// die in this browsing session?" without depending on telemetry.
+//
+// Cap matches the documented-fix shape: 50 entries, oldest dropped on
+// overflow. Storage is `chrome.storage.session` (transient — wiped on
+// browser restart) so the ring naturally bounds itself to the current
+// session. Schema:
+//   { ts: number, event: 'sw-start', inFlightReveals: number }
+const SW_LIFECYCLE_KEY = '_swLifecycle';
+const SW_LIFECYCLE_CAP = 50;
+
+async function _recordSwLifecycle(event) {
+    if (!chrome.storage?.session) return;
+    try {
+        // Wait for the pending-reveals hydration so the in-flight count
+        // we record reflects the persisted state, not just whatever the
+        // freshly-restarted SW happens to have in memory.
+        try { await _pendingRevealsReady; } catch (_) { /* reason: ring records even if hydration failed */ }
+        const stored = await chrome.storage.session.get(SW_LIFECYCLE_KEY);
+        const arr = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
+            ? stored[SW_LIFECYCLE_KEY]
+            : [];
+        arr.push({
+            ts: Date.now(),
+            event,
+            inFlightReveals: _pendingReveals.size,
+        });
+        // Trim from the head so the most recent events survive.
+        while (arr.length > SW_LIFECYCLE_CAP) arr.shift();
+        const writePromise = chrome.storage.session.set({ [SW_LIFECYCLE_KEY]: arr });
+        if (writePromise && typeof writePromise.catch === 'function') {
+            writePromise.catch(() => {
+                // reason: best-effort lifecycle ring; SW continues normally on persist failure.
+            });
+        }
+    } catch (_) {
+        // reason: storage.session may be unavailable on older Firefox or under quota pressure;
+        // the SW itself is not affected by ring-record failure.
+    }
+}
+
+// Fire once at module load — this IS the SW boot. Every fresh SW
+// process invocation hits this line; the resulting ring entry is
+// the signal that distinguishes "SW restarted between user actions"
+// from "SW was alive across the user's whole session."
+void _recordSwLifecycle('sw-start');
+
 // Allowed origins for EXT_FETCH proxy — blocks SSRF to private networks.
 //
 // SECURITY NOTE: The `localhost` alias intentionally is NOT allowlisted.
@@ -678,6 +731,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }).catch(err => {
             sendResponse({ cookies: null, error: err.message });
         });
+        return true;
+    }
+
+    // v4.47.0 NEW-7: SW lifecycle ring reader. Popup's bug-report
+    // bundle (NEW-1) calls this to surface "how often did the SW
+    // restart in this session?" in the bundle payload. Returns the
+    // raw ring; popup is responsible for any rendering.
+    if (msg.type === 'GET_SW_LIFECYCLE') {
+        (async () => {
+            try {
+                if (!chrome.storage?.session) {
+                    sendResponse({ entries: [], error: null });
+                    return;
+                }
+                const stored = await chrome.storage.session.get(SW_LIFECYCLE_KEY);
+                const entries = Array.isArray(stored?.[SW_LIFECYCLE_KEY])
+                    ? stored[SW_LIFECYCLE_KEY]
+                    : [];
+                sendResponse({ entries, error: null });
+            } catch (err) {
+                sendResponse({ entries: [], error: err?.message || String(err) });
+            }
+        })();
         return true;
     }
 
