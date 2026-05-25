@@ -2626,9 +2626,14 @@ async function pickWelcomeProfile(profile) {
 
 function showWhatsNew(lastSeen) {
     if (!whatsNewBanner || !whatsNewDetail) return;
-    const fromLabel = lastSeen ? `from v${lastSeen} ` : '';
-    whatsNewDetail.textContent = t('whatsNewDetail',
-        'Astra Deck updated ' + fromLabel + 'to v' + manifestVersion + '. See what changed.');
+    // Dynamic content — render directly. The t() helper does not
+    // interpolate placeholders, so routing this through it would
+    // erase the version detail in any translated build. Brand name
+    // is omitted because the popup header already carries it; the
+    // banner sits inside the same surface and adding "Astra Deck"
+    // here is redundant.
+    const fromClause = lastSeen ? ` (from v${lastSeen})` : '';
+    whatsNewDetail.textContent = `Updated to v${manifestVersion}${fromClause}. See what changed.`;
     whatsNewBanner.hidden = false;
 }
 
@@ -3054,15 +3059,21 @@ async function updateYtdlpNow() {
             } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
         });
         if (result && result.ok) {
-            const before = result.version_before || '?';
-            const after = result.version_after || '?';
-            const detail = before === after
-                ? `yt-dlp is already at v${after}.`
-                : `yt-dlp updated v${before} → v${after}.`;
-            showStatus(t('statusUpdateYtdlpOk', detail), 'success', 5200);
+            const before = result.version_before || '';
+            const after = result.version_after || '';
+            // Dynamic content — render directly rather than route through
+            // t() because the helper does not interpolate placeholders;
+            // a translation key would erase the version delta. "v"-prefix
+            // matches the version chip in the popup header so users
+            // visually anchor on the same shape.
+            const detail = (before && after && before === after)
+                ? `yt-dlp already at v${after}`
+                : `yt-dlp updated to v${after || '?'}${before ? ` (from v${before})` : ''}`;
+            showStatus(detail, 'success', 5200);
         } else {
             const err = (result && (result.error || result.stderr)) || 'Update failed.';
-            showStatus(t('statusUpdateYtdlpFail', 'yt-dlp update failed: ' + err), 'error', 6200);
+            // Same reasoning — t() would lose the stderr appendix.
+            showStatus('yt-dlp update failed — ' + err, 'error', 6200);
         }
     } finally {
         updateYtdlpButton.removeAttribute('aria-busy');

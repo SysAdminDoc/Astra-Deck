@@ -48,7 +48,8 @@
       </header>
       <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
       <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
-        <button type="button" class="welcome-profile-btn" id="welcome-profile-safe" data-profile="store-safe">
+        <button type="button" class="welcome-profile-btn is-recommended" id="welcome-profile-safe" data-profile="store-safe" aria-describedby="welcome-profile-safe-rec">
+          <span class="welcome-profile-rec" id="welcome-profile-safe-rec" data-i18n="welcomeProfileRecommended">Recommended</span>
           <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
           <span class="welcome-profile-desc" data-i18n="welcomeProfileSafeDesc">Everything that ships on extension stores. No download companion, no BYO AI keys.</span>
         </button>
