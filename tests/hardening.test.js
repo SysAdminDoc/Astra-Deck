@@ -8146,6 +8146,59 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'bug-report bundle payload must include swLifecycle (shorthand property)');
 });
 
+test('v4.47.0 NEW-8 — CHANGELOG rotation: active file carries only [Unreleased] + v4.x, archive holds v3.x and earlier', () => {
+    // NEW-8: the active CHANGELOG.md was approaching 6000 lines,
+    // hard to scan in browser-rendered Markdown viewers. Rotation
+    // moves v3.33.0 and earlier into CHANGELOG-v3-archive.md;
+    // active file keeps [Unreleased] + the v4.x line. This test
+    // pins the rotation invariants so a future contributor can't
+    // accidentally re-merge the archive back into the active file.
+
+    const activePath = path.join(__dirname, '..', 'CHANGELOG.md');
+    const archivePath = path.join(__dirname, '..', 'CHANGELOG-v3-archive.md');
+    assert.ok(fs.existsSync(activePath), 'CHANGELOG.md must exist');
+    assert.ok(fs.existsSync(archivePath),
+        'CHANGELOG-v3-archive.md must exist (NEW-8 rotation target)');
+
+    const active = fs.readFileSync(activePath, 'utf8');
+    const archive = fs.readFileSync(archivePath, 'utf8');
+
+    // Active starts with [Unreleased] heading.
+    assert.match(active, /^# Changelog/,
+        'active CHANGELOG.md must start with the "# Changelog" heading');
+    assert.match(active, /^## \[Unreleased\]/m,
+        'active CHANGELOG.md must contain an [Unreleased] section');
+
+    // Active must NOT contain any v3.x or earlier release headings —
+    // those live in the archive now. Matching `## [N.M.P]` where the
+    // major is 0–3.
+    const v3OrLowerInActive = active.match(/^## \[[0-3]\.[0-9]+\.[0-9]+\]/gm) || [];
+    assert.deepEqual(v3OrLowerInActive, [],
+        'active CHANGELOG.md must not contain any v0/v1/v2/v3 release headings — those belong in CHANGELOG-v3-archive.md');
+
+    // Active must end with the archive pointer so a reader can find
+    // older entries without grepping the repo.
+    assert.match(active, /CHANGELOG-v3-archive\.md/,
+        'active CHANGELOG.md must link to CHANGELOG-v3-archive.md at the bottom');
+
+    // Archive must START with v3.33.0 (the highest entry in the
+    // archive after rotation) — anchors the split point so a
+    // future re-rotation either keeps this boundary or updates the
+    // test deliberately.
+    assert.match(archive, /^# Astra Deck — Changelog Archive/,
+        'archive must start with the "# Astra Deck — Changelog Archive" heading');
+    const firstArchiveVersion = archive.match(/^## \[([0-9]+\.[0-9]+\.[0-9]+)\]/m);
+    assert.ok(firstArchiveVersion,
+        'archive must contain at least one ## [x.y.z] heading');
+    assert.equal(firstArchiveVersion[1], '3.33.0',
+        'first version in CHANGELOG-v3-archive.md must be 3.33.0 (the documented split point)');
+
+    // Archive must NOT contain v4.x entries.
+    const v4InArchive = archive.match(/^## \[4\.[0-9]+\.[0-9]+\]/gm) || [];
+    assert.deepEqual(v4InArchive, [],
+        'CHANGELOG-v3-archive.md must not contain any v4.x release headings — those belong in the active CHANGELOG.md');
+});
+
 test('v4.47.0 — schema-overview rows for credential-bearing keys carry an inline "local only" trust signal', () => {
     // The privacy data-flow panel (v4.12.0) explains the "stored
     // locally only" guarantee, but that panel is off by default —
