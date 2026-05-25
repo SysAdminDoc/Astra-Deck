@@ -6,6 +6,40 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Wheel-seek on the progress bar (NF9).** Scroll the mouse wheel
+  over the YouTube progress bar to seek forward/backward by
+  `wheelSeekStepSec` seconds (default 5 — matches YouTube's
+  native arrow-key seek step). Hooks `wheel` events on
+  `.ytp-progress-bar-container, .ytp-progress-bar` with
+  `capture: true` + `passive: false` and calls
+  `e.stopImmediatePropagation()` so the existing `volumeWheelMode`
+  listener at the `.html5-video-player` root never co-fires —
+  scrolling over the bar seeks, scrolling anywhere else over the
+  player still drives Volume Wheel. HUD chip (`.ytkit-seek-hud`)
+  surfaces the new playback position + direction arrow for 1.2 s
+  using the same palette as the volume HUD so the two features
+  feel like siblings. Defensive bounds:
+  - `wheelSeekStepSec` is clamped at the call site to
+    `(0 < x ≤ 300)` so a corrupted import can't seek by 1e9 s
+    per tick.
+  - Live streams (`video.duration === Infinity`) fall back to
+    `Number.MAX_SAFE_INTEGER` as the upper bound so
+    `currentTime` never becomes `NaN` / `Infinity`.
+  - Per-navigation re-attach via the existing `addNavigateRule`
+    hook handles YouTube's SPA re-renders that destroy + recreate
+    the progress bar element.
+  Two new settings: `wheelSeek: false` (master toggle, default
+  off, store-safe profile) + `wheelSeekStepSec: 5` (step size).
+  No keyboard shortcut added (house style). Schema-count pin
+  bumped 357 → 359; storage-size baseline +39 bytes. Pinned by
+  a new `v4.47.0 NF9 — wheelSeek` hardening test asserting the
+  progress-bar selector, the capture+passive:false registration,
+  `stopImmediatePropagation` (prevents volumeWheelMode co-fire),
+  `preventDefault` (suppresses page scroll), the step clamp,
+  the live-stream Infinity guard, both schema entries, and
+  the regenerated `default-settings.json` entries. 572/572 JS
+  tests pass (+1 new).
+
 - **CHANGELOG rotation (NEW-8): v3.33.0 and earlier moved to
   `CHANGELOG-v3-archive.md`.** Active CHANGELOG.md was approaching
   6000 lines and getting hard to scan in browser-rendered Markdown

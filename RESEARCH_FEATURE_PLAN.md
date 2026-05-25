@@ -149,9 +149,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 ### Polish and competitive parity
 
 
-- **P3 / S — Wheel-seek (NF9)**
-  - Touches: `ytkit.js` near `volumeWheelMode`; new `wheelSeek` schema entry.
-
 - **P3 / S — Header quick-links editor parity with YouTube Alchemy (10 slots)**
 
 - **P3 / M — `i18n` feature-definition labels move out of `ytkit.js` (EI6)**

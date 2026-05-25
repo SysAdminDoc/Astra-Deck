@@ -3251,8 +3251,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 357,
-        'SETTINGS_SCHEMA must cover all 357 keys');
+    // v4.47.0 NF9: +2 keys (wheelSeek + wheelSeekStepSec) lifted the
+    // pin from 357 to 359. Keep the literal so a future schema
+    // addition must bump this number deliberately.
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 359,
+        'SETTINGS_SCHEMA must cover all 359 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -8144,6 +8147,67 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'bug-report bundle path must declare swLifecycle = null up front (graceful fallback)');
     assert.match(bundleBlock, /\n\s+swLifecycle,/,
         'bug-report bundle payload must include swLifecycle (shorthand property)');
+});
+
+test('v4.47.0 NF9 — wheelSeek hooks the progress bar (not the player root) so volumeWheelMode does not conflict', () => {
+    // NF9: scroll over the progress bar to seek. Hooked at the
+    // .ytp-progress-bar level (not .html5-video-player) with
+    // capture-phase + stopImmediatePropagation so a scroll-over-bar
+    // gesture never also fires volumeWheelMode's listener at the
+    // player root. The step is clamped at the call site to a sane
+    // upper bound so a corrupted import can't seek by huge values.
+    const start = ytkitSource.indexOf("id: 'wheelSeek'");
+    assert.ok(start > -1, 'wheelSeek feature must exist in ytkit.js');
+    // The feature body covers _ensureStyles + _formatTime + _showHud +
+    // _onWheel + _attach + init + destroy. Slice wide enough to reach
+    // _attach() (which contains the querySelector pin below).
+    const block = ytkitSource.slice(start, start + 8000);
+
+    // 1. The wheel listener attaches to the progress bar, not the
+    //    player root. Selector list covers both the container and
+    //    the bar itself (YouTube renames these periodically; either
+    //    matches the "scroll over the bar" affordance).
+    assert.match(block, /querySelector\(['"]\.ytp-progress-bar-container,\s*\.ytp-progress-bar['"]/,
+        'wheelSeek must locate the progress bar via .ytp-progress-bar-container or .ytp-progress-bar');
+    assert.match(block, /addEventListener\(['"]wheel['"][^)]*passive:\s*false[^)]*capture:\s*true/,
+        'wheelSeek must register the wheel listener with passive:false + capture:true');
+
+    // 2. Conflict avoidance with volumeWheelMode: must
+    //    stopImmediatePropagation so the player-root listener
+    //    never sees the event.
+    assert.match(block, /e\.stopImmediatePropagation\(\)/,
+        'wheelSeek wheel handler must stopImmediatePropagation so volumeWheelMode does not co-fire');
+    assert.match(block, /e\.preventDefault\(\)/,
+        'wheelSeek wheel handler must preventDefault to suppress page scroll');
+
+    // 3. Step is clamped to (0, 300] so a corrupted import can't
+    //    seek by 1e9 seconds per tick.
+    assert.match(block, /stepRaw\s*>\s*0\s*&&\s*stepRaw\s*<=\s*300/,
+        'wheelSeek must clamp wheelSeekStepSec to a sane range (0 < x ≤ 300)');
+
+    // 4. Live-stream defense: video.duration is Infinity on live;
+    //    upper-bound the seek so currentTime never becomes NaN /
+    //    Infinity.
+    assert.match(block, /Number\.isFinite\(video\.duration\)\s*\?\s*video\.duration\s*:\s*Number\.MAX_SAFE_INTEGER/,
+        'wheelSeek must guard live-stream Infinity duration with a finite upper bound');
+
+    // 5. Schema entries declared.
+    const schemaSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8'
+    );
+    assert.match(schemaSource, /key:\s*"wheelSeek"[^}]*type:\s*"boolean"[^}]*defaultValue:\s*false/,
+        'settings-schema must declare wheelSeek as a boolean default:false');
+    assert.match(schemaSource, /key:\s*"wheelSeekStepSec"[^}]*type:\s*"number"[^}]*defaultValue:\s*5/,
+        'settings-schema must declare wheelSeekStepSec as a number default:5');
+
+    // 6. default-settings.json regenerated from defaults: block.
+    const defaults = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'
+    ));
+    assert.equal(defaults.wheelSeek, false,
+        'default-settings.json must carry wheelSeek=false');
+    assert.equal(defaults.wheelSeekStepSec, 5,
+        'default-settings.json must carry wheelSeekStepSec=5');
 });
 
 test('v4.47.0 NEW-8 — CHANGELOG rotation: active file carries only [Unreleased] + v4.x, archive holds v3.x and earlier', () => {

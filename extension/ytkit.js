@@ -3824,6 +3824,8 @@ return response;
             downloadScreenshotFormat: 'png',           // 'png' | 'jpeg' | 'webp'
             downloadSubtitlesWithScreenshot: false,
             volumeWheelMode: false,
+            wheelSeek: false,                          // v4.47.0 NF9: scroll over progress bar to seek
+            wheelSeekStepSec: 5,                       // v4.47.0 NF9: step size in seconds (clamped 0<x≤300 at runtime)
             disableLoudnessNormalization: false,
             perChannelIntroOutro: false,
             perChannelIntroOutroData: {},              // { channelId: { introSec, outroSec } }
@@ -29671,6 +29673,149 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._player = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  WHEEL SEEK — scroll over the progress bar to seek
+        // ═══════════════════════════════════════════════════════════════════
+        //
+        // v4.47.0 NF9: scroll the mouse wheel over the player progress
+        // bar to seek by `wheelSeekStepSec` seconds (default 5 — matches
+        // YouTube's native arrow-key seek). Hooks capture-phase wheel
+        // on `.ytp-progress-bar` specifically so it can `stopPropagation`
+        // BEFORE the `volumeWheelMode` handler at the .html5-video-player
+        // root fires — otherwise the two would both run on a scroll-over-
+        // bar event. No keyboard shortcut added (house style); the seek
+        // direction follows wheel direction (scroll down = back, scroll
+        // up = forward — same axis convention as the volume HUD). HUD
+        // chip surfaces the new playback position for 1.2 s using the
+        // existing volume-HUD palette so the two features feel like
+        // siblings.
+        {
+            id: 'wheelSeek',
+            name: 'Wheel Seek',
+            description: 'Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict.',
+            group: 'Video Player',
+            icon: 'rewind',
+            pages: [PageTypes.WATCH],
+            _bar: null,
+            _wheelHandler: null,
+            _hudEl: null,
+            _hudTimer: null,
+            _navRule: null,
+            _styleElement: null,
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-seek-hud{position:absolute;left:50%;top:14%;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:10px;background:rgba(8,8,10,0.86);color:#f4f4f5;border:1px solid rgba(255,255,255,0.08);font:600 14px/1 'YouTube Sans',system-ui,sans-serif;pointer-events:none;opacity:0;transition:opacity 140ms ease;}
+                    .ytkit-seek-hud[data-visible="1"]{opacity:1;}
+                    .ytkit-seek-hud__arrow{font-size:13px;color:#ff7849;}
+                    .ytkit-seek-hud__time{font-variant-numeric:tabular-nums;min-width:48px;text-align:left;}
+                `, 'wheel-seek');
+            },
+            _formatTime(seconds) {
+                // Best-effort mm:ss / h:mm:ss formatter. Negative
+                // seconds clamp to 0 (we cap them at the call site
+                // anyway) and NaN/Infinity falls through to '0:00'
+                // so the HUD never renders garbage.
+                if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
+                const s = Math.floor(seconds);
+                const h = Math.floor(s / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                const sec = s % 60;
+                const pad = (n) => String(n).padStart(2, '0');
+                return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+            },
+            _showHud(deltaSec, newTime) {
+                const player = this._bar?.closest('.html5-video-player')
+                    || document.querySelector('#movie_player, .html5-video-player');
+                if (!player) return;
+                if (!this._hudEl || !this._hudEl.isConnected) {
+                    this._hudEl = document.createElement('div');
+                    this._hudEl.className = 'ytkit-seek-hud';
+                    this._hudEl.setAttribute('role', 'status');
+                    this._hudEl.setAttribute('aria-live', 'polite');
+                    const arrow = document.createElement('span');
+                    arrow.className = 'ytkit-seek-hud__arrow';
+                    arrow.dataset.role = 'arrow';
+                    const time = document.createElement('span');
+                    time.className = 'ytkit-seek-hud__time';
+                    time.dataset.role = 'time';
+                    this._hudEl.append(arrow, time);
+                    player.appendChild(this._hudEl);
+                }
+                const arrow = this._hudEl.querySelector('[data-role="arrow"]');
+                const time = this._hudEl.querySelector('[data-role="time"]');
+                if (arrow) arrow.textContent = deltaSec >= 0 ? '▶▶' : '◀◀';
+                if (time) time.textContent = this._formatTime(newTime);
+                this._hudEl.dataset.visible = '1';
+                if (this._hudTimer) clearTimeout(this._hudTimer);
+                this._hudTimer = setTimeout(() => {
+                    if (this._hudEl) this._hudEl.dataset.visible = '0';
+                }, 1200);
+            },
+            _onWheel(e) {
+                if (!isWatchPagePath() && !location.pathname.startsWith('/embed/')) return;
+                e.preventDefault();
+                // stopImmediatePropagation so volumeWheelMode's listener
+                // at the player root never fires for the same gesture.
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                const video = document.querySelector('video.html5-main-video');
+                if (!video) return;
+                const stepRaw = Number(appState?.settings?.wheelSeekStepSec);
+                // Clamp the step to a sane range so a corrupted import
+                // can't seek by 1e9 s per scroll tick.
+                const step = Number.isFinite(stepRaw) && stepRaw > 0 && stepRaw <= 300
+                    ? stepRaw : 5;
+                const deltaSec = e.deltaY > 0 ? -step : step;
+                // Live streams: video.duration is Infinity; seeking past
+                // the live edge is a no-op anyway, but bound to a safe
+                // upper limit so we don't write NaN into currentTime.
+                const upper = Number.isFinite(video.duration) ? video.duration : Number.MAX_SAFE_INTEGER;
+                const next = Math.max(0, Math.min(upper, (video.currentTime || 0) + deltaSec));
+                try { video.currentTime = next; }
+                catch { /* movie_player not seekable yet */ }
+                this._showHud(deltaSec, next);
+            },
+            _attach() {
+                // Re-locate the progress bar element every time — YouTube
+                // re-renders the player chrome on SPA navigation and a
+                // stashed reference can dangle.
+                const bar = document.querySelector('.ytp-progress-bar-container, .ytp-progress-bar');
+                if (!bar) return;
+                if (bar === this._bar) return;
+                // Detach from previous bar if any.
+                if (this._bar && this._wheelHandler) {
+                    try { this._bar.removeEventListener('wheel', this._wheelHandler, true); }
+                    catch { /* reason: previous bar may already be gone */ }
+                }
+                this._bar = bar;
+                this._wheelHandler = (e) => this._onWheel(e);
+                // Capture phase + non-passive so we can preventDefault.
+                this._bar.addEventListener('wheel', this._wheelHandler, { passive: false, capture: true });
+            },
+            init() {
+                this._ensureStyles();
+                this._attach();
+                this._navRule = () => { setTimeout(() => this._attach(), 600); };
+                addNavigateRule(this.id, this._navRule);
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                if (this._bar && this._wheelHandler) {
+                    try { this._bar.removeEventListener('wheel', this._wheelHandler, true); }
+                    catch { /* reason: bar may already be gone */ }
+                }
+                this._bar = null;
+                this._wheelHandler = null;
+                if (this._hudTimer) clearTimeout(this._hudTimer);
+                this._hudTimer = null;
+                this._hudEl?.remove();
+                this._hudEl = null;
+                this._styleElement?.remove();
+                this._styleElement = null;
             }
         },
         // ═══════════════════════════════════════════════════════════════════
