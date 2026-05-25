@@ -632,6 +632,18 @@
   "undoResetAria": {
     "message": "Restore data from the most recent Reset"
   },
+  "reenableMediadlBtn": {
+    "message": "Enable Downloader Prompts"
+  },
+  "reenableMediadlAria": {
+    "message": "Re-enable Astra Downloader install prompts"
+  },
+  "statusMediadlReenabled": {
+    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+  },
+  "statusMediadlReenableFail": {
+    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+  },
   "statusBackupExported": {
     "message": "Backup exported."
   },

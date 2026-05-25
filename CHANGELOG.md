@@ -6,6 +6,22 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Popup "Enable Downloader Prompts" action surfaces after "Skip for now".**
+  `MediaDLManager.showInstallPrompt` writes `ytkit_mediadl_prompt_dismissed
+  = true` to `chrome.storage.local` when the user clicks "Skip for now"
+  in the in-page install dialog. That dismiss was permanent and there
+  was no obvious recovery path — users who later changed their mind had
+  to manually edit storage. The popup now surfaces a small recovery
+  button (hidden by default, auto-revealed on boot when the flag is
+  set) that removes the key via `chrome.storage.local.remove`.
+  Subsequent YouTube page loads naturally re-enable the install
+  prompt via the existing `storageRead` gate. 4 new i18n keys added
+  to en + 9 non-EN locales. New `v4.47.0 NF6 — Reinstall Astra
+  Downloader popup action clears the dismissed flag` hardening test
+  pins the button + storage-key constant + click listener wiring +
+  cross-file key parity with the ytkit.js write site. 527/527 tests
+  pass (+1).
+
 - **Reset action is now reversible (within the browser session).**
   Previously, the popup Reset wiped `chrome.storage.local` after one
   confirm dialog and there was no recovery — a misclick destroyed all

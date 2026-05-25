@@ -592,11 +592,9 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - Acceptance: semver compare; atomic replace; restart succeeds.
   - Verify: pytest semver compare; manual install of older .exe + click "Update".
 
-- [ ] **P1 — "Reinstall Astra Downloader" popup action (clears `_ytkit_mediadl_prompt_dismissed`)**
-  - Why: NF6; "Not now" today is permanent with no obvious recovery path.
-  - Touches: `popup.html`, `popup.js`.
-  - Acceptance: button visible; click clears the flag + re-runs health probe.
-  - Verify: hardening test.
+- [x] **P1 — "Enable Downloader Prompts" popup action (clears `ytkit_mediadl_prompt_dismissed`)**
+  - Shipped: new `#reenable-mediadl-btn` (hidden by default, surfaced on popup boot when the flag is set) calls `chrome.storage.local.remove('ytkit_mediadl_prompt_dismissed')` — subsequent YouTube page loads naturally re-enable the install prompt via `MediaDLManager.showInstallPrompt`. 4 new i18n keys added across en + 9 non-EN locales. Pinned by `v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismissed flag` hardening test (button + aria-label + i18n hook, popup-side key constant matching ytkit.js write site, click listener wiring, EN locale parity).
+  - **Still pending in the broader NF6 scope:** auto-update `/update` endpoint on AstraDownloader, signed installer (.exe + .msi), code-signing certificate cost decision, Add/Remove Programs entry. Tracked but out of scope for this slice.
 
 - [ ] **P2 — End-to-end download test with fake yt-dlp**
   - Why: EI14.
@@ -692,7 +690,7 @@ These can land in a single ≤200-line PR each; pick any of them if blocked on b
 - **QW9** — `npm audit` gate in `npm run check` (G4). _[shipped]_
 - **QW10** — `docs/` cross-link section in README (subagent audit Part B §5). _[shipped]_
 - **QW11** — Hidden-API surface (`window.__ytkitOpenAnalytics()`, `ytkit.unsafe()`, `?ytkit=safe`) documented in README §Advanced. _[shipped]_
-- **QW12** — "Reinstall Astra Downloader" popup button (NF6 partial).
+- **QW12** — "Reinstall Astra Downloader" popup button (NF6 partial). _[shipped — clears the dismissed flag; auto-update + signing still pending]_
 
 ---
 
