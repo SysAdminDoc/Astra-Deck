@@ -7566,3 +7566,54 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
             'core/runtime-flags.js must load before ytkit.js so the module is on globalThis.YTKitCore when ytkit.js runs');
     }
 });
+
+test('v4.47.0 NF25 — SETTINGS_VERSION parity across ytkit.js, popup.js, and settings-meta.json', () => {
+    // The three SETTINGS_VERSION sources describe the same schema
+    // version namespace. Drift between them risks silent profile-
+    // import corruption when one source fails to load and another
+    // picks up. check-versions.js enforces parity at the npm-run-
+    // check gate; this hardening test pins the contract shape so a
+    // future refactor of the gate can't drop the validation.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const popupSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.js'), 'utf8'
+    );
+    const meta = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'settings-meta.json'), 'utf8'
+    ));
+    const checkSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'check-versions.js'), 'utf8'
+    );
+
+    // 1. The three sources extract the same integer.
+    const ytkitMatch = ytkitSrc.match(/SETTINGS_VERSION:\s*(\d+)/);
+    assert.ok(ytkitMatch, 'ytkit.js must declare SETTINGS_VERSION');
+    const popupMatch = popupSrc.match(/const\s+SETTINGS_VERSION_FALLBACK\s*=\s*(\d+)/);
+    assert.ok(popupMatch, 'popup.js must declare SETTINGS_VERSION_FALLBACK');
+    const metaVersion = String(meta.settingsVersion);
+
+    assert.equal(ytkitMatch[1], popupMatch[1],
+        'ytkit.js SETTINGS_VERSION and popup.js SETTINGS_VERSION_FALLBACK must match');
+    assert.equal(ytkitMatch[1], metaVersion,
+        'ytkit.js SETTINGS_VERSION and settings-meta.json#settingsVersion must match');
+
+    // 2. The check-versions.js gate carries the three reader helpers
+    // and emits both pass / fail branches.
+    assert.match(checkSrc, /function readYtkitSettingsVersion\(\)/,
+        'check-versions.js must define readYtkitSettingsVersion');
+    assert.match(checkSrc, /function readPopupSettingsVersionFallback\(\)/,
+        'check-versions.js must define readPopupSettingsVersionFallback');
+    assert.match(checkSrc, /function readSettingsMetaVersion\(\)/,
+        'check-versions.js must define readSettingsMetaVersion');
+    assert.match(checkSrc, /SETTINGS_VERSION drift detected/,
+        'check-versions.js must emit a SETTINGS_VERSION-specific drift message');
+    assert.match(checkSrc, /process\.exit\(productOk && settingsOk \? 0 : 1\)/,
+        'check-versions.js must require BOTH product and settings version parity to exit 0');
+
+    // 3. The popup-side fallback comment names the parity invariant
+    // so a future code reviewer sees the invariant at the constant.
+    assert.match(popupSrc, /NF25.*ytkit\.js#SETTINGS_VERSION/s,
+        'popup.js SETTINGS_VERSION_FALLBACK must carry the NF25 parity invariant comment');
+});

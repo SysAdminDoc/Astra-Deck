@@ -6,6 +6,24 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **check-versions: SETTINGS_VERSION parity gate (NF25).** The product
+  version is enforced across 5 sources by `scripts/check-versions.js`;
+  the schema-version namespace was not. Drift caught: `popup.js`
+  fallback was `6` while `ytkit.js#SETTINGS_VERSION` was `7` and
+  `settings-meta.json#settingsVersion` was `7`. The fallback only
+  fires when the meta JSON fails to load, but when it does, the
+  popup falls back to v6 schema while ytkit migrates to v7 — silent
+  profile-import corruption. Closed by (a) bumping the popup
+  fallback to `7` with a comment naming the NF25 invariant, and
+  (b) extending `scripts/check-versions.js` with three new readers
+  (`readYtkitSettingsVersion`, `readPopupSettingsVersionFallback`,
+  `readSettingsMetaVersion`) and an independent settings-version
+  pass that emits its own drift breakdown. Both the product-version
+  and settings-version checks must pass for exit 0. Pinned by a new
+  `v4.47.0 NF25` hardening test that asserts the three source values
+  match + the gate carries the new reader functions + both branches
+  + the popup-side invariant comment. 541/541 JS tests pass (+1 new).
+
 - **ytkit.js: nyan-cat theme asset bundled inside the extension origin
   (NF23).** The `nyan-cat` theme's scrubber CSS used to load
   `assets/cat.gif` from a hardcoded `raw.githubusercontent.com` URL —

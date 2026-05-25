@@ -33,11 +33,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### CI / DX close-outs
 
-- **P0 / S — SETTINGS_VERSION parity gate (NF25)**
-  - Why: drift today: `popup.js:290 SETTINGS_VERSION_FALLBACK = 6` vs `ytkit.js:3926 SETTINGS_VERSION = 7` vs `settings-meta.json: 7`. `scripts/check-versions.js` validates product version but not SETTINGS_VERSION. Silent profile-import corruption hazard when settings-meta.json fails to load.
-  - Touches: `scripts/check-versions.js`, `tests/hardening.test.js`.
-  - Acceptance: `npm run check` fails when popup fallback drifts from settings-meta + ytkit.
-
 ---
 
 ### Settings / downloader hardening (P0 batch from 2026-05-25 audit)
