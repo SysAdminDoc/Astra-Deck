@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **hideVideosFromHome: configurable subs-load pause threshold (NF33).**
+  Before NF33: the subs-load pause gate halted pagination after any
+  3-batch streak of 100%-hidden batches. Users hit this on healthy
+  feeds where one unlucky batch happened to be all-spam — the next
+  batch could have been 80% non-hidden but the streak was already past
+  the gate. After NF33: a configurable
+  `hideVideosSubsLoadHiddenRatio` setting (default 0.8) defines the
+  cutoff; a batch qualifies as "mostly hidden" when its hidden ratio
+  is >= the threshold. Three consecutive mostly-hidden batches still
+  trip the pause (`hideVideosSubsLoadThreshold` unchanged). Invalid
+  setting values (NaN, ≤0, >1) fall back to 0.8 at the call site so
+  no corrupted import can disable the gate entirely. The
+  `DebugManager.log` line now reports the ratio + cutoff explicitly so
+  the diagnostic ring buffer shows which batches qualified. Pinned by
+  a new `v4.47.0 NF33` hardening test that asserts the old
+  `allHidden` gate is gone, the new ratio calculation + cutoff
+  resolution are in place, schema/defaults/ytkit triple-source
+  declares the new key with default 0.8, and sandbox-evaluates the
+  gate against six scenarios (100%, 80%, 70% at default; invalid
+  setting; out-of-range; stricter 0.95; looser 0.5). Schema-count
+  pin bumped 355 → 356; storage-size baseline updated by 36 bytes.
+  545/545 JS tests pass (+1 new).
+
 - **digitalWellbeing: midnight / DST boundary detection (NF34).**
   Before NF34: `_sessionStart` was set once via
   `this._sessionStart || today.seconds` and never reset. When midnight

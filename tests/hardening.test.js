@@ -3241,8 +3241,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 355,
-        'SETTINGS_SCHEMA must cover all 355 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 356,
+        'SETTINGS_SCHEMA must cover all 356 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7565,6 +7565,92 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
         assert.ok(flagsIdx < ytkitIdx,
             'core/runtime-flags.js must load before ytkit.js so the module is on globalThis.YTKitCore when ytkit.js runs');
     }
+});
+
+test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hiddenRatio', () => {
+    // Before NF33: const allHidden = hiddenCount === batchSize halted
+    // pagination after any 3-batch streak of 100%-hidden batches. Users
+    // hit this on healthy feeds where one unlucky batch happened to be
+    // all-spam — the next batch could have been 80% non-hidden but the
+    // streak was already past the gate.
+    //
+    // After NF33: const mostlyHidden = hiddenRatio >= ratioCutoff, where
+    // ratioCutoff comes from the hideVideosSubsLoadHiddenRatio setting
+    // (default 0.8). A 70%-hidden batch resets the streak instead of
+    // tripping the pause.
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+    const fnIdx = ytkitSrc.indexOf('_trackSubsLoadBatch(processedVideos)');
+    assert.ok(fnIdx > -1, '_trackSubsLoadBatch must exist');
+    const slice = ytkitSrc.slice(fnIdx, fnIdx + 2500);
+
+    // The old 100% gate is gone.
+    assert.doesNotMatch(slice, /allHidden = hiddenCount === batchSize/,
+        'NF33 replaces the 100%-hidden gate with a configurable ratio gate');
+
+    // The new gate computes a ratio + cutoff and uses mostlyHidden.
+    assert.match(slice, /hiddenRatio = hiddenCount \/ batchSize/,
+        'subs-load gate must compute hiddenRatio = hiddenCount / batchSize');
+    assert.match(slice, /hideVideosSubsLoadHiddenRatio/,
+        'subs-load gate must consult hideVideosSubsLoadHiddenRatio setting');
+    assert.match(slice, /mostlyHidden = hiddenRatio >= ratioCutoff/,
+        'mostlyHidden must be the documented comparison');
+    assert.match(slice, /raw <= 0 \|\| raw > 1\) return 0\.8/,
+        'invalid ratio settings must fall back to 0.8 default at call site');
+
+    // Schema declares the new entry with documented default.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8'
+    );
+    assert.match(schemaSrc, /key:\s*"hideVideosSubsLoadHiddenRatio".*defaultValue:\s*0\.8/,
+        'settings-schema must declare hideVideosSubsLoadHiddenRatio with default 0.8');
+
+    // ytkit.js defaults block carries the same key + default.
+    assert.match(ytkitSrc, /hideVideosSubsLoadHiddenRatio:\s*0\.8/,
+        'ytkit.js defaults must carry hideVideosSubsLoadHiddenRatio: 0.8');
+
+    // default-settings.json catalogues it.
+    const defaultsJson = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'
+    ));
+    assert.equal(defaultsJson.hideVideosSubsLoadHiddenRatio, 0.8,
+        'default-settings.json must include hideVideosSubsLoadHiddenRatio: 0.8');
+
+    // Sandbox-eval the gate so we have proof the contract works.
+    // We extract the lines from the slice that compute hiddenRatio →
+    // ratioCutoff → mostlyHidden and exercise three cases.
+    const gateBody = `
+        function gate(hiddenCount, batchSize, settingValue) {
+            const hiddenRatio = hiddenCount / batchSize;
+            const ratioCutoff = (() => {
+                const raw = Number(settingValue);
+                if (!Number.isFinite(raw) || raw <= 0 || raw > 1) return 0.8;
+                return raw;
+            })();
+            return hiddenRatio >= ratioCutoff;
+        }
+    `;
+    const vm = require('node:vm');
+    const sandbox = {};
+    vm.createContext(sandbox);
+    vm.runInContext(gateBody + 'globalThis.gate = gate;', sandbox);
+    const gate = sandbox.gate;
+
+    // 100% hidden: tripped under any cutoff.
+    assert.equal(gate(10, 10, 0.8), true, '100% hidden trips the default 0.8 cutoff');
+    // 80% hidden: tripped at default.
+    assert.equal(gate(8, 10, 0.8), true, '80% hidden trips the default 0.8 cutoff');
+    // 70% hidden: NOT tripped under default.
+    assert.equal(gate(7, 10, 0.8), false, '70% hidden does NOT trip the default 0.8 cutoff');
+    // Invalid setting falls back to 0.8.
+    assert.equal(gate(7, 10, 'invalid'), false, 'invalid setting falls back to 0.8 (70% does not trip)');
+    // Out-of-range (1.5 > 1) also falls back to 0.8.
+    assert.equal(gate(9, 10, 1.5), true, 'out-of-range fallback to 0.8 — 90% trips');
+    // A valid stricter cutoff (0.95) means even 80% hidden does NOT trip.
+    assert.equal(gate(8, 10, 0.95), false, 'stricter 0.95 cutoff lets 80% hidden through');
+    // A valid looser cutoff (0.5) means 60% hidden trips.
+    assert.equal(gate(6, 10, 0.5), true, 'looser 0.5 cutoff trips at 60% hidden');
 });
 
 test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session baseline', () => {

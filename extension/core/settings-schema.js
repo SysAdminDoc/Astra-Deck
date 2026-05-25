@@ -202,6 +202,14 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "hideVideosDurationFilter", category: "content-filter", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosSubsLoadLimit", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosSubsLoadThreshold", category: "content-filter", type: "number", defaultValue: 3, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    // v4.47.0 NF33: hidden-ratio cutoff for the subs-load pause gate.
+    // Previous gate was "100% hidden in N consecutive batches"; the
+    // new gate is "hiddenRatio >= cutoff in N consecutive batches".
+    // Default 0.8 lets a feed where 20% of cards survive the filter
+    // continue to paginate normally instead of locking after one
+    // unlucky batch streak. Invalid values fall back to 0.8 at the
+    // call site; range is documented as (0, 1].
+    Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "hideVideosRemoveHiddenCards", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosShowQuickHideButton", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosAllowChannelBlock", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

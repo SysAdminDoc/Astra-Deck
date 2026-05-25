@@ -114,6 +114,7 @@
   "hideVideosDurationFilter": 0,
   "hideVideosSubsLoadLimit": true,
   "hideVideosSubsLoadThreshold": 3,
+  "hideVideosSubsLoadHiddenRatio": 0.8,
   "hideVideosRemoveHiddenCards": false,
   "hideVideosShowQuickHideButton": true,
   "hideVideosAllowChannelBlock": true,
