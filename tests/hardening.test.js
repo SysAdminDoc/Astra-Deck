@@ -1829,10 +1829,13 @@ test('SETTINGS_VERSION is 7 and migration 7 force-resets reactionSpammer to fals
 test('reaction spammer panel interval is clamped to a 500 ms minimum floor', () => {
     // Rapid reactions risk YouTube account flagging; the 50 ms floor that
     // shipped in v3.22.0 was too aggressive. Pin the floor at 500 ms.
+    // v4.47.0 EI-NEW3: the property name changed from `_INTERVAL_MIN_MS`
+    // to `_INTERVAL_MIN_MS_FLOOR` (the runtime min is now read via a
+    // settings-aware getter). The 500ms safety floor is preserved.
     assert.match(
         ytkitSource,
-        /_INTERVAL_MIN_MS:\s*500,/,
-        'ytkit.js reaction-spammer feature must declare _INTERVAL_MIN_MS: 500',
+        /_INTERVAL_MIN_MS_FLOOR:\s*500,/,
+        'ytkit.js reaction-spammer feature must declare _INTERVAL_MIN_MS_FLOOR: 500',
     );
     // The userscript companion clamps the same floor — pin its constant too.
     const userscriptSource = fs.readFileSync(
@@ -2881,11 +2884,14 @@ test('astraContextMenu adds a contextmenu listener but never blocks the native m
 });
 
 test('youtubeMusicCompat only runs on music.youtube.com', () => {
+    // v4.47.0 EI-NEW2: substring includes() match was replaced with
+    // exact-equality `!==` so a hypothetical music.youtube.com.evil.tld
+    // can't be matched. The early-return invariant is preserved.
     const start = ytkitSource.indexOf("id: 'youtubeMusicCompat'");
     assert.ok(start > -1, 'youtubeMusicCompat must exist');
     const block = ytkitSource.slice(start, start + 3000);
-    assert.match(block, /location\.hostname\.includes\('music\.youtube\.com'\)/,
-        'must early-return on non-music hostnames');
+    assert.match(block, /location\.hostname !== 'music\.youtube\.com'/,
+        'must early-return on non-music hostnames via exact-equality match');
 });
 
 // ── v4.1.0 P1: Deferred-item follow-ups (DeArrow channel override + per-context quality) ──
@@ -3241,8 +3247,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 356,
-        'SETTINGS_SCHEMA must cover all 356 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 357,
+        'SETTINGS_SCHEMA must cover all 357 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -7565,6 +7571,61 @@ test('v4.47.0 NF12 — manifest loads runtime-flags.js before ytkit.js in every 
         assert.ok(flagsIdx < ytkitIdx,
             'core/runtime-flags.js must load before ytkit.js so the module is on globalThis.YTKitCore when ytkit.js runs');
     }
+});
+
+test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', () => {
+    const ytkitSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
+    );
+
+    // EI-NEW2: youtubeMusicCompat must use exact-hostname match.
+    // The previous .includes('music.youtube.com') was a substring smell.
+    // (We pin the new form positively; the prior-form mention in the
+    // explanatory comment is fine — only the executable expression
+    // matters, and the positive match below guarantees the new form
+    // exists. Banning the old form via regex would false-positive on
+    // the comment.)
+    assert.match(ytkitSrc, /location\.hostname !== 'music\.youtube\.com'/,
+        'youtubeMusicCompat must use exact-hostname match (=== or !==)');
+
+    // EI-NEW3: reactionSpammer floor reads from settings with hard-floor clamp.
+    assert.match(ytkitSrc, /_INTERVAL_MIN_MS_FLOOR:\s*500/,
+        'reactionSpammer must declare _INTERVAL_MIN_MS_FLOOR: 500 as the hard safety floor');
+    assert.match(ytkitSrc, /get _INTERVAL_MIN_MS\(\)/,
+        'reactionSpammer must expose _INTERVAL_MIN_MS as a getter that reads the setting');
+    assert.match(ytkitSrc, /raw < this\._INTERVAL_MIN_MS_FLOOR/,
+        'reactionSpammer getter must clamp to the floor — never let the user lower it');
+
+    // EI-NEW4: DeArrow TTL=0 warning + fallback opacity rule + fallback marker.
+    assert.match(ytkitSrc, /Cache disabled \(daCacheTTL=0\); every card hit fires an API request/,
+        'DeArrow init must warn when daCacheTTL=0');
+    assert.match(ytkitSrc, /\.daCustomTitle\[data-da-fallback="1"\]\s*\{[^}]*opacity:\s*0\.78/,
+        'DeArrow CSS must dim fallback titles via .daCustomTitle[data-da-fallback="1"]');
+    assert.match(ytkitSrc, /clone\.dataset\.daFallback = '1'/,
+        'DeArrow fallback path must mark the clone with data-da-fallback="1"');
+
+    // Schema entries for the new settings.
+    const schemaSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'settings-schema.js'), 'utf8'
+    );
+    assert.match(schemaSrc, /key:\s*"reactionSpammerMinIntervalMs".*defaultValue:\s*500/,
+        'schema must declare reactionSpammerMinIntervalMs with default 500');
+
+    // Default-settings catalogue must carry the same keys.
+    const defaultsJson = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'default-settings.json'), 'utf8'
+    ));
+    assert.equal(defaultsJson.reactionSpammerMinIntervalMs, 500,
+        'default-settings.json must catalogue reactionSpammerMinIntervalMs: 500');
+
+    // Phase V: ROADMAP matrix promotes Iridium + Control Panel.
+    const roadmapSrc = fs.readFileSync(
+        path.join(__dirname, '..', 'ROADMAP.md'), 'utf8'
+    );
+    assert.match(roadmapSrc, /\| 21 \| Iridium for YouTube/,
+        'ROADMAP must promote Iridium for YouTube as row 21 in Phase 1 matrix');
+    assert.match(roadmapSrc, /\| 22 \| Control Panel for YouTube/,
+        'ROADMAP must promote Control Panel for YouTube as row 22 in Phase 1 matrix');
 });
 
 test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hiddenRatio', () => {

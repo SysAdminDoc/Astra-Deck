@@ -164,6 +164,13 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "hideLiveChatEngagement", category: "live-chat", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "premiumLiveChat", category: "live-chat", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "reactionSpammer", category: "live-chat", type: "boolean", defaultValue: false, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    // v4.47.0 EI-NEW3: configurable floor for the reactionSpammer
+    // interval. The hardcoded 500 ms safety floor is preserved at the
+    // call site (raw < 500 -> clamped to 500); admins can tighten the
+    // floor to 1000+ ms to stay further from YouTube's automated-
+    // behavior heuristics. Cannot be lowered below 500 — that would
+    // defeat the safety guarantee documented in v3.23.0 N3.
+    Object.freeze({ key: "reactionSpammerMinIntervalMs", category: "live-chat", type: "number", defaultValue: 500, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "_reactionSpammerAck", category: "live-chat", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
 
     // ─── watch-player ───

@@ -3544,6 +3544,13 @@ return response;
             hideLiveChatEngagement: true,
             premiumLiveChat: true,
             reactionSpammer: false,
+            // v4.47.0 EI-NEW3: configurable safety floor for the
+            // reactionSpammer interval. The hardcoded 500 ms floor is
+            // still preserved at the call site as a hard minimum
+            // (raw < 500 -> clamped). Setting raises the floor so
+            // admins can stay further from YouTube's automated-behavior
+            // heuristics.
+            reactionSpammerMinIntervalMs: 500,
             // v3.23.0 N3: one-shot acknowledgement that the user has seen
             // the "YouTube may rate-limit rapid reactions" notice on the
             // first reaction-spammer launcher click. Tracked so the toast
@@ -14441,8 +14448,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // v3.23.0 N3: 500 ms floor on the spam interval. Faster than
             // ~2 Hz risks YouTube's automated-behavior heuristics flagging
             // the account. The upper bound stays at 60 s.
-            _INTERVAL_MIN_MS: 500,
+            //
+            // v4.47.0 EI-NEW3: the floor can be tightened (never loosened
+            // below 500 ms — that's a safety floor) via the
+            // `reactionSpammerMinIntervalMs` setting. Admins of high-
+            // traffic streams may want 1000+ ms to keep further away from
+            // the heuristic threshold.
+            _INTERVAL_MIN_MS_FLOOR: 500,
             _INTERVAL_MAX_MS: 60000,
+            get _INTERVAL_MIN_MS() {
+                // Read from settings; clamp to floor so the user can
+                // raise but never lower below the 500 ms safety floor.
+                const raw = Number(appState?.settings?.reactionSpammerMinIntervalMs);
+                if (!Number.isFinite(raw) || raw < this._INTERVAL_MIN_MS_FLOOR) {
+                    return this._INTERVAL_MIN_MS_FLOOR;
+                }
+                if (raw > this._INTERVAL_MAX_MS) return this._INTERVAL_MAX_MS;
+                return Math.floor(raw);
+            },
 
             _loadState() {
                 const saved = storageReadJSON(this._storageKey, {});
@@ -26113,9 +26136,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                     }
                 }
+                // v4.47.0 EI-NEW4: warn power users when the cache is
+                // disabled (daCacheTTL=0). With no cache, every visible
+                // card hits the DeArrow API. The 100k+ subs.ajay.app
+                // call cap is real; expect rate limits.
+                const _ttlRaw = parseInt(appState.settings.daCacheTTL || '4', 10);
+                if (_ttlRaw === 0) {
+                    DebugManager.log('DeArrow',
+                        'Cache disabled (daCacheTTL=0); every card hit fires an API request. Expect rate limits.');
+                }
                 const css = `
                     .daCustomTitle { display: block !important; }
                     .daCustomTitle + [id="video-title"], .daCustomTitle + a#video-title-link { display: none !important; }
+                    /* v4.47.0 EI-NEW4: locally-formatted fallback titles
+                       (sentence/title-case applied when DeArrow has no
+                       submission) dim slightly so power users see the
+                       distinction from real DeArrow data. */
+                    .daCustomTitle[data-da-fallback="1"] { opacity: 0.78 !important; }
                 `;
                 this._styleEl = injectStyle(css, this.id, true);
                 const resetAndProcess = () => {
@@ -26284,6 +26321,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     clone.removeAttribute('id');
                                     clone.textContent = formatted;
                                     clone.title = formatted;
+                                    // v4.47.0 EI-NEW4: mark locally-formatted
+                                    // fallbacks distinct from real DeArrow
+                                    // submissions; the CSS rule at init time
+                                    // dims these slightly so power users can
+                                    // tell the difference at a glance.
+                                    clone.dataset.daFallback = '1';
                                     titleEl.style.display = 'none';
                                     titleEl.dataset.daProcessed = '1';
                                     titleEl.parentNode.insertBefore(clone, titleEl);
@@ -32522,7 +32565,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'music',
             _styleElement: null,
             init() {
-                if (!location.hostname.includes('music.youtube.com')) return;
+                // v4.47.0 EI-NEW2: exact hostname match. The previous
+                // .includes('music.youtube.com') substring would match
+                // a hypothetical music.youtube.com.phishing.io and
+                // inject CSS there. Browser DNS resolution would not
+                // route to such a domain in practice, but the smell is
+                // real — project policy elsewhere prefers strict
+                // equality. The www.music.youtube.com variant doesn't
+                // exist (YouTube Music canonicalizes to the apex), so
+                // exact comparison is sufficient.
+                if (location.hostname !== 'music.youtube.com') return;
                 this._styleElement = injectStyle(`
                     ytmusic-app, ytmusic-app-layout {
                         background: var(--yt-sys-color-baseline--base-background, #0f0f0f) !important;
