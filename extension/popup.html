@@ -158,6 +158,10 @@
         </label>
       </div>
       <div class="actions-end">
+        <!-- v4.47.0 EI2: undo grace period for Reset. Hidden by default;
+             unhid when a `_resetSnapshot` exists in chrome.storage.session
+             (set by resetAllData, cleared on Undo or browser-close). -->
+        <button id="undo-reset-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="undoResetAria" aria-label="Restore data from the most recent Reset" data-i18n="undoResetBtn">Undo Reset</button>
         <button id="reset-btn" class="danger" type="button" data-i18n="resetBtn">Reset</button>
       </div>
     </nav>

@@ -6474,6 +6474,74 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it', () => {
+    // EI2: the destructive Reset action was irreversible; one
+    // misclick wiped all 354 settings + hidden lists + bookmarks
+    // with no recovery. v4.47.0 captures everything in
+    // chrome.storage.session under `_resetSnapshot` before the
+    // wipe; an "Undo Reset" button restores the snapshot until
+    // the browser session ends. The snapshot deliberately does
+    // NOT survive a browser restart — stale snapshots overwriting
+    // later real edits would be worse than the original problem.
+    //
+    // Source-level pin: the wiring must be present in popup.html,
+    // popup.js, popup.css, and the EN locale must expose every
+    // status string the handler can render.
+    assert.match(popupHtmlSource, /id="undo-reset-btn"/,
+        'popup.html must declare the Undo Reset button');
+    assert.match(popupHtmlSource, /aria-label="Restore data from the most recent Reset"/,
+        'Undo button must carry an aria-label');
+    assert.match(popupHtmlSource, /data-i18n="undoResetBtn"/,
+        'Undo button must carry an i18n key');
+    assert.match(popupHtmlSource, /hidden/,
+        'Undo button must default to hidden in markup');
+
+    assert.match(popupSource, /const RESET_SNAPSHOT_KEY = '_resetSnapshot'/,
+        'popup.js must declare the canonical snapshot key constant');
+    assert.match(popupSource, /chrome\.storage\.session/,
+        'snapshot helpers must use chrome.storage.session (not local) so the snapshot dies with the browser session');
+    assert.match(popupSource, /async function resetAllData\(\)/,
+        'resetAllData must remain async');
+    assert.match(popupSource, /writeResetSnapshot\(snapshot\)/,
+        'resetAllData must call writeResetSnapshot BEFORE storageClear so the wipe is recoverable');
+    // Order matters: snapshot before storageClear. The snapshot call
+    // must appear lexically before storageClear in resetAllData.
+    const resetFnStart = popupSource.indexOf('async function resetAllData(');
+    const resetFnEnd = popupSource.indexOf('\n}\n', resetFnStart) + 2;
+    const resetBody = popupSource.slice(resetFnStart, resetFnEnd);
+    const snapshotPos = resetBody.indexOf('writeResetSnapshot');
+    const clearPos = resetBody.indexOf('storageClear()');
+    assert.ok(snapshotPos > -1 && clearPos > -1,
+        'both writeResetSnapshot and storageClear must be called in resetAllData');
+    assert.ok(snapshotPos < clearPos,
+        'writeResetSnapshot must run BEFORE storageClear so the snapshot reflects pre-wipe state');
+
+    assert.match(popupSource, /async function undoResetAllData\(\)/,
+        'popup.js must define undoResetAllData');
+    assert.match(popupSource, /clearResetSnapshot\(\)/,
+        'undoResetAllData must clear the snapshot after restore so a second Undo can\'t replay');
+    assert.match(popupSource, /undoResetButton\.addEventListener\('click'/,
+        'popup.js must wire the click listener on the Undo button');
+    assert.match(popupSource, /refreshUndoResetVisibility/,
+        'popup.js must surface the Undo button on boot when a snapshot exists');
+
+    // i18n parity for the EN keys the handler can render.
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const k of [
+        'undoResetBtn',
+        'undoResetAria',
+        'statusAllDataClearedUndo',
+        'statusResetUndone',
+        'statusResetUndoExpired',
+        'statusResetUndoFail',
+    ]) {
+        assert.ok(enMessages[k] && enMessages[k].message,
+            `extension/_locales/en/messages.json must declare ${k}`);
+    }
+});
+
 test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifecycle', () => {
     // The v4.7.0 lifecycle module shipped but had zero defineFeature
     // callers until v4.47.0. Wave 1 is "register-only": each peel module

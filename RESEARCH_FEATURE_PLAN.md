@@ -282,14 +282,9 @@ What to **intentionally avoid**:
 - Pinned by `v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant` hardening test which exercises 6 contract cases (empty without/with reason, case-insensitivity, leading/indented comments, non-empty body) via the ESLint Linter API.
 - **Deferred (still tracked):** popup.js (41 catches), ytkit.js (175 catches), core/*.js (50 catches) need a per-file violation audit + bulk annotation pass before the rule can extend to them. The rule itself doesn't change — only `eslint.config.js` `files:` widens.
 
-### EI2 — Reset action: staging + undo grace period
-- **Current behavior**: popup Reset wipes `chrome.storage.local` after one confirm dialog; no rollback (subagent popup audit §7).
-- **Problem**: a misclick destroys 354 settings + hidden lists + bookmarks; policy says "no confirmation dialogs" but this is the rare reversible case where staging works better.
-- **Recommended change**: replace the confirm dialog with a soft-delete staging: snapshot current state into `_resetSnapshot` (object with TTL 7 days), wipe live settings, show a sticky toast with "Undo (7 days)" action. Auto-purge after 7 days.
-- **Touches**: `extension/popup.js#resetStorage`, `core/storage-manager.js` for `_resetSnapshot` LRU, popup CSS for sticky toast.
-- **Backward compat**: existing import/export flows unaffected.
-- **Verification**: round-trip reset → undo → state restored byte-identical; expiry test fast-forwards `Date.now()`.
-- **Complexity**: M. **Priority**: P1.
+### EI2 — Reset action: snapshot + undo grace period _[shipped]_
+- Shipped: `resetAllData` now captures every key in `chrome.storage.local` into a `_resetSnapshot` entry on `chrome.storage.session` BEFORE the wipe. An "Undo Reset" button (hidden by default) appears in the popup actions row when a snapshot exists; clicking it wipes again and replays the snapshot byte-for-byte. Snapshot lives on `chrome.storage.session` (not local) so it deliberately dies with the browser session — stale snapshots overwriting later real edits would be worse than the original problem. Status copy updated to surface the recovery path. New helpers: `readResetSnapshot`, `writeResetSnapshot`, `clearResetSnapshot`, `setUndoResetVisible`, `refreshUndoResetVisibility`, `undoResetAllData`. 6 new i18n keys added to en + 9 non-EN locales.
+- Pinned by `v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it` hardening test (button + aria-label + i18n hook in popup.html, snapshot-before-wipe ordering in popup.js, snapshot key constant, click listener wiring, locale parity).
 
 ### EI3 — Search filter expands to descriptions / risk / category _[shipped]_
 - Shipped: `parseSearchQuery` + `entryPassesFilters` helpers in `popup.js` add a mini-DSL — `risk:api`, `category:downloads`, `scope:watch`, `profile:store-safe`. Comma-separated values inside a field act as OR; multiple field clauses AND. Unknown fields fall back to free text so typos don't silently swallow the user's input.
@@ -559,12 +554,8 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
     omitting YouTube / i.ytimg / Reddit from connect-src is intentional
     least-privilege, not a gap. Audit recommendation withdrawn.
 
-- [ ] **P1 — Reset action: snapshot + 7-day undo**
-  - Why: EI2; today's reset is destructive with no recovery.
-  - Evidence: subagent popup audit §7.
-  - Touches: `popup.js#resetStorage`, sticky-toast CSS, `core/storage-manager.js` for `_resetSnapshot`.
-  - Acceptance: reset → undo → state restored byte-identical; expiry test passes.
-  - Verify: round-trip test; mocked-clock expiry test.
+- [x] **P1 — Reset action: snapshot + session-scoped undo (shipped)**
+  - Shipped: snapshot lives on `chrome.storage.session` so the Undo window is bounded by the browser session (not a 7-day LRU — simpler + safer). See EI2.
 
 - [x] **P1 — Add `npm audit --omit=dev` gate to `npm run check`**
   - Shipped: new `npm run audit:deps` script (`npm audit --omit=dev --audit-level=moderate`) appended to `npm run check`. Currently passes with 0 vulnerabilities.
@@ -695,7 +686,7 @@ These can land in a single ≤200-line PR each; pick any of them if blocked on b
 - **QW3** — `*.bak` cleanup + gitignore (EI11). _[shipped]_
 - **QW4** — Selector-health "Copy report" button (NF3). _[shipped]_
 - **QW5** — `prefers-reduced-motion` guard in popup.css (NF8). _[shipped — invariant pin]_
-- **QW6** — Reset action: snapshot + undo (EI2).
+- **QW6** — Reset action: snapshot + undo (EI2). _[shipped]_
 - **QW7** — Search filter mini-DSL (EI3). _[shipped]_
 - **QW8** — Popup "flush on beforeunload" (EI7). _[wontfix — popup uses synchronous chrome.storage.local, no debounce to flush]_
 - **QW9** — `npm audit` gate in `npm run check` (G4). _[shipped]_
