@@ -111,9 +111,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 - **P2 / L — Astra Downloader signed installer + .msi + Add/Remove Programs entry**
   - From NF6. Cost-aware: defer until CWS submission intent is resolved (Open Question 2).
 
-- **P3 / M — PyQt6 GUI smoke tests (NF22)**
-  - Touches: `astra_downloader/requirements.txt` (`pytest-qt`), `test_astra_downloader.py` new GuiSmokeTests class.
-
 ---
 
 ### Subscription Manager v2 (PocketTube parity)

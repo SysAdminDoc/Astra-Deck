@@ -1760,6 +1760,208 @@ class ResponseSizeCapTests(unittest.TestCase):
             "cors_response must measure the actual serialised body length, not the input dict")
 
 
+_qapp_singleton = None
+_qapp_init_error = None
+
+
+def _get_qapp_or_skip(test_case):
+    """Lazily construct the QApplication singleton for GUI smoke tests.
+
+    Qt requires exactly one QApplication per process; constructing
+    a second one raises. We cache the first instance and reuse it.
+    On a CI runner without a display server (Linux without xvfb,
+    SSH session without X-forwarding), construction raises — the
+    test is skipped rather than failing the whole pytest run.
+    """
+    global _qapp_singleton, _qapp_init_error
+    if _qapp_singleton is not None:
+        return _qapp_singleton
+    if _qapp_init_error is not None:
+        test_case.skipTest(f"QApplication unavailable: {_qapp_init_error}")
+        return None
+    try:
+        from PyQt6.QtWidgets import QApplication
+        _qapp_singleton = QApplication.instance() or QApplication([])
+        return _qapp_singleton
+    except Exception as e:  # noqa: BLE001
+        _qapp_init_error = repr(e)
+        test_case.skipTest(f"QApplication construction failed: {_qapp_init_error}")
+        return None
+
+
+class GuiSmokeTests(unittest.TestCase):
+    """v4.47.0 NF22 — live Qt smoke tests for the downloader GUI.
+
+    These tests construct a real QApplication and exercise the
+    FolderPickerService timer-driven dispatch end-to-end. Previously
+    the GUI side had only source-shape pins (FolderPickerWatchdogTests
+    above) — a regression in the dialog code-path would only surface
+    via the user reports it was supposed to make easier to file.
+
+    Tests skip gracefully if QApplication can't be constructed
+    (CI runner without a display server). The shared FolderPickerService
+    tests cover both the happy paths (Accepted, Rejected) and the
+    watchdog log path with a mocked-slow QFileDialog.exec.
+    """
+
+    def setUp(self):
+        _get_qapp_or_skip(self)
+        # Drain any leftover queue entries from prior test interactions
+        # so each test starts from a clean slate.
+        while True:
+            try:
+                ad._folder_pick_q.get_nowait()
+            except Exception:  # queue.Empty or anything weird
+                break
+
+    def test_qapplication_constructs(self):
+        # If we got past setUp without skipping, QApplication is alive.
+        from PyQt6.QtWidgets import QApplication
+        self.assertIsNotNone(QApplication.instance(),
+                             "QApplication.instance() must be available after setUp")
+
+    def test_folder_picker_service_constructs_and_starts_timer(self):
+        svc = ad.FolderPickerService()
+        try:
+            self.assertIsNotNone(svc._timer,
+                                 "FolderPickerService must own a QTimer for the dispatch loop")
+            self.assertTrue(svc._timer.isActive(),
+                            "FolderPickerService timer must start active so the dispatch loop polls")
+            # 150 ms cadence matches the pick-folder Flask handler's
+            # expectation that the GUI side is responsive enough to
+            # service a request within the 120 s overall timeout.
+            self.assertEqual(svc._timer.interval(), 150,
+                             "FolderPickerService timer cadence must be 150 ms")
+        finally:
+            svc._timer.stop()
+            svc.deleteLater()
+
+    def test_folder_picker_tick_no_pending_request_is_noop(self):
+        # Empty queue must not raise and must not emit any response.
+        svc = ad.FolderPickerService()
+        try:
+            # Verify queue is empty.
+            self.assertTrue(ad._folder_pick_q.empty())
+            # Direct tick call — no request enqueued, must return cleanly.
+            svc._tick()
+            # Queue still empty; no side effects.
+            self.assertTrue(ad._folder_pick_q.empty())
+        finally:
+            svc._timer.stop()
+            svc.deleteLater()
+
+    def test_folder_picker_tick_returns_accepted_path(self):
+        # Mock QFileDialog so .exec() returns Accepted + selectedFiles
+        # without actually opening a dialog. The patch targets the
+        # bound name in ad's namespace so the FolderPickerService
+        # picks up the fake.
+        import queue
+        response_q = queue.Queue(maxsize=1)
+        ad._folder_pick_q.put({'initial': '', 'response': response_q})
+
+        from PyQt6.QtWidgets import QFileDialog as RealQFileDialog
+        fake_dialog = mock.MagicMock()
+        fake_dialog.exec.return_value = RealQFileDialog.DialogCode.Accepted
+        fake_dialog.selectedFiles.return_value = ['/tmp/picked-folder']
+        fake_dialog.windowFlags.return_value = 0
+        with mock.patch.object(ad, 'QFileDialog', autospec=False) as FakeFileDialog:
+            FakeFileDialog.return_value = fake_dialog
+            # Re-export the DialogCode/FileMode enums the real class
+            # carried so the source code's qualified-name references
+            # still resolve.
+            FakeFileDialog.DialogCode = RealQFileDialog.DialogCode
+            FakeFileDialog.FileMode = RealQFileDialog.FileMode
+            FakeFileDialog.Option = RealQFileDialog.Option
+            svc = ad.FolderPickerService()
+            try:
+                svc._tick()
+            finally:
+                svc._timer.stop()
+                svc.deleteLater()
+
+        result = response_q.get(timeout=1.0)
+        self.assertEqual(result.get('path'), '/tmp/picked-folder',
+                         "Accepted dialog must enqueue the chosen path")
+        self.assertFalse(result.get('cancelled'),
+                         "Accepted dialog must report cancelled=False")
+
+    def test_folder_picker_tick_returns_cancelled_on_reject(self):
+        import queue
+        response_q = queue.Queue(maxsize=1)
+        ad._folder_pick_q.put({'initial': '', 'response': response_q})
+
+        from PyQt6.QtWidgets import QFileDialog as RealQFileDialog
+        fake_dialog = mock.MagicMock()
+        fake_dialog.exec.return_value = RealQFileDialog.DialogCode.Rejected
+        fake_dialog.windowFlags.return_value = 0
+        with mock.patch.object(ad, 'QFileDialog', autospec=False) as FakeFileDialog:
+            FakeFileDialog.return_value = fake_dialog
+            FakeFileDialog.DialogCode = RealQFileDialog.DialogCode
+            FakeFileDialog.FileMode = RealQFileDialog.FileMode
+            FakeFileDialog.Option = RealQFileDialog.Option
+            svc = ad.FolderPickerService()
+            try:
+                svc._tick()
+            finally:
+                svc._timer.stop()
+                svc.deleteLater()
+
+        result = response_q.get(timeout=1.0)
+        self.assertIsNone(result.get('path'),
+                          "Rejected dialog must enqueue path=None")
+        self.assertTrue(result.get('cancelled'),
+                        "Rejected dialog must report cancelled=True")
+
+    def test_folder_picker_watchdog_fires_when_dialog_blocks_past_threshold(self):
+        # Mock time.time so the watchdog believes the dialog blocked
+        # for (threshold + 5) seconds. write_persistent_log is
+        # spied so we can assert the log line shape.
+        import queue
+        response_q = queue.Queue(maxsize=1)
+        ad._folder_pick_q.put({'initial': '/initial/path', 'response': response_q})
+
+        from PyQt6.QtWidgets import QFileDialog as RealQFileDialog
+        fake_dialog = mock.MagicMock()
+        fake_dialog.exec.return_value = RealQFileDialog.DialogCode.Rejected
+        fake_dialog.windowFlags.return_value = 0
+
+        threshold = ad.FolderPickerService.DIALOG_WATCHDOG_THRESHOLD_SECONDS
+        # Two ticks of time.time(): start, then end (start + threshold + 5)
+        time_seq = iter([1000.0, 1000.0 + threshold + 5])
+
+        log_lines = []
+        orig_log = ad.write_persistent_log
+        ad.write_persistent_log = lambda msg, path=None: log_lines.append(msg)
+        try:
+            with mock.patch.object(ad, 'QFileDialog', autospec=False) as FakeFileDialog, \
+                 mock.patch.object(ad.time, 'time', side_effect=lambda: next(time_seq)):
+                FakeFileDialog.return_value = fake_dialog
+                FakeFileDialog.DialogCode = RealQFileDialog.DialogCode
+                FakeFileDialog.FileMode = RealQFileDialog.FileMode
+                FakeFileDialog.Option = RealQFileDialog.Option
+                svc = ad.FolderPickerService()
+                try:
+                    svc._tick()
+                finally:
+                    svc._timer.stop()
+                    svc.deleteLater()
+        finally:
+            ad.write_persistent_log = orig_log
+
+        # Drain the response queue (the dialog code still enqueues
+        # cancelled=True; the watchdog runs in parallel with the
+        # normal completion path).
+        response_q.get(timeout=1.0)
+        self.assertTrue(
+            any("FolderPickerService: dialog blocked for" in line for line in log_lines),
+            f"Watchdog must emit the documented log prefix; got {log_lines!r}",
+        )
+        self.assertTrue(
+            any(f"threshold {threshold}s" in line for line in log_lines),
+            f"Watchdog log must surface the threshold; got {log_lines!r}",
+        )
+
+
 class UpdateYtdlpEndpointTests(unittest.TestCase):
     """v4.47.0 NF18 — on-demand `yt-dlp -U` via `/update-ytdlp` so a
     user can fix a broken-on-YouTube yt-dlp build without waiting up

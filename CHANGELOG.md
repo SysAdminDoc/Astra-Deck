@@ -6,6 +6,35 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **PyQt6 GUI smoke tests for the downloader (NF22).** Previously the
+  GUI side had only source-shape pins (FolderPickerWatchdogTests) —
+  a regression in the dialog code-path would only surface via the
+  user reports the watchdog was supposed to make easier to file. This
+  adds a live `GuiSmokeTests` class that constructs a real
+  `QApplication` and exercises the `FolderPickerService` timer-driven
+  dispatch end-to-end. Six new tests:
+  - `test_qapplication_constructs` — proves the QApplication
+    singleton can be instantiated. Tests gracefully skip if Qt is
+    unavailable (CI runner without a display server).
+  - `test_folder_picker_service_constructs_and_starts_timer` — the
+    QTimer that drives the dispatch loop is active and runs at the
+    documented 150 ms cadence.
+  - `test_folder_picker_tick_no_pending_request_is_noop` — empty
+    queue must not raise.
+  - `test_folder_picker_tick_returns_accepted_path` — mocks
+    `QFileDialog.exec()` → `Accepted` + `selectedFiles()`,
+    verifies the response queue carries the chosen path.
+  - `test_folder_picker_tick_returns_cancelled_on_reject` — same
+    path, `Rejected`, asserts `cancelled=True`.
+  - `test_folder_picker_watchdog_fires_when_dialog_blocks_past_threshold`
+    — uses `time.time()` mocking to simulate a `threshold + 5 s`
+    dialog block; verifies the watchdog log line shape (NF35
+    invariant). No new dependency added — pytest-qt was scoped in
+    the backlog item but a hand-rolled `_get_qapp_or_skip` helper
+    avoids the install-time cost while preserving CI-portable
+    skip-on-no-display semantics. 111/111 Python tests pass
+    (+6 new); 573/573 JS tests still pass.
+
 - **On-demand yt-dlp self-update (NF18): `/update-ytdlp` endpoint +
   popup button.** When YouTube breaks the current yt-dlp build, the
   user previously had to wait up to 24 h for the auto-update throttle
