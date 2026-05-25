@@ -6,6 +6,57 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **ytkit.js: nyan-cat theme asset bundled inside the extension origin
+  (NF23).** The `nyan-cat` theme's scrubber CSS used to load
+  `assets/cat.gif` from a hardcoded `raw.githubusercontent.com` URL —
+  both a remote-content surface and a CSP escape hatch. NF23 closes
+  that: a new `getRepoAssetUrl(fileName)` helper alongside the existing
+  `getBrandAssetUrl` returns `chrome.runtime.getURL('assets/' + name)`
+  in extension contexts and falls back to the GitHub raw URL for the
+  userscript build. `extension/assets/cat.gif` was added (3.3 KB, copied
+  from the repo-root assets/) and `manifest.json#web_accessible_resources`
+  now covers `assets/*`. The CSS in `_rawThemes['nyan-cat']` interpolates
+  `${getRepoAssetUrl('cat.gif')}` at module-eval time so the URL bakes
+  in once. Pinned by a new `v4.47.0 NF23` hardening test that asserts
+  the helper exists with the documented fallback chain, the CSS
+  interpolation is in place, the hardcoded URL is gone, the asset is
+  bundled, and the manifest grants access.
+
+- **scripts/i18n-coverage.js — locale coverage report (NF24).**
+  `check-i18n.js` enforces structural parity (every EN key present
+  everywhere, no orphans). What it doesn't flag is *content drift* —
+  a locale shipping byte-identical to EN for most keys is silently
+  incomplete because `chrome.i18n.getMessage` falls through to
+  default_locale anyway. New `node scripts/i18n-coverage.js` (or
+  `npm run i18n:coverage`) emits a human-readable
+  `docs/i18n-coverage.md` with per-locale "translated vs.
+  identical-to-EN vs. missing" counts plus a headline percentage.
+  Informational only (not in `npm run check`); first run profiled 9
+  locales × 247 keys and shows the existing locales sitting at
+  70-85% translated (with the identical-to-EN remainder being
+  brand-name + technical-format preservation by convention).
+  Report includes a "how to improve coverage" workflow pointing at
+  `scripts/generate-locales.js` for translator additions.
+
+- **policy-profile: API-key scrub regex broadened (R6).** The previous
+  `ALWAYS_SCRUB_KEY_PATTERNS` only matched the suffix `apiKey$` /
+  `token$` plus the exact `aiSummaryApiKey`, so a future
+  user-supplied key named `apikey_v2`, `bearerToken`, `webhookSecret`,
+  or `authToken` would have slipped through into a shared export. R6
+  adds four broader patterns:
+    - `/apikey(?!_id$)/i` — catches `apikey_v2`, `api_key`, `apiKey1`
+    - `/bearer/i` — catches `bearerToken`, `accessBearer`
+    - `/secret/i` — catches `webhookSecret` etc.
+    - `/^auth/i` + `/[a-z]Auth/` — catches `authToken` / `userAuth`
+      while sparing camelCase mid-word
+  Verified no false positives against the current 354-key schema
+  (no entry contains `auth*`, `bearer`, `apikey`, or `secret` today;
+  the broad patterns are forward-looking). Pinned by a new
+  `v4.47.0 R6` hardening test that builds a synthetic settings
+  object mixing 9 secret-shaped keys with 3 benign keys and asserts
+  the export snapshot drops every secret-shaped key while preserving
+  the benign ones.
+
 - **CI: SBOM emit + static-eval source gate (NF20).** Closes NF20 from
   RESEARCH_FEATURE_PLAN. Two layers:
     1. `scripts/check-no-eval.js` (new) is a source-level grep that
