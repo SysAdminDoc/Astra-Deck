@@ -596,6 +596,35 @@ body {
   color: var(--text-muted);
 }
 
+/* v4.47.0: Copy-report action on the selector-health dashboard.
+   Reuses the dense neutral chip-button shape so it sits flush in the
+   header without competing with the title or the surface count. */
+.selector-health-copy-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1;
+}
+.selector-health-copy-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.selector-health-copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.selector-health-copy-btn[disabled] { opacity: 0.55; cursor: progress; }
+
+.selector-health-copy-status {
+  font-size: 10px;
+  color: var(--text-subtle);
+  margin-top: 4px;
+  min-height: 12px;
+}
+.selector-health-copy-status:empty { display: none; }
+
 .selector-health-total {
   font-size: 10px;
   color: var(--text-subtle);

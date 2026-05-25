@@ -553,12 +553,9 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
   - **Init-time enforcement:** kept silent (DebugManager.log only), not toasted. Toasting on every page load would be noisy because init runs per SPA navigation; the loud feedback path stays at settings-change time.
   - Shipped: new CONFLICT_MAP entries + cooperative-pair comment block. Pinned by `v4.47.0 CONFLICT_MAP pins the documented mutually-exclusive pairs` hardening test. CLAUDE.md §Architecture Notes synced to match the actual map.
 
-- [ ] **P1 — Build selector-health "Copy report" + diagnostics export**
-  - Why: data already exists in `core/selector-health.js` + `core/diagnostic-log.js`; popup has display but no export action.
-  - Evidence: subagent popup audit §1; NF3 above.
-  - Touches: `popup.html`, `popup.js`, wire `formatCopyReport` and diagnostic-log download.
-  - Acceptance: "Copy diagnostics report" button exists; clipboard payload format pinned.
-  - Verify: hardening test on payload structure.
+- [x] **P1 — Build selector-health "Copy report" + diagnostics export**
+  - Shipped: `popup.html` carries the `Copy report` button + an aria-live `selector-health-copy-status` line; `popup.html` now also bundles `core/selector-health.js` so `formatSelectorCopyReport` runs client-side. `popup.js` adds `copySelectorHealthReport()` with an `_selectorHealthCopyInFlight` guard against rapid double-clicks. Payload prepends `activeTab: <url>` + ctx counts to the standard report. Clipboard write prefers `navigator.clipboard.writeText` with `execCommand('copy')` fallback for locked-down contexts. All 7 new i18n keys added to en + 9 non-EN locales (English placeholders pending a future locale sweep per ROADMAP §i18n). Pinned by `v4.47.0 popup ships selector-health "Copy report" wiring end-to-end` hardening test.
+  - Future: include the diagnostic-log ring buffer + a "Save report as JSON" sibling action for offline filing (deferred — current button covers the GitHub-issue paste path).
 
 - [x] **P1 — Add `prefers-reduced-motion` guard across all Astra CSS**
   - Re-examined and shipped:
@@ -711,7 +708,7 @@ These can land in a single ≤200-line PR each; pick any of them if blocked on b
 - **QW1** — README badge sync (Phase A).
 - **QW2** — Manifest CSP Reddit add (EI5). _[wontfix — popup doesn't fetch external; current asymmetry is correct]_
 - **QW3** — `*.bak` cleanup + gitignore (EI11). _[shipped]_
-- **QW4** — Selector-health "Copy report" button (NF3).
+- **QW4** — Selector-health "Copy report" button (NF3). _[shipped]_
 - **QW5** — `prefers-reduced-motion` guard in popup.css (NF8). _[shipped — invariant pin]_
 - **QW6** — Reset action: snapshot + undo (EI2).
 - **QW7** — Search filter mini-DSL (EI3). _[shipped]_

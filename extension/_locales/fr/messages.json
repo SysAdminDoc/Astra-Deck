@@ -715,5 +715,26 @@
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} settings on across {categories} categories"
+  },
+  "selectorHealthCopyBtn": {
+    "message": "Copy report"
+  },
+  "selectorHealthCopyAria": {
+    "message": "Copy selector-health report to clipboard"
+  },
+  "selectorHealthCopyPending": {
+    "message": "Building report…"
+  },
+  "selectorHealthCopyDone": {
+    "message": "Copied — paste into a GitHub issue."
+  },
+  "selectorHealthCopyFail": {
+    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
+  },
+  "selectorHealthCopyNeedYt": {
+    "message": "Open a YouTube tab to build the report."
+  },
+  "selectorHealthCopyNoSnap": {
+    "message": "No snapshot available — the page may still be loading."
   }
 }

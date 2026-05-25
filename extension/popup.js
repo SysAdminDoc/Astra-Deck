@@ -409,6 +409,9 @@ const selectorHealthSection = $('#selector-health');
 const selectorHealthTotal = $('#selector-health-total');
 const selectorHealthList = $('#selector-health-list');
 const selectorHealthCtx = $('#selector-health-ctx');
+// v4.47.0: copy-report button + transient status line.
+const selectorHealthCopyBtn = $('#selector-health-copy-btn');
+const selectorHealthCopyStatus = $('#selector-health-copy-status');
 
 // v4.12.0: data-flow panel refs.
 const dataFlowSection = $('#data-flow');
@@ -1411,6 +1414,132 @@ async function renderSelectorHealthDashboard() {
         // Best-effort surface — never break the popup on a snapshot failure.
         selectorHealthSection.hidden = true;
     }
+}
+
+// v4.47.0: "Copy report" button on the selector-health dashboard.
+// Fetches the full snapshot from the active YT tab, formats it via the
+// bundled core/selector-health.js `formatSelectorCopyReport`, and copies
+// to the clipboard. The button stays disabled while the round-trip is
+// in flight so a rapid double-click can't post two reports. Status line
+// announces the outcome through aria-live="polite" so screen readers
+// hear success/failure.
+let _selectorHealthCopyInFlight = false;
+async function copySelectorHealthReport() {
+    if (_selectorHealthCopyInFlight) return;
+    if (!selectorHealthCopyBtn) return;
+    const setStatus = (msg) => {
+        if (selectorHealthCopyStatus) selectorHealthCopyStatus.textContent = msg;
+    };
+    _selectorHealthCopyInFlight = true;
+    selectorHealthCopyBtn.disabled = true;
+    setStatus(t('selectorHealthCopyPending', 'Building report…'));
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
+            setStatus(t('selectorHealthCopyNeedYt', 'Open a YouTube tab to build the report.'));
+            return;
+        }
+        // Same message shape as renderSelectorHealthDashboard — the
+        // content-script handler returns `surfaces` (already sorted by
+        // trouble-score, top 12) + `totalSurfaces` + `ctxCounts`. The
+        // formatter only needs the surfaces array.
+        const response = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(null), 1500);
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_SELECTOR_HEALTH' }, (msg) => {
+                    clearTimeout(timer);
+                    if (chrome.runtime.lastError) { resolve(null); return; }
+                    resolve(msg);
+                });
+            } catch (_) {
+                clearTimeout(timer);
+                resolve(null);
+            }
+        });
+        if (!response || response.ok === false || !Array.isArray(response.surfaces)) {
+            setStatus(t('selectorHealthCopyNoSnap', 'No snapshot available — the page may still be loading.'));
+            return;
+        }
+        // Formatter is bundled via core/selector-health.js; defensive
+        // fallback for the (impossible) case where the module didn't
+        // attach to globalThis.YTKitCore.
+        const core = globalThis.YTKitCore || {};
+        const formatter = typeof core.formatSelectorCopyReport === 'function'
+            ? core.formatSelectorCopyReport
+            : null;
+        let payload;
+        if (formatter) {
+            payload = formatter(response.surfaces, {
+                exportedAt: new Date().toISOString(),
+                productVersion: getVersion(),
+                browserUA: (navigator && navigator.userAgent) || 'unknown',
+                topN: 10
+            });
+            // Prepend the active tab URL + the per-ctx counts the formatter
+            // doesn't otherwise include. The popup ctx-counts strip already
+            // surfaces them, but a bug report should carry them inline.
+            const tabLine = 'activeTab: ' + (tab.url || 'unknown');
+            const ctxLines = [];
+            const ctx = (response.ctxCounts && typeof response.ctxCounts === 'object') ? response.ctxCounts : {};
+            const ordered = Object.entries(ctx).filter(([, v]) => Number(v) > 0).sort((a, b) => b[1] - a[1]);
+            if (ordered.length) {
+                ctxLines.push('');
+                ctxLines.push('diagnostic ctx counts:');
+                for (const [k, v] of ordered) ctxLines.push('  - ' + k + ': ' + v);
+            }
+            payload = tabLine + '\n' + payload + ctxLines.join('\n');
+        } else {
+            // Minimal fallback — emit the raw snapshot so the user still has
+            // something to file. Should never trigger in production.
+            payload = JSON.stringify({
+                productVersion: getVersion(),
+                exportedAt: new Date().toISOString(),
+                activeTab: tab.url || 'unknown',
+                surfaces: response.surfaces,
+                ctxCounts: response.ctxCounts || {}
+            }, null, 2);
+        }
+        // navigator.clipboard works in popup contexts because the popup
+        // counts as a user-activated focused surface. Catch the
+        // permission-denied path explicitly so we can fall back to the
+        // ancient textarea-execCommand approach without a console warning
+        // bubbling out of the .catch.
+        try {
+            await navigator.clipboard.writeText(payload);
+            setStatus(t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.'));
+        } catch (clipErr) {
+            // Fallback: hidden textarea + document.execCommand('copy').
+            // Same shape as the existing health-banner copy path.
+            const ta = document.createElement('textarea');
+            ta.value = payload;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'absolute';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (_) {
+                // reason: execCommand may throw in tightly-locked-down contexts
+                ok = false;
+            }
+            ta.remove();
+            if (ok) {
+                setStatus(t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.'));
+            } else {
+                setStatus(t('selectorHealthCopyFail', 'Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead.'));
+            }
+        }
+    } catch (_) {
+        // reason: any unexpected failure must not break the popup
+        setStatus(t('selectorHealthCopyFail', 'Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead.'));
+    } finally {
+        _selectorHealthCopyInFlight = false;
+        if (selectorHealthCopyBtn) selectorHealthCopyBtn.disabled = false;
+    }
+}
+
+if (selectorHealthCopyBtn) {
+    selectorHealthCopyBtn.addEventListener('click', () => { void copySelectorHealthReport(); });
 }
 
 // v4.12.0: data-flow panel. Reads extension/core/data-flow.js's

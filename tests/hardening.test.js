@@ -6474,6 +6474,58 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 popup ships selector-health "Copy report" wiring end-to-end', () => {
+    // The Copy report button must exist in popup.html, have an a11y label
+    // and an i18n hook, the popup must bundle core/selector-health.js so
+    // formatSelectorCopyReport is callable client-side, and the click
+    // handler must guard against concurrent in-flight clicks (the
+    // round-trip can take up to 1500 ms and rapid double-clicks would
+    // otherwise post duplicate reports).
+    const html = popupHtmlSource;
+    assert.match(html, /id="selector-health-copy-btn"/,
+        'popup.html must declare the copy-report button');
+    assert.match(html, /aria-label="Copy selector-health report to clipboard"/,
+        'copy-report button must carry an aria-label for screen readers');
+    assert.match(html, /data-i18n="selectorHealthCopyBtn"/,
+        'copy-report button must carry the i18n key so non-EN locales render the translated label');
+    assert.match(html, /id="selector-health-copy-status"/,
+        'popup.html must declare the live-region status line so aria-live announces success/failure');
+    assert.match(html, /<script src="core\/selector-health\.js"><\/script>/,
+        'popup.html must bundle core/selector-health.js for client-side formatting');
+
+    // The click handler must be wired and guarded.
+    assert.match(popupSource, /_selectorHealthCopyInFlight/,
+        'popup.js must declare an in-flight guard against concurrent copy clicks');
+    assert.match(popupSource, /async function copySelectorHealthReport\(\)/,
+        'popup.js must define the copy handler');
+    assert.match(popupSource, /selectorHealthCopyBtn\.addEventListener\('click'/,
+        'popup.js must attach the click listener to the copy button');
+    // Fallback path: navigator.clipboard.writeText preferred, then
+    // execCommand('copy') for tightly-locked-down contexts.
+    assert.match(popupSource, /navigator\.clipboard\.writeText/,
+        'copy handler must prefer navigator.clipboard.writeText');
+    assert.match(popupSource, /execCommand\('copy'\)/,
+        'copy handler must fall back to execCommand for permission-denied contexts');
+
+    // i18n key parity for the 7 new keys (en/messages.json gates the
+    // cross-locale parity check separately via scripts/check-i18n.js).
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const k of [
+        'selectorHealthCopyBtn',
+        'selectorHealthCopyAria',
+        'selectorHealthCopyPending',
+        'selectorHealthCopyDone',
+        'selectorHealthCopyFail',
+        'selectorHealthCopyNeedYt',
+        'selectorHealthCopyNoSnap',
+    ]) {
+        assert.ok(enMessages[k] && enMessages[k].message,
+            `extension/_locales/en/messages.json must declare ${k}`);
+    }
+});
+
 test('v4.47.0 popup search mini-DSL parses field filters and forwards free text', () => {
     // The popup search filter accepts a small DSL for filtering by schema
     // metadata: `risk:api`, `category:downloads`, `scope:watch`,
