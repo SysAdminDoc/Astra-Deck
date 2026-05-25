@@ -6,6 +6,29 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **transcriptViewer: language preference (NF29).** Non-English users
+  always got English captions because `ytkit.js:21047` hardcoded
+  `tracks.find(t => t.languageCode === 'en')`. NF29 ships a new
+  `transcriptPreferredLanguage` schema entry (category `watch-player`,
+  default `auto`) and a single shared `pickTranscriptTrack(tracks)`
+  helper alongside `getSetting()`. The helper implements a 4-tier
+  precedence:
+    1. exact `languageCode` match for the user's
+       `transcriptPreferredLanguage` setting (when not `auto`/empty)
+    2. exact `languageCode` match for `navigator.language` base
+       (e.g. `es-MX` → `es`)
+    3. exact `'en'` (the v4.46.0 hardcoded fallback — preserved so the
+       behaviour change is opt-in for users who don't set a preference)
+    4. first available track
+  All three transcript track-selection call sites in ytkit.js now
+  route through the helper (was identical duplicated `tracks.find`
+  chain in three places). Pinned by a new `v4.47.0 NF29` hardening
+  test that asserts the helper signature, JSDoc, precedence shape,
+  schema entry default, and sandbox-evaluates the helper against all
+  four precedence tiers. Schema-count pin bumped 354 → 355; storage-
+  size baseline updated by 37 bytes for the new key. 542/542 JS tests
+  pass (+1 new).
+
 - **astra_downloader v1.5.2: Deno cutoff hard-gate on `/download`
   (NF27).** yt-dlp ≥ 2026.04.01 ships an external n/sig solver and
   shells out to a JavaScript runtime (Deno is the documented option)
