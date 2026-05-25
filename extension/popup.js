@@ -1921,6 +1921,60 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         input.addEventListener('change', persist);
         input.addEventListener('blur',   persist);
         row.appendChild(input);
+    } else if (entry.type === 'array' && Array.isArray(entry.knownValues) && entry.knownValues.length > 0) {
+        // v4.47.0 NF7: checkbox-grid editor for array-typed entries
+        // that carry a `knownValues` enumeration on the schema. Replaces
+        // the raw JSON textarea for the four hidden* entries
+        // (hiddenChatElements, hiddenActionButtons, hiddenPlayerControls,
+        // hiddenWatchElements) so users don't have to hand-edit JSON to
+        // toggle individual items. Each token becomes a checkbox; checking
+        // adds the token to the array, unchecking removes it. Order
+        // matches knownValues so the storage payload stays deterministic
+        // for export-import round-trips.
+        const grid = document.createElement('div');
+        grid.className = 'so-key-checks';
+        grid.setAttribute('role', 'group');
+        grid.setAttribute('aria-label', entry.key);
+        const seed = Array.isArray(settings[entry.key]) ? settings[entry.key] : [];
+        const seedSet = new Set(seed);
+        const known = entry.knownValues;
+        const inputs = [];
+        for (const token of known) {
+            const label = document.createElement('label');
+            label.className = 'so-key-check';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = token;
+            cb.checked = seedSet.has(token);
+            cb.dataset.key = entry.key;
+            inputs.push(cb);
+            const text = document.createElement('span');
+            text.textContent = token;
+            label.appendChild(cb);
+            label.appendChild(text);
+            grid.appendChild(label);
+        }
+        const persist = async () => {
+            // Rebuild the array in known-values order from the checked
+            // boxes; preserve any unknown tokens (legacy / import) at the
+            // tail so a user who has a saved value with deprecated tokens
+            // doesn't lose them when toggling a checkbox.
+            const checked = new Set(inputs.filter((i) => i.checked).map((i) => i.value));
+            const knownSet = new Set(known);
+            const preserved = seed.filter((t) => !knownSet.has(t));
+            const next = known.filter((t) => checked.has(t)).concat(preserved);
+            for (const cb of inputs) cb.disabled = true;
+            try {
+                await writeSetting(entry.key, next);
+                renderSchemaOverview();
+            } catch (err) {
+                console.warn('[Astra Deck popup] schema-overview checkbox persist failed:', err);
+            } finally {
+                for (const cb of inputs) cb.disabled = false;
+            }
+        };
+        for (const cb of inputs) cb.addEventListener('change', persist);
+        row.appendChild(grid);
     } else if (entry.type === 'array' || entry.type === 'object') {
         // v4.41.0: array / object JSON editor. The schema overview
         // can now edit every type — closes the editor coverage from

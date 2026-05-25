@@ -233,14 +233,11 @@ What to **intentionally avoid**:
 - **Verification plan**: smoke-install on a clean VM, verify SmartScreen behavior, verify Reinstall action, verify `/update` semver compare via `test_astra_downloader.py`.
 - **Complexity**: L. **Priority**: P1 (Reinstall + `/update`); P2 (signing + .msi).
 
-### NF7 — Multi-select checkbox UI for array settings
-
-- **User problem**: array settings like `hiddenChatElements`, `hiddenActionButtons`, `hiddenPlayerControls` are edited in the popup as raw JSON textareas (v4.41.0 feature) — power-user-only UX.
-- **Evidence**: subagent popup audit §2; `popup.js:1705–1775`; default-settings has 6 array entries.
-- **Proposed behavior**: detect `schema.type === 'array'` AND `schema.knownValues` (new optional field listing valid items, e.g., `['like', 'share', 'ask', ...]`). When `knownValues` is present, render as a checkbox grid instead of a textarea. Falls back to textarea otherwise (e.g., `quickLinkItems` free-text). Add `knownValues` to the 6 array keys in `core/settings-schema.js`.
-- **Implementation areas**: `core/settings-schema.js` (extend 6 array entries with `knownValues`), `extension/popup.js:1705–1775` (renderer fork).
-- **Verification plan**: round-trip an edit through the new checkbox UI; verify JSON parity with the textarea path.
-- **Complexity**: S. **Priority**: P2.
+### NF7 — Multi-select checkbox UI for array settings _[shipped]_
+- Shipped: new optional `knownValues` field on array-type schema entries declares the canonical enumeration. The popup's array-editor branch forks on `Array.isArray(entry.knownValues) && entry.knownValues.length > 0` — if present, renders a flex-wrap checkbox grid (one box per token); if absent, falls back to the v4.41.0 JSON textarea.
+- 4 hidden-* schema entries (`hiddenChatElements`, `hiddenActionButtons`, `hiddenPlayerControls`, `hiddenWatchElements`) now declare `knownValues`. `syncSafePrefsAllowlist` deliberately keeps the JSON path (70+ entries; checkbox UI would be unusable).
+- Persist handler is order-preserving — known-values order first (deterministic for export/import round-trips), unknown tokens preserved at the tail so a saved value with deprecated tokens doesn't lose them.
+- Pinned by `v4.47.0 NF7 — array schema entries with knownValues render checkbox grids` hardening test (schema invariant: knownValues ⊇ defaultValue for each hidden-* entry; syncSafePrefsAllowlist remains JSON; popup forks on knownValues BEFORE the JSON fallback; CSS surface present).
 
 ### NF8 — Reduced-motion guard on popup status pulse + global audit _[shipped — invariant pin only]_
 
@@ -650,7 +647,7 @@ Each item is sized + scoped to a coding agent. Items are grouped by phase; phase
 
 ### Phase G — Polish and minor competitive parity (1 week each)
 
-- [ ] **P2 — Multi-select checkbox UI for array settings (NF7)**
+- [x] **P2 — Multi-select checkbox UI for array settings (NF7)** _[shipped]_
 - [ ] **P2 — Search filter mini-DSL (EI3)**
 - [ ] **P2 — Capability probe + unavailable chip (NF10)**
 - [ ] **P3 — Wheel-seek (NF9)**

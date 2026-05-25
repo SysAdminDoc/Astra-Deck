@@ -881,6 +881,38 @@ body {
   align-self: flex-start;
 }
 
+/* v4.47.0 NF7: checkbox-grid editor for array-typed schema entries
+   that declare a `knownValues` enumeration (hiddenChatElements,
+   hiddenActionButtons, hiddenPlayerControls, hiddenWatchElements).
+   The grid uses dense flex-wrap so 8-14 tokens fit comfortably under
+   the popup's 420 px width without forcing a scroll. */
+.schema-overview-list .so-key-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+  align-self: stretch;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.schema-overview-list .so-key-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface-raised);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.2;
+}
+.schema-overview-list .so-key-check:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.schema-overview-list .so-key-check input[type="checkbox"] { margin: 0; }
+.schema-overview-list .so-key-check input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.schema-overview-list .so-key-check input[type="checkbox"][disabled] { opacity: 0.5; cursor: progress; }
+
 /* v4.39.0: github-full-gated entries in the schema overview. The badge
    makes it visible up-front that the toggle is a no-op until
    GitHub-Full Profile is enabled. House-style 4 px radius — square /
