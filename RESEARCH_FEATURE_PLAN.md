@@ -147,9 +147,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Quality / safety gates
 
-- **P2 / S — SBOM + static-eval scan in CI (NF20)**
-  - Touches: `.github/workflows/validate.yml` (folds into NF11 PR-validate workflow).
-  - Acceptance: `eval(` / `new Function(` in built artifacts fails the build.
 
 - **P3 / S — Locale-coverage report (NF24)**
   - Touches: `scripts/check-i18n.js`, `docs/i18n-coverage.md` (new).
