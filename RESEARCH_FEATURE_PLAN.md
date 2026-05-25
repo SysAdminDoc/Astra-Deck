@@ -111,9 +111,17 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Polish and competitive parity
 
-- **P2 / M — Capability probe + unavailable chip (NF10)**
-  - Depends on NF17 schema field above.
-  - Touches: `extension/core/capability-probe.js` (new), `popup.js` row renderer, schema entries adopt `requires:`.
+- **P2 / S — Capability-probe popup integration (NF10 follow-up)**
+  - Why: the `extension/core/capability-probe.js` module shipped in v4.47.0
+    with full PROBES coverage + isEntryAvailable helper + hardening tests.
+    The popup row renderer should consume it at boot and render an
+    "Unavailable in this browser" chip on rows whose schema `requires:`
+    field declares an unavailable capability.
+  - Touches: `popup.js` schema-overview row builder; popup boot path
+    awaits `capabilityProbe.runAll()` once; popup.css adds an
+    `.unavailable-chip` rule using the existing risk-band palette.
+  - Acceptance: synthetic test sets `summarizerApi` false, asserts
+    `localAiSummary` row carries the chip; setting true clears it.
 
 - **P2 / M — Add `likes` + `subsCount` to predicate ctx (NF16)**
   - Why: BlockTube parity (`likes`), PocketTube parity (`subsCount`).
