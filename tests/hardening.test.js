@@ -6474,6 +6474,55 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismissed flag', () => {
+    // NF6 partial: ytkit.js's MediaDLManager.showInstallPrompt sets
+    // `ytkit_mediadl_prompt_dismissed = true` in chrome.storage.local
+    // when the user clicks "Skip for now". That dismiss is permanent
+    // and there's no obvious recovery path. The popup now surfaces a
+    // "Enable Downloader Prompts" button when that flag is set;
+    // clicking it removes the key from chrome.storage.local. Subsequent
+    // YouTube page loads re-enable the install prompt naturally.
+    //
+    // The full NF6 scope (auto-update, Reinstall button that triggers a
+    // download, code-signing) is a separate set of follow-up items;
+    // this slice fixes the recoverability gap only.
+    assert.match(popupHtmlSource, /id="reenable-mediadl-btn"/,
+        'popup.html must declare the Re-enable Downloader Prompts button');
+    assert.match(popupHtmlSource, /aria-label="Re-enable Astra Downloader install prompts"/,
+        'button must carry an aria-label');
+    assert.match(popupHtmlSource, /data-i18n="reenableMediadlBtn"/,
+        'button must carry an i18n key');
+
+    assert.match(popupSource, /const MEDIADL_DISMISSED_KEY = 'ytkit_mediadl_prompt_dismissed'/,
+        'popup.js must declare the canonical key matching ytkit.js storageWrite');
+    assert.match(popupSource, /chrome\.storage\.local\.remove\(MEDIADL_DISMISSED_KEY/,
+        'clear must use chrome.storage.local.remove on the canonical key');
+    assert.match(popupSource, /async function refreshReenableMediadlVisibility\(\)/,
+        'popup.js must declare the visibility refresh that runs on boot');
+    assert.match(popupSource, /reenableMediadlButton\.addEventListener\('click'/,
+        'popup.js must wire the click listener');
+
+    // Pin the storage-key match against the ytkit.js write site so a
+    // future rename in either file is caught here. The grep below
+    // intentionally hard-codes the string both ends must agree on.
+    assert.match(ytkitSource, /storageWrite\(['"]ytkit_mediadl_prompt_dismissed['"]/,
+        'ytkit.js must continue to write the same storage key the popup reads/clears');
+
+    // EN locale parity for the 4 new keys.
+    const enMessages = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', '_locales', 'en', 'messages.json'), 'utf8'
+    ));
+    for (const k of [
+        'reenableMediadlBtn',
+        'reenableMediadlAria',
+        'statusMediadlReenabled',
+        'statusMediadlReenableFail',
+    ]) {
+        assert.ok(enMessages[k] && enMessages[k].message,
+            `extension/_locales/en/messages.json must declare ${k}`);
+    }
+});
+
 test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it', () => {
     // EI2: the destructive Reset action was irreversible; one
     // misclick wiped all 354 settings + hidden lists + bookmarks
