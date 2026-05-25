@@ -817,6 +817,109 @@ class AutoUpdateActiveDownloadGuardTests(unittest.TestCase):
                          "Update must still fire when no active_count_fn provided")
 
 
+class DenoRuntimeHardGateTests(unittest.TestCase):
+    """v4.47.0 NF27 — yt-dlp >= 2026.04.01 needs Deno to solve YouTube's
+    signature challenges. Without it, every download returns empty
+    format lists with an opaque late error. The /download handler must
+    refuse the request upfront with 422 + actionable advice when the
+    Deno probe reports ``ytdlpNeedsRuntime && !installed``.
+    """
+
+    def _create_api(self, deno_probe_result):
+        # Build a fresh create_api(config, dl_manager, history) instance with
+        # the deno probe patched to the given dict. Returns the Flask test
+        # client. Mirrors the existing ApiSecurityTests setup.
+        cfg = FakeConfig({'ServerToken': 'test-token-1234567890abcdef1234567890ab'})
+        dl_manager = ad.DownloadManager(cfg, FakeHistory())
+
+        with mock.patch.object(ad, 'probe_deno_runtime', return_value=deno_probe_result):
+            api = ad.create_api(cfg, dl_manager, FakeHistory())
+        api.config['TESTING'] = True
+        return api.test_client(), cfg
+
+    def _auth_header(self, cfg):
+        return {'X-Auth-Token': cfg.get('ServerToken', '')}
+
+    def test_download_rejected_when_yt_dlp_needs_runtime_and_deno_absent(self):
+        client, cfg = self._create_api({
+            'installed': False,
+            'version': None,
+            'path': None,
+            'ytdlpNeedsRuntime': True,
+            'advice': 'winget install DenoLand.Deno',
+        })
+        # Note: even though we patched probe_deno_runtime at create_api time,
+        # the handler calls it on every request, so re-patch for the request.
+        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+            'installed': False,
+            'ytdlpNeedsRuntime': True,
+            'advice': 'winget install DenoLand.Deno',
+        }):
+            resp = client.post(
+                '/download',
+                headers={**self._auth_header(cfg), 'Host': '127.0.0.1'},
+                json={'url': 'https://www.youtube.com/watch?v=abcdefghijk'},
+            )
+        self.assertEqual(resp.status_code, 422,
+                         f"Expected 422, got {resp.status_code} body={resp.data!r}")
+        body = resp.get_json() or {}
+        self.assertEqual(body.get('code'), 'deno-runtime-missing',
+                         'Error code must identify the Deno cause')
+        self.assertIn('Deno', body.get('error', ''),
+                      'Error message must mention Deno so the extension can surface it')
+        self.assertIn('winget install', body.get('advice', ''),
+                      'Advice field must carry the install command verbatim')
+
+    def test_download_allowed_when_deno_installed(self):
+        # ytdlpNeedsRuntime=True but installed=True → guard passes through.
+        client, cfg = self._create_api({
+            'installed': True,
+            'version': '2.0.0',
+            'path': '/usr/bin/deno',
+            'ytdlpNeedsRuntime': True,
+            'advice': '',
+        })
+        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+            'installed': True,
+            'ytdlpNeedsRuntime': True,
+        }):
+            resp = client.post(
+                '/download',
+                headers={**self._auth_header(cfg), 'Host': '127.0.0.1'},
+                json={'url': 'https://www.youtube.com/watch?v=abcdefghijk'},
+            )
+        # We expect the download to proceed past the Deno gate; the request
+        # may fail later (yt-dlp.exe likely missing in the test env) but
+        # NOT with our 422. Specifically check that the response is not
+        # 422 with code='deno-runtime-missing'.
+        if resp.status_code == 422:
+            body = resp.get_json() or {}
+            self.assertNotEqual(body.get('code'), 'deno-runtime-missing',
+                                'Deno-installed path must pass through the NF27 gate')
+
+    def test_download_allowed_when_runtime_not_needed(self):
+        # Pre-cutoff yt-dlp (ytdlpNeedsRuntime=False) — guard MUST allow
+        # regardless of Deno installed state, so older pins keep working.
+        client, cfg = self._create_api({
+            'installed': False,
+            'ytdlpNeedsRuntime': False,
+        })
+        with mock.patch.object(ad, 'probe_deno_runtime', return_value={
+            'installed': False,
+            'ytdlpNeedsRuntime': False,
+        }):
+            resp = client.post(
+                '/download',
+                headers={**self._auth_header(cfg), 'Host': '127.0.0.1'},
+                json={'url': 'https://www.youtube.com/watch?v=abcdefghijk'},
+            )
+        # As above: not 422 with code='deno-runtime-missing'.
+        if resp.status_code == 422:
+            body = resp.get_json() or {}
+            self.assertNotEqual(body.get('code'), 'deno-runtime-missing',
+                                'Pre-cutoff yt-dlp path must skip the NF27 gate')
+
+
 class NoArchiveLockTests(unittest.TestCase):
     """v1.3.0 removed the download-archive lock so re-downloads always
     run. These tests pin the invariants so the lock can't be silently

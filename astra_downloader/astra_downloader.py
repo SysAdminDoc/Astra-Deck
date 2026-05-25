@@ -2556,6 +2556,35 @@ def create_api(config, dl_manager, history):
         if url_err:
             return cors_response({"error": url_err}, 400)
 
+        # v4.47.0 NF27: Deno runtime hard-gate.
+        #
+        # yt-dlp >= 2026.04.01 ships an external n/sig solver and shells out
+        # to a JavaScript runtime (Deno is the documented option) to solve
+        # YouTube's signature challenges. Without Deno on PATH, recent yt-dlp
+        # builds silently return empty format lists, and the download fails
+        # late with an opaque "no formats available" error.
+        #
+        # The /health probe surfaces denoRuntime.ytdlpNeedsRuntime +
+        # denoRuntime.installed; the extension renders a "Deno: missing"
+        # warn pill via that data. Until now /download accepted the request
+        # anyway and the user saw the late failure. NF27 turns this into an
+        # actionable upfront error.
+        deno = probe_deno_runtime()
+        if deno.get('ytdlpNeedsRuntime') and not deno.get('installed'):
+            advice = deno.get('advice') or 'Install Deno (https://deno.com/) and restart Astra Downloader.'
+            return cors_response(
+                {
+                    "error": (
+                        "yt-dlp >= 2026.04.01 requires the Deno JavaScript runtime to "
+                        "solve YouTube's signature challenges; without it, every "
+                        "download returns empty format lists. " + advice
+                    ),
+                    "code": "deno-runtime-missing",
+                    "advice": advice,
+                },
+                422,
+            )
+
         raw_cookies = body.get('cookies')
         cookies = raw_cookies if isinstance(raw_cookies, list) else None
         # Cap the cookie list so a hostile extension context can't cause the
