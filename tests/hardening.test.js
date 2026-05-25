@@ -8146,6 +8146,61 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'bug-report bundle payload must include swLifecycle (shorthand property)');
 });
 
+test('v4.47.0 — schema-overview rows for credential-bearing keys carry an inline "local only" trust signal', () => {
+    // The privacy data-flow panel (v4.12.0) explains the "stored
+    // locally only" guarantee, but that panel is off by default —
+    // a user pasting an API key into the schema-overview editor
+    // had no visible reassurance about where the key lives. A
+    // small green chip on the row makes the trust boundary visible
+    // at the pasting moment. Implementation invariants pinned here:
+    //
+    // 1. TRUST_SIGNAL_LOCAL_ONLY_KEYS is a strict subset of
+    //    BUG_REPORT_REDACTED_KEYS — every key with a trust chip
+    //    must also be redacted from the bug-report bundle, otherwise
+    //    the chip's "redacted from bundle" claim is a lie.
+    // 2. The chip uses the existing profile-badge geometry +
+    //    so-key-trust-local class variant.
+    // 3. CSS declares the variant.
+
+    assert.match(popupSource, /const\s+TRUST_SIGNAL_LOCAL_ONLY_KEYS\s*=\s*new Set\(/,
+        'popup.js must declare TRUST_SIGNAL_LOCAL_ONLY_KEYS');
+
+    // Extract both sets and assert the subset relationship at
+    // source-level so future additions to one are caught against
+    // the other.
+    const trustListMatch = popupSource.match(/TRUST_SIGNAL_LOCAL_ONLY_KEYS\s*=\s*new Set\(\[([^\]]+)\]/);
+    assert.ok(trustListMatch, 'TRUST_SIGNAL_LOCAL_ONLY_KEYS must initialize from an array literal');
+    const trustKeys = trustListMatch[1].match(/'[^']+'/g) || [];
+    const redactListMatch = popupSource.match(/BUG_REPORT_REDACTED_KEYS\s*=\s*Object\.freeze\(\[([^\]]+)\]/);
+    assert.ok(redactListMatch, 'BUG_REPORT_REDACTED_KEYS must initialize from a frozen array literal');
+    const redactKeys = new Set((redactListMatch[1].match(/'[^']+'/g) || []));
+    for (const trustKey of trustKeys) {
+        assert.ok(redactKeys.has(trustKey),
+            `${trustKey} must also be in BUG_REPORT_REDACTED_KEYS so the chip's "redacted from bundle" claim is true`);
+    }
+    // Each of the well-known BYO-key fields must carry the trust chip.
+    for (const required of ["'aiSummaryApiKey'", "'aiSummaryEndpoint'"]) {
+        assert.ok(trustKeys.includes(required),
+            `${required} must be in TRUST_SIGNAL_LOCAL_ONLY_KEYS so the trust chip surfaces on its row`);
+    }
+
+    // Row builder consults the set and applies the chip.
+    const rowStart = popupSource.indexOf('function buildSchemaOverviewKeyRow');
+    const rowEnd = popupSource.indexOf('return row;', rowStart);
+    const rowBlock = popupSource.slice(rowStart, rowEnd);
+    assert.match(rowBlock, /TRUST_SIGNAL_LOCAL_ONLY_KEYS\.has\(entry\.key\)/,
+        'row builder must check TRUST_SIGNAL_LOCAL_ONLY_KEYS.has(entry.key) before rendering the chip');
+    assert.match(rowBlock, /so-key-trust-local/,
+        'row builder must apply the .so-key-trust-local class on the chip');
+
+    // CSS variant exists.
+    const popupCss = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'popup.css'), 'utf8'
+    );
+    assert.match(popupCss, /\.so-key-profile-badge\.so-key-trust-local\s*\{/,
+        'popup.css must declare the .so-key-trust-local variant');
+});
+
 test('v4.47.0 NEW-6 — per-key Reset button on schema-overview rows whose value differs from default', () => {
     // NEW-6: a user who has changed one setting to a breaking value
     // currently has to either remember the default or hit global
@@ -8347,7 +8402,11 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
     // 1. BUG_REPORT_REDACTED_KEYS exists and lists every sensitive key.
     assert.match(popupSource, /const\s+BUG_REPORT_REDACTED_KEYS\s*=\s*Object\.freeze\(\[/,
         'popup.js must declare BUG_REPORT_REDACTED_KEYS as a frozen array');
-    const listStart = popupSource.indexOf('BUG_REPORT_REDACTED_KEYS');
+    // Anchor on the declaration itself (not a passing mention in a
+    // comment elsewhere) — a later comment referenced the symbol
+    // name and a bare indexOf would otherwise slice from the wrong
+    // spot.
+    const listStart = popupSource.search(/const\s+BUG_REPORT_REDACTED_KEYS\s*=/);
     const listBlock = popupSource.slice(listStart, listStart + 600);
     for (const key of ['aiSummaryApiKey', 'aiSummaryEndpoint', 'customCssCode',
                        'downloadCobaltInstance', 'alternativeFrontendInstance']) {

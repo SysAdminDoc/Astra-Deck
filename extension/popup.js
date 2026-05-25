@@ -1895,6 +1895,26 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         }
     }
 
+    // v4.47.0: inline trust signal on credential-bearing rows. The
+    // privacy data-flow panel (v4.12.0) already explains the "stored
+    // locally only" guarantee, but that panel is off by default — a
+    // user pasting an API key into the schema-overview editor has no
+    // visible reassurance about where the key lives. A small green
+    // "local only" chip on the row makes the trust boundary visible
+    // at the pasting moment, not buried in an opt-in panel. Tooltip
+    // expands: bug-report bundles redact the value via NEW-1's
+    // BUG_REPORT_REDACTED_KEYS list, and chrome.storage.local is
+    // origin-scoped (never synced to a Google account).
+    if (TRUST_SIGNAL_LOCAL_ONLY_KEYS.has(entry.key)) {
+        const trustChip = document.createElement('span');
+        trustChip.className = 'so-key-profile-badge so-key-trust-local';
+        trustChip.textContent = 'local only';
+        trustChip.title = 'This value is stored in chrome.storage.local on this device. '
+            + 'It is never synced to a Google account, never sent to Astra Deck servers, '
+            + 'and is redacted from the bug-report bundle (Diagnostics → Save).';
+        row.appendChild(trustChip);
+    }
+
     if (entry.type === 'boolean') {
         const on = settings[entry.key] === true;
         const btn = document.createElement('button');
@@ -2317,6 +2337,19 @@ const BUG_REPORT_REDACTED_KEYS = Object.freeze([
     'customCssCode',
     'downloadCobaltInstance',
     'alternativeFrontendInstance',
+]);
+
+// v4.47.0: schema-overview rows for these keys carry an inline
+// "local only" trust signal chip. The set is a strict subset of
+// BUG_REPORT_REDACTED_KEYS — only the truly credential-bearing
+// keys (BYO API keys + the AI endpoint URL, which can embed a
+// key as a query param). Public default URLs (Cobalt instance,
+// alternative frontend, custom CSS) are redacted from bundles
+// but don't need a trust chip on the editor row because the
+// "local only" reassurance is specifically about secrets.
+const TRUST_SIGNAL_LOCAL_ONLY_KEYS = new Set([
+    'aiSummaryApiKey',
+    'aiSummaryEndpoint',
 ]);
 
 // v4.47.0 NEW-1: redact in place so the bug-report bundle never ships

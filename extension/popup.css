@@ -1132,6 +1132,17 @@ body {
   border-color: rgba(245, 87, 87, 0.36);
 }
 
+/* v4.47.0: inline trust signal on credential-bearing rows. Same
+   compact-pill geometry as the gated + unavailable chips, but a
+   reassuring green tone — this is positive trust info, not a
+   warning. Tooltip enumerates the local-storage + redaction
+   guarantees. WCAG AA contrast against the row background. */
+.schema-overview-list .so-key-profile-badge.so-key-trust-local {
+  background: rgba(78, 200, 165, 0.14);
+  color: #6fe0bc;
+  border-color: rgba(78, 200, 165, 0.36);
+}
+
 /* v4.47.0 NEW-6: per-key reset affordance. Only rendered when the
    schema entry has a defaultValue AND the current setting value
    differs from it. Compact circular button with the ↺ glyph — wraps

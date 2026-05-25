@@ -148,8 +148,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 
 ### Polish and competitive parity
 
-- **P2 / S — Inline trust signal on AI provider rows**
-  - "Key stored locally only" inline on the `aiSummaryApiKey` row (currently only in privacy-data-flow panel which is off by default).
 
 - **P3 / S — Wheel-seek (NF9)**
   - Touches: `ytkit.js` near `volumeWheelMode`; new `wheelSeek` schema entry.
