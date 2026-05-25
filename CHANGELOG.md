@@ -6,6 +6,49 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Polish batch: EI-NEW2 / EI-NEW3 / EI-NEW4 / Phase V.** Four small
+  fixes shipped together because each is under 200 lines:
+    - **EI-NEW2 — `youtubeMusicCompat` exact-hostname match.** Replaced
+      `location.hostname.includes('music.youtube.com')` with
+      `location.hostname !== 'music.youtube.com'`. The previous
+      substring match would have matched a hypothetical
+      `music.youtube.com.phishing.io`; browser DNS resolution doesn't
+      route to such a domain in practice, but project policy elsewhere
+      uses exact equality. Existing
+      `youtubeMusicCompat only runs on music.youtube.com` hardening
+      test updated to match the new shape.
+    - **EI-NEW3 — `reactionSpammer` configurable safety floor.** The
+      hardcoded `_INTERVAL_MIN_MS: 500` constant became a settings-
+      aware getter that reads
+      `appState.settings.reactionSpammerMinIntervalMs` (default 500,
+      schema risk `store-risk`/profile `github-full`) and clamps to a
+      hard floor `_INTERVAL_MIN_MS_FLOOR: 500`. Admins of high-traffic
+      streams can raise the floor (e.g. 1000 ms) to keep further from
+      YouTube's automated-behavior heuristics — but cannot lower it
+      below 500 ms because that defeats the safety guarantee from
+      v3.23.0 N3. The existing v3.23 test that pinned the constant
+      shape updated to pin the new floor constant name.
+    - **EI-NEW4 — DeArrow TTL=0 warning + fallback indicator.** When
+      `daCacheTTL === 0`, init now logs a `DebugManager` warning:
+      "Cache disabled (daCacheTTL=0); every card hit fires an API
+      request. Expect rate limits." Fallback titles (sentence/title-
+      case applied when DeArrow has no submission) get a
+      `data-da-fallback="1"` attribute on the clone; new CSS rule
+      `opacity: 0.78` dims them so power users can tell the
+      difference at a glance from real DeArrow submissions.
+    - **Phase V — Iridium + Control Panel promoted into ROADMAP
+      §Phase 1 matrix.** Both CWS competitors were noted in
+      `docs/research/iter-8-sources.md` (2026-05-20) but never
+      formally scored. Added rows 21 + 22 with the standard
+      columns; broader-scoring follow-up is open work.
+  Pinned by a new `v4.47.0 polish batch` hardening test that asserts
+  every invariant: youtubeMusicCompat exact-equality form,
+  `_INTERVAL_MIN_MS_FLOOR` constant + getter + clamp, DeArrow
+  TTL=0 log line + fallback CSS rule + fallback marker write,
+  schema entry default, ROADMAP matrix promotion. Schema-count pin
+  bumped 356 → 357; storage-size baseline updated by 35 bytes.
+  546/546 JS tests pass (+1 new).
+
 - **hideVideosFromHome: configurable subs-load pause threshold (NF33).**
   Before NF33: the subs-load pause gate halted pagination after any
   3-batch streak of 100%-hidden batches. Users hit this on healthy

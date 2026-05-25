@@ -51,6 +51,7 @@
   "hideLiveChatEngagement": true,
   "premiumLiveChat": true,
   "reactionSpammer": false,
+  "reactionSpammerMinIntervalMs": 500,
   "_reactionSpammerAck": false,
   "hidePaidPromotionWatch": true,
   "hideChannelJoinButton": true,

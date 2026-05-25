@@ -411,6 +411,8 @@ External data is volatile. User counts and update dates below are point-in-time 
 | 18 | Scripts.YT | Robert Wesner | Userscripts and small extensions | Active script hub. | small focused scripts | Play-all restoration, timestamp persistence, shadow-comment checks. | https://scripts.yt/ |
 | 19 | Tweeks | NextByte | AI-generated website modifications | Official site: 25K+ people, 4K+ public tweeks, 59 YouTube tweeks. | platform | Natural-language userscript generation and sharing. | https://www.tweeks.io/ |
 | 20 | Userstyles/Stylus YouTube themes | Various | Stylus/UserCSS | Counts vary by hub. | CSS-only | OLED/dark/compact/old-layout patches and element hiding with minimal JS risk. | https://userstyles.world/ ; https://greasyfork.org/en/scripts/by-site/youtube.com?language=css |
+| 21 | Iridium for YouTube | iridiumio | Chrome, Edge, Firefox | CWS listing active (noted in docs/research/iter-8-sources.md, added 2026-05-20). Closed-source. | broad | Codec/quality controls, player polish, ad/sponsor handling; overlaps Astra's qualityProfileMatrix + forceH264 surface. | https://chromewebstore.google.com/detail/iridium-for-youtube/ |
+| 22 | Control Panel for YouTube | Jasper de Groot | Chrome, Firefox | CWS listing noted in iter-8-sources (2026-05-20); deeper feature scoring pending. | broad | UI-tweaks + control panel for layout / Shorts / channels; presumed quality/UI control. | (CWS listing per iter-8-sources.md) |
 
 ### Community and Issue Findings
 

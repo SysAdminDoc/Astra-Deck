@@ -67,17 +67,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Why: ~4500 lines of brittle CSS chains; YouTube class renames break the entire layout.
   - Touches: `ytkit.js#chatStyleComments` (`5965-7245`).
 
-- **P3 / S — `youtubeMusicCompat` exact-hostname match (EI-NEW2)**
-  - Why: `ytkit.js:32395` `.includes('music.youtube.com')` matches `music.youtube.com.phishing.io`.
-  - Touches: one-character change.
-
-- **P3 / S — `reactionSpammer` configurable 500ms floor (EI-NEW3)**
-  - Why: `ytkit.js:14394` hardcoded constant; admins of high-traffic streams may want to tune.
-  - Touches: schema entry + read at floor enforcement site.
-
-- **P3 / S — DeArrow TTL=0 warning + fallback indicator (EI-NEW4)**
-  - Why: TTL=0 silently thrashes the API; fallback formatting indistinguishable from real DeArrow data.
-  - Touches: `ytkit.js#deArrow` (`26013-26257`).
 
 - **P3 / M — `hideVideosFromHome` channel-key cache (EI-NEW5)**
   - Why: `_isSameChannel` is O(channels) per card at `ytkit.js:15815-15819`. ~8ms+ per feed load on 500+ blocked channels.
@@ -87,9 +76,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Why: per-surface miss counter misses class-rename churn (DeArrow's rapid patch cadence shows this is now baseline).
   - Touches: `extension/core/selector-health.js` + per-pack `expectedAttributes`.
 
-- **P3 / S — Promote Iridium + Control Panel into ROADMAP §Phase 1 matrix**
-  - Why: two CWS competitors are in `docs/research/iter-8-sources.md` (2026-05-20) but never scored.
-  - Touches: `ROADMAP.md §Phase 1 Feature Matrix`.
 
 ---
 

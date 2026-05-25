@@ -39,7 +39,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // settings catalogue bumped this baseline by 37 bytes.
     // v4.47.0 NF33: adding `hideVideosSubsLoadHiddenRatio: 0.8` added
     // another 36 bytes.
-    assert.equal(assessment.totalBytes, 177827);
+    // v4.47.0 EI-NEW3: adding `reactionSpammerMinIntervalMs: 500`
+    // added another 35 bytes.
+    assert.equal(assessment.totalBytes, 177862);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
