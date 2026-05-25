@@ -6474,6 +6474,59 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant', () => {
+    // The rule must exist on disk, be required from eslint.config.js,
+    // and be enabled as `error` on the background.js file group. The
+    // existence of the rule is the load-bearing piece — bulk rollout
+    // to popup.js / ytkit.js / core/* is a follow-up that requires a
+    // per-file violation audit + annotation pass first.
+    const eslintConfig = fs.readFileSync(
+        path.join(__dirname, '..', 'eslint.config.js'), 'utf8'
+    );
+    assert.match(eslintConfig, /require-catch-reason/,
+        'eslint.config.js must register the require-catch-reason rule');
+    assert.match(eslintConfig, /'local\/require-catch-reason':\s*'error'/,
+        'require-catch-reason must be enabled as error (not warn) so CI fails on regression');
+
+    const rulePath = path.join(__dirname, '..', 'scripts', 'eslint-rules', 'require-catch-reason.js');
+    assert.ok(fs.existsSync(rulePath), 'rule source must exist at scripts/eslint-rules/require-catch-reason.js');
+    const rule = require(rulePath);
+    assert.equal(rule.meta && rule.meta.type, 'problem',
+        'rule must be classified as `problem` (not stylistic) — silent catches hide bugs');
+    assert.ok(rule.meta && rule.meta.messages && rule.meta.messages.missingReason,
+        'rule must declare the `missingReason` message id');
+
+    // Exercise the rule against a synthetic source so we don't have to
+    // shell out to the eslint binary. Reuses ESLint's exported Linter
+    // class. The rule contract: empty catch without `// reason:` →
+    // exactly 1 message; with the comment → 0 messages.
+    let Linter;
+    try { ({ Linter } = require('eslint')); } catch (_) {
+        // reason: ESLint optional at test time; skip silently rather than
+        // hard-fail when devDeps haven't been installed.
+        return;
+    }
+    const linter = new Linter();
+    const lint = (source) => linter.verify(source, {
+        plugins: { local: { rules: { 'require-catch-reason': rule } } },
+        rules: { 'local/require-catch-reason': 'error' },
+        languageOptions: { ecmaVersion: 2022, sourceType: 'script' },
+    });
+
+    assert.equal(lint('try{}catch(e){}').length, 1,
+        'empty catch with no reason must be flagged');
+    assert.equal(lint('try{}catch(e){ /* reason: ok */ }').length, 0,
+        'empty catch with /* reason: */ inline comment must pass');
+    assert.equal(lint('try{}catch(e){ /* REASON: case-insensitive */ }').length, 0,
+        'comment match must be case-insensitive');
+    assert.equal(lint('try{}catch(e){ // reason: line comment\n}').length, 0,
+        'leading line comment with reason must pass');
+    assert.equal(lint('try{}catch(e){\n  // reason: indented\n}').length, 0,
+        'indented inner comment with reason must pass');
+    assert.equal(lint('try{}catch(e){\n  console.warn(e);\n}').length, 0,
+        'non-empty catch body (statement present) must pass regardless of comment');
+});
+
 test('v4.47.0 popup ships selector-health "Copy report" wiring end-to-end', () => {
     // The Copy report button must exist in popup.html, have an a11y label
     // and an i18n hook, the popup must bundle core/selector-health.js so
