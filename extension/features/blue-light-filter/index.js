@@ -67,7 +67,11 @@
         id: 'blueLightFilter',
         category: 'playback-audio',
         buildRgba: buildBlueLightRgba,
-        OVERLAY_FIXED_CSS
+        OVERLAY_FIXED_CSS,
+        // v4.47.0 NF5 wave 1: register-only; inline ytkit.js owns
+        // mount/remove of the warm-tint overlay element.
+        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
     });
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -76,6 +80,15 @@
         OVERLAY_FIXED_CSS,
         featureSpec
     });
+
+    // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module.
+    try {
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+            globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
+        }
+    } catch (_) {
+        // reason: defineFeature throws on duplicate id; ignore re-registers
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = { buildBlueLightRgba, OVERLAY_FIXED_CSS, featureSpec };

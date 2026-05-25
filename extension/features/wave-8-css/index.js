@@ -53,14 +53,47 @@
             @keyframes ytkit-nyan-rainbow { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }`;
     }
 
+    // v4.47.0 NF5 wave 1: lifecycle specs for the five wave-8 CSS-only
+    // feature ids this module owns. Register-only; inline ytkit.js
+    // cssFeature() blocks still own init/destroy. Category sourced
+    // from the settings-schema entries.
+    const LIFECYCLE_SPECS = Object.freeze([
+        { id: 'hideNotificationButton', category: 'comments'      },
+        { id: 'noFrostedGlass',         category: 'shell'         },
+        { id: 'hideLatestPosts',        category: 'feed'          },
+        { id: 'disableMiniPlayer',      category: 'watch-player'  },
+        { id: 'nyanCatProgressBar',     category: 'shell'         },
+    ]);
+
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.wave8Css = Object.freeze({
         buildHideNotificationButtonCss,
         buildNoFrostedGlassCss,
         buildHideLatestPostsCss,
         buildDisableMiniPlayerCss,
-        buildNyanCatProgressBarCss
+        buildNyanCatProgressBarCss,
+        LIFECYCLE_SPECS
     });
+
+    try {
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+            const lc = globalThis.YTKitCore.getLifecycle();
+            for (const spec of LIFECYCLE_SPECS) {
+                try {
+                    lc.defineFeature({
+                        id: spec.id,
+                        category: spec.category,
+                        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+                        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
+                    });
+                } catch (_) {
+                    // reason: duplicate id from a prior load — safe to skip
+                }
+            }
+        }
+    } catch (_) {
+        // reason: lifecycle unavailable in this context (e.g. test harness)
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
@@ -68,7 +101,8 @@
             buildNoFrostedGlassCss,
             buildHideLatestPostsCss,
             buildDisableMiniPlayerCss,
-            buildNyanCatProgressBarCss
+            buildNyanCatProgressBarCss,
+            LIFECYCLE_SPECS
         };
     }
 })();

@@ -95,14 +95,22 @@
                 `;
     }
 
-    // Lifecycle-ready spec. Not yet wired into the existing feature
-    // registry (the in-monolith block still owns init/destroy), but
-    // exported so a follow-up slice can flip to the v4.7.0 contract
-    // without touching the buildSubtitleCss function again.
+    // Lifecycle-ready spec. The buildSubtitleCss helper lives in this
+    // peel module; the actual DOM mount/teardown still runs in the
+    // monolith's inline subtitleStyling block. v4.47.0 NF5 wave 1
+    // registers the spec with the v4.7.0 lifecycle module so the
+    // contract is exercised + the future adoption wave can flip to
+    // delegating init/destroy here without changing the surface.
     const featureSpec = Object.freeze({
         id: 'subtitleStyling',
         category: 'subtitles',
-        buildCss: buildSubtitleCss
+        buildCss: buildSubtitleCss,
+        // No-op for wave 1 — ytkit.js inline block still owns the real
+        // injectStyle / cleanup. Wave 2 will replace these with the
+        // actual mount/remove and ytkit.js will delegate via
+        // lifecycle.start / .destroy.
+        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
     });
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -111,6 +119,20 @@
         featureSpec,
         FONT_FAMILY_MAP
     });
+
+    // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module so
+    // snapshot() can see this feature. Defensive — the lifecycle module
+    // is loaded before the peels in manifest content_scripts, but the
+    // userscript build path may inline things differently, so we check
+    // for the global first and silently skip if absent.
+    try {
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+            globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
+        }
+    } catch (_) {
+        // reason: defineFeature throws on duplicate id; multiple loads of this
+        // IIFE (extension + userscript context) must not break boot.
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = { buildSubtitleCss, featureSpec, FONT_FAMILY_MAP };

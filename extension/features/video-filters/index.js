@@ -76,7 +76,10 @@
         id: 'videoVisualFilters',
         category: 'playback-audio',
         buildCss: buildVideoFilterCss,
-        isIdentity: isVideoFilterIdentity
+        isIdentity: isVideoFilterIdentity,
+        // v4.47.0 NF5 wave 1: register-only.
+        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
     });
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -86,6 +89,15 @@
         featureSpec,
         FIELD_BOUNDS
     });
+
+    // v4.47.0 NF5 wave 1: register with the v4.7.0 lifecycle module.
+    try {
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+            globalThis.YTKitCore.getLifecycle().defineFeature(featureSpec);
+        }
+    } catch (_) {
+        // reason: defineFeature throws on duplicate id; ignore re-registers
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {

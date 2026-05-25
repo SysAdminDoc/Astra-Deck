@@ -119,6 +119,22 @@
             + '                    }\n                ';
     }
 
+    // v4.47.0 NF5 wave 1: lifecycle specs for the seven theme-css
+    // feature ids this module owns. All register-only (init / destroy
+    // no-op); inline ytkit.js cssFeature() blocks still own the actual
+    // injectStyle / cleanup. The categories below match the
+    // settings-schema entries — schema parity is pinned by the
+    // hardening test.
+    const LIFECYCLE_SPECS = Object.freeze([
+        { id: 'customProgressBarColor', category: 'shell' },
+        { id: 'customSelectionColor',   category: 'shell' },
+        { id: 'grayscaleThumbnails',    category: 'shell' },
+        { id: 'forceDarkEverywhere',    category: 'shell' },
+        { id: 'themeAccentColor',       category: 'shell' },
+        { id: 'compactUnfixedHeader',   category: 'shell' },
+        { id: 'hideVideoEndContent',    category: 'watch-player' },
+    ]);
+
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
     features.themeCss = Object.freeze({
         buildProgressBarCss,
@@ -127,8 +143,29 @@
         buildForceDarkEverywhereCss,
         buildAccentColorCss,
         buildCompactUnfixedHeaderCss,
-        buildHideVideoEndContentCss
+        buildHideVideoEndContentCss,
+        LIFECYCLE_SPECS
     });
+
+    try {
+        if (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function') {
+            const lc = globalThis.YTKitCore.getLifecycle();
+            for (const spec of LIFECYCLE_SPECS) {
+                try {
+                    lc.defineFeature({
+                        id: spec.id,
+                        category: spec.category,
+                        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
+                        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
+                    });
+                } catch (_) {
+                    // reason: duplicate id from a prior load — safe to skip
+                }
+            }
+        }
+    } catch (_) {
+        // reason: lifecycle unavailable in this context (e.g. test harness)
+    }
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
@@ -138,7 +175,8 @@
             buildForceDarkEverywhereCss,
             buildAccentColorCss,
             buildCompactUnfixedHeaderCss,
-            buildHideVideoEndContentCss
+            buildHideVideoEndContentCss,
+            LIFECYCLE_SPECS
         };
     }
 })();
