@@ -46,9 +46,6 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
   - Touches: new `extension/features/de-arrow-overrides/index.js`, consumer in `ytkit.js#deArrow`.
 
 
-- **P2 / M — `hideVideosFromHome` 80%-streak pause threshold (NF33)**
-  - Why: any 3-batch 100%-hidden streak halts pagination at `ytkit.js:15690`. Should be `(hiddenRatio > 0.8 && streak >= 3)`.
-  - Touches: `ytkit.js#hideVideosFromHome` + new optional setting `hideVideosSubsLoadHiddenRatio`.
 
 - **P2 / L — `stickyVideo` unify chat observer lifecycle (NF32)**
   - Why: `_chatWatcherObs` (`ytkit.js:9768`) and `_pendingChatObs` (`ytkit.js:9451`) are independent observers with separate stop timers — double-observer leak risk on rapid SPA nav.

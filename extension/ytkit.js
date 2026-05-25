@@ -3582,6 +3582,10 @@ return response;
             hideVideosDurationFilter: 0,
             hideVideosSubsLoadLimit: true,
             hideVideosSubsLoadThreshold: 3,
+            // v4.47.0 NF33: ratio cutoff for "mostly hidden" batches in
+            // the subs-load pause gate. 0.8 = pause after 3 consecutive
+            // batches each >= 80% hidden.
+            hideVideosSubsLoadHiddenRatio: 0.8,
             hideVideosRemoveHiddenCards: false,
             hideVideosShowQuickHideButton: true,
             hideVideosAllowChannelBlock: true,
@@ -15732,11 +15736,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._subsLoadState.totalVideosHidden += hiddenCount;
                 this._subsLoadState.lastBatchSize = batchSize;
                 this._subsLoadState.lastBatchHidden = hiddenCount;
-                const allHidden = hiddenCount === batchSize;
+                // v4.47.0 NF33: the prior "100% hidden" gate (allHidden =
+                // hiddenCount === batchSize) over-fired in practice — any
+                // 3-batch streak where every single card was hidden halted
+                // pagination, even when 20% non-hidden content would have
+                // loaded normally afterwards. The new gate is configurable
+                // via hideVideosSubsLoadHiddenRatio (default 0.8 = 80%).
+                // A batch qualifies as "mostly hidden" when its hidden
+                // ratio is >= the threshold; the streak still uses the
+                // existing hideVideosSubsLoadThreshold (default 3) so the
+                // sliding-window semantics are preserved.
+                const hiddenRatio = hiddenCount / batchSize;
+                const ratioCutoff = (() => {
+                    const raw = Number(appState.settings.hideVideosSubsLoadHiddenRatio);
+                    if (!Number.isFinite(raw) || raw <= 0 || raw > 1) return 0.8;
+                    return raw;
+                })();
+                const mostlyHidden = hiddenRatio >= ratioCutoff;
                 const threshold = appState.settings.hideVideosSubsLoadThreshold || 3;
-                if (allHidden) {
+                if (mostlyHidden) {
                     this._subsLoadState.consecutiveHiddenBatches++;
-                    DebugManager.log('VideoHider', `Subs load: batch ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} all hidden (${hiddenCount}/${batchSize})`);
+                    DebugManager.log('VideoHider', `Subs load: batch ${this._subsLoadState.consecutiveHiddenBatches}/${threshold} mostly hidden (${hiddenCount}/${batchSize} = ${Math.round(hiddenRatio * 100)}% >= ${Math.round(ratioCutoff * 100)}%)`);
                     if (this._subsLoadState.consecutiveHiddenBatches >= threshold) this._blockSubsLoading();
                 } else {
                     this._subsLoadState.consecutiveHiddenBatches = 0;

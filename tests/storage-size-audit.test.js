@@ -37,7 +37,9 @@ test('typical local payload is not storage.sync eligible', () => {
 
     // v4.47.0 NF29: adding `transcriptPreferredLanguage: "auto"` to the
     // settings catalogue bumped this baseline by 37 bytes.
-    assert.equal(assessment.totalBytes, 177791);
+    // v4.47.0 NF33: adding `hideVideosSubsLoadHiddenRatio: 0.8` added
+    // another 36 bytes.
+    assert.equal(assessment.totalBytes, 177827);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -58,7 +60,7 @@ test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
     assert.match(report, /Safe-store profile sync candidate: viable \(5\.4 KB/);
-    assert.match(report, /Full UI preferences payload: not viable for sync \(11\.2 KB/);
-    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.6 KB/);
+    assert.match(report, /Full UI preferences payload: not viable for sync \(11\.3 KB/);
+    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.7 KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });
