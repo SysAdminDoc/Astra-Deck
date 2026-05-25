@@ -658,8 +658,8 @@ Each item is independently shippable; ordering reflects highest-leverage-first w
 - [ ] **P3 — Live-chat archive export (NEW-9)** — after EI8 unblocks.
 - [ ] **P3 — `chatStyleComments` rebuild (EI-NEW1 promotion candidate)** — bump to P2 if YouTube comment redesign lands.
 - [ ] **P3 — Settings export binary format (EXIST-7)**.
-- [ ] **P3 — CHANGELOG rotation (NEW-8)** — at 8000 lines.
-- [ ] **P3 — Issue template asks for audience (EXIST-8)**.
+- [x] **P3 — CHANGELOG rotation (NEW-8)** — shipped 2026-05-25; v3.33.0 and earlier moved to `CHANGELOG-v3-archive.md`.
+- [x] **P3 — Issue template asks for audience (EXIST-8)** — shipped 2026-05-25.
 - [ ] **P3 — Iridium + Control Panel for YouTube feature scoring** — close the matrix.
 - [ ] **P3 — Store-safe vs GitHub-full split artifact** — bumps to P1 if CWS submission proceeds.
 
