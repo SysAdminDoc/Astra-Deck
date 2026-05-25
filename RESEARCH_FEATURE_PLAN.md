@@ -1,6 +1,6 @@
 # Astra Deck — Active Backlog
 
-Last consolidated: 2026-05-25 at HEAD `389e8d6` (v4.46.0 + 13 autonomous-loop commits).
+Last consolidated: 2026-05-25 (2nd pass) at HEAD `c1ffe18` (v4.46.0 + 24 autonomous-loop commits). The 2nd pass folded in the 2026-05-25 post-loop deep-audit findings (NF25-NF35 + EI-NEW1-6 + Phase V matrix sync) from `docs/research/2026-05-25-postloop-audit.md`, which was then deleted (folded back in here).
 
 This file is the **single source of truth for what's left to ship.** It folds in the original v4.46.0 punch list and the 2026-05-25 reconciliation pass. Completed items live in [CHANGELOG.md](CHANGELOG.md); long-arc architecture lives in [ROADMAP.md](ROADMAP.md); contributor orientation lives in [docs/architecture.md](docs/architecture.md).
 
@@ -32,6 +32,93 @@ Each item carries: priority, complexity, why, evidence, touches, acceptance, ver
 ---
 
 ### CI / DX close-outs
+
+- **P0 / S — SETTINGS_VERSION parity gate (NF25)**
+  - Why: drift today: `popup.js:290 SETTINGS_VERSION_FALLBACK = 6` vs `ytkit.js:3926 SETTINGS_VERSION = 7` vs `settings-meta.json: 7`. `scripts/check-versions.js` validates product version but not SETTINGS_VERSION. Silent profile-import corruption hazard when settings-meta.json fails to load.
+  - Touches: `scripts/check-versions.js`, `tests/hardening.test.js`.
+  - Acceptance: `npm run check` fails when popup fallback drifts from settings-meta + ytkit.
+
+---
+
+### Settings / downloader hardening (P0 batch from 2026-05-25 audit)
+
+- **P0 / M — yt-dlp auto-update active-download guard (NF26)**
+  - Why: `astra_downloader.py:981-1018` `maybe_auto_update_ytdlp()` fires fire-and-forget at `:3758` with no `active_count() == 0` guard. Windows file-locking can fail an in-flight download mid-`-U`.
+  - Touches: `astra_downloader/astra_downloader.py`, `astra_downloader/test_astra_downloader.py`.
+  - Acceptance: pytest with `active_count` mock returning >0 → update deferred; ==0 → update fires.
+
+- **P0 / M — Deno cutoff hard-gate on `/download` (NF27)**
+  - Why: yt-dlp ≥ 2026.04.01 requires Deno. The `denoRuntime` probe at `astra_downloader.py:751-804` reports state but `/download` doesn't consult it; yt-dlp returns empty format lists with an opaque error.
+  - Touches: `astra_downloader.py` (`/download` handler), `extension/ytkit.js` MediaDLManager error path.
+  - Acceptance: `/download` returns 422 with explicit advice when yt-dlp ≥ cutoff + Deno absent.
+
+---
+
+### Polish / parity (P1-P2 batch from 2026-05-25 audit)
+
+- **P1 / S — `transcriptViewer` honors `navigator.language` + new `transcriptPreferredLanguage` setting (NF29)**
+  - Why: `ytkit.js:21035` hardcodes English. Non-English users always get English captions.
+  - Touches: `extension/core/settings-schema.js`, `ytkit.js#transcriptViewer._loadTranscript`.
+
+- **P1 / S — RYD budget-exhaustion observability (NF30)**
+  - Why: `ytkit.js:30240` silently returns false on rate-limit. Pill shows "RYD off" with no copy. Users assume the feature is broken.
+  - Touches: pill render path in `ytkit.js#returnDislike`.
+
+- **P1 / M — DeArrow channel-override chip + per-channel UI (NF28)**
+  - Why: data model shipped (`deArrowChannelOverrides`); lookup at `ytkit.js:26174`. UI was deferred per `CLAUDE.md:438` and never re-tracked.
+  - Touches: new `extension/features/de-arrow-overrides/index.js`, consumer in `ytkit.js#deArrow`.
+
+- **P2 / S — `digitalWellbeing` DST + midnight + tab-hidden persist (NF34)**
+  - Why: long-session watch-time skew across DST; persist runs while `document.hidden`. `ytkit.js:26670-26920`.
+  - Touches: `ytkit.js#digitalWellbeing` init + tick.
+
+- **P2 / M — `hideVideosFromHome` 80%-streak pause threshold (NF33)**
+  - Why: any 3-batch 100%-hidden streak halts pagination at `ytkit.js:15690`. Should be `(hiddenRatio > 0.8 && streak >= 3)`.
+  - Touches: `ytkit.js#hideVideosFromHome` + new optional setting `hideVideosSubsLoadHiddenRatio`.
+
+- **P2 / L — `stickyVideo` unify chat observer lifecycle (NF32)**
+  - Why: `_chatWatcherObs` (`ytkit.js:9768`) and `_pendingChatObs` (`ytkit.js:9451`) are independent observers with separate stop timers — double-observer leak risk on rapid SPA nav.
+  - Touches: `ytkit.js#stickyVideo` init + destroy.
+
+- **P2 / M — `subscriptionGroups` per-group sort persistence (NF31)**
+  - Why: sort mode is global (`subscriptionSortMode`) at `ytkit.js:30897-30914`. PocketTube parity gap for per-group override.
+  - Touches: `extension/core/settings-schema.js` (`subscriptionGroupData` shape), `ytkit.js#subscriptionGroups`.
+
+---
+
+### Observability + competitive sync (P3 batch from 2026-05-25 audit)
+
+- **P3 / S — FolderPickerService timeout watchdog (NF35)**
+  - Why: slow GUI thread silently fails the 120s timeout. Users see "Could not open folder picker" with no root cause.
+  - Touches: `astra_downloader.py:1915-1948`.
+
+- **P3 / M — `chatStyleComments` `@supports(selector(...))` fallbacks (EI-NEW1)**
+  - Why: ~4500 lines of brittle CSS chains; YouTube class renames break the entire layout.
+  - Touches: `ytkit.js#chatStyleComments` (`5965-7245`).
+
+- **P3 / S — `youtubeMusicCompat` exact-hostname match (EI-NEW2)**
+  - Why: `ytkit.js:32395` `.includes('music.youtube.com')` matches `music.youtube.com.phishing.io`.
+  - Touches: one-character change.
+
+- **P3 / S — `reactionSpammer` configurable 500ms floor (EI-NEW3)**
+  - Why: `ytkit.js:14394` hardcoded constant; admins of high-traffic streams may want to tune.
+  - Touches: schema entry + read at floor enforcement site.
+
+- **P3 / S — DeArrow TTL=0 warning + fallback indicator (EI-NEW4)**
+  - Why: TTL=0 silently thrashes the API; fallback formatting indistinguishable from real DeArrow data.
+  - Touches: `ytkit.js#deArrow` (`26013-26257`).
+
+- **P3 / M — `hideVideosFromHome` channel-key cache (EI-NEW5)**
+  - Why: `_isSameChannel` is O(channels) per card at `ytkit.js:15815-15819`. ~8ms+ per feed load on 500+ blocked channels.
+  - Touches: build a `_blockedChannelKeys: Map<key, channelRecord>` at init.
+
+- **P3 / M — `selector-health` attribute-drift detection (EI-NEW6)**
+  - Why: per-surface miss counter misses class-rename churn (DeArrow's rapid patch cadence shows this is now baseline).
+  - Touches: `extension/core/selector-health.js` + per-pack `expectedAttributes`.
+
+- **P3 / S — Promote Iridium + Control Panel into ROADMAP §Phase 1 matrix**
+  - Why: two CWS competitors are in `docs/research/iter-8-sources.md` (2026-05-20) but never scored.
+  - Touches: `ROADMAP.md §Phase 1 Feature Matrix`.
 
 ---
 
