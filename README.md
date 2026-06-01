@@ -382,8 +382,9 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 | Doc | Audience |
 |-----|----------|
-| [ROADMAP.md](ROADMAP.md) | v5.0.0 → v6.0.0 product plan, competitive matrix, full per-toggle settings schema |
-| [RESEARCH_FEATURE_PLAN.md](RESEARCH_FEATURE_PLAN.md) | v4.46.0+ code-audit punch list (Phases A–H, Quick Wins, Larger Bets) |
+| [ROADMAP.md](ROADMAP.md) | Active backlog plus v5.0.0 → v6.0.0 product plan, competitive matrix, full per-toggle settings schema |
+| [COMPLETED.md](COMPLETED.md) | Shipped roadmap arcs and recent hardening/polish summaries |
+| [RESEARCH_REPORT.md](RESEARCH_REPORT.md) | Research summary and archive index for prior feature-plan files |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
 | [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |

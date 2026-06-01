@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Planning docs consolidated.** Active backlog items now live at the top of
+  `ROADMAP.md`, shipped roadmap arcs are summarized in `COMPLETED.md`, and
+  research context is summarized in `RESEARCH_REPORT.md`. The previous
+  root-level feature-plan files are archived under `docs/archive/research/`.
+
 - **Premium-polish pass on the first-run + update surfaces.** Three
   small but real quality improvements to features from this arc:
   - **Welcome card: Store-Safe is now visibly the recommended
@@ -74,8 +79,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   hardening test asserting the constant value, the `_parseItems`
   truncate, the `validateForm` cap-gate + status copy, and the
   defensive click-time re-check + toast. 574/574 JS tests pass
-  (+1 new); npm run check clean. Backlog item retired from
-  RESEARCH_FEATURE_PLAN.md.
+  (+1 new); npm run check clean. Backlog item retired from the
+  consolidated roadmap.
 
 - **PyQt6 GUI smoke tests for the downloader (NF22).** Previously the
   GUI side had only source-shape pins (FolderPickerWatchdogTests) —

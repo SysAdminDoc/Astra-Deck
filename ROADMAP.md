@@ -2,6 +2,81 @@
 
 Generated: 2026-05-21 (research pass 2 + autonomous v5.0.0 foundation sprint — supersedes the morning pass with full per-toggle settings schema, manifest-command audit, tightened architecture, and 6 shipped foundation slices v4.5.3 → v4.11.0)
 
+This is the canonical roadmap and active backlog. Shipped work is summarized in
+[COMPLETED.md](COMPLETED.md) and detailed in [CHANGELOG.md](CHANGELOG.md).
+Research is summarized in [RESEARCH_REPORT.md](RESEARCH_REPORT.md), with the
+pre-consolidation research plans archived under `docs/archive/research/`.
+
+## Active Backlog
+
+### Browser-Bounded Captures
+
+- [ ] **P0 / S — Capture live-chat MHTML fixtures (EI8)**: refresh the three
+  live-chat selector packs and token fixture, then run
+  `npm run build:fixtures && npm test`.
+- [ ] **P0 / S — Capture YouTube liquid-glass player chrome (HARDENING H21,
+  EI9)**: refresh the watch-page fixture and promote liquid-glass selectors into
+  the critical selector set.
+- [ ] **P2 / M — MHTML capture-week expansion (EI15 + NF19)**: add fixtures and
+  selector packs for Shorts, channel, search, history, watch-later, embedded
+  player, and notifications surfaces.
+
+### Polish And Parity
+
+- [ ] **P2 / L — `stickyVideo` unify chat observer lifecycle (NF32)**: merge the
+  duplicate chat watcher paths into one predictable init/destroy lifecycle.
+- [ ] **P2 / M — `subscriptionGroups` per-group sort persistence (NF31)**: move
+  sort mode from a global setting to per-group state.
+- [ ] **P3 / M — `chatStyleComments` selector fallbacks (EI-NEW1)**: add
+  `@supports(selector(...))` fallbacks for brittle CSS chains.
+- [ ] **P3 / M — `hideVideosFromHome` channel-key cache (EI-NEW5)**: precompute
+  blocked-channel lookup keys instead of scanning all records per card.
+- [ ] **P3 / M — `selector-health` attribute-drift detection (EI-NEW6)**: expand
+  selector health beyond miss counts to class/attribute churn.
+
+### Lint And Lifecycle
+
+- [ ] **P2 / M — `require-catch-reason` to `extension/core/*.js`** after the
+  per-file catch annotation pass.
+- [ ] **P3 / L — `require-catch-reason` to `ytkit.js`** after annotating the
+  large monolith catch surface.
+- [ ] **P2 / L — Wave 3 lifecycle full delegate**: move CSS injection ownership
+  into peel modules and make `cssFeature` a thin lifecycle wrapper.
+- [ ] **P2 / XL — Top-3 monolith peel**: split `stickyVideo`,
+  `hideVideosFromHome`, and `chatStyleComments` into feature modules.
+- [ ] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
+  `floatingLogoOnWatch`.
+
+### Companion, Subscriptions, And Research
+
+- [ ] **P1 / L — Astra Downloader `/update` endpoint + popup action (NF6)**:
+  provide a user-visible companion update path with semver compare, atomic
+  replace, and restart.
+- [ ] **P2 / L — Astra Downloader signed installer + MSI**: deferred until CWS
+  submission intent and signing budget are decided.
+- [ ] **P2 / L — Nested subscription groups (NF2)**: add depth-2 groups and
+  JSON round-trip coverage.
+- [ ] **P2 / L — Dead-channel detection + bulk unsubscribe staging**: flag stale
+  channels and provide a 30-day undo window.
+- [ ] **P3 / M — Group notifications digest panel**: show per-group new-video
+  counts since last visit.
+- [ ] **P2 / M — Per-video notes (`videoNotes`) (NF1)**: add notes schema/UI,
+  export support, and a 1000-note LRU cap.
+- [ ] **P3 / M — Study/work mode export to Markdown/CSV**.
+- [ ] **P3 / M — i18n feature-definition labels out of `ytkit.js` (EI6)**.
+- [ ] **P3 / M — Store-safe vs GitHub-full separate build artifacts**.
+
+### Carried Risks And Questions
+
+- R4: bound storage growth for `videoNotes`, `timestampBookmarks`, and
+  `videoHistory`.
+- R6: finish `policy-profile.js` scrub-regex coverage.
+- R8: surface a Cobalt fallback unreachable diagnostic.
+- G3: add a long-session memory leak test.
+- Open decisions: downloader signing budget, CWS/AMO submission intent,
+  dead-channel detection method, lifecycle migration cadence, live-chat capture
+  window, and i18n coverage warning policy.
+
 ## Session log (2026-05-21 autonomous loop)
 
 Six ships executed in sequence, each fully tested + built + pushed:

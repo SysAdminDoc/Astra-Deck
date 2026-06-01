@@ -1,6 +1,6 @@
 # Astra Deck — Architecture Map
 
-This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.0+), not prescriptive (which direction to push). For where to push, see [ROADMAP.md](../ROADMAP.md) (v5.0.0 → v6.0.0 plan) and [RESEARCH_FEATURE_PLAN.md](../RESEARCH_FEATURE_PLAN.md) (v4.46.0+ code-audit punch list).
+This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.0+), not prescriptive (which direction to push). For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and v5.0.0 → v6.0.0 plan, plus [RESEARCH_REPORT.md](../RESEARCH_REPORT.md) for research context and archived feature-plan sources.
 
 ## The four moving parts
 
@@ -142,7 +142,7 @@ User opens the popup:
 4. **Every feature has `init()` + `destroy()`.** `destroy()` must fully remove DOM, observers, listeners, timers, pending async work, body/html classes, injected styles, and storage listeners.
 5. **TrustedTypes-safe DOM injection.** All `innerHTML`-shaped writes go through `core/trusted-html.js#setTrustedHTML` or DOM API construction. `el.innerHTML = ''` is also forbidden — use `el.textContent = ''`.
 6. **Selector preference.** Stable selectors only: custom elements, IDs, roles, `aria-*`, `href`, structural CSS. Obfuscated / generated classes are `fallback[]` only. New feature code calls `findSurfaceElement(surface, root)`, never raw document-wide selectors.
-7. **Catch blocks need `// reason:`.** v3.14.0 invariant: every empty `catch (_) {}` body must explain itself with a `// reason:` comment OR contain at least one executable statement (logger, return, anything). Enforced by `scripts/eslint-rules/require-catch-reason.js` on `background.js` today; wider rollout pending per-file annotation pass (see RESEARCH_FEATURE_PLAN EI1).
+7. **Catch blocks need `// reason:`.** v3.14.0 invariant: every empty `catch (_) {}` body must explain itself with a `// reason:` comment OR contain at least one executable statement (logger, return, anything). Enforced by `scripts/eslint-rules/require-catch-reason.js` on `background.js` today; wider rollout pending per-file annotation pass (see `ROADMAP.md` lint-surface widening).
 8. **No `Co-Authored-By: Claude` trailer in commits.** Project enforces zero AI-attribution. Conventional version-prefix subjects.
 9. **Schema parity.** Adding a new setting requires touching BOTH `core/settings-schema.js` (the truth) AND `default-settings.json` (the mirror). `scripts/check-settings.js` enforces parity on every `npm run check`. Tests in `tests/settings-migration-roundtrip.test.js` enforce that prior-schema-version exports round-trip cleanly into the current schema.
 10. **Version drift.** `scripts/check-versions.js` enforces that all five sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js#YTKIT_VERSION`, `YTKit.user.js#@version`, `package-lock.json`) carry the same version. Bumping is one command: `node build-extension.js --bump patch|minor|major`.
@@ -193,4 +193,4 @@ Same as the CSS-only path through step 2, then:
 
 ## Where to push next
 
-See [RESEARCH_FEATURE_PLAN.md](../RESEARCH_FEATURE_PLAN.md) for the v4.46.0+ punch list (Phases A–H, Quick Wins, Larger Bets). Several phases have already shipped (A, B, NF4, QW7, QW4, EI1, NF5 wave 1, EI2, NF6 partial, NF7, EI12, EI14); the residue is mostly browser-bounded captures (live-chat, liquid-glass player), per-category lifecycle adoption, and the Subscription Manager v2 / Per-video notes / Astra Downloader signing larger bets.
+See [ROADMAP.md](../ROADMAP.md) for the active backlog. The current residue is mostly browser-bounded captures (live-chat, liquid-glass player), per-category lifecycle adoption, and the Subscription Manager v2 / Per-video notes / Astra Downloader signing larger bets.
