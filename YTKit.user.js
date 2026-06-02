@@ -8567,8 +8567,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         try {
                             const regexMatch = filterStr.match(/^\/(.+)\/([gimsuy]*)$/);
                             if (regexMatch) {
-                                // Reject patterns with nested quantifiers (ReDoS risk)
-                                if (/([+*?]|\{\d+,?\d*\})\s*[+*?]|\(\?[^)]*[+*]/.test(regexMatch[1])) {
+                                // Reject patterns with nested quantifiers (ReDoS risk).
+                                // Three branches mirror the hardened extension guard:
+                                // adjacent quantifiers (a++), a group with an inner
+                                // quantifier then an outer one ((a+)+ / (?:a+)+), and
+                                // overlapping-alternation backtracking ((a|a|a)+ / (a|aa)+).
+                                if (/([+*?]|\{\d+,?\d*\})\s*[+*?]|\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})|\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(regexMatch[1])) {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
                                     const regex = new RegExp(regexMatch[1], regexMatch[2]);
