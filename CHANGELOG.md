@@ -6,6 +6,37 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Deep audit hardening pass (H26).** Repo-wide principal-engineer audit
+  across every surface — service worker, popup, core modules, the `ytkit.js`
+  content script, the userscripts, and the Python downloader — verified
+  adversarially before applying. 23 real fixes landed; 8 candidate findings
+  were rejected as intentional design / false positives. 574 JS + 111 Python
+  tests stay green; `npm run check` and the four-artifact build pass.
+  - **High:** Reset now aborts (instead of silently wiping with no Undo) when
+    the recovery snapshot can't be staged because storage exceeds the
+    `storage.session` quota — while still allowing the intentional no-undo path
+    on browsers without session storage. The predicate-sandbox / videoHider /
+    commentFilter ReDoS guards now reject overlapping-alternation patterns
+    (`(a|a|a)+`, `(a|aa)+`) that previously slipped past and could freeze the
+    content-script main thread. The Python downloader now terminates in-flight
+    `yt-dlp`/`ffmpeg` subprocesses on quit instead of orphaning them.
+  - **Medium:** `EXT_FETCH` now keeps its timeout armed through the body-drain
+    phase (a slow-trickle upstream could previously pin the service worker);
+    Reset no longer re-triggers the first-run welcome card; the schema-overview
+    no longer tears down a focused inline editor on an unrelated storage write;
+    the XML transcript fallback now captures segment `dur`; the folder picker
+    warns up-front when a chosen path is outside the allowed download roots;
+    the first-run SetupWorker thread is awaited at shutdown; and the Windows
+    process-tree kill reaps `ffmpeg` children even when `yt-dlp` exits fast.
+  - **Low:** astral-plane HTML entities in transcripts, the captionTracks
+    fallback regex truncating on `]`/`}` in a track name, a storage-preload
+    clobber race, a shared-mutable cached `URLSearchParams`, a side-effecting
+    `api-limiter.getState()`, a selector-health snapshot that mutated its own
+    telemetry, an unbounded `error_lines` list, an unlocked `Config` across
+    threads, `/pick-folder` rate-limiting/single-flight, a latent
+    `commentTextSelectionSupport` teardown gap, a focus-trap visibility gap, a
+    duplicate native search-clear button, and a dead capability-probe branch.
+
 - **Planning docs consolidated.** Active backlog items now live at the top of
   `ROADMAP.md`, shipped roadmap arcs are summarized in `COMPLETED.md`, and
   research context is summarized in `RESEARCH_REPORT.md`. The previous

@@ -203,12 +203,22 @@
                     url: `https://www.youtube.com/watch?v=${videoId}`
                 });
 
-                const captionMatch = html.match(/"captionTracks":(\[.*?\])(?:,|\})/);
-                if (!captionMatch || !captionMatch[1]) {
-                    throw new Error('captionTracks not found in page');
+                const keyIdx = html.indexOf('"captionTracks":');
+                if (keyIdx === -1) throw new Error('captionTracks not found in page');
+                const arrStart = html.indexOf('[', keyIdx);
+                if (arrStart === -1) throw new Error('captionTracks not found in page');
+                let depth = 0, inStr = false, esc = false, arrEnd = -1;
+                for (let i = arrStart; i < html.length; i++) {
+                    const c = html[i];
+                    if (esc) { esc = false; continue; }
+                    if (c === '\\') { esc = true; continue; }
+                    if (c === '"') { inStr = !inStr; continue; }
+                    if (inStr) continue;
+                    if (c === '[') depth++;
+                    else if (c === ']') { depth--; if (depth === 0) { arrEnd = i; break; } }
                 }
-
-                const captionJson = captionMatch[1].replace(/\\u0026/g, '&');
+                if (arrEnd === -1) throw new Error('captionTracks not found in page');
+                const captionJson = html.slice(arrStart, arrEnd + 1).replace(/\\u0026/g, '&');
                 const tracks = JSON.parse(captionJson);
 
                 let videoTitle = videoId;
@@ -374,13 +384,14 @@
 
             _parseXML(content) {
                 const segments = [];
-                const textRegex = /<text[^>]*start="([^"]*)"[^>]*(?:dur="([^"]*)")?[^>]*>([\s\S]*?)<\/text>/g;
+                const textRegex = /<text\b([^>]*)>([\s\S]*?)<\/text>/g;
 
                 let match;
                 while ((match = textRegex.exec(content)) !== null) {
-                    const startSeconds = parseFloat(match[1]) || 0;
-                    const duration = parseFloat(match[2]) || 0;
-                    const text = this._decodeHTMLEntities(match[3])
+                    const attrs = match[1];
+                    const startSeconds = parseFloat((attrs.match(/\bstart="([^"]*)"/) || [])[1]) || 0;
+                    const duration = parseFloat((attrs.match(/\bdur="([^"]*)"/) || [])[1]) || 0;
+                    const text = this._decodeHTMLEntities(match[2])
                         .replace(/<[^>]*>/g, '')
                         .trim();
 
@@ -457,8 +468,14 @@
                     .replace(/&amp;/g, '&')
                     .replace(/&lt;/g, '<')
                     .replace(/&gt;/g, '>')
-                    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
-                    .replace(/&#x([a-fA-F0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+                    .replace(/&#(\d+);/g, (m, num) => {
+                        const cp = Number(num);
+                        return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+                    })
+                    .replace(/&#x([a-fA-F0-9]+);/g, (m, hex) => {
+                        const cp = parseInt(hex, 16);
+                        return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+                    });
             },
 
             _sanitizeFilename(name) {
