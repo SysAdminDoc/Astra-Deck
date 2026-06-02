@@ -3745,8 +3745,14 @@
                 .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>')
-                .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
-                .replace(/&#x([a-fA-F0-9]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+                .replace(/&#(\d+);/g, (m, num) => {
+                    const cp = Number(num);
+                    return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+                })
+                .replace(/&#x([a-fA-F0-9]+);/g, (m, hex) => {
+                    const cp = parseInt(hex, 16);
+                    return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+                });
         },
 
         _sanitizeFilename(name) {

@@ -1826,6 +1826,12 @@ button:focus-visible {
 
 .search-row input::placeholder { color: var(--text-muted); }
 
+.search-row input::-webkit-search-cancel-button,
+.search-row input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .search-row input:focus-visible {
   outline: none;
   border-color: var(--accent-border);

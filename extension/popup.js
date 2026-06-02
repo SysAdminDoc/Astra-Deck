@@ -838,6 +838,7 @@ function isVisibleFocusableElement(element) {
     if (!(element instanceof HTMLElement)) return false;
     if (element.hidden || element.closest('[hidden]')) return false;
     if (element.getAttribute('aria-hidden') === 'true') return false;
+    if (element.offsetParent === null && getComputedStyle(element).position !== 'fixed') return false;
     return true;
 }
 
@@ -3173,8 +3174,22 @@ async function resetAllData() {
                 });
             } catch (err) { reject(err); }
         });
-        await writeResetSnapshot(snapshot);
+        const snapped = await writeResetSnapshot(snapshot);
+        if (!snapped && sessionStorageAvailable()) {
+            showStatus(t('statusResetSnapshotFail',
+                'Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first.'),
+                'error', 6000);
+            return;
+        }
         await storageClear();
+        // Re-stamp the first-run / what's-new sentinels that storageClear()
+        // just wiped, so a reset doesn't re-trigger the welcome/onboarding
+        // card on the next popup open. Undo is unaffected — the pre-clear
+        // snapshot holds the originals and restores them verbatim.
+        await storageSet({
+            [FIRST_RUN_SEEN_KEY]: true,
+            [LAST_SEEN_VERSION_KEY]: (manifestVersion && manifestVersion !== '—') ? manifestVersion : '',
+        });
         await renderStorageInfo();
         await loadSettings();
         render(popupState.settings, q.value);
@@ -3378,8 +3393,12 @@ function installWheelScrolling() {
                 // surface in the popup on next render.
                 renderDataFlowPanel();
                 // v4.23.0: keep the schema overview's counts in sync
-                // when settings change from any source.
-                renderSchemaOverview();
+                // when settings change from any source — but never blow away
+                // a focused inline editor (number/text/JSON), which would
+                // discard the user's uncommitted input mid-edit.
+                if (!schemaOverviewList || !schemaOverviewList.contains(document.activeElement)) {
+                    renderSchemaOverview();
+                }
             }).catch((error) => {
                 console.warn('[Astra Deck popup] Failed to refresh settings:', error);
             });
