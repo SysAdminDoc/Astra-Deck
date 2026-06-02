@@ -599,6 +599,9 @@
   "statusResetUndoExpired": {
     "message": "Undo no longer available — snapshot expired with the browser session."
   },
+  "statusResetSnapshotFail": {
+    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
+  },
   "statusResetUndoFail": {
     "message": "Undo failed"
   },

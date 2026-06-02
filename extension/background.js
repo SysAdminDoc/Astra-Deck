@@ -578,7 +578,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
 
         fetch(url, fetchOpts).then(async (resp) => {
-            if (timer) clearTimeout(timer);
+            // NOTE: the clampedTimeout deadline intentionally spans the entire
+            // connect + headers + body-drain lifecycle. We do NOT clear the
+            // timer here on headers arrival — a slowloris upstream that trickles
+            // bytes under MAX_RESPONSE_BYTES must still hit the deadline, whose
+            // controller.abort() tears down an in-progress reader.read() and
+            // whose callback returns {timeout:true} to the caller. The timer is
+            // cleared only on terminal paths below (success / early returns /
+            // catch).
             if (responded) return;
 
             // SSRF hardening: if redirects followed us to an origin that is NOT
@@ -588,6 +595,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             // arbitrary host would otherwise bypass the origin allowlist.
             if (resp.url && resp.url !== url && !isUrlAllowed(resp.url)) {
                 responded = true;
+                if (timer) { clearTimeout(timer); timer = null; }
                 sendResponse({ error: `Response URL not in allowlist after redirect: ${resp.url}` });
                 try { controller.abort(); } catch (_) {
                     // reason: controller may already be aborted
@@ -600,6 +608,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 const contentLength = parseInt(contentLengthHeader, 10);
                 if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
                     responded = true;
+                    if (timer) { clearTimeout(timer); timer = null; }
                     sendResponse({ error: `Response too large (${contentLength} bytes)` });
                     try { controller.abort(); } catch (_) {
                         // reason: controller may already be aborted by timeout
@@ -638,6 +647,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                                 // reason: controller may already be aborted by timeout
                             }
                             responded = true;
+                            if (timer) { clearTimeout(timer); timer = null; }
                             sendResponse({ error: `Response body too large (${received} bytes)` });
                             return;
                         }
@@ -655,6 +665,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                             // reason: controller may already be aborted by timeout
                         }
                         responded = true;
+                        if (timer) { clearTimeout(timer); timer = null; }
                         sendResponse({ error: `Response body too large (${measuredBytes} bytes)` });
                         return;
                     }
@@ -667,6 +678,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             }
 
             responded = true;
+            if (timer) { clearTimeout(timer); timer = null; }
             const responseHeaders = [...resp.headers.entries()]
                 .filter(([k]) => !BLOCKED_RESPONSE_HEADERS.has(k.toLowerCase()))
                 .map(([k, v]) => `${k}: ${v}`)

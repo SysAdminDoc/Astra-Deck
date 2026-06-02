@@ -16,7 +16,7 @@
     let cachedSearchHref = '';
     let cachedSearchParams = null;
 
-    function getUrlSearchParams() {
+    function getCachedSearchParams() {
         const href = window.location.href;
         if (href !== cachedSearchHref) {
             cachedSearchHref = href;
@@ -25,8 +25,14 @@
         return cachedSearchParams;
     }
 
+    // Public accessor hands callers a defensive copy so external mutation
+    // can't corrupt the shared cached URLSearchParams instance.
+    function getUrlSearchParams() {
+        return new URLSearchParams(getCachedSearchParams());
+    }
+
     function getUrlParam(name) {
-        return getUrlSearchParams().get(name);
+        return getCachedSearchParams().get(name);
     }
 
     function isValidVideoId(value) {

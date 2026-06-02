@@ -2,6 +2,115 @@
 
 > Cumulative hardening log. H1–H19 covered v3.20.x audit passes (Passes 7–18).
 > H20 onward covers v3.23.0 (Pass 19). H25 covers v4.46.0 (extreme audit pass).
+> H26 is a repo-wide multi-agent deep audit on top of v4.46.0.
+
+## H26 — Repo-wide deep audit (multi-agent, on v4.46.0)
+
+**Method.** Every surface was swept by a focused auditor (background SW,
+popup state/UX, the five security-primitive core modules, transcript /
+selector services, navigation / lifecycle, storage / data-flow, the
+43.8k-line `ytkit.js` content script, the userscripts, the build/CSP, and
+the Python downloader's security + threading). **Every** finding was then
+re-checked by an independent adversarial verifier biased to reject — it
+read the cited code, grepped for existing guards, and checked the test
+suite + this file before confirming. 23 findings survived as real and
+test-safe; 8 were rejected (see *Rejected — not bugs* below). Baseline
+574 JS + 111 Python tests stayed green throughout; `npm run check` and the
+four-artifact build pass.
+
+**High.**
+
+- **Reset could wipe everything with no recoverable Undo.**
+  `popup.js#resetAllData` awaited `writeResetSnapshot(snapshot)` but
+  discarded its result, then ran `storageClear()` unconditionally. When
+  `storage.local` exceeds the fixed ~10 MB `storage.session` quota
+  (which `unlimitedStorage` does *not* lift) the snapshot write fails
+  silently and the heaviest users — exactly the ones the storage banner
+  nudges toward Reset — lose all data with the Undo button never
+  appearing. Now aborts with an actionable error when `!snapped &&
+  sessionStorageAvailable()`, while preserving the intentional no-undo
+  path on browsers that lack `storage.session`.
+- **ReDoS guard missed overlapping-alternation.** The
+  `hasUnsafeQuantifiers` / `hasNestedQuantifiers` guards (in
+  `core/predicate-sandbox.js` plus the `videoHider` and
+  `commentFilterManager` guards in `ytkit.js`) caught nested quantifiers
+  and inner-quantifier alternation but not pure overlapping-alternation
+  like `(a|a|a)+` / `(a|aa)+`, which are exponential with no inner
+  quantifier. The 5 ms eval budget is measured *after* the synchronous
+  regex completes, so it opens the circuit only for the next call — it
+  cannot interrupt the freeze. Added an `altGroupQuantified` branch to
+  all three guards (`[+*]`/`{n,}` only, so `(a|b)?` stays allowed).
+- **Orphaned download subprocesses on quit.** `astra_downloader`'s
+  `closeEvent` stopped the server/timers/tray but never cancelled
+  in-flight downloads, leaving `yt-dlp.exe`/`ffmpeg.exe` running (CPU,
+  open `.part` files, and a later `-U` racing an in-use binary). Added
+  `DownloadManager.cancel_all()` (terminates active process trees under
+  the lock) and call it after `_stop_server()` in the quit path.
+
+**Medium.**
+
+- **`EXT_FETCH` body-drain had no deadline.** The single timeout was
+  cleared the instant headers arrived, before the streamed `reader.read()`
+  loop, so a trickle-under-cap upstream pinned the MV3 SW indefinitely —
+  the exact "hung upstream" the timer comment claims to prevent. The
+  `clampedTimeout` now stays armed across connect+headers+body and is
+  cleared only on terminal paths; no `controller.abort()` site removed.
+- **Reset re-triggered the first-run welcome card.** `storageClear()`
+  wiped `FIRST_RUN_SEEN_KEY`/`LAST_SEEN_VERSION_KEY`, re-onboarding a
+  returning user (and silently re-exposing the profile picker), violating
+  the documented invariant. The sentinels are now re-stamped after the
+  wipe; Undo still restores the originals from the pre-clear snapshot.
+- **`storage.onChanged` destroyed a focused inline editor.** The popup
+  schema-overview re-rendered (clearing `textContent`) on *any* settings
+  write, discarding an in-progress edit + caret. The rebuild is now
+  skipped while one of its own editors holds focus.
+- **XML transcript fallback lost `dur`.** The greedy `[^>]*` in
+  `_parseXML` ate the `dur="…"` attribute before the optional group, so
+  every fallback segment had zero duration. Now captures the attribute
+  blob and reads `start`/`dur` order-independently.
+- **Folder picker accepted paths the confinement allowlist then
+  rejected.** `/pick-folder` now flags `outsideAllowlist` and the popup
+  warns at pick time (rather than failing opaquely at download). The
+  allowlist itself is unchanged — auto-widening `ExtraOutputRoots` was
+  explicitly rejected as a security regression.
+- **First-run `SetupWorker` QThread not awaited at shutdown** ("Destroyed
+  while thread is still running" + partial temp files) — now bounded-waited
+  with a `terminate()` fallback in `closeEvent`.
+- **`terminate_process_tree` orphaned `ffmpeg` on fast `yt-dlp` exit.**
+  Windows `proc.terminate()` reaps only the single handle; the tree-kill
+  ran only in the timeout branch. Now `taskkill /T /F` runs
+  unconditionally on Windows; POSIX path unchanged.
+
+**Low.** Astral-plane numeric HTML entities (`String.fromCharCode` →
+guarded `String.fromCodePoint`, in `transcript-service.js` + `YTKit.user.js`);
+`_method4` captionTracks regex truncating on `]`/`}` in a track name
+(bracket-balanced, string-aware walk); `preloadExtensionState` clobbering
+fresher onChanged writes (skip-if-present merge); shared-mutable cached
+`URLSearchParams` (defensive copy on the public accessor); side-effecting
+`api-limiter.getState()` (read-only); `getSelectorHealthSnapshot` mutating
+its own telemetry via the writer fallback (read-only zero-stat); unbounded
+`error_lines` (scalar `last_error`); unlocked `Config` across threads
+(`RLock` + atomic `update()`); `/pick-folder` rate-limit + single-flight
+(`Queue(maxsize=1)` + 429/409); latent `commentTextSelectionSupport`
+teardown gap (added `destroy()`, not yet wired); focus-trap counting
+`display:none` `<details>` buttons (`offsetParent` guard); duplicate native
+search-clear button (CSS `::-webkit-search-cancel-button`); dead
+capability-probe ternary (`return false`).
+
+**Rejected — not bugs (verifier verdicts).** manifest 4.46.0 vs
+`[Unreleased]` 4.47.0 (intentional pre-release model, enforced by
+`check-versions.js`); popup header-ref dereferences without guards
+(fail-fast on own markup is the prevailing design); `data-flow.js`
+`originMatchesManifest` loose `startsWith` (the field is never user-facing;
+loopback range deliberately exempted from the coverage gate);
+`navigation.js` watch-flexy observer "duplication" (the two observers have
+independent lifecycles; it's the sole probe on the navigate-only path);
+`policy-profile.js` export-scrubber over-scrubbing (intentional — over-scrub
+is the safe failure for a secret redactor, test-pinned at R6);
+`trusted-html.js` pass-through policy (documented intent — sanitization
+breaks SVG/icon markup and exists only to satisfy YouTube's TT CSP, all 13
+callers static); `video-type.js` refresh-on-null and DOM-live-wins
+precedence (both intentional, invariant-test-pinned).
 
 ## H25 — Extreme audit cut (v4.46.0)
 

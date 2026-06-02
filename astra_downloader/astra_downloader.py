@@ -165,6 +165,8 @@ DEFAULT_CONFIG = {
 # in a burst.
 RATE_LIMIT_DOWNLOAD_MAX = 30
 RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS = 60
+RATE_LIMIT_PICKFOLDER_MAX = 5
+RATE_LIMIT_PICKFOLDER_WINDOW_SECONDS = 60
 # v1.2.0: CORS preflight cache horizon — keeps browsers from re-asking OPTIONS
 # for every POST /download during a multi-video session.
 CORS_MAX_AGE_SECONDS = 600
@@ -1813,27 +1815,37 @@ QMessageBox { background-color: #0b0f14; }
 class Config:
     def __init__(self):
         INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
         self._data = sanitize_config(load_json_file(CONFIG_PATH, {}))
         self.save()
 
     def get(self, key, default=None):
-        return self._data.get(key, default)
+        with self._lock:
+            return self._data.get(key, default)
 
     def set(self, key, value):
-        self._data[key] = value
+        with self._lock:
+            self._data[key] = value
+
+    def update(self, mapping):
+        with self._lock:
+            self._data.update(mapping)
+            return self.save()
 
     def save(self):
-        try:
-            self._data = sanitize_config(self._data)
-            atomic_write_json(CONFIG_PATH, self._data)
-            return True
-        except Exception as e:
-            write_persistent_log(f"Config save failed: {e}")
-            return False
+        with self._lock:
+            try:
+                self._data = sanitize_config(self._data)
+                atomic_write_json(CONFIG_PATH, self._data)
+                return True
+            except Exception as e:
+                write_persistent_log(f"Config save failed: {e}")
+                return False
 
     @property
     def data(self):
-        return dict(self._data)
+        with self._lock:
+            return dict(self._data)
 
 # ══════════════════════════════════════════════════════════════
 # HISTORY
@@ -1889,6 +1901,38 @@ def is_playlist_url(url):
 def terminate_process_tree(proc, timeout=3):
     if not proc or proc.poll() is not None:
         return
+
+    if sys.platform == 'win32':
+        # Reap the entire process tree (yt-dlp + any ffmpeg child) unconditionally.
+        # proc.terminate() only kills the single yt-dlp handle, orphaning ffmpeg
+        # when yt-dlp exits promptly.
+        try:
+            subprocess.run(
+                ['taskkill', '/PID', str(proc.pid), '/T', '/F'],
+                capture_output=True,
+                creationflags=CREATE_NO_WINDOW,
+                timeout=5,
+            )
+            try:
+                proc.wait(timeout=timeout)
+            except Exception:
+                pass
+            return
+        except Exception as e:
+            write_persistent_log(f"Process tree termination warning: {e}")
+        try:
+            proc.terminate()
+            proc.wait(timeout=timeout)
+            return
+        except Exception:
+            pass
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        return
+
+    # POSIX: graceful -> forceful
     try:
         proc.terminate()
         proc.wait(timeout=timeout)
@@ -1897,19 +1941,6 @@ def terminate_process_tree(proc, timeout=3):
         pass
     except Exception:
         pass
-
-    if sys.platform == 'win32':
-        try:
-            subprocess.run(
-                ['taskkill', '/PID', str(proc.pid), '/T', '/F'],
-                capture_output=True,
-                creationflags=CREATE_NO_WINDOW,
-                timeout=5,
-            )
-            return
-        except Exception as e:
-            write_persistent_log(f"Process tree termination warning: {e}")
-
     try:
         proc.kill()
     except Exception:
@@ -2011,7 +2042,7 @@ class Download:
 # via per-request response queues. 150 ms tick is invisible to the
 # user (HTTP request -> dialog appears within one frame).
 
-_folder_pick_q = queue.Queue()
+_folder_pick_q = queue.Queue(maxsize=1)
 _folder_picker_service = None  # set in main() once QApplication exists
 
 
@@ -2250,7 +2281,7 @@ class DownloadManager(QObject):
             )
             dl.process = proc
             last_lines = []
-            error_lines = []
+            last_error = None
 
             for line in proc.stdout:
                 line = line.strip()
@@ -2260,7 +2291,7 @@ class DownloadManager(QObject):
                 if len(last_lines) > 30:
                     last_lines = last_lines[-30:]
                 if 'ERROR' in line.upper():
-                    error_lines.append(line)
+                    last_error = line
 
                 # Preferred structured progress (JSON — robust to yt-dlp
                 # format changes). Falls through to the legacy MDLP regex
@@ -2335,13 +2366,13 @@ class DownloadManager(QObject):
                     dl.progress = 100
                 else:
                     dl.status = "failed"
-                    # Audit pass: truncate error_lines[-1] like the fallback
-                    # branch already does. yt-dlp ERROR lines can carry a
-                    # full Python traceback; an untruncated value used to
-                    # round-trip through /status to the extension popup and
+                    # Audit pass: truncate the last ERROR line like the
+                    # fallback branch already does. yt-dlp ERROR lines can
+                    # carry a full Python traceback; an untruncated value used
+                    # to round-trip through /status to the extension popup and
                     # blow past the JSON payload UI budget.
-                    if error_lines:
-                        dl.error = error_lines[-1][-240:]
+                    if last_error:
+                        dl.error = last_error[-240:]
                     elif last_lines:
                         dl.error = " ".join(last_lines)[-240:]
                     else:
@@ -2398,6 +2429,19 @@ class DownloadManager(QObject):
             threading.Thread(target=terminate, daemon=True).start()
         self.progress_updated.emit()
         return True
+
+    def cancel_all(self):
+        with self._lock:
+            active = [d for d in self.downloads.values() if d.status in DOWNLOAD_ACTIVE_STATES]
+        for dl in active:
+            dl.status = "cancelled"
+            dl.error = "Cancelled (app shutdown)."
+            proc = dl.process
+            if proc and proc.poll() is None:
+                try:
+                    terminate_process_tree(proc)
+                except Exception as e:
+                    write_persistent_log(f"cancel_all termination warning: {e}")
 
     def active_count(self):
         with self._lock:
@@ -2498,6 +2542,10 @@ def create_api(config, dl_manager, history):
     download_rate_limiter = RateLimiter(
         max_events=RATE_LIMIT_DOWNLOAD_MAX,
         window_seconds=RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
+    )
+    pickfolder_rate_limiter = RateLimiter(
+        max_events=RATE_LIMIT_PICKFOLDER_MAX,
+        window_seconds=RATE_LIMIT_PICKFOLDER_WINDOW_SECONDS,
     )
 
     def check_auth():
@@ -2761,14 +2809,39 @@ def create_api(config, dl_manager, history):
             return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
         if _folder_picker_service is None:
             return cors_response({"error": "Folder picker is not available."}, 503)
+        allowed, retry_after = pickfolder_rate_limiter.allow('pickfolder')
+        if not allowed:
+            return cors_response(
+                {"error": "Too many folder-picker requests in a short period. Please wait a moment."},
+                429,
+                extra_headers={"Retry-After": str(int(retry_after) + 1)},
+            )
         body = request.get_json(silent=True) or {}
         initial = clean_text(body.get('initial'), '', 1024)
         response_q = queue.Queue(maxsize=1)
-        _folder_pick_q.put({'initial': initial, 'response': response_q})
+        try:
+            _folder_pick_q.put_nowait({'initial': initial, 'response': response_q})
+        except queue.Full:
+            return cors_response({"error": "A folder picker is already open. Close it before requesting another."}, 409)
         try:
             result = response_q.get(timeout=120)
         except queue.Empty:
             return cors_response({"error": "Folder picker timed out — was the dialog left open?"}, 504)
+        if isinstance(result, dict) and result.get('path'):
+            roots = allowed_output_roots(config)
+            inside = False
+            try:
+                rp = Path(result['path']).resolve()
+                for root in roots:
+                    try:
+                        rp.relative_to(root)
+                        inside = True
+                        break
+                    except ValueError:
+                        continue
+            except Exception:
+                inside = True  # advisory only; /download still enforces — fail open on the hint
+            result['outsideAllowlist'] = not inside
         return cors_response(result)
 
     @api.route('/cancel/<dl_id>', methods=['DELETE'])
@@ -4377,24 +4450,25 @@ class MainWindow(QMainWindow):
         self.cfg_sublangs.setText(sublangs)
         self.cfg_ratelimit.setText(rate)
         self.cfg_proxy.setText(proxy)
-        self.config.set("ServerPort", new_port)
-        self.config.set("ServerToken", new_token)
-        self.config.set("DownloadPath", dl_path)
-        self.config.set("AudioDownloadPath", audio_path)
-        self.config.set("EmbedMetadata", self.cfg_metadata.isChecked())
-        self.config.set("EmbedThumbnail", self.cfg_thumbnail.isChecked())
-        self.config.set("EmbedChapters", self.cfg_chapters.isChecked())
-        self.config.set("EmbedSubs", self.cfg_subs.isChecked())
-        self.config.set("SubLangs", sublangs)
-        self.config.set("SponsorBlock", self.cfg_sponsorblock.isChecked())
-        self.config.set("SponsorBlockAction", self.cfg_sb_action.currentData())
-        self.config.set("ConcurrentFragments", self.cfg_fragments.value())
-        self.config.set("RateLimit", rate)
-        self.config.set("Proxy", proxy)
-        self.config.set("AutoUpdateYtDlp", self.cfg_autoupdate.isChecked())
-        self.config.set("CloseToTray", self.cfg_closetotray.isChecked())
-        self.config.set("StartMinimized", self.cfg_startmin.isChecked())
-        self.config.save()
+        self.config.update({
+            "ServerPort": new_port,
+            "ServerToken": new_token,
+            "DownloadPath": dl_path,
+            "AudioDownloadPath": audio_path,
+            "EmbedMetadata": self.cfg_metadata.isChecked(),
+            "EmbedThumbnail": self.cfg_thumbnail.isChecked(),
+            "EmbedChapters": self.cfg_chapters.isChecked(),
+            "EmbedSubs": self.cfg_subs.isChecked(),
+            "SubLangs": sublangs,
+            "SponsorBlock": self.cfg_sponsorblock.isChecked(),
+            "SponsorBlockAction": self.cfg_sb_action.currentData(),
+            "ConcurrentFragments": self.cfg_fragments.value(),
+            "RateLimit": rate,
+            "Proxy": proxy,
+            "AutoUpdateYtDlp": self.cfg_autoupdate.isChecked(),
+            "CloseToTray": self.cfg_closetotray.isChecked(),
+            "StartMinimized": self.cfg_startmin.isChecked(),
+        })
         self._sync_connection_ui()
         if restart_now:
             self._start_server()
@@ -4592,6 +4666,14 @@ class MainWindow(QMainWindow):
             self._stop_instance_command_listener()
             if self.server_running:
                 self._stop_server()
+            self.dl_manager.cancel_all()
+            worker = getattr(self, "setup_worker", None)
+            if worker is not None and worker.isRunning():
+                worker.requestInterruption()
+                worker.quit()
+                if not worker.wait(5000):
+                    worker.terminate()
+                    worker.wait()
             self.tray.hide()
             self.update_timer.stop()
             self.cleanup_timer.stop()

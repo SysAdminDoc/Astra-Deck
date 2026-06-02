@@ -98,7 +98,7 @@
             // Unknown capability — be defensive, return false rather
             // than throw, so a stale UI element doesn't crash the
             // popup on an unknown name.
-            return entry ? entry.run() : false;
+            return false;
         }
         return entry.run();
     }

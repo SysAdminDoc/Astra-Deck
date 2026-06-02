@@ -37,7 +37,17 @@
         extensionStateReadyPromise = (async () => {
             if (core.hasExtensionContext()) {
                 try {
-                    Object.assign(extensionStateCache, await chrome.storage.local.get(null));
+                    // Skip-if-present merge: the onChanged listener is installed
+                    // before this preload resolves and may write a fresher value
+                    // into the cache during the get(null) round-trip. Listener
+                    // values are always at-or-newer than this snapshot, so never
+                    // clobber a key the cache already holds.
+                    const snapshot = await chrome.storage.local.get(null);
+                    for (const k in snapshot) {
+                        if (!Object.prototype.hasOwnProperty.call(extensionStateCache, k)) {
+                            extensionStateCache[k] = snapshot[k];
+                        }
+                    }
                 } catch (error) {
                     console.warn('[YTKit] Storage preload failed:', error);
                 }

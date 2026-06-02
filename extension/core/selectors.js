@@ -523,7 +523,28 @@
         return Object.entries(SurfaceSelectorMap).map(([surface, entry]) => {
             const selectors = SurfaceSelectors[surface] || [];
             const selectorEntries = selectors.map((selector) => {
-                const stat = selectorStats.get(`${surface}:${selector}`) || getSelectorStat(surface, selector);
+                // Read-only snapshot: never fall back to getSelectorStat (a
+                // writer that .sets + _enforceMapCap). Synthesize a zero-stat
+                // mirroring getSelectorStat's initializer field-for-field so a
+                // diagnostics read can't create/evict telemetry.
+                const stat = selectorStats.get(`${surface}:${selector}`) || {
+                    surface,
+                    selector,
+                    attempts: 0,
+                    hits: 0,
+                    misses: 0,
+                    errors: 0,
+                    firstMissAt: null,
+                    lastMissAt: null,
+                    lastHitAt: null,
+                    lastError: null,
+                    lastOutcome: 'untested',
+                    firstShape: null,
+                    lastShape: null,
+                    shapeDrifts: 0,
+                    lastShapeAt: null,
+                    firstShapeAt: null
+                };
                 return {
                     selector,
                     stable: entry.stable.includes(selector),

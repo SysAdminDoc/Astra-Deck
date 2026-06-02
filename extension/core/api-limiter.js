@@ -121,7 +121,14 @@
         }
 
         function getState(key = 'default') {
-            const bucket = getBucket(key);
+            // Read-only diagnostics: never create a bucket on a miss. A
+            // lazily-created bucket per varied key would leak the Map
+            // unboundedly. Synthesize a default snapshot instead.
+            const bucketKey = String(key || 'default');
+            const bucket = buckets.get(bucketKey);
+            if (!bucket) {
+                return { key: bucketKey, tokens: defaults.capacity, queued: 0, running: false, backoffUntil: 0 };
+            }
             refill(bucket);
             return {
                 key: bucket.key,

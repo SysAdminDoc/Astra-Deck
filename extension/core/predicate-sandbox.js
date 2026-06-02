@@ -40,7 +40,11 @@
         function hasUnsafeQuantifiers(pattern) {
             const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pattern);
             const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pattern);
-            return adjacent || groupInner;
+            // Overlapping-alternation backtracking: a group containing `|`, then
+            // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
+            // alone are exponential — no inner quantifier needed.
+            const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pattern);
+            return adjacent || groupInner || altGroupQuantified;
         }
 
         // ── Tokenizer ──

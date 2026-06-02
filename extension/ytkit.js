@@ -3217,6 +3217,9 @@ return response;
                 });
                 if (data?.path) {
                     setDirState(data.path, true);
+                    if (data.outsideAllowlist) {
+                        showToast(t('dlPopupOutsideRoots', 'That folder is outside the allowed download locations and will be rejected. Add it to ExtraOutputRoots or pick a subfolder of your download path.'), '#f59e0b', { duration: 8 });
+                    }
                 } else if (data?.error) {
                     dirDisplay.textContent = data.error;
                 }
@@ -16404,7 +16407,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 const pat = regexMatch[1];
                                 const adjacentQuantifiers = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
                                 const groupWithInnerQuantifier = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
-                                const hasNestedQuantifiers = adjacentQuantifiers || groupWithInnerQuantifier;
+                                // Overlapping-alternation backtracking: a group containing `|`, then
+                                // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
+                                // alone are exponential — no inner quantifier needed.
+                                const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pat);
+                                const hasNestedQuantifiers = adjacentQuantifiers || groupWithInnerQuantifier || altGroupQuantified;
                                 if (hasNestedQuantifiers) {
                                     DebugManager.log('VideoHider', 'Regex rejected: nested quantifiers (ReDoS risk)');
                                 } else {
@@ -29209,7 +29216,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const pat = m[1];
                         const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pat);
                         const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pat);
-                        if (adjacent || groupInner) {
+                        // Overlapping-alternation backtracking: a group containing `|`, then
+                        // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
+                        // alone are exponential — no inner quantifier needed.
+                        const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pat);
+                        if ((adjacent || groupInner) || altGroupQuantified) {
                             DebugManager.log('CommentFilter', 'Regex rejected: nested quantifiers (ReDoS risk)');
                             continue;
                         }
@@ -33261,6 +33272,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
             });
             this._observer.observe(document.documentElement, { childList: true, subtree: true });
+        },
+        destroy() {
+            if (this._selectStartHandler) {
+                window.removeEventListener('selectstart', this._selectStartHandler, true);
+                this._selectStartHandler = null;
+            }
+            this._observer?.disconnect();
+            this._observer = null;
+            if (this._normalizeRaf) {
+                cancelAnimationFrame(this._normalizeRaf);
+                this._normalizeRaf = 0;
+            }
+            this._styleElement?.remove();
+            this._styleElement = null;
+            this._initialized = false;
         }
     };
 
