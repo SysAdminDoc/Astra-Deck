@@ -22,9 +22,9 @@ or maintainer action to confirm.
   branch protection exists for `main`, but required status checks are not
   enabled and repository rulesets are empty. Recent `Validate` runs are green
   after the CI/dependency fixes, but earlier failed `main` pushes still landed,
-  so ROADMAP now carries a P1 manual-gated item to require green `Validate`
-  checks before `main` updates. Detailed evidence lives in
-  `docs/research-cycle-11-main-protection-status-checks.md`.
+  so the build lane added required `Validate` checks to `main` branch protection
+  and recorded the exact check names in `docs/repo-settings.md`. Detailed
+  evidence lives in `docs/research-cycle-11-main-protection-status-checks.md`.
 - [Verified] Cycle 10 Python dependency-audit pass on 2026-06-04 found a
   preventive hardening gap rather than an active advisory: Dependabot covers pip
   and the current `pip-audit 2.10.0` probe against
@@ -209,30 +209,26 @@ strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
 JavaScript dependency audit, Python dependency audit, dependency review, plus a
 build/release workflow). [Verified]
 
-The engineering arc is sound; the dominant risks are (1) **main-branch
-governance** because the stronger validation workflow is not yet required by
-GitHub branch protection, (2) **runtime DOM churn** against YouTube's
-high-velocity redesigns, (3) **Firefox release parity** before AMO or
-self-distributed Firefox updates, and (4) **overlay accessibility and locale
-proofing** beyond the popup and English source bundle.
+The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
+against YouTube's high-velocity redesigns, (2) **Firefox release parity** before
+AMO or self-distributed Firefox updates, and (3) **overlay accessibility and
+locale proofing** beyond the popup and English source bundle.
 
 Top remaining opportunities (one-liners):
 
-1. Require green `Validate` checks before `main` updates by enabling branch
-   protection required status checks or an active repository ruleset. [Verified]
-2. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-3. MHTML capture-week expansion across Shorts, channel, search, history,
+2. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-4. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+3. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-5. Locale proofing queue for identical-to-English feature names/descriptions in
+4. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-6. Signed Astra Downloader installer/MSI once the signing budget and submission
+5. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -349,31 +345,24 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 
 ## Quality & Friction Findings
 
-Current open risk:
+Current risk status:
 
-- **[Critical] Red CI on `main`.** The latest 12 `Validate` workflow runs failed;
-  the current failure is Python test collection importing `PyQt6.QtWidgets`
-  without Linux `libEGL.so.1`. JS validation is green, so this is an environment
-  or import-boundary problem rather than a failing product assertion. → ROADMAP
-  P0 CI recovery. [Verified]
-- **[High] Release-channel lag.** Source/docs/build outputs are v4.46.0, but the
-  public latest GitHub release remains v4.5.2 and README links users to that
-  latest-release URL. The v4.46 profile split and companion checksum contract are
-  therefore not available to users through the documented install path. →
-  ROADMAP P1 release catch-up / checksums / provenance. [Verified]
-- **[High] Main branch does not require green checks.** Branch protection exists
-  and force-push/deletion protections are enabled, but required status checks are
-  not configured and there are no repository rulesets. Failed `Validate` pushes
-  landed earlier on 2026-06-04 before the CI fixes, so the improved validation
-  surface should be enforced by GitHub settings rather than only observed after
-  the fact. → ROADMAP P1 required status checks / ruleset. [Verified]
-- **[High] Privacy/data-consent artifacts incomplete.** The repo has
-  store-safe/GitHub-full permission rationale, but no stable privacy-policy
-  source and no Firefox data-transmission consent path in the generated Firefox
-  manifest. Chrome privacy fields require data-use disclosure and a policy URL;
-  Mozilla now requires either built-in `data_collection_permissions` on supported
-  Firefox versions or a custom consent/control path for older versions. →
-  ROADMAP P1 privacy disclosure / Firefox data-consent packet. [Verified]
+- **[Closed] Red CI on `main`.** The Ubuntu PyQt6 runtime failure is fixed:
+  `Validate` installs the Qt runtime package set, runs with
+  `QT_QPA_PLATFORM=offscreen`, performs a PyQt preflight, and passes the Python
+  downloader suite on `main`. [Verified]
+- **[Closed] Release-channel lag.** Public latest release is now `v4.46.0` with
+  all eight profile-split extension artifacts, userscript, SBOM,
+  `release-manifest.json`, and `SHA256SUMS`; release docs record the local
+  `ytkit.pem` signing path. [Verified]
+- **[Closed] Main branch did not require green checks.** Classic branch
+  protection now records required `Validate` check contexts in
+  `docs/repo-settings.md`; force-push/deletion protections and admin enforcement
+  remain enabled. [Verified]
+- **[Closed] Privacy/data-consent artifacts incomplete.** `docs/privacy-policy.md`
+  is the stable policy source, Chrome Limited Use and data-category disclosures
+  are documented, and Firefox artifacts require Firefox 140+ with generated
+  `data_collection_permissions`. [Verified]
 - **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
   but no `web-ext lint` or clean-profile Firefox MV3 load gate exercises the
   artifact before AMO or self-distributed Firefox updates. → ROADMAP P1 Firefox

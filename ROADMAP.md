@@ -333,7 +333,7 @@ means implemented/closed by the build lane.
   branch-protection/ruleset settings, recent `Validate` runs, and GitHub
   protected-branch/ruleset documentation. Detailed notes live in
   `docs/research-cycle-11-main-protection-status-checks.md`.
-- [ ] 🔬🤖🔧 P1 — Require green validation checks before `main` updates
+- [x] 🔬🤖🔧 P1 — Require green validation checks before `main` updates
   - Why: the CI and dependency gates are now stronger, but `main` protection
     does not currently require them before updates. Earlier failed `Validate`
     runs still landed on `main`; branch protection should enforce the same
@@ -368,6 +368,13 @@ means implemented/closed by the build lane.
     equivalent required checks. Open a throwaway PR that changes a dependency or
     test fixture and confirm merge is blocked until required checks are green.
   - Complexity: S
+  - Status 2026-06-04: delivered through classic branch protection. The required
+    check contexts are documented in `docs/repo-settings.md` and match the live
+    GitHub Actions check-run names on `main`: `JS tests + check gate`, `Python
+    dependency audit`, and `Python downloader tests`. `Dependency review` is
+    intentionally documented as a PR-only follow-up context because it is skipped
+    on direct pushes until a throwaway PR confirms the exact required-check
+    behavior.
 
 ### Researcher Queue (Cycle 10 - 2026-06-04)
 
