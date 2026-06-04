@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 13 Actions Node 24 readiness pass on 2026-06-04 found that
+  the latest green `Validate` run on `main` and latest `Build & Release` tag run
+  both emit GitHub's Node 20 JavaScript action deprecation warning. Current
+  workflow pins include `actions/checkout@v4`, `actions/setup-node@v4`,
+  `actions/setup-python@v5`, and `actions/upload-artifact@v4`; GitHub says
+  runners start defaulting JavaScript actions to Node 24 on 2026-06-16 and
+  later remove Node 20. ROADMAP now carries a P1 item to migrate workflows to
+  Node 24-ready action majors and prove `Validate`, `Build & Release`, and
+  `yt-dlp Smoke` no longer emit the warning. Detailed evidence lives in
+  `docs/research-cycle-13-actions-node24-readiness.md`.
 - [Verified] Cycle 12 dependency-review enablement pass on 2026-06-04 found
   that open Dependabot PR #11 is blocked by platform setup rather than a
   vulnerable dependency: `Validate / Dependency review` fails with GitHub's
@@ -223,27 +233,30 @@ build/release workflow). [Verified]
 The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
 against YouTube's high-velocity redesigns, (2) **Firefox release parity** before
 AMO or self-distributed Firefox updates, and (3) **repository/settings drift**
-where CI jobs exist before the GitHub security-analysis settings that make them
-actionable.
+where CI jobs exist before the GitHub security-analysis settings or action
+runtime migrations that make them durable.
 
 Top remaining opportunities (one-liners):
 
-1. Enable dependency graph / Dependabot alert settings so the PR-only
+1. Migrate GitHub Actions workflows to Node 24-ready action majors before
+   GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
+   [Verified]
+2. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-2. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-3. MHTML capture-week expansion across Shorts, channel, search, history,
+4. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-4. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-5. Locale proofing queue for identical-to-English feature names/descriptions in
+6. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-6. Signed Astra Downloader installer/MSI once the signing budget and submission
+7. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -283,12 +296,18 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-9-privacy-consent-readiness.md`,
   `docs/research-cycle-10-python-dependency-audit.md`,
   `docs/research-cycle-11-main-protection-status-checks.md`, and
-  `docs/research-cycle-12-dependency-review-enablement.md`. [Verified]
+  `docs/research-cycle-12-dependency-review-enablement.md`, and
+  `docs/research-cycle-13-actions-node24-readiness.md`. [Verified]
 - Open Dependabot PR #11 and run `26950993002`: Dependency review fails with
   GitHub's dependency-graph enablement message while the other `Validate` jobs
   pass. The repository security-analysis API response shows a public repository
   with Dependabot security updates disabled and no dependency-graph field in the
   returned block. [Verified]
+- Current workflow action-runtime probe: `gh run view 26953094214 --log` and
+  `gh run view 26951406026 --log` both emit GitHub's Node 20 JavaScript action
+  deprecation warning. `.github/workflows/validate.yml`, `build.yml`, and
+  `yt-dlp-smoke.yml` still pin Node 20-era `checkout`, `setup-node`,
+  `setup-python`, and `upload-artifact` action majors. [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
@@ -514,6 +533,9 @@ Closed since the 2026-06-03 baseline:
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
+- Whether GitHub Actions migrations should jump to the latest observed majors
+  (`checkout@v6`, `setup-node@v6`, `setup-python@v6`, `upload-artifact@v7`) or
+  the lowest Node 24-ready majors to reduce behavior drift. [Needs validation]
 - Whether Firefox support should move from 128 to 140 to use built-in data
   collection consent cleanly, or keep 128-139 support with a custom
   consent/control page. [Needs validation]
