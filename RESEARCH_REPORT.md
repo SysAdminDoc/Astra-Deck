@@ -42,6 +42,10 @@ or maintainer action to confirm.
   and `liveChat`. ROADMAP P2 now lists the exact missing capture files, mapped
   selector packs, builder/test hooks, and verification path for the capture-week
   expansion.
+- [Verified] Cycle 5 Firefox-gate pass on 2026-06-04 confirmed the repo already
+  has static Firefox manifest-patch coverage, but release artifacts are not run
+  through `web-ext lint` or a clean Firefox profile. ROADMAP P1 now calls for a
+  pinned Firefox artifact lint/load gate with captured startup errors.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
@@ -172,7 +176,9 @@ planning-track "v5.0.0 foundation complete" and v5/v6 plan.
 
 Top remaining opportunities (one-liners):
 
-1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates. [Verified]
+1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+   lint both Firefox profiles with `web-ext` and load at least store-safe in a
+   clean Firefox profile. [Verified]
 2. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
@@ -284,9 +290,9 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 Current open risk:
 
 - **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
-  but no clean-profile Firefox MV3 smoke gate exercises the artifact before AMO
-  or self-distributed Firefox updates. → ROADMAP P1 Firefox parity smoke.
-  [Verified]
+  but no `web-ext lint` or clean-profile Firefox MV3 load gate exercises the
+  artifact before AMO or self-distributed Firefox updates. → ROADMAP P1 Firefox
+  parity smoke. [Verified]
 - **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed,
   but Shorts, channel, search, history, watch-later, embedded player, and
   notifications surfaces still lack capture-backed selector fixtures; the
