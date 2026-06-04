@@ -105,12 +105,18 @@ phased feature plan) is preserved at
     links. The exporter now reads the live bookmark `t`/`n` fields and the
     shared file-export helper accepts per-format MIME types.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P3 — i18n feature-definition labels out of `ytkit.js` (EI6)
+- [x] P3 — i18n feature-definition labels out of `ytkit.js` (EI6)
   - Why: feature-definition labels are inline English in the monolith, blocking
     real localization depth.
   - Touches: `extension/ytkit.js`, locale bundles, `_locales/`.
   - Acceptance: feature-definition labels resolve through the i18n layer instead
-    of inline English strings.
+    of inline English strings. _(Delivered 2026-06-04: feature definitions now
+    receive generated `feature_<id>_name` / `feature_<id>_desc` metadata keys,
+    the settings panel and page quick-control cards resolve labels through the
+    existing locale override -> `chrome.i18n.getMessage()` -> English fallback
+    path, the runtime registry carries the feature i18n metadata, and all 10
+    locale bundles include the seeded feature keys with quick-toggle
+    translations reused where they already existed.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 - [ ] P3 — Store-safe vs GitHub-full separate build artifacts
   - Why: download / ad-skip / Cobalt features may require GitHub-full only; a

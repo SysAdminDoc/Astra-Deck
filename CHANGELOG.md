@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feature-definition i18n.** The full in-page settings panel now resolves
+  feature names and descriptions through generated `feature_<id>_name` /
+  `feature_<id>_desc` locale keys before falling back to inline English.
+  Runtime feature registry entries carry `nameKey` / `descriptionKey`, page
+  quick-control cards share the same resolver, and all 10 locale bundles now
+  seed the 306 feature-definition name/description pairs with existing
+  quick-toggle translations reused where available.
+
 - **Study / Work export.** The `researchSpacedReview` watch-page action now
   exports a Study / Work report as Markdown or CSV, combining Watch Time Tracker
   totals, current Digital Wellbeing day state, Focused Mode state, and timestamp

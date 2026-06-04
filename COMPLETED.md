@@ -35,6 +35,8 @@ release-level details live in `CHANGELOG.md`.
 - Per-video notes with JSON export and a 1000-note LRU cap.
 - Group notifications digest with per-group new-video counts and Mark read.
 - Study / Work export to Markdown and CSV from local watch/bookmark state.
+- Feature-definition names and descriptions now route through generated i18n
+  keys in all locale bundles before falling back to inline English.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
