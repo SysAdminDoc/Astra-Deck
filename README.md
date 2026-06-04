@@ -391,7 +391,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 | Doc | Audience |
 |-----|----------|
-| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. The legacy v5.0.0 → v6.0.0 product plan, competitive matrix, and settings schema are archived at [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md) |
+| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. Current product-version sources are on v4.x and agree at v4.46.0; the legacy internal planning-track dossier labelled v5.0.0 -> v6.0.0 is archived at [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md) |
 | [COMPLETED.md](COMPLETED.md) | Shipped roadmap arcs and recent hardening/polish summaries |
 | [RESEARCH_REPORT.md](RESEARCH_REPORT.md) | Research summary and archive index for prior feature-plan files |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
