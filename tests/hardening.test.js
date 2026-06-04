@@ -7819,6 +7819,40 @@ test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hidde
     assert.equal(gate(6, 10, 0.5), true, 'looser 0.5 cutoff trips at 60% hidden');
 });
 
+test('v4.47.0 EI-NEW5 — hideVideosFromHome precomputes blocked channel identity keys', () => {
+    const start = ytkitSource.indexOf("id: 'hideVideosFromHome'");
+    const end = ytkitSource.indexOf("id: 'showLocalDownloadButton'", start);
+    assert.ok(start > -1 && end > start, 'video hider block must exist');
+    const block = ytkitSource.slice(start, end);
+
+    assert.match(block, /_channelKeyCache:\s*null/,
+        'video hider must cache blocked-channel identity keys separately from records');
+    assert.match(block, /_setBlockedChannelCache\(channels\)/,
+        'video hider must centralize blocked-channel cache replacement');
+    assert.match(block, /const keyCache = new Set\(\)/,
+        'blocked-channel cache replacement must precompute identity keys into a Set');
+    assert.match(block, /this\._channelKeyCache = keyCache/,
+        'blocked-channel cache replacement must store the precomputed key Set');
+    assert.match(block, /_getBlockedChannelKeys\(\)/,
+        'video hider must expose cached blocked-channel keys for per-card lookups');
+
+    const isBlockedStart = block.indexOf('_isChannelBlocked(channelInfo)');
+    assert.ok(isBlockedStart > -1, '_isChannelBlocked must exist');
+    const isBlockedBlock = block.slice(isBlockedStart, isBlockedStart + 900);
+    assert.match(isBlockedBlock, /const blockedKeys = this\._getBlockedChannelKeys\(\)/,
+        '_isChannelBlocked must read the precomputed blocked-channel key Set');
+    assert.match(isBlockedBlock, /return keys\.some\(key => blockedKeys\.has\(key\)\)/,
+        '_isChannelBlocked must use Set membership for per-card channel checks');
+    assert.doesNotMatch(isBlockedBlock, /_getBlockedChannels\(\)\.some\(channel/,
+        '_isChannelBlocked must not scan every blocked-channel record per card');
+
+    const storageStart = ytkitSource.indexOf('if (filteredChanges[STORAGE_KEYS.blockedChannels])');
+    assert.ok(storageStart > -1, 'blocked-channel storage change branch must exist');
+    const storageBlock = ytkitSource.slice(storageStart, storageStart + 800);
+    assert.match(storageBlock, /_setBlockedChannelCache\?\.\(channels\)/,
+        'external blocked-channel updates must refresh the key cache');
+});
+
 test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session baseline', () => {
     // Before NF34: _sessionStart was set once via `this._sessionStart ||
     // today.seconds` and never reset. When midnight crossed, _loadToday
