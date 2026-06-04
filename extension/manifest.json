@@ -158,6 +158,7 @@
         "features/home-subs-css/index.js",
         "features/chat-style-comments/index.js",
         "features/sticky-video/index.js",
+        "features/video-hider/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -233,6 +234,7 @@
         "features/home-subs-css/index.js",
         "features/chat-style-comments/index.js",
         "features/sticky-video/index.js",
+        "features/video-hider/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
