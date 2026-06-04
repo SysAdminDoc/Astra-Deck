@@ -334,7 +334,7 @@ means implemented/closed by the build lane.
   attestation steps, signing-key policy docs, architecture CI docs, and stale
   research-report sections. Detailed notes live in
   `docs/research-cycle-14-release-doc-contract-reconciliation.md`.
-- [ ] 🔬🤖 P2 — Reconcile release automation docs with local-signed artifact contract
+- [ ] 🔬🤖 P2 — Reconcile release automation docs with maintainer-local artifact contract
   - Why: the actual release contract is now split: CI builds validation
     artifacts, emits `release-manifest.json` / `SHA256SUMS`, and creates
     attestations for CI-built artifacts, while public CRX artifacts remain
@@ -354,7 +354,8 @@ means implemented/closed by the build lane.
     public assets with GitHub SHA-256 digest fields, and tag run `26951406026`
     completed the CI attestation steps for CI-built artifacts. GitHub's
     artifact-attestation docs distinguish CI-generated attestations that can be
-    verified with `gh attestation verify`; local-signed release assets instead
+    verified with `gh attestation verify`; maintainer-local release assets
+    instead
     need digest comparison against `SHA256SUMS`. [Verified]
   - Touches: `docs/architecture.md`, release checklist/runbook docs, and any
     stale report/checklist text that describes CI as publishing GitHub Releases
@@ -363,9 +364,10 @@ means implemented/closed by the build lane.
   - Acceptance: the docs name one current release contract: CI tag runs validate,
     build, upload workflow artifacts, and create attestations for CI-built
     files; maintainer-local release steps create/update the GitHub Release with
-    local-signed CRX/XPI plus checksum manifest; verification instructions
+    locally signed CRX artifacts, Firefox ZIP/XPI artifacts, and checksum
+    manifest; verification instructions
     distinguish `gh attestation verify` for CI-built files from release-asset
-    digest comparison for local-signed files. `docs/architecture.md` no longer
+    digest comparison for maintainer-local files. `docs/architecture.md` no longer
     claims `build.yml` runs `gh release create`, and stale "not yet in place"
     statements for shipped release, privacy, and Python audit artifacts are
     removed from current docs.
