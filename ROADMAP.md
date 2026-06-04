@@ -197,17 +197,18 @@ phased feature plan) is preserved at
     registration APIs, is wired into `npm run check`, and will fail future
     additions until their targets are audited.)_
   - Source: docs/archive/research/ (iter-1-scored NEXT-6, borderline NOW)
-- [ ] P2 — Allowlist yt-dlp flags at the Flask boundary (research, deferred)
+- [x] P2 — Allowlist yt-dlp flags at the Flask boundary (research, deferred)
   - Why: complements the yt-dlp pin; makes the no-passthrough invariant explicit
     and enforced rather than incidental, so a future feature cannot widen the
     surface unintentionally.
   - Touches: `astra_downloader/astra_downloader.py`.
   - Acceptance: yt-dlp invocation rejects any flag outside a reviewed allowlist;
     a test asserts an unexpected flag is refused.
-  - Status 2026-06-04: active dirty implementation exists in
-    `astra_downloader/astra_downloader.py` and
-    `astra_downloader/test_astra_downloader.py`; verify and land that source/test
-    lane separately rather than creating a duplicate roadmap item.
+  - Status 2026-06-04: delivered. `/download` now accepts only reviewed
+    extension wire fields before Deno checks, cookie writes, queueing, or
+    subprocess setup. Client-supplied yt-dlp argv/flag fields and unknown fields
+    return explicit 400 responses, and Python API tests cover helper validation
+    plus endpoint rejection before a download record is queued.
   - Source: docs/archive/research/ (iter-1-scored under-consideration / NEXT)
 
 ### Carried Risks And Open Questions

@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Downloader request-field allowlist.** The Flask `/download` boundary now
+  accepts only reviewed extension wire fields before Deno checks, cookie writes,
+  queueing, or subprocess setup. Client-supplied yt-dlp argv / flag fields and
+  unknown fields return explicit 400 responses, with API tests proving an
+  unexpected `ytDlpArgs` payload is rejected before any download is queued.
+
 - **Firefox programmatic-injection pre-flight.** Added
   `scripts/check-firefox-injection.js` to `npm run check` so future
   `scripting.executeScript`, `tabs.executeScript`, or dynamic content-script
