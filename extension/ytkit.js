@@ -3899,8 +3899,8 @@ return response;
             monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
             // v3.29.0 — Subscription manager
             subscriptionGroups: false,                 // Master toggle for groups + sort surface
-            subscriptionGroupData: {},                 // { groupId: { name, color, channelIds[], updatedAt } }
-            subscriptionSortMode: 'default',           // 'default' | 'date-desc' | 'duration-asc' | 'unwatched' | 'new-since-last-visit' | 'popular'
+            subscriptionGroupData: {},                 // { groupId: { name, color, channelIds[], sortMode, updatedAt } }
+            subscriptionSortMode: 'default',           // legacy/all-feed fallback; groups persist their own sortMode
             subscriptionShowNewSinceLastVisit: true,
             subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
             subscriptionAiTags: false,                 // Master toggle for AI-generated group tags
@@ -31229,6 +31229,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
             _GROUPS_KEY: 'subscriptionGroupData',
             _LAST_VISIT_KEY: 'subscriptionLastVisitData',
+            _SORT_MODES: Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']),
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -31267,6 +31268,38 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 catch (e) { DebugManager.log('SubGroups', `Save failed: ${e.message}`); }
             },
 
+            _normalizeSubscriptionSortMode(mode) {
+                const value = String(mode || 'default');
+                return this._SORT_MODES.includes(value) ? value : 'default';
+            },
+
+            _getActiveSortMode(groups = this._readGroups()) {
+                const groupSortMode = this._activeGroupId && groups[this._activeGroupId]?.sortMode;
+                if (groupSortMode) return this._normalizeSubscriptionSortMode(groupSortMode);
+                return this._normalizeSubscriptionSortMode(appState?.settings?.subscriptionSortMode || 'default');
+            },
+
+            _setActiveSortMode(mode) {
+                const normalized = this._normalizeSubscriptionSortMode(mode);
+                const groups = this._readGroups();
+                if (this._activeGroupId && groups[this._activeGroupId]) {
+                    const next = {
+                        ...groups,
+                        [this._activeGroupId]: {
+                            ...groups[this._activeGroupId],
+                            sortMode: normalized,
+                            updatedAt: Date.now()
+                        }
+                    };
+                    this._writeGroups(next);
+                    return normalized;
+                }
+                appState.settings.subscriptionSortMode = normalized;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', `Sort save failed: ${e.message}`); }
+                return normalized;
+            },
+
             _exportGroups() {
                 const payload = {
                     schemaVersion: 1,
@@ -31297,7 +31330,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const channelIds = Array.isArray(raw.channelIds)
                             ? raw.channelIds.filter(s => typeof s === 'string' && s.length < 64).slice(0, 1000)
                             : [];
-                        sanitized[id] = { name, color, channelIds, updatedAt: Date.now() };
+                        sanitized[id] = {
+                            name,
+                            color,
+                            channelIds,
+                            sortMode: this._normalizeSubscriptionSortMode(raw.sortMode),
+                            updatedAt: Date.now()
+                        };
                     }
                     this._writeGroups(sanitized);
                     if (typeof showToast === 'function') showToast(`Imported ${Object.keys(sanitized).length} subscription groups`, '#22c55e');
@@ -31389,8 +31428,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return Math.round(number * scale);
             },
 
-            _applySort() {
-                const mode = String(appState?.settings?.subscriptionSortMode || 'default');
+            _applySort(modeOverride) {
+                const mode = this._normalizeSubscriptionSortMode(modeOverride || this._getActiveSortMode());
                 if (mode === 'default') return;
                 const container = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents');
                 if (!container) return;
@@ -31546,7 +31585,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const id = 'g_' + Math.random().toString(36).slice(2, 9);
                     const next = {
                         ...this._readGroups(),
-                        [id]: { name, color: '#7c3aed', channelIds: [], updatedAt: Date.now() }
+                        [id]: {
+                            name,
+                            color: '#7c3aed',
+                            channelIds: [],
+                            sortMode: this._getActiveSortMode(),
+                            updatedAt: Date.now()
+                        }
                     };
                     this._writeGroups(next);
                     dismiss();
@@ -31587,6 +31632,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._activeGroupId = '';
                     this._renderToolbar();
                     this._applyGroupFilter();
+                    this._applySort();
                 });
                 bar.appendChild(allChip);
 
@@ -31613,6 +31659,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._activeGroupId = this._activeGroupId === id ? '' : id;
                         this._renderToolbar();
                         this._applyGroupFilter();
+                        this._applySort();
                     });
                     bar.appendChild(chip);
                 }
@@ -31629,8 +31676,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 bar.appendChild(sortLabel);
 
                 const sortSelect = document.createElement('select');
+                const activeSortMode = this._getActiveSortMode(groups);
                 for (const [v, label] of [
                     ['default', 'YouTube default'],
+                    ['date-desc', 'Latest first'],
                     ['duration-asc', 'Shortest first'],
                     ['unwatched', 'Unwatched first'],
                     ['new-since-last-visit', 'New since last visit'],
@@ -31638,13 +31687,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 ]) {
                     const opt = document.createElement('option');
                     opt.value = v; opt.textContent = label;
-                    if (appState?.settings?.subscriptionSortMode === v) opt.selected = true;
+                    if (activeSortMode === v) opt.selected = true;
                     sortSelect.appendChild(opt);
                 }
                 sortSelect.addEventListener('change', () => {
-                    appState.settings.subscriptionSortMode = sortSelect.value;
-                    try { settingsManager.save(appState.settings); } catch { /* */ }
-                    this._applySort();
+                    const mode = this._setActiveSortMode(sortSelect.value);
+                    this._applySort(mode);
                 });
                 bar.appendChild(sortSelect);
 
