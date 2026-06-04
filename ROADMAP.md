@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 19 - 2026-06-04.
+> Last researched: Cycle 20 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,74 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 20 - 2026-06-04)
+
+- [x] 🔬 `runtime-optional-enrichment-hosts-2026-06-04` - inspected the
+  store-safe/GitHub-full manifest builder, data-flow catalogue, permission
+  rationale, CWS checklist, current hardening assertions, and Chrome/Mozilla
+  optional host-permission guidance. Detailed notes live in
+  `docs/research-cycle-20-optional-permissions.md`.
+- [ ] P2 - 🔬🤖 Convert optional enrichment hosts to runtime-granted host permissions
+  - Why: Astra Deck's public store-safe build now strips AI, Cobalt, Ollama,
+    and local companion hosts, but it still grants optional enrichment API hosts
+    at install time. SponsorBlock/DeArrow, Return YouTube Dislike, Reddit
+    comments, and thumbnail upgrade/download features can be framed as explicit
+    user-enabled capabilities, so moving their non-core hosts to runtime grants
+    would reduce install-time warnings, align access with toggles, and improve
+    denied/revoked state handling before store submission.
+  - Evidence: `extension/manifest.json:31` defines install-time
+    `host_permissions`, with `extension/manifest.json:35` through
+    `extension/manifest.json:39` granting `i.ytimg.com`,
+    `sponsor.ajay.app`, `returnyoutubedislikeapi.com`, `www.reddit.com`, and
+    `old.reddit.com`. `build-extension.js:258` through
+    `build-extension.js:287` append every allowed `ORIGIN_CATALOGUE` entry into
+    profile `host_permissions` and derive CSP from that list; no generated
+    `optional_host_permissions` path exists. `extension/core/data-flow.js:46`,
+    `extension/core/data-flow.js:54`, `extension/core/data-flow.js:62`, and
+    `extension/core/data-flow.js:70` tie those hosts to discrete feature keys.
+    `docs/cws-submission-checklist.md:118` already calls the SponsorBlock,
+    Return YouTube Dislike, and Reddit hosts optional user-visible enrichment
+    calls, while `tests/hardening.test.js:2165` through
+    `tests/hardening.test.js:2171` currently require the old install-time
+    store-safe grants. Chrome documents `optional_host_permissions` and the
+    Permissions API for runtime grants, Mozilla documents MV3 runtime host
+    grants under `optional_host_permissions`, and OWASP recommends optional
+    permissions where possible for least privilege
+    (https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions,
+    https://developer.chrome.com/docs/extensions/reference/api/permissions,
+    https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/optional_host_permissions,
+    https://cheatsheetseries.owasp.org/cheatsheets/Browser_Extension_Vulnerabilities_Cheat_Sheet.html).
+    [Verified]
+  - Touches: `extension/core/data-flow.js`, `build-extension.js`,
+    generated Chrome/Firefox manifests, permission/request helpers,
+    feature-toggle paths for SponsorBlock/DeArrow, Return YouTube Dislike,
+    Reddit comments, and thumbnail features, `tests/hardening.test.js`,
+    `docs/store-permission-rationale.md`, `docs/cws-submission-checklist.md`,
+    diagnostics/data-flow docs, and Firefox lint/load verification notes.
+  - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
+    enrichment hosts move into generated `optional_host_permissions` for
+    store-safe Chrome and Firefox artifacts; a shared permission helper checks,
+    requests, and observes grants/revocations without Chrome-only assumptions;
+    each optional host request is triggered only by an explicit user gesture;
+    denied or revoked grants leave the feature disabled/degraded with clear
+    settings/control-state feedback and no repeated prompt loop; background
+    fetch paths enforce both the existing origin allowlist and current runtime
+    grant state; data-flow and diagnostics distinguish required,
+    optional-granted, optional-denied, and inactive destinations; CSP still
+    permits documented optional fetch targets or records the chosen strategy;
+    hardening tests replace the current install-time assertions with
+    required-vs-optional manifest coverage plus grant/deny/revoke behavior; and
+    store permission docs explain the new runtime grant model.
+  - Verify: `npm run check`, `npm test`, `npm run build`,
+    `node sync-userscript.js`, a targeted manifest test proving store-safe
+    required hosts and optional hosts are separate for Chrome and Firefox, a
+    targeted permission-helper test for granted/denied/revoked states, and
+    `rg -n "optional_host_permissions|permissions.request|permissions.contains|onRemoved|host_permissions" extension build-extension.js scripts tests docs`
+    showing the new contract across source, tests, and docs. Manual unpacked
+    Chrome and Firefox store-safe smoke checks should prove each optional
+    feature prompts once, works after grant, and degrades after revoke.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 19 - 2026-06-04)
 
