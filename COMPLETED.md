@@ -48,6 +48,9 @@ release-level details live in `CHANGELOG.md`.
   call sites until `moz-extension://` behavior is audited.
 - Flask `/download` now rejects client-supplied yt-dlp argv/flag fields and
   unknown request fields before queueing a companion download.
+- Storage growth for `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`,
+  and `ytkit-watch-time` is now capped at write time with deterministic eviction
+  in both extension and userscript paths.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript

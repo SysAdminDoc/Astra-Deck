@@ -37,7 +37,9 @@ or maintainer action to confirm.
   `liveChat` selector-pack chains against decoded MHTML markup; Firefox
   pre-flight now blocks future programmatic injection APIs until their
   `moz-extension://` targets are reviewed; and the Flask `/download` boundary
-  now rejects client-supplied yt-dlp argv/flag fields before queueing.
+  now rejects client-supplied yt-dlp argv/flag fields before queueing; and
+  storage growth for notes, timestamp bookmarks, watch progress, and watch-time
+  stats is bounded at write time.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -71,6 +73,11 @@ or maintainer action to confirm.
   `py -3.12 -m pytest astra_downloader/test_astra_downloader.py -q` (121
   tests), `npm run check`, `npm test` (624 checks),
   `py -3.12 -m pytest astra_downloader` (121 tests), `npm run build`,
+  `node sync-userscript.js`, and `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the storage-growth cap batch:
+  `node --check extension/ytkit.js`, `node --check YTKit.user.js`,
+  `node --test tests/hardening.test.js tests/userscript-parity.test.js` (429
+  checks), `npm run check`, `npm test` (628 checks), `npm run build`,
   `node sync-userscript.js`, and `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
@@ -242,8 +249,10 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
   dual-world content scripts, bearer-token + Host-header companion. [Verified]
 - **Persistence**: `chrome.storage` + `chrome.storage.session` for transient SW
   state; IndexedDB for transcripts; `unlimitedStorage`. Growth bounds for
-  `videoNotes` / `timestampBookmarks` / `videoHistory` are an open carried risk
-  (R4, Existing Planned Work). [Verified]
+  `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`, and
+  `ytkit-watch-time` now run at write time with deterministic eviction in the
+  extension and userscript paths, plus an extension `storageQuotaLRU` backstop.
+  [Verified]
 - **Concurrency / lifecycle**: `feature-lifecycle.js`, `lifecycle-route-bridge.js`,
   and AbortController machinery shipped; per-category adoption is deferred to a
   multi-slice initiative (Existing Planned Work). [Verified]
