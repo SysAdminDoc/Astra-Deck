@@ -2314,7 +2314,7 @@ test('subscriptionGroups keys by channel ID and survives SPA navigation', () => 
 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 30000);
+    const block = ytkitSource.slice(start, start + 36000);
     assert.match(block, /schemaVersion:\s*1/,
         'export payload must declare schemaVersion 1');
     assert.match(block, /astra-deck-subscription-groups-/,
@@ -2328,7 +2328,7 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 30000);
+    const block = ytkitSource.slice(start, start + 36000);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
@@ -2341,10 +2341,31 @@ test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and 
 
 test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 30000);
+    const block = ytkitSource.slice(start, start + 36000);
     assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
+});
+
+test('subscriptionGroups persists sort mode per active group (NF31)', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 36000);
+    assert.match(block, /_SORT_MODES:\s*Object\.freeze\(\['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular'\]\)/,
+        'subscriptionGroups must centralize the allowed sort modes');
+    assert.match(block, /_getActiveSortMode\(groups = this\._readGroups\(\)\)[\s\S]*groups\[this\._activeGroupId\]\?\.sortMode/,
+        'active group sort must be read from subscriptionGroupData when a group is selected');
+    assert.match(block, /_setActiveSortMode\(mode\)[\s\S]*\[this\._activeGroupId\]: \{[\s\S]*sortMode: normalized[\s\S]*this\._writeGroups\(next\)/,
+        'selected group sort changes must persist on that group record');
+    assert.match(block, /appState\.settings\.subscriptionSortMode = normalized/,
+        'the legacy top-level sort setting must only remain as the all-subscriptions fallback');
+    assert.match(block, /sortMode: this\._normalizeSubscriptionSortMode\(raw\.sortMode\)/,
+        'group import must preserve valid per-group sort modes and normalize stale values');
+    assert.match(block, /sortMode: this\._getActiveSortMode\(\)/,
+        'new groups must inherit the current active sort mode as their own baseline');
+    assert.match(block, /const activeSortMode = this\._getActiveSortMode\(groups\)[\s\S]*if \(activeSortMode === v\) opt\.selected = true/,
+        'toolbar select must display the active group sort mode');
+    assert.match(block, /const mode = this\._setActiveSortMode\(sortSelect\.value\)[\s\S]*this\._applySort\(mode\)/,
+        'toolbar changes must route through the per-group sort writer before sorting');
 });
 
 // ── v3.30.0 P1: Research workspace invariants ──
@@ -2980,7 +3001,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
 
 test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 30000);
+    const block = ytkitSource.slice(start, start + 36000);
     assert.match(block, /_parseCompactViewCount/,
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
@@ -3224,7 +3245,7 @@ test('subscriptionAiTags persists generated tags into subscriptionAiTagData per 
 
 test('subscriptionAiTags renders chip suffix and binds shift+click for regeneration', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 30000);
+    const block = ytkitSource.slice(start, start + 36000);
     assert.match(block, /aiTagData\[id\]\?\.tags\?\.length/,
         'chip render must check for stored tags');
     assert.match(block, /Shift\+click to regenerate/,
