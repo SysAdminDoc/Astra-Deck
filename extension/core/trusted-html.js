@@ -17,7 +17,7 @@
                 });
                 return policy;
             } catch (_) {
-                // Reuse the fallback below when another context owns the policy name.
+                // reason: reuse the fallback below when another context owns the policy name.
             }
         }
         policy = {

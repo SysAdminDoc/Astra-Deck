@@ -71,7 +71,6 @@
         // = ports.length * PROBE_TIMEOUT_MS but realistic case = one
         // round trip on the canonical port.
         for (const port of MEDIA_DL_PORTS) {
-            // eslint-disable-next-line no-await-in-loop
             const ok = await fetchWithTimeout(`http://127.0.0.1:${port}/health`, PROBE_TIMEOUT_MS);
             if (ok) return true;
         }

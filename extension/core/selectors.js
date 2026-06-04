@@ -183,7 +183,7 @@
         try {
             globalThis.dispatchEvent?.(new CustomEvent('ytkit-selector-miss', { detail }));
         } catch (_) {
-            // CustomEvent is unavailable in some unit-test contexts.
+            // reason: CustomEvent is unavailable in some unit-test contexts.
         }
         if (options.debug) {
             console.debug('[YTKit] Selector miss:', detail);
@@ -299,7 +299,7 @@
                 messagedExt = true;
             }
         } catch (_) {
-            // Extension context unavailable; fall through to CustomEvent.
+            // reason: extension context unavailable; fall through to CustomEvent.
         }
 
         globalThis[SHAPE_DRIFT_REENTRY_FLAG] = true;
@@ -310,7 +310,7 @@
             // channel; the event is purely a same-frame fallback.
             globalThis.dispatchEvent?.(new CustomEvent('ytkit-selector-shape-drift', { detail }));
         } catch (_) {
-            // CustomEvent not available in some unit-test contexts.
+            // reason: CustomEvent not available in some unit-test contexts.
         } finally {
             globalThis[SHAPE_DRIFT_REENTRY_FLAG] = false;
         }
