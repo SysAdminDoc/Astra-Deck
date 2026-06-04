@@ -5693,12 +5693,18 @@ test('v4.34.0 player-chrome batch pack files exist with the v4.31.0 schema field
 
 test('v4.34.0 player-chrome batch surfaces now come from the pack registry', () => {
     const core = loadSelectorPackContext();
+    const expectedLastVerified = {
+        playerChrome: '2026-06-04',
+        playerSettings: '2026-05-19',
+        sidebar: '2026-05-19',
+        modals: '2026-05-19',
+    };
     for (const surface of V434_BATCH_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence after the v4.34.0 peel`);
-        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.equal(entry.lastVerified, expectedLastVerified[surface]);
     }
 });
 

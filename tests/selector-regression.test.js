@@ -33,10 +33,20 @@ const YTKIT_SOURCE = fs.readFileSync(
     path.join(REPO_ROOT, 'extension', 'ytkit.js'),
     'utf8'
 );
+const SELECTOR_PACK_SOURCES = fs.readdirSync(
+    path.join(REPO_ROOT, 'extension', 'core', 'selector-packs')
+)
+    .filter((file) => file.endsWith('.js'))
+    .sort()
+    .map((file) => fs.readFileSync(
+        path.join(REPO_ROOT, 'extension', 'core', 'selector-packs', file),
+        'utf8'
+    ));
 const RUNTIME_SOURCE = [
     YTKIT_SOURCE,
     fs.readFileSync(path.join(REPO_ROOT, 'extension', 'core', 'selectors.js'), 'utf8'),
     fs.readFileSync(path.join(REPO_ROOT, 'extension', 'core', 'player.js'), 'utf8'),
+    ...SELECTOR_PACK_SOURCES,
 ].join('\n');
 
 function loadTokens(fixtureName) {
@@ -114,6 +124,10 @@ const CRITICAL_SELECTORS = [
     'ytp-fullscreen-button',
     'ytp-time-display',
     'ytp-tooltip-text',
+    // Delhi / liquid-glass player chrome (DOM-probed 2026-06-04)
+    'ytp-delhi-modern',
+    'ytp-overflow-panel',
+    'ytp-time-wrapper-delhi',
     // Feed / grid
     'ytd-rich-grid-renderer',
     'ytd-rich-item-renderer',
@@ -138,12 +152,11 @@ const CRITICAL_SELECTORS = [
 // See: https://9to5google.com/2025/10/14/youtube-video-player-redesign-more/
 //      https://www.techspot.com/news/109892-youtube-modernizes-video-player...
 //
-// The audit can't promote any of these to CRITICAL_SELECTORS yet — the
-// `mhtml/` reference captures are pre-redesign and the upstream CSS class
-// names are not publicly documented. The list below names the surfaces
-// Astra-Deck features touch that are MOST likely to break on the new
-// chrome; before the next release that ships post-rollout the maintainer
-// must:
+// The concrete DOM-probed shell tokens (`ytp-delhi-modern`,
+// `ytp-overflow-panel`, `ytp-time-wrapper-delhi`) are now promoted to
+// CRITICAL_SELECTORS. The list below keeps unresolved transition surfaces
+// visible until a full MHTML capture succeeds; before a release that ships
+// post-rollout changes the maintainer must:
 //
 //   1. Capture a fresh MHTML on a watch page that has the new chrome
 //      enabled (toggle via the per-channel Lab opt-in or wait for full
