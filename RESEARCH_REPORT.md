@@ -18,6 +18,15 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 18 security-disclosure pass on 2026-06-04 found no root
+  `SECURITY.md`, no `.github` security policy file, private vulnerability
+  reporting disabled, and zero repository security advisories. Current
+  contributor docs route bug reports through public issues, while the
+  signing-key leak runbook already assumes a `SECURITY.md` section will exist.
+  ROADMAP now carries a P1 item to publish a security policy, enable private
+  vulnerability reporting, link the policy from contributor docs, and route
+  sensitive reports through repository security advisories. Detailed evidence
+  lives in `docs/research-cycle-18-security-disclosure.md`.
 - [Verified] Cycle 17 signing-key custody pass on 2026-06-04 found that
   `ytkit.pem` is not tracked by git and has no history for that path, but this
   local checkout contains an ignored private-key-shaped file in the repo root.
@@ -283,31 +292,34 @@ Top remaining opportunities (one-liners):
 2. Move CRX signing key custody out of the repo worktree and require an
    explicit external key path for maintainer-local CRX release builds.
    [Verified]
-3. Migrate GitHub Actions workflows to Node 24-ready action majors before
+3. Publish `SECURITY.md` and enable private vulnerability reporting so
+   signing-key, extension, companion, dependency, and release-integrity reports
+   do not go through public issues. [Verified]
+4. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-4. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+5. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-5. Enable dependency graph / Dependabot alert settings so the PR-only
+6. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-6. Reconcile release automation docs with the current maintainer-local artifact
+7. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-7. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+8. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-8. MHTML capture-week expansion across Shorts, channel, search, history,
+9. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-9. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+10. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-10. Locale proofing queue for identical-to-English feature names/descriptions in
+11. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-11. Signed Astra Downloader installer/MSI once the signing budget and submission
+12. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -352,7 +364,14 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-14-release-doc-contract-reconciliation.md`, and
   `docs/research-cycle-15-secret-scanning-alert.md`, and
   `docs/research-cycle-16-actions-sha-pinning.md`, and
-  `docs/research-cycle-17-signing-key-custody.md`. [Verified]
+  `docs/research-cycle-17-signing-key-custody.md`, and
+  `docs/research-cycle-18-security-disclosure.md`. [Verified]
+- Security disclosure probe: no root `SECURITY.md` or `.github` security-policy
+  file exists; private vulnerability reporting returns `enabled: false`; public
+  issue templates are the only visible reporting path; and the repository has
+  zero security advisories. GitHub docs say a security policy gives reporting
+  instructions, and private vulnerability reporting gives researchers a
+  structured private path in public repositories. [Verified]
 - CRX signing-key custody probe: `ytkit.pem` is ignored by `.gitignore` and is
   not tracked in current git state, but the local checkout has a 1732-byte
   private-key-shaped root file. `docs/signing-keys.md` says the key lives
@@ -587,6 +606,10 @@ Closed since the 2026-06-03 baseline:
   the local checkout contains a private-key-shaped root file and the build
   script hardcodes / auto-generates that root path. ROADMAP P0 now queues an
   external key-path contract before the next maintainer-local CRX release.
+- **Security disclosure** [Verified]: no `SECURITY.md` is present and private
+  vulnerability reporting is disabled, so sensitive reports currently lack a
+  clear private path. ROADMAP P1 now queues a security policy plus private
+  vulnerability reporting enablement.
 - **GitHub Actions supply chain** [Verified]: default workflow token
   permissions are read-only, but repository Actions policy still allows all
   action sources and does not require full-length SHA pins. Current workflow
@@ -630,6 +653,8 @@ Closed since the 2026-06-03 baseline:
   must be revoked. [Needs validation]
 - Whether CRX release builds should use `ASTRA_CRX_KEY_PATH`, a CLI flag, or
   both for the external signing-key path. [Needs validation]
+- What first-response and triage SLA language should `SECURITY.md` commit to
+  for private vulnerability reports. [Needs validation]
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
