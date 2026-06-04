@@ -35,8 +35,10 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   by one `_chatObserver` + `_chatObserverTimer` lifecycle, with `_waitForChat`,
   standard-page late-chat detection, `_unmount`, and `destroy` routed through
   shared helpers.)_
-- [ ] **P2 / M — `subscriptionGroups` per-group sort persistence (NF31)**: move
-  sort mode from a global setting to per-group state.
+- [x] **P2 / M — `subscriptionGroups` per-group sort persistence (NF31)**: move
+  sort mode from a global setting to per-group state. _(Delivered 2026-06-04:
+  active group records now persist `sortMode`; `subscriptionSortMode` remains
+  only as the all-subscriptions / legacy fallback.)_
 - [ ] **P3 / M — `chatStyleComments` selector fallbacks (EI-NEW1)**: add
   `@supports(selector(...))` fallbacks for brittle CSS chains.
 - [ ] **P3 / M — `hideVideosFromHome` channel-key cache (EI-NEW5)**: precompute

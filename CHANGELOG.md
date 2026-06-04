@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF31 subscription group sort persistence.** Subscription sort mode now
+  persists on the active group record, so Coding, Music, News, and the
+  all-subscriptions view can each keep their own sort. The legacy
+  `subscriptionSortMode` setting remains as the all-feed fallback, and imports
+  normalize stale or missing group sort values.
+
 - **NF32 stickyVideo chat observer lifecycle.** Theater Split now uses one
   `_chatObserver` + `_chatObserverTimer` path for both split-open chat
   positioning and standard-page late-chat reclassification. `_unmount()` and
