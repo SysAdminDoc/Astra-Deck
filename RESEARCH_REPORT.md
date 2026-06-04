@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 25 companion-install-docs pass on 2026-06-04 found that
+  README installation covers extension and userscript paths, while later README
+  download copy depends on Astra Downloader and documents Deno / PO-token
+  prerequisites without a parent companion setup section. The release-output
+  list also omits companion EXE/sidecar assets, which is truthful for latest
+  release `v4.46.0` but leaves users without a clear companion install/update
+  explanation. ROADMAP now carries a P2 docs-only item to add truthful
+  companion setup and release-asset guidance without duplicating the signed MSI
+  or Cycle 22 self-update work. Detailed evidence lives in
+  `docs/research-cycle-25-companion-install-docs.md`.
 - [Verified] Cycle 24 retired-options-page copy pass on 2026-06-04 found one
   shipped runtime error that still tells users to set `aiSummaryApiKey` "via
   options page" even though v3.19.0 removed the standalone options page, the
@@ -383,22 +393,25 @@ Top remaining opportunities (one-liners):
    maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
    first-read operator docs no longer point to missing or stale guidance.
    [Verified]
-13. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+13. Document the Astra Downloader companion setup and release-asset path in
+   README/release docs without promising an EXE before the release-channel proof
+   ships. [Verified]
+14. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-14. MHTML capture-week expansion across Shorts, channel, search, history,
+15. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-15. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+16. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-16. Replace the retired options-page runtime error copy with current
+17. Replace the retired options-page runtime error copy with current
    settings-panel / toolbar-popup guidance and add a copy regression.
    [Verified]
-17. Locale proofing queue for identical-to-English feature names/descriptions in
+18. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-18. Signed Astra Downloader installer/MSI once the signing budget and submission
+19. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -450,7 +463,14 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-21-codeowners.md`, and
   `docs/research-cycle-22-companion-update-assets.md`, and
   `docs/research-cycle-23-repo-working-notes-drift.md`, and
-  `docs/research-cycle-24-retired-options-copy.md`. [Verified]
+  `docs/research-cycle-24-retired-options-copy.md`, and
+  `docs/research-cycle-25-companion-install-docs.md`. [Verified]
+- Companion install-docs probe: README installation covers extension and
+  userscript paths, while the Downloads and prerequisite sections depend on
+  Astra Downloader without a parent companion setup section. README release
+  outputs omit `AstraDownloader.exe` and sidecar assets, latest release `v4.46.0`
+  also lacks them, and signing-key docs cover CRX/XPI publication paths but not
+  companion setup. [Verified]
 - Retired options-page copy probe: `extension/ytkit.js` still throws
   `Set aiSummaryApiKey first (via options page)` on the summary-provider
   missing-key path, while `extension/manifest.json` has `action.default_popup =
@@ -630,6 +650,10 @@ Current risk status:
   `gh release create` release flow while the current repo uses Firefox 140+,
   protected-main PRs, and maintainer-local signing. → ROADMAP P2 repo working
   notes reconciliation. [Verified]
+- **[Med] Companion setup docs gap.** README install docs cover extension and
+  userscript artifacts but do not give a distinct Astra Downloader setup path,
+  even though Downloads, Deno, and PO-token sections depend on the companion.
+  → ROADMAP P2 companion install documentation. [Verified]
 - **[Med] Retired settings-surface copy.** The standalone options page is
   removed and tested as absent, but the summary-provider key error still tells
   users to use an options page. → ROADMAP P2 retired options-page copy fix.
@@ -738,6 +762,11 @@ Closed since the 2026-06-03 baseline:
   current settings paths, and tests assert the standalone options page remains
   removed. One runtime summary-provider error still names that removed surface;
   ROADMAP P2 now queues the copy fix and regression. [Verified]
+- **Companion onboarding docs**: in-app setup prompts are shipped, but README
+  installation docs do not yet describe the companion install/release-asset
+  state before users reach the app. ROADMAP P2 now queues a truthful README /
+  release-doc section that stays separate from signed MSI and self-update work.
+  [Verified]
 
 ## Security / Privacy / Data Safety
 

@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 24 - 2026-06-04.
+> Last researched: Cycle 25 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,47 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 25 - 2026-06-04)
+
+- [x] 🔬 `companion-install-docs-2026-06-04` - inspected README install and
+  release-output sections, companion download copy, Deno / PO-token prerequisite
+  docs, signed-installer and self-update roadmap rows, signing-key publication
+  docs, latest release asset state, and official release / helper-install
+  guidance. Detailed notes live in
+  `docs/research-cycle-25-companion-install-docs.md`.
+- [ ] P2 - 🔬🤖 Document the Astra Downloader companion install and release-asset path
+  - Why: README installation covers extension and userscript paths, then later
+    says downloads use the Astra Downloader companion. Users need a truthful
+    setup section that explains the current companion state, release asset
+    availability, prerequisites, and how this differs from the signed
+    installer/MSI and self-update release-channel work.
+  - Evidence: `README.md:26-55` covers extension/userscript install only;
+    `README.md:135` says downloads use Astra Downloader; `README.md:137-171`
+    explains PO-token and Deno prerequisites without a parent companion install
+    section; `README.md:367-373` lists release outputs without
+    `AstraDownloader.exe` or `.sha256`; `ROADMAP.md:108-118` keeps
+    `APP_VERSION` frozen until a matching companion binary release exists;
+    `ROADMAP.md:151-156` keeps signed installer/MSI open; Cycle 22 queues
+    EXE/sidecar release-channel proof; `ROADMAP.md:1616-1638` says in-app
+    companion setup prompts shipped; `docs/signing-keys.md:217-229` documents
+    CRX/XPI publication paths but not companion setup; latest release `v4.46.0`
+    lacks `AstraDownloader.exe` and `AstraDownloader.exe.sha256`. [Verified]
+  - Touches: `README.md`, `docs/signing-keys.md`, possibly a companion setup doc
+    under `docs/`, and release notes/checklist text once the EXE asset exists.
+  - Acceptance: README has a distinct Astra Downloader companion setup section;
+    it truthfully states whether the latest release contains a companion EXE and
+    hash sidecar; it links or describes the in-app setup prompt, Deno runtime,
+    and PO-token provider prerequisites without implying they are browser
+    extension installs; the release-output list mentions companion assets only
+    when the Cycle 22 release-channel item ships, or explicitly labels them as
+    pending; the signed installer/MSI caveat remains separate.
+  - Verify: `rg -n "Astra Downloader|AstraDownloader.exe|Deno|PO Token"
+    README.md docs/signing-keys.md docs`; `gh release view --json assets`;
+    `npm run check`; docs-only diff review confirms no feature source, build
+    file, manifest, runtime config, or generated artifact changed unless paired
+    with the actual release-asset implementation.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 24 - 2026-06-04)
 
