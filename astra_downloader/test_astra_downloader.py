@@ -238,6 +238,56 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.get_json()["error"], "Missing download URL.")
 
+    def test_download_request_body_allows_reviewed_extension_fields(self):
+        body = {
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "audioOnly": False,
+            "format": "mp4",
+            "quality": "1080",
+            "outputDir": str(Path(tempfile.gettempdir())),
+            "title": "Fixture",
+            "referer": "https://www.youtube.com/",
+            "cookies": [],
+        }
+        validated, err, code = ad.validate_download_request_body(body)
+        self.assertIs(validated, body)
+        self.assertIsNone(err)
+        self.assertIsNone(code)
+
+    def test_download_request_body_rejects_client_supplied_ytdlp_flags(self):
+        _validated, err, code = ad.validate_download_request_body({
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "ytDlpArgs": ["--netrc-cmd", "calc.exe"],
+        })
+        self.assertEqual(code, "unsupported-ytdlp-flags")
+        self.assertIn("Client-supplied yt-dlp flags are not allowed", err)
+
+    def test_download_request_body_rejects_unknown_fields(self):
+        _validated, err, code = ad.validate_download_request_body({
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "writeInfoJson": True,
+        })
+        self.assertEqual(code, "unsupported-download-fields")
+        self.assertIn("writeInfoJson", err)
+
+    def test_download_endpoint_rejects_ytdlp_args_before_queueing(self):
+        token = "h" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().post(
+            "/download",
+            json={
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "ytDlpArgs": ["--netrc-cmd", "calc.exe"],
+            },
+            headers={"X-Auth-Token": token},
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json()["code"], "unsupported-ytdlp-flags")
+        self.assertEqual(manager.downloads, {})
+
     def test_history_limit_is_clamped(self):
         token = "d" * 32
         history = FakeHistory()

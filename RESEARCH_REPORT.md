@@ -36,7 +36,8 @@ or maintainer action to confirm.
   smoke workflow; selector fixture regeneration now proves `playerChrome` and
   `liveChat` selector-pack chains against decoded MHTML markup; Firefox
   pre-flight now blocks future programmatic injection APIs until their
-  `moz-extension://` targets are reviewed.
+  `moz-extension://` targets are reviewed; and the Flask `/download` boundary
+  now rejects client-supplied yt-dlp argv/flag fields before queueing.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -65,6 +66,12 @@ or maintainer action to confirm.
   tests/firefox-injection-audit.test.js` (3 checks), `npm run check`,
   `npm test` (624 checks), `npm run build`, `node sync-userscript.js`, and
   `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the downloader request-field
+  allowlist batch: `py -3.12 -m py_compile astra_downloader/astra_downloader.py`,
+  `py -3.12 -m pytest astra_downloader/test_astra_downloader.py -q` (121
+  tests), `npm run check`, `npm test` (624 checks),
+  `py -3.12 -m pytest astra_downloader` (121 tests), `npm run build`,
+  `node sync-userscript.js`, and `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`
@@ -270,8 +277,10 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
   exactly why import/export (P1) and diagnostics export (P3) must run through the
   scrubber, and R6 (finish scrub-regex coverage) is in Existing Planned Work.
 - **Companion** [Verified]: loopback-only (`127.0.0.1`, never `localhost`),
-  bearer-token, DNS-rebinding Host-header defense, yt-dlp pinned. The yt-dlp
-  cookie-leak class warrants a written threat model (ROADMAP P2).
+  bearer-token, DNS-rebinding Host-header defense, yt-dlp pinned, and Flask
+  `/download` request-field allowlisting that blocks client-supplied yt-dlp
+  argv / flag payloads before queueing. The yt-dlp cookie-leak class warrants a
+  written threat model (ROADMAP P2).
 
 ## UX & Accessibility
 

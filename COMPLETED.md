@@ -46,6 +46,8 @@ release-level details live in `CHANGELOG.md`.
   liquid-glass player-chrome selector chains.
 - Firefox programmatic-injection pre-flight now blocks future `executeScript`
   call sites until `moz-extension://` behavior is audited.
+- Flask `/download` now rejects client-supplied yt-dlp argv/flag fields and
+  unknown request fields before queueing a companion download.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
