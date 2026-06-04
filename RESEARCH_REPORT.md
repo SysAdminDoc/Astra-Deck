@@ -439,12 +439,11 @@ Current risk status:
   but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
   strings per non-EN locale, with 584 of 612 feature name/description keys still
   identical to EN. → ROADMAP P3 locale proofing queue. [Verified]
-- **[Low/Med] Python dependency audit gap.** Dependabot watches
-  `astra_downloader/requirements.txt` and the current `pip-audit` baseline is
-  clean, but CI has no Python vulnerability gate comparable to `npm audit`.
-  This can let a future Flask/Waitress/PyQt6/requests/yt-dlp transitive advisory
-  wait for manual review rather than failing validation immediately. → ROADMAP
-  P2 Python dependency audit gate. [Verified]
+- **[Closed] Python dependency audit gap.** `Validate / Python dependency
+  audit` now runs `pip-audit` against `astra_downloader/requirements.txt` and
+  uploads `astra-downloader-pip-audit` JSON. The remaining dependency-security
+  blocker is repository dependency-graph enablement for PR-time Dependency
+  review. → ROADMAP P1 dependency graph enablement. [Verified]
 - **[Gated] Downloader installer trust.** Companion onboarding is now explicit,
   but the signed installer/MSI remains blocked on signing budget and submission
   intent. → ROADMAP P2 signed installer/MSI. [Needs validation]
