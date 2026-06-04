@@ -1300,6 +1300,24 @@ test('storageQuotaLRU description names every top-level cache it prunes', () => 
         'Description must name the SponsorBlock segment cache key so users can audit quota pruning');
 });
 
+test('storageQuotaLRU sweeps real note/bookmark/watch stores, not the timestampBookmarks toggle', () => {
+    const pruneStart = ytkitSource.indexOf("id: 'storageQuotaLRU'");
+    assert.ok(pruneStart > -1, 'storageQuotaLRU feature must still exist');
+    const pruneEnd = ytkitSource.indexOf("this._timer = null;", pruneStart);
+    const pruneBlock = ytkitSource.slice(pruneStart, pruneEnd);
+
+    assert.doesNotMatch(pruneBlock, /\['timestampBookmarks',/,
+        'timestampBookmarks is a boolean toggle; quota sweep must not treat it as the persisted bookmark map');
+    assert.match(pruneBlock, /videoNotesData/,
+        'storageQuotaLRU must backstop videoNotesData even when the notes feature is disabled');
+    assert.match(pruneBlock, /STORAGE_KEYS\.bookmarks[\s\S]*sanitizeTimestampBookmarks/,
+        'storageQuotaLRU must prune the real ytkit-bookmarks top-level store');
+    assert.match(pruneBlock, /STORAGE_KEYS\.watchProgress[\s\S]*sanitizeWatchProgressStore/,
+        'storageQuotaLRU must prune the real ytkit-watch-progress top-level store');
+    assert.match(pruneBlock, /STORAGE_KEYS\.watchTime[\s\S]*sanitizeWatchTimeStats/,
+        'storageQuotaLRU must prune the real ytkit-watch-time top-level store');
+});
+
 // ── v3.20.3 H6: explicit cookie-jar wire contract via normalizeCookieExpiry ──
 //
 // Three sites previously inlined `expirationDate: c.expirationDate || 0`:
@@ -2748,6 +2766,61 @@ test('videoNotes stores local per-video notes with export and a 1000-note LRU ca
     assert.ok(dataEntry, 'settings-schema must catalogue videoNotesData');
     assert.equal(toggleEntry.type, 'boolean', 'videoNotes must be a boolean toggle');
     assert.equal(dataEntry.type, 'object', 'videoNotesData must be object typed');
+});
+
+test('timestampBookmarks enforces a deterministic write-time cap on the real bookmark map', () => {
+    const start = ytkitSource.indexOf("id: 'timestampBookmarks'");
+    assert.ok(start > -1, 'timestampBookmarks feature must exist');
+    const block = ytkitSource.slice(start, start + 12000);
+
+    assert.match(ytkitSource, /function sanitizeTimestampBookmarks\(value, limits = IMPORT_LIMITS\)/,
+        'timestamp bookmark cap must live in a shared sanitizer');
+    assert.match(ytkitSource, /sanitizedEntries\.sort\(\(left, right\) => \(\(Number\(right\.d\) \|\| 0\) - \(Number\(left\.d\) \|\| 0\)\) \|\| \(left\.t - right\.t\)\)/,
+        'per-video bookmark eviction must keep newest edited bookmarks before restoring chronological render order');
+    assert.match(ytkitSource, /videos\.sort\(\(left, right\) => \(right\[2\] - left\[2\]\) \|\| left\[0\]\.localeCompare\(right\[0\]\)\)/,
+        'bookmark video eviction must sort by newest edit and then video id for deterministic ties');
+    assert.match(ytkitSource, /videos\.slice\(0, limits\.bookmarkVideos\)/,
+        'bookmark sanitizer must cap the number of videos retained');
+    assert.match(block, /_MAX_BOOKMARK_VIDEOS: IMPORT_LIMITS\.bookmarkVideos/,
+        'timestampBookmarks must document its video-map cap');
+    assert.match(block, /_MAX_BOOKMARKS_PER_VIDEO: IMPORT_LIMITS\.bookmarksPerVideo/,
+        'timestampBookmarks must document its per-video cap');
+    assert.match(block, /_writeBookmarks\(bookmarks\)/,
+        'timestampBookmarks must centralize capped writes');
+    assert.match(block, /this\._writeBookmarks\(bookmarks\)/,
+        'adding a bookmark must persist through the capped write helper');
+    assert.match(block, /this\._writeBookmarks\(nextBookmarks\)/,
+        'undo restore must persist through the capped write helper');
+    assert.match(block, /bks\[videoId\]\[idx\]\.d = Date\.now\(\)/,
+        'note edits must refresh LRU timestamp before capped persistence');
+});
+
+test('watch progress and watch-time stores enforce deterministic caps on write', () => {
+    const progressStart = ytkitSource.indexOf("id: 'watchProgress'");
+    assert.ok(progressStart > -1, 'watchProgress feature must exist');
+    const progressBlock = ytkitSource.slice(progressStart, progressStart + 8000);
+    const trackerStart = ytkitSource.indexOf("id: 'watchTimeTracker'");
+    assert.ok(trackerStart > -1, 'watchTimeTracker feature must exist');
+    const trackerBlock = ytkitSource.slice(trackerStart, trackerStart + 8000);
+
+    assert.match(ytkitSource, /function sanitizeWatchProgressStore\(value, nowMs = Date\.now\(\)\)/,
+        'watch progress cap must live in a shared sanitizer');
+    assert.match(ytkitSource, /entries\.slice\(0, STORAGE_CAPS\.watchProgressVideos\)/,
+        'watch progress sanitizer must cap retained videos');
+    assert.match(progressBlock, /_MAX_PROGRESS_VIDEOS: STORAGE_CAPS\.watchProgressVideos/,
+        'watchProgress must document its retained-video cap');
+    assert.match(progressBlock, /_writeProgress\(progress\)/,
+        'watchProgress must centralize capped writes');
+    assert.match(progressBlock, /this\._writeProgress\(progress\)/,
+        'watchProgress save path must persist through the capped write helper');
+    assert.match(ytkitSource, /function sanitizeWatchTimeStats\(value, nowDate = new Date\(\)\)/,
+        'watch-time stats cap must live in a shared sanitizer');
+    assert.match(ytkitSource, /days\.slice\(0, STORAGE_CAPS\.watchTimeDays\)/,
+        'watch-time sanitizer must cap retained day keys');
+    assert.match(trackerBlock, /_writeStats\(stats\)/,
+        'watchTimeTracker must centralize capped writes');
+    assert.match(trackerBlock, /this\._writeStats\(stats\)/,
+        'watchTimeTracker tick path must persist through the capped write helper');
 });
 
 // ── v3.30.0 P1: Research workspace invariants ──

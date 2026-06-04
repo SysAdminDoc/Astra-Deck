@@ -713,7 +713,9 @@ return response;
         hiddenVideos: 'ytkit-hidden-videos',
         allowedVideos: 'ytkit-video-hider-allowed-videos',
         blockedChannels: 'ytkit-blocked-channels',
-        bookmarks: 'ytkit-bookmarks'
+        bookmarks: 'ytkit-bookmarks',
+        watchProgress: 'ytkit-watch-progress',
+        watchTime: 'ytkit-watch-time'
     });
     const LEGACY_STORAGE_KEYS = Object.freeze({
         sidebarOrder: 'ytkit_sidebar_order'
@@ -728,6 +730,11 @@ return response;
         bookmarksPerVideo: 100,
         bookmarkNoteChars: 500,
         totalBytes: 4.5 * 1024 * 1024
+    });
+    const STORAGE_CAPS = Object.freeze({
+        watchProgressVideos: 2000,
+        watchProgressMaxAgeMs: 30 * 24 * 60 * 60 * 1000,
+        watchTimeDays: 90
     });
     const PANEL_OPEN_CLASS = 'ytkit-panel-open';
     const PANEL_MESSAGE_TYPES = Object.freeze({
@@ -934,10 +941,9 @@ return response;
         return sanitized;
     }
 
-    function sanitizeImportedBookmarks(value) {
+    function sanitizeTimestampBookmarks(value, limits = IMPORT_LIMITS) {
         if (!isPlainObject(value)) return {};
-        const sanitized = {};
-        let videoCount = 0;
+        const videos = [];
         for (const [videoId, entries] of Object.entries(value)) {
             if (!isSafeObjectKey(videoId) || !VIDEO_ID_PATTERN.test(videoId) || !Array.isArray(entries)) continue;
             const seenTimes = new Set();
@@ -949,20 +955,67 @@ return response;
                 const time = Math.floor(rawTime);
                 if (seenTimes.has(time)) continue;
                 seenTimes.add(time);
-                const note = typeof entry.n === 'string' ? entry.n.slice(0, IMPORT_LIMITS.bookmarkNoteChars) : '';
+                const note = typeof entry.n === 'string' ? entry.n.slice(0, limits.bookmarkNoteChars) : '';
                 const createdAt = Number.isFinite(Number(entry.d)) && Number(entry.d) > 0
-                    ? Number(entry.d)
-                    : Date.now();
+                    ? Math.floor(Number(entry.d))
+                    : 0;
                 sanitizedEntries.push({ t: time, n: note, d: createdAt });
-                if (sanitizedEntries.length >= IMPORT_LIMITS.bookmarksPerVideo) break;
             }
             if (sanitizedEntries.length === 0) continue;
-            sanitizedEntries.sort((left, right) => left.t - right.t);
-            sanitized[videoId] = sanitizedEntries;
-            videoCount += 1;
-            if (videoCount >= IMPORT_LIMITS.bookmarkVideos) break;
+            sanitizedEntries.sort((left, right) => ((Number(right.d) || 0) - (Number(left.d) || 0)) || (left.t - right.t));
+            const cappedEntries = sanitizedEntries.slice(0, limits.bookmarksPerVideo).sort((left, right) => left.t - right.t);
+            const newest = cappedEntries.reduce((max, entry) => Math.max(max, Number(entry.d) || 0), 0);
+            videos.push([videoId, cappedEntries, newest]);
         }
-        return sanitized;
+        videos.sort((left, right) => (right[2] - left[2]) || left[0].localeCompare(right[0]));
+        return Object.fromEntries(videos.slice(0, limits.bookmarkVideos).map(([videoId, entries]) => [videoId, entries]));
+    }
+
+    function sanitizeImportedBookmarks(value) {
+        return sanitizeTimestampBookmarks(value);
+    }
+
+    function sanitizeWatchProgressStore(value, nowMs = Date.now()) {
+        if (!isPlainObject(value)) return {};
+        const cutoff = nowMs - STORAGE_CAPS.watchProgressMaxAgeMs;
+        const entries = [];
+        for (const [videoId, raw] of Object.entries(value)) {
+            if (!isSafeObjectKey(videoId) || !VIDEO_ID_PATTERN.test(videoId) || !isPlainObject(raw)) continue;
+            const percent = Number(raw.p);
+            const updatedAt = Number(raw.t);
+            if (!Number.isFinite(percent) || !Number.isFinite(updatedAt) || updatedAt < cutoff) continue;
+            entries.push([videoId, {
+                p: Math.max(0, Math.min(100, Math.round(percent))),
+                t: Math.floor(updatedAt)
+            }]);
+        }
+        entries.sort((left, right) => ((Number(right[1]?.t) || 0) - (Number(left[1]?.t) || 0)) || left[0].localeCompare(right[0]));
+        return Object.fromEntries(entries.slice(0, STORAGE_CAPS.watchProgressVideos));
+    }
+
+    function formatLocalDateKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    }
+
+    function sanitizeWatchTimeStats(value, nowDate = new Date()) {
+        const stats = isPlainObject(value) ? value : {};
+        const rawDays = isPlainObject(stats.days) ? stats.days : {};
+        const cutoff = new Date(nowDate);
+        cutoff.setDate(cutoff.getDate() - STORAGE_CAPS.watchTimeDays);
+        const cutoffKey = formatLocalDateKey(cutoff);
+        const days = [];
+        for (const [dayKey, rawSeconds] of Object.entries(rawDays)) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || dayKey <= cutoffKey) continue;
+            const seconds = Number(rawSeconds);
+            if (!Number.isFinite(seconds) || seconds <= 0) continue;
+            days.push([dayKey, seconds]);
+        }
+        days.sort((left, right) => right[0].localeCompare(left[0]));
+        const total = Number(stats.total);
+        return {
+            days: Object.fromEntries(days.slice(0, STORAGE_CAPS.watchTimeDays)),
+            total: Number.isFinite(total) && total > 0 ? total : 0
+        };
     }
 
     function estimateSerializedBytes(value) {
@@ -18445,7 +18498,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             group: 'Content',
             icon: 'bar-chart',
             _styleElement: null,
-            _storageKey: 'ytkit-watch-progress',
+            _storageKey: STORAGE_KEYS.watchProgress,
+            _MAX_PROGRESS_VIDEOS: STORAGE_CAPS.watchProgressVideos,
             _saveInterval: null,
             _addBarsTimer: null,
 
@@ -18457,8 +18511,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
-            _getProgress() {
-                return StorageManager.get(this._storageKey, {});
+            _getProgress() { return sanitizeWatchProgressStore(StorageManager.get(this._storageKey, {})); },
+
+            _writeProgress(progress) {
+                const capped = sanitizeWatchProgressStore(progress);
+                StorageManager.set(this._storageKey, capped);
+                return capped;
             },
 
             _saveCurrentProgress() {
@@ -18470,12 +18528,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (percent < 5) return; // Don't save negligible progress
                 const progress = this._getProgress();
                 progress[videoId] = { p: Math.min(percent, 100), t: Date.now() };
-                // Prune entries older than 30 days
-                const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
-                for (const id in progress) {
-                    if (progress[id].t < cutoff) delete progress[id];
-                }
-                StorageManager.set(this._storageKey, progress);
+                this._writeProgress(progress);
             },
 
             _addProgressBars() {
@@ -20160,6 +20213,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'bookmark',
             pages: [PageTypes.WATCH],
             _storageKey: 'ytkit-bookmarks',
+            _MAX_BOOKMARK_VIDEOS: IMPORT_LIMITS.bookmarkVideos,
+            _MAX_BOOKMARKS_PER_VIDEO: IMPORT_LIMITS.bookmarksPerVideo,
+            _MAX_BOOKMARK_NOTE_CHARS: IMPORT_LIMITS.bookmarkNoteChars,
             _panel: null,
             _btn: null,
             _countEl: null,
@@ -20173,7 +20229,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
-            _getBookmarks() { return StorageManager.get(this._storageKey, {}); },
+            _sanitizeBookmarks(bookmarks) {
+                return sanitizeTimestampBookmarks(bookmarks, {
+                    bookmarkVideos: this._MAX_BOOKMARK_VIDEOS,
+                    bookmarksPerVideo: this._MAX_BOOKMARKS_PER_VIDEO,
+                    bookmarkNoteChars: this._MAX_BOOKMARK_NOTE_CHARS
+                });
+            },
+
+            _getBookmarks() { return this._sanitizeBookmarks(StorageManager.get(this._storageKey, {})); },
+
+            _writeBookmarks(bookmarks) {
+                const capped = this._sanitizeBookmarks(bookmarks);
+                StorageManager.set(this._storageKey, capped);
+                return capped;
+            },
 
             _formatTime(secs) {
                 const h = Math.floor(secs / 3600);
@@ -20195,7 +20265,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 bookmarks[videoId].push({ t: time, n: '', d: Date.now() });
                 bookmarks[videoId].sort((a, b) => a.t - b.t);
-                StorageManager.set(this._storageKey, bookmarks);
+                this._writeBookmarks(bookmarks);
                 this._renderPanel();
                 showToast(`Bookmarked at ${this._formatTime(time)}`, '#22c55e');
             },
@@ -20206,7 +20276,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const removed = bookmarks[videoId][index];
                 bookmarks[videoId].splice(index, 1);
                 if (bookmarks[videoId].length === 0) delete bookmarks[videoId];
-                StorageManager.set(this._storageKey, bookmarks);
+                this._writeBookmarks(bookmarks);
                 this._renderPanel();
                 if (!removed) return;
                 showToast(`Removed bookmark at ${this._formatTime(removed.t)}`, '#6b7280', {
@@ -20219,7 +20289,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             if (!nextBookmarks[videoId]) nextBookmarks[videoId] = [];
                             nextBookmarks[videoId].push(removed);
                             nextBookmarks[videoId].sort((a, b) => a.t - b.t);
-                            StorageManager.set(this._storageKey, nextBookmarks);
+                            this._writeBookmarks(nextBookmarks);
                             this._renderPanel();
                             showToast(`Restored bookmark at ${this._formatTime(removed.t)}`, '#22c55e');
                         }
@@ -20297,7 +20367,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const bks = this._getBookmarks();
                         if (bks[videoId]?.[idx]) {
                             bks[videoId][idx].n = note.value.slice(0, IMPORT_LIMITS.bookmarkNoteChars);
-                            StorageManager.set(this._storageKey, bks);
+                            bks[videoId][idx].d = Date.now();
+                            this._writeBookmarks(bks);
                             this._renderPanel();
                         }
                     };
@@ -20961,11 +21032,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             description: 'Track your daily/weekly YouTube watch time with a stats widget in the settings panel',
             group: 'Watch Page',
             icon: 'timer',
-            _storageKey: 'ytkit-watch-time',
+            _storageKey: STORAGE_KEYS.watchTime,
             _interval: null,
             _lastTick: null,
 
-            _getStats() { return StorageManager.get(this._storageKey, { days: {}, total: 0 }); },
+            _getStats() { return sanitizeWatchTimeStats(StorageManager.get(this._storageKey, { days: {}, total: 0 })); },
+
+            _writeStats(stats) {
+                const capped = sanitizeWatchTimeStats(stats);
+                StorageManager.set(this._storageKey, capped);
+                return capped;
+            },
 
             _todayKey() {
                 const d = new Date();
@@ -20983,15 +21060,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!stats.days[key]) stats.days[key] = 0;
                     stats.days[key] += elapsed;
                     stats.total = (stats.total || 0) + elapsed;
-                    // Prune days older than 90 days.
-                    // Retention window is the last 90 days inclusive of today, so the
-                    // oldest kept day is (today - 89). Using `<=` on the cutoff below
-                    // drops that exact day and above, which previously left 91 days
-                    // in the store.
-                    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 90);
-                    const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth()+1).padStart(2,'0')}-${String(cutoff.getDate()).padStart(2,'0')}`;
-                    for (const dk in stats.days) { if (dk <= cutoffKey) delete stats.days[dk]; }
-                    StorageManager.set(this._storageKey, stats);
+                    this._writeStats(stats);
                 }
                 this._lastTick = now;
             },
@@ -28489,10 +28558,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'storageQuotaLRU',
             name: 'Storage Quota Management',
-            description: 'LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion',
+            description: 'LRU-cap growing settings and stores (hiddenVideos, hiddenChannels, videoNotesData, ytkit-bookmarks, ytkit-watch-progress, ytkit-watch-time, da_branding_cache, sb_segments_cache) to prevent quota exhaustion',
             group: 'Advanced',
             icon: 'database',
             _timer: null,
+            _countMapEntries(value) {
+                return value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).length : 0;
+            },
+            _hasChanged(left, right) {
+                try { return JSON.stringify(left) !== JSON.stringify(right); }
+                catch (_) { return true; }
+            },
+            _pruneTopLevelStore(key, sanitizer, label) {
+                const current = StorageManager.get(key, {});
+                const capped = sanitizer(current);
+                if (!this._hasChanged(current, capped)) return 0;
+                StorageManager.setSync(key, capped);
+                const before = this._countMapEntries(current);
+                const after = this._countMapEntries(capped);
+                DiagnosticLog?.record('storageQuotaLRU', `pruned ${Math.max(0, before - after)} ${label} entries`);
+                return Math.max(0, before - after);
+            },
             _prune() {
                 try {
                     // Caps inside appState.settings. The DeArrow branding cache
@@ -28503,7 +28589,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const caps = [
                         ['hiddenVideos', 5000],
                         ['hiddenChannels', 2000],
-                        ['timestampBookmarks', 2000],
                         ['_errors', 500],
                     ];
                     let pruned = 0;
@@ -28521,10 +28606,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             }
                         }
                     }
+                    const notes = appState.settings.videoNotesData;
+                    const notesFeature = getFeatureById('videoNotes');
+                    if (notes && typeof notes === 'object' && !Array.isArray(notes) && typeof notesFeature?._enforceNotesCap === 'function') {
+                        const cappedNotes = notesFeature._enforceNotesCap(notes);
+                        if (this._hasChanged(notes, cappedNotes)) {
+                            pruned += Math.max(0, this._countMapEntries(notes) - this._countMapEntries(cappedNotes));
+                            appState.settings.videoNotesData = cappedNotes;
+                        }
+                    }
                     if (pruned > 0) {
                         settingsManager.save(appState.settings);
                         DiagnosticLog?.record('storageQuotaLRU', `pruned ${pruned} entries`);
                     }
+
+                    this._pruneTopLevelStore(STORAGE_KEYS.bookmarks, sanitizeTimestampBookmarks, 'ytkit-bookmarks');
+                    this._pruneTopLevelStore(STORAGE_KEYS.watchProgress, sanitizeWatchProgressStore, 'ytkit-watch-progress');
+                    this._pruneTopLevelStore(STORAGE_KEYS.watchTime, sanitizeWatchTimeStats, 'ytkit-watch-time');
 
                     // Belt-and-suspenders sweep on the DeArrow branding cache
                     // top-level key. DeArrow caps itself at 2000 on every
@@ -28582,7 +28680,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _modal: null,
             _styleEl: null,
             _injectTimer: null,
-            _storageKey: 'ytkit-watch-time',
+            _storageKey: STORAGE_KEYS.watchTime,
             _scheduleInject(delay = 2500) {
                 if (this._injectTimer) clearTimeout(this._injectTimer);
                 this._injectTimer = setTimeout(() => {
@@ -28593,7 +28691,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _fmt(s) { const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); return h > 0 ? `${h}h ${m}m` : `${m}m`; },
             _open() {
                 if (this._modal) { this._modal.remove(); this._modal = null; return; }
-                const stats = StorageManager.get(this._storageKey, { days: {}, total: 0 });
+                const stats = sanitizeWatchTimeStats(StorageManager.get(this._storageKey, { days: {}, total: 0 }));
                 const days = [];
                 for (let i = 29; i >= 0; i--) {
                     const d = new Date(); d.setDate(d.getDate() - i);
