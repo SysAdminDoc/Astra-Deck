@@ -46,6 +46,12 @@ or maintainer action to confirm.
   has static Firefox manifest-patch coverage, but release artifacts are not run
   through `web-ext lint` or a clean Firefox profile. ROADMAP P1 now calls for a
   pinned Firefox artifact lint/load gate with captured startup errors.
+- [Verified] Cycle 6 overlay-a11y pass on 2026-06-04 found that the automated
+  audit scripts cover popup HTML/CSS only, while toast DOM, download dialogs,
+  transcript panels, video notes, subscription group surfaces, and downloader
+  health/history panels remain manual via `docs/screen-reader-smoke.md`. ROADMAP
+  P2 now names these targets and the first-pass target-size/focus/name/live-region
+  assertions.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
@@ -182,7 +188,9 @@ Top remaining opportunities (one-liners):
 2. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-3. WCAG 2.2 AA audit for in-page overlays, not just the popup. [Verified]
+3. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+   dialogs, transcript panels, video notes, subscription group surfaces, and
+   downloader health/history panels. [Verified]
 4. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles. [Verified]
 5. Signed Astra Downloader installer/MSI once the signing budget and submission
@@ -300,8 +308,8 @@ Current open risk:
   → ROADMAP P2 capture-week expansion. [Verified]
 - **[Med] In-page overlay accessibility.** Popup a11y/contrast is CI-gated, but
   transcript, notes, theater split, subscription manager, and toast overlays are
-  not yet under the WCAG 2.2 target-size/focus-appearance gate. → ROADMAP P2
-  overlay a11y audit. [Verified]
+  not yet under the WCAG 2.2 target-size/focus-appearance gate; `audit:a11y` is
+  currently popup-only. → ROADMAP P2 overlay a11y audit. [Verified]
 - **[Med] Locale proofing debt.** The feature-definition i18n extraction shipped,
   but `docs/i18n-coverage.md` still reports 37-73 identical-to-English strings
   per non-EN locale. → ROADMAP P3 locale proofing queue. [Verified]
