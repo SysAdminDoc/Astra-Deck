@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Settings migration full-profile fixture.** Added a pinned
+  `SETTINGS_VERSION` v1 full-profile settings blob covering every current
+  default key, migration override, future-default classification, and retired
+  setting. The migration round-trip suite now proves the 362-key schema is
+  preserved, defaulted, overridden, or intentionally stripped during forward
+  import, so accidental key drops fail deterministically.
+
 - **Long-session leak regression.** Added `tests/long-session.test.js`, a
   deterministic DOM/timer/RAF/MutationObserver harness that simulates 1000
   route changes and mutation batches against the real navigation and diagnostic
