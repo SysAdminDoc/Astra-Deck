@@ -382,7 +382,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 | Doc | Audience |
 |-----|----------|
-| [ROADMAP.md](ROADMAP.md) | Active backlog plus v5.0.0 → v6.0.0 product plan, competitive matrix, full per-toggle settings schema |
+| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. The legacy v5.0.0 → v6.0.0 product plan, competitive matrix, and settings schema are archived at [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md) |
 | [COMPLETED.md](COMPLETED.md) | Shipped roadmap arcs and recent hardening/polish summaries |
 | [RESEARCH_REPORT.md](RESEARCH_REPORT.md) | Research summary and archive index for prior feature-plan files |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
