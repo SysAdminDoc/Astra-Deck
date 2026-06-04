@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 3 - 2026-06-04.
+> Last researched: Cycle 4 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -64,8 +64,37 @@ means implemented/closed by the build lane.
   - Why: Shorts, channel, search, history, watch-later, embedded player, and
     notifications surfaces have no capture-backed fixtures, leaving their
     selector packs unverified against real DOM.
-  - Touches: `mhtml/`, `extension/core/selector-packs/`, `scripts/build-selector-fixtures.js`.
-  - Acceptance: fixtures and selector packs exist for each listed surface.
+  - Evidence: `scripts/build-selector-fixtures.js` currently registers only
+    `YouTube.mhtml`, `WatchPage.mhtml`, and `LiveChat.mhtml`, and
+    `selector-surface-matches.json` only exercises `playerChrome` and
+    `liveChat`. High-churn packs such as `notifications`, `search`,
+    `shortsShelf`, `feedCard`, `thumbnail`, and `profile` still carry
+    2026-05-19 verification stamps or cite captures not represented in the
+    committed fixture builder. [Verified]
+  - Capture matrix:
+    - `mhtml/Shorts.mhtml` -> `shortsShelf`, `media`, `thumbnail`.
+    - `mhtml/SearchResults.mhtml` -> `search`, `feedCard`, `thumbnail`, `nav`.
+    - `mhtml/Channel.mhtml` -> `profile` / `channelProfile`, `feed`,
+      `feedCard`, `thumbnail`.
+    - `mhtml/History.mhtml` -> `feed`, `feedCard`, `thumbnail`, `appShell`.
+    - `mhtml/WatchLater.mhtml` -> `feed`, `feedCard`, `thumbnail`, `leftNav`.
+    - `mhtml/EmbedPlayer.mhtml` -> `player`, `mainVideo`, `playerChrome`,
+      `playerSettings`.
+    - `mhtml/NotificationsMenu.mhtml` -> `notifications`, `nav`, `appShell`.
+  - Touches: `mhtml/`, `tests/fixtures/*.tokens.txt`,
+    `tests/fixtures/selector-surface-matches.json`,
+    `scripts/build-selector-fixtures.js`, `tests/selector-regression.test.js`,
+    `docs/selector-fixture-workflow.md`, affected selector-pack metadata.
+  - Acceptance: the fixture builder registers every matrix capture, emits a
+    committed token file per capture, extends `SURFACE_MATCH_SOURCES` to the
+    high-churn packs above, and fails the selector test when a stable selector
+    from any registered surface is unmatched. Raw `.mhtml` files remain
+    gitignored; only derived fixtures and metadata are committed.
+  - Verify: `npm run build:fixtures`,
+    `node --test tests/selector-regression.test.js`, then inspect
+    `tests/fixtures/selector-surface-matches.json` for zero unmatched stable
+    selectors. If a capture is blocked by auth or YouTube rollout state, record
+    the surface-specific blocker in `docs/selector-fixture-workflow.md`.
   - Source: ROADMAP.md Active Backlog (Browser-Bounded Captures)
 
 ### Companion, Subscriptions, And Research
@@ -291,6 +320,14 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 4 - 2026-06-04)
+
+- [x] 🔬 `capture-week-matrix-2026-06-04` - inspected the live selector fixture
+  builder, selector-regression test, `selector-surface-matches.json`, selector
+  pack metadata, and capture workflow. The MHTML capture-week row is now scoped
+  as a concrete capture matrix with builder/test/documentation acceptance
+  criteria instead of a generic "add fixtures" instruction.
 
 ### Researcher Queue (Cycle 3 - 2026-06-04)
 
