@@ -2315,8 +2315,8 @@ test('subscriptionGroups keys by channel ID and survives SPA navigation', () => 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     const block = ytkitSource.slice(start, start + 36000);
-    assert.match(block, /schemaVersion:\s*1/,
-        'export payload must declare schemaVersion 1');
+    assert.match(block, /schemaVersion:\s*2/,
+        'export payload must declare schemaVersion 2');
     assert.match(block, /astra-deck-subscription-groups-/,
         'export filename must include the project prefix');
     // Import must sanitize channelIds + name length + color format.
@@ -2324,6 +2324,8 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
         'import must validate that raw.channelIds is an array before assigning');
     assert.match(block, /\/\^#\[0-9a-fA-F\]\{6\}\$\//,
         'import must validate the color is a 6-digit hex code');
+    assert.match(block, /parentId:\s*''/,
+        'import must default parentId to top-level for legacy v1 payloads');
 });
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
@@ -2366,6 +2368,37 @@ test('subscriptionGroups persists sort mode per active group (NF31)', () => {
         'toolbar select must display the active group sort mode');
     assert.match(block, /const mode = this\._setActiveSortMode\(sortSelect\.value\)[\s\S]*this\._applySort\(mode\)/,
         'toolbar changes must route through the per-group sort writer before sorting');
+});
+
+test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (NF2)', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 42000);
+    assert.match(block, /_getGroupParentId\(groupId, groups = this\._readGroups\(\)\)/,
+        'subscriptionGroups must expose parentId normalization for nested groups');
+    assert.match(block, /grandParentId && groups\[grandParentId\] \? '' : parentId/,
+        'parentId normalization must reject child-of-child depth');
+    assert.match(block, /_getChildGroupIds\(parentId, groups = this\._readGroups\(\)\)/,
+        'subscriptionGroups must expose child lookup by parentId');
+    assert.match(block, /_getGroupChannelIdSet\(groupId, groups = this\._readGroups\(\)\)/,
+        'subscriptionGroups must compute active channel sets through a helper');
+    assert.match(block, /for \(const childId of this\._getChildGroupIds\(groupId, groups\)\)/,
+        'top-level group filters must include child group channelIds');
+    assert.match(block, /rawParentById/,
+        'import must keep a raw parentId map for two-pass normalization');
+    assert.match(block, /sanitized\[id\]\.parentId = parentId/,
+        'import must preserve valid depth-2 parentId links');
+    assert.match(block, /!rawParentById\[parentId\]/,
+        'import must reject child-of-child parentId links');
+    assert.match(block, /_showNewGroupDialog\(anchorEl, parentId = ''\)/,
+        'new group dialog must accept an optional parentId');
+    assert.match(block, /safeParentId = this\._normalizeNewGroupParentId\(parentId, groups\)/,
+        'new group dialog must normalize parentId before persisting');
+    assert.match(block, /parentId: safeParentId/,
+        'new groups must persist parentId for subgroups');
+    assert.match(block, /chip\.dataset\.depth = String\(depth\)/,
+        'toolbar chips must expose depth for child-group styling');
+    assert.match(block, /\+ Subgroup/,
+        'toolbar must expose a subgroup creation action for top-level active groups');
 });
 
 // ── v3.30.0 P1: Research workspace invariants ──

@@ -48,11 +48,15 @@ phased feature plan) is preserved at
     the YouTube content-script bridge. `APP_VERSION` remains `1.5.1` until a
     matching companion binary release is built and published.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P2 — Nested subscription groups (NF2)
+- [x] P2 — Nested subscription groups (NF2)
   - Why: subscription groups are flat; power users (PocketTube parity) want
     depth-2 organization.
   - Touches: subscription-groups feature module, settings schema, import/export.
-  - Acceptance: depth-2 groups work with JSON round-trip coverage.
+  - Acceptance: depth-2 groups work with JSON round-trip coverage. _(Delivered
+    2026-06-04: group records now carry `parentId`, exports moved to schema v2,
+    imports preserve valid parent links while rejecting child-of-child depth,
+    parent filters include child-group channels, and the toolbar renders child
+    chips plus a top-level-only `+ Subgroup` action.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 - [ ] P2 — Dead-channel detection + bulk unsubscribe staging
   - Why: stale channels accumulate; bulk unsubscribe is irreversible without a
