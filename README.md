@@ -243,10 +243,10 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 - Toggle switches with instant apply
 - Sub-feature controls for granular element hiding
 - Textarea editors for keyword filters, quick links, custom CSS
-- Export / Import / Reset
+- Schema-validated Export / Import / Reset with credential scrub
 - Conflict detection (auto-disables conflicting features with toast notification)
 
-The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, export/import/reset, diagnostics, and language selection.
+The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection.
 
 ---
 

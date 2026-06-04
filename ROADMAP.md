@@ -409,7 +409,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     keys. `tests/settings-migration-roundtrip.test.js` loads the fixture and
     proves each key is preserved, defaulted, overridden by migration, or
     intentionally dropped.
-- [ ] P1 — Settings import/export with schema-validated round-trip and scrub
+- [x] P1 — Settings import/export with schema-validated round-trip and scrub
   - Why: power users moving across browsers (a real PocketTube differentiator is
     Google-Drive/Chrome-profile sync) need an explicit, local-first
     export/import. Today there is no first-class backup surface, and any export
@@ -426,6 +426,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: export → wipe → import on a populated profile restores all
     non-credential settings; `node scripts/check-settings.js` passes the export.
   - Complexity: L
+  - Status 2026-06-04: delivered. Popup and in-page settings backups now emit a
+    schema-validated `exportVersion: 4` payload with settings-schema version,
+    active profile, scrubbed-key, and profile-defaulted-key metadata. Both
+    import paths migrate first, then reject unknown, unsafe, or type-mismatched
+    settings before writing storage. `policy-profile.js` now owns the shared
+    validator and schema-only export mode; userscript output is synced; hardening
+    tests prove credential fields are absent and schema-only exports validate.
 - [ ] P1 — Cross-browser parity gate: Firefox MV3 smoke before each AMO submission
   - Why: Enhancer for YouTube's Firefox build has suffered extended non-functional
     periods — the clearest competitive opening is reliable Firefox parity. The

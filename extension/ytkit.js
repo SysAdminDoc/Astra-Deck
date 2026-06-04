@@ -4231,11 +4231,73 @@ return response;
             return savedSettings;
         },
 
+        _policyProfile: null,
+
+        _getPolicyProfile() {
+            if (this._policyProfile) return this._policyProfile;
+            const factory = globalThis.YTKitCore && globalThis.YTKitCore.createPolicyProfile;
+            if (typeof factory !== 'function') return null;
+            try {
+                this._policyProfile = factory();
+            } catch (err) {
+                console.warn('[YTKit] Failed to initialize policy profile:', err);
+                this._policyProfile = null;
+            }
+            return this._policyProfile;
+        },
+
+        _formatSettingsValidationError(prefix, validation) {
+            const errors = validation && Array.isArray(validation.errors) ? validation.errors : [];
+            const sample = errors.slice(0, 4).join('; ');
+            const suffix = errors.length > 4 ? `; +${errors.length - 4} more` : '';
+            return `${prefix}: ${sample || 'schema validation failed'}${suffix}`;
+        },
+
+        _validateSettingsForBackupImport(settings) {
+            const policy = this._getPolicyProfile();
+            if (!policy || typeof policy.validateSettingsSnapshot !== 'function') {
+                return this._sanitize(settings);
+            }
+            const validation = policy.validateSettingsSnapshot(settings);
+            if (!validation.ok) {
+                throw new Error(this._formatSettingsValidationError('Settings import rejected', validation));
+            }
+            return this._sanitize(validation.settings);
+        },
+
+        _buildSchemaValidatedExportSettings(settings) {
+            const source = this._sanitize(settings);
+            const policy = this._getPolicyProfile();
+            if (!policy || typeof policy.buildExportSnapshot !== 'function') {
+                return {
+                    settings: source,
+                    effectiveProfile: 'unknown',
+                    scrubbedKeys: [],
+                    defaultedKeys: []
+                };
+            }
+            const snapshot = policy.buildExportSnapshot(source, { schemaOnly: true });
+            if (typeof policy.validateSettingsSnapshot === 'function') {
+                const validation = policy.validateSettingsSnapshot(snapshot.settings);
+                if (!validation.ok) {
+                    throw new Error(this._formatSettingsValidationError('Settings export rejected', validation));
+                }
+                snapshot.settings = this._sanitize(validation.settings);
+            }
+            return {
+                settings: snapshot.settings,
+                effectiveProfile: snapshot.effective || 'unknown',
+                scrubbedKeys: Array.isArray(snapshot.scrubbedKeys) ? snapshot.scrubbedKeys : [],
+                defaultedKeys: Array.isArray(snapshot.defaultedKeys) ? snapshot.defaultedKeys : []
+            };
+        },
+
         _prepareImportedSettings(settings) {
             const migrated = this._sanitize(this._migrate(this._sanitize(settings), 'profile-import'));
+            const validated = this._validateSettingsForBackupImport(migrated);
             return this._normalizeProfileModel(this._sanitize({
                 ...this.defaults,
-                ...migrated,
+                ...validated,
                 _settingsVersion: this.SETTINGS_VERSION
             }));
         },
@@ -4330,7 +4392,7 @@ return response;
             StorageManager.set('ytSuiteHasRun', hasRun);
         },
         exportAllSettings() {
-            const settings = this._sanitize(this.load());
+            const exportSettings = this._buildSchemaValidatedExportSettings(this.load());
             // Include Video Hider lists, blocked channels, and bookmarks in export
             let hiddenVideos = [];
             let allowedVideos = [];
@@ -4347,13 +4409,19 @@ return response;
             const hiddenVideosForExport = sanitizeImportedHiddenVideos(hiddenVideos);
             const allowedVideosForExport = sanitizeImportedVideoIdList(allowedVideos, IMPORT_LIMITS.allowedVideos);
             const exportData = {
-                settings: settings,
+                astraDeckBackup: true,
+                settings: exportSettings.settings,
                 hiddenVideos: hiddenVideosForExport,
                 filteredVideoPosts: hiddenVideosForExport,
                 allowedVideos: allowedVideosForExport,
                 blockedChannels: sanitizeImportedBlockedChannels(blockedChannels),
                 bookmarks: sanitizeImportedBookmarks(bookmarks),
-                exportVersion: 3,
+                exportVersion: 4,
+                backupSchemaVersion: 1,
+                settingsSchemaVersion: this.SETTINGS_VERSION,
+                settingsProfile: exportSettings.effectiveProfile,
+                scrubbedSettings: exportSettings.scrubbedKeys,
+                profileDefaultedSettings: exportSettings.defaultedKeys,
                 exportDate: new Date().toISOString(),
                 ytkitVersion: YTKIT_VERSION
             };

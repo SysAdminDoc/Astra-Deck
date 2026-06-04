@@ -230,6 +230,26 @@ test('settings backups include filtered video posts and import the alias', () =>
         /allowedVideos/,
         'Popup exports should include allowed video exceptions'
     );
+    assert.match(
+        popupExportBody,
+        /buildSchemaValidatedExportSettings\(mergedSettings\)/,
+        'Popup exports must route settings through the schema-validated scrubber'
+    );
+    assert.match(
+        popupExportBody,
+        /exportVersion:\s*4/,
+        'Popup settings backups must emit the schema-validated v4 payload'
+    );
+    assert.match(
+        popupExportBody,
+        /settingsSchemaVersion:\s*SETTINGS_VERSION_FALLBACK/,
+        'Popup settings backups must declare the settings schema version'
+    );
+    assert.match(
+        popupExportBody,
+        /scrubbedSettings:\s*exportSettings\.scrubbedKeys/,
+        'Popup settings backups must declare which setting keys were scrubbed'
+    );
 
     const panelExportStart = ytkitSource.indexOf('exportAllSettings()');
     const panelExportEnd = ytkitSource.indexOf('importAllSettings(jsonString)');
@@ -244,6 +264,21 @@ test('settings backups include filtered video posts and import the alias', () =>
         panelExportBody,
         /allowedVideos/,
         'In-page exports should include allowed video exceptions'
+    );
+    assert.match(
+        panelExportBody,
+        /_buildSchemaValidatedExportSettings\(this\.load\(\)\)/,
+        'In-page exports must route settings through the schema-validated scrubber'
+    );
+    assert.match(
+        panelExportBody,
+        /exportVersion:\s*4/,
+        'In-page settings backups must emit the schema-validated v4 payload'
+    );
+    assert.match(
+        panelExportBody,
+        /settingsSchemaVersion:\s*this\.SETTINGS_VERSION/,
+        'In-page settings backups must declare the settings schema version'
     );
 
     assert.ok(
@@ -261,6 +296,29 @@ test('settings backups include filtered video posts and import the alias', () =>
         ytkitSource.includes('importedData.allowedVideos'),
         'Imports should restore allowed video exceptions from backups'
     );
+});
+
+test('settings backup import/export paths use strict schema validation and scrub metadata', () => {
+    const popupMergeStart = popupSource.indexOf('function mergeImportedSettingsWithDefaults');
+    assert.ok(popupMergeStart > -1, 'popup mergeImportedSettingsWithDefaults must exist');
+    const popupMergeBlock = popupSource.slice(popupMergeStart, popupMergeStart + 1600);
+    assert.match(popupMergeBlock, /validateSettingsForBackupImport\(migrated\)/,
+        'Popup imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
+
+    const panelPrepareStart = ytkitSource.indexOf('_prepareImportedSettings(settings)');
+    assert.ok(panelPrepareStart > -1, 'ytkit settingsManager._prepareImportedSettings must exist');
+    const panelPrepareBlock = ytkitSource.slice(panelPrepareStart, panelPrepareStart + 1400);
+    assert.match(panelPrepareBlock, /_validateSettingsForBackupImport\(migrated\)/,
+        'In-page imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
+
+    for (const [name, source] of [['popup.js', popupSource], ['ytkit.js', ytkitSource]]) {
+        assert.match(source, /Settings import rejected/,
+            `${name} must surface a schema-validation rejection reason`);
+        assert.match(source, /Settings export rejected/,
+            `${name} must reject schema-invalid live settings before exporting a backup`);
+        assert.match(source, /schemaOnly:\s*true/,
+            `${name} must request schema-only export snapshots so unknown keys cannot round-trip`);
+    }
 });
 
 // ── v3.14.0 infrastructure: selectorChain helper ──
@@ -4174,6 +4232,49 @@ test('v5.0.0 policy-profile: github-full export still scrubs credential-shaped s
                 `${entry.key} must be absent from ${effective} export snapshots`);
         }
     }
+});
+
+test('policy-profile validates schema-shaped settings backup payloads', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const valid = pp.validateSettingsSnapshot({
+        sponsorBlock: true,
+        videosPerRow: 4,
+        hiddenChatElements: ['header', 'polls'],
+        subscriptionGroupData: {},
+        lowPowerProfileBackup: null
+    });
+    assert.equal(valid.ok, true, valid.errors.join('; '));
+    assert.deepEqual(valid.settings.hiddenChatElements, ['header', 'polls']);
+
+    const invalid = pp.validateSettingsSnapshot(JSON.parse(
+        '{"sponsorBlock":"true","videosPerRow":"4","unknownFutureSetting":true,"__proto__":true}'
+    ));
+    assert.equal(invalid.ok, false, 'shape drift and unknown keys must be rejected');
+    assert.ok(invalid.errors.some((msg) => msg.includes('invalid type for "sponsorBlock"')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('invalid type for "videosPerRow"')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('unknown setting "unknownFutureSetting"')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('unsafe setting key "__proto__"')));
+});
+
+test('policy-profile schema-only export drops unknown keys and reports scrubbed credentials', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const snap = pp.buildExportSnapshot({
+        sponsorBlock: true,
+        aiSummaryApiKey: 'sk-test',
+        unknownFutureSetting: 'keep me out'
+    }, { effective: 'github-full', schemaOnly: true });
+
+    assert.equal(snap.settings.sponsorBlock, true);
+    assert.equal('aiSummaryApiKey' in snap.settings, false,
+        'credential-bearing setting value must not be present in schema-only export');
+    assert.equal('unknownFutureSetting' in snap.settings, false,
+        'unknown settings must not be present in schema-only export');
+    assert.ok(snap.scrubbedKeys.includes('aiSummaryApiKey'),
+        'schema-only export should declare that aiSummaryApiKey was scrubbed');
+    assert.equal(pp.validateSettingsSnapshot(snap.settings).ok, true,
+        'schema-only export output must validate as an importable settings snapshot');
 });
 
 test('v5.0.0 policy-profile: countByProfile partitions the schema cleanly', () => {
