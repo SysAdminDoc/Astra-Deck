@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Cross-store privacy and Firefox consent packet.** Added
+  `docs/privacy-policy.md` as the stable policy source linked from README and
+  store-submission docs. The policy covers local storage, third-party API calls,
+  local companion handoff, YouTube cookie use, BYO-key provider behavior,
+  retention/export/delete controls, no telemetry/ads/sale, and the Chrome
+  Limited Use statement. Firefox artifacts now require Firefox 140+ and declare
+  built-in `data_collection_permissions` for browsing activity, website
+  content, website activity, and authentication information.
+
 - **GitHub Validate Python job restored.** The `Validate` workflow now installs
   the Linux Qt runtime packages needed by PyQt6, runs downloader tests with
   `QT_QPA_PLATFORM=offscreen`, installs the pytest plugins that own the repo's

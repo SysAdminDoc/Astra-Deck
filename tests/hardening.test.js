@@ -1076,7 +1076,11 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         'Chrome manifest must NOT declare a `commands` block (no keyboard shortcuts)'
     );
 
-    const { patchManifestForFirefox } = require('../scripts/manifest-patch');
+    const {
+        patchManifestForFirefox,
+        FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
+        FIREFOX_DATA_COLLECTION_REQUIRED
+    } = require('../scripts/manifest-patch');
     const ffManifest = JSON.parse(JSON.stringify(manifest));
     patchManifestForFirefox(ffManifest);
 
@@ -1088,7 +1092,20 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     // The Firefox-specific gecko + background transformations must still
     // apply — a regression here would silently break Firefox at load time.
     assert.equal(ffManifest.browser_specific_settings?.gecko?.id, 'ytkit@sysadmindoc.github.io');
-    assert.equal(ffManifest.browser_specific_settings?.gecko?.strict_min_version, '128.0');
+    assert.equal(
+        ffManifest.browser_specific_settings?.gecko?.strict_min_version,
+        FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION
+    );
+    assert.deepEqual(
+        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions?.required,
+        FIREFOX_DATA_COLLECTION_REQUIRED,
+        'Firefox manifest must declare the built-in data-consent categories Astra transmits'
+    );
+    assert.equal(
+        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional,
+        undefined,
+        'Astra does not request optional Firefox data permissions at runtime, so none should be declared optional'
+    );
     assert.ok(
         Array.isArray(ffManifest.background?.scripts) && ffManifest.background.scripts.length > 0,
         'Firefox background must be a scripts[] array, not a service_worker entry'
@@ -2149,6 +2166,8 @@ test('store permission rationale covers live manifest permissions and profile ho
         'rationale doc must include a single-purpose statement');
     assert.ok(rationale.includes('## Data-Handling Statement'),
         'rationale doc must include a data-handling statement');
+    assert.ok(rationale.includes('## Firefox Data Consent'),
+        'rationale doc must include Firefox data-consent reviewer copy');
 
     for (const permission of manifest.permissions || []) {
         assert.ok(rationale.includes('`' + permission + '`'),
@@ -2161,6 +2180,57 @@ test('store permission rationale covers live manifest permissions and profile ho
             assert.ok(rationale.includes('`' + host + '`'),
                 'rationale doc must mention ' + profile + ' host permission ' + host);
         }
+    }
+});
+
+test('privacy policy covers store data categories and Firefox consent packet', () => {
+    const read = (relPath) => fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+    const policy = read('docs/privacy-policy.md');
+    const readme = read('README.md');
+    const checklist = read('docs/cws-submission-checklist.md');
+    const architecture = read('docs/architecture.md');
+    const { FIREFOX_DATA_COLLECTION_REQUIRED } = require('../scripts/manifest-patch');
+
+    assert.ok(readme.includes('docs/privacy-policy.md'),
+        'README must link the stable privacy policy source');
+    assert.ok(checklist.includes('docs/privacy-policy.md') || checklist.includes('privacy-policy.md'),
+        'store checklist must point at the privacy policy source');
+    assert.match(readme, /Firefox 140\+/,
+        'README Firefox install/compatibility copy must match the manifest floor');
+    assert.match(architecture, /Firefox 140\+/,
+        'architecture map must match the manifest Firefox floor');
+
+    for (const phrase of [
+        'Chrome Web Store User Data Policy',
+        'Limited Use',
+        'No telemetry',
+        'No advertising',
+        'No sale of data',
+        'YouTube cookies',
+        'Astra Downloader',
+        'BYO-key',
+        'Retention',
+        'Export',
+        'Delete'
+    ]) {
+        assert.ok(policy.includes(phrase), 'privacy policy must mention ' + phrase);
+    }
+
+    for (const category of [
+        'Authentication information',
+        'Web history',
+        'User activity',
+        'Website content'
+    ]) {
+        assert.ok(policy.includes(category),
+            'privacy policy must include Chrome data category ' + category);
+    }
+
+    for (const firefoxCategory of FIREFOX_DATA_COLLECTION_REQUIRED) {
+        assert.ok(policy.includes('`' + firefoxCategory + '`'),
+            'privacy policy must include Firefox data category ' + firefoxCategory);
+        assert.ok(checklist.includes('`' + firefoxCategory + '`'),
+            'store checklist must include Firefox data category ' + firefoxCategory);
     }
 });
 

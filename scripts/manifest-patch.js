@@ -4,13 +4,24 @@
 // exact Firefox-side manifest delta without spawning a real build.
 // Side-effect-free module — safe to `require()` from tests.
 
+const FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION = '140.0';
+const FIREFOX_DATA_COLLECTION_REQUIRED = Object.freeze([
+    'browsingActivity',
+    'websiteContent',
+    'websiteActivity',
+    'authenticationInfo'
+]);
+
 // Mutates and returns `ffManifest`. Caller is responsible for writing
 // the result back to disk.
 function patchManifestForFirefox(ffManifest) {
     ffManifest.browser_specific_settings = {
         gecko: {
             id: 'ytkit@sysadmindoc.github.io',
-            strict_min_version: '128.0'
+            strict_min_version: FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
+            data_collection_permissions: {
+                required: FIREFOX_DATA_COLLECTION_REQUIRED.slice()
+            }
         }
     };
 
@@ -27,4 +38,8 @@ function patchManifestForFirefox(ffManifest) {
     return ffManifest;
 }
 
-module.exports = { patchManifestForFirefox };
+module.exports = {
+    patchManifestForFirefox,
+    FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
+    FIREFOX_DATA_COLLECTION_REQUIRED
+};

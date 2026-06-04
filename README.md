@@ -17,6 +17,8 @@
 
 <p align="center">
   <a href="https://github.com/SysAdminDoc/Astra-Deck/releases/latest"><strong>Download Latest Release</strong></a>
+  ·
+  <a href="docs/privacy-policy.md"><strong>Privacy Policy</strong></a>
 </p>
 
 ---
@@ -44,7 +46,7 @@ The CRX is still attached for enterprise or tooling flows, but modern Chromium b
 2. Open `about:addons`, click the gear icon, select **Install Add-on From File**
 3. Select the `.xpi` file
 
-Requires Firefox 128+.
+Requires Firefox 140+.
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
@@ -338,7 +340,7 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 | Browser | Method | Status |
 |---------|--------|--------|
 | Chrome / Edge / Brave | Extension (MV3) | Fully supported |
-| Firefox 128+ | Extension (MV3) | Fully supported |
+| Firefox 140+ | Extension (MV3) | Fully supported |
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 
@@ -401,6 +403,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | [docs/architecture.md](docs/architecture.md) | Trust boundaries, data flow, where things live, conventions a new contributor needs |
 | [docs/cws-submission-checklist.md](docs/cws-submission-checklist.md) | Chrome Web Store submission preflight (manifest, privacy policy, screenshots) |
 | [docs/store-permission-rationale.md](docs/store-permission-rationale.md) | Copy-paste store-review permission, host, and single-purpose rationale |
+| [docs/privacy-policy.md](docs/privacy-policy.md) | Stable privacy policy source for README, homepage, CWS, and AMO listing links |
 | [docs/selector-fixture-workflow.md](docs/selector-fixture-workflow.md) | How to refresh MHTML captures when YouTube DOM changes |
 | [docs/screen-reader-smoke.md](docs/screen-reader-smoke.md) | NVDA / JAWS / VoiceOver release-gate checklist |
 | [docs/predicate-sandbox-investigation.md](docs/predicate-sandbox-investigation.md) | Threat model and design of the safe expression DSL for `advancedLocalPredicate` |

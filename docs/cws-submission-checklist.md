@@ -41,6 +41,10 @@ must use Google's standardized vocabulary to declare data categories.
 
 - [ ] Privacy policy hosted at a stable URL (CWS will reject if the
       URL returns 404 during review).
+- [ ] Tracked source for that policy is
+      [docs/privacy-policy.md](privacy-policy.md); publish that content at the
+      project homepage or another maintainer-controlled stable URL before
+      filling the CWS/AMO listing fields.
 - [ ] Copy the current single-purpose statement, data-handling statement, and
       permission/host justifications from
       [store-permission-rationale.md](store-permission-rationale.md).
@@ -64,6 +68,9 @@ must use Google's standardized vocabulary to declare data categories.
 - [ ] Data-handling disclosure: explicitly states data is local-only
       (no telemetry, no remote storage) for everything except
       user-initiated BYO-key AI summary calls.
+- [ ] Limited Use disclosure: explicitly states Astra Deck's use and transfer of
+      information received from Google APIs adheres to the Chrome Web Store User
+      Data Policy, including Limited Use requirements.
 
 ---
 
@@ -152,4 +159,12 @@ differences:
   privacy policies (CWS requires AMO-hosted text in some flows).
 - AMO requires source code submission for any minified / obfuscated
   asset. Astra Deck ships readable so this is a no-op.
+- Firefox artifacts require Firefox 140+ and use the built-in data collection
+  consent prompt. `scripts/manifest-patch.js` injects
+  `browser_specific_settings.gecko.data_collection_permissions.required` with:
+  `browsingActivity`, `websiteContent`, `websiteActivity`, and
+  `authenticationInfo`.
+- AMO reviewer notes should point at [privacy-policy.md](privacy-policy.md) and
+  the Firefox Data Consent section of
+  [store-permission-rationale.md](store-permission-rationale.md).
 - AMO unlisted reviews land in 2-4 weeks at the time of writing.

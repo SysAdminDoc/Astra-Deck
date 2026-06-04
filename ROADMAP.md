@@ -388,7 +388,7 @@ means implemented/closed by the build lane.
   data-flow catalogue, background cookie/proxy paths, and current Chrome /
   Mozilla privacy-disclosure and Firefox data-consent rules. Detailed notes
   live in `docs/research-cycle-9-privacy-consent-readiness.md`.
-- [ ] 🔬🤖 P1 — Ship cross-store privacy disclosure and Firefox data-consent packet
+- [x] 🔬🤖 P1 — Ship cross-store privacy disclosure and Firefox data-consent packet
   - Why: Astra Deck already has strong store permission rationale and profile
     split mechanics, but the release path still lacks a stable privacy-policy
     artifact and a Firefox data-transmission consent strategy that matches the
@@ -443,6 +443,15 @@ means implemented/closed by the build lane.
     README/docs/build output, and include Firefox reviewer notes for any
     remaining 128-139 support path.
   - Complexity: M
+  - Status 2026-06-04: delivered. `docs/privacy-policy.md` is now the stable
+    privacy-policy source linked from README and submission docs; it covers
+    local storage, third-party transmissions, local companion/cookie handoff,
+    BYO-key behavior, retention/export/delete, no telemetry/ads/sale, and the
+    Chrome Limited Use statement. The Firefox path is Firefox 140+ built-in
+    data consent: `scripts/manifest-patch.js` raises `strict_min_version` to
+    `140.0` and injects required `data_collection_permissions` for
+    `browsingActivity`, `websiteContent`, `websiteActivity`, and
+    `authenticationInfo`, with tests pinning the manifest and policy packet.
 
 ### Researcher Queue (Cycle 8 - 2026-06-04)
 
