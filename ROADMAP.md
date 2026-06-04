@@ -395,7 +395,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     `--cookies` invocation, finally-block deletion, stale-jar sweep, and
     residual local-machine risk. `astra_downloader/test_astra_downloader.py`
     now pins the doc against those live mitigation names.
-- [ ] P2 — Disclose Return-YouTube-Dislike estimate accuracy in the UI
+- [x] P2 — Disclose Return-YouTube-Dislike estimate accuracy in the UI
   - Why: the archived risk list already notes "RYD accuracy: dislike counts for
     post-2021 and low-traffic videos are estimates. UI must disclose this," but
     there is no roadmap item to actually surface the disclosure. Competitors that
@@ -409,6 +409,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: render a known low-traffic video and confirm the affordance + its
     `aria-label`.
   - Complexity: S
+  - Status 2026-06-04: delivered. Extension RYD count pills and the userscript
+    count span now render a compact `est.` affordance, title copy, and
+    `aria-label` explaining that Return YouTube Dislike counts are estimates
+    after YouTube removed public dislike totals and that low-traffic videos can
+    be less accurate. The ratio label/bar also discloses that it uses estimated
+    counts, locale seed descriptions now say "estimated dislike count", and the
+    hardening suite pins extension, userscript, locale, and cleanup coverage.
 
 ### Larger Bets
 

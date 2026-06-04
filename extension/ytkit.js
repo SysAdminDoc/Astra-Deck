@@ -31342,7 +31342,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'returnDislike',
             name: 'Return YouTube Dislike',
-            description: 'Restore the dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
+            description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
             group: 'Ratings',
             icon: 'thumbs-down',
             pages: [PageTypes.WATCH],
@@ -31351,6 +31351,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _BUDGET_PER_MIN: 100,
             _styleElement: null,
             _pillEl: null,
+            _estimateEl: null,
             _navRule: null,
 
             _ensureStyles() {
@@ -31359,8 +31360,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-ryd-pill{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);font:600 12px/1.2 system-ui;font-variant-numeric:tabular-nums;}
                     .ytkit-ryd-pill[data-tone="cached"]{color:rgba(255,255,255,0.55);}
                     .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
+                    .ytkit-ryd-estimate{margin-left:4px;font:500 10px/1 system-ui;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
                     .ytkit-ryd-ratio{margin-left:8px;font:500 11px/1 system-ui;color:rgba(255,255,255,0.55);}
                 `, 'ryd-pill');
+            },
+
+            _estimateDisclosureText() {
+                return 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.';
             },
 
             _readCache(videoId) {
@@ -31438,6 +31444,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!dislikeButton) return;
                 const data = await this._fetch(videoId);
                 this._pillEl?.remove();
+                this._estimateEl?.remove();
+                document.querySelectorAll('.ytkit-ryd-ratio').forEach(el => el.remove());
                 if (!data) {
                     // v4.47.0 NF30: budget-vs-network differentiation.
                     // _fetch returns null on both rate-limited and network
@@ -31461,26 +31469,39 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     dislikeButton.appendChild(offline);
                     this._pillEl = offline;
+                    this._estimateEl = null;
                     return;
                 }
                 const pill = document.createElement('span');
                 pill.className = 'ytkit-ryd-pill';
                 pill.dataset.tone = data.fromCache ? 'cached' : 'fresh';
                 pill.textContent = this._formatCount(data.dislikes);
+                const countLabel = this._formatCount(data.dislikes);
+                const estimateCopy = this._estimateDisclosureText();
                 if (data.fromCache) {
                     // v4.47.0 NF30: cache-age indicator. Entries can be
                     // up to returnDislikeCacheHours (default 24h) old;
                     // power users want to know how stale the count is.
                     const ageMs = Date.now() - (this._cache?.[videoId]?.ts || Date.now());
                     const ageH = Math.floor(ageMs / 3600000);
-                    pill.title = ageH >= 1
+                    const cacheTitle = ageH >= 1
                         ? `Cached dislike count from Return YouTube Dislike (${ageH}h old).`
                         : `Cached dislike count from Return YouTube Dislike (<1h old).`;
+                    pill.title = `${cacheTitle} ${estimateCopy}`;
                 } else {
-                    pill.title = `Live dislike count from Return YouTube Dislike (${this._budgetWindow.count}/${this._BUDGET_PER_MIN}/min used).`;
+                    pill.title = `Live dislike count from Return YouTube Dislike (${this._budgetWindow.count}/${this._BUDGET_PER_MIN}/min used). ${estimateCopy}`;
                 }
+                pill.setAttribute('aria-label', `${countLabel} estimated dislikes. ${estimateCopy}`);
                 dislikeButton.appendChild(pill);
                 this._pillEl = pill;
+
+                const estimateEl = document.createElement('span');
+                estimateEl.className = 'ytkit-ryd-estimate';
+                estimateEl.textContent = 'est.';
+                estimateEl.title = estimateCopy;
+                estimateEl.setAttribute('aria-label', estimateCopy);
+                dislikeButton.appendChild(estimateEl);
+                this._estimateEl = estimateEl;
 
                 if (appState?.settings?.returnDislikeShowRatio) {
                     const total = (data.likes || 0) + (data.dislikes || 0);
@@ -31489,6 +31510,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const ratioEl = document.createElement('span');
                         ratioEl.className = 'ytkit-ryd-ratio';
                         ratioEl.textContent = `${ratio}% liked`;
+                        ratioEl.title = `Like ratio uses estimated Return YouTube Dislike counts. ${estimateCopy}`;
                         dislikeButton.appendChild(ratioEl);
                     }
                 }
@@ -31506,7 +31528,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._navRule = null;
                 this._pillEl?.remove();
                 this._pillEl = null;
-                document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-ratio').forEach(el => el.remove());
+                this._estimateEl?.remove();
+                this._estimateEl = null;
+                document.querySelectorAll('.ytkit-ryd-pill, .ytkit-ryd-estimate, .ytkit-ryd-ratio').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._cache = null;

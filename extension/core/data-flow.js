@@ -60,7 +60,7 @@
         }),
         Object.freeze({
             origin: 'https://returnyoutubedislikeapi.com',
-            purpose: 'Return YouTube Dislike ratio + dislike counts.',
+            purpose: 'Return YouTube Dislike ratio + estimated dislike counts.',
             requiredByFeatures: ['returnDislike', 'returnDislikeOnCards'],
             credentialsPolicy: 'no-cookies',
             profile: 'store-safe',

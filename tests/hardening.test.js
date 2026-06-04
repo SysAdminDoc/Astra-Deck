@@ -2655,6 +2655,47 @@ test('returnDislike honors returnDislikeCacheHours TTL with a sane minimum', () 
         'TTL must default to 24 h with a 1 h floor');
 });
 
+test('returnDislike discloses estimated accuracy in the rendered count UI', () => {
+    const start = ytkitSource.indexOf("id: 'returnDislike'");
+    assert.ok(start > -1, 'returnDislike feature must exist');
+    const block = ytkitSource.slice(start, start + 14000);
+    assert.match(block, /description: 'Restore an estimated dislike count/,
+        'feature description must name the restored count as estimated');
+    assert.match(block, /_estimateDisclosureText\(\)/,
+        'render path must centralize the estimate disclosure copy');
+    assert.match(block, /low-traffic videos can be less accurate/,
+        'estimate copy must disclose the low-traffic accuracy caveat');
+    assert.match(block, /\.ytkit-ryd-estimate/,
+        'rendered UI must include a dedicated estimate affordance');
+    assert.match(block, /estimateEl\.textContent = 'est\.'/,
+        'successful count render must show a compact estimate label');
+    assert.match(block, /pill\.setAttribute\('aria-label', `\$\{countLabel\} estimated dislikes\./,
+        'count pill must expose the estimate caveat to assistive tech');
+    assert.match(block, /ratioEl\.title = `Like ratio uses estimated Return YouTube Dislike counts/,
+        'like-ratio helper must also disclose that it uses estimated counts');
+    assert.match(block, /document\.querySelectorAll\('\.ytkit-ryd-pill, \.ytkit-ryd-estimate, \.ytkit-ryd-ratio'\)/,
+        'destroy cleanup must remove every RYD-owned render node');
+
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+    assert.match(userscriptSource, /_estimateDisclosureText\(\)/,
+        'userscript build must carry the same RYD estimate disclosure');
+
+    const localesRoot = path.join(__dirname, '..', 'extension', '_locales');
+    for (const locale of fs.readdirSync(localesRoot)) {
+        const messagesPath = path.join(localesRoot, locale, 'messages.json');
+        if (!fs.existsSync(messagesPath)) continue;
+        const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+        assert.match(
+            messages.feature_returnDislike_desc.message,
+            /estimated dislike count/,
+            `${locale} feature_returnDislike_desc must disclose estimated counts`
+        );
+    }
+});
+
 test('extension manifest now whitelists returnyoutubedislikeapi.com (host_permissions + CSP)', () => {
     const manifest = JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'),

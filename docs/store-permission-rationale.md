@@ -61,7 +61,7 @@ user's browser to the selected provider or local runtime.
 | `https://youtu.be/*` | Recognizes and normalizes YouTube short links so features and exports attach to the correct video. |
 | `https://i.ytimg.com/*` | Loads and saves YouTube thumbnail images for thumbnail upgrade and explicit thumbnail-download features. |
 | `https://sponsor.ajay.app/*` | Fetches SponsorBlock segments and DeArrow title/thumbnail metadata when those user-visible enrichment features are enabled. |
-| `https://returnyoutubedislikeapi.com/*` | Fetches Return YouTube Dislike counts for the optional dislike-count restoration feature. |
+| `https://returnyoutubedislikeapi.com/*` | Fetches estimated Return YouTube Dislike counts for the optional dislike-count restoration feature. |
 | `https://www.reddit.com/*` | Fetches Reddit search results for the optional Reddit discussion panel under a YouTube video. |
 | `https://old.reddit.com/*` | Allows Reddit permalink handling for the optional Reddit discussion panel without broad Reddit host access. |
 
