@@ -18,7 +18,7 @@
     "build:fixtures": "node scripts/build-selector-fixtures.js",
     "i18n:coverage": "node scripts/i18n-coverage.js",
     "audit:storage": "node scripts/audit-storage-size.js",
-    "check": "node scripts/check-syntax.js && node scripts/check-versions.js && node scripts/check-i18n.js && node scripts/check-settings.js && node scripts/check-no-eval.js && npm run lint && npm run audit:a11y && npm run audit:contrast && npm run audit:deps",
+    "check": "node scripts/check-syntax.js && node scripts/check-versions.js && node scripts/check-i18n.js && node scripts/check-settings.js && node scripts/check-no-eval.js && node scripts/check-firefox-injection.js && npm run lint && npm run audit:a11y && npm run audit:contrast && npm run audit:deps",
     "audit:deps": "npm audit --omit=dev --audit-level=moderate",
     "check:versions": "node scripts/check-versions.js",
     "check:settings": "node scripts/check-settings.js",

@@ -164,12 +164,18 @@ phased feature plan) is preserved at
     selector-pack chains and fails when the critical live-chat or liquid-glass
     selectors no longer resolve against their captured fixture.)_
   - Source: docs/archive/research/ (iter-1-scored NEXT-5)
-- [ ] P2 — Firefox 149 pre-flight `scripting.executeScript` audit (research NEXT-6)
+- [x] P2 — Firefox 149 pre-flight `scripting.executeScript` audit (research NEXT-6)
   - Why: Firefox MV3 `scripting.executeScript` has diverged from Chromium; a
     pre-flight catches injection-target breakage cheaply before AMO submission.
   - Touches: `extension/background.js`, `extension/*.js`, `docs/`.
   - Acceptance: an audit note records Firefox-Nightly behavior of every
     `executeScript` call site; any `moz-extension://` divergence is filed.
+    _(Delivered 2026-06-04: `docs/firefox-executescript-preflight.md` records
+    the Firefox 149/152 behavior and the current zero-call-site inventory.
+    `scripts/check-firefox-injection.js` scans `extension/` for
+    `scripting.executeScript`, `tabs.executeScript`, and dynamic content-script
+    registration APIs, is wired into `npm run check`, and will fail future
+    additions until their targets are audited.)_
   - Source: docs/archive/research/ (iter-1-scored NEXT-6, borderline NOW)
 - [ ] P2 — Allowlist yt-dlp flags at the Flask boundary (research, deferred)
   - Why: complements the yt-dlp pin; makes the no-passthrough invariant explicit
