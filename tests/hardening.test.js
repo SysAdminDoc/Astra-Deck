@@ -3617,6 +3617,70 @@ test('v5.1.0 selector-health: rankProblemSurfaces excludes zero-attempt surfaces
     assert.equal(ranked[1].surface, 'errored');
 });
 
+test('v4.47.0 EI-NEW6 — selector-health surfaces class and attribute shape drift', () => {
+    const {
+        summarizeSelectorHealth,
+        rankSelectorProblems,
+        formatSelectorCopyReport
+    } = require('../extension/core/selector-health.js');
+    const snapshot = [
+        {
+            surface: 'healthy',
+            hitCount: 40,
+            missCount: 0,
+            errorCount: 0,
+            selectors: [{ hasShapeSample: true, shapeDrifts: 0 }]
+        },
+        {
+            surface: 'churned',
+            hitCount: 40,
+            missCount: 0,
+            errorCount: 0,
+            highChurn: true,
+            selectors: [
+                {
+                    hasShapeSample: true,
+                    firstShape: 't:ytd-watch-flexy|attrs:2|attr-sig:a|class-count:1|class-sig:b',
+                    lastShape: 't:ytd-watch-flexy|attrs:3|attr-sig:c|class-count:2|class-sig:d',
+                    shapeDrifts: 3
+                }
+            ]
+        },
+        {
+            surface: 'unsampled-hit',
+            hitCount: 5,
+            missCount: 0,
+            errorCount: 0,
+            selectors: [{ hasShapeSample: false, shapeDrifts: 0 }]
+        }
+    ];
+
+    const summary = summarizeSelectorHealth(snapshot);
+    assert.equal(summary.totalShapeDrifts, 3,
+        'summary must aggregate shape-drift counts across selector rows');
+    assert.equal(summary.surfacesWithShapeDrift, 1,
+        'summary must count surfaces with class/attribute churn');
+    assert.equal(summary.surfacesWithoutShapeSample, 1,
+        'summary must distinguish hit-only surfaces that have not sampled shape');
+
+    const ranked = rankSelectorProblems(snapshot, 5);
+    assert.equal(ranked[0].surface, 'churned',
+        'shape drift must rank as a problem even when selectors still hit');
+    assert.equal(ranked[0].shapeDrifts, 3);
+    assert.equal(ranked[0].hasShapeSample, true);
+
+    const report = formatSelectorCopyReport(snapshot, {
+        productVersion: '4.47.0',
+        browserUA: 'unit-test',
+        exportedAt: '2026-06-04T00:00:00Z',
+        topN: 3
+    });
+    assert.match(report, /surfaces with drift:\s+1/);
+    assert.match(report, /total shape drifts:\s+3/);
+    assert.match(report, /- churned: 0\/40 attempts failed \(0%\); 3 shape drifts\s+\[high-churn\]/);
+    assert.match(report, /Comparing shape drift for class\/attribute churn/);
+});
+
 test('v5.1.0 selector-health: copy report begins with product header and lists top problems', () => {
     const { formatSelectorCopyReport } = require('../extension/core/selector-health.js');
     const snapshot = [

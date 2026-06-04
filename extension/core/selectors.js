@@ -321,13 +321,26 @@
         return options.root || document;
     }
 
+    function _hashShapePart(value) {
+        const text = String(value || '');
+        let hash = 2166136261;
+        for (let i = 0; i < text.length; i += 1) {
+            hash ^= text.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+        }
+        return (hash >>> 0).toString(36);
+    }
+
     // v4.5+ (iter-5 N5 L3 follow-up): derive a default shape signature for
     // an Element so live resolver hits actually feed `recordSelectorShape`.
     // The L3 audit flagged that the recorder API existed but no live call
     // site invoked it. Default signature samples cheap, stable identifier
     // surfaces: video-id length, child count, tag name. Callers can pass
     // their own `options.shapeKey(node) -> string` for finer-grained
-    // signatures (e.g. live chat may key on aria-label hashing).
+    // signatures (e.g. live chat may key on aria-label hashing). The
+    // default signature keeps raw class/attribute names out of telemetry:
+    // it records counts plus short hashes of sorted names so churn is
+    // detectable without leaking page-owned identifiers.
     //
     // Returns null on non-Element or any throw so the resolver pipeline is
     // never broken by a shape-extraction edge case.
@@ -344,10 +357,22 @@
             const vid = node.getAttribute?.('video-id');
             if (typeof vid === 'string') parts.push(`vid-len:${vid.length}`);
             // [data-context-menu] / [data-stream-type] etc. attribute
-            // counts give a coarse but useful surface fingerprint without
-            // burning a full attribute walk.
+            // counts give a coarse but useful surface fingerprint.
             const attrCount = node.attributes?.length;
             if (typeof attrCount === 'number') parts.push(`attrs:${attrCount}`);
+            const attrNames = Array.from(node.attributes || [])
+                .map(attr => String(attr?.name || '').toLowerCase())
+                .filter(Boolean)
+                .sort();
+            if (attrNames.length) parts.push(`attr-sig:${_hashShapePart(attrNames.join(','))}`);
+            const classNames = Array.from(node.classList || [])
+                .map(cls => String(cls || '').toLowerCase())
+                .filter(Boolean)
+                .sort();
+            if (classNames.length) {
+                parts.push(`class-count:${classNames.length}`);
+                parts.push(`class-sig:${_hashShapePart(classNames.join(','))}`);
+            }
             const childCount = node.childElementCount;
             if (typeof childCount === 'number') parts.push(`children:${childCount}`);
             return parts.join('|') || null;

@@ -481,6 +481,57 @@ test('findSurfaceElement wires hits into recordSelectorShape with a default sign
     assert.equal(row.shapeDrifts, 1);
 });
 
+test('findSurfaceElement default signature detects class and attribute churn (EI-NEW6)', () => {
+    const events = [];
+    const core = loadFoundation({
+        dispatchEvent(event) { events.push(event); }
+    });
+    let videoId = 'aaaaaaaaaaa';
+    let attrNames = ['video-id', 'data-watch-context'];
+    let classNames = ['ytp-delhi-modern'];
+    const fakeWatchFlexy = {
+        nodeType: 1,
+        tagName: 'YTD-WATCH-FLEXY',
+        getAttribute(name) { return name === 'video-id' ? videoId : null; },
+        get attributes() { return attrNames.map(name => ({ name })); },
+        get classList() { return classNames; },
+        childElementCount: 3
+    };
+    const root = {
+        querySelector(sel) {
+            if (sel === 'ytd-watch-flexy[video-id]') return fakeWatchFlexy;
+            return null;
+        }
+    };
+
+    core.findSurfaceElement('watch', { root });
+    let row = JSON.parse(core.exportSelectorHealth()).surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === 'ytd-watch-flexy[video-id]');
+    assert.match(row.firstShape, /attr-sig:/,
+        'default shape signature should include a hashed attribute-name signature');
+    assert.match(row.firstShape, /class-count:1/,
+        'default shape signature should include class count');
+    assert.match(row.firstShape, /class-sig:/,
+        'default shape signature should include a hashed class-list signature');
+    assert.ok(!row.firstShape.includes('ytp-delhi-modern')
+            && !row.firstShape.includes('data-watch-context'),
+        'default shape signature must not expose raw class or attribute names');
+
+    attrNames = ['video-id', 'data-watch-context', 'data-player-state'];
+    classNames = ['ytp-delhi-modern', 'ytp-liquid-glass'];
+    videoId = 'aaaaaaaaaaa';
+    core.findSurfaceElement('watch', { root });
+
+    assert.equal(events.length, 1, 'class/attribute churn should emit one shape-drift event');
+    assert.match(events[0].detail.previousShape, /class-count:1/);
+    assert.match(events[0].detail.currentShape, /class-count:2/);
+    row = JSON.parse(core.exportSelectorHealth()).surfaces
+        .find((s) => s.surface === 'watch')
+        .selectors.find((r) => r.selector === 'ytd-watch-flexy[video-id]');
+    assert.equal(row.shapeDrifts, 1);
+});
+
 test('trusted html helper centralizes TrustedTypes policy creation', () => {
     const createdPolicies = [];
     const core = loadFoundation({
