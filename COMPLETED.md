@@ -44,6 +44,8 @@ release-level details live in `CHANGELOG.md`.
   bounded real YouTube media download.
 - Selector fixture regeneration now emits a DOM-match report for live-chat and
   liquid-glass player-chrome selector chains.
+- Firefox programmatic-injection pre-flight now blocks future `executeScript`
+  call sites until `moz-extension://` behavior is audited.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -134,6 +136,12 @@ carry only open work.
   `tests/selector-regression.test.js` fails if the `playerChrome` or `liveChat`
   selector-pack chains drift from the report or lose critical fixture matches.
   *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Firefox 149 pre-flight `scripting.executeScript` audit —
+  `docs/firefox-executescript-preflight.md` records the Firefox 149/152
+  `moz-extension://` behavior and the current zero-call-site inventory;
+  `scripts/check-firefox-injection.js` is now wired into `npm run check` to fail
+  future programmatic injection additions until reviewed. *(Delivered
+  2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 

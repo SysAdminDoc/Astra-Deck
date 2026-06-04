@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Firefox programmatic-injection pre-flight.** Added
+  `scripts/check-firefox-injection.js` to `npm run check` so future
+  `scripting.executeScript`, `tabs.executeScript`, or dynamic content-script
+  registration call sites under `extension/` fail until audited for Firefox
+  149/152 `moz-extension://` behavior. The audit note records the current
+  zero-call-site inventory and the official Mozilla / MDN source behavior.
+
 - **Selector fixture match harness.** `npm run build:fixtures` now writes
   `tests/fixtures/selector-surface-matches.json` alongside the token fixtures.
   The builder parses decoded MHTML markup with a dependency-free DOM subset
