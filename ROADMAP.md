@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 13 - 2026-06-04.
+> Last researched: Cycle 14 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,55 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 14 - 2026-06-04)
+
+- [x] 🔬 `release-doc-contract-reconciliation-2026-06-04` - inspected
+  current release workflow, v4.46.0 release assets/digests, tag-run
+  attestation steps, signing-key policy docs, architecture CI docs, and stale
+  research-report sections. Detailed notes live in
+  `docs/research-cycle-14-release-doc-contract-reconciliation.md`.
+- [ ] 🔬🤖 P2 — Reconcile release automation docs with local-signed artifact contract
+  - Why: the actual release contract is now split: CI builds validation
+    artifacts, emits `release-manifest.json` / `SHA256SUMS`, and creates
+    attestations for CI-built artifacts, while public CRX artifacts remain
+    maintainer-local because `ytkit.pem` must not enter CI. Some docs still say
+    the CI workflow creates GitHub Releases directly or still describe the
+    pre-v4.46 checksum/provenance gap, which can send future release work down
+    the wrong path.
+  - Evidence: `.github/workflows/build.yml` has `workflow_dispatch` and tag
+    triggers, runs version checks/build/SBOM/manifest generation, uploads
+    `build/*` as a workflow artifact, and runs `actions/attest-build-provenance`
+    / `actions/attest-sbom`; it does not call `gh release create` or
+    `gh release upload`. `docs/signing-keys.md` explicitly says CI never
+    receives `ytkit.pem` and does not publish GitHub Releases; the maintainer
+    builds public CRX artifacts locally and uploads them with the local checksum
+    manifest. `docs/architecture.md` still summarizes CI as ending in
+    `gh release create`. `gh release view v4.46.0 --json assets` shows 12
+    public assets with GitHub SHA-256 digest fields, and tag run `26951406026`
+    completed the CI attestation steps for CI-built artifacts. GitHub's
+    artifact-attestation docs distinguish CI-generated attestations that can be
+    verified with `gh attestation verify`; local-signed release assets instead
+    need digest comparison against `SHA256SUMS`. [Verified]
+  - Touches: `docs/architecture.md`, release checklist/runbook docs, and any
+    stale report/checklist text that describes CI as publishing GitHub Releases
+    or says checksum/provenance/privacy/Python-audit artifacts are still absent
+    after the 2026-06-04 closures.
+  - Acceptance: the docs name one current release contract: CI tag runs validate,
+    build, upload workflow artifacts, and create attestations for CI-built
+    files; maintainer-local release steps create/update the GitHub Release with
+    local-signed CRX/XPI plus checksum manifest; verification instructions
+    distinguish `gh attestation verify` for CI-built files from release-asset
+    digest comparison for local-signed files. `docs/architecture.md` no longer
+    claims `build.yml` runs `gh release create`, and stale "not yet in place"
+    statements for shipped release, privacy, and Python audit artifacts are
+    removed from current docs.
+  - Verify: `rg -n "gh release create|current public latest release lags|not yet attach|not yet shipped|does not yet attach|Python dependency vulnerability auditing is not yet" docs RESEARCH_REPORT.md`
+    returns no current false-positive statements outside archived research and
+    explicit Cycle 14 evidence/status notes. Confirm
+    `docs/signing-keys.md`, `docs/architecture.md`, and release checklist text
+    agree on CI-built vs maintainer-local artifacts.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 13 - 2026-06-04)
 
