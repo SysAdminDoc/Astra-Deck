@@ -13,25 +13,32 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 1 - 2026-06-04.
+> Last researched: Cycle 2 - 2026-06-04.
 
-## Implementer Instructions
+## ▶ Implementer Instructions (for the build machine)
 
-- Treat this roadmap as the active planning queue. Shipped work belongs in
-  `COMPLETED.md` and release detail belongs in `CHANGELOG.md`; avoid re-opening
-  archived dossier items unless live source or current external policy changes
-  make them newly actionable.
-- Preserve the profile split: store-safe artifacts must keep AI, Cobalt, and
-  loopback grants stripped while GitHub-full keeps the complete data-flow
-  catalogue.
-- Use the existing Node 22 gate as the local verification floor:
-  `npm run check`, `npm test`, `npm run build`, `node sync-userscript.js`, and
-  targeted Python downloader tests for companion changes.
-- Keep browser-bounded work evidence-backed. Selector rows should land with
-  refreshed `mhtml/` fixtures or a documented manual browser-capture blocker.
-- Researcher-queue ownership tags: `🤖` means implementer-actionable, `🔧`
-  means user/external/manual gated, `🔬` means researcher-added this cycle, and
-  `✅` means implemented/closed by the build lane.
+This roadmap is fed continuously by the research machine. On every pass, the
+build machine should:
+
+1. Start with the next unchecked item that is not marked `🔧` or otherwise
+   externally gated.
+2. Re-read the row's evidence, acceptance criteria, and source links before
+   changing code; avoid reopening archived dossier items unless live source or
+   current external policy makes them newly actionable.
+3. Implement only the smallest coherent slice needed to satisfy the row, then
+   update `ROADMAP.md`, `COMPLETED.md`, and `CHANGELOG.md` when it ships.
+4. Use the existing Node 22 gate as the verification floor:
+   `npm run check`, `npm test`, `npm run build`, `node sync-userscript.js`, and
+   targeted Python downloader tests for companion changes.
+5. Keep browser-bounded work evidence-backed. Selector rows should land with
+   refreshed `mhtml/` fixtures or a documented manual browser-capture blocker.
+6. Preserve the profile split: store-safe artifacts must keep AI, Cobalt, and
+   loopback grants stripped while GitHub-full keeps the complete data-flow
+   catalogue.
+
+Researcher-queue ownership tags: `🤖` means implementer-actionable, `🔧` means
+user/external/manual gated, `🔬` means researcher-added this cycle, and `✅`
+means implemented/closed by the build lane.
 
 ## Existing Planned Work
 
@@ -285,6 +292,42 @@ cleanup they agree at v4.46.0.
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 2 - 2026-06-04)
+
+- [x] 🔬 `cycle-2-reconciliation-2026-06-04` - refreshed against
+  `origin/main` after fetching (`git rev-list --left-right --count HEAD...@{u}`
+  returned `0 0`) while treating the selector-capture implementation as separate
+  build-lane work. This pass reconciled already-shipped Return YouTube Dislike
+  disclosure, companion onboarding, diagnostics export, and i18n coverage work
+  instead of adding duplicate rows.
+- [ ] 🔬🤖 P3 — Locale proofing queue for identical-to-English feature copy
+  - Why: the feature-definition i18n extraction is shipped, but the generated
+    coverage report still shows 15%-29.6% identical-to-English strings across
+    non-EN locales. Chrome and MDN extension i18n guidance both treat
+    `messages.json` as the user-visible string source of truth, so seeded
+    English placeholders should be tracked separately from intentional brand or
+    technical terms.
+  - Evidence: `docs/i18n-coverage.md` reports 37-73 identical-to-EN strings per
+    non-EN locale and explicitly says some may be untranslated placeholders;
+    `scripts/i18n-coverage.js` is informational only; Chrome i18n docs require
+    user-visible strings in locale `messages.json`
+    (https://developer.chrome.com/docs/extensions/reference/api/i18n);
+    MDN documents the same WebExtensions i18n model
+    (https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization).
+    [Verified]
+  - Touches: `scripts/i18n-coverage.js`, `scripts/generate-locales.js`,
+    `extension/_locales/*/messages.json`, `docs/i18n-coverage.md`,
+    `CONTRIBUTING.md`.
+  - Acceptance: coverage output separates intentional brand/technical matches
+    from unresolved identical-to-EN placeholders, feature name/description keys
+    are proofed or queued per locale, and a warning threshold prevents newly
+    extracted user-facing strings from silently shipping as English in non-EN
+    locale bundles.
+  - Verify: `node scripts/i18n-coverage.js`, `npm run check`, and review one
+    generated locale diff to confirm brand/technical terms were not
+    over-translated.
+  - Complexity: M
+
 ### Researcher Queue (Cycle 1 - 2026-06-04)
 
 - [x] 🔬 `policy-firefox-ytdlp-npm-refresh-2026-06-04` - rechecked Chrome Web
@@ -480,14 +523,21 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Evidence: `scripts/manifest-patch.js` `browser_specific_settings.gecko`;
     `extension/background.js` service worker; Enhancer-for-YouTube Firefox
     reliability reports; the existing Firefox-149 audit item under Existing
-    Planned Work (this complements, does not duplicate, it). [Verified]
+    Planned Work (this complements, does not duplicate, it); Mozilla documents
+    Firefox MV3 platform differences
+    (https://extensionworkshop.com/documentation/develop/manifest-v3-migration-guide/),
+    `web-ext lint` as the pre-submission source check
+    (https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/),
+    and signed release/beta distribution requirements
+    (https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/).
+    [Verified]
   - Touches: `.github/workflows/`, `scripts/manifest-patch.js`, a Firefox smoke
     harness (e.g. `web-ext lint` + headless load).
   - Acceptance: CI runs `web-ext lint` (or equivalent) on the patched Firefox
     manifest and fails on a Gecko-incompatible manifest/API change.
   - Verify: a deliberately Chromium-only manifest key turns the Firefox gate red.
   - Complexity: M
-- [ ] P2 — First-run onboarding + empty/permission states for the companion path
+- [x] P2 — First-run onboarding + empty/permission states for the companion path
   - Why: the popup is the only settings surface and the downloader is a separate
     PyInstaller companion on `127.0.0.1`. A new user has no guided path to install
     the companion, grant permissions, or understand the store-safe vs GitHub-full
@@ -503,6 +553,15 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: load the popup with no companion running and confirm the guided empty
     state + its accessible names.
   - Complexity: L
+  - Status 2026-06-04: delivered. The popup first-run card now explains
+    Store-Safe versus GitHub-Full, records the chosen `githubFullProfile`, and
+    names the local downloader in GitHub-Full copy. The content-script install
+    prompt exposes install/retry/check actions with labelled controls, the
+    Downloads pane renders an Astra Downloader status banner and setup/retry
+    actions, the popup can re-enable dismissed install prompts and trigger the
+    companion `/update` bridge, and the download history/health panels show
+    explicit unreachable states. Hardening coverage pins the welcome card,
+    prompt recovery, update action, health, and history-offline paths.
 - [ ] P2 — WCAG 2.2 AA audit pass for in-page overlays (beyond the popup)
   - Why: `audit:a11y` and `audit:contrast` gate the popup, but the in-page
     overlays (theater split, transcript, notes, subscription manager, toasts) are
@@ -510,14 +569,19 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     target-size criteria that overlay controls commonly fail.
   - Evidence: `scripts/audit-popup-a11y.js` scope is the popup only; in-page
     overlays render from `extension/ytkit.js` / `features/*`;
-    `docs/screen-reader-smoke.md` exists but is manual. [Verified]
+    `docs/screen-reader-smoke.md` exists but is manual; W3C WCAG 2.2 Target
+    Size (Minimum) requires 24x24 CSS px targets or qualifying spacing
+    (https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html), and
+    Focus Appearance defines minimum visible focus area/contrast
+    (https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html).
+    [Verified]
   - Touches: `scripts/`, `tests/`, overlay render paths in `features/*`.
   - Acceptance: an automated check asserts overlay controls have accessible
     names, focus order, ≥24px targets, and visible focus; a regression turns it
     red.
   - Verify: run the new audit against a rendered overlay fixture.
   - Complexity: L
-- [ ] P3 — Diagnostics export bundle for bug reports
+- [x] P3 — Diagnostics export bundle for bug reports
   - Why: `core/diagnostic-log.js` and `selector-health.js` already collect
     runtime signal, but there is no one-click "export diagnostics" that a user can
     attach to a GitHub issue — selector rot is the top carried risk and repro.
@@ -532,3 +596,10 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: export on a populated profile and confirm no credential/host-cookie
     data is present.
   - Complexity: M
+  - Status 2026-06-04: delivered. Popup Diagnostics now saves an
+    `astra-deck-diagnostics-*.json` bundle with an `astraDeckBugReport` marker,
+    manifest/browser metadata, sanitized settings, capability map, service-worker
+    lifecycle ring, and diagnostic ring. BYO keys, endpoint URLs, custom CSS, and
+    credential-like settings are redacted before export, the bug report template
+    asks users to attach the generated bundle, and hardening coverage pins the
+    payload, redaction, and template wiring.
