@@ -213,10 +213,18 @@ phased feature plan) is preserved at
 
 ### Carried Risks And Open Questions
 
-- [ ] P2 — Bound storage growth for `videoNotes`, `timestampBookmarks`, and `videoHistory` (R4)
+- [x] P2 — Bound storage growth for `videoNotes`, `timestampBookmarks`, and `videoHistory` (R4)
   - Why: unbounded local-storage maps are a long-session memory / quota risk.
   - Touches: storage-manager, the affected feature modules.
   - Acceptance: each map enforces a documented cap with deterministic eviction.
+  - Status 2026-06-04: delivered. `videoNotesData` keeps the existing 1000-note
+    LRU and is now also swept by `storageQuotaLRU`; `ytkit-bookmarks`
+    (`timestampBookmarks`) is capped at 400 videos / 100 bookmarks per video by
+    newest edit time; `ytkit-watch-progress` (the live video-history/progress
+    map) is capped at 2000 videos and 30 days; `ytkit-watch-time` is capped to
+    the latest 90 day keys. Extension and userscript write paths enforce the
+    caps before persistence, and hardening/userscript parity tests pin the real
+    stores instead of the stale `timestampBookmarks` toggle.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
 - [ ] P3 — Finish `policy-profile.js` scrub-regex coverage (R6)
   - Why: incomplete scrub-regex coverage risks leaking gated values into

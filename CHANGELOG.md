@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Storage-growth caps for notes, bookmarks, and watch history.** Added shared
+  deterministic sanitizers for `ytkit-bookmarks`, `ytkit-watch-progress`, and
+  `ytkit-watch-time`, then routed extension and userscript write paths through
+  them before persistence. `storageQuotaLRU` now sweeps the real top-level
+  stores plus `videoNotesData`, not the stale `timestampBookmarks` toggle.
+
 - **Downloader request-field allowlist.** The Flask `/download` boundary now
   accepts only reviewed extension wire fields before Deno checks, cookie writes,
   queueing, or subprocess setup. Client-supplied yt-dlp argv / flag fields and
