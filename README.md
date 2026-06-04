@@ -403,6 +403,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | [docs/selector-fixture-workflow.md](docs/selector-fixture-workflow.md) | How to refresh MHTML captures when YouTube DOM changes |
 | [docs/screen-reader-smoke.md](docs/screen-reader-smoke.md) | NVDA / JAWS / VoiceOver release-gate checklist |
 | [docs/predicate-sandbox-investigation.md](docs/predicate-sandbox-investigation.md) | Threat model and design of the safe expression DSL for `advancedLocalPredicate` |
+| [docs/yt-dlp-cookie-threat-model.md](docs/yt-dlp-cookie-threat-model.md) | Cookie flow and redirect-leak mitigations for Astra Downloader / yt-dlp |
 | [docs/signing-keys.md](docs/signing-keys.md) | CRX3 packaging key management |
 
 ---

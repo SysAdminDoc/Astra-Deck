@@ -26,6 +26,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   hardening test checks the doc against live manifest permissions plus generated
   store-safe/GitHub-full host grants.
 
+- **yt-dlp cookie threat model.** Added
+  `docs/yt-dlp-cookie-threat-model.md` documenting the CVE-2023-35934 /
+  GHSA-v8mc-9377-rwjj redirect-cookie leak class, Astra's YouTube-only cookie
+  bridge, per-download Netscape cookie jars, `--cookies` invocation, jar cleanup
+  and stale sweep, exact `yt-dlp==2026.3.17` pin, and residual local-machine
+  risk. The downloader test suite now pins the doc against live mitigation
+  names.
+
 - **Settings migration full-profile fixture.** Added a pinned
   `SETTINGS_VERSION` v1 full-profile settings blob covering every current
   default key, migration override, future-default classification, and retired

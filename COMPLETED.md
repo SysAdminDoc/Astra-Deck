@@ -57,6 +57,9 @@ package versions; the live product-version sources currently agree at v4.46.0.
 - Store-review permission rationale now covers the single-purpose statement,
   data-handling statement, manifest permissions, store-safe host grants, and
   GitHub-full-only host grants, with a hardening test pinning doc coverage.
+- yt-dlp cookie threat model now documents the CVE-2023-35934 advisory class,
+  YouTube-only cookie bridge, temporary Netscape jars, `--cookies` invocation,
+  cleanup/sweep controls, current pin safety, and residual local-machine risk.
 - Storage growth for `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`,
   and `ytkit-watch-time` is now capped at write time with deterministic eviction
   in both extension and userscript paths.
