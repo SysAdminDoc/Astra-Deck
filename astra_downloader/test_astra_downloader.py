@@ -622,6 +622,29 @@ class CookieJarSweepTests(unittest.TestCase):
                 ad.INSTALL_DIR = original
 
 
+class CookieThreatModelDocTests(unittest.TestCase):
+    """Keep the cookie-risk documentation tied to live mitigations."""
+
+    def test_doc_records_advisory_and_companion_cookie_controls(self):
+        doc_path = Path(__file__).resolve().parent.parent / "docs" / "yt-dlp-cookie-threat-model.md"
+        body = doc_path.read_text(encoding="utf-8")
+        for needle in [
+            "CVE-2023-35934",
+            "GHSA-v8mc-9377-rwjj",
+            "2023.07.06",
+            "yt-dlp==2026.3.17",
+            "ALLOWED_COOKIE_DOMAINS",
+            ".youtube.com",
+            "write_cookies_netscape()",
+            "--cookies",
+            "200 entries",
+            "cleanup_stale_cookie_jars()",
+            "300 seconds",
+            "127.0.0.1",
+        ]:
+            self.assertIn(needle, body)
+
+
 class ApiRateLimitTests(unittest.TestCase):
     """End-to-end /download rate limit via the Flask test client."""
 

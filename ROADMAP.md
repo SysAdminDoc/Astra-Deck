@@ -373,7 +373,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     should receive the store-safe package. `tests/hardening.test.js` now fails
     if the rationale stops covering a live manifest permission or generated
     store-safe/GitHub-full host grant.
-- [ ] P2 — Document the yt-dlp cookie-handling threat model for the companion
+- [x] P2 — Document the yt-dlp cookie-handling threat model for the companion
   - Why: the downloader uses the `cookies` permission and yt-dlp; yt-dlp has a
     documented cookie-leak advisory class (cookies leaking across hosts on
     redirect, CVE-2023-35934) and Chrome's July-2024 cookie encryption changed
@@ -388,6 +388,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: cross-check the documented floor against the pin in
     `astra_downloader/requirements.txt`.
   - Complexity: S
+  - Status 2026-06-04: delivered. `docs/yt-dlp-cookie-threat-model.md` now
+    records the GHSA-v8mc-9377-rwjj / CVE-2023-35934 advisory baseline, current
+    `yt-dlp==2026.3.17` pin, extension cookie bridge, YouTube-only domain
+    allowlist, `/download` payload/field caps, per-download Netscape cookie jar,
+    `--cookies` invocation, finally-block deletion, stale-jar sweep, and
+    residual local-machine risk. `astra_downloader/test_astra_downloader.py`
+    now pins the doc against those live mitigation names.
 - [ ] P2 — Disclose Return-YouTube-Dislike estimate accuracy in the UI
   - Why: the archived risk list already notes "RYD accuracy: dislike counts for
     post-2021 and low-traffic videos are estimates. UI must disclose this," but
