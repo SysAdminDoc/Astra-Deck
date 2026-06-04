@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 15 - 2026-06-04.
+> Last researched: Cycle 16 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,63 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 16 - 2026-06-04)
+
+- [x] 🔬 `actions-sha-pinning-policy-2026-06-04` - inspected
+  `.github/workflows/*.yml`, `.github/dependabot.yml`, live repository Actions
+  permissions, workflow token defaults, and GitHub Actions supply-chain
+  hardening / Dependabot documentation. Detailed notes live in
+  `docs/research-cycle-16-actions-sha-pinning.md`.
+- [ ] 🔬🤖🔧 P2 — Pin GitHub Actions to full-length SHAs and restrict allowed action sources
+  - Why: Astra Deck has release and validation workflows that rely on
+    GitHub-hosted actions by mutable major tags. The repository currently
+    allows all actions and does not require full-length SHA pins, so future
+    workflow edits can introduce unreviewed action sources and current trusted
+    action tags can still move. This matters most for `Build & Release`, which
+    grants `contents: write`, `id-token: write`, and `attestations: write` while
+    producing release artifacts and attestations.
+  - Evidence: `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
+    "{enabled,allowed_actions,sha_pinning_required,selected_actions_url}"`
+    returns `enabled: true`, `allowed_actions: all`,
+    `sha_pinning_required: false`, and no selected-actions URL. `gh api
+    repos/SysAdminDoc/Astra-Deck/actions/permissions/workflow --jq .` shows the
+    default `GITHUB_TOKEN` permission is already `read` and workflows cannot
+    create or approve PR reviews by default. `rg -n "uses:\s*[^#]+@"
+    .github/workflows` finds 17 external action refs across `validate.yml`,
+    `build.yml`, and `yt-dlp-smoke.yml`, all currently tag-pinned. GitHub's
+    secure-use reference says a full-length commit SHA is the only immutable
+    action reference, and repository settings can require full-length SHA pins.
+    GitHub Actions settings and REST docs also support `allowed_actions:
+    selected` plus `github_owned_allowed`, `verified_allowed`, and
+    `patterns_allowed`; Dependabot supports `github-actions` version updates and
+    same-line version comments for SHA-pinned action refs. [Verified]
+  - Touches: `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
+    `.github/workflows/yt-dlp-smoke.yml`, `.github/dependabot.yml` if the
+    Actions cadence/comment strategy changes, repository Actions permissions,
+    and `docs/repo-settings.md`.
+  - Acceptance: after the Node 24 action-major migration is complete, every
+    external `uses:` entry is pinned to the full 40-character commit SHA from
+    the action owner's repository, with a same-line version comment that
+    preserves Dependabot update context. Each pin records the upstream tag or
+    release it came from, and the update PR proves `Validate`, `Build & Release`
+    on a tag or dry-run tag, and `yt-dlp Smoke` still pass. Repository Actions
+    permissions are then changed from `allowed_actions: all` to `selected` with
+    GitHub-owned actions allowed and broad verified-creator allowance disabled,
+    followed by `sha_pinning_required: true`. Any non-GitHub-owned action added
+    later must be explicitly named in `patterns_allowed` by repository, tag, or
+    SHA.
+  - Verify: `rg -n "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)"
+    .github/workflows` returns no mutable major-branch action refs, while
+    `rg -n "uses:\s*[^#]+@[0-9a-f]{40}(\s|$)" .github/workflows` lists every
+    external action. `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
+    "{allowed_actions,sha_pinning_required}"` returns `selected` and `true`.
+    `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions/selected-actions
+    --jq .` shows GitHub-owned actions allowed, verified creators disabled, and
+    only deliberate extra patterns. A throwaway PR or workflow-dispatch run
+    proves the SHA-pinning policy does not block `Validate` or release-artifact
+    generation.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 15 - 2026-06-04)
 
