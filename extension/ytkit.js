@@ -3930,7 +3930,7 @@ return response;
             monetizationIndicator: false,              // Surface 'sponsored', 'monetized off', mid-roll counts
             // v3.29.0 — Subscription manager
             subscriptionGroups: false,                 // Master toggle for groups + sort surface
-            subscriptionGroupData: {},                 // { groupId: { name, color, channelIds[], sortMode, updatedAt } }
+            subscriptionGroupData: {},                 // { groupId: { name, color, channelIds[], parentId, sortMode, updatedAt } }
             subscriptionSortMode: 'default',           // legacy/all-feed fallback; groups persist their own sortMode
             subscriptionShowNewSinceLastVisit: true,
             subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
@@ -31419,6 +31419,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
                     .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
                     .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
+                    .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
                     .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
                     .ytkit-sub-hidden-by-group{display:none !important;}
                 `, 'subscription-groups');
@@ -31478,9 +31479,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return normalized;
             },
 
+            _getGroupParentId(groupId, groups = this._readGroups()) {
+                const id = String(groupId || '');
+                const parentId = String(groups[id]?.parentId || '');
+                if (!id || !parentId || parentId === id || !groups[parentId]) return '';
+                const grandParentId = String(groups[parentId]?.parentId || '');
+                return grandParentId && groups[grandParentId] ? '' : parentId;
+            },
+
+            _normalizeNewGroupParentId(parentId, groups = this._readGroups()) {
+                const value = String(parentId || '');
+                if (!value || !groups[value]) return '';
+                return this._getGroupParentId(value, groups) ? '' : value;
+            },
+
+            _getTopLevelGroupIds(groups = this._readGroups()) {
+                return Object.keys(groups).filter(id => !this._getGroupParentId(id, groups));
+            },
+
+            _getChildGroupIds(parentId, groups = this._readGroups()) {
+                return Object.keys(groups).filter(id => this._getGroupParentId(id, groups) === parentId);
+            },
+
+            _getGroupChannelIdSet(groupId, groups = this._readGroups()) {
+                const group = groups[groupId];
+                const ids = new Set(Array.isArray(group?.channelIds) ? group.channelIds : []);
+                if (group && !this._getGroupParentId(groupId, groups)) {
+                    for (const childId of this._getChildGroupIds(groupId, groups)) {
+                        const child = groups[childId];
+                        if (Array.isArray(child?.channelIds)) child.channelIds.forEach(id => ids.add(id));
+                    }
+                }
+                return ids;
+            },
+
             _exportGroups() {
                 const payload = {
-                    schemaVersion: 1,
+                    schemaVersion: 2,
                     exportedAt: new Date().toISOString(),
                     groups: this._readGroups()
                 };
@@ -31500,6 +31535,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const data = JSON.parse(json);
                     if (!data || typeof data !== 'object' || !data.groups) throw new Error('Missing groups field');
                     const sanitized = {};
+                    const rawParentById = {};
                     for (const [id, raw] of Object.entries(data.groups)) {
                         if (typeof id !== 'string' || id.length > 64) continue;
                         if (!raw || typeof raw !== 'object') continue;
@@ -31512,9 +31548,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             name,
                             color,
                             channelIds,
+                            parentId: '',
                             sortMode: this._normalizeSubscriptionSortMode(raw.sortMode),
                             updatedAt: Date.now()
                         };
+                        const parentId = String(raw.parentId || '');
+                        if (parentId && parentId !== id && parentId.length <= 64) rawParentById[id] = parentId;
+                    }
+                    for (const [id, parentId] of Object.entries(rawParentById)) {
+                        if (sanitized[id] && sanitized[parentId] && !rawParentById[parentId]) {
+                            sanitized[id].parentId = parentId;
+                        }
                     }
                     this._writeGroups(sanitized);
                     if (typeof showToast === 'function') showToast(`Imported ${Object.keys(sanitized).length} subscription groups`, '#22c55e');
@@ -31539,7 +31583,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _applyGroupFilter() {
                 const groups = this._readGroups();
                 const active = this._activeGroupId;
-                const allowed = active && groups[active] ? new Set(groups[active].channelIds) : null;
+                const allowed = active && groups[active] ? this._getGroupChannelIdSet(active, groups) : null;
                 const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
                 cards.forEach(card => {
                     if (!allowed) {
@@ -31675,7 +31719,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (typeof showToast === 'function') showToast(`Generating tags for "${group.name || groupId}"\u2026`, '#7c3aed', { duration: 6 });
                 // Gather titles from the rendered subscription feed cards for
                 // channels in this group. Title-only — never transcripts here.
-                const allowed = new Set(group.channelIds);
+                const allowed = this._getGroupChannelIdSet(groupId, groups);
                 const titles = [];
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
                     const id = this._extractChannelIdFromCard(card);
@@ -31714,27 +31758,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._renderToolbar();
             },
 
-            _showNewGroupDialog(anchorEl) {
+            _showNewGroupDialog(anchorEl, parentId = '') {
                 // Audit-pass replacement for window.prompt — modal blocks the
                 // page, ships unstyled, and is deprecated in some contexts.
                 // This inline dialog reuses Astra surface CSS, focus-traps to
                 // the input, and dismisses on Esc / outside click.
+                const groups = this._readGroups();
+                const safeParentId = this._normalizeNewGroupParentId(parentId, groups);
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 const overlay = document.createElement('div');
                 overlay.className = 'ytkit-sub-group-dialog';
                 overlay.style.cssText = 'position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
                 overlay.setAttribute('role', 'dialog');
                 overlay.setAttribute('aria-modal', 'true');
-                overlay.setAttribute('aria-label', 'Create subscription group');
+                overlay.setAttribute('aria-label', safeParentId ? 'Create subscription subgroup' : 'Create subscription group');
                 const card = document.createElement('div');
                 card.style.cssText = 'min-width:320px;max-width:420px;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 22px 48px rgba(0,0,0,.6);';
                 const h = document.createElement('div');
                 h.style.cssText = 'font:600 14px/1.3 system-ui;color:#fafafa;margin-bottom:10px;';
-                h.textContent = 'Name this group';
+                h.textContent = safeParentId ? `Name a subgroup under ${groups[safeParentId]?.name || safeParentId}` : 'Name this group';
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.maxLength = 80;
-                input.placeholder = 'e.g. Coding, Music, News';
+                input.placeholder = safeParentId ? 'e.g. Frontend, DevOps, Jazz' : 'e.g. Coding, Music, News';
                 input.setAttribute('aria-label', 'Group name');
                 input.style.cssText = 'width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;box-sizing:border-box;';
                 const actions = document.createElement('div');
@@ -31767,6 +31813,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             name,
                             color: '#7c3aed',
                             channelIds: [],
+                            parentId: safeParentId,
                             sortMode: this._getActiveSortMode(),
                             updatedAt: Date.now()
                         }
@@ -31815,14 +31862,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 bar.appendChild(allChip);
 
                 const aiTagData = this._readAiTagData();
-                for (const [id, group] of Object.entries(groups)) {
+                const renderGroupChip = (id) => {
+                    const group = groups[id];
+                    if (!group) return;
+                    const depth = this._getGroupParentId(id, groups) ? 1 : 0;
                     const chip = document.createElement('button');
                     chip.type = 'button';
                     chip.className = 'ytkit-sub-group-chip';
                     chip.dataset.active = this._activeGroupId === id ? '1' : '0';
+                    chip.dataset.depth = String(depth);
                     chip.style.borderColor = group.color || '#7c3aed';
                     const tagSuffix = aiTagData[id]?.tags?.length ? ` · ${aiTagData[id].tags.slice(0, 3).join(' ')}` : '';
-                    chip.textContent = `${group.name || id} (${group.channelIds?.length || 0})${tagSuffix}`;
+                    const prefix = depth ? '- ' : '';
+                    chip.textContent = `${prefix}${group.name || id} (${group.channelIds?.length || 0})${tagSuffix}`;
                     if (aiTagData[id]?.tags?.length) {
                         chip.title = `AI tags: ${aiTagData[id].tags.join(', ')} · Shift+click to regenerate`;
                     } else if (appState?.settings?.subscriptionAiTags) {
@@ -31840,6 +31892,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._applySort();
                     });
                     bar.appendChild(chip);
+                };
+
+                for (const id of this._getTopLevelGroupIds(groups)) {
+                    renderGroupChip(id);
+                    for (const childId of this._getChildGroupIds(id, groups)) renderGroupChip(childId);
                 }
 
                 const newBtn = document.createElement('button');
@@ -31847,6 +31904,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 newBtn.textContent = '+ Group';
                 newBtn.addEventListener('click', () => this._showNewGroupDialog(newBtn));
                 bar.appendChild(newBtn);
+
+                if (this._activeGroupId && groups[this._activeGroupId] && !this._getGroupParentId(this._activeGroupId, groups)) {
+                    const subBtn = document.createElement('button');
+                    subBtn.type = 'button';
+                    subBtn.textContent = '+ Subgroup';
+                    subBtn.addEventListener('click', () => this._showNewGroupDialog(subBtn, this._activeGroupId));
+                    bar.appendChild(subBtn);
+                }
 
                 const sortLabel = document.createElement('span');
                 sortLabel.className = 'ytkit-sub-toolbar__label';

@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF2 nested subscription groups.** Subscription group records now support a
+  depth-2 `parentId` shape, export as schema v2, and import via a two-pass
+  normalizer that preserves valid parent links while rejecting child-of-child
+  depth. Selecting a parent group includes channels from its child groups, the
+  toolbar renders child chips with depth styling, and a `+ Subgroup` action is
+  available only when a top-level group is active.
+
 - **NF6 Astra Downloader companion self-update.** Added a protected `/update`
   endpoint that compares companion `APP_VERSION`, blocks while downloads are
   active, downloads the latest GitHub Release `AstraDownloader.exe`, validates

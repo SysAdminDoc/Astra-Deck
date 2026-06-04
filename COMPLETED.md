@@ -30,6 +30,7 @@ release-level details live in `CHANGELOG.md`.
 - PyQt6 GUI smoke tests for downloader folder picker flows.
 - On-demand yt-dlp self-update endpoint and popup action.
 - On-demand Astra Downloader companion self-update endpoint and popup action.
+- Nested subscription groups with depth-2 JSON import/export.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -83,6 +84,10 @@ carry only open work.
   `AstraDownloader.exe`, validate it, schedule an atomic replace/restart, block
   while downloads are active, and surface a popup action through the YouTube tab
   bridge. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Nested subscription groups (NF2) — `subscriptionGroupData` now supports
+  depth-2 `parentId` records, schema v2 export/import, parent filters that union
+  child group channels, and toolbar child chips plus `+ Subgroup` creation.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 
