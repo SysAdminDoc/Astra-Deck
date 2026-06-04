@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 20 - 2026-06-04.
+> Last researched: Cycle 21 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,63 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 21 - 2026-06-04)
+
+- [x] 🔬 `codeowners-security-review-2026-06-04` - inspected supported
+  CODEOWNERS locations, branch pull-request review policy, existing PR
+  template, security-sensitive path set, and GitHub CODEOWNERS / protected
+  branch documentation. Detailed notes live in
+  `docs/research-cycle-21-codeowners.md`.
+- [ ] 🔬🤖🔧 P2 — Add CODEOWNERS coverage for security-sensitive paths
+  - Why: `main` already requires pull-request review, but no CODEOWNERS file
+    exists and branch protection does not require code-owner review. Changes to
+    workflows, release tooling, signing-key policy, extension permissions,
+    background proxy/message surfaces, companion loopback code, security policy,
+    or repository settings docs therefore do not automatically request or
+    require a focused maintainer/security review. That leaves the new security
+    roadmap items dependent on manual reviewer memory instead of path-based
+    ownership.
+  - Evidence: `Test-Path .github/CODEOWNERS`, `Test-Path CODEOWNERS`, and
+    `Test-Path docs/CODEOWNERS` all return `False`; `rg -n "CODEOWNERS|code
+    owner|require_code_owner_reviews" .github docs ROADMAP.md RESEARCH_REPORT.md
+    README.md CONTRIBUTING.md` finds no current ownership policy. `gh repo
+    view SysAdminDoc/Astra-Deck --json owner,viewerPermission` confirms
+    `@SysAdminDoc` owns the personal public repository and the current viewer
+    has `ADMIN` permission. `gh api
+    repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_pull_request_reviews
+    --jq .` reports `required_approving_review_count: 1` but
+    `require_code_owner_reviews: false`; `gh api
+    repos/SysAdminDoc/Astra-Deck/codeowners/errors` returns `404` while no
+    CODEOWNERS file exists. GitHub docs say CODEOWNERS files can live in
+    `.github/`, root, or `docs/`, define responsible people or teams with write
+    access, request reviews when owned files change, and can be combined with
+    branch protection to require code-owner approval. [Verified]
+  - Touches: `.github/CODEOWNERS`, `docs/repo-settings.md`, branch protection
+    `require_code_owner_reviews`, and likely owner mappings for `.github/`,
+    `build-extension.js`, `scripts/generate-release-manifest.js`,
+    `docs/signing-keys.md`, `SECURITY.md`, `extension/manifest.json`,
+    `extension/background.js`, `extension/core/data-flow.js`,
+    `extension/core/policy-profile.js`, and `astra_downloader/`.
+  - Acceptance: `.github/CODEOWNERS` exists on `main`, maps security-sensitive
+    files and directories to `@SysAdminDoc` or a real write-enabled team, and
+    includes comments explaining why the paths are protected. The CODEOWNERS
+    errors API reports no invalid pattern/owner entries for the default branch.
+    Branch protection enables code-owner review after the file is present. The
+    PR template or repo-settings doc tells contributors that security-sensitive
+    path changes require owner review. Any path owner listed has write access,
+    and generated or archived docs are not over-owned unless they affect
+    release/security policy.
+  - Verify: `gh api repos/SysAdminDoc/Astra-Deck/contents/.github/CODEOWNERS
+    --jq .path` returns `.github/CODEOWNERS`; `gh api
+    repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq ".errors"` returns an
+    empty list; `gh api
+    repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_pull_request_reviews
+    --jq "{required_approving_review_count,require_code_owner_reviews}"` shows
+    code-owner reviews enabled. A test PR touching `.github/workflows/validate.yml`
+    or `build-extension.js` requests the expected owner and cannot merge until
+    an owner approval is present.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 20 - 2026-06-04)
 

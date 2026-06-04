@@ -18,6 +18,15 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 21 CODEOWNERS pass on 2026-06-04 found no CODEOWNERS file
+  in `.github/`, root, or `docs/`; `main` requires one approving review but
+  does not require code-owner review; the repository is a personal public repo
+  owned by `@SysAdminDoc`; and the PR template has no security-sensitive-path
+  review reminder. ROADMAP now carries a P2 manual-gated item to add
+  `.github/CODEOWNERS` for workflows, release/signing/security policy,
+  extension permission/proxy paths, and companion loopback code, then enable
+  `require_code_owner_reviews` after the CODEOWNERS errors API is clean.
+  Detailed evidence lives in `docs/research-cycle-21-codeowners.md`.
 - [Verified] Cycle 20 optional-permissions pass on 2026-06-04 found that the
   store-safe profile split strips GitHub-full AI/Cobalt/Ollama/loopback hosts,
   but still grants optional enrichment API hosts at install time. The manifest
@@ -319,34 +328,38 @@ Top remaining opportunities (one-liners):
 4. Enable CodeQL code scanning for JavaScript extension code and the Python
    companion, then decide whether the CodeQL check becomes required after a
    clean baseline run. [Verified]
-5. Convert optional store-safe enrichment hosts to runtime-granted optional
+5. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
+   extension permission/proxy, data-flow, and companion loopback paths, then
+   enable code-owner review once owner references and syntax are proven.
+   [Verified]
+6. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]
-6. Migrate GitHub Actions workflows to Node 24-ready action majors before
+7. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-7. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+8. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-8. Enable dependency graph / Dependabot alert settings so the PR-only
+9. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-9. Reconcile release automation docs with the current maintainer-local artifact
+10. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-10. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+11. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-11. MHTML capture-week expansion across Shorts, channel, search, history,
+12. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-12. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+13. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-13. Locale proofing queue for identical-to-English feature names/descriptions in
+14. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-14. Signed Astra Downloader installer/MSI once the signing budget and submission
+15. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -394,7 +407,17 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-17-signing-key-custody.md`, and
   `docs/research-cycle-18-security-disclosure.md`, and
   `docs/research-cycle-19-code-scanning.md`, and
-  `docs/research-cycle-20-optional-permissions.md`. [Verified]
+  `docs/research-cycle-20-optional-permissions.md`, and
+  `docs/research-cycle-21-codeowners.md`. [Verified]
+- CODEOWNERS probe: `.github/CODEOWNERS`, root `CODEOWNERS`, and
+  `docs/CODEOWNERS` are absent; `gh repo view SysAdminDoc/Astra-Deck --json
+  owner,viewerPermission` reports owner `SysAdminDoc` and viewer permission
+  `ADMIN`; branch pull-request review protection reports
+  `required_approving_review_count: 1` and `require_code_owner_reviews: false`;
+  the CODEOWNERS errors endpoint returns 404 while no CODEOWNERS file exists;
+  and `.github/pull_request_template.md` contains generic Summary/Changes/
+  Testing sections without a security-sensitive-path review reminder.
+  [Verified]
 - Runtime optional-permissions probe: `extension/manifest.json:31` defines
   install-time host permissions and lines 35-39 include optional enrichment
   hosts; `build-extension.js:258` through `build-extension.js:287` generate
@@ -605,6 +628,11 @@ Closed since the 2026-06-03 baseline:
   message-passing, DOM/TrustedHTML, request-forgery, Flask route, subprocess,
   or local-token data flows. ROADMAP P1 now queues CodeQL for JavaScript and
   Python. [Verified]
+- **Path-aware review ownership**: `main` requires one approving review but
+  no CODEOWNERS file exists and code-owner review is disabled. ROADMAP P2 now
+  queues CODEOWNERS coverage for security-sensitive workflows, release/signing
+  docs, extension permission/proxy paths, and companion loopback code before
+  enabling `require_code_owner_reviews`. [Verified]
 - **Testability**: 19 spec files including hardening (474 KB),
   selector-regression, and userscript-parity; in-page overlay a11y is not yet
   automated. [Verified]
@@ -656,6 +684,11 @@ Closed since the 2026-06-03 baseline:
   `not-configured`, no `.github/workflows/codeql*.yml` exists, and the code
   scanning alerts API reports no analysis. ROADMAP P1 now queues a CodeQL
   baseline for JavaScript and Python before adding more third-party SARIF tools.
+- **Code-owner review** [Verified]: branch protection already requires one
+  approving review, conversation resolution, admin enforcement, and green
+  required checks, but no CODEOWNERS file exists and branch protection does not
+  require code-owner review. ROADMAP P2 now queues `.github/CODEOWNERS` plus a
+  clean CODEOWNERS errors API result before enforcement.
 - **GitHub Actions supply chain** [Verified]: default workflow token
   permissions are read-only, but repository Actions policy still allows all
   action sources and does not require full-length SHA pins. Current workflow
