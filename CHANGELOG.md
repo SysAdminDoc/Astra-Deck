@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Study / Work export.** The `researchSpacedReview` watch-page action now
+  exports a Study / Work report as Markdown or CSV, combining Watch Time Tracker
+  totals, current Digital Wellbeing day state, Focused Mode state, and timestamp
+  bookmarks with deep links. The bookmark reader now handles the live
+  `timestampBookmarks` `t`/`n` fields, and the shared file-export helper accepts
+  per-format MIME types.
+
 - **Group notifications digest.** Subscription Groups now has a toolbar Digest
   panel with all-subscriptions and per-group new-video counts based on rendered
   relative age text versus `subscriptionLastVisitData`. The panel supports

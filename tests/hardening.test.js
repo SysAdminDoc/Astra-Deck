@@ -2505,16 +2505,50 @@ test('localAiSummary checks for Chrome built-in Summarizer and never falls throu
         '_summarize() must not use XHR');
 });
 
-test('researchSpacedReview emits a CSV with header + escapes embedded quotes', () => {
+test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
     const start = ytkitSource.indexOf("id: 'researchSpacedReview'");
     assert.ok(start > -1, 'researchSpacedReview must exist');
-    const block = ytkitSource.slice(start, start + 8000);
-    assert.match(block, /\['front', 'back', 'tags'\]/,
-        'CSV header must be front, back, tags');
+    const block = ytkitSource.slice(start, start + 18000);
+    assert.match(block, /name: 'Study \/ Work Export'/,
+        'feature label must reflect the broader study/work export surface');
+    assert.match(block, /_collectStudyWorkData\(\)/,
+        'must gather watch time, focused mode, digital wellbeing, and bookmarks before export');
+    assert.match(block, /_buildStudyMarkdown\(data = this\._collectStudyWorkData\(\)\)/,
+        'must build a Markdown export');
+    assert.match(block, /_buildStudyCsv\(data = this\._collectStudyWorkData\(\)\)/,
+        'must build a CSV export');
+    assert.match(block, /entry\?\.t \?\? entry\?\.time \?\? entry\?\.seconds/,
+        'bookmark export must read the live timestampBookmarks t field and legacy aliases');
+    assert.match(block, /entry\?\.n \?\? entry\?\.note \?\? entry\?\.text/,
+        'bookmark export must read the live timestampBookmarks n field and legacy aliases');
+    assert.match(block, /ytkit-watch-time/,
+        'study/work export must include Watch Time Tracker data');
+    assert.match(block, /dwWatchTimeToday/,
+        'study/work export must include Digital Wellbeing day state');
+    assert.match(block, /focusedMode/,
+        'study/work export must include Focused Mode state');
+    assert.match(block, /row_type', 'exported_at', 'date', 'video_id'/,
+        'CSV header must expose stable study/work columns');
     assert.match(block, /_csvEscape/,
         'must declare a CSV escaper');
     assert.match(block, /s\.replace\(\/"\/g, '""'\)/,
         'CSV escaper must double-quote embedded quotes');
+    assert.match(block, /astra-deck-study-work-\$\{today\}\.\$\{isCsv \? 'csv' : 'md'\}/,
+        'exports must use a dated study/work filename');
+    assert.match(block, /text\/csv;charset=utf-8/,
+        'CSV downloads must use a text/csv MIME type');
+    assert.match(block, /text\/markdown;charset=utf-8/,
+        'Markdown downloads must use a text/markdown MIME type');
+    assert.match(block, /Export study MD/,
+        'watch-page UI must expose a Markdown export action');
+    assert.match(block, /Export study CSV/,
+        'watch-page UI must expose a CSV export action');
+    const exportIdx = ytkitSource.indexOf('function handleFileExport');
+    const exportBlock = ytkitSource.slice(exportIdx, exportIdx + 500);
+    assert.match(exportBlock, /type = 'application\/json'/,
+        'shared export helper must keep JSON as the default MIME type');
+    assert.match(exportBlock, /new Blob\(\[content\], \{ type \}\)/,
+        'shared export helper must honor per-export MIME types');
 });
 
 test('researchTranscriptIndex stores transcripts in IndexedDB keyed by videoId', () => {

@@ -3941,7 +3941,7 @@ return response;
             subscriptionAiTagData: {},                 // { groupId: { tags: string[], generatedAt: ms } }
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
-            researchSpacedReview: false,               // Export bookmarks as a SuperMemo-style CSV
+            researchSpacedReview: false,               // Export study/work data to Markdown + CSV
             researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
             researchTranscriptSearchPanel: false,      // Adds a watch-page button that opens a search UI on the index
             // v3.31.0 — Accessibility, mobile, low power
@@ -32891,8 +32891,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         {
             id: 'researchSpacedReview',
-            name: 'Spaced Review Export',
-            description: 'Export your timestamp bookmarks as a SuperMemo / Anki-friendly CSV (front | back | tags). Front is the bookmark note (or timestamp), back is the video title plus a deep link to the timestamp.',
+            name: 'Study / Work Export',
+            description: 'Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links.',
             group: 'Research',
             icon: 'graduation-cap',
             pages: [PageTypes.WATCH],
@@ -32900,8 +32900,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
 
             _readBookmarks() {
-                try { return storageReadJSON?.('ytkit-bookmarks', {}) || {}; }
-                catch { return {}; }
+                try {
+                    return StorageManager?.get?.('ytkit-bookmarks', {}) || storageReadJSON?.('ytkit-bookmarks', {}) || {};
+                } catch (e) {
+                    DebugManager.log('StudyWorkExport', `Bookmark read failed: ${e.message}`);
+                    return {};
+                }
+            },
+
+            _readWatchStats() {
+                try {
+                    return StorageManager?.get?.('ytkit-watch-time', { days: {}, total: 0 }) || { days: {}, total: 0 };
+                } catch (e) {
+                    DebugManager.log('StudyWorkExport', `Watch-time read failed: ${e.message}`);
+                    return { days: {}, total: 0 };
+                }
             },
 
             _csvEscape(value) {
@@ -32910,37 +32923,163 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return s;
             },
 
-            _exportCsv() {
-                const all = this._readBookmarks();
-                const rows = [['front', 'back', 'tags']];
-                let count = 0;
-                for (const [videoId, entries] of Object.entries(all)) {
+            _todayKey() {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            },
+
+            _lastSevenDayKeys() {
+                const keys = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+                }
+                return keys;
+            },
+
+            _formatDuration(seconds) {
+                const total = Math.max(0, Math.floor(Number(seconds) || 0));
+                const h = Math.floor(total / 3600);
+                const m = Math.floor((total % 3600) / 60);
+                const s = total % 60;
+                if (h > 0) return `${h}h ${m}m ${s}s`;
+                if (m > 0) return `${m}m ${s}s`;
+                return `${s}s`;
+            },
+
+            _formatSavedAt(value) {
+                const ms = Number(value) || 0;
+                if (!ms || !Number.isFinite(ms)) return '';
+                const d = new Date(ms);
+                return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+            },
+
+            _currentVideoTitle(videoId) {
+                if (videoId && videoId === getVideoId()) {
+                    const text = (
+                        document.querySelector('ytd-watch-metadata h1, ytd-watch-metadata #title, h1.ytd-watch-metadata')?.textContent ||
+                        document.title ||
+                        ''
+                    ).replace(/\s+-\s+YouTube\s*$/i, '').trim();
+                    if (text) return text.slice(0, 180);
+                }
+                return '';
+            },
+
+            _collectBookmarkRows(bookmarkMap = this._readBookmarks()) {
+                const rows = [];
+                for (const [videoId, entries] of Object.entries(bookmarkMap || {})) {
                     if (!Array.isArray(entries)) continue;
                     for (const entry of entries) {
-                        const time = Number(entry?.time) || 0;
-                        const note = String(entry?.note || '').trim() || `@ ${this._formatTime(time)}`;
-                        const link = `https://youtu.be/${videoId}?t=${Math.floor(time)}`;
-                        rows.push([
-                            this._csvEscape(note),
-                            this._csvEscape(`[${this._formatTime(time)}](${link})`),
-                            this._csvEscape(`astra-deck;${videoId}`)
-                        ]);
-                        count++;
+                        const seconds = Math.max(0, Math.floor(Number(entry?.t ?? entry?.time ?? entry?.seconds) || 0));
+                        const note = String(entry?.n ?? entry?.note ?? entry?.text ?? '').trim();
+                        const title = String(entry?.title || entry?.videoTitle || this._currentVideoTitle(videoId) || '').trim();
+                        rows.push({
+                            videoId,
+                            title,
+                            seconds,
+                            timeLabel: this._formatTime(seconds),
+                            note,
+                            savedAt: this._formatSavedAt(entry?.d ?? entry?.savedAt ?? entry?.createdAt),
+                            link: `https://youtu.be/${videoId}?t=${seconds}`
+                        });
                     }
                 }
-                if (count === 0) {
-                    if (typeof showToast === 'function') showToast('No timestamp bookmarks to export.', '#6b7280');
-                    return;
+                return rows.sort((a, b) => (a.videoId.localeCompare(b.videoId) || a.seconds - b.seconds));
+            },
+
+            _collectStudyWorkData() {
+                const stats = this._readWatchStats();
+                const days = (stats.days && typeof stats.days === 'object') ? stats.days : {};
+                const todayKey = this._todayKey();
+                const wellbeingToday = appState?.settings?.dwWatchTimeToday;
+                const wellbeingTodaySeconds = wellbeingToday?.date === todayKey ? Number(wellbeingToday.seconds) || 0 : 0;
+                const todaySeconds = Math.max(Number(days[todayKey]) || 0, wellbeingTodaySeconds);
+                const weekSeconds = this._lastSevenDayKeys().reduce((sum, key) => sum + (Number(days[key]) || 0), 0);
+                const bookmarks = this._collectBookmarkRows();
+                return {
+                    exportedAt: new Date().toISOString(),
+                    todayKey,
+                    todaySeconds,
+                    weekSeconds,
+                    totalSeconds: Number(stats.total) || 0,
+                    focusedMode: !!appState?.settings?.focusedMode,
+                    digitalWellbeing: !!appState?.settings?.digitalWellbeing,
+                    bookmarkCount: bookmarks.length,
+                    videoCount: new Set(bookmarks.map(row => row.videoId)).size,
+                    bookmarks
+                };
+            },
+
+            _buildStudyMarkdown(data = this._collectStudyWorkData()) {
+                const lines = [
+                    '# Astra Deck Study / Work Export',
+                    '',
+                    `Generated: ${data.exportedAt}`,
+                    '',
+                    '## Summary',
+                    `- Today (${data.todayKey}): ${this._formatDuration(data.todaySeconds)} (${Math.floor(data.todaySeconds)} seconds)`,
+                    `- Last 7 days: ${this._formatDuration(data.weekSeconds)} (${Math.floor(data.weekSeconds)} seconds)`,
+                    `- All time: ${this._formatDuration(data.totalSeconds)} (${Math.floor(data.totalSeconds)} seconds)`,
+                    `- Focused Mode: ${data.focusedMode ? 'enabled' : 'disabled'}`,
+                    `- Digital Wellbeing: ${data.digitalWellbeing ? 'enabled' : 'disabled'}`,
+                    `- Timestamp bookmarks: ${data.bookmarkCount} across ${data.videoCount} videos`,
+                    '',
+                    '## Timestamp Bookmarks'
+                ];
+                if (!data.bookmarks.length) {
+                    lines.push('', 'No timestamp bookmarks were saved at export time.');
+                    return lines.join('\n');
                 }
-                const csv = rows.map(r => r.join(',')).join('\r\n');
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `astra-deck-bookmarks-${new Date().toISOString().slice(0,10)}.csv`;
-                a.click();
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                if (typeof showToast === 'function') showToast(`Exported ${count} bookmarks`, '#22c55e');
+                let currentVideo = '';
+                for (const row of data.bookmarks) {
+                    if (row.videoId !== currentVideo) {
+                        currentVideo = row.videoId;
+                        lines.push('', `### ${row.title ? `${row.title} (${row.videoId})` : row.videoId}`);
+                    }
+                    const suffix = row.savedAt ? ` - saved ${row.savedAt}` : '';
+                    lines.push(`- [${row.timeLabel}](${row.link}) - ${row.note || 'Saved moment'}${suffix}`);
+                }
+                return lines.join('\n');
+            },
+
+            _buildStudyCsv(data = this._collectStudyWorkData()) {
+                const rows = [[
+                    'row_type', 'exported_at', 'date', 'video_id', 'video_title',
+                    'time_seconds', 'time_label', 'note', 'link', 'today_seconds',
+                    'week_seconds', 'total_seconds', 'focused_mode', 'digital_wellbeing'
+                ]];
+                rows.push([
+                    'summary', data.exportedAt, data.todayKey, '', '', '', '', '', '',
+                    Math.floor(data.todaySeconds), Math.floor(data.weekSeconds), Math.floor(data.totalSeconds),
+                    data.focusedMode ? 'enabled' : 'disabled',
+                    data.digitalWellbeing ? 'enabled' : 'disabled'
+                ]);
+                for (const row of data.bookmarks) {
+                    rows.push([
+                        'bookmark', data.exportedAt, row.savedAt, row.videoId, row.title,
+                        row.seconds, row.timeLabel, row.note, row.link, '', '', '',
+                        data.focusedMode ? 'enabled' : 'disabled',
+                        data.digitalWellbeing ? 'enabled' : 'disabled'
+                    ]);
+                }
+                return rows.map(row => row.map(value => this._csvEscape(value)).join(',')).join('\r\n');
+            },
+
+            _exportStudyWork(format = 'markdown') {
+                const data = this._collectStudyWorkData();
+                const today = new Date().toISOString().slice(0, 10);
+                const isCsv = format === 'csv';
+                const content = isCsv ? this._buildStudyCsv(data) : this._buildStudyMarkdown(data);
+                handleFileExport(
+                    `astra-deck-study-work-${today}.${isCsv ? 'csv' : 'md'}`,
+                    content,
+                    isCsv ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8'
+                );
+                if (typeof showToast === 'function') {
+                    showToast(`Exported study/work ${isCsv ? 'CSV' : 'Markdown'} (${data.bookmarkCount} bookmarks)`, '#22c55e');
+                }
             },
 
             _formatTime(s) {
@@ -32954,13 +33093,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _attach() {
                 if (!isWatchPagePath()) return;
                 const anchor = document.querySelector('ytd-watch-metadata #title, ytd-watch-metadata h1');
-                if (!anchor || anchor.querySelector('.ytkit-spaced-export-btn')) return;
-                this._btn = document.createElement('button');
-                this._btn.type = 'button';
-                this._btn.className = 'ytkit-spaced-export-btn ytkit-local-ai-btn';
-                this._btn.style.marginLeft = '8px';
-                this._btn.textContent = 'Export bookmarks (CSV)';
-                this._btn.addEventListener('click', () => this._exportCsv());
+                if (!anchor || anchor.querySelector('.ytkit-study-work-export')) return;
+                this._btn = document.createElement('span');
+                this._btn.className = 'ytkit-study-work-export';
+                this._btn.style.cssText = 'display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle;flex-wrap:wrap;';
+                const makeButton = (label, format) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'ytkit-spaced-export-btn ytkit-local-ai-btn';
+                    btn.textContent = label;
+                    btn.addEventListener('click', () => this._exportStudyWork(format));
+                    return btn;
+                };
+                this._btn.append(
+                    makeButton('Export study MD', 'markdown'),
+                    makeButton('Export study CSV', 'csv')
+                );
                 anchor.appendChild(this._btn);
             },
 
@@ -32975,7 +33123,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._navRule = null;
                 this._btn?.remove();
                 this._btn = null;
-                document.querySelectorAll('.ytkit-spaced-export-btn').forEach(el => el.remove());
+                document.querySelectorAll('.ytkit-study-work-export, .ytkit-spaced-export-btn').forEach(el => el.remove());
             }
         },
         // ═══════════════════════════════════════════════════════════════════
@@ -36825,8 +36973,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         fileInput.click();
     }
 
-    function handleFileExport(filename, content) {
-        const blob = new Blob([content], { type: 'application/json' });
+    function handleFileExport(filename, content, type = 'application/json') {
+        const blob = new Blob([content], { type });
         const url = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement('a'), { href: url, download: filename });
         a.click();

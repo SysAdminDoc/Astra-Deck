@@ -18,14 +18,15 @@ or maintainer action to confirm.
 
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
-  detection / unsubscribe staging, NF1 per-video notes, and the group
-  notifications digest are now represented in `ROADMAP.md`, `extension/ytkit.js`,
-  docs, and hardening tests. The subscription implementation uses rendered-feed
-  DOM heuristics, local last-visit data, and a 30-day local undo/staging window
-  rather than a YouTube Data API unsubscribe path; the notes implementation stays
-  local-first with versioned JSON export and a 1000-note cap.
-- [Verified] Validation on 2026-06-04 after the group-digest batch:
-  `node --check extension/ytkit.js`, `node --test tests/hardening.test.js`
+  detection / unsubscribe staging, NF1 per-video notes, the group notifications
+  digest, and Study / Work export are now represented in `ROADMAP.md`,
+  `extension/ytkit.js`, docs, and hardening tests. The subscription
+  implementation uses rendered-feed DOM heuristics, local last-visit data, and a
+  30-day local undo/staging window rather than a YouTube Data API unsubscribe
+  path; the notes and study/work exports stay local-first with versioned JSON,
+  Markdown, or CSV downloads.
+- [Verified] Validation on 2026-06-04 after the Study / Work export batch:
+  `node --check extension/ytkit.js` and `node --test tests/hardening.test.js`
   (417 checks), `npm run check`, `npm test` (612 checks), and `npm run build`
   all passed. The build emitted Chrome ZIP/CRX and Firefox ZIP/XPI artifacts for
   v4.46.0.
@@ -133,6 +134,7 @@ excluded by design. [Verified]
 | Theater split / sticky player | `features/sticky-video/`, `player-dock/` | Shipped | Lifecycle-unified chat observer [Verified] |
 | Theming / OLED tokens | `features/theme-css/`, `wave-8-css/`, `home-subs-css/` | Shipped | Schema-driven [Verified] |
 | Transcript viewer + IndexedDB search | `core/transcript-service.js` | Shipped | [Verified] |
+| Study / Work export | `researchSpacedReview` feature | Shipped | Markdown/CSV export from watch time, focused mode, digital wellbeing, and timestamp bookmarks [Verified] |
 | AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | [Verified] |
 | Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint; no /update UX item open [Verified] |
 | Per-video notes | `videoNotes` feature | Shipped | Local-first notes, versioned export, 1000-note LRU cap [Verified] |
