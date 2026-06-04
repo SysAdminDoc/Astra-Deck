@@ -2504,6 +2504,26 @@ test('downloadCobaltFallback gates on github-full profile and only fires when do
         'must open the returned media URL with noopener+noreferrer');
 });
 
+test('downloadCobaltFallback records an actionable diagnostic when Cobalt is unreachable', () => {
+    const start = ytkitSource.indexOf("id: 'downloadCobaltFallback'");
+    assert.ok(start > -1, 'downloadCobaltFallback must exist');
+    const block = ytkitSource.slice(start, start + 9000);
+    assert.match(block, /_diagnosticInstanceLabel\s*\(\s*instance\s*\)/,
+        'must format the configured Cobalt endpoint for diagnostics');
+    assert.match(block, /new URL\s*\(\s*instance\s*\)/,
+        'diagnostic endpoint label must parse the configured instance as a URL');
+    assert.match(block, /return u\.origin/,
+        'diagnostic endpoint label must use only the origin, not the full request URL');
+    assert.match(block, /DiagnosticLog\?\.record\?\.\(\s*'cobalt-fallback'/,
+        'Cobalt failures must be recorded in DiagnosticLog with a stable context');
+    assert.match(block, /Cobalt fallback unreachable/,
+        'diagnostic text must name the unreachable fallback');
+    assert.match(block, /Astra Downloader was offline/,
+        'diagnostic text must explain why the fallback path was used');
+    assert.match(block, /check downloadCobaltInstance or start Astra Downloader/,
+        'diagnostic text must include actionable next steps');
+});
+
 test('downloadHistoryPanel reads /history with auth + limit=50 and shows offline state', () => {
     const start = ytkitSource.indexOf("id: 'downloadHistoryPanel'");
     assert.ok(start > -1, 'downloadHistoryPanel must exist');
