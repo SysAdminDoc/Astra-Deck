@@ -127,6 +127,7 @@ FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/f
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
 COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
 COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe"
+COMPANION_UPDATE_SHA256_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256"
 COMPANION_UPDATE_TIMEOUT_SECONDS = 120
 COMPANION_UPDATE_MIN_BYTES = 1024
 
@@ -1323,6 +1324,19 @@ def _run_companion_self_update(restart=True):
             chunk_size=65536,
         )
         validate_companion_update_binary(update_path)
+        expected_hash = fetch_expected_sha256(
+            COMPANION_UPDATE_SHA256_URL,
+            target_asset='AstraDownloader.exe',
+            timeout=15,
+        )
+        hash_verified = verify_file_sha256(update_path, expected_hash)
+        if expected_hash and not hash_verified:
+            raise RuntimeError('SHA-256 verification failed for companion update')
+        if not expected_hash:
+            write_persistent_log(
+                'Companion update SHA-256 sidecar unavailable; '
+                'proceeding with MZ + size validation only.'
+            )
         schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
         if restart:
             schedule_companion_process_exit()
