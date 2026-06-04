@@ -60,16 +60,13 @@
     // on globalThis.YTKitCore.runtimeFlags.
     const RuntimeFlags = (globalThis.YTKitCore && globalThis.YTKitCore.runtimeFlags) || null;
 
-    // v4.47.0 NF5 wave 2: feature-lifecycle observability hook. The peel
-    // modules in extension/features/*/index.js register their feature
-    // ids at module-eval via getLifecycle().defineFeature(spec) (wave 1
-    // shipped at commit 3f22e0e). Wave 2 keeps the CSS-injection work
-    // in cssFeature() below but routes the state transitions through
-    // lifecycle.start(id) / lifecycle.destroy(id) so snapshot() reflects
-    // the actual started state in production instead of perpetual
-    // started:false. Optional — when the lifecycle module isn't loaded
-    // (test harness with no core/feature-lifecycle.js bundle) the
-    // cssFeature flow still works directly.
+    // v4.47.0 NF5 wave 3: feature-lifecycle CSS ownership hook. Peel
+    // modules in extension/features/*/index.js register CSS lifecycle
+    // specs at module-eval via getLifecycle().defineFeature(spec). The
+    // cssFeature() helper below now delegates registered specs through
+    // lifecycle.start(id, ctx) / lifecycle.destroy(id, ctx), leaving the
+    // direct injectStyle/body-class path as the compatibility fallback
+    // when a spec is unavailable or fails to start.
     const Lifecycle = (globalThis.YTKitCore && typeof globalThis.YTKitCore.getLifecycle === 'function')
         ? globalThis.YTKitCore.getLifecycle()
         : null;
@@ -4479,29 +4476,38 @@ return response;
     function cssFeature(id, name, description, group, icon, css, extra) {
         const isRaw = css.includes('{');
         const bodyClass = `ytkit-${id}`;
+        const hasLifecycleSpec = () => !!(Lifecycle && Lifecycle._features && Lifecycle._features.has(id));
         const f = {
             id, name, description, group, icon,
             _styleElement: null,
+            _lifecycleDelegated: false,
             init() {
+                if (hasLifecycleSpec()) {
+                    try {
+                        Lifecycle.start(this.id, { css, isRaw, bodyClass });
+                        this._lifecycleDelegated = true;
+                        return;
+                    } catch (_) {
+                        // reason: lifecycle CSS delegate failed; fall back to direct injection
+                        this._lifecycleDelegated = false;
+                    }
+                }
                 this._styleElement = injectStyle(css, this.id, isRaw);
                 document.body.classList.add(bodyClass);
-                // v4.47.0 NF5 wave 2: notify the lifecycle module if it
-                // knows this id (a features/*/index.js peel registered
-                // it at wave 1). The peel's spec.init() is a no-op so
-                // lifecycle.start() only bumps the started flag —
-                // making snapshot() reflect production reality.
-                if (Lifecycle && Lifecycle._features && Lifecycle._features.has(this.id)) {
-                    try { Lifecycle.start(this.id); }
-                    catch (_) { /* reason: lifecycle start failure must not block cssFeature init */ }
-                }
             },
             destroy() {
+                if (this._lifecycleDelegated && hasLifecycleSpec()) {
+                    try {
+                        Lifecycle.destroy(this.id, { css, isRaw, bodyClass });
+                    } catch (_) {
+                        // reason: lifecycle destroy is best-effort; keep fallback cleanup available
+                    }
+                    this._lifecycleDelegated = false;
+                    return;
+                }
                 this._styleElement?.remove(); this._styleElement = null;
                 document.body.classList.remove(bodyClass);
-                if (Lifecycle && Lifecycle._features && Lifecycle._features.has(this.id)) {
-                    try { Lifecycle.destroy(this.id); }
-                    catch (_) { /* reason: lifecycle destroy is best-effort; must not block cssFeature teardown */ }
-                }
+                this._lifecycleDelegated = false;
             }
         };
         if (extra) Object.assign(f, extra);

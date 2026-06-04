@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF5 Wave 3 lifecycle CSS delegation.** CSS peel modules now register real
+  style lifecycle specs through `core/styles.js#createCssLifecycleSpec`, and
+  `cssFeature` delegates registered features to lifecycle start/destroy with
+  direct injection kept only as fallback. The userscript bundle now includes
+  `core/styles.js` so the same helper is available outside MV3.
+
 - **Monolith catch-reason lint coverage.** `extension/ytkit.js` now runs the
   custom `require-catch-reason` ESLint rule. The remaining intentional silent
   catches in the monolith carry explicit `reason:` comments, and the lint

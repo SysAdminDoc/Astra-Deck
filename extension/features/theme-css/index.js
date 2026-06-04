@@ -119,20 +119,34 @@
             + '                    }\n                ';
     }
 
-    // v4.47.0 NF5 wave 1: lifecycle specs for the seven theme-css
-    // feature ids this module owns. All register-only (init / destroy
-    // no-op); inline ytkit.js cssFeature() blocks still own the actual
-    // injectStyle / cleanup. The categories below match the
-    // settings-schema entries — schema parity is pinned by the
-    // hardening test.
+    function createLifecycleSpec(id, category, buildCss) {
+        const factory = globalThis.YTKitCore
+            && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
+            && globalThis.YTKitCore.createCssLifecycleSpec;
+        if (factory) return factory({ id, category, buildCss });
+        return {
+            id,
+            category,
+            buildCss,
+            init() { /* reason: styles core helper unavailable in this context */ },
+            destroy() { /* reason: styles core helper unavailable in this context */ }
+        };
+    }
+
+    // v4.47.0 NF5 wave 3: lifecycle specs for the seven theme-css
+    // feature ids this module owns. The specs now carry the style
+    // injection/teardown implementation via core/styles.js; manual
+    // feature blocks can delegate once their non-CSS side effects move.
+    // The categories below match the settings-schema entries — schema
+    // parity is pinned by the hardening test.
     const LIFECYCLE_SPECS = Object.freeze([
-        { id: 'customProgressBarColor', category: 'shell' },
-        { id: 'customSelectionColor',   category: 'shell' },
-        { id: 'grayscaleThumbnails',    category: 'shell' },
-        { id: 'forceDarkEverywhere',    category: 'shell' },
-        { id: 'themeAccentColor',       category: 'shell' },
-        { id: 'compactUnfixedHeader',   category: 'shell' },
-        { id: 'hideVideoEndContent',    category: 'watch-player' },
+        createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss),
+        createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss),
+        createLifecycleSpec('grayscaleThumbnails',    'shell',        buildGrayscaleThumbnailsCss),
+        createLifecycleSpec('forceDarkEverywhere',    'shell',        buildForceDarkEverywhereCss),
+        createLifecycleSpec('themeAccentColor',       'shell',        buildAccentColorCss),
+        createLifecycleSpec('compactUnfixedHeader',   'shell',        buildCompactUnfixedHeaderCss),
+        createLifecycleSpec('hideVideoEndContent',    'watch-player', buildHideVideoEndContentCss),
     ]);
 
     const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -152,12 +166,7 @@
             const lc = globalThis.YTKitCore.getLifecycle();
             for (const spec of LIFECYCLE_SPECS) {
                 try {
-                    lc.defineFeature({
-                        id: spec.id,
-                        category: spec.category,
-                        init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
-                        destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
-                    });
+                    lc.defineFeature(spec);
                 } catch (_) {
                     // reason: duplicate id from a prior load — safe to skip
                 }
