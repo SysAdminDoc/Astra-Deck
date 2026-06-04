@@ -41,6 +41,9 @@ must use Google's standardized vocabulary to declare data categories.
 
 - [ ] Privacy policy hosted at a stable URL (CWS will reject if the
       URL returns 404 during review).
+- [ ] Copy the current single-purpose statement, data-handling statement, and
+      permission/host justifications from
+      [store-permission-rationale.md](store-permission-rationale.md).
 - [ ] Declares EACH category Astra Deck uses against the [Chrome
       Web Store Permissions Justification template](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy):
   - **Authentication info** — YouTube session cookies via
@@ -83,8 +86,12 @@ must use Google's standardized vocabulary to declare data categories.
 
 ## 4. CWS-specific permissions justifications
 
-Each permission needs a one-paragraph justification in the CWS
-dashboard. Astra Deck's set:
+Each permission needs a one-paragraph justification in the CWS dashboard. The
+copy-paste source of truth is
+[store-permission-rationale.md](store-permission-rationale.md), which is pinned
+by `tests/hardening.test.js` against the live manifest and build-profile host
+grants. Submit the `store-safe` package to public stores; reserve `github-full`
+for GitHub/self-hosted installs.
 
 | Permission | Justification |
 |---|---|
@@ -93,10 +100,11 @@ dashboard. Astra Deck's set:
 | `cookies` | The Astra Downloader companion downloads authenticated YouTube content. The extension reads YouTube cookies via `chrome.cookies.getAll` and posts them to the localhost downloader (127.0.0.1:9751 only). Never sent off-machine. |
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |
 | `host_permissions: youtube.com / youtu.be / youtube-nocookie.com / i.ytimg.com` | Content script attachment + thumbnail-replacement. |
-| `host_permissions: sponsor.ajay.app` | SponsorBlock + DeArrow API calls. Hash-prefix anonymized — no plaintext videoIds leave the user. |
-| `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | BYO-key AI summary feature. Per-user opt-in; the key + the call body never touch our infrastructure. |
-| `host_permissions: 127.0.0.1:9751-9851` | Astra Downloader local probe (one of six fallback ports). |
-| `host_permissions: 127.0.0.1:11434` | Optional local Ollama for AI summary. |
+| `host_permissions: sponsor.ajay.app / returnyoutubedislikeapi.com / reddit.com` | Optional user-visible enrichment calls for SponsorBlock, DeArrow, Return YouTube Dislike, and the Reddit discussion panel. No cookies are sent. |
+| `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary feature; per-user opt-in and direct to provider. |
+| `host_permissions: api.cobalt.tools` | GitHub-full only. Optional Cobalt fallback when Astra Downloader is offline. |
+| `host_permissions: 127.0.0.1:9751-9851` | GitHub-full only. Astra Downloader local probe and explicit download handoff across six fallback ports. |
+| `host_permissions: 127.0.0.1:11434` | GitHub-full only. Optional local Ollama for AI summary. |
 
 ---
 

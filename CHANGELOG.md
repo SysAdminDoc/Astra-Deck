@@ -19,6 +19,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   sources and labels legacy v5/v6 roadmap references as internal planning-track
   names, not released extension/userscript versions.
 
+- **Store-review permission rationale.** Added
+  `docs/store-permission-rationale.md` as the copy-paste source for the Chrome
+  Web Store / AMO single-purpose, data-handling, manifest-permission, and
+  host-permission review fields. The CWS checklist now points to it, and a
+  hardening test checks the doc against live manifest permissions plus generated
+  store-safe/GitHub-full host grants.
+
 - **Settings migration full-profile fixture.** Added a pinned
   `SETTINGS_VERSION` v1 full-profile settings blob covering every current
   default key, migration override, future-default classification, and retired

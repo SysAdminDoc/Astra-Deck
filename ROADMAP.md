@@ -345,7 +345,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     `RESEARCH_REPORT.md`, `docs/architecture.md`, and the archived dossier are
     explicitly marked as legacy internal planning-track labels, not shipped
     release versions.
-- [ ] P1 — Add per-permission justification + single-purpose store note for review
+- [x] P1 — Add per-permission justification + single-purpose store note for review
   - Why: the extension requests `cookies` + `downloads`; the source/full-profile
     manifest carries 19 host origins spanning YouTube, SponsorBlock, Return
     YouTube Dislike, Cobalt, three AI providers (OpenAI/Anthropic/Gemini),
@@ -365,6 +365,14 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     feature set is one product, not a toolbar.
   - Verify: checklist review against the published CWS field requirements.
   - Complexity: S
+  - Status 2026-06-04: delivered. `docs/store-permission-rationale.md` now
+    contains the copy-paste single-purpose statement, data-handling statement,
+    manifest permission justifications, store-safe host justifications, and
+    GitHub-full-only host justifications. `docs/cws-submission-checklist.md`
+    links that doc as the CWS source of truth and clarifies that public stores
+    should receive the store-safe package. `tests/hardening.test.js` now fails
+    if the rationale stops covering a live manifest permission or generated
+    store-safe/GitHub-full host grant.
 - [ ] P2 — Document the yt-dlp cookie-handling threat model for the companion
   - Why: the downloader uses the `cookies` permission and yt-dlp; yt-dlp has a
     documented cookie-leak advisory class (cookies leaking across hosts on

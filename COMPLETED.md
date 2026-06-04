@@ -54,6 +54,9 @@ package versions; the live product-version sources currently agree at v4.46.0.
   unknown request fields before queueing a companion download.
 - Version-surface docs now name v4.46.0 as the current shipped product line and
   label legacy v5/v6 roadmap terms as internal planning-track names only.
+- Store-review permission rationale now covers the single-purpose statement,
+  data-handling statement, manifest permissions, store-safe host grants, and
+  GitHub-full-only host grants, with a hardening test pinning doc coverage.
 - Storage growth for `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`,
   and `ytkit-watch-time` is now capped at write time with deterministic eviction
   in both extension and userscript paths.
