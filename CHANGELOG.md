@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **EI-NEW1 chatStyleComments selector fallback.** The reply-dialog
+  `:has()` rule is now explicitly fenced with `@supports selector(:has(*))`,
+  with a no-`:has()` fallback that uses the existing `.ytkit-replying` class to
+  keep active reply composers visible while hiding closed dialog shells.
+
 - **NF31 subscription group sort persistence.** Subscription sort mode now
   persists on the active group record, so Coding, Music, News, and the
   all-subscriptions view can each keep their own sort. The legacy

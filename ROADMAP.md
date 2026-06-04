@@ -39,8 +39,11 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   sort mode from a global setting to per-group state. _(Delivered 2026-06-04:
   active group records now persist `sortMode`; `subscriptionSortMode` remains
   only as the all-subscriptions / legacy fallback.)_
-- [ ] **P3 / M — `chatStyleComments` selector fallbacks (EI-NEW1)**: add
-  `@supports(selector(...))` fallbacks for brittle CSS chains.
+- [x] **P3 / M — `chatStyleComments` selector fallbacks (EI-NEW1)**: add
+  `@supports(selector(...))` fallbacks for brittle CSS chains. _(Delivered
+  2026-06-04: reply-dialog `:has()` hiding is now fenced by
+  `@supports selector(:has(*))` and falls back to the existing
+  `.ytkit-replying` class when `:has()` is unavailable.)_
 - [ ] **P3 / M — `hideVideosFromHome` channel-key cache (EI-NEW5)**: precompute
   blocked-channel lookup keys instead of scanning all records per card.
 - [ ] **P3 / M — `selector-health` attribute-drift detection (EI-NEW6)**: expand
