@@ -2323,6 +2323,8 @@ return response;
         poll();
     }
 
+    const ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe';
+
     // ── MediaDL Server Manager ──
     // Caches server availability, provides install/status helpers, and auto-start logic.
     const MediaDLManager = {
@@ -2333,10 +2335,10 @@ return response;
         _autoStartAttempted: false,
         _CHECK_INTERVAL: 30000, // Re-check every 30s
 
-        // GitHub raw URL for the compiled installer exe
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.exe',
+        // GitHub Release URL for the compiled installer exe
+        INSTALLER_URL: ASTRA_DOWNLOADER_RELEASE_EXE_URL,
         INSTALLER_FILE_NAME: 'AstraDownloader.exe',
-        INSTALLER_COMMAND: "powershell -NoProfile -ExecutionPolicy Bypass -Command \"[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.exe' -OutFile $out; Start-Process $out\"",
+        INSTALLER_COMMAND: `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $out=Join-Path $env:TEMP 'AstraDownloader.exe'; Invoke-WebRequest -UseBasicParsing -Uri '${ASTRA_DOWNLOADER_RELEASE_EXE_URL}' -OutFile $out; Start-Process $out"`,
         INSTALLER_RUN_HINT: 'Open Downloads and double-click the setup file to install.',
 
         // Ports the server may have bound to — must match AstraDownloader.PORT_FALLBACKS.
@@ -2437,6 +2439,38 @@ return response;
             } catch (e) {
                 DebugManager.log('MediaDL', `updateYtdlp failed: ${e.message}`);
                 return { ok: false, status: 0, error: e.message || 'Network error while calling /update-ytdlp.' };
+            }
+        },
+
+        // v4.47.0 NF6: on-demand Astra Downloader companion update.
+        // Mirrors updateYtdlp(): force-probe health for a fresh token and
+        // discovered port, then POST to the companion's /update endpoint.
+        // The server downloads the new AstraDownloader.exe, schedules an
+        // after-exit atomic replacement, and restarts itself.
+        async updateCompanion() {
+            const probe = await this.check(true);
+            if (!probe.ok) {
+                return {
+                    ok: false,
+                    status: 0,
+                    error: 'Astra Downloader is not running. Start it and try again.',
+                };
+            }
+            try {
+                const { response, data } = await extensionFetchJson({
+                    method: 'POST',
+                    url: this.baseUrl() + '/update',
+                    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': probe.token },
+                    data: '{}',
+                    timeout: 180000,
+                });
+                if (data && typeof data === 'object') {
+                    return { ...data, status: response.status };
+                }
+                return { ok: false, status: response.status, error: 'Empty response from /update.' };
+            } catch (e) {
+                DebugManager.log('MediaDL', `updateCompanion failed: ${e.message}`);
+                return { ok: false, status: 0, error: e.message || 'Network error while calling /update.' };
             }
         },
 
@@ -5075,6 +5109,21 @@ return response;
                     (async () => {
                         try {
                             const result = await MediaDLManager.updateYtdlp();
+                            sendResponse?.(result);
+                        } catch (e) {
+                            sendResponse?.({ ok: false, status: 0, error: String(e?.message || e) });
+                        }
+                    })();
+                    return true; // async response
+                }
+
+                // v4.47.0 NF6: popup-triggered Astra Downloader companion
+                // update. Same token/discovery shape as YTKIT_UPDATE_YTDLP,
+                // but calls the server's /update endpoint.
+                if (message.type === 'YTKIT_UPDATE_COMPANION') {
+                    (async () => {
+                        try {
+                            const result = await MediaDLManager.updateCompanion();
                             sendResponse?.(result);
                         } catch (e) {
                             sendResponse?.({ ok: false, status: 0, error: String(e?.message || e) });

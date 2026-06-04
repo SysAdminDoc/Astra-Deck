@@ -182,6 +182,17 @@ MV3 program policy, AMO Firefox MV3, WCAG 2.2 AA, the SponsorBlock / DeArrow /
 Enhancer for YouTube / PocketTube / BlockTube / Return YouTube Dislike ecosystem,
 and yt-dlp cookie-handling advisories).
 
+### Phase 1 Competitive Matrix Carry-Forward
+
+The full competitive matrix lives in
+`docs/archive/roadmap-dossier-2026-05-21.md`; these two rows stay visible here
+because the v4.47.0 polish batch promoted them as active comparison references.
+
+| # | Competitor | Owner | Surfaces | Status | Scope | Relevant Astra parity surface | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 21 | Iridium for YouTube | iridiumio | Chrome, Edge, Firefox | CWS listing active (noted in `docs/research/iter-8-sources.md`, added 2026-05-20). Closed-source. | broad | Codec/quality controls, player polish, ad/sponsor handling; overlaps Astra's `qualityProfileMatrix` + `forceH264` surface. | https://chromewebstore.google.com/detail/iridium-for-youtube/ |
+| 22 | Control Panel for YouTube | Jasper de Groot | Chrome, Firefox | CWS listing noted in iter-8 sources (2026-05-20); deeper feature scoring pending. | broad | UI tweaks + control panel for layout / Shorts / channels; presumed quality/UI control. | CWS listing per iter-8 sources |
+
 ### Quick Wins
 
 - [ ] P1 — Reconcile version surfaces and retire the "v5.0.0 foundation" framing

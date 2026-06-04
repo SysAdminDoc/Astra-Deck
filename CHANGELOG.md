@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF6 Astra Downloader companion self-update.** Added a protected `/update`
+  endpoint that compares companion `APP_VERSION`, blocks while downloads are
+  active, downloads the latest GitHub Release `AstraDownloader.exe`, validates
+  the binary, schedules an after-exit atomic replace/restart, and reports
+  structured current/update/error states. The popup now exposes an **Update
+  Companion** action that routes through the active YouTube content script so
+  the local auth token stays in the page bridge. The existing installer action
+  now targets the GitHub Release executable instead of a missing raw-root file;
+  `APP_VERSION` remains `1.5.1` until the next matching companion binary release
+  is produced.
+
 - **Next-2 peel: player dock and YouTube Music compatibility.** Added
   `features/player-dock/index.js` and
   `features/youtube-music-compat/index.js`, wired both into MV3 and userscript

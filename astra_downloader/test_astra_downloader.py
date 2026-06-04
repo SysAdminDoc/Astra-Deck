@@ -2099,5 +2099,97 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
         self.assertEqual(result['source'], 'unit-test')
 
 
+class CompanionUpdateEndpointTests(unittest.TestCase):
+    """v4.47.0 NF6 — on-demand Astra Downloader self-update via /update."""
+
+    TOKEN = "v" * 32
+
+    def _client(self, *, in_flight=0):
+        config = FakeConfig({"ServerToken": self.TOKEN})
+
+        class _FakeManager:
+            downloads = {}
+            _lock = threading.Lock()
+
+            def active_count(_self):
+                return in_flight
+
+        manager = _FakeManager()
+        api = ad.create_api(config, manager, FakeHistory())
+        return api.test_client()
+
+    def test_parse_companion_version_source_extracts_app_version(self):
+        self.assertEqual(
+            ad.parse_companion_version_source('APP_VERSION = "1.2.3"\n'),
+            "1.2.3",
+        )
+        self.assertEqual(ad.parse_companion_version_source("no version"), "")
+
+    def test_unauthenticated_request_is_rejected(self):
+        client = self._client()
+        resp = client.post("/update")
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn("rejected", resp.get_json()["error"])
+
+    def test_in_flight_downloads_block_companion_update_with_409(self):
+        client = self._client(in_flight=3)
+        resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+        self.assertEqual(resp.status_code, 409)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("inFlight"), 3)
+        self.assertIn("restart", body["error"])
+        self.assertIn("atomically replacing", body["error"])
+
+    def test_current_version_returns_200_without_download(self):
+        client = self._client()
+        with mock.patch.object(ad, 'fetch_latest_companion_version', return_value=ad.APP_VERSION), \
+             mock.patch.object(ad, 'download_file_atomic') as download:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertFalse(body.get("update_available"))
+        self.assertEqual(body.get("status"), "current")
+        download.assert_not_called()
+
+    def test_version_check_failure_returns_502(self):
+        client = self._client()
+        with mock.patch.object(ad, 'fetch_latest_companion_version', side_effect=RuntimeError("offline")):
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 502)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("error_code"), "version-check-failed")
+        self.assertIn("offline", body.get("error"))
+
+    def test_successful_companion_update_schedules_replace_and_restart(self):
+        client = self._client()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES))
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'schedule_companion_update_restart',
+                               return_value={'scheduled': True, 'target': str(Path(tmp) / "AstraDownloader.exe")}) as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertTrue(body.get("update_available"))
+        self.assertEqual(body.get("status"), "restart_scheduled")
+        self.assertEqual(body.get("current_version"), ad.APP_VERSION)
+        self.assertEqual(body.get("latest_version"), "9.9.9")
+        schedule.assert_called_once()
+        exit_later.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

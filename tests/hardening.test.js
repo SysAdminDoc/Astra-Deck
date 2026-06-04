@@ -6693,9 +6693,8 @@ test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismiss
     // clicking it removes the key from chrome.storage.local. Subsequent
     // YouTube page loads re-enable the install prompt naturally.
     //
-    // The full NF6 scope (auto-update, Reinstall button that triggers a
-    // download, code-signing) is a separate set of follow-up items;
-    // this slice fixes the recoverability gap only.
+    // The full NF6 companion self-update path is pinned in the next test;
+    // this slice keeps the dismissed-prompt recovery button from drifting.
     assert.match(popupHtmlSource, /id="reenable-mediadl-btn"/,
         'popup.html must declare the Re-enable Downloader Prompts button');
     assert.match(popupHtmlSource, /aria-label="Re-enable Astra Downloader install prompts"/,
@@ -6731,6 +6730,87 @@ test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismiss
         assert.ok(enMessages[k] && enMessages[k].message,
             `extension/_locales/en/messages.json must declare ${k}`);
     }
+});
+
+test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup action round-trip', () => {
+    // NF6: update the local companion itself, not just yt-dlp. The popup
+    // routes through the active YouTube content script so it never owns the
+    // local token; MediaDLManager calls /update; the Python service compares
+    // APP_VERSION, downloads AstraDownloader.exe atomically, schedules an
+    // after-exit replace/restart, and blocks while downloads are active.
+    assert.match(popupHtmlSource, /id="update-companion-btn"/,
+        'popup.html must declare the companion update button');
+    const updateBtnMatch = popupHtmlSource.match(/<button[^>]*id="update-companion-btn"[^>]*>/);
+    assert.ok(updateBtnMatch, 'update-companion button declaration must exist');
+    assert.ok(!/\bhidden\b/.test(updateBtnMatch[0]),
+        'update-companion button must be visible by default');
+    assert.match(updateBtnMatch[0], /aria-label="Update Astra Downloader companion"/,
+        'update-companion button must carry an aria-label');
+
+    const updateMethodStart = ytkitSource.indexOf('async updateCompanion()');
+    assert.ok(updateMethodStart > -1,
+        'MediaDLManager must define an async updateCompanion() method');
+    const updateBlock = ytkitSource.slice(updateMethodStart, updateMethodStart + 1600);
+    assert.match(updateBlock, /await this\.check\(true\)/,
+        'updateCompanion must force-probe health before POSTing');
+    assert.match(updateBlock, /\/update/,
+        'updateCompanion must hit the companion /update endpoint');
+    assert.match(updateBlock, /['"]X-Auth-Token['"]:\s*probe\.token/,
+        'updateCompanion must forward the per-install token');
+    assert.match(updateBlock, /timeout:\s*180000/,
+        'updateCompanion must allow enough time for exe download and scheduling');
+    assert.match(ytkitSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe'/,
+        'installer and companion update paths must point at the GitHub Release exe, not a raw-root file');
+
+    const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_COMPANION'");
+    assert.ok(handlerStart > -1,
+        'ytkit.js must handle YTKIT_UPDATE_COMPANION');
+    const handlerBlock = ytkitSource.slice(handlerStart, handlerStart + 700);
+    assert.match(handlerBlock, /MediaDLManager\.updateCompanion\(\)/,
+        'YTKIT_UPDATE_COMPANION handler must call MediaDLManager.updateCompanion()');
+    assert.match(handlerBlock, /return true;/,
+        'YTKIT_UPDATE_COMPANION handler must keep sendResponse open');
+
+    assert.match(popupSource, /const updateCompanionButton = \$\('#update-companion-btn'\)/,
+        'popup.js must capture update-companion-btn');
+    assert.match(popupSource, /async function updateCompanionNow\(\)/,
+        'popup.js must define updateCompanionNow');
+    const popupHandlerStart = popupSource.indexOf('async function updateCompanionNow');
+    const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
+    assert.match(popupHandlerBlock, /YOUTUBE_TAB_URLS/,
+        'updateCompanionNow must query YouTube tabs for a loaded content script');
+    assert.match(popupHandlerBlock, /type:\s*['"]YTKIT_UPDATE_COMPANION['"]/,
+        'updateCompanionNow must send YTKIT_UPDATE_COMPANION');
+    assert.match(popupHandlerBlock, /current_version/,
+        'updateCompanionNow must surface current_version');
+    assert.match(popupHandlerBlock, /latest_version/,
+        'updateCompanionNow must surface latest_version');
+    assert.match(popupHandlerBlock, /updateCompanionButton\.disabled\s*=\s*true/,
+        'updateCompanionNow must disable the button while in flight');
+
+    const downloaderSource = fs.readFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'), 'utf8'
+    );
+    assert.match(downloaderSource, /@api\.route\(['"]\/update['"],\s*methods=\['POST'\]\)/,
+        'astra_downloader.py must declare /update as a POST route');
+    assert.match(downloaderSource, /def fetch_latest_companion_version/,
+        'downloader must fetch the latest companion APP_VERSION');
+    assert.match(downloaderSource, /COMPANION_UPDATE_EXE_URL = "https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe"/,
+        'downloader must download companion binaries from GitHub Releases');
+    assert.match(downloaderSource, /def _run_companion_self_update/,
+        'downloader must expose the companion self-update runner');
+    assert.match(downloaderSource, /def schedule_companion_update_restart/,
+        'downloader must schedule delayed replace and restart');
+    assert.match(downloaderSource, /MoveFileEx/,
+        'Windows delayed updater must use MoveFileEx for replace-existing semantics');
+    const endpointStart = downloaderSource.indexOf("@api.route('/update'");
+    const endpointBlock = downloaderSource.slice(endpointStart, endpointStart + 1700);
+    assert.match(endpointBlock, /in_flight = dl_manager\.active_count\(\)/,
+        '/update must consult dl_manager.active_count');
+    assert.match(endpointBlock, /409/,
+        '/update must return 409 when downloads are active');
+    assert.match(endpointBlock, /atomically replacing/,
+        '/update 409 message must explain the executable replacement race');
 });
 
 test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it', () => {
