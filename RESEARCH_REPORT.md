@@ -18,6 +18,20 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 2 refresh on 2026-06-04 fetched and compared `origin/main`
+  (`git rev-list --left-right --count HEAD...@{u}` returned `0 0`) after the
+  selector-capture implementation landed separately on the build lane. The
+  roadmap now treats Return YouTube Dislike estimate disclosure, first-run
+  companion onboarding, and diagnostics export as shipped work, with a new
+  non-duplicate P3 follow-up for proofing identical-to-English locale copy.
+- [Verified, external] Primary-source refresh for this cycle checked Chrome
+  extension i18n guidance, MDN WebExtensions i18n guidance, Mozilla
+  Extension Workshop MV3 / `web-ext` / signing documentation, W3C WCAG 2.2
+  Target Size and Focus Appearance guidance, Chrome Web Store MV3 policy, and
+  the yt-dlp GitHub releases/PO-token guidance. The current `yt-dlp==2026.3.17`
+  pin remains aligned with the latest stable GitHub release observed on this
+  pass; PO-token churn remains a companion watch item, but the existing Deno /
+  PO-token health and yt-dlp smoke rows already cover it.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
@@ -146,21 +160,16 @@ from a broad permission and host set mitigated by profile-split artifacts,
 the product ships as 4.46.0 while older docs described an internal
 planning-track "v5.0.0 foundation complete" and v5/v6 plan.
 
-Top opportunities (one-liners):
+Top remaining opportunities (one-liners):
 
-1. Standing migration test that loads a pinned old-version settings blob and
-   proves lossless forward migration (highest data-loss risk). [Verified]
-2. Reconcile version surfaces — ship line is 4.46.x, not v5/v6. [Verified]
-3. Per-permission justification + single-purpose store note before CWS/AMO. [Verified]
-4. Settings import/export with schema validation + credential scrub (PocketTube
-   sync is the competitive baseline; stay local-first). [Verified]
-5. Firefox MV3 parity smoke gate before AMO (Enhancer-for-YouTube's Firefox gap
-   is the clearest competitive opening). [Verified]
-6. First-run onboarding + companion empty/permission states (no silent failure). [Verified]
-7. WCAG 2.2 AA audit for in-page overlays, not just the popup. [Verified]
-8. Document the yt-dlp cookie-handling threat model for the `cookies` permission. [Verified]
-9. Disclose Return-YouTube-Dislike estimate accuracy in the UI. [Verified]
-10. One-click scrubbed diagnostics export for bug reports / selector-rot repro. [Verified]
+1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates. [Verified]
+2. MHTML capture-week expansion across Shorts, channel, search, history,
+   watch-later, embedded player, and notifications surfaces. [Verified]
+3. WCAG 2.2 AA audit for in-page overlays, not just the popup. [Verified]
+4. Locale proofing queue for identical-to-English feature names/descriptions in
+   non-EN bundles. [Verified]
+5. Signed Astra Downloader installer/MSI once the signing budget and submission
+   intent are decided. [Needs validation]
 
 ## Evidence Reviewed
 
