@@ -31051,6 +31051,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return mode === 'github-full';
             },
 
+            _diagnosticInstanceLabel(instance) {
+                try {
+                    const u = new URL(instance);
+                    return u.origin || 'configured Cobalt instance';
+                } catch (_) {
+                    // reason: malformed custom instance values still need an actionable diagnostic
+                    return 'configured Cobalt instance';
+                }
+            },
+
+            _recordFailureDiagnostic(instance, error) {
+                const endpoint = this._diagnosticInstanceLabel(instance);
+                const reason = String(error?.message || 'unknown error').slice(0, 180);
+                DiagnosticLog?.record?.('cobalt-fallback',
+                    `Cobalt fallback unreachable (${endpoint}). Astra Downloader was offline; check downloadCobaltInstance or start Astra Downloader. Last error: ${reason}`);
+            },
+
             async _trigger() {
                 if (!this._isAllowed()) {
                     if (typeof showToast === 'function') showToast('Cobalt fallback is only enabled in the GitHub/full profile.', '#f59e0b');
@@ -31084,6 +31101,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     throw new Error('Cobalt returned no usable media URL');
                 } catch (e) {
                     DebugManager.log('CobaltFallback', `Failed: ${e.message}`);
+                    this._recordFailureDiagnostic(instance, e);
                     if (typeof showToast === 'function') showToast(`Cobalt fallback failed: ${e.message}`, '#ef4444', { duration: 6 });
                 }
             },

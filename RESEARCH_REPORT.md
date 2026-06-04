@@ -42,7 +42,9 @@ or maintainer action to confirm.
   is bounded at write time; and `policy-profile.js` scrub coverage now removes
   separator-aware API-key names plus password/credential/key-alias/cookie/
   token/bearer/secret/auth-shaped values before profile or forward-compat
-  export passthrough.
+  export passthrough; and Cobalt fallback failures now record an actionable
+  `cobalt-fallback` diagnostic with origin-only endpoint context when Astra
+  Downloader is offline.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -88,6 +90,12 @@ or maintainer action to confirm.
   `node --test tests/hardening.test.js` (426 checks), `npm run check`,
   `npm test` (630 checks), `npm run build`, `node sync-userscript.js`,
   `node --check YTKit.user.js`, and `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the Cobalt fallback diagnostic
+  batch: `node --check extension/ytkit.js`,
+  `node --check tests/hardening.test.js`, and
+  `node --test tests/hardening.test.js` (427 checks), `npm run check`,
+  `npm test` (631 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`
