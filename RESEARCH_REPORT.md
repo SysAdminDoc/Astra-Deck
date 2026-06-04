@@ -19,20 +19,23 @@ or maintainer action to confirm.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
-  digest, Study / Work export, and feature-definition i18n are now represented
-  in `ROADMAP.md`, `extension/ytkit.js`, docs, and hardening tests. The
+  digest, Study / Work export, feature-definition i18n, and store-safe /
+  GitHub-full release artifact split are now represented in `ROADMAP.md`,
+  `extension/ytkit.js`, docs, the packager, and hardening tests. The
   subscription implementation uses rendered-feed DOM heuristics, local
   last-visit data, and a 30-day local undo/staging window rather than a YouTube
   Data API unsubscribe path; the notes and study/work exports stay local-first
   with versioned JSON, Markdown, or CSV downloads; the settings-panel feature
   labels now resolve through the locale layer before falling back to inline
-  English.
-- [Verified] Validation on 2026-06-04 after the feature-definition i18n batch:
-  `node --check extension/ytkit.js`, `node --check extension/core/registry.js`,
-  `node --check tests/hardening.test.js`, `node scripts/check-i18n.js`,
-  `node --test tests/hardening.test.js` (420 checks), `npm run check`,
-  `npm test` (615 checks), and `npm run build` all passed. The build emitted
-  Chrome ZIP/CRX and Firefox ZIP/XPI artifacts for v4.46.0.
+  English; the store-safe package now strips AI, Cobalt, and loopback host
+  grants while GitHub-full keeps the complete data-flow catalogue.
+- [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
+  `node --check build-extension.js`, `node --check extension/background.js`,
+  `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
+  (421 checks), `npm run check`, `npm test` (616 checks), `npm run build`,
+  ZIP manifest inspection for store-safe/full host grants, and
+  `node sync-userscript.js` all passed. The build emitted store-safe and
+  GitHub-full Chrome ZIP/CRX plus Firefox ZIP/XPI artifacts for v4.46.0.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`
@@ -56,8 +59,8 @@ deps audit, plus a build/release workflow). [Verified]
 
 The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
 against YouTube's high-velocity redesigns, (2) **store-policy / trust surface**
-from a broad permission and host set bundled into one extension, (3) **upgrade
-data-safety** for the 354-key schema, and (4) **version-surface confusion** —
+from a broad permission and host set mitigated by profile-split artifacts,
+(3) **upgrade data-safety** for the 354-key schema, and (4) **version-surface confusion** —
 the product ships as 4.46.0 while the docs describe a "v5.0.0 foundation complete"
 and a v5/v6 plan.
 
@@ -80,9 +83,9 @@ Top opportunities (one-liners):
 ## Evidence Reviewed
 
 - `package.json` (v4.46.0, node ≥22, crx3 dep, full `check`/`test` scripts). [Verified]
-- `extension/manifest.json` (MV3 v4.46.0, 4 permissions, 17 host origins,
-  document_start MAIN + ISOLATED dual-world content scripts, live-chat excluded
-  from the main scripts). [Verified]
+- `extension/manifest.json` (MV3 v4.46.0, 4 permissions, 19 full-profile host
+  origins, document_start MAIN + ISOLATED dual-world content scripts, live-chat
+  excluded from the main scripts). [Verified]
 - `extension/core/` (27 modules: registry, selectors, navigation, api-limiter,
   trusted-html, predicate-sandbox, transcript-service, storage-manager,
   diagnostic-log, policy-profile, selector-health, settings-schema 107 KB, etc.). [Verified]
@@ -138,8 +141,8 @@ excluded by design. [Verified]
 | Theming / OLED tokens | `features/theme-css/`, `wave-8-css/`, `home-subs-css/` | Shipped | Schema-driven [Verified] |
 | Transcript viewer + IndexedDB search | `core/transcript-service.js` | Shipped | [Verified] |
 | Study / Work export | `researchSpacedReview` feature | Shipped | Markdown/CSV export from watch time, focused mode, digital wellbeing, and timestamp bookmarks [Verified] |
-| AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | [Verified] |
-| Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint; no /update UX item open [Verified] |
+| AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | GitHub-full artifact only [Verified] |
+| Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint and popup action; local loopback grants stay GitHub-full [Verified] |
 | Per-video notes | `videoNotes` feature | Shipped | Local-first notes, versioned export, 1000-note LRU cap [Verified] |
 | Settings import/export | — | Gap | No first-class surface [Verified] |
 | Selector-pack health | `core/selector-health.js` | Shipped | Now reports attribute-shape drift [Verified] |
@@ -215,9 +218,11 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 ## Security / Privacy / Data Safety
 
 - **Permission surface** [Verified]: `cookies`, `downloads`, `unlimitedStorage`,
-  `storage`; 17 host origins incl. three AI providers, Reddit, and seven loopback
-  ports. No `<all_urls>`; specific patterns used. The breadth raises the
-  single-purpose/justification bar (ROADMAP P1 store note).
+  `storage`; 19 GitHub-full host origins incl. three AI providers, Cobalt,
+  Reddit, and seven loopback ports. No `<all_urls>`; specific patterns used.
+  Store-safe build artifacts now strip AI, Cobalt, and loopback grants/CSP, but
+  the breadth of the full package still raises the single-purpose/justification
+  bar (ROADMAP P1 store note).
 - **No remote code** [Likely]: `check-no-eval.js` gate + MV3 prohibition; consistent
   with policy.
 - **Credential handling** [Verified]: `policy-profile.js` scrubs gated/credential
@@ -249,7 +254,7 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 ## Open Questions
 
 - Downloader signing budget and CWS/AMO submission intent (gates the signed
-  installer + store-profile split). [Needs validation]
+  installer work). [Needs validation]
 - Live-stream MHTML capture window for full live-chat iframe internals — repeated
   headless-capture timeouts mean this needs a manual/stable-browser save path.
   [Needs validation]

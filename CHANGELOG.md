@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Store-safe / GitHub-full artifact split.** `build-extension.js` now emits
+  profile-named Chrome and Firefox packages from the same extension source:
+  store-safe artifacts strip AI, Cobalt, and local-loopback host grants/CSP,
+  while GitHub-full artifacts retain the full data-flow catalogue including
+  Cobalt. The packager also accepts `--profile store-safe|github-full|both`,
+  and the background proxy allowlist now includes Cobalt so the full-profile
+  fallback can reach its default API instance.
+
 - **Feature-definition i18n.** The full in-page settings panel now resolves
   feature names and descriptions through generated `feature_<id>_name` /
   `feature_<id>_desc` locale keys before falling back to inline English.
