@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 4 - 2026-06-04.
+> Last researched: Cycle 5 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -321,6 +321,15 @@ means implemented/closed by the build lane.
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 5 - 2026-06-04)
+
+- [x] 🔬 `firefox-parity-gate-shape-2026-06-04` - inspected
+  `build-extension.js`, `scripts/manifest-patch.js`, `.github/workflows/build.yml`,
+  `docs/signing-keys.md`, `docs/firefox-executescript-preflight.md`, and
+  manifest-patch tests. The Firefox parity row now distinguishes existing static
+  manifest-patch coverage from the missing release-artifact `web-ext lint` and
+  clean-profile Firefox load gate.
+
 ### Researcher Queue (Cycle 4 - 2026-06-04)
 
 - [x] 🔬 `capture-week-matrix-2026-06-04` - inspected the live selector fixture
@@ -576,12 +585,24 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     (https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/),
     and signed release/beta distribution requirements
     (https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/).
-    [Verified]
-  - Touches: `.github/workflows/`, `scripts/manifest-patch.js`, a Firefox smoke
-    harness (e.g. `web-ext lint` + headless load).
-  - Acceptance: CI runs `web-ext lint` (or equivalent) on the patched Firefox
-    manifest and fails on a Gecko-incompatible manifest/API change.
-  - Verify: a deliberately Chromium-only manifest key turns the Firefox gate red.
+    Local gap: `tests/hardening.test.js` only asserts the patcher transforms the
+    manifest, `.github/workflows/build.yml` runs `npm test`, `npm run check`, and
+    `npm run build:userscript`, and `docs/firefox-executescript-preflight.md`
+    records no local Firefox runtime for a browser-console run. [Verified]
+  - Touches: `.github/workflows/`, `package.json`, `scripts/`, release checklist.
+  - Acceptance: CI or a release-blocking workflow builds the store-safe and
+    GitHub-full Firefox artifacts, extracts or stages the patched manifests,
+    runs a pinned `web-ext lint --source-dir <firefox-stage>` check for both,
+    and launches at least the store-safe artifact in a clean Firefox profile
+    against a stable YouTube URL with startup/load errors captured. GitHub-full
+    may be lint-only unless the local companion path is explicitly started in the
+    job. The smoke output records Firefox version, artifact profile, manifest
+    version, gecko ID, and whether the background script loaded without console
+    errors.
+  - Verify: a deliberately Chromium-only manifest key, a reverted
+    `background.service_worker` Firefox patch, or a removed
+    `browser_specific_settings.gecko.id` must turn the Firefox gate red before
+    release upload.
   - Complexity: M
 - [x] P2 — First-run onboarding + empty/permission states for the companion path
   - Why: the popup is the only settings surface and the downloader is a separate
