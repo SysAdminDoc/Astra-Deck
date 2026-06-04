@@ -4359,13 +4359,296 @@
                     `;
         }
 
+        function isCommentTextSelectionTarget(target) {
+            const node = target instanceof Element ? target : target?.parentElement;
+            if (!node) return false;
+
+            const comment = node.closest('#comments ytd-comment-view-model, #comments ytd-comment-renderer');
+            if (!comment) return false;
+
+            if (node.closest([
+                'button',
+                '[role="button"]',
+                'yt-icon-button',
+                'tp-yt-paper-button',
+                'ytd-button-renderer',
+                'ytd-menu-renderer',
+                'ytd-toggle-button-renderer',
+                '#action-menu',
+                '#inline-action-menu',
+                '#reply-button-end',
+                '#creator-heart',
+                '#more-replies',
+                '#more-replies-sub-thread',
+                '#less-replies',
+                '#less-replies-sub-thread'
+            ].join(','))) return false;
+
+            return !!node.closest([
+                '#content',
+                '#content-text',
+                'yt-attributed-string',
+                '.ytAttributedStringHost',
+                'yt-core-attributed-string'
+            ].join(','));
+        }
+
+        function setDataFlag(comment, flagName, enabled) {
+            if (enabled) comment.dataset[flagName] = '1';
+            else delete comment.dataset[flagName];
+        }
+
+        function applyLayoutStyles(nodes, styles) {
+            nodes.forEach((node) => {
+                if (!(node instanceof Element)) return;
+                Object.entries(styles).forEach(([key, value]) => node.style.setProperty(key, value, 'important'));
+            });
+        }
+
+        function normalizeCommentLayoutSurface(comment) {
+            if (!(comment instanceof Element)) return;
+            comment.removeAttribute('optimal-reading-width-comments');
+            comment.style.setProperty('--ytd-comment-thumb-dimension', '24px', 'important');
+            comment.style.setProperty('padding', '6px 6px 6px', 'important');
+            comment.style.setProperty('width', '100%', 'important');
+            comment.style.setProperty('max-width', 'none', 'important');
+            comment.style.setProperty('box-sizing', 'border-box', 'important');
+
+            const body = comment.querySelector(':scope > #body');
+            applyLayoutStyles([body], {
+                display: 'flex',
+                'align-items': 'flex-start',
+                gap: '6px',
+                width: '100%',
+                'max-width': 'none',
+                'box-sizing': 'border-box'
+            });
+
+            const authorThumbnail = comment.querySelector('#author-thumbnail');
+            applyLayoutStyles([authorThumbnail], {
+                'margin-right': '0',
+                flex: '0 0 24px',
+                width: '24px',
+                'min-width': '24px'
+            });
+            applyLayoutStyles(comment.querySelectorAll('#author-thumbnail yt-img-shadow, #author-thumbnail img, #author-thumbnail button'), {
+                width: '24px',
+                height: '24px'
+            });
+
+            const main = comment.querySelector(':scope > #body > #main');
+            applyLayoutStyles([main], {
+                display: 'block',
+                flex: '1 1 0',
+                width: 'auto',
+                'max-width': 'none',
+                'min-width': '0',
+                'padding-right': '6px',
+                'box-sizing': 'border-box'
+            });
+
+            applyLayoutStyles(comment.querySelectorAll('#header, #header-author, ytd-expander, #content, #content-text, yt-attributed-string, .ytAttributedStringHost, yt-core-attributed-string'), {
+                width: '100%',
+                'max-width': 'none',
+                'min-width': '0',
+                'box-sizing': 'border-box'
+            });
+
+            const actionMenu = comment.querySelector('#action-menu, #inline-action-menu');
+            applyLayoutStyles([actionMenu], {
+                right: '6px',
+                top: '8px'
+            });
+        }
+
+        function normalizeCommentInteractionSurface(comment) {
+            if (!(comment instanceof Element)) return;
+            const thread = comment.closest('ytd-comment-thread-renderer');
+            thread?.querySelectorAll('.thread-hitbox').forEach((hitbox) => {
+                hitbox.style.setProperty('display', 'none', 'important');
+                hitbox.style.setProperty('pointer-events', 'none', 'important');
+                hitbox.style.setProperty('visibility', 'hidden', 'important');
+                hitbox.style.setProperty('opacity', '0', 'important');
+                hitbox.style.setProperty('width', '0', 'important');
+                hitbox.style.setProperty('height', '0', 'important');
+            });
+
+            comment.querySelectorAll('#main, #header, #header-author, ytd-expander, #content, #content-text').forEach((node) => {
+                node.style.setProperty('position', 'relative', 'important');
+                node.style.setProperty('z-index', '1', 'important');
+                node.style.setProperty('pointer-events', 'auto', 'important');
+            });
+
+            comment.querySelectorAll('#author-text, #author-text a, #published-time-text, #published-time-text a').forEach((node) => {
+                node.style.setProperty('position', 'relative', 'important');
+                node.style.setProperty('z-index', '2', 'important');
+                node.style.setProperty('pointer-events', 'auto', 'important');
+            });
+
+            comment.querySelectorAll('#content, #content-text, yt-attributed-string, .ytAttributedStringHost, yt-core-attributed-string').forEach((node) => {
+                node.style.setProperty('pointer-events', 'auto', 'important');
+                node.style.setProperty('-webkit-user-select', 'text', 'important');
+                node.style.setProperty('user-select', 'text', 'important');
+            });
+        }
+
+        function processComment(comment) {
+            if (!(comment instanceof Element)) return;
+            comment.dataset.ytkitChat = '1';
+            setDataFlag(comment, 'ytkitPinned', comment.matches?.('[pinned]') || !!comment.querySelector('ytd-pinned-comment-badge-renderer:not([hidden])'));
+            setDataFlag(comment, 'ytkitHeart', !!comment.querySelector('#creator-heart-button[is-hearted], #creator-heart-button:not([hidden])'));
+            setDataFlag(comment, 'ytkitLinked', comment.matches?.('[linked]') || !!comment.querySelector('#linked-comment-badge:not([hidden])'));
+            comment.querySelector('.ytkit-vote-badge')?.remove();
+            normalizeCommentLayoutSurface(comment);
+            normalizeCommentInteractionSurface(comment);
+        }
+
+        function styleReplyDialogs(doc) {
+            doc.querySelectorAll('ytd-comment-engagement-bar #reply-dialog').forEach(dialog => {
+                const cb = dialog.querySelector('ytd-commentbox:not([hidden])');
+                const isOpen = cb && !cb.closest('[hidden]') && cb.offsetParent !== null;
+
+                if (!isOpen) {
+                    if (dialog.dataset.ytkitStyled) {
+                        delete dialog.dataset.ytkitStyled;
+                        dialog.removeAttribute('style');
+                        const allCb = dialog.querySelector('ytd-commentbox');
+                        if (allCb) {
+                            allCb.removeAttribute('style');
+                            allCb.querySelectorAll('#thumbnail-input-row, #main, #divider-line, #creation-box, #input-container, tp-yt-paper-input-container, .input-wrapper, #labelAndInputContainer, .paper-input-input, ytd-emoji-input, yt-user-mention-autosuggest-input, #author-thumbnail, .underline, .unfocused-line, .focused-line, #contenteditable-textarea, #contenteditable-root, #footer, ytd-comment-reply-dialog-renderer').forEach(el => el.removeAttribute('style'));
+                            allCb.querySelectorAll('#footer .yt-spec-button-shape-next').forEach(el => el.removeAttribute('style'));
+                            const ta = allCb.querySelector('#contenteditable-textarea');
+                            if (ta) delete ta.dataset.ytkitFocus;
+                        }
+                        const rr = dialog.querySelector('ytd-comment-reply-dialog-renderer');
+                        if (rr) rr.removeAttribute('style');
+                    }
+                    return;
+                }
+                dialog.dataset.ytkitStyled = '1';
+
+                const S = (el, props) => { if (!el) return; for (const [k, v] of Object.entries(props)) el.style.setProperty(k, v, 'important'); };
+                const HIDE = { display: 'none', height: '0', border: 'none', 'border-bottom': 'none', overflow: 'hidden', opacity: '0', visibility: 'hidden', 'box-shadow': 'none' };
+                const CLEAR = { display: 'block', width: '100%', border: 'none', 'border-bottom': 'none', outline: 'none', background: 'transparent', 'box-shadow': 'none', padding: '0', margin: '0', 'box-sizing': 'border-box' };
+
+                S(dialog, { display: 'block', padding: '10px 0 4px', margin: '0', position: 'relative', width: '100%', 'box-sizing': 'border-box', overflow: 'visible', border: 'none', outline: 'none', background: 'transparent' });
+                S(cb, { ...CLEAR, overflow: 'visible' });
+                S(cb.querySelector('#thumbnail-input-row'), CLEAR);
+                S(cb.querySelector('#main'), CLEAR);
+                S(cb.querySelector('#divider-line'), HIDE);
+                S(cb.querySelector('#creation-box'), CLEAR);
+                const inputContainer = cb.querySelector('#input-container') || cb.querySelector('tp-yt-paper-input-container');
+                S(inputContainer, { ...CLEAR, 'border-bottom': 'none', 'box-shadow': 'none' });
+                S(cb.querySelector('.input-wrapper'), CLEAR);
+                S(cb.querySelector('#labelAndInputContainer'), CLEAR);
+                cb.querySelectorAll('.paper-input-input').forEach(el => S(el, CLEAR));
+                S(cb.querySelector('ytd-emoji-input'), CLEAR);
+                S(cb.querySelector('yt-user-mention-autosuggest-input'), CLEAR);
+                S(cb.querySelector('#author-thumbnail'), { display: 'none' });
+                const replyRenderer = dialog.querySelector('ytd-comment-reply-dialog-renderer');
+                S(replyRenderer, { ...CLEAR, overflow: 'visible' });
+
+                cb.querySelectorAll('.underline, .unfocused-line, .focused-line, .add-on-content').forEach(el => S(el, HIDE));
+
+                const textarea = cb.querySelector('#contenteditable-textarea');
+                S(textarea, { display: 'block', 'font-size': '13px', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(var(--ytkit-accent-rgb),0.2)', 'border-radius': '8px', 'min-height': '60px', height: 'auto', color: 'rgba(255,255,255,0.85)', 'line-height': '1.5', outline: 'none', width: '100%', 'box-sizing': 'border-box', transition: 'border-color 0.2s, background 0.2s' });
+
+                const root = cb.querySelector('#contenteditable-root');
+                S(root, { display: 'block', 'font-size': '13px', color: 'rgba(255,255,255,0.85)', 'line-height': '1.5', outline: 'none', border: 'none', background: 'transparent', padding: '0', 'min-height': 'unset', width: '100%' });
+
+                if (textarea && !textarea.dataset.ytkitFocus) {
+                    textarea.dataset.ytkitFocus = '1';
+                    textarea.addEventListener('focusin', () => { textarea.style.setProperty('border-color', 'rgba(var(--ytkit-accent-rgb),0.45)', 'important'); textarea.style.setProperty('background', 'rgba(255,255,255,0.06)', 'important'); });
+                    textarea.addEventListener('focusout', () => { textarea.style.setProperty('border-color', 'rgba(var(--ytkit-accent-rgb),0.2)', 'important'); textarea.style.setProperty('background', 'rgba(255,255,255,0.04)', 'important'); });
+                }
+
+                const footer = cb.querySelector('#footer');
+                S(footer, { 'margin-top': '8px', gap: '6px', display: 'flex', 'justify-content': 'flex-end' });
+                cb.querySelectorAll('#footer .yt-spec-button-shape-next').forEach(btn => S(btn, { height: '28px', 'font-size': '11px', padding: '0 14px', 'min-height': 'unset', 'border-radius': '6px' }));
+            });
+        }
+
+        function processAllComments(doc) {
+            doc.querySelectorAll('ytd-comment-view-model, ytd-comment-renderer').forEach(processComment);
+            doc.querySelectorAll('ytd-comment-view-model.ytkit-replying, ytd-comment-renderer.ytkit-replying').forEach(c => {
+                const replyBox = c.querySelector('#reply-dialog ytd-commentbox:not([hidden])');
+                const isOpen = replyBox && !replyBox.closest('[hidden]') && replyBox.offsetParent !== null;
+                if (!isOpen) c.classList.remove('ytkit-replying');
+            });
+            doc.querySelectorAll('#reply-dialog ytd-commentbox:not([hidden])').forEach(d => {
+                if (d.closest('[hidden]') || d.offsetParent === null) return;
+                const comment = d.closest('ytd-comment-view-model, ytd-comment-renderer');
+                if (comment) comment.classList.add('ytkit-replying');
+            });
+            styleReplyDialogs(doc);
+        }
+
+        function cleanupRuntimeDom(doc) {
+            doc.querySelectorAll('.ytkit-vote-badge').forEach(el => el.remove());
+            doc.querySelectorAll('[data-ytkit-chat]').forEach(el => {
+                delete el.dataset.ytkitChat;
+                delete el.dataset.ytkitPinned;
+                delete el.dataset.ytkitHeart;
+                delete el.dataset.ytkitLinked;
+            });
+            doc.querySelectorAll('.ytkit-replying').forEach(el => el.classList.remove('ytkit-replying'));
+        }
+
+        function createChatStyleCommentsRuntime(options = {}) {
+            const doc = options.document || globalThis.document;
+            const win = options.window || globalThis.window;
+            const raf = options.requestAnimationFrame || globalThis.requestAnimationFrame || ((fn) => setTimeout(fn, 0));
+            const addRule = typeof options.addMutationRule === 'function' ? options.addMutationRule : null;
+            const removeRule = typeof options.removeMutationRule === 'function' ? options.removeMutationRule : null;
+            const featureId = options.featureId || 'chatStyleComments';
+            let processScheduled = false;
+            const runtime = {
+                _commentSelectionSelectStartHandler: null,
+                _mutationHandler: null,
+                init() {
+                    if (!doc || !win || !addRule) return;
+                    this._commentSelectionSelectStartHandler = (e) => {
+                        if (!isCommentTextSelectionTarget(e.target)) return;
+                        e.stopPropagation();
+                        e.stopImmediatePropagation?.();
+                    };
+                    win.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
+                    processAllComments(doc);
+                    this._mutationHandler = () => {
+                        if (processScheduled) return;
+                        processScheduled = true;
+                        raf(() => {
+                            processScheduled = false;
+                            processAllComments(doc);
+                        });
+                    };
+                    addRule(featureId, this._mutationHandler);
+                },
+                destroy() {
+                    processScheduled = false;
+                    if (this._commentSelectionSelectStartHandler && win) {
+                        win.removeEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
+                        this._commentSelectionSelectStartHandler = null;
+                    }
+                    if (removeRule) removeRule(featureId);
+                    if (doc) cleanupRuntimeDom(doc);
+                    this._mutationHandler = null;
+                }
+            };
+            return runtime;
+        }
+
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
         features.chatStyleComments = Object.freeze({
             STYLE_IDS,
             buildCommentRestyleCss,
             buildPremiumCommentsCss,
             buildPremiumInteractionCss,
-            buildSelectorSupportFallbackCss
+            buildSelectorSupportFallbackCss,
+            isCommentTextSelectionTarget,
+            processComment,
+            processAllComments,
+            createChatStyleCommentsRuntime
         });
 
         if (typeof module !== 'undefined' && module.exports) {
@@ -4374,7 +4657,11 @@
                 buildCommentRestyleCss,
                 buildPremiumCommentsCss,
                 buildPremiumInteractionCss,
-                buildSelectorSupportFallbackCss
+                buildSelectorSupportFallbackCss,
+                isCommentTextSelectionTarget,
+                processComment,
+                processAllComments,
+                createChatStyleCommentsRuntime
             };
         }
     })();

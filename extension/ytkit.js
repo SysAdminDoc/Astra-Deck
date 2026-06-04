@@ -6101,6 +6101,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _premiumInteractionStyleElement: null,
             _observer: null,
             _commentSelectionSelectStartHandler: null,
+            _runtime: null,
             pages: [PageTypes.WATCH],
             _isCommentTextSelectionTarget(target) {
                 const node = target instanceof Element ? target : target?.parentElement;
@@ -7224,6 +7225,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 `;
                 this._premiumInteractionStyleElement = injectStyle(premiumInteractionCss + selectorSupportFallbackCss, this.id + '-premium-2', true);
 
+                const createRuntime = chatStyleFeatures && typeof chatStyleFeatures.createChatStyleCommentsRuntime === 'function'
+                    && chatStyleFeatures.createChatStyleCommentsRuntime;
+                if (createRuntime) {
+                    this._runtime = createRuntime({
+                        document,
+                        window,
+                        requestAnimationFrame,
+                        addMutationRule,
+                        removeMutationRule,
+                        featureId: this.id
+                    });
+                    this._runtime.init();
+                    return;
+                }
+
                 this._commentSelectionSelectStartHandler = (e) => {
                     if (!this._isCommentTextSelectionTarget(e.target)) return;
                     e.stopPropagation();
@@ -7440,19 +7456,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement?.remove(); this._styleElement = null;
                 this._premiumStyleElement?.remove(); this._premiumStyleElement = null;
                 this._premiumInteractionStyleElement?.remove(); this._premiumInteractionStyleElement = null;
-                if (this._commentSelectionSelectStartHandler) {
-                    window.removeEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
-                    this._commentSelectionSelectStartHandler = null;
+                if (this._runtime) {
+                    this._runtime.destroy();
+                    this._runtime = null;
+                } else {
+                    if (this._commentSelectionSelectStartHandler) {
+                        window.removeEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
+                        this._commentSelectionSelectStartHandler = null;
+                    }
+                    removeMutationRule(this.id);
+                    document.querySelectorAll('.ytkit-vote-badge').forEach(el => el.remove());
+                    document.querySelectorAll('[data-ytkit-chat]').forEach(el => {
+                        delete el.dataset.ytkitChat;
+                        delete el.dataset.ytkitPinned;
+                        delete el.dataset.ytkitHeart;
+                        delete el.dataset.ytkitLinked;
+                    });
+                    document.querySelectorAll('.ytkit-replying').forEach(el => el.classList.remove('ytkit-replying'));
                 }
-                removeMutationRule(this.id);
-                document.querySelectorAll('.ytkit-vote-badge').forEach(el => el.remove());
-                document.querySelectorAll('[data-ytkit-chat]').forEach(el => {
-                    delete el.dataset.ytkitChat;
-                    delete el.dataset.ytkitPinned;
-                    delete el.dataset.ytkitHeart;
-                    delete el.dataset.ytkitLinked;
-                });
-                document.querySelectorAll('.ytkit-replying').forEach(el => el.classList.remove('ytkit-replying'));
             }
         },
 

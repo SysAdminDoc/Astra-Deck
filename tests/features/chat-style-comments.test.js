@@ -35,6 +35,9 @@ test('chatStyleComments module exports the style builder surface', () => {
     assert.equal(typeof mod.buildPremiumCommentsCss, 'function');
     assert.equal(typeof mod.buildPremiumInteractionCss, 'function');
     assert.equal(typeof mod.buildSelectorSupportFallbackCss, 'function');
+    assert.equal(typeof mod.processComment, 'function');
+    assert.equal(typeof mod.processAllComments, 'function');
+    assert.equal(typeof mod.createChatStyleCommentsRuntime, 'function');
     assert.deepEqual(mod.STYLE_IDS, {
         base: 'chatStyleComments',
         premium: 'chatStyleComments-premium',
@@ -72,6 +75,12 @@ test('chatStyleComments monolith delegates CSS payloads through the feature modu
     }
     assert.match(block, /buildPremiumInteractionCss\(\{ tooltipZ: Z\.TOAST \+ 2 \}\)/,
         'tooltip z-index must remain tied to the monolith Z table');
+    assert.match(block, /createChatStyleCommentsRuntime/,
+        'ytkit.js must delegate comment runtime ownership to the feature module');
+    assert.match(block, /this\._runtime\.init\(\);[\s\S]*?return;/,
+        'ytkit.js must skip inline observer/listener setup after module runtime init');
+    assert.match(block, /this\._runtime\.destroy\(\);/,
+        'ytkit.js destroy must delegate runtime teardown when the module owns it');
 });
 
 test('chatStyleComments module loads before ytkit.js in content scripts', () => {
@@ -83,4 +92,47 @@ test('chatStyleComments module loads before ytkit.js in content scripts', () => 
         assert.ok(moduleIndex > -1, 'manifest content script must include chat-style-comments module');
         assert.ok(moduleIndex < ytkitIndex, 'chat-style-comments module must load before ytkit.js');
     }
+});
+
+test('chatStyleComments runtime registers and tears down mutation + selection handlers', () => {
+    const { mod } = loadModule();
+    const calls = [];
+    let mutationHandler = null;
+    const doc = { querySelectorAll() { return []; } };
+    const win = {
+        addEventListener(type, handler, capture) {
+            calls.push(['add', type, capture]);
+            assert.equal(typeof handler, 'function');
+        },
+        removeEventListener(type, handler, capture) {
+            calls.push(['remove', type, capture]);
+            assert.equal(typeof handler, 'function');
+        }
+    };
+    const runtime = mod.createChatStyleCommentsRuntime({
+        document: doc,
+        window: win,
+        requestAnimationFrame(fn) { fn(); },
+        addMutationRule(id, handler) {
+            calls.push(['addRule', id]);
+            mutationHandler = handler;
+        },
+        removeMutationRule(id) {
+            calls.push(['removeRule', id]);
+        },
+        featureId: 'chatStyleComments'
+    });
+
+    runtime.init();
+    assert.deepEqual(calls.slice(0, 2), [
+        ['add', 'selectstart', true],
+        ['addRule', 'chatStyleComments']
+    ]);
+    assert.equal(typeof mutationHandler, 'function');
+    mutationHandler();
+    runtime.destroy();
+    assert.deepEqual(calls.slice(-2), [
+        ['remove', 'selectstart', true],
+        ['removeRule', 'chatStyleComments']
+    ]);
 });
