@@ -430,34 +430,38 @@
             },
 
             _cachedApiKey: null,
+            _cachedApiKeyAt: 0,
+            _CACHE_TTL_MS: 10 * 60 * 1000,
             _getInnertubeApiKey() {
-                if (this._cachedApiKey) return this._cachedApiKey;
-                if (typeof document === 'undefined') return null;
-                // ISOLATED world: window.ytcfg is not accessible; parse from <script> tags.
+                const now = Date.now();
+                if (this._cachedApiKey && (now - this._cachedApiKeyAt) < this._CACHE_TTL_MS) return this._cachedApiKey;
+                if (typeof document === 'undefined') return this._cachedApiKey || null;
                 const scripts = document.querySelectorAll('script');
                 for (const s of scripts) {
                     const m = s.textContent.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
-                    if (m) { this._cachedApiKey = m[1]; return m[1]; }
+                    if (m) { this._cachedApiKey = m[1]; this._cachedApiKeyAt = now; return m[1]; }
                 }
-                return null;
+                return this._cachedApiKey || null;
             },
 
             _cachedClientVersion: null,
+            _cachedClientVersionAt: 0,
             _getClientVersion() {
-                if (this._cachedClientVersion) return this._cachedClientVersion;
-                if (typeof document === 'undefined') return null;
+                const now = Date.now();
+                if (this._cachedClientVersion && (now - this._cachedClientVersionAt) < this._CACHE_TTL_MS) return this._cachedClientVersion;
+                if (typeof document === 'undefined') return this._cachedClientVersion || null;
                 try {
                     const scripts = document.querySelectorAll('script');
                     for (const s of scripts) {
                         const text = s.textContent;
                         if (!text || !text.includes('INNERTUBE_CLIENT_VERSION')) continue;
                         const m = text.match(/"INNERTUBE_CLIENT_VERSION"\s*:\s*"(\d{1,2}\.\d{6,10}\.\d{1,2}\.\d{1,2})"/);
-                        if (m) { this._cachedClientVersion = m[1]; return m[1]; }
+                        if (m) { this._cachedClientVersion = m[1]; this._cachedClientVersionAt = now; return m[1]; }
                     }
                 } catch (_) {
                     // reason: script may be CSP-protected or not yet loaded; caller falls back to default
                 }
-                return null;
+                return this._cachedClientVersion || null;
             },
 
             _decodeHTMLEntities(text) {

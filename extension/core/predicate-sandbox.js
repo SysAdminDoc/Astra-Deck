@@ -214,8 +214,10 @@
                             if (hasUnsafeQuantifiers(patternArg.value)) {
                                 throw new PredicateError(`${method}() pattern rejected: nested quantifiers (ReDoS risk)`, t.pos);
                             }
-                            try { new RegExp(patternArg.value, args[1]?.value || ''); }
+                            let compiledRegex;
+                            try { compiledRegex = new RegExp(patternArg.value, args[1]?.value || ''); }
                             catch (e) { throw new PredicateError(`Invalid regex: ${e.message}`, t.pos); }
+                            return { kind: 'method', target: path, method, args, _compiledRegex: compiledRegex };
                         }
                         return { kind: 'method', target: path, method, args };
                     }
@@ -268,17 +270,11 @@
                     const target = readPath(ctx, node.target, -1);
                     if (target == null) return false;
                     const args = node.args.map(a => evaluate(a, ctx));
-                    if (node.method === 'test') {
+                    if (node.method === 'test' || node.method === 'match') {
                         if (typeof target !== 'string') return false;
                         try {
-                            const re = new RegExp(args[0], args[1] || '');
-                            return re.test(target);
-                        } catch { return false; }
-                    }
-                    if (node.method === 'match') {
-                        if (typeof target !== 'string') return false;
-                        try {
-                            const re = new RegExp(args[0], args[1] || '');
+                            const re = node._compiledRegex || new RegExp(args[0], args[1] || '');
+                            if (re.lastIndex) re.lastIndex = 0;
                             return re.test(target);
                         } catch { return false; }
                     }
