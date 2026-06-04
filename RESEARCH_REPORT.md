@@ -46,7 +46,9 @@ or maintainer action to confirm.
   `cobalt-fallback` diagnostic with origin-only endpoint context when Astra
   Downloader is offline; and a new long-session route/mutation stress test now
   pins shared observer count, scoped-rule early exits, capped diagnostic maps,
-  and listener/observer cleanup.
+  and listener/observer cleanup; and a pinned v1 full-profile settings fixture
+  now proves the 362-key settings schema migrates forward without unclassified
+  drops.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -103,6 +105,11 @@ or maintainer action to confirm.
   `node --test tests/long-session.test.js` (1 check), `npm run check`,
   `npm test` (632 checks), `npm run build`, `node sync-userscript.js`, and
   `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the settings migration fixture
+  batch: `node --check tests/settings-migration-roundtrip.test.js` and
+  `node --test tests/settings-migration-roundtrip.test.js` (2 checks),
+  `npm run check`, `npm test` (633 checks), `npm run build`,
+  `node sync-userscript.js`, and `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`
@@ -124,7 +131,7 @@ or maintainer action to confirm.
 Astra Deck is a mature, single-developer YouTube enhancement platform spanning a
 Manifest V3 extension (Chrome/Edge/Brave/Firefox 128+), a Tampermonkey/Violent-
 monkey userscript built from the same source, and a local Python/Flask + PyQt6 +
-yt-dlp companion downloader. [Verified] It carries a 354-key flat settings schema,
+yt-dlp companion downloader. [Verified] It carries a 362-key flat settings schema,
 27 `extension/core/` runtime modules, 11 peeled `extension/features/` modules, a
 28-surface capture-provenanced selector-pack system, 10 bundled UI locales, and a
 strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
@@ -133,7 +140,7 @@ deps audit, plus a build/release workflow). [Verified]
 The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
 against YouTube's high-velocity redesigns, (2) **store-policy / trust surface**
 from a broad permission and host set mitigated by profile-split artifacts,
-(3) **upgrade data-safety** for the 354-key schema, and (4) **version-surface confusion** —
+(3) **upgrade data-safety** for the 362-key schema, and (4) **version-surface confusion** —
 the product ships as 4.46.0 while the docs describe a "v5.0.0 foundation complete"
 and a v5/v6 plan.
 
@@ -167,7 +174,7 @@ Top opportunities (one-liners):
   diagnostic-log, policy-profile, selector-health, settings-schema 107 KB, etc.). [Verified]
 - `extension/features/` (11 peeled modules) and `extension/ytkit.js` (2.1 MB
   monolith) + `ytkit-main.js` MAIN-world bridge. [Verified]
-- `extension/default-settings.json` (354 keys). [Verified]
+- `extension/default-settings.json` (362 keys). [Verified]
 - `astra_downloader/` (Flask + PyQt6 + yt-dlp companion; loopback 9751 + 5
   fallbacks; bearer-token + Host-header allowlist per `docs/architecture.md`). [Verified]
 - `scripts/` (build, fixtures, i18n, storage audit, a11y/contrast audits,
@@ -251,7 +258,7 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 
 ## Quality & Friction Findings
 
-- **[High] Upgrade data-safety.** 354 flat keys + `unlimitedStorage`; the existing
+- **[High] Upgrade data-safety.** 362 flat keys + `unlimitedStorage`; the existing
   round-trip test does not load a pinned old-version blob → silent config loss on
   a botched migration is the top data-loss risk. → ROADMAP P0 migration test. [Verified]
 - **[High] Version-surface confusion.** Ship line 4.46.0 vs documented "v5.0.0

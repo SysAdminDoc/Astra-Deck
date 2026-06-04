@@ -386,13 +386,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Larger Bets
 
-- [ ] P0 — Standing migration test for the 354-key settings schema across versions
-  - Why: settings are 354 flat keys with `unlimitedStorage`; a botched
+- [x] P0 — Standing migration test for the 362-key settings schema across versions
+  - Why: settings are 362 flat keys with `unlimitedStorage`; a botched
     add/rename/remove silently drops or corrupts user config on upgrade. A
     round-trip test exists (`settings-migration-roundtrip.test.js`) but there is
     no test that loads a *pinned old-version settings blob* and asserts a clean,
     lossless migration forward — the highest data-loss risk in the product.
-  - Evidence: `extension/default-settings.json` (354 keys);
+  - Evidence: `extension/default-settings.json` (362 keys);
     `tests/settings-migration-roundtrip.test.js`;
     `scripts/check-settings.js`; `unlimitedStorage` permission. [Verified]
   - Touches: `tests/`, a `tests/fixtures/` pinned legacy-settings blob,
@@ -403,6 +403,12 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: `npm test` includes the migration fixture and fails on a simulated
     drop.
   - Complexity: M
+  - Status 2026-06-04: delivered. `tests/fixtures/settings-legacy-v1-full-profile.json`
+    now pins a v1 full-profile snapshot with every current default key, explicit
+    migration overrides, explicit future-default classifications, and retired
+    keys. `tests/settings-migration-roundtrip.test.js` loads the fixture and
+    proves each key is preserved, defaulted, overridden by migration, or
+    intentionally dropped.
 - [ ] P1 — Settings import/export with schema-validated round-trip and scrub
   - Why: power users moving across browsers (a real PocketTube differentiator is
     Google-Drive/Chrome-profile sync) need an explicit, local-first

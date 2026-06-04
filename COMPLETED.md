@@ -61,6 +61,10 @@ release-level details live in `CHANGELOG.md`.
 - Long-session route/mutation stress now has a deterministic regression test
   covering shared observer count, scoped-rule early exits, capped diagnostics,
   and route listener / observer cleanup.
+- Settings migration coverage now includes a pinned v1 full-profile fixture for
+  the 362-key settings schema, with explicit preserved/defaulted/overridden/
+  retired classifications so accidental upgrade-time setting drops fail in
+  tests.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
