@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 5 - 2026-06-04.
+> Last researched: Cycle 6 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -320,6 +320,14 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 6 - 2026-06-04)
+
+- [x] 🔬 `overlay-a11y-target-map-2026-06-04` - inspected
+  `scripts/audit-popup-a11y.js`, `scripts/check-contrast.js`,
+  `docs/screen-reader-smoke.md`, toast DOM, and in-page overlay render paths.
+  The WCAG overlay row now names the first-pass overlay targets and measurable
+  assertions instead of asking for a broad manual audit.
 
 ### Researcher Queue (Cycle 5 - 2026-06-04)
 
@@ -641,12 +649,35 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     (https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html), and
     Focus Appearance defines minimum visible focus area/contrast
     (https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html).
+    Local targets: `extension/core/toast-dom.js` and the inline fallback build
+    `.ytkit-global-toast`; `extension/ytkit.js` renders the download options
+    dialog, local downloader install prompt, transcript viewer panel,
+    transcript-search dialog, `videoNotes` panel, subscription groups toolbar /
+    digest panel, and download health/history panels.
     [Verified]
+  - First-pass assertions:
+    - Every dialog-like overlay has `role="dialog"` plus either `aria-label` or
+      `aria-labelledby`; modal overlays also set `aria-modal="true"` and own an
+      Escape close path.
+    - Every icon-only or close/action button has visible text or an `aria-label`.
+    - Focusable overlay controls have a `:focus-visible` rule and do not leave
+      hidden panels focusable.
+    - Overlay buttons, chips, and close affordances meet the WCAG 2.2 24x24 CSS
+      px target-size minimum through explicit size, padding, or spacing.
+    - Toasts keep `role="status"` / `aria-live="polite"` for informational
+      messages, `role="alert"` / assertive live regions for errors, focusable
+      actions, and no dialog-style announcement on auto-dismiss.
   - Touches: `scripts/`, `tests/`, overlay render paths in `features/*`.
-  - Acceptance: an automated check asserts overlay controls have accessible
-    names, focus order, ≥24px targets, and visible focus; a regression turns it
-    red.
-  - Verify: run the new audit against a rendered overlay fixture.
+  - Acceptance: `npm run audit:a11y` is generalized or paired with
+    `npm run audit:overlays` so the popup audit and overlay audit run in
+    `npm run check`. The overlay audit covers the targets above, emits a concise
+    per-overlay report, and fails on missing names, missing focus-visible rules,
+    invalid live-region semantics, or target-size regressions. If a target cannot
+    be statically rendered yet, the blocker and manual screen-reader line are
+    recorded in `docs/screen-reader-smoke.md`.
+  - Verify: run the new audit with one intentionally unlabeled close button, one
+    missing `:focus-visible` rule, and one sub-24px action target; each mutation
+    must turn the gate red.
   - Complexity: L
 - [x] P3 — Diagnostics export bundle for bug reports
   - Why: `core/diagnostic-log.js` and `selector-health.js` already collect
