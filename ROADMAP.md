@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 11 - 2026-06-04.
+> Last researched: Cycle 12 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,55 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 12 - 2026-06-04)
+
+- [x] 🔬 `dependency-review-enablement-2026-06-04` - inspected open
+  Dependabot PR #11, its failed `Validate / Dependency review` logs, repository
+  security-analysis API output, and current GitHub dependency graph /
+  dependency review documentation. Detailed notes live in
+  `docs/research-cycle-12-dependency-review-enablement.md`.
+- [ ] 🔬🤖🔧 P1 — Enable dependency graph before requiring Dependency review
+  - Why: branch protection now requires the core `Validate` jobs, and the
+    workflow contains a PR-only `Dependency review` job, but the first open
+    Dependabot PR that exercises it fails before reviewing any dependency diff.
+    The failure is a repository security-analysis setting gap, so legitimate
+    dependency-maintenance PRs can be blocked without an actionable vulnerable
+    dependency finding.
+  - Evidence: PR #11
+    (`ci(deps): bump actions/setup-python from 5 to 6`) has green `JS tests +
+    check gate`, `Python dependency audit`, and `Python downloader tests`
+    checks, but `gh run view 26950993002 --log-failed` reports
+    `Dependency review is not supported on this repository. Please ensure that
+    Dependency graph is enabled`. `gh api repos/SysAdminDoc/Astra-Deck --jq
+    "{private,security_and_analysis:.security_and_analysis}"` shows a public
+    repository with secret scanning enabled, Dependabot security updates
+    disabled, and no dependency-graph field in the returned security-analysis
+    block. GitHub docs state that dependency review becomes available when the
+    dependency graph is enabled, supports the same ecosystems as the dependency
+    graph, and that the dependency review action can fail PRs that introduce
+    vulnerable dependencies. The action README documents public-repository
+    support and branch-protection use for requiring the check. [Verified]
+  - Touches: GitHub repository Settings -> Code security and analysis, branch
+    protection required-check selection after the setting is fixed, and
+    `docs/repo-settings.md` to record the resulting policy.
+  - Acceptance: dependency graph and Dependabot alerts/security updates are
+    enabled for the repository where available, or the project records why the
+    setting cannot be enabled and temporarily removes or guards the
+    `Dependency review` check so dependency PRs are not blocked by platform
+    setup. PR #11 is rerun after the change and `Validate / Dependency review`
+    either succeeds or fails only with concrete vulnerable-dependency findings.
+    Branch protection keeps PR-only `Dependency review` separate from direct
+    push checks until a PR run proves the exact required-check behavior, and
+    `docs/repo-settings.md` records the chosen required contexts.
+  - Verify: `gh api repos/SysAdminDoc/Astra-Deck --jq
+    ".security_and_analysis"` shows dependency graph / Dependabot alert
+    enablement where GitHub exposes it; rerun PR #11's `Validate` workflow and
+    inspect the `Dependency review` job summary. Confirm
+    `gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_status_checks`
+    still requires only checks that run in the protected update path, or that
+    an active ruleset documents equivalent behavior.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 11 - 2026-06-04)
 
