@@ -20,15 +20,18 @@ or maintainer action to confirm.
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
   digest, Study / Work export, feature-definition i18n, and store-safe /
-  GitHub-full release artifact split are now represented in `ROADMAP.md`,
-  `extension/ytkit.js`, docs, the packager, and hardening tests. The
+  GitHub-full release artifact split, and monthly yt-dlp smoke CI are now
+  represented in `ROADMAP.md`, `extension/ytkit.js`, docs, the packager,
+  workflows, and hardening tests. The
   subscription implementation uses rendered-feed DOM heuristics, local
   last-visit data, and a 30-day local undo/staging window rather than a YouTube
   Data API unsubscribe path; the notes and study/work exports stay local-first
   with versioned JSON, Markdown, or CSV downloads; the settings-panel feature
   labels now resolve through the locale layer before falling back to inline
   English; the store-safe package now strips AI, Cobalt, and loopback host
-  grants while GitHub-full keeps the complete data-flow catalogue.
+  grants while GitHub-full keeps the complete data-flow catalogue; yt-dlp
+  bumps now run through exact Python package pins plus a bounded real-download
+  smoke workflow.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -36,6 +39,14 @@ or maintainer action to confirm.
   ZIP manifest inspection for store-safe/full host grants, and
   `node sync-userscript.js` all passed. The build emitted store-safe and
   GitHub-full Chrome ZIP/CRX plus Firefox ZIP/XPI artifacts for v4.46.0.
+- [Verified] Validation on 2026-06-04 after the monthly yt-dlp smoke batch:
+  `node --check tests/yt-dlp-smoke-workflow.test.js`,
+  `py -3.12 -m py_compile scripts/yt-dlp-smoke.py`,
+  `node --test tests/yt-dlp-smoke-workflow.test.js` (3 checks),
+  `py -3.12 -m pip install -r astra_downloader/requirements.txt`,
+  `py -3.12 scripts/yt-dlp-smoke.py` (downloaded `dQw4w9WgXcQ.mp4`, 3441508
+  bytes), `py -3.12 -m pytest astra_downloader` (117 tests), `npm run check`,
+  `npm test` (619 checks), and `npm run build` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`
@@ -83,6 +94,9 @@ Top opportunities (one-liners):
 ## Evidence Reviewed
 
 - `package.json` (v4.46.0, node ≥22, crx3 dep, full `check`/`test` scripts). [Verified]
+- `astra_downloader/requirements.txt` exact-pins `yt-dlp==2026.3.17` and
+  `curl_cffi==0.15.0` for the scheduled extractor smoke gate, while retaining
+  upper-major GUI/server dependency bounds. [Verified]
 - `extension/manifest.json` (MV3 v4.46.0, 4 permissions, 19 full-profile host
   origins, document_start MAIN + ISOLATED dual-world content scripts, live-chat
   excluded from the main scripts). [Verified]
@@ -96,8 +110,9 @@ Top opportunities (one-liners):
   fallbacks; bearer-token + Host-header allowlist per `docs/architecture.md`). [Verified]
 - `scripts/` (build, fixtures, i18n, storage audit, a11y/contrast audits,
   version/settings/no-eval checks, manifest-patch for Gecko). [Verified]
-- `.github/workflows/build.yml` + `validate.yml` (test + check gate, tag-driven
-  release with version-surface verification). [Verified]
+- `.github/workflows/build.yml`, `validate.yml`, and `yt-dlp-smoke.yml` (test +
+  check gate, tag-driven release with version-surface verification, and monthly
+  `workflow_dispatch` yt-dlp extractor smoke). [Verified]
 - `tests/` (19 spec files incl. hardening, selector-regression,
   settings-migration-roundtrip, userscript-parity). [Verified]
 - `docs/architecture.md`, `docs/cws-submission-checklist.md`,
@@ -204,8 +219,9 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 - **Error handling**: a custom `require-catch-reason` lint rule now spans
   `core/*.js` and `ytkit.js`; silent catches must carry a `reason:`. [Verified]
 - **Dependency health**: minimal npm deps (`crx3`, `eslint`); `npm audit`
-  gated in CI; yt-dlp is the highest-churn dependency (pinned with a smoke-test CI
-  gap, Existing Planned Work NEXT-1). [Verified]
+  gated in CI; yt-dlp is the highest-churn dependency and now has exact
+  package pins plus a monthly/manual smoke workflow that downloads a bounded
+  YouTube fixture before extractor bumps are trusted. [Verified]
 - **Testability**: 19 spec files including hardening (474 KB),
   selector-regression, and userscript-parity; in-page overlay a11y is not yet
   automated. [Verified]

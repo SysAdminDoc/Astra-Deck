@@ -6,9 +6,9 @@
 #   * We pin Node engines at >=22 (per package.json). Dependabot proposes
 #     bumps; CI's `npm test` + `npm run check` gates catch regressions
 #     before merge.
-#   * `astra_downloader/requirements.txt` carries upper-major pins
-#     (PyQt6<7, flask<4, requests<3, waitress<4) so Dependabot can't
-#     silently land a major bump.
+#   * `astra_downloader/requirements.txt` carries exact yt-dlp/curl_cffi smoke
+#     pins plus upper-major GUI/server pins (PyQt6<7, flask<4, requests<3,
+#     waitress<4) so Dependabot PRs have a real extractor gate.
 #   * GitHub Actions check covers the release workflow's pinned action
 #     versions (actions/checkout, actions/setup-node, actions/upload-artifact).
 #   * Weekly cadence keeps the noise floor manageable; the maintainer can
@@ -53,9 +53,9 @@ updates:
       - "downloader"
     commit-message:
       prefix: "deps(downloader)"
-    # requirements.txt upper-bounds (PyQt6<7, flask<4, requests<3,
-    # waitress<4) already block major churn. Dependabot only proposes
-    # minor/patch inside those.
+    # requirements.txt exact-pins yt-dlp/curl_cffi for the monthly smoke
+    # workflow and upper-bounds GUI/server dependencies. Let Dependabot
+    # propose yt-dlp/curl_cffi bumps; the smoke workflow gates them.
     ignore:
       - dependency-name: "PyQt6"
         update-types: ["version-update:semver-major"]

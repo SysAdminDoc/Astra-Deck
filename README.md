@@ -26,7 +26,7 @@
 ### Chrome / Edge / Brave
 
 **Option A — Load unpacked from ZIP:**
-1. Download `astra-deck-chrome-v*.zip` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+1. Download `astra-deck-store-safe-chrome-v*.zip` or `astra-deck-github-full-chrome-v*.zip` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Extract it to a permanent folder
 3. Open `chrome://extensions/`, enable **Developer mode**
 4. Click **Load unpacked** and select the extracted folder
@@ -40,7 +40,7 @@ The CRX is still attached for enterprise or tooling flows, but modern Chromium b
 
 ### Firefox
 
-1. Download `astra-deck-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+1. Download `astra-deck-store-safe-firefox-v*.xpi` or `astra-deck-github-full-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Open `about:addons`, click the gear icon, select **Install Add-on From File**
 3. Select the `.xpi` file
 
@@ -50,7 +50,7 @@ Requires Firefox 128+.
 
 A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then **[click here to install](https://github.com/SysAdminDoc/Astra-Deck/raw/refs/heads/main/YTKit.user.js)**.
 
-> Some features (SharedAudio, Return YouTube Dislike, SponsorBlock per-category, Cobalt downloads) are only available in the userscript. The extension uses a MediaDL-only download path.
+> SharedAudio remains userscript-only. Extension downloads use Astra Downloader first; the GitHub-full extension artifact can also expose the optional Cobalt fallback when the local companion is offline.
 
 ---
 
@@ -129,7 +129,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
-> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service.
+> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service. Store-safe artifacts stop there; GitHub-full artifacts can show the Cobalt fallback button when Astra Downloader is offline.
 
 ### PO Token provider (optional but recommended)
 
@@ -166,6 +166,12 @@ curl -fsSL https://deno.land/install.sh | sh
 (Or grab the installer from `https://deno.com/`.)
 
 Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
+
+The repo pins `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` in
+`astra_downloader/requirements.txt` for CI. The monthly/manual
+`.github/workflows/yt-dlp-smoke.yml` workflow installs those pins and runs a
+bounded media download through `scripts/yt-dlp-smoke.py` against a stable public
+YouTube fixture before Dependabot bumps are accepted.
 
 ### Comments
 
