@@ -2965,6 +2965,8 @@ async function importSettings(file) {
 // the prompt without manually editing storage.
 const MEDIADL_DISMISSED_KEY = 'ytkit_mediadl_prompt_dismissed';
 const reenableMediadlButton = $('#reenable-mediadl-btn');
+// v4.47.0 NF6: on-demand Astra Downloader companion self-update button.
+const updateCompanionButton = $('#update-companion-btn');
 // v4.47.0 NF18: on-demand yt-dlp self-update button.
 const updateYtdlpButton = $('#update-ytdlp-btn');
 
@@ -3079,6 +3081,48 @@ async function updateYtdlpNow() {
     } finally {
         updateYtdlpButton.removeAttribute('aria-busy');
         updateYtdlpButton.disabled = false;
+    }
+}
+
+// v4.47.0 NF6: on-demand Astra Downloader companion self-update.
+// Uses the same active-tab bridge as updateYtdlpNow because the content
+// script owns MediaDLManager discovery and the per-install auth token.
+async function updateCompanionNow() {
+    if (!updateCompanionButton) return;
+    updateCompanionButton.setAttribute('aria-busy', 'true');
+    updateCompanionButton.disabled = true;
+    try {
+        let tabs = [];
+        try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
+        catch (_) { /* reason: extension suspended or tabs API unavailable */ }
+        if (!tabs || tabs.length === 0) {
+            showStatus('Open a YouTube tab first — the popup needs it to reach the Astra Downloader.', 'error', 5200);
+            return;
+        }
+        const tab = tabs[0];
+        const result = await new Promise((resolve) => {
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_UPDATE_COMPANION' }, (r) => {
+                    void chrome.runtime.lastError;
+                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
+                });
+            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
+        });
+        if (result && result.ok) {
+            const current = result.current_version || '';
+            const latest = result.latest_version || '';
+            if (result.update_available === false || result.status === 'current') {
+                showStatus(`Astra Downloader already at v${latest || current || '?'}.`, 'success', 5200);
+            } else {
+                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting companion.`, 'success', 7200);
+            }
+        } else {
+            const err = (result && result.error) || 'Update failed.';
+            showStatus('Astra Downloader update failed — ' + err, 'error', 7200);
+        }
+    } finally {
+        updateCompanionButton.removeAttribute('aria-busy');
+        updateCompanionButton.disabled = false;
     }
 }
 
@@ -3443,6 +3487,9 @@ function installWheelScrolling() {
         // currently set in chrome.storage.local. Hidden otherwise — most
         // users will never see this.
         void refreshReenableMediadlVisibility();
+    }
+    if (updateCompanionButton) {
+        updateCompanionButton.addEventListener('click', () => { void updateCompanionNow(); });
     }
     if (updateYtdlpButton) {
         updateYtdlpButton.addEventListener('click', () => { void updateYtdlpNow(); });
