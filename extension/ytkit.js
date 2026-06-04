@@ -7186,7 +7186,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         border-radius: 12px !important;
                     }
                 `;
-                this._premiumInteractionStyleElement = injectStyle(premiumInteractionCss, this.id + '-premium-2', true);
+                const selectorSupportFallbackCss = `
+                    @supports selector(:has(*)) {
+                        #comments ytd-comment-engagement-bar #reply-dialog:not(:has(ytd-commentbox:not([hidden]))) {
+                            display: none !important;
+                            padding: 0 !important;
+                        }
+                    }
+
+                    @supports not selector(:has(*)) {
+                        #comments ytd-comment-engagement-bar #reply-dialog {
+                            display: none !important;
+                            padding: 0 !important;
+                        }
+
+                        #comments .ytkit-replying ytd-comment-engagement-bar #reply-dialog {
+                            display: block !important;
+                            padding: 10px 0 4px !important;
+                        }
+                    }
+                `;
+                this._premiumInteractionStyleElement = injectStyle(premiumInteractionCss + selectorSupportFallbackCss, this.id + '-premium-2', true);
 
                 this._commentSelectionSelectStartHandler = (e) => {
                     if (!this._isCommentTextSelectionTarget(e.target)) return;

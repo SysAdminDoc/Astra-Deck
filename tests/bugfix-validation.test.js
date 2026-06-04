@@ -1240,6 +1240,26 @@ test('chatStyleComments removes reply-composer underline chrome', () => {
         'chatStyleComments should clear reply composer box borders');
 });
 
+test('chatStyleComments fences :has reply-dialog selector with fallback CSS (EI-NEW1)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8');
+
+    const start = source.indexOf("id: 'chatStyleComments'");
+    const end = source.indexOf("id: 'sponsorBlock'");
+    assert.ok(start > -1 && end > start, 'chatStyleComments block should exist');
+
+    const block = source.slice(start, end);
+    assert.ok(block.includes('@supports selector(:has(*))'),
+        'chatStyleComments should fence the :has reply-dialog selector behind @supports selector');
+    assert.ok(block.includes('#reply-dialog:not(:has(ytd-commentbox:not([hidden])))'),
+        'chatStyleComments should keep the precise :has selector for capable browsers');
+    assert.ok(block.includes('@supports not selector(:has(*))'),
+        'chatStyleComments should provide a no-:has fallback branch');
+    assert.ok(block.includes('#comments .ytkit-replying ytd-comment-engagement-bar #reply-dialog'),
+        'chatStyleComments fallback should reopen reply dialogs via the existing .ytkit-replying class');
+});
+
 test('chatStyleComments keeps comment action controls on a single row', () => {
     const fs = require('fs');
     const path = require('path');
