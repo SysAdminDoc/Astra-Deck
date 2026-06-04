@@ -80,8 +80,10 @@ pre-consolidation research plans archived under `docs/archive/research/`.
     `features/chat-style-comments/index.js` with byte-pinned style builders,
     MV3/userscript load-order wiring, and monolith delegation with inline
     fallback CSS preserved.
-  - [ ] Extract the remaining `chatStyleComments` DOM observer and selection
-    listener ownership.
+  - [x] 2026-06-04: extracted the remaining `chatStyleComments` DOM observer,
+    selection guard, comment normalization, reply-dialog styling, mutation
+    scheduling, and teardown into the chat-style feature module with inline
+    monolith fallback retained.
   - [ ] Split `stickyVideo` into a feature module.
   - [ ] Split `hideVideosFromHome` into a feature module.
 - [ ] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
