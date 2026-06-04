@@ -352,8 +352,8 @@ means implemented/closed by the build lane.
     `secret_scanning_non_provider_patterns` and
     `secret_scanning_validity_checks` disabled. GitHub docs say secret scanning
     alerts should be evaluated for validity/metadata where supported and then
-    remediated or resolved with an explicit resolution such as revoked,
-    false-positive, used-in-tests, or wont-fix. [Verified]
+    remediated or resolved with an explicit REST API resolution enum such as
+    `revoked`, `false_positive`, `used_in_tests`, or `wont_fix`. [Verified]
   - Touches: GitHub Security -> Secret scanning alert 1, Google Cloud/API key
     owner action if the key is real, current source/generated userscript files
     if the embedded key must be removed or replaced, and `docs/repo-settings.md`

@@ -113,8 +113,8 @@ Relevant source facts:
 - Validity checks help prioritize active secrets where supported.
 - Non-provider patterns must be enabled separately for repositories/accounts
   where that setting is available.
-- GitHub's REST API supports resolving alerts with explicit resolutions such as
-  revoked, false-positive, used-in-tests, or wont-fix.
+- GitHub's REST API supports resolving alerts with explicit resolution enums
+  such as `revoked`, `false_positive`, `used_in_tests`, or `wont_fix`.
 
 ## Current Gap
 
