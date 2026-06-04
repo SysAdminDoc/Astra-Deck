@@ -1871,7 +1871,7 @@
             }),
             Object.freeze({
                 origin: 'https://returnyoutubedislikeapi.com',
-                purpose: 'Return YouTube Dislike ratio + dislike counts.',
+                purpose: 'Return YouTube Dislike ratio + estimated dislike counts.',
                 requiredByFeatures: ['returnDislike', 'returnDislikeOnCards'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
@@ -18936,11 +18936,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'returnYoutubeDislike',
             name: 'Return YouTube Dislike',
-            description: 'Restore dislike counts and like/dislike ratio bar using the Return YouTube Dislike API',
+            description: 'Restore estimated dislike counts and like/dislike ratio bar using the Return YouTube Dislike API',
             group: 'Watch Page',
             icon: 'thumbs-down',
             pages: [PageTypes.WATCH],
             _styleEl: null,
+
+            _estimateDisclosureText() {
+                return 'Return YouTube Dislike counts are estimates after YouTube removed public dislike totals; low-traffic videos can be less accurate.';
+            },
 
             async _fetchDislikes(videoId) {
                 try {
@@ -18980,10 +18984,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!dislikeBtn) return;
                 const countEl = document.createElement('span');
                 countEl.className = 'ytkit-dislike-count';
-                countEl.textContent = this._formatCount(data.dislikes);
+                const countLabel = this._formatCount(data.dislikes);
+                const estimateCopy = this._estimateDisclosureText();
+                countEl.textContent = countLabel;
+                countEl.title = estimateCopy;
+                countEl.setAttribute('aria-label', `${countLabel} estimated dislikes. ${estimateCopy}`);
                 countEl.style.cssText = 'margin-left:4px;font-size:12px;color:rgba(255,255,255,0.7);';
                 dislikeBtn.parentElement.style.position = dislikeBtn.parentElement.style.position || 'relative';
                 dislikeBtn.parentElement.appendChild(countEl);
+                const estimateEl = document.createElement('span');
+                estimateEl.className = 'ytkit-dislike-estimate';
+                estimateEl.textContent = 'est.';
+                estimateEl.title = estimateCopy;
+                estimateEl.setAttribute('aria-label', estimateCopy);
+                dislikeBtn.parentElement.appendChild(estimateEl);
                 // Add ratio bar below like/dislike buttons
                 const segmented = dislikeBtn.closest('ytd-segmented-like-dislike-button-renderer, .YtSegmentedLikeDislikeButtonViewModelHost');
                 if (segmented && !segmented.querySelector('.ytkit-ratio-bar')) {
@@ -18991,6 +19005,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const likePercent = total > 0 ? ((data.likes / total) * 100).toFixed(1) : 100;
                     const bar = document.createElement('div');
                     bar.className = 'ytkit-ratio-bar';
+                    bar.title = `Like ratio uses estimated Return YouTube Dislike counts. ${estimateCopy}`;
                     bar.style.cssText = `width:100%;height:2px;margin-top:4px;border-radius:1px;background:rgba(255,255,255,0.15);overflow:hidden;`;
                     const fill = document.createElement('div');
                     fill.style.cssText = `width:${likePercent}%;height:100%;background:#3ea6ff;border-radius:1px;`;
@@ -19001,14 +19016,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                this._styleEl = injectStyle('.ytkit-ratio-bar { pointer-events: none; }', this.id, true);
+                this._styleEl = injectStyle('.ytkit-ratio-bar { pointer-events: none; }.ytkit-dislike-estimate{margin-left:4px;font:500 10px/1 system-ui;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}', this.id, true);
                 setTimeout(() => this._apply(), 2000);
                 addNavigateRule('ryd', () => setTimeout(() => this._apply(), 2500));
             },
             destroy() {
                 removeNavigateRule('ryd');
                 this._styleEl?.remove(); this._styleEl = null;
-                document.querySelectorAll('.ytkit-dislike-count, .ytkit-ratio-bar').forEach(el => el.remove());
+                document.querySelectorAll('.ytkit-dislike-count, .ytkit-dislike-estimate, .ytkit-ratio-bar').forEach(el => el.remove());
             }
         },
         {

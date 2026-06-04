@@ -2172,7 +2172,7 @@
     "message": "Return YouTube Dislike"
   },
   "feature_returnDislike_desc": {
-    "message": "Restore the dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
+    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
   },
   "feature_antiTranslateAudioTrack_name": {
     "message": "Anti-Translate Audio Track"
