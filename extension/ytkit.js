@@ -8410,7 +8410,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _isActive: false,         // overlay is mounted
             _entering: false,
             _dismissed: false,        // user explicitly closed split — block re-expand until nav
-            _chatWatcherObs: null,    // observer for late chat frame insertion
+            _chatObserver: null,      // single observer for late chat frame insertion
             _lastVideoId: null,
             _splitWrapper: null,
             _navRuleId: '_theaterSplit',
@@ -8434,7 +8434,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _fullscreenOverlayStash: null, // saved visibility for _positionedEls during native fullscreen
             _playerResizeObs: null,
             _playerResizeDebounceTimer: null,
-            _chatWatcherStopTimer: null,
+            _chatObserverTimer: null,
             _scrollToCommentsTimer: null,
             _scrollToCommentsIdle: null,
             _expandFallbackTimer: null,
@@ -9518,61 +9518,90 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             // Position chat element over the right split panel
             _setupChat(chatEl, rightPct, top, height) {
                 if (!chatEl) { this._waitForChat(rightPct, top, height); return; }
+                this._positionChat(chatEl, rightPct, top, height);
+            },
+
+            _positionChat(chatEl, rightPct, top, height) {
                 this._positionOverRight(chatEl, rightPct, top, height);
                 chatEl.removeAttribute('collapsed');
                 this._setStyles(chatEl, {width:`calc(${rightPct}% - 2px)`,padding:'0 8px 0 0','border-radius':'0'});
                 this._forceChatFill(chatEl);
             },
 
+            _prepareSecondaryForChat() {
+                const sec = document.querySelector('#secondary');
+                if (!sec) return;
+                sec.style.display = '';
+                sec.style.setProperty('display', 'block', 'important');
+                sec.style.setProperty('pointer-events', 'none', 'important');
+                sec.dataset.ytkitSplitHidden = '1';
+                const related = sec.querySelector('#related');
+                if (related) { related.dataset.ytkitSplitHidden = '1'; related.style.display = 'none'; }
+            },
+
+            _stopChatObserver() {
+                clearTimeout(this._chatObserverTimer);
+                this._chatObserverTimer = null;
+                this._chatObserver?.disconnect();
+                this._chatObserver = null;
+            },
+
+            _handleChatFound(chatEl, options = {}) {
+                if (!chatEl || !this._isActive) return;
+                let detectedType = VideoTypeDetector.refresh();
+                if (detectedType === 'standard') detectedType = 'live';
+                if (detectedType === 'live' || detectedType === 'vod') {
+                    this._videoType = detectedType;
+                    this._prepareSecondaryForChat();
+                }
+                if (!options.position || !this._isSplit) {
+                    DebugManager.log('Theater', `Late chat detected, reclassified as ${this._videoType}`);
+                    return;
+                }
+
+                let chatTop = options.topOffset;
+                let chatHeight = options.heightStr;
+                if (this._videoType === 'live') {
+                    const liveHeaderTop = this._ensureSplitLiveHeader(options.rightPct);
+                    chatTop = `${liveHeaderTop}px`;
+                    chatHeight = `calc(100vh - ${liveHeaderTop}px)`;
+                }
+                this._positionChat(chatEl, options.rightPct, chatTop, chatHeight);
+                if (!this._scrollTarget) this._scrollTarget = chatEl;
+                if (this._videoType === 'vod') {
+                    chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                    const below = this._getBelow();
+                    if (below && below.style.getPropertyValue('top') === '0') {
+                        below.style.setProperty('top', '45vh', 'important');
+                        below.style.setProperty('height', '55vh', 'important');
+                    }
+                }
+                DebugManager.log('Theater', 'Late chat frame found and positioned');
+            },
+
+            _watchForChat(options = {}) {
+                this._stopChatObserver();
+                const existing = this._getChatEl();
+                if (existing) { this._handleChatFound(existing, options); return; }
+                this._chatObserver = new MutationObserver(() => {
+                    const chatEl = this._getChatEl();
+                    if (!chatEl) return;
+                    this._stopChatObserver();
+                    this._handleChatFound(chatEl, options);
+                });
+                this._chatObserver.observe(document.body, { childList: true, subtree: true });
+                this._chatObserverTimer = setTimeout(() => this._stopChatObserver(), options.timeoutMs || 10000);
+            },
+
             // Wait for chat frame via MutationObserver (replaces 10s polling loop)
             _waitForChat(rightPct, topOffset, heightStr) {
-                const self = this;
-                // Clean up any prior pending observer + safety timeout
-                if (this._pendingChatObs) { this._pendingChatObs.disconnect(); this._pendingChatObs = null; }
-                if (this._chatSafetyTimeout) { clearTimeout(this._chatSafetyTimeout); this._chatSafetyTimeout = null; }
-                let _chatObs = null;
-                const _onFound = (chatEl) => {
-                    if (_chatObs) { _chatObs.disconnect(); _chatObs = null; }
-                    self._pendingChatObs = null;
-                    if (!self._isSplit || !self._isActive) return;
-                    self._videoType = VideoTypeDetector.refresh();
-                    if (self._videoType === 'standard') self._videoType = 'live';
-                    let chatTop = topOffset;
-                    let chatHeight = heightStr;
-                    if (self._videoType === 'live') {
-                        const liveHeaderTop = self._ensureSplitLiveHeader(rightPct);
-                        chatTop = `${liveHeaderTop}px`;
-                        chatHeight = `calc(100vh - ${liveHeaderTop}px)`;
-                    }
-                    self._positionOverRight(chatEl, rightPct, chatTop, chatHeight);
-                    chatEl.removeAttribute('collapsed');
-                    chatEl.style.setProperty('width', `calc(${rightPct}% - 2px)`, 'important');
-                    chatEl.style.setProperty('padding', '0 8px 0 0', 'important');
-                    chatEl.style.setProperty('border-radius', '0', 'important');
-                    self._forceChatFill(chatEl);
-                    if (!self._scrollTarget) self._scrollTarget = chatEl;
-                    if (self._videoType === 'vod') {
-                        chatEl.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
-                        const below = self._getBelow();
-                        if (below && below.style.getPropertyValue('top') === '0') {
-                            below.style.setProperty('top', '45vh', 'important');
-                            below.style.setProperty('height', '55vh', 'important');
-                        }
-                    }
-                    DebugManager.log('Theater', 'Late chat frame found and positioned');
-                };
-                // Check immediately
-                const existing = this._getChatEl();
-                if (existing) { _onFound(existing); return; }
-                // Observe for chat frame insertion (faster + less CPU than polling)
-                _chatObs = new MutationObserver(() => {
-                    const chatEl = self._getChatEl();
-                    if (chatEl) _onFound(chatEl);
+                this._watchForChat({
+                    position: true,
+                    rightPct,
+                    topOffset,
+                    heightStr,
+                    timeoutMs: 10000
                 });
-                _chatObs.observe(document.body, { childList: true, subtree: true });
-                this._pendingChatObs = _chatObs;
-                // Safety timeout: disconnect after 10s (managed so destroy() can cancel it)
-                this._chatSafetyTimeout = setTimeout(() => { this._chatSafetyTimeout = null; if (_chatObs) { _chatObs.disconnect(); _chatObs = null; self._pendingChatObs = null; } }, 10000);
             },
 
             // ── Build the fixed overlay (video full-width, right panel hidden) ──
@@ -9882,41 +9911,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 // Watch for late chat frame insertion — if we mounted as 'standard'
-                // but a chat frame appears later (SPA race), reclassify and un-hide #secondary
+                // but a chat frame appears later (SPA race), reclassify and un-hide #secondary.
+                // The same lifecycle also handles split-open positioning from _waitForChat().
                 if (this._videoType === 'standard' && !this._getChatEl()) {
-                    this._chatWatcherObs?.disconnect();
-                    clearTimeout(this._chatWatcherStopTimer);
-                    this._chatWatcherStopTimer = null;
-                    this._chatWatcherObs = new MutationObserver(() => {
-                        const chatEl = this._getChatEl();
-                        if (!chatEl || !this._isActive) return;
-                        this._chatWatcherObs.disconnect();
-                        this._chatWatcherObs = null;
-                        clearTimeout(this._chatWatcherStopTimer);
-                        this._chatWatcherStopTimer = null;
-                        // Reclassify video type
-                        const newType = VideoTypeDetector.refresh();
-                        if (newType === 'live' || newType === 'vod') {
-                            this._videoType = newType;
-                            // Un-hide #secondary so chat is accessible
-                            const sec2 = document.querySelector('#secondary');
-                            if (sec2) {
-                                sec2.style.display = '';
-                                sec2.style.setProperty('display', 'block', 'important');
-                                sec2.style.setProperty('pointer-events', 'none', 'important');
-                                const related = sec2.querySelector('#related');
-                                if (related) { related.dataset.ytkitSplitHidden='1'; related.style.display='none'; }
-                            }
-                            DebugManager.log('Theater', `Late chat detected, reclassified as ${newType}`);
-                        }
-                    });
-                    this._chatWatcherObs.observe(document.body, { childList: true, subtree: true });
-                    // Safety: stop watching after 15s
-                    this._chatWatcherStopTimer = setTimeout(() => {
-                        this._chatWatcherStopTimer = null;
-                        this._chatWatcherObs?.disconnect();
-                        this._chatWatcherObs = null;
-                    }, 15000);
+                    this._watchForChat({ position: false, timeoutMs: 15000 });
                 }
 
                 // Masthead hidden via CSS class added in _activate()
@@ -10133,7 +10131,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const divider = wrapper.querySelector('#ytkit-split-divider');
                 const below   = this._getBelow();
                 const chatEl  = this._getChatEl();
-                if (chatEl) this._videoType = VideoTypeDetector.refresh();
+                if (chatEl) {
+                    const detectedType = VideoTypeDetector.refresh();
+                    this._videoType = detectedType === 'standard' ? 'live' : detectedType;
+                }
                 const type    = this._videoType;
                 document.documentElement.classList.toggle('ytkit-split-live', type === 'live');
 
@@ -10361,8 +10362,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._resizeTimer = null;
                 clearTimeout(this._initResizeTimer);
                 this._initResizeTimer = null;
-                clearTimeout(this._chatWatcherStopTimer);
-                this._chatWatcherStopTimer = null;
+                this._stopChatObserver();
                 clearTimeout(this._expandFallbackTimer);
                 this._expandFallbackTimer = null;
                 clearTimeout(this._postExpandButtonsTimer);
@@ -10375,8 +10375,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     cancelIdleCallback(this._scrollToCommentsIdle);
                 }
                 this._scrollToCommentsIdle = null;
-                this._chatWatcherObs?.disconnect();
-                this._chatWatcherObs = null;
                 this._restoreSplitActionDock();
                 this._stopSplitAutoscroll();
 
@@ -13178,8 +13176,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._unmount();
                 this._restoreSplitActionDock();
-                if (this._pendingChatObs) { this._pendingChatObs.disconnect(); this._pendingChatObs = null; }
-                if (this._chatSafetyTimeout) { clearTimeout(this._chatSafetyTimeout); this._chatSafetyTimeout = null; }
+                this._stopChatObserver();
                 this._lastVideoId = null;
                 this._styleEl?.remove();
                 this._splitMetaStyleEl?.remove();
@@ -43896,4 +43893,3 @@ body.ytkit-panel-open #ytkit-settings-panel {
         window.addEventListener('DOMContentLoaded', main, { once: true });
     }
 })();
-

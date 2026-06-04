@@ -29,8 +29,12 @@ pre-consolidation research plans archived under `docs/archive/research/`.
 
 ### Polish And Parity
 
-- [ ] **P2 / L — `stickyVideo` unify chat observer lifecycle (NF32)**: merge the
+- [x] **P2 / L — `stickyVideo` unify chat observer lifecycle (NF32)**: merge the
   duplicate chat watcher paths into one predictable init/destroy lifecycle.
+  _(Delivered 2026-06-04: `_pendingChatObs` / `_chatWatcherObs` were replaced
+  by one `_chatObserver` + `_chatObserverTimer` lifecycle, with `_waitForChat`,
+  standard-page late-chat detection, `_unmount`, and `destroy` routed through
+  shared helpers.)_
 - [ ] **P2 / M — `subscriptionGroups` per-group sort persistence (NF31)**: move
   sort mode from a global setting to per-group state.
 - [ ] **P3 / M — `chatStyleComments` selector fallbacks (EI-NEW1)**: add
@@ -71,6 +75,54 @@ pre-consolidation research plans archived under `docs/archive/research/`.
 - [ ] **P3 / M — Study/work mode export to Markdown/CSV**.
 - [ ] **P3 / M — i18n feature-definition labels out of `ytkit.js` (EI6)**.
 - [ ] **P3 / M — Store-safe vs GitHub-full separate build artifacts**.
+
+### Hardening And Cross-Browser (folded 2026-06-03)
+
+These items were triaged out of the local 2026-04-24 factory-loop research pass
+(NEXT tier) and confirmed still-actionable against current code; the already
+shipped NOW/NEXT items from that pass are recorded in `COMPLETED.md`.
+
+- [ ] **P2 / M — Monthly yt-dlp version-bump + smoke-test CI (research NEXT-1)**:
+  Dependabot already opens dependency PRs, but there is no automated download
+  smoke test to gate a yt-dlp bump. Add a `workflow_dispatch`/scheduled job that
+  installs the pinned `yt-dlp`, runs a minimal extract/download against a known
+  stable video, and fails the bump on regression.
+  - Why: yt-dlp is the highest-churn dependency; silent extractor breakage ships
+    a non-functional downloader.
+  - Touches: `.github/workflows/`, `astra_downloader/requirements.txt`.
+  - Acceptance: a scheduled/dispatch workflow exercises a real yt-dlp extract and
+    reports pass/fail; a deliberately-broken pin turns the job red.
+  - Source: docs/research/iter-1-scored.md (NEXT-1), PHASE-2-5-SUMMARY.md
+- [ ] **P2 / M — Selector-resilience test harness over `mhtml/` fixtures
+  (research NEXT-5)**: `scripts/build-selector-fixtures.js` + `npm test` already
+  consume fixtures; extend this into a standing resilience harness that asserts
+  every critical selector pack resolves against the captured DOM and flags drift.
+  - Why: runtime DOM churn is the top carried risk; a fixture-backed harness
+    catches selector rot before users do.
+  - Touches: `scripts/build-selector-fixtures.js`, `tests/`, `mhtml/`.
+  - Acceptance: a test fails when a critical selector no longer matches its
+    captured fixture; coverage spans the live-chat and liquid-glass packs.
+  - Source: docs/research/iter-1-scored.md (NEXT-5)
+- [ ] **P2 / S — Firefox 149 pre-flight `scripting.executeScript` audit
+  (research NEXT-6)**: grep extension surfaces for `moz-extension://` injection
+  targets and confirm MV3 `scripting` behavior on Firefox Nightly before the
+  next AMO submission.
+  - Why: Firefox MV3 `scripting.executeScript` has diverged from Chromium; a
+    pre-flight catches injection-target breakage cheaply.
+  - Touches: `extension/background.js`, `extension/*.js`, `docs/`.
+  - Acceptance: an audit note records Firefox-Nightly behavior of every
+    `executeScript` call site; any `moz-extension://` divergence is filed.
+  - Source: docs/research/iter-1-scored.md (NEXT-6, borderline NOW)
+- [ ] **P2 / S — Allowlist yt-dlp flags at the Flask boundary (research,
+  deferred)**: the downloader builds yt-dlp args server-side with no user-input
+  passthrough; add an explicit flag allowlist as defense-in-depth so a future
+  feature cannot widen the surface unintentionally.
+  - Why: complements the yt-dlp pin; makes the no-passthrough invariant explicit
+    and enforced rather than incidental.
+  - Touches: `astra_downloader/astra_downloader.py`.
+  - Acceptance: yt-dlp invocation rejects any flag outside a reviewed allowlist;
+    a test asserts an unexpected flag is refused.
+  - Source: docs/research/iter-1-scored.md (under-consideration / NEXT)
 
 ### Carried Risks And Questions
 

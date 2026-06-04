@@ -11,7 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { sources, config } = require('../helpers/source');
+const { sources, config, extractFeatureBlock } = require('../helpers/source');
 
 test('Theater Split userscript companion is present at v1.0.7 or later', () => {
     // The v3.20.3 H8 hardening pass closed a divider-drag SPA-nav
@@ -34,6 +34,29 @@ test('stickyVideo + scoped CSS rules exist in the extension build', () => {
     // check that the inline path is still wired.
     assert.match(sources.ytkit, /stickyVideo/,
         'stickyVideo feature flag must exist in ytkit.js');
+});
+
+test('stickyVideo chat observer lifecycle uses one teardown path (NF32)', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+
+    assert.doesNotMatch(block, /_pendingChatObs|_chatSafetyTimeout|_chatWatcherObs|_chatWatcherStopTimer/,
+        'stickyVideo must not reintroduce separate pending-chat and late-chat observer state');
+    assert.match(block, /_chatObserver:\s*null/,
+        'stickyVideo must declare the single chat observer slot');
+    assert.match(block, /_chatObserverTimer:\s*null/,
+        'stickyVideo must declare the single chat observer safety timer');
+    assert.match(block, /_stopChatObserver\(\)\s*\{[\s\S]*this\._chatObserver\?\.disconnect\(\)[\s\S]*this\._chatObserver\s*=\s*null/,
+        'stickyVideo must have one idempotent observer cleanup helper');
+    assert.match(block, /_watchForChat\(options = \{\}\)\s*\{[\s\S]*this\._stopChatObserver\(\)[\s\S]*new MutationObserver[\s\S]*this\._chatObserver\.observe\(document\.body,\s*\{ childList: true, subtree: true \}\)[\s\S]*setTimeout\(\(\) => this\._stopChatObserver\(\), options\.timeoutMs \|\| 10000\)/,
+        'stickyVideo must route all chat watches through _watchForChat');
+    assert.match(block, /_waitForChat\(rightPct, topOffset, heightStr\)\s*\{[\s\S]*this\._watchForChat\(\{[\s\S]*position: true[\s\S]*timeoutMs: 10000[\s\S]*\}\)/,
+        '_waitForChat must use the shared observer lifecycle for split-open positioning');
+    assert.match(block, /this\._watchForChat\(\{ position: false, timeoutMs: 15000 \}\)/,
+        'standard-page late-chat reclassification must use the shared observer lifecycle');
+    assert.match(block, /_unmount\(keepClass\)\s*\{[\s\S]*this\._stopChatObserver\(\)/,
+        '_unmount must stop the shared chat observer');
+    assert.match(block, /destroy\(\)\s*\{[\s\S]*this\._stopChatObserver\(\)/,
+        'destroy must stop the shared chat observer even when no overlay is active');
 });
 
 test('abortDividerDrag exists in the userscript companion (H8)', () => {

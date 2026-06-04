@@ -497,8 +497,7 @@ Documented so future audits don't re-raise these.
 |-------|---------|
 | Settings-init race: TIER 1 rAF runs before settings load | `await preloadExtensionState()` at `ytkit.js:364` completes before `main()` is called. `settingsManager.load()` is synchronous against the preloaded cache. |
 | `DiagnosticLog.record()` crashes on early init | Guard `if (!appState?.settings) return;` exists at `ytkit.js:233`. |
-| Theater-split `_chatWatcherObs` leaks on destroy | `destroy()` at `ytkit.js:7212` disconnects and nulls the observer. |
-| Theater-split `_chatObs` local leaks | Scoped to a closure and cleared by a 10 s safety timeout at `ytkit.js:6454` plus cleanup at `ytkit.js:6423`. |
+| Theater-split chat observer lifecycle leaks on destroy | NF32 unified the pending-chat and late-chat paths into `_chatObserver` + `_chatObserverTimer`; `_unmount()` and `destroy()` both call `_stopChatObserver()`. |
 | Resume-playback `_saveInterval` orphans on SPA nav | `destroy()` at `ytkit.js:14944` clears the interval; `init()` at `ytkit.js:14935` guards against stacking. Same pattern at `ytkit.js:11818-11825` for watchProgress. |
 | Video-hider click-listener stacking | `_processVideoElement()` early-returns if `.ytkit-video-hide-btn` already exists in the thumbnail (`ytkit.js:10284`), preventing duplicate listeners. |
 | Options JSON textarea needs debounce | Import is file-based (`file.text()` at `options.js:691`), not a live textarea. |
