@@ -669,11 +669,58 @@ async function loadSettingsImportCatalog() {
 
 function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, source) {
     const migrated = migrateImportedSettings(settings, settingsVersion, source);
+    const validated = validateSettingsForBackupImport(migrated);
     return sanitizeSettingsObject({
         ...defaults,
-        ...migrated,
+        ...validated,
         _settingsVersion: settingsVersion
     });
+}
+
+function formatSchemaValidationError(prefix, validation) {
+    const errors = validation && Array.isArray(validation.errors) ? validation.errors : [];
+    const sample = errors.slice(0, 4).join('; ');
+    const suffix = errors.length > 4 ? `; +${errors.length - 4} more` : '';
+    return `${prefix}: ${sample || 'schema validation failed'}${suffix}`;
+}
+
+function validateSettingsForBackupImport(settings) {
+    const policy = ensurePolicyProfile();
+    if (!policy || typeof policy.validateSettingsSnapshot !== 'function') {
+        return sanitizeSettingsObject(settings);
+    }
+    const validation = policy.validateSettingsSnapshot(settings);
+    if (!validation.ok) {
+        throw new Error(formatSchemaValidationError('Settings import rejected', validation));
+    }
+    return sanitizeSettingsObject(validation.settings);
+}
+
+function buildSchemaValidatedExportSettings(settings) {
+    const source = sanitizeSettingsObject(settings);
+    const policy = ensurePolicyProfile();
+    if (!policy || typeof policy.buildExportSnapshot !== 'function') {
+        return {
+            settings: source,
+            effectiveProfile: 'unknown',
+            scrubbedKeys: [],
+            defaultedKeys: []
+        };
+    }
+    const snapshot = policy.buildExportSnapshot(source, { schemaOnly: true });
+    if (typeof policy.validateSettingsSnapshot === 'function') {
+        const validation = policy.validateSettingsSnapshot(snapshot.settings);
+        if (!validation.ok) {
+            throw new Error(formatSchemaValidationError('Settings export rejected', validation));
+        }
+        snapshot.settings = sanitizeSettingsObject(validation.settings);
+    }
+    return {
+        settings: snapshot.settings,
+        effectiveProfile: snapshot.effective || 'unknown',
+        scrubbedKeys: Array.isArray(snapshot.scrubbedKeys) ? snapshot.scrubbedKeys : [],
+        defaultedKeys: Array.isArray(snapshot.defaultedKeys) ? snapshot.defaultedKeys : []
+    };
 }
 
 function formatBytes(bytes) {
@@ -2815,15 +2862,21 @@ function buildExportData(allStorage) {
     );
     const hiddenVideos = sanitizeImportedHiddenVideos(allStorage[STORAGE_KEYS.hiddenVideos]);
     const allowedVideos = sanitizeImportedVideoIdList(allStorage[STORAGE_KEYS.allowedVideos], IMPORT_LIMITS.allowedVideos);
-    const settings = sanitizeSettingsObject(mergedSettings);
+    const exportSettings = buildSchemaValidatedExportSettings(mergedSettings);
     return {
-        settings,
+        astraDeckBackup: true,
+        settings: exportSettings.settings,
         hiddenVideos,
         filteredVideoPosts: hiddenVideos,
         allowedVideos,
         blockedChannels: sanitizeImportedBlockedChannels(allStorage[STORAGE_KEYS.blockedChannels]),
         bookmarks: sanitizeImportedBookmarks(allStorage[STORAGE_KEYS.bookmarks]),
-        exportVersion: 3,
+        exportVersion: 4,
+        backupSchemaVersion: 1,
+        settingsSchemaVersion: SETTINGS_VERSION_FALLBACK,
+        settingsProfile: exportSettings.effectiveProfile,
+        scrubbedSettings: exportSettings.scrubbedKeys,
+        profileDefaultedSettings: exportSettings.defaultedKeys,
         exportDate: new Date().toISOString(),
         astraDeckVersion: manifestVersion,
         ytkitVersion: manifestVersion

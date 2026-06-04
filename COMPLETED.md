@@ -65,6 +65,10 @@ release-level details live in `CHANGELOG.md`.
   the 362-key settings schema, with explicit preserved/defaulted/overridden/
   retired classifications so accidental upgrade-time setting drops fail in
   tests.
+- Settings backups now use a schema-validated `exportVersion: 4` payload in both
+  the popup and in-page settings panel, with policy-profile scrubbing,
+  schema-only export, credential omission, and import rejection for unknown or
+  shape-mismatched settings.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
