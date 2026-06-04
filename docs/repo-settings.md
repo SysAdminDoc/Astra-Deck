@@ -36,3 +36,27 @@ Current policy:
 - Keep required conversation resolution enabled.
 - Keep repository rulesets empty unless replacing this classic branch-protection
   rule with an equivalent active ruleset.
+
+## GitHub Actions Permissions
+
+Current snapshot from 2026-06-04:
+
+- Actions enabled: yes.
+- Allowed actions policy: `all`.
+- Full-length SHA pinning required: no.
+- Default `GITHUB_TOKEN` workflow permissions: read.
+- Workflow-created PR approvals: disabled.
+
+Target policy after workflow refs are SHA-clean:
+
+- Change allowed actions to `selected`.
+- Allow GitHub-owned actions.
+- Keep broad verified-creator allowance disabled.
+- Add explicit `patterns_allowed` entries only for deliberate non-GitHub-owned
+  actions or reusable workflows.
+- Require full-length SHA pinning for actions.
+
+Do not enable the SHA-pinning policy before all external `uses:` entries are
+pinned to full 40-character commit SHAs; otherwise existing validation and
+release workflows can be blocked by repository policy before the workflow patch
+lands.
