@@ -6,8 +6,10 @@ research summary; actionable items live in [ROADMAP.md](ROADMAP.md) under
 
 - `docs/archive/research/RESEARCH_FEATURE_PLAN.md`
 - `docs/archive/research/RESEARCH_FEATURE_PLAN_PASS3.md`
-- `docs/archive/roadmap-dossier-2026-05-21.md` (the legacy v5.0.0 → v6.0.0 product
-  plan, competitive matrix, feature catalog, and technical reconnaissance)
+- `docs/archive/roadmap-dossier-2026-05-21.md` (the legacy internal
+  planning-track dossier labelled v5.0.0 -> v6.0.0: product plan, competitive
+  matrix, feature catalog, and technical reconnaissance; not the shipped
+  product-version line, which currently agrees at v4.46.0)
 
 Claim labels: [Verified] = read in-tree or confirmed against a cited source;
 [Likely] = strong inference from in-tree evidence; [Assumption] = reasonable
@@ -141,8 +143,8 @@ The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
 against YouTube's high-velocity redesigns, (2) **store-policy / trust surface**
 from a broad permission and host set mitigated by profile-split artifacts,
 (3) **upgrade data-safety** for the 362-key schema, and (4) **version-surface confusion** —
-the product ships as 4.46.0 while the docs describe a "v5.0.0 foundation complete"
-and a v5/v6 plan.
+the product ships as 4.46.0 while older docs described an internal
+planning-track "v5.0.0 foundation complete" and v5/v6 plan.
 
 Top opportunities (one-liners):
 
@@ -261,9 +263,10 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 - **[High] Upgrade data-safety.** 362 flat keys + `unlimitedStorage`; the existing
   round-trip test does not load a pinned old-version blob → silent config loss on
   a botched migration is the top data-loss risk. → ROADMAP P0 migration test. [Verified]
-- **[High] Version-surface confusion.** Ship line 4.46.0 vs documented "v5.0.0
-  complete" / v5–v6 plan; a contributor or reviewer cannot tell releases from
-  planning. → ROADMAP P1 version reconciliation. [Verified]
+- **[High] Version-surface confusion.** Ship line 4.46.0 vs documented internal
+  planning-track "v5.0.0 complete" / v5-v6 plan; a contributor or reviewer
+  cannot tell releases from planning. → ROADMAP P1 version reconciliation.
+  [Verified]
 - **[Med] Onboarding / empty-state friction.** Popup is the only surface; the
   companion connection fails silently until the user happens to launch the
   PyInstaller app. → ROADMAP P2 onboarding + empty/permission states. [Verified]

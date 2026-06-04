@@ -3,7 +3,11 @@
 This file summarizes shipped roadmap arcs. Active work lives in `ROADMAP.md`;
 release-level details live in `CHANGELOG.md`.
 
-## v5.1 Carry-Forward Arc
+Product releases are still on the v4.x line. The v5.x / v6.x labels below are
+legacy internal planning-track names from archived roadmap work, not shipped
+package versions; the live product-version sources currently agree at v4.46.0.
+
+## Internal Planning Track: v5.1 Carry-Forward Arc
 
 - Selector-pack migration completed across seven batches.
 - DOM-layer toast extraction shipped through `core/toast-dom.js`.
@@ -13,7 +17,7 @@ release-level details live in `CHANGELOG.md`.
 - Several v5.2+ follow-ups remain in `ROADMAP.md`, including live-chat capture,
   lifecycle migration, and i18n translation depth.
 
-## v5.0 Foundation Arc
+## Internal Planning Track: v5.0 Foundation Arc
 
 - Settings-schema single source of truth and schema coverage gate.
 - Core feature lifecycle and policy profile helpers.
@@ -48,6 +52,8 @@ release-level details live in `CHANGELOG.md`.
   call sites until `moz-extension://` behavior is audited.
 - Flask `/download` now rejects client-supplied yt-dlp argv/flag fields and
   unknown request fields before queueing a companion download.
+- Version-surface docs now name v4.46.0 as the current shipped product line and
+  label legacy v5/v6 roadmap terms as internal planning-track names only.
 - Storage growth for `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`,
   and `ytkit-watch-time` is now capped at write time with deterministic eviction
   in both extension and userscript paths.
@@ -198,9 +204,10 @@ artifacts live under the gitignored `docs/research/` tree and are summarized in
 ### Stale / Obsolete Items
 
 - [STALE] "No further features are planned — maintenance mode only" charter cap
-  of 3 NOW items — *Reason: superseded by the 2026-05-21 v5.0.0 foundation sprint
-  and the active feature backlog (subscription groups, video notes, companion
-  updater) now tracked in ROADMAP.md. Source: docs/research/README.md, iter-1-audit.md*
+  of 3 NOW items — *Reason: superseded by the 2026-05-21 internal
+  planning-track v5.0.0 foundation sprint and the active feature backlog
+  (subscription groups, video notes, companion updater) now tracked in ROADMAP.md. Source:
+  docs/research/README.md, iter-1-audit.md*
 - [STALE] 18+ "REJECTED" landscape candidates from the 2026-04-24 harvest —
   *Reason: closed as no-go at harvest time; retained only in the local research
   archive, not promoted. Source: docs/research/iter-1-scored.md*

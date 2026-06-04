@@ -1,16 +1,21 @@
 # Astra Deck Roadmap Dossier (archived 2026-06-03)
 
-This is the legacy research dossier and v5.2.0 → v6.0.0 product plan that was
-generated during the 2026-05-21 autonomous research pass and previously lived
-inline in `ROADMAP.md`. It was archived on 2026-06-03 when `ROADMAP.md` was
-consolidated into a lean single-source-of-truth task list (Existing Planned Work
-+ Research-Driven Additions).
+This is the legacy research dossier and product plan labelled as an internal
+planning track: v5.2.0 -> v6.0.0. Those labels are roadmap-era planning names, not the
+shipped extension/userscript version line; current live product-version sources
+must be read from `package.json`, `extension/manifest.json`, `extension/ytkit.js`,
+`YTKit.user.js`, and `package-lock.json` (v4.46.0 at the 2026-06-04 cleanup).
+The dossier was generated during the 2026-05-21 autonomous research pass and
+previously lived inline in `ROADMAP.md`. It was archived on 2026-06-03 when
+`ROADMAP.md` was consolidated into a lean single-source-of-truth task list
+(Existing Planned Work + Research-Driven Additions).
 
 It is preserved here as historical reference: the autonomous session log, full
 repo tree snapshot, competitive landscape, feature catalog, technical
-reconnaissance, architecture notes, the v5.2.0 → v6.0.0 phased feature plan, and
-the original risks / definition-of-done sections. Active planned work now lives
-in `../../ROADMAP.md`; shipped arcs live in `../../COMPLETED.md`.
+reconnaissance, architecture notes, the internal planning-track v5.2.0 -> v6.0.0
+phased feature plan, and the original risks / definition-of-done sections.
+Active planned work now lives in `../../ROADMAP.md`; shipped arcs live in
+`../../COMPLETED.md`.
 
 ---
 
@@ -35,7 +40,7 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.17.0 | Second feature peel — `features/video-filters/buildVideoFilterCss()` + isIdentity + clamping + 6 tests | 389 | +6 |
 | v4.18.0 | Third feature peel — `features/blue-light-filter/buildBlueLightRgba()` + OVERLAY_FIXED_CSS + 5 tests | 394 | +5 |
 | v4.19.0 | Bundled theme-css peel (customProgressBarColor + customSelectionColor + grayscaleThumbnails) + 7 tests | 401 | +7 |
-| v4.20.0 | Userscript bundle of 11 v5.0.0 core modules via `sync-userscript.js` + 5 tests | 406 | +5 |
+| v4.20.0 | Userscript bundle of 11 internal-planning-track v5.0.0 core modules via `sync-userscript.js` + 5 tests | 406 | +5 |
 | v4.21.0 | theme-css extends (+forceDarkEverywhere, +themeAccentColor) + 5 tests | 411 | +5 |
 | v4.22.0 | theme-css extends (+compactUnfixedHeader, +hideVideoEndContent) + 5 tests | 416 | +5 |
 | v4.23.0 | Schema-driven category overview in popup (collapsible, reactive) + 5 tests | 421 | +5 |
@@ -45,7 +50,7 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.27.0 | String-type inline editor (text + auto color picker for hex defaults) + 5 tests | 440 | +5 |
 | v4.28.0 | `humanizeSettingKey()` helper + popup label upgrade + 6 tests | 446 | +6 |
 | v4.29.0 | Persist popup overview expansion across opens + 5 tests | 451 | +5 |
-| v4.30.0 | Documentation tag — v5.0.0 foundation arc closed (no code change) | 451 | 0 |
+| v4.30.0 | Documentation tag — internal-planning-track v5.0.0 foundation arc closed (no code change) | 451 | 0 |
 | v4.31.0 | v5.1.0 #1 — versioned selector-pack file split (batch 1: appShell, nav+masthead, search, leftNav) + 7 tests | 458 | +7 |
 | v4.32.0 | v5.1.0 #2 — selector-pack batch 2 (feed-shell: feed, feedCard, thumbnail, shortsShelf) + 4 tests | 462 | +4 |
 | v4.33.0 | v5.1.0 #3 — selector-pack batch 3 (watch-shell: watch, relatedSidebar, player, mainVideo) + 4 tests | 466 | +4 |
@@ -61,9 +66,11 @@ Six ships executed in sequence, each fully tested + built + pushed:
 | v4.43.0 | feature peel batch 2 — 6 Home / Subs CSS-only features (hideCreateButton, hideVoiceSearch, widenSearchBar, disablePlayOnHover, fullWidthSubscriptions, hideSubscriptionOptions) → `features/home-subs-css/` + 5 tests | 515 | +5 |
 | v4.44.0 | Documentation tag — v5.1.0 carry-forward arc closed (5 of 8 items `[x]`, 3 of 8 `[~]` with v5.2.0+ scope; no code change) | 515 | 0 |
 
-Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the v5.0.0 core surface, +136 hardening tests (315 → 451), **26 versions shipped (v4.5.3 → v4.30.0)**, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved. **v5.0.0 foundation arc effectively complete.**
+Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith feature blocks, popup ships per-key editors for boolean + number + string (text or color) types covering ≈340 of 354 schema keys with humanised English labels and persisted category-expansion state, 1 popup `Privacy` quick-toggle group, schema-driven risk badges on every applicable toggle row, userscript bundles the internal-planning-track v5.0.0 core surface, +136 hardening tests (315 → 451), **26 product versions shipped (v4.5.3 -> v4.30.0)**, every `npm run check` + `npm test` + `node build-extension.js` pipeline green. Open question (Ctrl+Shift+Y) resolved. **Internal planning-track v5.0.0 foundation arc effectively complete.**
 
-Carry-forward for the next session (v5.1.0+ work — v5.0.0 foundation is now sound enough to start any of these in isolation):
+Carry-forward for the next session (internal planning-track v5.1.0+ work; the
+internal planning-track v5.0.0 foundation is now sound enough to start any of
+these in isolation):
 
 1. **Versioned selector packs** — [x] migration COMPLETE in 7 batches (v4.31.0–v4.37.0). All 28 surfaces (+ 2 aliases) now live in their own `extension/core/selector-packs/<surface>.js` file with `captureEvidence` + `lastVerified`. `INLINE_SURFACES` is `{}`. The live-chat trio was refreshed on 2026-06-04 with `mhtml/LiveChat.mhtml`, committed `yt-live-chat.tokens.txt` coverage, and watch-wrapper DOM probe evidence.
 2. **Continue feature peels (long tail)** — [~] +11 peels this session (v4.38.0 wave-8 CSS quintet → `features/wave-8-css/`; v4.43.0 home-subs CSS sextet → `features/home-subs-css/`). Total peeled: 21 of ~200 monolith blocks. v5.2.0+ scope: continue batch-by-batch (next likely batches are wave-10 alchemy CSS, watch-page CSS, and comments CSS clusters). DOM-walking observers are blocked on slice #3 and remain v5.2.0+ work.
@@ -75,8 +82,10 @@ Carry-forward for the next session (v5.1.0+ work — v5.0.0 foundation is now so
 8. **`labelKey` / `descriptionKey` override fields on schema entries** — [x] shipped in v4.40.0. Optional `labelKey` + `descriptionKey` string fields on any schema entry; the popup row builder consults `entry.labelKey` (trim/non-empty guarded) first and falls back to the v4.28.0 humaniser. Initial overrides: `downloadCobaltFallback`, `downloadCobaltInstance`, `aiSummaryEndpoint`, `aiSummaryProvider`. Paired-i18n keys remain a v5.2.0+ follow-up.
 
 Target site: YouTube desktop web (`www.youtube.com`, `youtube-nocookie.com`, `youtu.be`), live-chat iframe (`*.youtube.com/live_chat*`), `i.ytimg.com` thumbnail origin. YouTube Music is opt-in only via `youtubeMusicCompat`. Excluded by design: `m.youtube.com`, `studio.youtube.com`.
-Current repo version observed: Astra Deck v4.5.2 (`extension/manifest.json` and `extension/ytkit.js` `YTKIT_VERSION`).
-Planning track: Astra Deck v5.0.0 through v6.0.0.
+Current repo version observed during the original 2026-05-21 pass: Astra Deck
+v4.5.2 (`extension/manifest.json` and `extension/ytkit.js` `YTKIT_VERSION`).
+Internal planning track, not shipped version line: Astra Deck v5.0.0 through
+internal planning-track v6.0.0.
 Deliverable for this run: planning only. No feature code was written. README is deferred to the implementation release per repo rules.
 
 Source-of-truth inputs for this pass:
@@ -103,7 +112,10 @@ Chosen vehicle: both MV3 extension and single-file userscript.
 Version convention:
 
 - Existing product versioning remains `Astra Deck vX.Y.Z`.
-- The superset roadmap begins at `v5.0.0` because the repo is already at `v4.5.2`; a greenfield `ProjectName v0.0.1` convention is not applicable to this existing release line.
+- The superset roadmap's internal planning-track labels begin at `v5.0.0`
+  because the repo was already at product version `v4.5.2` during the original
+  pass; a greenfield `ProjectName v0.0.1` convention was not applicable to this
+  existing release line.
 - Each phase below has explicit acceptance criteria and can ship independently.
 
 House style for every shipped UI:
@@ -677,7 +689,7 @@ Packaging profiles:
 
 ### Architecture
 
-Recommended v5 file layout (`extension/ytkit.js` is currently a 43,081-line monolith; v5.0.0 carves it apart by category, keeps the dual-world bridge, and adds selector packs + schema as build-time artifacts):
+Recommended internal-planning-track v5 file layout (`extension/ytkit.js` is currently a 43,081-line monolith; internal-planning-track v5.0.0 carves it apart by category, keeps the dual-world bridge, and adds selector packs + schema as build-time artifacts):
 
 ```text
 extension/
@@ -756,8 +768,8 @@ tests/                           # extend with per-pack selector regression + sc
 
 Migration sequence from the current v4.5.2 monolith:
 
-1. v5.0.0 — introduce `settings-schema.js`; `build-extension.js` starts generating `default-settings.json` from the schema, fails build on drift. The current 43k-line `ytkit.js` stays in place; only the schema and lifecycle contracts move first.
-2. v5.0.0 — introduce `feature-lifecycle.js`, `observers.js`, `selector-health.js`, `toast.js`, `a11y.js`, `theme-tokens.js`, `policy-profile.js` as new core modules. Existing features adopt them opportunistically.
+1. Internal-planning-track v5.0.0 — introduce `settings-schema.js`; `build-extension.js` starts generating `default-settings.json` from the schema, fails build on drift. The current 43k-line `ytkit.js` stays in place; only the schema and lifecycle contracts move first.
+2. Internal-planning-track v5.0.0 — introduce `feature-lifecycle.js`, `observers.js`, `selector-health.js`, `toast.js`, `a11y.js`, `theme-tokens.js`, `policy-profile.js` as new core modules. Existing features adopt them opportunistically.
 3. v5.1.0 — split `selectors.js` into per-surface `selector-packs/` with capture provenance.
 4. v5.2.0+ — peel feature blocks out of `ytkit.js` by category, one phase per category bucket. Userscript parity tests gate each peel.
 
@@ -1255,23 +1267,23 @@ Schema verification gates (build-time):
 
 ## Phased Build Plan
 
-### v5.0.0 - Architecture and Settings Foundation _(effectively complete as of v4.29.0)_
+### Internal Planning Track v5.0.0 - Architecture and Settings Foundation _(effectively complete as of v4.29.0)_
 
 Goal: make the product maintainable enough to carry the full superset.
 
-**Status (2026-05-21 close of session):** every checklist item below is either checked (x) or marked partial (~) with the remaining work explicitly named. The schema-driven popup editor, the data-flow panel, the policy-profile resolver, the lifecycle contract + navigation bridge, the selector-health surface, the userscript bundle, and 10 feature peels have all shipped. Remaining v5.0.0 work (selector-pack file split, DOM-layer toast extraction, full per-feature lifecycle adoption) is non-blocking on the v5.1+ phases — those phases can start with the current foundation.
+**Status (2026-05-21 close of session):** every checklist item below is either checked (x) or marked partial (~) with the remaining work explicitly named. The schema-driven popup editor, the data-flow panel, the policy-profile resolver, the lifecycle contract + navigation bridge, the selector-health surface, the userscript bundle, and 10 feature peels have all shipped. Remaining internal-planning-track v5.0.0 work (selector-pack file split, DOM-layer toast extraction, full per-feature lifecycle adoption) is non-blocking on the v5.1+ phases — those phases can start with the current foundation.
 
 Features:
 
 - [x] Introduce full settings schema metadata for all 354 observed keys. _(Delivered in v4.6.0 — `extension/core/settings-schema.js` is the single source of truth; `scripts/check-settings.js` is hooked into `npm run check`; 10 hardening tests pin the invariants; `build-extension.js` emits `default-settings.json` from the schema with a drift gate against the legacy `ytkit.js` extractor.)_
 - [x] Introduce `feature-lifecycle.js`. _(Delivered in v4.7.0 — `extension/core/feature-lifecycle.js` exports `createLifecycle()` with `defineFeature`/`start`/`apply`/`destroy`, AbortController-backed signals, monotonic route tokens, best-effort destroy, snapshot diagnostics. Wired into both content_script load orders ahead of `ytkit.js`; 5 hardening tests pin invariants. Adoption is opt-in per feature — no existing features rewired yet.)_
-- [x] Add explicit store-safe/full/userscript profile switch. _(Resolver delivered in v4.7.0 — `extension/core/policy-profile.js` exports `createPolicyProfile()` with `resolveEffectiveProfile`, `isEntryAllowedInProfile`, `filterSettingsForProfile`, `shouldScrubKey`, `buildExportSnapshot`, `countByProfile`. 6 hardening tests pin the partition + scrub rules. Popup UI for the toggle row + visible warnings still pending — see v5.0.0 follow-up below.)_
+- [x] Add explicit store-safe/full/userscript profile switch. _(Resolver delivered in v4.7.0 — `extension/core/policy-profile.js` exports `createPolicyProfile()` with `resolveEffectiveProfile`, `isEntryAllowedInProfile`, `filterSettingsForProfile`, `shouldScrubKey`, `buildExportSnapshot`, `countByProfile`. 6 hardening tests pin the partition + scrub rules. Popup UI for the toggle row + visible warnings still pending — see internal-planning-track v5.0.0 follow-up below.)_
 - [x] Build category-driven settings panel with search, profile badges, and diagnostics _(read-side in v4.23.0 + boolean editing in v4.24.0 + search integration in v4.25.0 + number editor in v4.26.0 + string + color-picker editors in v4.27.0. The existing `#q` filter drives both the QUICK_TOGGLES list and the schema overview. ≈340 of 354 schema keys are now editable directly from the popup; arrays + objects remain in-page-workspace-only. Profile badges + diagnostics rows can layer on top in a follow-up but the core schema-driven panel is delivered.)_
 - [x] Add selector health system and versioned selector packs _(read-side delivered in v4.8.0 — `extension/core/selector-health.js`. File split COMPLETE in v4.37.0 — all 28 surfaces (+ 2 aliases) live in `extension/core/selector-packs/<surface>.js` with `captureEvidence` + `lastVerified`. `INLINE_SURFACES` is empty; the pack registry drives `SurfaceSelectorMap`. The live-chat fresh capture is a follow-up slice, not a blocker.)_
 - [x] Add route-aware observer coordinator _(delivered in v4.9.0 — `extension/core/lifecycle-route-bridge.js` self-installs against `core/navigation.js` and `core/feature-lifecycle.js`; every yt-navigate-finish / yt-page-data-updated / popstate / watch-flexy mutation auto-increments the lifecycle route token via `notifyRouteChange()`. 4 hardening tests pin the contract + load order.)_
-- [x] Add data-flow panel v1 with API origins and permission explanations _(complete in v4.12.0 — popup data-flow section bundled with the v5.0.0 core modules, gated on `privacyDataFlowPanel`, reactive to `chrome.storage.onChanged`, no pill backdrops per house style, all 10 locales seeded, 7 new hardening tests including a background.js↔catalogue origin parity gate.)_
+- [x] Add data-flow panel v1 with API origins and permission explanations _(complete in v4.12.0 — popup data-flow section bundled with the internal-planning-track v5.0.0 core modules, gated on `privacyDataFlowPanel`, reactive to `chrome.storage.onChanged`, no pill backdrops per house style, all 10 locales seeded, 7 new hardening tests including a background.js↔catalogue origin parity gate.)_
 - [~] Extract feature modules from the monolith by category _(10 peels across 4 carve-outs — subtitles (v4.13.0), video-filters (v4.17.0), blue-light-filter (v4.18.0), and the theme-css bundle now covering 7 consumers: customProgressBarColor + customSelectionColor + grayscaleThumbnails (v4.19.0) + forceDarkEverywhere + themeAccentColor (v4.21.0) + compactUnfixedHeader + hideVideoEndContent (v4.22.0). 34 hardening tests pin the parity contracts.)_
-- [~] Extract `showToast` into `core/toast.js` _(pure helpers peeled in v4.14.0 — `inferToastTone`/`getToastRgb`/`getToastBadgeLabel`/`getToastAriaDefaults` + `TONE_RGB`/`TONE_BADGE`. 6 hardening tests pin the parity. DOM-touching showToast/dismissToast still in the monolith; v5.0.0 "single live region" primitive is the next step.)_
+- [~] Extract `showToast` into `core/toast.js` _(pure helpers peeled in v4.14.0 — `inferToastTone`/`getToastRgb`/`getToastBadgeLabel`/`getToastAriaDefaults` + `TONE_RGB`/`TONE_BADGE`. 6 hardening tests pin the parity. DOM-touching showToast/dismissToast still in the monolith; internal-planning-track v5.0.0 "single live region" primitive is the next step.)_
 
 Acceptance criteria:
 
@@ -1279,7 +1291,7 @@ Acceptance criteria:
 - [x] Every entry also has a human-readable label _(via v4.28.0 `humanizeSettingKey()` deterministic fallback; a `labelKey` override field can layer translated strings on top in a future i18n pass without blocking the popup)._
 - [~] Every feature can be disabled without leaving DOM/classes/listeners/observers behind _(true for the 10 peeled features whose tests pin the parity contract; not yet exhaustively verified for the ~190 remaining monolith blocks — see v5.1+ lifecycle adoption pass)._
 - [x] `npm run check` (including the `check:settings` gate), `npm test`, `npm run build`, `npm run audit:a11y`, and `npm run audit:contrast` pass.
-- [x] Userscript carries the v5.0.0 core surface — `sync-userscript.js` bundles 11 v5.0.0 modules verbatim into `YTKit.user.js` between BEGIN/END markers; parity is pinned per-module by hardening tests.
+- [x] Userscript carries the internal-planning-track v5.0.0 core surface — `sync-userscript.js` bundles 11 internal-planning-track v5.0.0 modules verbatim into `YTKit.user.js` between BEGIN/END markers; parity is pinned per-module by hardening tests.
 - [x] Selector fixtures fail loudly when stable selectors disappear _(infra in `tests/selector-regression.test.js`; the per-pack split is COMPLETE in v4.37.0 — every surface has its own `extension/core/selector-packs/<surface>.js` with capture provenance + lastVerified, and the v4.37.0 hardening tests pin the surface-count parity + manifest-vs-disk parity invariants.)_
 
 ### v5.1.0 - Selector Fixture and DOM Churn Hardening
@@ -1478,7 +1490,7 @@ Acceptance criteria:
 - Feed stress test shows bounded observer work and no unbounded diagnostics maps.
 - Low-power profile measurably reduces card-processing work.
 
-### v6.0.0 - "Beats Every Competitor" Release
+### Internal Planning Track v6.0.0 - "Beats Every Competitor" Release
 
 Goal: ship the union of competitor features plus Astra-only differentiators.
 
@@ -1514,7 +1526,7 @@ Acceptance criteria:
 
 ## Definition of Done
 
-`v6.0.0` is done when:
+`Internal planning-track v6.0.0` is done when:
 
 - Astra Deck has a categorized settings schema for every toggle.
 - Every feature has `init()`, immediate apply where possible, and complete `destroy()`.
