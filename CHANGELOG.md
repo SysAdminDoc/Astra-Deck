@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Next-2 peel: player dock and YouTube Music compatibility.** Added
+  `features/player-dock/index.js` and
+  `features/youtube-music-compat/index.js`, wired both into MV3 and userscript
+  load order, and made `ytkit.js` prefer the module-owned
+  `floatingLogoOnWatch` / `youtubeMusicCompat` runtime objects while retaining
+  inline object fallbacks.
+
 - **Top-3 peel: hideVideosFromHome runtime.** Added
   `features/video-hider/index.js` with `createHideVideosFromHomeFeature(deps)`,
   wired it into MV3 and userscript load order, and made `ytkit.js` prefer the

@@ -98,8 +98,14 @@ pre-consolidation research plans archived under `docs/archive/research/`.
     the module now owns the primary Video Hider runtime/state object, MV3 and
     userscript load the module before `ytkit.js`, and the monolith keeps its
     inline object only as a compatibility fallback.
-- [ ] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
-  `floatingLogoOnWatch`.
+- [x] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
+  `floatingLogoOnWatch`. _(Delivered 2026-06-04:
+  `features/youtube-music-compat/index.js` and
+  `features/player-dock/index.js` now own the primary runtime objects through
+  `createYoutubeMusicCompatFeature(deps)` and
+  `createFloatingLogoOnWatchFeature(deps)`; MV3/userscript load both before
+  `ytkit.js`, and the monolith keeps inline objects only as compatibility
+  fallbacks.)_
 
 ### Companion, Subscriptions, And Research
 

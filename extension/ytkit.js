@@ -7925,7 +7925,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() { this._styleElement?.remove(); this._styleElement = null; }
         },
-        {
+        (globalThis.YTKitFeatures?.floatingLogoOnWatch?.createFloatingLogoOnWatchFeature?.({
+            appState,
+            getFeatureById,
+            ICONS: globalThis.YTKitCore?.ICONS,
+            t,
+            showDownloadPopup,
+            showSpeedPopup,
+            toggleSettingsPanel,
+            BRAND,
+            appendStyleSheet,
+            addNavigateRule,
+            removeNavigateRule
+        }) || {
             id: 'floatingLogoOnWatch',
             name: 'Astra Player Dock',
             description: 'Replace native player right-controls with Astra quick links, local tools, and settings',
@@ -8448,7 +8460,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this._ruleId);
                 this._cleanup();
             }
-        },
+        }),
         cssFeature('hideDescriptionRow', 'Hide Description', 'Remove the video description panel below the player', 'Watch Page', 'file-minus',
             'ytd-watch-metadata #bottom-row'),
         (globalThis.YTKitFeatures?.stickyVideo?.createStickyVideoFeature?.({
@@ -33045,7 +33057,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  YOUTUBE MUSIC COMPAT — Apply select features on music.youtube.com
         // ═══════════════════════════════════════════════════════════════════
-        {
+        (globalThis.YTKitFeatures?.youtubeMusicCompat?.createYoutubeMusicCompatFeature?.({
+            injectStyle
+        }) || {
             id: 'youtubeMusicCompat',
             name: 'YouTube Music Compatibility',
             description: 'Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating.',
@@ -33078,7 +33092,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement?.remove();
                 this._styleElement = null;
             }
-        },
+        }),
 
     ];
 
