@@ -189,13 +189,32 @@ CRX/XPI **will not** auto-update to the new build.
 | Local primary build machine (encrypted home dir) | Daily build use. |
 | Offline backup (encrypted external drive or 1Password / Bitwarden vault) | Disaster recovery. Restore takes hours, not days. |
 | Never on cloud storage without zero-knowledge encryption | Cloud-storage providers can subpoena, leak, or accidentally publish files. |
-| Never in a CI secret store | CI never builds release CRX/XPI on `ytkit.pem` — the maintainer signs locally and uploads the artifacts (the CI workflow uploads to GH Releases without ever seeing the private key). Pinning here so a future contributor doesn't move signing into Actions. |
+| Never in a CI secret store | CI never receives `ytkit.pem` and does not publish GitHub Releases. The tag workflow builds validation artifacts, emits `release-manifest.json` / `SHA256SUMS`, and creates attestations for those CI-built artifacts only. The maintainer builds the public CRX artifacts locally with `ytkit.pem` and uploads them with the local checksum manifest. |
 
 Refresh the offline backup whenever the primary key changes.
 
 ---
 
-## 8. CWS / AMO publication paths
+## 8. Local release checklist
+
+Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
+
+1. Confirm the tree is clean and the version surfaces match:
+   `node scripts/check-versions.js --tag vX.Y.Z`.
+2. Run the local gates: `npm test`, `npm run check`, and
+   `py -3.12 -m pytest astra_downloader`.
+3. Build signed artifacts from the machine that has `ytkit.pem`:
+   `npm run build:userscript`.
+4. Emit the release SBOM:
+   `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`.
+5. Generate checksums and manifest: `npm run release:manifest`.
+6. Verify `build/SHA256SUMS` names every uploaded artifact and that
+   `build/release-manifest.json` marks `localSigningRequired: true`.
+7. Create or update the GitHub Release from local `build/*` assets.
+8. After upload, compare `gh release view <tag> --json assets` digest values
+   against `build/SHA256SUMS`.
+
+## 9. CWS / AMO publication paths
 
 Per the current roadmap NX4, Astra Deck does not have an AMO listing.
 The self-distribution model is:
@@ -220,7 +239,7 @@ the `ytkit.pem` updates.
 
 ---
 
-## 9. Audit trail
+## 10. Audit trail
 
 Every rotation lands in `HARDENING.md` with an Hn entry naming:
 
