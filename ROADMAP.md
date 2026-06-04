@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 8 - 2026-06-04.
+> Last researched: Cycle 9 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,70 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 9 - 2026-06-04)
+
+- [x] 🔬 `privacy-consent-readiness-2026-06-04` - inspected the current
+  manifest profile split, `docs/store-permission-rationale.md`,
+  `docs/cws-submission-checklist.md`, `scripts/manifest-patch.js`, the
+  data-flow catalogue, background cookie/proxy paths, and current Chrome /
+  Mozilla privacy-disclosure and Firefox data-consent rules. Detailed notes
+  live in `docs/research-cycle-9-privacy-consent-readiness.md`.
+- [ ] 🔬🤖 P1 — Ship cross-store privacy disclosure and Firefox data-consent packet
+  - Why: Astra Deck already has strong store permission rationale and profile
+    split mechanics, but the release path still lacks a stable privacy-policy
+    artifact and a Firefox data-transmission consent strategy that matches the
+    current public-store rules. This is now a release-readiness blocker because
+    the extension stores local user activity/content, uses `cookies` for
+    authenticated downloader handoff, and can transmit page/video context to
+    third-party APIs or the local companion depending on feature/profile.
+  - Evidence: `docs/cws-submission-checklist.md` says a privacy-policy URL is
+    required and points at reviewer copy, but the repo search found no
+    concrete privacy-policy page/file or published-policy checklist. Chrome's
+    privacy-fields docs require single-purpose, per-permission justification,
+    data-use disclosure/certification, and a privacy-policy link
+    (https://developer.chrome.com/docs/webstore/cws-dashboard-privacy); Chrome
+    Web Store policies require an accurate policy, Limited Use disclosure, and
+    narrow permissions (https://developer.chrome.com/docs/webstore/program-policies/policies).
+    Mozilla's add-on policies define data transmission as data handled outside
+    the add-on or local browser, require consent/control for that transmission,
+    and require opt-in before transmitting personal data such as cookies
+    (https://extensionworkshop.com/documentation/publish/add-on-policies/).
+    Firefox's built-in data consent is available for desktop 140+, but
+    `scripts/manifest-patch.js` currently emits `strict_min_version: '128.0'`
+    and no `browser_specific_settings.gecko.data_collection_permissions`; the
+    Firefox guidance says Firefox 139-and-earlier installs need a custom data
+    collection experience or a higher minimum version
+    (https://www.extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
+    The local `data-flow.js` catalogue includes store-safe transmissions to
+    YouTube, thumbnails, SponsorBlock/DeArrow, Return YouTube Dislike, and
+    Reddit plus GitHub-full transmissions to BYO-key AI providers, local Ollama,
+    Astra Downloader loopback, and Cobalt. [Verified]
+  - Touches: `docs/privacy-policy.md` or equivalent hosted policy source,
+    README/homepage/store links, `docs/cws-submission-checklist.md`,
+    `docs/store-permission-rationale.md`, `scripts/manifest-patch.js`,
+    `tests/hardening.test.js`, and the first-run / consent UI if Firefox 128-139
+    support is kept.
+  - Acceptance: a stable privacy-policy source exists and is linked from the
+    project homepage/README and store-submission docs; it declares local-only
+    storage categories, third-party API transmissions, local companion handoff,
+    cookie use, BYO-key provider behavior, retention/export/delete behavior, no
+    telemetry/ads/sale, and the Chrome Limited Use statement. The Chrome
+    dashboard matrix is documented with data categories and permission/host
+    justifications that match the store-safe artifact. Firefox chooses and tests
+    one clear path: either raise the Firefox minimum to 140+ and add
+    `data_collection_permissions` with required/optional categories matching
+    the data-flow catalogue, or keep Firefox 128+ and ship an unmissable
+    single-page consent/control flow before any data-transmitting feature runs
+    on Firefox versions without built-in consent. GitHub-full-only hosts remain
+    absent from public store-safe artifacts.
+  - Verify: `npm run check`, `npm test`, `node build-extension.js --profile both`,
+    inspect both generated Firefox manifests for the chosen data-consent path,
+    inspect the Chrome store-safe manifest/CSP for no GitHub-full hosts, run
+    `rg -n "privacy policy|Limited Use|data_collection_permissions"` across
+    README/docs/build output, and include Firefox reviewer notes for any
+    remaining 128-139 support path.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 8 - 2026-06-04)
 

@@ -18,6 +18,13 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 9 privacy/consent-readiness pass on 2026-06-04 found a
+  non-duplicate release-readiness gap: Astra Deck has strong store permission
+  rationale and profile-split artifacts, but no concrete privacy-policy source
+  or Firefox data-transmission consent strategy pinned to the generated Firefox
+  manifest path. ROADMAP now carries a P1 item for a cross-store privacy
+  disclosure and Firefox data-consent packet, with detailed evidence in
+  `docs/research-cycle-9-privacy-consent-readiness.md`.
 - [Verified] Cycle 8 CI/release-integrity pass on 2026-06-04 found two
   non-duplicate delivery risks: `Validate` is red on `main` because the Python
   downloader job fails test collection on Ubuntu with missing `libEGL.so.1`
@@ -187,10 +194,10 @@ deps audit, plus a build/release workflow). [Verified]
 
 The engineering arc is sound; the dominant risks are (1) **CI/release-channel
 drift** because `Validate` is currently red and public latest release still
-serves v4.5.2, (2) **runtime DOM churn** against YouTube's high-velocity
-redesigns, (3) **store-policy / trust surface** from a broad permission and host
-set mitigated by profile-split artifacts, and (4) **upgrade data-safety** for
-the 362-key schema.
+serves v4.5.2, (2) **privacy disclosure / Firefox data-consent readiness**
+because the profile split is strong but the public policy and generated Firefox
+data-consent path are not pinned, (3) **runtime DOM churn** against YouTube's
+high-velocity redesigns, and (4) **upgrade data-safety** for the 362-key schema.
 
 Top remaining opportunities (one-liners):
 
@@ -199,19 +206,24 @@ Top remaining opportunities (one-liners):
 2. Publish a v4.46+ release catch-up with all profile-split artifacts, checksum
    manifest/sidecars, and release provenance or a documented local-signing
    exception. [Verified]
-3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+3. Ship a cross-store privacy disclosure and Firefox data-consent packet:
+   publish a stable policy source, document Chrome dashboard data-use
+   categories, and either raise Firefox support to 140+ with
+   `data_collection_permissions` or add a custom consent/control flow for
+   Firefox 128-139. [Verified]
+4. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-4. MHTML capture-week expansion across Shorts, channel, search, history,
+5. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+6. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-6. Locale proofing queue for identical-to-English feature names/descriptions in
+7. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-7. Signed Astra Downloader installer/MSI once the signing budget and submission
+8. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -244,13 +256,17 @@ Top remaining opportunities (one-liners):
 - `tests/` (19 spec files incl. hardening, selector-regression,
   settings-migration-roundtrip, userscript-parity). [Verified]
 - `docs/architecture.md`, `docs/cws-submission-checklist.md`,
-  `docs/screen-reader-smoke.md`, `docs/signing-keys.md`. [Verified]
+  `docs/screen-reader-smoke.md`, `docs/signing-keys.md`,
+  `docs/store-permission-rationale.md`, and
+  `docs/research-cycle-9-privacy-consent-readiness.md`. [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
   Chrome Web Store MV3 program policy; AMO Firefox MV3; WCAG 2.2 AA; yt-dlp
   cookie-handling advisories; Qt Linux runtime requirements; GitHub release asset
-  digests and artifact/SBOM attestations; npm SBOM. [Verified, external]
+  digests and artifact/SBOM attestations; npm SBOM; Chrome Web Store privacy
+  fields / Limited Use policy; Mozilla add-on data-transmission consent and
+  Firefox built-in `data_collection_permissions`. [Verified, external]
 
 ## Current Product Map
 
@@ -331,6 +347,13 @@ Current open risk:
   latest-release URL. The v4.46 profile split and companion checksum contract are
   therefore not available to users through the documented install path. →
   ROADMAP P1 release catch-up / checksums / provenance. [Verified]
+- **[High] Privacy/data-consent artifacts incomplete.** The repo has
+  store-safe/GitHub-full permission rationale, but no stable privacy-policy
+  source and no Firefox data-transmission consent path in the generated Firefox
+  manifest. Chrome privacy fields require data-use disclosure and a policy URL;
+  Mozilla now requires either built-in `data_collection_permissions` on supported
+  Firefox versions or a custom consent/control path for older versions. →
+  ROADMAP P1 privacy disclosure / Firefox data-consent packet. [Verified]
 - **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
   but no `web-ext lint` or clean-profile Firefox MV3 load gate exercises the
   artifact before AMO or self-distributed Firefox updates. → ROADMAP P1 Firefox
@@ -417,6 +440,13 @@ Closed since the 2026-06-03 baseline:
   fields and GitHub supports artifact/SBOM attestations, but Astra's current
   release workflow only uploads `build/*`; a project-owned `SHA256SUMS` manifest,
   companion sidecar publication, and attestation path are not yet in place.
+- **Privacy disclosure / consent** [Verified]: store-safe permission rationale
+  exists, but a linkable privacy policy and Firefox data-consent build contract
+  are not yet shipped. Chrome requires privacy-field data-use certification and
+  policy consistency; Mozilla treats data handled outside the add-on/local
+  browser as transmission and requires consent/control, with built-in
+  `data_collection_permissions` available for Firefox 140+ while the current
+  generated manifest still targets Firefox 128.
 
 ## UX & Accessibility
 
@@ -440,6 +470,12 @@ Closed since the 2026-06-03 baseline:
 
 - Whether the next public release should be v4.46.0 exactly or a new v4.47.0
   after the CI and release-integrity fixes land. [Needs validation]
+- Whether Firefox support should move from 128 to 140 to use built-in data
+  collection consent cleanly, or keep 128-139 support with a custom
+  consent/control page. [Needs validation]
+- Where the stable privacy policy should live: tracked docs rendered through the
+  project homepage, README one-click link, or another maintainer-controlled URL.
+  [Needs validation]
 - Whether CRX/XPI artifacts remain maintainer-local because of `ytkit.pem`, or
   whether CI should attest only ZIP/userscript/SBOM artifacts while local-signed
   CRX/XPI are attached with checksum sidecars. [Needs validation]
