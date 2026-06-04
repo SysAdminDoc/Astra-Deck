@@ -250,6 +250,29 @@ MAX_TEXT_FIELD = 500
 MAX_PATH_FIELD = 2048
 LOG_MAX_BYTES = 1024 * 1024
 _LOG_LOCK = threading.Lock()
+DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
+    'url',
+    'audioOnly',
+    'format',
+    'quality',
+    'outputDir',
+    'title',
+    'referer',
+    'cookies',
+})
+DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
+    'args',
+    'argv',
+    'flags',
+    'extraArgs',
+    'extractorArgs',
+    'postprocessorArgs',
+    'postprocessor_args',
+    'externalDownloaderArgs',
+    'ytDlpArgs',
+    'ytdlpArgs',
+    'yt_dlp_args',
+})
 
 
 def write_persistent_log(message, path=LOG_PATH):
@@ -1454,6 +1477,37 @@ def normalize_url(value):
     if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         return None, "Enter a valid http or https URL."
     return url, None
+
+
+def validate_download_request_body(body):
+    """Validate the client-owned /download wire fields.
+
+    yt-dlp argv is intentionally built only from reviewed server-side config,
+    normalized URL/output fields, and fixed helper functions. If a future
+    extension feature tries to send arbitrary flags, reject at the Flask
+    boundary before Deno checks, cookie writes, queueing, or subprocess setup.
+    """
+    if not isinstance(body, dict) or not body.get('url'):
+        return None, "Missing download URL.", None
+
+    keys = {str(key) for key in body.keys()}
+    forbidden = sorted(keys & DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS)
+    if forbidden:
+        return (
+            None,
+            "Client-supplied yt-dlp flags are not allowed. The companion builds yt-dlp arguments server-side.",
+            "unsupported-ytdlp-flags",
+        )
+
+    unknown = sorted(keys - DOWNLOAD_REQUEST_ALLOWED_FIELDS)
+    if unknown:
+        return (
+            None,
+            "Unsupported /download field(s): {}.".format(", ".join(unknown)),
+            "unsupported-download-fields",
+        )
+
+    return body, None, None
 
 
 def normalize_output_dir(value, default_dir=None, allowed_roots=None):
@@ -2902,9 +2956,12 @@ def create_api(config, dl_manager, history):
                 429,
                 extra_headers={"Retry-After": str(int(retry_after) + 1)},
             )
-        body = request.get_json(silent=True)
-        if not isinstance(body, dict) or not body.get('url'):
-            return cors_response({"error": "Missing download URL."}, 400)
+        body, body_err, body_code = validate_download_request_body(request.get_json(silent=True))
+        if body_err:
+            payload = {"error": body_err}
+            if body_code:
+                payload["code"] = body_code
+            return cors_response(payload, 400)
         url, url_err = normalize_url(body['url'])
         if url_err:
             return cors_response({"error": url_err}, 400)
