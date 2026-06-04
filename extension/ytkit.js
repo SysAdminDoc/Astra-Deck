@@ -15658,7 +15658,29 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  VIDEO HIDER — Hide videos/channels from feeds
         // ═══════════════════════════════════════════════════════════════════
-        {
+        (globalThis.YTKitFeatures?.hideVideosFromHome?.createHideVideosFromHomeFeature?.({
+            Z,
+            appState,
+            DebugManager,
+            setSettingsPanelOpen,
+            storageRead,
+            storageReadJSON,
+            storageWrite,
+            sanitizeImportedHiddenVideos,
+            sanitizeImportedVideoIdList,
+            sanitizeImportedBlockedChannels,
+            IMPORT_LIMITS,
+            VIDEO_ID_PATTERN,
+            normalizeBlockedChannelRecord,
+            getBlockedChannelIdentityKeys,
+            isPlainObject,
+            createSVG: globalThis.YTKitCore?.createSVG,
+            showToast,
+            PredicateSandbox,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle
+        }) || {
             id: 'hideVideosFromHome',
             name: 'Video Hider',
             description: 'Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking.',
@@ -17112,7 +17134,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._removeHomeHideAllButton();
                 this._removeLoadBlocker();
             }
-        },
+        }),
         {
             id: 'showLocalDownloadButton',
             name: 'Download Button',

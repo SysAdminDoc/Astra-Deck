@@ -74,7 +74,7 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   delegates registered specs through lifecycle start/destroy with direct
   injection only as fallback, and the userscript bundle includes `core/styles.js`
   so extension/userscript style ownership stays aligned.)_
-- [ ] **P2 / XL — Top-3 monolith peel**: split `stickyVideo`,
+- [x] **P2 / XL — Top-3 monolith peel**: split `stickyVideo`,
   `hideVideosFromHome`, and `chatStyleComments` into feature modules.
   - [x] 2026-06-04: seeded `chatStyleComments` as
     `features/chat-style-comments/index.js` with byte-pinned style builders,
@@ -93,7 +93,11 @@ pre-consolidation research plans archived under `docs/archive/research/`.
       ownership into `createStickyVideoFeature(deps)`; the module now owns the
       primary Theater Split feature object while `ytkit.js` keeps the inline
       object only as a compatibility fallback.
-  - [ ] Split `hideVideosFromHome` into a feature module.
+  - [x] 2026-06-04: split `hideVideosFromHome` into
+    `features/video-hider/index.js` via `createHideVideosFromHomeFeature(deps)`;
+    the module now owns the primary Video Hider runtime/state object, MV3 and
+    userscript load the module before `ytkit.js`, and the monolith keeps its
+    inline object only as a compatibility fallback.
 - [ ] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
   `floatingLogoOnWatch`.
 

@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Top-3 peel: hideVideosFromHome runtime.** Added
+  `features/video-hider/index.js` with `createHideVideosFromHomeFeature(deps)`,
+  wired it into MV3 and userscript load order, and made `ytkit.js` prefer the
+  module-owned Video Hider runtime while retaining the inline object fallback.
+
 - **Top-3 peel: stickyVideo runtime.** `features/sticky-video/index.js` now
   exports `createStickyVideoFeature(deps)` and owns the primary Theater Split
   runtime/state object; `ytkit.js` prefers that factory and keeps its inline
