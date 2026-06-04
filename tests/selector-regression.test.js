@@ -252,10 +252,21 @@ test('live-chat placeholder selectors remain promoted after the fresh fixture re
 test('fresh-capture fixture workflow is documented', () => {
     const docPath = path.join(REPO_ROOT, 'docs', 'selector-fixture-workflow.md');
     const doc = fs.readFileSync(docPath, 'utf8');
+    const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
+    const captureScript = fs.readFileSync(
+        path.join(REPO_ROOT, 'scripts', 'capture-watch-mhtml.js'),
+        'utf8'
+    );
 
     assert.match(doc, /File > Save Page As > Webpage, Single File/);
+    assert.match(doc, /npm run capture:watch/);
+    assert.match(doc, /Page\.stopLoading/);
     assert.match(doc, /npm run build:fixtures/);
     assert.match(doc, /ytkit\.exportSelectorHealth\(\)/);
+    assert.equal(pkg.scripts['capture:watch'], 'node scripts/capture-watch-mhtml.js');
+    assert.match(captureScript, /Page\.captureSnapshot/);
+    assert.match(captureScript, /dom-mhtml-fallback/);
+    assert.match(captureScript, /ytp-delhi-modern/);
 });
 
 test('selector fixtures exist and contain a non-trivial token set', () => {
