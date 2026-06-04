@@ -57,6 +57,9 @@ jobs:
   python:
     name: Python downloader tests
     runs-on: ubuntu-latest
+    env:
+      ASTRA_DOWNLOADER_NO_BOOTSTRAP: "1"
+      QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -65,11 +68,47 @@ jobs:
           cache: pip
           cache-dependency-path: astra_downloader/requirements.txt
 
+      - name: Install Qt Runtime Libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 \
+            libgl1 \
+            libxkbcommon-x11-0 \
+            libxcb-cursor0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-shape0 \
+            libxcb-xfixes0 \
+            libxcb-xinerama0
+
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r astra_downloader/requirements.txt
-          python -m pip install pytest
+          python -m pip install pytest pytest-asyncio pytest-qt
+
+      - name: Verify PyQt Runtime
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+          try:
+              from PyQt6.QtWidgets import QApplication
+          except Exception as exc:
+              print(f"::error title=PyQt6 runtime unavailable::{type(exc).__name__}: {exc}")
+              print("Install or refresh Linux Qt runtime packages in validate.yml before running downloader tests.")
+              sys.exit(1)
+
+          app = QApplication.instance() or QApplication([])
+          print(f"PyQt6 runtime OK with QT_QPA_PLATFORM={os.environ.get('QT_QPA_PLATFORM')}")
+          app.quit()
+          PY
 
       - name: pytest
         run: python -m pytest astra_downloader
