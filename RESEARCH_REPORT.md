@@ -37,9 +37,12 @@ or maintainer action to confirm.
   `liveChat` selector-pack chains against decoded MHTML markup; Firefox
   pre-flight now blocks future programmatic injection APIs until their
   `moz-extension://` targets are reviewed; and the Flask `/download` boundary
-  now rejects client-supplied yt-dlp argv/flag fields before queueing; and
-  storage growth for notes, timestamp bookmarks, watch progress, and watch-time
-  stats is bounded at write time.
+  now rejects client-supplied yt-dlp argv/flag fields before queueing; storage
+  growth for notes, timestamp bookmarks, watch progress, and watch-time stats
+  is bounded at write time; and `policy-profile.js` scrub coverage now removes
+  separator-aware API-key names plus password/credential/key-alias/cookie/
+  token/bearer/secret/auth-shaped values before profile or forward-compat
+  export passthrough.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -79,6 +82,12 @@ or maintainer action to confirm.
   `node --test tests/hardening.test.js tests/userscript-parity.test.js` (429
   checks), `npm run check`, `npm test` (628 checks), `npm run build`,
   `node sync-userscript.js`, and `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the policy-profile scrub coverage
+  batch: `node --check extension/core/policy-profile.js`,
+  `node --check tests/hardening.test.js`, and
+  `node --test tests/hardening.test.js` (426 checks), `npm run check`,
+  `npm test` (630 checks), `npm run build`, `node sync-userscript.js`,
+  `node --check YTKit.user.js`, and `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`

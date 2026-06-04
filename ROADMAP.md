@@ -226,11 +226,20 @@ phased feature plan) is preserved at
     caps before persistence, and hardening/userscript parity tests pin the real
     stores instead of the stale `timestampBookmarks` toggle.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
-- [ ] P3 — Finish `policy-profile.js` scrub-regex coverage (R6)
+- [x] P3 — Finish `policy-profile.js` scrub-regex coverage (R6)
   - Why: incomplete scrub-regex coverage risks leaking gated values into
     store-safe / export profiles.
   - Touches: `extension/core/policy-profile.js`, scrub tests.
   - Acceptance: scrub-regex coverage spans all gated keys with tests.
+  - Status 2026-06-04: delivered. The scrubber now uses separator-aware
+    `api[_-]?key` matching, keeps `apiKeyId`-style identifiers out of the
+    scrub set, and also catches password, credential, private/access/refresh/
+    session/signing key, cookie, bearer, secret, token, and auth-shaped keys.
+    Unknown secret-shaped keys are removed before forward-compatible passthrough.
+    Hardening tests now derive coverage from the live `SETTINGS_SCHEMA`: every
+    GitHub-full schema entry is defaulted in store-safe exports unless scrubbed,
+    and every credential-shaped schema key is absent from both store-safe and
+    GitHub-full export snapshots.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
 - [ ] P3 — Surface a Cobalt fallback unreachable diagnostic (R8)
   - Why: when the Cobalt fallback is unreachable the failure is currently silent.

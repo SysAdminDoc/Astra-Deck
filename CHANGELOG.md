@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Policy-profile scrub coverage.** The export scrubber now catches
+  separator-aware API-key names (`api_key`, `api-key`), password/credential
+  fields, private/access/refresh/session/signing key aliases, cookie snapshots,
+  bearer/secret/token/auth-shaped keys, and unknown secret-shaped forward-compat
+  settings before passthrough. Schema-derived hardening tests now prove every
+  GitHub-full key is defaulted out of store-safe exports unless scrubbed, and
+  every credential-shaped schema key is absent from both store-safe and
+  GitHub-full export snapshots.
+
 - **Storage-growth caps for notes, bookmarks, and watch history.** Added shared
   deterministic sanitizers for `ytkit-bookmarks`, `ytkit-watch-progress`, and
   `ytkit-watch-time`, then routed extension and userscript write paths through

@@ -92,12 +92,15 @@
         // anchored suffix didn't fire on the underscore-separator or
         // the `bearer` prefix. New patterns:
         //
-        //   apikey(?!_id$) anywhere  — catches apikey_v2 / apiKey1 / api_key
+        //   api[_-]?key anywhere      — catches apikey_v2 / apiKey1 / api_key
         //   bearer anywhere           — catches bearerToken / bearer_secret
         //   secret anywhere           — catches webhookSecret etc.
-        //   ^auth / _auth / Auth$    — catches authToken / apiAuth / userAuth
+        //   password/credential       — catches conventional auth stores
+        //   private/access/etc. Key   — catches common keypair/token aliases
+        //   cookies?/cookieJar        — catches accidental cookie snapshots
+        //   ^auth / _auth / Auth$     — catches authToken / apiAuth / userAuth
         //
-        // The negative-lookahead on `apikey(?!_id$)` prevents matching
+        // The negative-lookahead on `api[_-]?key(?![_-]?id$)` prevents matching
         // benign keys that store an ID-of-API-key rather than the key
         // itself (none today, but a defensive carve-out).
         const ALWAYS_SCRUB_KEY_PATTERNS = Object.freeze([
@@ -105,9 +108,14 @@
             /^aiSummaryApiKey$/,
             /token$/i,
             // Broader patterns added in v4.47.0 R6.
-            /apikey(?!_id$)/i,
+            /api[_-]?key(?![_-]?id$)/i,
             /bearer/i,
             /secret/i,
+            /password/i,
+            /credential/i,
+            /(?:^|[a-z])(?:private|access|refresh|session|signing)Key$/i,
+            /cookies?$/i,
+            /cookieJar$/i,
             // Two patterns for camelCase "auth" coverage:
             //   /^auth/i        — settings starting with "auth" (authToken)
             //   /[a-z]Auth/     — camelCase "Auth" mid-word (userAuth)
@@ -119,6 +127,7 @@
         ]);
 
         function shouldScrubKey(key) {
+            if (typeof key !== 'string' || key.length === 0) return false;
             return ALWAYS_SCRUB_KEY_PATTERNS.some((re) => re.test(key));
         }
 
@@ -132,8 +141,9 @@
                 if (shouldScrubKey(key)) continue;
                 const entry = findEntry(key);
                 if (!entry) {
-                    // Unknown keys travel through opaquely (forward-compat
-                    // with newer schema versions); never scrubbed here.
+                    // Unknown non-secret keys travel through opaquely
+                    // (forward-compat with newer schema versions). Unknown
+                    // secret-shaped keys were already removed by the scrubber.
                     out[key] = settings[key];
                     continue;
                 }
