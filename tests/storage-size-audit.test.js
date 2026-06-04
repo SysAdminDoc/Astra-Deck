@@ -43,7 +43,11 @@ test('typical local payload is not storage.sync eligible', () => {
     // added another 35 bytes.
     // v4.47.0 NF9: adding `wheelSeek: false` + `wheelSeekStepSec: 5`
     // added another 39 bytes.
-    assert.equal(assessment.totalBytes, 177901);
+    // Dead-channel unsubscribe staging adds `subscriptionUnsubscribeStagingData`
+    // to the settings catalogue, adding another 40 bytes.
+    // NF1 videoNotes adds `videoNotes` + `videoNotesData`, adding another
+    // 39 bytes to the empty settings payload.
+    assert.equal(assessment.totalBytes, 177980);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -64,7 +68,7 @@ test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
     assert.match(report, /Safe-store profile sync candidate: viable \(5\.4 KB/);
-    assert.match(report, /Full UI preferences payload: not viable for sync \(11\.3 KB/);
-    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.7 KB/);
+    assert.match(report, /Full UI preferences payload: not viable for sync \(11\.4 KB/);
+    assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.8 KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });

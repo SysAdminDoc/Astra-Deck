@@ -1,66 +1,562 @@
 # Astra Deck Research Report
 
-This is the canonical research summary. Full pre-consolidation source documents
-are archived at:
+Deep-research and product-map pass conducted 2026-06-03. This is the canonical
+research summary; actionable items live in [ROADMAP.md](ROADMAP.md) under
+"Research-Driven Additions." Pre-consolidation source documents are archived at:
 
 - `docs/archive/research/RESEARCH_FEATURE_PLAN.md`
 - `docs/archive/research/RESEARCH_FEATURE_PLAN_PASS3.md`
+- `docs/archive/roadmap-dossier-2026-05-21.md` (the legacy internal
+  planning-track dossier labelled v5.0.0 -> v6.0.0: product plan, competitive
+  matrix, feature catalog, and technical reconnaissance; not the shipped
+  product-version line, which currently agrees at v4.46.0)
 
-## Current Findings
+Claim labels: [Verified] = read in-tree or confirmed against a cited source;
+[Likely] = strong inference from in-tree evidence; [Assumption] = reasonable
+default not directly confirmed; [Needs validation] = requires a device, browser,
+or maintainer action to confirm.
 
-- Astra Deck is a mature YouTube enhancement layer with MV3 Chrome/Firefox,
-  userscript, and local downloader surfaces.
-- The active risk cluster is runtime DOM churn: selector fixtures exist, but
-  live-chat and liquid-glass player captures still need maintainer/browser time.
-- The largest engineering track remains gradual monolith peeling and lifecycle
-  adoption for high-risk features such as `stickyVideo`, `hideVideosFromHome`,
-  and `chatStyleComments`.
-- The highest product gaps are subscription manager depth, per-video notes,
-  companion updater/install polish, and store-safe versus GitHub-full artifact
-  separation.
+## 2026-06-04 Freshness Refresh
 
-## Evidence Sources
+- [Verified] Cycle 13 Actions Node 24 readiness pass on 2026-06-04 found that
+  the latest green `Validate` run on `main` and latest `Build & Release` tag run
+  both emit GitHub's Node 20 JavaScript action deprecation warning. Current
+  workflow pins include `actions/checkout@v4`, `actions/setup-node@v4`,
+  `actions/setup-python@v5`, and `actions/upload-artifact@v4`; GitHub says
+  runners start defaulting JavaScript actions to Node 24 on 2026-06-16 and
+  later remove Node 20. ROADMAP now carries a P1 item to migrate workflows to
+  Node 24-ready action majors and prove `Validate`, `Build & Release`, and
+  `yt-dlp Smoke` no longer emit the warning. Detailed evidence lives in
+  `docs/research-cycle-13-actions-node24-readiness.md`.
+- [Verified] Cycle 12 dependency-review enablement pass on 2026-06-04 found
+  that open Dependabot PR #11 is blocked by platform setup rather than a
+  vulnerable dependency: `Validate / Dependency review` fails with GitHub's
+  message that dependency graph must be enabled, while the same run's JS,
+  Python audit, and Python downloader jobs are green. The repository
+  security-analysis API response shows Dependabot security updates disabled and
+  no dependency-graph field in the returned block. ROADMAP now carries a P1
+  manual-gated item to enable dependency graph / Dependabot alert settings,
+  rerun PR #11, and only require PR-only Dependency review after a successful PR
+  context is proven. Detailed evidence lives in
+  `docs/research-cycle-12-dependency-review-enablement.md`.
+- [Verified] Cycle 11 main-protection pass on 2026-06-04 found that GitHub
+  branch protection exists for `main`, but required status checks are not
+  enabled and repository rulesets are empty. Recent `Validate` runs are green
+  after the CI/dependency fixes, but earlier failed `main` pushes still landed,
+  so the build lane added required `Validate` checks to `main` branch protection
+  and recorded the exact check names in `docs/repo-settings.md`. Detailed
+  evidence lives in `docs/research-cycle-11-main-protection-status-checks.md`.
+- [Verified] Cycle 10 Python dependency-audit pass on 2026-06-04 found a
+  preventive hardening gap rather than an active advisory: Dependabot covers pip
+  and the current `pip-audit 2.10.0` probe against
+  `astra_downloader/requirements.txt` found no known vulnerabilities across 25
+  resolved packages. The build lane closed the gap by adding a dedicated
+  `Validate` Python dependency-audit job with JSON artifact upload plus PR
+  dependency-review coverage. Detailed evidence lives in
+  `docs/research-cycle-10-python-dependency-audit.md`.
+- [Verified] Cycle 9 privacy/consent-readiness pass on 2026-06-04 found a
+  non-duplicate release-readiness gap: Astra Deck has strong store permission
+  rationale and profile-split artifacts, but no concrete privacy-policy source
+  or Firefox data-transmission consent strategy pinned to the generated Firefox
+  manifest path. ROADMAP now carries a P1 item for a cross-store privacy
+  disclosure and Firefox data-consent packet, with detailed evidence in
+  `docs/research-cycle-9-privacy-consent-readiness.md`.
+- [Verified] Cycle 8 CI/release-integrity pass on 2026-06-04 found two
+  non-duplicate delivery risks: `Validate` was red on `main` because the Python
+  downloader job failed test collection on Ubuntu with missing `libEGL.so.1`,
+  and the public latest GitHub release still served v4.5.2 while the source
+  tree/build outputs were v4.46.0. The build lane closed both gaps: `Validate`
+  is green and public latest release is now `v4.46.0` with 12 assets,
+  `SHA256SUMS`, release manifest, SBOM, and a documented local-signing path.
+  Detailed evidence lives in `docs/research-cycle-8-ci-release-integrity.md`.
+- [Verified] Cycle 2 refresh on 2026-06-04 fetched and compared `origin/main`
+  (`git rev-list --left-right --count HEAD...@{u}` returned `0 0`) after the
+  selector-capture implementation landed separately on the build lane. The
+  roadmap now treats Return YouTube Dislike estimate disclosure, first-run
+  companion onboarding, and diagnostics export as shipped work, with a new
+  non-duplicate P3 follow-up for proofing identical-to-English locale copy.
+- [Verified, external] Primary-source refresh for this cycle checked Chrome
+  extension i18n guidance, MDN WebExtensions i18n guidance, Mozilla
+  Extension Workshop MV3 / `web-ext` / signing documentation, W3C WCAG 2.2
+  Target Size and Focus Appearance guidance, Chrome Web Store MV3 policy, and
+  the yt-dlp GitHub releases/PO-token guidance. The current `yt-dlp==2026.3.17`
+  pin remains aligned with the latest stable GitHub release observed on this
+  pass; PO-token churn remains a companion watch item, but the existing Deno /
+  PO-token health and yt-dlp smoke rows already cover it.
+- [Verified] Cycle 3 reconciliation on 2026-06-04 updated stale report sections
+  that still described settings import/export, onboarding, diagnostics export,
+  RYD estimate disclosure, settings migration, and the yt-dlp cookie threat model
+  as gaps after those items had shipped.
+- [Verified] Cycle 4 capture-matrix pass on 2026-06-04 found that
+  `scripts/build-selector-fixtures.js` still registers only home, watch, and
+  live-chat MHTML sources, with DOM-subset matching limited to `playerChrome`
+  and `liveChat`. ROADMAP P2 now lists the exact missing capture files, mapped
+  selector packs, builder/test hooks, and verification path for the capture-week
+  expansion.
+- [Verified] Cycle 5 Firefox-gate pass on 2026-06-04 confirmed the repo already
+  has static Firefox manifest-patch coverage, but release artifacts are not run
+  through `web-ext lint` or a clean Firefox profile. ROADMAP P1 now calls for a
+  pinned Firefox artifact lint/load gate with captured startup errors.
+- [Verified] Cycle 6 overlay-a11y pass on 2026-06-04 found that the automated
+  audit scripts cover popup HTML/CSS only, while toast DOM, download dialogs,
+  transcript panels, video notes, subscription group surfaces, and downloader
+  health/history panels remain manual via `docs/screen-reader-smoke.md`. ROADMAP
+  P2 now names these targets and the first-pass target-size/focus/name/live-region
+  assertions.
+- [Verified] Cycle 7 locale-proofing pass on 2026-06-04 regenerated
+  `docs/i18n-coverage.md` after feature-definition i18n extraction. The current
+  report profiles 860 EN keys and shows 622-658 identical-to-English strings per
+  non-EN locale; 584 of 612 feature name/description keys are still identical to
+  EN across non-EN locale bundles.
+- [Verified] The live working tree has advanced beyond the 2026-06-03 report:
+  NF6 companion self-update, NF2 nested subscription groups, dead-channel
+  detection / unsubscribe staging, NF1 per-video notes, the group notifications
+  digest, Study / Work export, feature-definition i18n, and store-safe /
+  GitHub-full release artifact split, monthly yt-dlp smoke CI, and the
+  selector-fixture match harness, and the Firefox programmatic-injection
+  pre-flight are now
+  represented in `ROADMAP.md`, `extension/ytkit.js`, docs, the packager,
+  workflows, fixture generation, static checks, and hardening tests. The
+  subscription implementation uses rendered-feed DOM heuristics, local
+  last-visit data, and a 30-day local undo/staging window rather than a YouTube
+  Data API unsubscribe path; the notes and study/work exports stay local-first
+  with versioned JSON, Markdown, or CSV downloads; the settings-panel feature
+  labels now resolve through the locale layer before falling back to inline
+  English; the store-safe package now strips AI, Cobalt, and loopback host
+  grants while GitHub-full keeps the complete data-flow catalogue; yt-dlp
+  bumps now run through exact Python package pins plus a bounded real-download
+  smoke workflow; selector fixture regeneration now proves `playerChrome` and
+  `liveChat` selector-pack chains against decoded MHTML markup; Firefox
+  pre-flight now blocks future programmatic injection APIs until their
+  `moz-extension://` targets are reviewed; and the Flask `/download` boundary
+  now rejects client-supplied yt-dlp argv/flag fields before queueing; storage
+  growth for notes, timestamp bookmarks, watch progress, and watch-time stats
+  is bounded at write time; and `policy-profile.js` scrub coverage now removes
+  separator-aware API-key names plus password/credential/key-alias/cookie/
+  token/bearer/secret/auth-shaped values before profile or forward-compat
+  export passthrough; and Cobalt fallback failures now record an actionable
+  `cobalt-fallback` diagnostic with origin-only endpoint context when Astra
+  Downloader is offline; and a new long-session route/mutation stress test now
+  pins shared observer count, scoped-rule early exits, capped diagnostic maps,
+  and listener/observer cleanup; and a pinned v1 full-profile settings fixture
+  now proves the 362-key settings schema migrates forward without unclassified
+  drops.
+- [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
+  `node --check build-extension.js`, `node --check extension/background.js`,
+  `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
+  (421 checks), `npm run check`, `npm test` (616 checks), `npm run build`,
+  ZIP manifest inspection for store-safe/full host grants, and
+  `node sync-userscript.js` all passed. The build emitted store-safe and
+  GitHub-full Chrome ZIP/CRX plus Firefox ZIP/XPI artifacts for v4.46.0.
+- [Verified] Validation on 2026-06-04 after the monthly yt-dlp smoke batch:
+  `node --check tests/yt-dlp-smoke-workflow.test.js`,
+  `py -3.12 -m py_compile scripts/yt-dlp-smoke.py`,
+  `node --test tests/yt-dlp-smoke-workflow.test.js` (3 checks),
+  `py -3.12 -m pip install -r astra_downloader/requirements.txt`,
+  `py -3.12 scripts/yt-dlp-smoke.py` (downloaded `dQw4w9WgXcQ.mp4`, 3441508
+  bytes), `py -3.12 -m pytest astra_downloader` (117 tests), `npm run check`,
+  `npm test` (619 checks), and `npm run build` all passed.
+- [Verified] Validation on 2026-06-04 after the selector-resilience harness
+  batch: `node --check scripts/build-selector-fixtures.js`,
+  `npm run build:fixtures`, `node --check tests/selector-regression.test.js`,
+  `node --test tests/selector-regression.test.js` (33 checks), `npm run check`,
+  `npm test` (621 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the Firefox injection audit batch:
+  `node --check scripts/check-firefox-injection.js`,
+  `node scripts/check-firefox-injection.js`, `node --check
+  tests/firefox-injection-audit.test.js`, and `node --test
+  tests/firefox-injection-audit.test.js` (3 checks), `npm run check`,
+  `npm test` (624 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the downloader request-field
+  allowlist batch: `py -3.12 -m py_compile astra_downloader/astra_downloader.py`,
+  `py -3.12 -m pytest astra_downloader/test_astra_downloader.py -q` (121
+  tests), `npm run check`, `npm test` (624 checks),
+  `py -3.12 -m pytest astra_downloader` (121 tests), `npm run build`,
+  `node sync-userscript.js`, and `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the storage-growth cap batch:
+  `node --check extension/ytkit.js`, `node --check YTKit.user.js`,
+  `node --test tests/hardening.test.js tests/userscript-parity.test.js` (429
+  checks), `npm run check`, `npm test` (628 checks), `npm run build`,
+  `node sync-userscript.js`, and `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the policy-profile scrub coverage
+  batch: `node --check extension/core/policy-profile.js`,
+  `node --check tests/hardening.test.js`, and
+  `node --test tests/hardening.test.js` (426 checks), `npm run check`,
+  `npm test` (630 checks), `npm run build`, `node sync-userscript.js`,
+  `node --check YTKit.user.js`, and `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the Cobalt fallback diagnostic
+  batch: `node --check extension/ytkit.js`,
+  `node --check tests/hardening.test.js`, and
+  `node --test tests/hardening.test.js` (427 checks), `npm run check`,
+  `npm test` (631 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the long-session memory-leak
+  regression batch: `node --check tests/long-session.test.js` and
+  `node --test tests/long-session.test.js` (1 check), `npm run check`,
+  `npm test` (632 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the settings migration fixture
+  batch: `node --check tests/settings-migration-roundtrip.test.js` and
+  `node --test tests/settings-migration-roundtrip.test.js` (2 checks),
+  `npm run check`, `npm test` (633 checks), `npm run build`,
+  `node sync-userscript.js`, and `git diff --check` all passed.
+- [Verified, external] Current source check did not create a new roadmap row:
+  Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
+  code / permission-rationale items relevant; MDN's `scripting.executeScript`
+  page is still the right Firefox MV3 compatibility anchor; Mozilla's Firefox
+  128 MV3 MAIN-world support keeps the Firefox pre-flight item actionable; yt-dlp
+  `2026.03.17` remains the latest stable release observed, with YouTube support
+  explicitly called out as a churn risk; and YouTube Data API subscription reads
+  require OAuth and have documented quota cost, supporting the local-first DOM
+  staging approach for this slice.
+- [Verified, external] Package/security freshness check: `npm audit --omit=dev
+  --audit-level=moderate` is clean, `crx3` is current at 2.0.0, and ESLint has
+  low-risk patch/minor drift (`10.2.1` installed; npm reports `10.4.1` current).
+  The dirty companion source/test work in the live tree already targets the
+  existing yt-dlp flag-allowlist roadmap row, so this pass updated that row's
+  status instead of adding a duplicate.
 
-- Local planning artifacts, manifest, settings schema, extension core modules,
-  modular feature directories, userscripts, downloader service, tests, build
-  scripts, workflows, and contributor docs.
-- Prior competitor and parity work covering SponsorBlock, DeArrow, Return
-  YouTube Dislike, Enhancer for YouTube, Unhook, Improve YouTube, PocketTube,
-  UnTrap, BlockTube, YouTube Alchemy, YouFocus, and related tools.
-- Existing local MHTML captures and selector fixtures, with live-chat and
-  newer player-chrome captures still called out as gaps.
+## Executive Summary
 
-## Research Archive Use
+Astra Deck is a mature, single-developer YouTube enhancement platform spanning a
+Manifest V3 extension (Chrome/Edge/Brave/Firefox 140+), a Tampermonkey/Violent-
+monkey userscript built from the same source, and a local Python/Flask + PyQt6 +
+yt-dlp companion downloader. [Verified] It carries a 362-key flat settings schema,
+27 `extension/core/` runtime modules, 11 peeled `extension/features/` modules, a
+28-surface capture-provenanced selector-pack system, 10 bundled UI locales, and a
+strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
+JavaScript dependency audit, Python dependency audit, dependency review, plus a
+build/release workflow). [Verified]
 
-- `RESEARCH_FEATURE_PLAN.md` preserves the detailed v4.46+ active backlog,
-  evidence, non-goals, risks, and open questions as they existed before this
-  consolidation.
-- `RESEARCH_FEATURE_PLAN_PASS3.md` preserves the external-research pass,
-  opportunity ranking, file inventory, ecosystem notes, and could-not-verify
-  sections.
+The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
+against YouTube's high-velocity redesigns, (2) **Firefox release parity** before
+AMO or self-distributed Firefox updates, and (3) **repository/settings drift**
+where CI jobs exist before the GitHub security-analysis settings or action
+runtime migrations that make them durable.
 
-## Local Factory-Loop Research Pass (2026-04-24)
+Top remaining opportunities (one-liners):
 
-A separate L1 factory-loop research pass (charter: "maintenance mode only —
-security focused") produced a 103-item harvest scored across six axes and
-tiered into NOW / NEXT / LATER / under-consideration / rejected buckets. Its raw
-artifacts (`iter-1-*.md`, `iter-4/5/8-*.md`, `PHASE-2-5-SUMMARY.md`, the
-`docs/research/README.md` index) live under the gitignored `docs/research/`
-tree and are intentionally local-only — they are working notes, not shipped
-documentation.
+1. Migrate GitHub Actions workflows to Node 24-ready action majors before
+   GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
+   [Verified]
+2. Enable dependency graph / Dependabot alert settings so the PR-only
+   Dependency review job can evaluate dependency changes instead of failing on
+   repository setup. [Verified]
+3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+   lint both Firefox profiles with `web-ext` and load at least store-safe in a
+   clean Firefox profile. [Verified]
+4. MHTML capture-week expansion across Shorts, channel, search, history,
+   watch-later, embedded player, and notifications surfaces, including fixture
+   builder and selector-match coverage for each registered pack. [Verified]
+5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+   dialogs, transcript panels, video notes, subscription group surfaces, and
+   downloader health/history panels. [Verified]
+6. Locale proofing queue for identical-to-English feature names/descriptions in
+   non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
+   feature keys landed. [Verified]
+7. Signed Astra Downloader installer/MSI once the signing budget and submission
+   intent are decided. [Needs validation]
 
-On 2026-06-03 that pass was triaged into the canonical trio:
+## Evidence Reviewed
 
-- All three NOW security items — yt-dlp/curl_cffi pins, the Flask
-  DNS-rebinding Host-header defense, and the Trusted Types `createPolicy`
-  collision guard — were verified already shipped and recorded in
-  `COMPLETED.md`.
-- NEXT-2/3 (`chrome.storage.session` migration) and NEXT-4 (the
-  `no-post-await-addlistener` ESLint rule) were likewise verified shipped.
-- The still-actionable remainder — yt-dlp smoke-test CI (NEXT-1 second half),
-  the selector-resilience harness (NEXT-5), the Firefox 149 `executeScript`
-  pre-flight audit (NEXT-6), and the yt-dlp flag allowlist — moved into
-  `ROADMAP.md` under "Hardening And Cross-Browser".
-- The "no further features" charter cap and the 18+ rejected landscape
-  candidates were marked `[STALE]` in `COMPLETED.md`, superseded by the
-  2026-05-21 v5.0.0 foundation sprint and current feature backlog.
+- `package.json` (v4.46.0, node ≥22, crx3 dep, full `check`/`test` scripts). [Verified]
+- `astra_downloader/requirements.txt` exact-pins `yt-dlp==2026.3.17` and
+  `curl_cffi==0.15.0` for the scheduled extractor smoke gate, while retaining
+  upper-major GUI/server dependency bounds. [Verified]
+- `extension/manifest.json` (MV3 v4.46.0, 4 permissions, 19 full-profile host
+  origins, document_start MAIN + ISOLATED dual-world content scripts, live-chat
+  excluded from the main scripts). [Verified]
+- `extension/core/` (27 modules: registry, selectors, navigation, api-limiter,
+  trusted-html, predicate-sandbox, transcript-service, storage-manager,
+  diagnostic-log, policy-profile, selector-health, settings-schema 107 KB, etc.). [Verified]
+- `extension/features/` (11 peeled modules) and `extension/ytkit.js` (2.1 MB
+  monolith) + `ytkit-main.js` MAIN-world bridge. [Verified]
+- `extension/default-settings.json` (362 keys). [Verified]
+- `astra_downloader/` (Flask + PyQt6 + yt-dlp companion; loopback 9751 + 5
+  fallbacks; bearer-token + Host-header allowlist per `docs/architecture.md`). [Verified]
+- `scripts/` (build, fixtures, i18n, storage audit, a11y/contrast audits,
+  version/settings/no-eval checks, manifest-patch for Gecko). [Verified]
+- `.github/workflows/build.yml`, `validate.yml`, and `yt-dlp-smoke.yml` (test +
+  check gate, tag-driven release with version-surface verification, and monthly
+  `workflow_dispatch` yt-dlp extractor smoke). [Verified]
+- GitHub Actions Validate runs `26950005859`, `26950502914`, `26950889307`,
+  and `26951303023` are green on `main` after the Python Qt-runtime fix,
+  privacy/consent packet, Python dependency audit gate, and release-tooling
+  update. [Verified]
+- Latest GitHub release `v4.46.0` now points at `ac6a363` and attaches 12
+  assets: eight profile-split artifacts, userscript, SBOM, `release-manifest.json`,
+  and `SHA256SUMS`. [Verified]
+- `tests/` (19 spec files incl. hardening, selector-regression,
+  settings-migration-roundtrip, userscript-parity). [Verified]
+- `docs/architecture.md`, `docs/cws-submission-checklist.md`,
+  `docs/screen-reader-smoke.md`, `docs/signing-keys.md`,
+  `docs/store-permission-rationale.md`, and
+  `docs/research-cycle-9-privacy-consent-readiness.md`,
+  `docs/research-cycle-10-python-dependency-audit.md`,
+  `docs/research-cycle-11-main-protection-status-checks.md`, and
+  `docs/research-cycle-12-dependency-review-enablement.md`, and
+  `docs/research-cycle-13-actions-node24-readiness.md`. [Verified]
+- Open Dependabot PR #11 and run `26950993002`: Dependency review fails with
+  GitHub's dependency-graph enablement message while the other `Validate` jobs
+  pass. The repository security-analysis API response shows a public repository
+  with Dependabot security updates disabled and no dependency-graph field in the
+  returned block. [Verified]
+- Current workflow action-runtime probe: `gh run view 26953094214 --log` and
+  `gh run view 26951406026 --log` both emit GitHub's Node 20 JavaScript action
+  deprecation warning. `.github/workflows/validate.yml`, `build.yml`, and
+  `yt-dlp-smoke.yml` still pin Node 20-era `checkout`, `setup-node`,
+  `setup-python`, and `upload-artifact` action majors. [Verified]
+- `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
+- Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
+  Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
+  Chrome Web Store MV3 program policy; AMO Firefox MV3; WCAG 2.2 AA; yt-dlp
+  cookie-handling advisories; Qt Linux runtime requirements; GitHub release asset
+  digests and artifact/SBOM attestations; npm SBOM; Chrome Web Store privacy
+  fields / Limited Use policy; Mozilla add-on data-transmission consent and
+  Firefox built-in `data_collection_permissions`; PyPA `pip-audit`,
+  `pypa/gh-action-pip-audit`, and GitHub dependency review. [Verified, external]
+
+## Current Product Map
+
+Four moving parts communicating across three trust boundaries (per
+`docs/architecture.md`): [Verified]
+
+1. **MV3 extension** (`extension/`) — content scripts inject at `document_start`
+   in both MAIN (`ytkit-main.js`) and ISOLATED (`core/*` + selector packs +
+   `ytkit.js`) worlds; a dedicated all-frame injection handles the live-chat
+   iframe; `background.js` is the service worker.
+2. **Userscript** (`YTKit.user.js`) — built from `extension/ytkit.js` via
+   `sync-userscript.js`; parity guarded by `userscript-parity.test.js`.
+3. **Astra Downloader** — Python companion, HTTP on `127.0.0.1:9751` (+ five
+   fallback ports), bearer-token auth + DNS-rebinding Host-header defense.
+4. **Toolbar popup** — the only settings surface (the options page was retired in
+   v3.19.0).
+
+Target surface: YouTube desktop web + `youtube-nocookie.com` + `youtu.be` +
+live-chat iframe + `i.ytimg.com`; `m.youtube.com` and `studio.youtube.com`
+excluded by design. [Verified]
+
+## Feature Inventory
+
+| Area | Where | Maturity | Coverage |
+|------|-------|----------|----------|
+| Sponsor/segment skip (SponsorBlock) | `extension/ytkit.js`, `sponsor.ajay.app` host | Shipped | Hardened, rate-limited [Likely] |
+| Title/thumbnail (DeArrow-class) | settings schema + `ytkit.js` | Shipped | [Likely] |
+| Return YouTube Dislike | `returnyoutubedislikeapi.com` host | Shipped | Estimate disclosure now appears in count/ratio UI, locale copy, title, and aria-label paths [Verified] |
+| Feed/comment/channel filtering (BlockTube-class) | `features/video-hider/`, `ytkit.js` | Shipped | ReDoS-guarded; channel-key cache [Verified] |
+| Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Depth-2 groups, dead-channel staging, and group digest are shipped; external sync remains absent [Verified] |
+| Theater split / sticky player | `features/sticky-video/`, `player-dock/` | Shipped | Lifecycle-unified chat observer [Verified] |
+| Theming / OLED tokens | `features/theme-css/`, `wave-8-css/`, `home-subs-css/` | Shipped | Schema-driven [Verified] |
+| Transcript viewer + IndexedDB search | `core/transcript-service.js` | Shipped | [Verified] |
+| Study / Work export | `researchSpacedReview` feature | Shipped | Markdown/CSV export from watch time, focused mode, digital wellbeing, and timestamp bookmarks [Verified] |
+| AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | GitHub-full artifact only [Verified] |
+| Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint and popup action; local loopback grants stay GitHub-full [Verified] |
+| Per-video notes | `videoNotes` feature | Shipped | Local-first notes, versioned export, 1000-note LRU cap [Verified] |
+| Settings import/export | popup + `policy-profile.js` | Shipped | Schema-validated local backup/import with credential scrub and schema-only export [Verified] |
+| Selector-pack health | `core/selector-health.js` | Shipped | Now reports attribute-shape drift [Verified] |
+
+## Competitive Landscape
+
+- **SponsorBlock / DeArrow** (same author): community-sourced segment skip and
+  title/thumbnail correction; 4.7★; the de-facto baseline Astra already mirrors. [Verified]
+- **Enhancer for YouTube**: deep player control (quality/codec/FPS, popup player)
+  but documented Firefox reliability gaps and YouTube-update compatibility churn —
+  the clearest opening for Astra cross-browser parity. [Verified]
+- **Improve YouTube!**: open-source, frequent updates, strong Firefox support —
+  Astra's nearest open-source rival on reliability. [Verified]
+- **PocketTube** (200k+ users): nested subscription groups, custom icons,
+  "play all," and cross-device sync via Google Drive / Chrome profile — Astra's
+  subscription roadmap is differentiated by local-first but lacks sync/import-export. [Verified]
+- **BlockTube**: rule-based filtering; Astra's filter engine is the planned
+  superset (predicate-sandbox already exists for safe DSL evaluation). [Verified]
+- **Return YouTube Dislike**: estimate-based for post-2021/low-traffic videos —
+  Astra now discloses that caveat in the rendered count/ratio UI and locale
+  descriptions. [Verified]
+
+Standards: Chrome Web Store MV3 program policy (no remotely hosted code;
+single-purpose; per-permission justification; specific host patterns over
+`<all_urls>`). Astra correctly avoids `<all_urls>` but bundles a broad feature
+set + sensitive permissions, raising the single-purpose/justification bar. WCAG
+2.2 AA adds focus-appearance and target-size criteria relevant to in-page
+overlays. yt-dlp has a cookie-leak advisory class (cross-host leakage on
+redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
+
+## Quality & Friction Findings
+
+Current risk status:
+
+- **[Closed] Red CI on `main`.** The Ubuntu PyQt6 runtime failure is fixed:
+  `Validate` installs the Qt runtime package set, runs with
+  `QT_QPA_PLATFORM=offscreen`, performs a PyQt preflight, and passes the Python
+  downloader suite on `main`. [Verified]
+- **[Closed] Release-channel lag.** Public latest release is now `v4.46.0` with
+  all eight profile-split extension artifacts, userscript, SBOM,
+  `release-manifest.json`, and `SHA256SUMS`; release docs record the local
+  `ytkit.pem` signing path. [Verified]
+- **[Closed] Main branch did not require green checks.** Classic branch
+  protection now records required `Validate` check contexts in
+  `docs/repo-settings.md`; force-push/deletion protections and admin enforcement
+  remain enabled. [Verified]
+- **[Closed] Privacy/data-consent artifacts incomplete.** `docs/privacy-policy.md`
+  is the stable policy source, Chrome Limited Use and data-category disclosures
+  are documented, and Firefox artifacts require Firefox 140+ with generated
+  `data_collection_permissions`. [Verified]
+- **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
+  but no `web-ext lint` or clean-profile Firefox MV3 load gate exercises the
+  artifact before AMO or self-distributed Firefox updates. → ROADMAP P1 Firefox
+  parity smoke. [Verified]
+- **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed,
+  but Shorts, channel, search, history, watch-later, embedded player, and
+  notifications surfaces still lack capture-backed selector fixtures; the
+  fixture builder currently registers only home, watch, and live-chat captures.
+  → ROADMAP P2 capture-week expansion. [Verified]
+- **[Med] In-page overlay accessibility.** Popup a11y/contrast is CI-gated, but
+  transcript, notes, theater split, subscription manager, and toast overlays are
+  not yet under the WCAG 2.2 target-size/focus-appearance gate; `audit:a11y` is
+  currently popup-only. → ROADMAP P2 overlay a11y audit. [Verified]
+- **[Med] Locale proofing debt.** The feature-definition i18n extraction shipped,
+  but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
+  strings per non-EN locale, with 584 of 612 feature name/description keys still
+  identical to EN. → ROADMAP P3 locale proofing queue. [Verified]
+- **[Low/Med] Python dependency audit gap.** Dependabot watches
+  `astra_downloader/requirements.txt` and the current `pip-audit` baseline is
+  clean, but CI has no Python vulnerability gate comparable to `npm audit`.
+  This can let a future Flask/Waitress/PyQt6/requests/yt-dlp transitive advisory
+  wait for manual review rather than failing validation immediately. → ROADMAP
+  P2 Python dependency audit gate. [Verified]
+- **[Gated] Downloader installer trust.** Companion onboarding is now explicit,
+  but the signed installer/MSI remains blocked on signing budget and submission
+  intent. → ROADMAP P2 signed installer/MSI. [Needs validation]
+
+Closed since the 2026-06-03 baseline:
+
+- Settings migration safety is now pinned by an old-version full-profile fixture.
+  [Verified]
+- Version-surface confusion was reconciled to the live v4.x ship line. [Verified]
+- Settings import/export now has schema validation and credential scrub. [Verified]
+- Companion onboarding, empty states, install prompt recovery, and update action
+  are shipped. [Verified]
+- Diagnostics export now produces a scrubbed bug-report bundle. [Verified]
+- RYD estimate disclosure now appears in the UI and locale copy. [Verified]
+
+## Architecture & Technical Findings
+
+- **Boundaries** are clean and documented: three explicit trust boundaries,
+  dual-world content scripts, bearer-token + Host-header companion. [Verified]
+- **Persistence**: `chrome.storage` + `chrome.storage.session` for transient SW
+  state; IndexedDB for transcripts; `unlimitedStorage`. Growth bounds for
+  `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`, and
+  `ytkit-watch-time` now run at write time with deterministic eviction in the
+  extension and userscript paths, plus an extension `storageQuotaLRU` backstop.
+  [Verified]
+- **Concurrency / lifecycle**: `feature-lifecycle.js`, `lifecycle-route-bridge.js`,
+  and AbortController machinery shipped; per-category adoption is deferred to a
+  multi-slice initiative (Existing Planned Work). [Verified]
+- **Error handling**: a custom `require-catch-reason` lint rule now spans
+  `core/*.js` and `ytkit.js`; silent catches must carry a `reason:`. [Verified]
+- **Dependency health**: minimal npm deps (`crx3`, `eslint`); `npm audit`
+  gated in CI; yt-dlp is the highest-churn dependency and now has exact
+  package pins plus a monthly/manual smoke workflow that downloads a bounded
+  YouTube fixture before extractor bumps are trusted. Python dependency
+  vulnerability auditing is not yet a CI gate, though the current local
+  `pip-audit` probe is clean. [Verified]
+- **Testability**: 19 spec files including hardening (474 KB),
+  selector-regression, and userscript-parity; in-page overlay a11y is not yet
+  automated. [Verified]
+- **Dead code**: `ytkit.js` retains inline feature objects as compatibility
+  fallbacks after peeling — intentional, not dead, but a long-tail cleanup target. [Likely]
+- **Release automation**: `workflow_dispatch` + tag-driven build/release with a
+  `check-versions --tag` gate and `gh release` upload — matches the house CI
+  standard, but current public latest release lags the source tree by many
+  versions and the release workflow does not yet attach a project-owned checksum
+  manifest or provenance. Firefox build is patched but not smoke-tested
+  (ROADMAP P1). [Verified]
+
+## Security / Privacy / Data Safety
+
+- **Permission surface** [Verified]: `cookies`, `downloads`, `unlimitedStorage`,
+  `storage`; 19 GitHub-full host origins incl. three AI providers, Cobalt,
+  Reddit, and seven loopback ports. No `<all_urls>`; specific patterns used.
+  Store-safe build artifacts now strip AI, Cobalt, and loopback grants/CSP, but
+  the breadth of the full package still raises the single-purpose/justification
+  bar (ROADMAP P1 store note).
+- **No remote code** [Likely]: `check-no-eval.js` gate + MV3 prohibition; consistent
+  with policy.
+- **Credential handling** [Verified]: `policy-profile.js` now backs settings
+  import/export, schema-only export, and diagnostics bundle redaction; AI keys,
+  endpoint URLs, custom CSS, cookies, bearer/auth tokens, and credential-shaped
+  fields must continue to route through the scrubber for any future export path.
+- **Companion** [Verified]: loopback-only (`127.0.0.1`, never `localhost`),
+  bearer-token, DNS-rebinding Host-header defense, yt-dlp pinned, and Flask
+  `/download` request-field allowlisting that blocks client-supplied yt-dlp
+  argv / flag payloads before queueing. The yt-dlp cookie-handling threat model
+  is documented; signed installer/MSI trust polish remains gated.
+- **Release integrity** [Verified]: GitHub release assets expose SHA-256 digest
+  fields and GitHub supports artifact/SBOM attestations, but Astra's current
+  release workflow only uploads `build/*`; a project-owned `SHA256SUMS` manifest,
+  companion sidecar publication, and attestation path are not yet in place.
+- **Privacy disclosure / consent** [Verified]: store-safe permission rationale
+  exists, but a linkable privacy policy and Firefox data-consent build contract
+  are not yet shipped. Chrome requires privacy-field data-use certification and
+  policy consistency; Mozilla treats data handled outside the add-on/local
+  browser as transmission and requires consent/control, with built-in
+  `data_collection_permissions` available for Firefox 140+ while the current
+  generated manifest still targets Firefox 128.
+
+## UX & Accessibility
+
+- Popup a11y + contrast are CI-gated; `docs/screen-reader-smoke.md` is a manual
+  procedure. [Verified]
+- In-page overlays (theater split, transcript, notes, subscription manager,
+  toasts) have no automated a11y gate and are the WCAG 2.2 AA target-size /
+  focus-appearance risk (ROADMAP P2). [Verified]
+- House rules honored: dark/OLED, dense, no confirmation dialogs, no keyboard
+  shortcuts (the `commands` surface was removed in v4.5.3). [Verified]
+
+## Explicit Non-Goals
+
+- `m.youtube.com` and `studio.youtube.com` support (excluded by design). [Verified]
+- Keyboard shortcuts (removed in v4.5.3; must not return). [Verified]
+- Remotely hosted code / analytics / opaque auto-update (trust posture). [Verified]
+- Cloud account sync as a default — Astra stays local-first; any sync must be
+  explicit and opt-in (contrast with PocketTube's Google-Drive sync). [Assumption]
+
+## Open Questions
+
+- Whether the next public release should be v4.46.0 exactly or a new v4.47.0
+  after the CI and release-integrity fixes land. [Needs validation]
+- Whether `main` should use classic branch-protection required checks or a
+  repository ruleset, and whether all `main` updates should go through PRs.
+  [Needs validation]
+- Whether dependency graph / Dependabot alerts should be enabled alone first, or
+  Dependabot security updates should also be enabled in the same settings pass.
+  [Needs validation]
+- Whether GitHub Actions migrations should jump to the latest observed majors
+  (`checkout@v6`, `setup-node@v6`, `setup-python@v6`, `upload-artifact@v7`) or
+  the lowest Node 24-ready majors to reduce behavior drift. [Needs validation]
+- Whether Firefox support should move from 128 to 140 to use built-in data
+  collection consent cleanly, or keep 128-139 support with a custom
+  consent/control page. [Needs validation]
+- Where the stable privacy policy should live: tracked docs rendered through the
+  project homepage, README one-click link, or another maintainer-controlled URL.
+  [Needs validation]
+- Whether Python dependency auditing should use PyPI advisories only, OSV, or
+  both; and whether audit JSON should be retained as a release artifact.
+  [Needs validation]
+- Whether CRX/XPI artifacts remain maintainer-local because of `ytkit.pem`, or
+  whether CI should attest only ZIP/userscript/SBOM artifacts while local-signed
+  CRX/XPI are attached with checksum sidecars. [Needs validation]
+- Downloader signing budget and CWS/AMO submission intent (gates the signed
+  installer work). [Needs validation]
+- Live-stream MHTML capture window for full live-chat iframe internals — repeated
+  headless-capture timeouts mean this needs a manual/stable-browser save path.
+  [Needs validation]
+- Real-browser QA for the DOM-heuristic dead-channel staging flow, especially on
+  large subscription feeds and YouTube layouts outside the current rendered-card
+  selectors. [Needs validation]
+- Whether the v5/v6 numbering should be retired entirely or formally re-baselined
+  onto the 4.46.x line. [Needs validation]
+- Lifecycle-migration cadence and which feature category owners are available for
+  the paired DOM-walking peels + visible-behaviour QA. [Needs validation]

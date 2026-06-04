@@ -22,11 +22,25 @@ const targetVersion = versionMatch[1];
 let userscriptText = fs.readFileSync(USERSCRIPT_SOURCE, 'utf8');
 const before = userscriptText;
 
-userscriptText = userscriptText.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m, `$1YTKit v${targetVersion}`);
-userscriptText = userscriptText.replace(/^(\/\/ @version\s+)[\d.]+/m, `$1${targetVersion}`);
-userscriptText = userscriptText.replace(/^(\/\/ @updateURL\s+).+$/m, `$1${USERSCRIPT_RAW_URL}`);
-userscriptText = userscriptText.replace(/^(\/\/ @downloadURL\s+).+$/m, `$1${USERSCRIPT_RAW_URL}`);
-userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/, `const YTKIT_VERSION = '${targetVersion}';`);
+const headerEnd = userscriptText.indexOf('// ==/UserScript==');
+if (headerEnd === -1) {
+    console.error('Could not find userscript metadata header terminator');
+    process.exit(1);
+}
+const headerCloseEnd = headerEnd + '// ==/UserScript=='.length;
+let headerText = userscriptText.slice(0, headerCloseEnd);
+const bodyText = userscriptText.slice(headerCloseEnd);
+headerText = headerText.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m,
+    (_match, prefix) => `${prefix}YTKit v${targetVersion}`);
+headerText = headerText.replace(/^(\/\/ @version\s+)[\d.]+/m,
+    (_match, prefix) => `${prefix}${targetVersion}`);
+headerText = headerText.replace(/^(\/\/ @updateURL\s+).+$/m,
+    (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
+headerText = headerText.replace(/^(\/\/ @downloadURL\s+).+$/m,
+    (_match, prefix) => `${prefix}${USERSCRIPT_RAW_URL}`);
+userscriptText = headerText + bodyText;
+userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/,
+    () => `const YTKIT_VERSION = '${targetVersion}';`);
 
 // v4.20.0: bundle the v5.0.0 core modules into the userscript so the
 // userscript path reaches feature parity with the MV3 extension. Each
@@ -35,6 +49,7 @@ userscriptText = userscriptText.replace(/const YTKIT_VERSION = '[^']+';/, `const
 // region between the BEGIN/END markers is replaced wholesale on every
 // sync; do NOT hand-edit content between the markers in YTKit.user.js.
 const V5_BUNDLE_MODULES = [
+    'extension/core/styles.js',
     'extension/core/settings-schema.js',
     'extension/core/feature-lifecycle.js',
     'extension/core/policy-profile.js',
@@ -50,10 +65,15 @@ const V5_BUNDLE_MODULES = [
     'extension/features/theme-css/index.js',
     'extension/features/wave-8-css/index.js',
     'extension/features/home-subs-css/index.js',
+    'extension/features/chat-style-comments/index.js',
+    'extension/features/sticky-video/index.js',
+    'extension/features/video-hider/index.js',
+    'extension/features/player-dock/index.js',
+    'extension/features/youtube-music-compat/index.js',
     'extension/core/lifecycle-route-bridge.js'
 ];
 
-const BUNDLE_BEGIN_RE = /\/\/ ── BEGIN v5\.0\.0 bundled core modules ──[\s\S]*?\/\/ ── END v5\.0\.0 bundled core modules ──/;
+const BUNDLE_BEGIN_RE = /^[ \t]*\/\/ ── BEGIN v5\.0\.0 bundled core modules ──\r?\n[\s\S]*?^[ \t]*\/\/ ── END v5\.0\.0 bundled core modules ──/m;
 
 if (BUNDLE_BEGIN_RE.test(userscriptText)) {
     const parts = ['    // ── BEGIN v5.0.0 bundled core modules ──'];
@@ -77,7 +97,7 @@ if (BUNDLE_BEGIN_RE.test(userscriptText)) {
         parts.push('');
     }
     parts.push('    // ── END v5.0.0 bundled core modules ──');
-    userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, parts.join('\n'));
+    userscriptText = userscriptText.replace(BUNDLE_BEGIN_RE, () => parts.join('\n'));
 } else {
     console.warn('Userscript bundle markers not found — skipping bundle refresh.');
 }

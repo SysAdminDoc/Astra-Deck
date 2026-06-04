@@ -12,11 +12,13 @@
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, Return YouTube Dislike, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 10 bundled UI locales. Beats every public-OSS competitor on at least one axis per the competitive matrix in ROADMAP.md.
+  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 10 bundled UI locales. Beats every public-OSS competitor on at least one axis per the competitive matrix in ROADMAP.md.
 </p>
 
 <p align="center">
   <a href="https://github.com/SysAdminDoc/Astra-Deck/releases/latest"><strong>Download Latest Release</strong></a>
+  ·
+  <a href="docs/privacy-policy.md"><strong>Privacy Policy</strong></a>
 </p>
 
 ---
@@ -26,7 +28,7 @@
 ### Chrome / Edge / Brave
 
 **Option A — Load unpacked from ZIP:**
-1. Download `astra-deck-chrome-v*.zip` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+1. Download `astra-deck-store-safe-chrome-v*.zip` or `astra-deck-github-full-chrome-v*.zip` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Extract it to a permanent folder
 3. Open `chrome://extensions/`, enable **Developer mode**
 4. Click **Load unpacked** and select the extracted folder
@@ -40,17 +42,17 @@ The CRX is still attached for enterprise or tooling flows, but modern Chromium b
 
 ### Firefox
 
-1. Download `astra-deck-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
+1. Download `astra-deck-store-safe-firefox-v*.xpi` or `astra-deck-github-full-firefox-v*.xpi` from the [latest release](https://github.com/SysAdminDoc/Astra-Deck/releases/latest)
 2. Open `about:addons`, click the gear icon, select **Install Add-on From File**
 3. Select the `.xpi` file
 
-Requires Firefox 128+.
+Requires Firefox 140+.
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
 A userscript build is also available. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then **[click here to install](https://github.com/SysAdminDoc/Astra-Deck/raw/refs/heads/main/YTKit.user.js)**.
 
-> Some features (SharedAudio, Return YouTube Dislike, SponsorBlock per-category, Cobalt downloads) are only available in the userscript. The extension uses a MediaDL-only download path.
+> SharedAudio remains userscript-only. Extension downloads use Astra Downloader first; the GitHub-full extension artifact can also expose the optional Cobalt fallback when the local companion is offline.
 
 ---
 
@@ -87,6 +89,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Expand Video Width / Disable Ambient Mode | On |
 | Hide Merch, AI Summary, Hashtags, Pinned Comments, Info Panels | On |
 | Clean Share URLs — strip tracking params | On |
+| Return YouTube Dislike — estimated dislike count with `est.` disclosure + ratio | Off |
 | Auto-Expand Description / Sticky Chat / Scroll to Player | Off |
 
 ### Video Player
@@ -129,7 +132,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
-> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service.
+> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service. Store-safe artifacts stop there; GitHub-full artifacts can show the Cobalt fallback button when Astra Downloader is offline.
 
 ### PO Token provider (optional but recommended)
 
@@ -166,6 +169,12 @@ curl -fsSL https://deno.land/install.sh | sh
 (Or grab the installer from `https://deno.com/`.)
 
 Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
+
+The repo pins `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` in
+`astra_downloader/requirements.txt` for CI. The monthly/manual
+`.github/workflows/yt-dlp-smoke.yml` workflow installs those pins and runs a
+bounded media download through `scripts/yt-dlp-smoke.py` against a stable public
+YouTube fixture before Dependabot bumps are accepted.
 
 ### Comments
 
@@ -237,10 +246,10 @@ Click the gear icon in the YouTube masthead or player controls, or use the toolb
 - Toggle switches with instant apply
 - Sub-feature controls for granular element hiding
 - Textarea editors for keyword filters, quick links, custom CSS
-- Export / Import / Reset
+- Schema-validated Export / Import / Reset with credential scrub
 - Conflict detection (auto-disables conflicting features with toast notification)
 
-The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, export/import/reset, diagnostics, and language selection.
+The toolbar popup provides the lightweight control surface: polished quick toggles, YouTube-tab context, storage stats, schema-validated backups, diagnostics, and language selection.
 
 ---
 
@@ -321,9 +330,8 @@ The popup language dropdown's "Auto (browser default)" option shows the
 detected language inline. The selection writes
 `chrome.storage.local._localeOverride`; the in-page YouTube workspace
 picks up the override on next page navigation. Feature-definition entries
-(150+ name + description pairs) inside `ytkit.js` are still hardcoded
-English — community translations welcome via PR against
-`extension/_locales/<lang>/messages.json`.
+inside `ytkit.js` resolve through generated locale keys with English fallbacks;
+community translations welcome via PR against `extension/_locales/<lang>/messages.json`.
 
 ---
 
@@ -332,7 +340,7 @@ English — community translations welcome via PR against
 | Browser | Method | Status |
 |---------|--------|--------|
 | Chrome / Edge / Brave | Extension (MV3) | Fully supported |
-| Firefox 128+ | Extension (MV3) | Fully supported |
+| Firefox 140+ | Extension (MV3) | Fully supported |
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 
@@ -346,16 +354,23 @@ English — community translations welcome via PR against
 npm ci
 npm test
 npm run check
-npm run build                             # Build at current version
-npm run build:userscript                  # Include userscript artifact
+npm run build                             # Build store-safe + GitHub-full artifacts
+npm run build:userscript                  # Include userscript artifact too
+npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json
+npm run release:manifest                  # Generate release-manifest.json + SHA256SUMS
+node build-extension.js --profile store-safe
+node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
 node build-extension.js --bump minor --with-userscript
 ```
 
 Outputs in `build/`:
-- `astra-deck-chrome-v*.zip` + `.crx` (CRX3 signed with `ytkit.pem`)
-- `astra-deck-firefox-v*.zip` + `.xpi`
+- `astra-deck-store-safe-chrome-v*.zip` + `.crx` (Chrome Web Store posture)
+- `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
+- `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)
+- `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript`)
+- `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
 
@@ -382,7 +397,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 | Doc | Audience |
 |-----|----------|
-| [ROADMAP.md](ROADMAP.md) | Active backlog plus v5.0.0 → v6.0.0 product plan, competitive matrix, full per-toggle settings schema |
+| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. Current product-version sources are on v4.x and agree at v4.46.0; the legacy internal planning-track dossier labelled v5.0.0 -> v6.0.0 is archived at [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md) |
 | [COMPLETED.md](COMPLETED.md) | Shipped roadmap arcs and recent hardening/polish summaries |
 | [RESEARCH_REPORT.md](RESEARCH_REPORT.md) | Research summary and archive index for prior feature-plan files |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
@@ -390,9 +405,12 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |
 | [docs/architecture.md](docs/architecture.md) | Trust boundaries, data flow, where things live, conventions a new contributor needs |
 | [docs/cws-submission-checklist.md](docs/cws-submission-checklist.md) | Chrome Web Store submission preflight (manifest, privacy policy, screenshots) |
+| [docs/store-permission-rationale.md](docs/store-permission-rationale.md) | Copy-paste store-review permission, host, and single-purpose rationale |
+| [docs/privacy-policy.md](docs/privacy-policy.md) | Stable privacy policy source for README, homepage, CWS, and AMO listing links |
 | [docs/selector-fixture-workflow.md](docs/selector-fixture-workflow.md) | How to refresh MHTML captures when YouTube DOM changes |
 | [docs/screen-reader-smoke.md](docs/screen-reader-smoke.md) | NVDA / JAWS / VoiceOver release-gate checklist |
 | [docs/predicate-sandbox-investigation.md](docs/predicate-sandbox-investigation.md) | Threat model and design of the safe expression DSL for `advancedLocalPredicate` |
+| [docs/yt-dlp-cookie-threat-model.md](docs/yt-dlp-cookie-threat-model.md) | Cookie flow and redirect-leak mitigations for Astra Downloader / yt-dlp |
 | [docs/signing-keys.md](docs/signing-keys.md) | CRX3 packaging key management |
 
 ---

@@ -128,7 +128,7 @@ function entryPassesFilters(entry, filters) {
     return true;
 }
 // Lookup a schema entry by storage key. Lazily memoised because the
-// schema is frozen and ~354 entries — a Map keyed by `key` keeps the
+// schema is frozen and ~362 entries — a Map keyed by `key` keeps the
 // per-toggle filter check at O(1).
 let _schemaIndex = null;
 function getSchemaIndex() {
@@ -669,11 +669,58 @@ async function loadSettingsImportCatalog() {
 
 function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, source) {
     const migrated = migrateImportedSettings(settings, settingsVersion, source);
+    const validated = validateSettingsForBackupImport(migrated);
     return sanitizeSettingsObject({
         ...defaults,
-        ...migrated,
+        ...validated,
         _settingsVersion: settingsVersion
     });
+}
+
+function formatSchemaValidationError(prefix, validation) {
+    const errors = validation && Array.isArray(validation.errors) ? validation.errors : [];
+    const sample = errors.slice(0, 4).join('; ');
+    const suffix = errors.length > 4 ? `; +${errors.length - 4} more` : '';
+    return `${prefix}: ${sample || 'schema validation failed'}${suffix}`;
+}
+
+function validateSettingsForBackupImport(settings) {
+    const policy = ensurePolicyProfile();
+    if (!policy || typeof policy.validateSettingsSnapshot !== 'function') {
+        return sanitizeSettingsObject(settings);
+    }
+    const validation = policy.validateSettingsSnapshot(settings);
+    if (!validation.ok) {
+        throw new Error(formatSchemaValidationError('Settings import rejected', validation));
+    }
+    return sanitizeSettingsObject(validation.settings);
+}
+
+function buildSchemaValidatedExportSettings(settings) {
+    const source = sanitizeSettingsObject(settings);
+    const policy = ensurePolicyProfile();
+    if (!policy || typeof policy.buildExportSnapshot !== 'function') {
+        return {
+            settings: source,
+            effectiveProfile: 'unknown',
+            scrubbedKeys: [],
+            defaultedKeys: []
+        };
+    }
+    const snapshot = policy.buildExportSnapshot(source, { schemaOnly: true });
+    if (typeof policy.validateSettingsSnapshot === 'function') {
+        const validation = policy.validateSettingsSnapshot(snapshot.settings);
+        if (!validation.ok) {
+            throw new Error(formatSchemaValidationError('Settings export rejected', validation));
+        }
+        snapshot.settings = sanitizeSettingsObject(validation.settings);
+    }
+    return {
+        settings: snapshot.settings,
+        effectiveProfile: snapshot.effective || 'unknown',
+        scrubbedKeys: Array.isArray(snapshot.scrubbedKeys) ? snapshot.scrubbedKeys : [],
+        defaultedKeys: Array.isArray(snapshot.defaultedKeys) ? snapshot.defaultedKeys : []
+    };
 }
 
 function formatBytes(bytes) {
@@ -2078,7 +2125,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     } else if (entry.type === 'array' || entry.type === 'object') {
         // v4.41.0: array / object JSON editor. The schema overview
         // can now edit every type — closes the editor coverage from
-        // ~340 to 354 schema keys. The editor renders the current
+        // ~340 to all schema keys. The editor renders the current
         // value via JSON.stringify(value, null, 2) and persists on
         // commit (change/blur) via JSON.parse. If parse fails the
         // row shows a parse-error pill below the textarea and skips
@@ -2815,15 +2862,21 @@ function buildExportData(allStorage) {
     );
     const hiddenVideos = sanitizeImportedHiddenVideos(allStorage[STORAGE_KEYS.hiddenVideos]);
     const allowedVideos = sanitizeImportedVideoIdList(allStorage[STORAGE_KEYS.allowedVideos], IMPORT_LIMITS.allowedVideos);
-    const settings = sanitizeSettingsObject(mergedSettings);
+    const exportSettings = buildSchemaValidatedExportSettings(mergedSettings);
     return {
-        settings,
+        astraDeckBackup: true,
+        settings: exportSettings.settings,
         hiddenVideos,
         filteredVideoPosts: hiddenVideos,
         allowedVideos,
         blockedChannels: sanitizeImportedBlockedChannels(allStorage[STORAGE_KEYS.blockedChannels]),
         bookmarks: sanitizeImportedBookmarks(allStorage[STORAGE_KEYS.bookmarks]),
-        exportVersion: 3,
+        exportVersion: 4,
+        backupSchemaVersion: 1,
+        settingsSchemaVersion: SETTINGS_VERSION_FALLBACK,
+        settingsProfile: exportSettings.effectiveProfile,
+        scrubbedSettings: exportSettings.scrubbedKeys,
+        profileDefaultedSettings: exportSettings.defaultedKeys,
         exportDate: new Date().toISOString(),
         astraDeckVersion: manifestVersion,
         ytkitVersion: manifestVersion
@@ -2965,6 +3018,8 @@ async function importSettings(file) {
 // the prompt without manually editing storage.
 const MEDIADL_DISMISSED_KEY = 'ytkit_mediadl_prompt_dismissed';
 const reenableMediadlButton = $('#reenable-mediadl-btn');
+// v4.47.0 NF6: on-demand Astra Downloader companion self-update button.
+const updateCompanionButton = $('#update-companion-btn');
 // v4.47.0 NF18: on-demand yt-dlp self-update button.
 const updateYtdlpButton = $('#update-ytdlp-btn');
 
@@ -3079,6 +3134,48 @@ async function updateYtdlpNow() {
     } finally {
         updateYtdlpButton.removeAttribute('aria-busy');
         updateYtdlpButton.disabled = false;
+    }
+}
+
+// v4.47.0 NF6: on-demand Astra Downloader companion self-update.
+// Uses the same active-tab bridge as updateYtdlpNow because the content
+// script owns MediaDLManager discovery and the per-install auth token.
+async function updateCompanionNow() {
+    if (!updateCompanionButton) return;
+    updateCompanionButton.setAttribute('aria-busy', 'true');
+    updateCompanionButton.disabled = true;
+    try {
+        let tabs = [];
+        try { tabs = await chrome.tabs.query({ url: YOUTUBE_TAB_URLS }); }
+        catch (_) { /* reason: extension suspended or tabs API unavailable */ }
+        if (!tabs || tabs.length === 0) {
+            showStatus('Open a YouTube tab first — the popup needs it to reach the Astra Downloader.', 'error', 5200);
+            return;
+        }
+        const tab = tabs[0];
+        const result = await new Promise((resolve) => {
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_UPDATE_COMPANION' }, (r) => {
+                    void chrome.runtime.lastError;
+                    resolve(r || { ok: false, status: 0, error: 'No response from the YouTube tab.' });
+                });
+            } catch (_) { resolve({ ok: false, status: 0, error: 'Could not message the YouTube tab.' }); }
+        });
+        if (result && result.ok) {
+            const current = result.current_version || '';
+            const latest = result.latest_version || '';
+            if (result.update_available === false || result.status === 'current') {
+                showStatus(`Astra Downloader already at v${latest || current || '?'}.`, 'success', 5200);
+            } else {
+                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting companion.`, 'success', 7200);
+            }
+        } else {
+            const err = (result && result.error) || 'Update failed.';
+            showStatus('Astra Downloader update failed — ' + err, 'error', 7200);
+        }
+    } finally {
+        updateCompanionButton.removeAttribute('aria-busy');
+        updateCompanionButton.disabled = false;
     }
 }
 
@@ -3443,6 +3540,9 @@ function installWheelScrolling() {
         // currently set in chrome.storage.local. Hidden otherwise — most
         // users will never see this.
         void refreshReenableMediadlVisibility();
+    }
+    if (updateCompanionButton) {
+        updateCompanionButton.addEventListener('click', () => { void updateCompanionNow(); });
     }
     if (updateYtdlpButton) {
         updateYtdlpButton.addEventListener('click', () => { void updateYtdlpNow(); });

@@ -1062,7 +1062,7 @@ body {
 }
 
 /* v4.41.0: array / object JSON editor in the schema overview. The
-   textarea closes the editor coverage from ~340 → 354 schema keys.
+   textarea closes the editor coverage from ~340 to all schema keys.
    House-style 6 px radius, monospace font, parse-error pill below. */
 .schema-overview-list .so-key-json-wrap {
   display: flex;

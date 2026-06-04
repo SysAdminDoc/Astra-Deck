@@ -170,6 +170,7 @@ const ALLOWED_FETCH_ORIGINS = [
     'https://api.openai.com',
     'https://api.anthropic.com',
     'https://generativelanguage.googleapis.com',
+    'https://api.cobalt.tools',
     'https://www.reddit.com',
     'https://old.reddit.com',
     // AstraDownloader — primary port plus fallbacks (must match astra_downloader.PORT_FALLBACKS

@@ -50,6 +50,135 @@ function runNodeCommand(args) {
     });
 }
 
+function literalString(node) {
+    return node && node.type === 'Literal' && typeof node.value === 'string'
+        ? node.value
+        : null;
+}
+
+function objectPropertyMap(node) {
+    const entries = [];
+    for (const prop of node.properties || []) {
+        if (prop.type !== 'Property') continue;
+        const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value;
+        entries.push([key, prop.value]);
+    }
+    return new Map(entries);
+}
+
+function evaluateStringExpression(node, scope = Object.create(null)) {
+    if (!node) return null;
+    if (node.type === 'Literal' && typeof node.value === 'string') return node.value;
+    if (node.type === 'Identifier' && typeof scope[node.name] === 'string') return scope[node.name];
+    if (node.type === 'BinaryExpression' && node.operator === '+') {
+        const left = evaluateStringExpression(node.left, scope);
+        const right = evaluateStringExpression(node.right, scope);
+        return left !== null && right !== null ? left + right : null;
+    }
+    return null;
+}
+
+function extractObjectFeatureDefinition(node, scope = Object.create(null)) {
+    if (!node || node.type !== 'ObjectExpression') return null;
+    const props = objectPropertyMap(node);
+    const id = evaluateStringExpression(props.get('id'), scope);
+    const name = evaluateStringExpression(props.get('name'), scope);
+    const desc = evaluateStringExpression(props.get('description'), scope);
+    return id && name && desc ? { id, name, desc } : null;
+}
+
+function extractSpreadFeatureDefinitions(node) {
+    const call = node?.argument;
+    if (call?.type !== 'CallExpression') return [];
+    if (call.callee?.type !== 'MemberExpression') return [];
+    const property = call.callee.property;
+    const propertyName = property?.type === 'Identifier' ? property.name : property?.value;
+    if (propertyName !== 'map') return [];
+    const sourceArray = call.callee.object;
+    const callback = call.arguments[0];
+    if (sourceArray?.type !== 'ArrayExpression' || callback?.type !== 'ArrowFunctionExpression') return [];
+    const pattern = callback.params[0];
+    if (pattern?.type !== 'ArrayPattern') return [];
+    const body = callback.body?.type === 'ObjectExpression'
+        ? callback.body
+        : callback.body?.type === 'BlockStatement'
+            ? callback.body.body.find((stmt) => stmt.type === 'ReturnStatement')?.argument
+            : null;
+    if (!body || body.type !== 'ObjectExpression') return [];
+    const rows = [];
+    for (const tuple of sourceArray.elements || []) {
+        if (tuple?.type !== 'ArrayExpression') continue;
+        const scope = Object.create(null);
+        pattern.elements.forEach((param, index) => {
+            if (param?.type !== 'Identifier') return;
+            const value = literalString(tuple.elements[index]);
+            if (value !== null) scope[param.name] = value;
+        });
+        const row = extractObjectFeatureDefinition(body, scope);
+        if (row) rows.push(row);
+    }
+    return rows;
+}
+
+let ytkitFeatureDefinitionCache = null;
+function extractYtkitFeatureDefinitions() {
+    if (ytkitFeatureDefinitionCache) return ytkitFeatureDefinitionCache;
+    const espree = require('espree');
+    const ast = espree.parse(ytkitSource, {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+        range: true
+    });
+    let featuresArray = null;
+    const walk = (node) => {
+        if (!node || featuresArray) return;
+        if (Array.isArray(node)) {
+            node.forEach(walk);
+            return;
+        }
+        if (node.type === 'VariableDeclarator' && node.id?.name === 'features') {
+            featuresArray = node.init;
+            return;
+        }
+        for (const value of Object.values(node)) {
+            if (value && typeof value === 'object') walk(value);
+        }
+    };
+    walk(ast);
+    assert.equal(featuresArray?.type, 'ArrayExpression',
+        'ytkit.js must expose the canonical features array');
+    const definitions = [];
+    for (const element of featuresArray.elements || []) {
+        if (!element) continue;
+        if (element.type === 'ObjectExpression') {
+            const row = extractObjectFeatureDefinition(element);
+            if (row) definitions.push(row);
+            continue;
+        }
+        if (element.type === 'CallExpression' && element.callee?.name === 'cssFeature') {
+            const id = literalString(element.arguments[0]);
+            const name = literalString(element.arguments[1]);
+            const desc = literalString(element.arguments[2]);
+            if (id && name && desc) definitions.push({ id, name, desc });
+            continue;
+        }
+        if (element.type === 'SpreadElement') {
+            definitions.push(...extractSpreadFeatureDefinitions(element));
+            continue;
+        }
+        if (element.type === 'LogicalExpression') {
+            const row = extractObjectFeatureDefinition(element.right);
+            if (row) definitions.push(row);
+        }
+    }
+    ytkitFeatureDefinitionCache = definitions;
+    return definitions;
+}
+
+function featureMessageKey(id, suffix) {
+    return `feature_${String(id).trim().replace(/[^A-Za-z0-9]/g, '_')}_${suffix}`;
+}
+
 // ── v3.14.0 C1: ReDoS guard in videoHider ──
 
 test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () => {
@@ -101,6 +230,26 @@ test('settings backups include filtered video posts and import the alias', () =>
         /allowedVideos/,
         'Popup exports should include allowed video exceptions'
     );
+    assert.match(
+        popupExportBody,
+        /buildSchemaValidatedExportSettings\(mergedSettings\)/,
+        'Popup exports must route settings through the schema-validated scrubber'
+    );
+    assert.match(
+        popupExportBody,
+        /exportVersion:\s*4/,
+        'Popup settings backups must emit the schema-validated v4 payload'
+    );
+    assert.match(
+        popupExportBody,
+        /settingsSchemaVersion:\s*SETTINGS_VERSION_FALLBACK/,
+        'Popup settings backups must declare the settings schema version'
+    );
+    assert.match(
+        popupExportBody,
+        /scrubbedSettings:\s*exportSettings\.scrubbedKeys/,
+        'Popup settings backups must declare which setting keys were scrubbed'
+    );
 
     const panelExportStart = ytkitSource.indexOf('exportAllSettings()');
     const panelExportEnd = ytkitSource.indexOf('importAllSettings(jsonString)');
@@ -115,6 +264,21 @@ test('settings backups include filtered video posts and import the alias', () =>
         panelExportBody,
         /allowedVideos/,
         'In-page exports should include allowed video exceptions'
+    );
+    assert.match(
+        panelExportBody,
+        /_buildSchemaValidatedExportSettings\(this\.load\(\)\)/,
+        'In-page exports must route settings through the schema-validated scrubber'
+    );
+    assert.match(
+        panelExportBody,
+        /exportVersion:\s*4/,
+        'In-page settings backups must emit the schema-validated v4 payload'
+    );
+    assert.match(
+        panelExportBody,
+        /settingsSchemaVersion:\s*this\.SETTINGS_VERSION/,
+        'In-page settings backups must declare the settings schema version'
     );
 
     assert.ok(
@@ -132,6 +296,29 @@ test('settings backups include filtered video posts and import the alias', () =>
         ytkitSource.includes('importedData.allowedVideos'),
         'Imports should restore allowed video exceptions from backups'
     );
+});
+
+test('settings backup import/export paths use strict schema validation and scrub metadata', () => {
+    const popupMergeStart = popupSource.indexOf('function mergeImportedSettingsWithDefaults');
+    assert.ok(popupMergeStart > -1, 'popup mergeImportedSettingsWithDefaults must exist');
+    const popupMergeBlock = popupSource.slice(popupMergeStart, popupMergeStart + 1600);
+    assert.match(popupMergeBlock, /validateSettingsForBackupImport\(migrated\)/,
+        'Popup imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
+
+    const panelPrepareStart = ytkitSource.indexOf('_prepareImportedSettings(settings)');
+    assert.ok(panelPrepareStart > -1, 'ytkit settingsManager._prepareImportedSettings must exist');
+    const panelPrepareBlock = ytkitSource.slice(panelPrepareStart, panelPrepareStart + 1400);
+    assert.match(panelPrepareBlock, /_validateSettingsForBackupImport\(migrated\)/,
+        'In-page imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
+
+    for (const [name, source] of [['popup.js', popupSource], ['ytkit.js', ytkitSource]]) {
+        assert.match(source, /Settings import rejected/,
+            `${name} must surface a schema-validation rejection reason`);
+        assert.match(source, /Settings export rejected/,
+            `${name} must reject schema-invalid live settings before exporting a backup`);
+        assert.match(source, /schemaOnly:\s*true/,
+            `${name} must request schema-only export snapshots so unknown keys cannot round-trip`);
+    }
 });
 
 // ── v3.14.0 infrastructure: selectorChain helper ──
@@ -889,7 +1076,11 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
         'Chrome manifest must NOT declare a `commands` block (no keyboard shortcuts)'
     );
 
-    const { patchManifestForFirefox } = require('../scripts/manifest-patch');
+    const {
+        patchManifestForFirefox,
+        FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION,
+        FIREFOX_DATA_COLLECTION_REQUIRED
+    } = require('../scripts/manifest-patch');
     const ffManifest = JSON.parse(JSON.stringify(manifest));
     patchManifestForFirefox(ffManifest);
 
@@ -901,7 +1092,20 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     // The Firefox-specific gecko + background transformations must still
     // apply — a regression here would silently break Firefox at load time.
     assert.equal(ffManifest.browser_specific_settings?.gecko?.id, 'ytkit@sysadmindoc.github.io');
-    assert.equal(ffManifest.browser_specific_settings?.gecko?.strict_min_version, '128.0');
+    assert.equal(
+        ffManifest.browser_specific_settings?.gecko?.strict_min_version,
+        FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION
+    );
+    assert.deepEqual(
+        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions?.required,
+        FIREFOX_DATA_COLLECTION_REQUIRED,
+        'Firefox manifest must declare the built-in data-consent categories Astra transmits'
+    );
+    assert.equal(
+        ffManifest.browser_specific_settings?.gecko?.data_collection_permissions?.optional,
+        undefined,
+        'Astra does not request optional Firefox data permissions at runtime, so none should be declared optional'
+    );
     assert.ok(
         Array.isArray(ffManifest.background?.scripts) && ffManifest.background.scripts.length > 0,
         'Firefox background must be a scripts[] array, not a service_worker entry'
@@ -1171,6 +1375,24 @@ test('storageQuotaLRU description names every top-level cache it prunes', () => 
         'Description must name the SponsorBlock segment cache key so users can audit quota pruning');
 });
 
+test('storageQuotaLRU sweeps real note/bookmark/watch stores, not the timestampBookmarks toggle', () => {
+    const pruneStart = ytkitSource.indexOf("id: 'storageQuotaLRU'");
+    assert.ok(pruneStart > -1, 'storageQuotaLRU feature must still exist');
+    const pruneEnd = ytkitSource.indexOf("this._timer = null;", pruneStart);
+    const pruneBlock = ytkitSource.slice(pruneStart, pruneEnd);
+
+    assert.doesNotMatch(pruneBlock, /\['timestampBookmarks',/,
+        'timestampBookmarks is a boolean toggle; quota sweep must not treat it as the persisted bookmark map');
+    assert.match(pruneBlock, /videoNotesData/,
+        'storageQuotaLRU must backstop videoNotesData even when the notes feature is disabled');
+    assert.match(pruneBlock, /STORAGE_KEYS\.bookmarks[\s\S]*sanitizeTimestampBookmarks/,
+        'storageQuotaLRU must prune the real ytkit-bookmarks top-level store');
+    assert.match(pruneBlock, /STORAGE_KEYS\.watchProgress[\s\S]*sanitizeWatchProgressStore/,
+        'storageQuotaLRU must prune the real ytkit-watch-progress top-level store');
+    assert.match(pruneBlock, /STORAGE_KEYS\.watchTime[\s\S]*sanitizeWatchTimeStats/,
+        'storageQuotaLRU must prune the real ytkit-watch-time top-level store');
+});
+
 // ── v3.20.3 H6: explicit cookie-jar wire contract via normalizeCookieExpiry ──
 //
 // Three sites previously inlined `expirationDate: c.expirationDate || 0`:
@@ -1387,6 +1609,63 @@ test('build-extension.js updates package-lock version during --bump', () => {
         'build-extension.js must update packages[""].version so lockfile drift cannot ship');
 });
 
+test('release manifest generation pins checksums, SBOM, attestations, and local signing policy', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'build.yml'), 'utf8'
+    );
+    const scriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'generate-release-manifest.js'), 'utf8'
+    );
+    const { expectedReleaseNames, parseAssetName } = require('../scripts/generate-release-manifest');
+
+    assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/,
+        'package.json must expose release:manifest for the local release recipe');
+    assert.match(workflow, /npm sbom --omit=dev --sbom-format cyclonedx > build\/astra-deck-npm-sbom\.cdx\.json/,
+        'build.yml must emit a release SBOM into build/');
+    assert.match(workflow, /npm run release:manifest/,
+        'build.yml must generate SHA256SUMS and release-manifest.json');
+    assert.match(workflow, /actions\/attest-build-provenance@v4/,
+        'tag builds must create build-provenance attestations for CI-built artifacts');
+    assert.match(workflow, /actions\/attest-sbom@v4/,
+        'tag builds must create SBOM attestations for CI-built artifacts');
+    assert.doesNotMatch(workflow, /gh release create/,
+        'CI must not publish GitHub Releases because ytkit.pem stays local');
+    assert.match(scriptSource, /SHA256SUMS_NAME = 'SHA256SUMS'/,
+        'release manifest script must write SHA256SUMS');
+    assert.match(scriptSource, /MANIFEST_NAME = 'release-manifest\.json'/,
+        'release manifest script must write release-manifest.json');
+    assert.match(scriptSource, /localSigningRequired:\s*true/,
+        'release manifest must disclose the local signing requirement');
+    assert.match(scriptSource, /AstraDownloader\.exe\.sha256/,
+        'release manifest script must create the companion hash sidecar when the exe is present');
+
+    const expected = expectedReleaseNames(pkg.version);
+    assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 9,
+        'expected release set must include eight extension artifacts plus userscript');
+    assert.ok(expected.includes('astra-deck-npm-sbom.cdx.json'),
+        'expected release set must include the npm SBOM asset');
+
+    const parsed = parseAssetName(`astra-deck-store-safe-firefox-v${pkg.version}.xpi`, pkg.version);
+    assert.deepEqual(
+        {
+            kind: parsed.kind,
+            profile: parsed.profile,
+            browser: parsed.browser,
+            artifactType: parsed.artifactType,
+            version: parsed.version
+        },
+        {
+            kind: 'extension',
+            profile: 'store-safe',
+            browser: 'firefox',
+            artifactType: 'xpi',
+            version: pkg.version
+        },
+        'release manifest metadata must classify Firefox store-safe XPI assets'
+    );
+});
+
 test('check-syntax dynamically covers every extension and script JS file', () => {
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'check-syntax.js'),
@@ -1535,6 +1814,72 @@ test('check-i18n.js exists and all __MSG_ references in manifest resolve', () =>
     }
     assert.equal(exitCode, 0,
         'check-i18n must exit 0 on the current tree — all __MSG_ and getMessage() keys must resolve');
+});
+
+test('feature definitions are annotated with generated i18n metadata keys', () => {
+    const definitions = extractYtkitFeatureDefinitions();
+    assert.ok(definitions.length >= 300,
+        `expected at least 300 feature label definitions, found ${definitions.length}`);
+    const ids = new Set(definitions.map((def) => def.id));
+    assert.equal(ids.size, definitions.length,
+        'feature i18n extraction must not produce duplicate ids');
+    assert.match(ytkitSource, /function getFeatureI18nKey\s*\(/,
+        'ytkit.js must define a feature i18n key helper');
+    assert.match(ytkitSource, /function ensureFeatureI18nKeys\s*\(/,
+        'ytkit.js must annotate feature definitions with nameKey/descriptionKey');
+    assert.match(ytkitSource, /features\.forEach\(ensureFeatureI18nKeys\)/,
+        'the canonical features array must be annotated before registry/UI use');
+    assert.match(ytkitSource, /nameKey:\s*feature\.nameKey/,
+        'runtime feature registry entries must expose nameKey');
+    assert.match(ytkitSource, /descriptionKey:\s*feature\.descriptionKey/,
+        'runtime feature registry entries must expose descriptionKey');
+});
+
+test('all locales carry feature-definition name and description messages', () => {
+    const definitions = extractYtkitFeatureDefinitions();
+    const localesDir = path.join(__dirname, '..', 'extension', '_locales');
+    const localeDirs = fs.readdirSync(localesDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name);
+    const failures = [];
+    for (const locale of localeDirs) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'),
+            'utf8'
+        ));
+        for (const def of definitions) {
+            for (const suffix of ['name', 'desc']) {
+                const key = featureMessageKey(def.id, suffix);
+                if (typeof messages[key]?.message !== 'string' || !messages[key].message.trim()) {
+                    failures.push(`${locale}: missing ${key}`);
+                }
+            }
+        }
+    }
+    assert.ok(failures.length === 0,
+        `feature i18n locale gaps:\n  ${failures.join('\n  ')}`);
+});
+
+test('settings panel feature cards render labels through feature i18n helpers', () => {
+    const start = ytkitSource.indexOf('function buildFeatureCard');
+    assert.ok(start > -1, 'buildFeatureCard must exist');
+    const block = ytkitSource.slice(start, start + 4500);
+    assert.match(block, /const featureName = getFeatureName\(f\)/,
+        'feature cards must resolve the display name through getFeatureName');
+    assert.match(block, /getFeatureDescription\(f\)/,
+        'feature cards must resolve the description through getFeatureDescription');
+    assert.doesNotMatch(block, /\bf\.name\b/,
+        'feature card display paths must not read f.name directly');
+    assert.doesNotMatch(block, /\bf\.description\b/,
+        'feature card display paths must not read f.description directly');
+
+    const quickStart = ytkitSource.indexOf('availableFeatures.forEach');
+    assert.ok(quickStart > -1, 'page quick-settings feature loop must exist');
+    const quickBlock = ytkitSource.slice(quickStart, quickStart + 1800);
+    assert.match(quickBlock, /getFeatureName\(feat\)/,
+        'page quick-settings cards must resolve names through getFeatureName');
+    assert.match(quickBlock, /getFeatureDescription\(feat\)/,
+        'page quick-settings cards must resolve descriptions through getFeatureDescription');
 });
 
 // ── Pass 17 L9: DiagnosticLog clear button ──
@@ -1766,10 +2111,18 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
     // Required origins that popup.js or the legitimate AI/SponsorBlock /
     // localhost downloader flows may legitimately fetch.
     const requiredOrigins = [
+        'https://*.youtube.com',
+        'https://*.youtube-nocookie.com',
+        'https://youtu.be',
+        'https://i.ytimg.com',
+        'https://sponsor.ajay.app',
+        'https://returnyoutubedislikeapi.com',
+        'https://www.reddit.com',
+        'https://old.reddit.com',
         'https://api.openai.com',
         'https://api.anthropic.com',
         'https://generativelanguage.googleapis.com',
-        'https://sponsor.ajay.app',
+        'https://api.cobalt.tools',
         'http://127.0.0.1:9751',
         'http://127.0.0.1:11434',
     ];
@@ -1783,6 +2136,159 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
     // Negative assertion: connect-src must NOT be a wildcard.
     assert.ok(!/connect-src[^;]*\*\s*[;'"]/.test(csp),
         'connect-src must not be a wildcard — defeats the purpose');
+});
+
+test('build-extension emits distinct store-safe and github-full manifest profiles', () => {
+    const builder = require('../build-extension.js');
+    const baseManifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8',
+    ));
+
+    assert.deepEqual(builder.expandBuildProfileSelection('both'), ['store-safe', 'github-full']);
+    assert.equal(builder.getArtifactBaseName('store-safe', 'chrome', '4.46.0'),
+        'astra-deck-store-safe-chrome-v4.46.0');
+    assert.equal(builder.getArtifactBaseName('github-full', 'firefox', '4.46.0'),
+        'astra-deck-github-full-firefox-v4.46.0');
+
+    const storeManifest = builder.patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(baseManifest)), 'store-safe');
+    const fullManifest = builder.patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(baseManifest)), 'github-full');
+
+    const storeHosts = storeManifest.host_permissions || [];
+    const fullHosts = fullManifest.host_permissions || [];
+    for (const required of [
+        'https://*.youtube.com/*',
+        'https://*.youtube-nocookie.com/*',
+        'https://youtu.be/*',
+        'https://i.ytimg.com/*',
+        'https://sponsor.ajay.app/*',
+        'https://returnyoutubedislikeapi.com/*',
+        'https://www.reddit.com/*',
+        'https://old.reddit.com/*'
+    ]) {
+        assert.ok(storeHosts.includes(required), 'store-safe manifest must include ' + required);
+        assert.ok(fullHosts.includes(required), 'github-full manifest must include ' + required);
+    }
+
+    for (const fullOnly of [
+        'https://api.openai.com/*',
+        'https://api.anthropic.com/*',
+        'https://generativelanguage.googleapis.com/*',
+        'https://api.cobalt.tools/*',
+        'http://127.0.0.1:9751/*',
+        'http://127.0.0.1:11434/*'
+    ]) {
+        assert.ok(!storeHosts.includes(fullOnly),
+            'store-safe manifest must not include github-full host ' + fullOnly);
+        assert.ok(fullHosts.includes(fullOnly),
+            'github-full manifest must include ' + fullOnly);
+    }
+
+    const storeCsp = storeManifest.content_security_policy?.extension_pages || '';
+    const fullCsp = fullManifest.content_security_policy?.extension_pages || '';
+    assert.ok(!storeCsp.includes('https://api.openai.com'),
+        'store-safe CSP must exclude OpenAI');
+    assert.ok(!storeCsp.includes('https://api.cobalt.tools'),
+        'store-safe CSP must exclude Cobalt');
+    assert.ok(!storeCsp.includes('http://127.0.0.1:9751'),
+        'store-safe CSP must exclude local downloader loopback');
+    assert.ok(fullCsp.includes('https://api.openai.com'),
+        'github-full CSP must include OpenAI');
+    assert.ok(fullCsp.includes('https://api.cobalt.tools'),
+        'github-full CSP must include Cobalt');
+    assert.ok(fullCsp.includes('http://127.0.0.1:9751'),
+        'github-full CSP must include local downloader loopback');
+});
+
+test('store permission rationale covers live manifest permissions and profile host grants', () => {
+    const builder = require('../build-extension.js');
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8',
+    ));
+    const rationale = fs.readFileSync(
+        path.join(__dirname, '..', 'docs', 'store-permission-rationale.md'),
+        'utf8',
+    );
+    const checklist = fs.readFileSync(
+        path.join(__dirname, '..', 'docs', 'cws-submission-checklist.md'),
+        'utf8',
+    );
+
+    assert.ok(checklist.includes('store-permission-rationale.md'),
+        'CWS checklist must point reviewers to the copy-paste rationale doc');
+    assert.ok(rationale.includes('## Single-Purpose Statement'),
+        'rationale doc must include a single-purpose statement');
+    assert.ok(rationale.includes('## Data-Handling Statement'),
+        'rationale doc must include a data-handling statement');
+    assert.ok(rationale.includes('## Firefox Data Consent'),
+        'rationale doc must include Firefox data-consent reviewer copy');
+
+    for (const permission of manifest.permissions || []) {
+        assert.ok(rationale.includes('`' + permission + '`'),
+            'rationale doc must mention manifest permission ' + permission);
+    }
+
+    for (const profile of ['store-safe', 'github-full']) {
+        const hosts = builder.getManifestProfileHostPermissions(profile);
+        for (const host of hosts) {
+            assert.ok(rationale.includes('`' + host + '`'),
+                'rationale doc must mention ' + profile + ' host permission ' + host);
+        }
+    }
+});
+
+test('privacy policy covers store data categories and Firefox consent packet', () => {
+    const read = (relPath) => fs.readFileSync(path.join(__dirname, '..', relPath), 'utf8');
+    const policy = read('docs/privacy-policy.md');
+    const readme = read('README.md');
+    const checklist = read('docs/cws-submission-checklist.md');
+    const architecture = read('docs/architecture.md');
+    const { FIREFOX_DATA_COLLECTION_REQUIRED } = require('../scripts/manifest-patch');
+
+    assert.ok(readme.includes('docs/privacy-policy.md'),
+        'README must link the stable privacy policy source');
+    assert.ok(checklist.includes('docs/privacy-policy.md') || checklist.includes('privacy-policy.md'),
+        'store checklist must point at the privacy policy source');
+    assert.match(readme, /Firefox 140\+/,
+        'README Firefox install/compatibility copy must match the manifest floor');
+    assert.match(architecture, /Firefox 140\+/,
+        'architecture map must match the manifest Firefox floor');
+
+    for (const phrase of [
+        'Chrome Web Store User Data Policy',
+        'Limited Use',
+        'No telemetry',
+        'No advertising',
+        'No sale of data',
+        'YouTube cookies',
+        'Astra Downloader',
+        'BYO-key',
+        'Retention',
+        'Export',
+        'Delete'
+    ]) {
+        assert.ok(policy.includes(phrase), 'privacy policy must mention ' + phrase);
+    }
+
+    for (const category of [
+        'Authentication information',
+        'Web history',
+        'User activity',
+        'Website content'
+    ]) {
+        assert.ok(policy.includes(category),
+            'privacy policy must include Chrome data category ' + category);
+    }
+
+    for (const firefoxCategory of FIREFOX_DATA_COLLECTION_REQUIRED) {
+        assert.ok(policy.includes('`' + firefoxCategory + '`'),
+            'privacy policy must include Firefox data category ' + firefoxCategory);
+        assert.ok(checklist.includes('`' + firefoxCategory + '`'),
+            'store checklist must include Firefox data category ' + firefoxCategory);
+    }
 });
 
 // ── v3.23.0 N3: Reaction Spammer default-OFF + cooldown floor ──
@@ -2219,6 +2725,26 @@ test('downloadCobaltFallback gates on github-full profile and only fires when do
         'must open the returned media URL with noopener+noreferrer');
 });
 
+test('downloadCobaltFallback records an actionable diagnostic when Cobalt is unreachable', () => {
+    const start = ytkitSource.indexOf("id: 'downloadCobaltFallback'");
+    assert.ok(start > -1, 'downloadCobaltFallback must exist');
+    const block = ytkitSource.slice(start, start + 9000);
+    assert.match(block, /_diagnosticInstanceLabel\s*\(\s*instance\s*\)/,
+        'must format the configured Cobalt endpoint for diagnostics');
+    assert.match(block, /new URL\s*\(\s*instance\s*\)/,
+        'diagnostic endpoint label must parse the configured instance as a URL');
+    assert.match(block, /return u\.origin/,
+        'diagnostic endpoint label must use only the origin, not the full request URL');
+    assert.match(block, /DiagnosticLog\?\.record\?\.\(\s*'cobalt-fallback'/,
+        'Cobalt failures must be recorded in DiagnosticLog with a stable context');
+    assert.match(block, /Cobalt fallback unreachable/,
+        'diagnostic text must name the unreachable fallback');
+    assert.match(block, /Astra Downloader was offline/,
+        'diagnostic text must explain why the fallback path was used');
+    assert.match(block, /check downloadCobaltInstance or start Astra Downloader/,
+        'diagnostic text must include actionable next steps');
+});
+
 test('downloadHistoryPanel reads /history with auth + limit=50 and shows offline state', () => {
     const start = ytkitSource.indexOf("id: 'downloadHistoryPanel'");
     assert.ok(start > -1, 'downloadHistoryPanel must exist');
@@ -2254,6 +2780,47 @@ test('returnDislike honors returnDislikeCacheHours TTL with a sane minimum', () 
     const block = ytkitSource.slice(start, start + 12000);
     assert.match(block, /Math\.max\(1,\s*Number\(appState\?\.settings\?\.returnDislikeCacheHours\)\s*\|\|\s*24\)/,
         'TTL must default to 24 h with a 1 h floor');
+});
+
+test('returnDislike discloses estimated accuracy in the rendered count UI', () => {
+    const start = ytkitSource.indexOf("id: 'returnDislike'");
+    assert.ok(start > -1, 'returnDislike feature must exist');
+    const block = ytkitSource.slice(start, start + 14000);
+    assert.match(block, /description: 'Restore an estimated dislike count/,
+        'feature description must name the restored count as estimated');
+    assert.match(block, /_estimateDisclosureText\(\)/,
+        'render path must centralize the estimate disclosure copy');
+    assert.match(block, /low-traffic videos can be less accurate/,
+        'estimate copy must disclose the low-traffic accuracy caveat');
+    assert.match(block, /\.ytkit-ryd-estimate/,
+        'rendered UI must include a dedicated estimate affordance');
+    assert.match(block, /estimateEl\.textContent = 'est\.'/,
+        'successful count render must show a compact estimate label');
+    assert.match(block, /pill\.setAttribute\('aria-label', `\$\{countLabel\} estimated dislikes\./,
+        'count pill must expose the estimate caveat to assistive tech');
+    assert.match(block, /ratioEl\.title = `Like ratio uses estimated Return YouTube Dislike counts/,
+        'like-ratio helper must also disclose that it uses estimated counts');
+    assert.match(block, /document\.querySelectorAll\('\.ytkit-ryd-pill, \.ytkit-ryd-estimate, \.ytkit-ryd-ratio'\)/,
+        'destroy cleanup must remove every RYD-owned render node');
+
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+    assert.match(userscriptSource, /_estimateDisclosureText\(\)/,
+        'userscript build must carry the same RYD estimate disclosure');
+
+    const localesRoot = path.join(__dirname, '..', 'extension', '_locales');
+    for (const locale of fs.readdirSync(localesRoot)) {
+        const messagesPath = path.join(localesRoot, locale, 'messages.json');
+        if (!fs.existsSync(messagesPath)) continue;
+        const messages = JSON.parse(fs.readFileSync(messagesPath, 'utf8'));
+        assert.match(
+            messages.feature_returnDislike_desc.message,
+            /estimated dislike count/,
+            `${locale} feature_returnDislike_desc must disclose estimated counts`
+        );
+    }
 });
 
 test('extension manifest now whitelists returnyoutubedislikeapi.com (host_permissions + CSP)', () => {
@@ -2301,22 +2868,22 @@ test('monetizationIndicator paints exactly one pill and removes it on destroy', 
 test('subscriptionGroups keys by channel ID and survives SPA navigation', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     assert.match(block, /_GROUPS_KEY: 'subscriptionGroupData'/,
         'must persist groups to subscriptionGroupData');
     assert.match(block, /a\[href\*="\/channel\/"]/,
         'must extract channel IDs from /channel/UC… links');
     assert.match(block, /addNavigateRule\(this\.id/,
         'must hook the SPA navigate event so groups re-apply on route changes');
-    assert.match(block, /addMutationRule\(this\.id/,
-        'must hook the mutation rule so newly-rendered cards get filtered');
+    assert.match(block, /addScopedMutationRule\(this\.id, 'ytd-rich-item-renderer, ytd-video-renderer'/,
+        'must hook a scoped mutation rule so newly-rendered cards get filtered without reacting to injected badges');
 });
 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
-    assert.match(block, /schemaVersion:\s*1/,
-        'export payload must declare schemaVersion 1');
+    const block = ytkitSource.slice(start, start + 76000);
+    assert.match(block, /schemaVersion:\s*2/,
+        'export payload must declare schemaVersion 2');
     assert.match(block, /astra-deck-subscription-groups-/,
         'export filename must include the project prefix');
     // Import must sanitize channelIds + name length + color format.
@@ -2324,11 +2891,13 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
         'import must validate that raw.channelIds is an array before assigning');
     assert.match(block, /\/\^#\[0-9a-fA-F\]\{6\}\$\//,
         'import must validate the color is a 6-digit hex code');
+    assert.match(block, /parentId:\s*''/,
+        'import must default parentId to top-level for legacy v1 payloads');
 });
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
@@ -2341,7 +2910,7 @@ test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and 
 
 test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
@@ -2349,7 +2918,7 @@ test('subscriptionGroups sort modes cover unwatched / duration / new-since', () 
 
 test('subscriptionGroups persists sort mode per active group (NF31)', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     assert.match(block, /_SORT_MODES:\s*Object\.freeze\(\['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular'\]\)/,
         'subscriptionGroups must centralize the allowed sort modes');
     assert.match(block, /_getActiveSortMode\(groups = this\._readGroups\(\)\)[\s\S]*groups\[this\._activeGroupId\]\?\.sortMode/,
@@ -2366,6 +2935,174 @@ test('subscriptionGroups persists sort mode per active group (NF31)', () => {
         'toolbar select must display the active group sort mode');
     assert.match(block, /const mode = this\._setActiveSortMode\(sortSelect\.value\)[\s\S]*this\._applySort\(mode\)/,
         'toolbar changes must route through the per-group sort writer before sorting');
+});
+
+test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (NF2)', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 76000);
+    assert.match(block, /_getGroupParentId\(groupId, groups = this\._readGroups\(\)\)/,
+        'subscriptionGroups must expose parentId normalization for nested groups');
+    assert.match(block, /grandParentId && groups\[grandParentId\] \? '' : parentId/,
+        'parentId normalization must reject child-of-child depth');
+    assert.match(block, /_getChildGroupIds\(parentId, groups = this\._readGroups\(\)\)/,
+        'subscriptionGroups must expose child lookup by parentId');
+    assert.match(block, /_getGroupChannelIdSet\(groupId, groups = this\._readGroups\(\)\)/,
+        'subscriptionGroups must compute active channel sets through a helper');
+    assert.match(block, /for \(const childId of this\._getChildGroupIds\(groupId, groups\)\)/,
+        'top-level group filters must include child group channelIds');
+    assert.match(block, /rawParentById/,
+        'import must keep a raw parentId map for two-pass normalization');
+    assert.match(block, /sanitized\[id\]\.parentId = parentId/,
+        'import must preserve valid depth-2 parentId links');
+    assert.match(block, /!rawParentById\[parentId\]/,
+        'import must reject child-of-child parentId links');
+    assert.match(block, /_showNewGroupDialog\(anchorEl, parentId = ''\)/,
+        'new group dialog must accept an optional parentId');
+    assert.match(block, /safeParentId = this\._normalizeNewGroupParentId\(parentId, groups\)/,
+        'new group dialog must normalize parentId before persisting');
+    assert.match(block, /parentId: safeParentId/,
+        'new groups must persist parentId for subgroups');
+    assert.match(block, /chip\.dataset\.depth = String\(depth\)/,
+        'toolbar chips must expose depth for child-group styling');
+    assert.match(block, /\+ Subgroup/,
+        'toolbar must expose a subgroup creation action for top-level active groups');
+});
+
+test('subscriptionGroups stages dead-channel unsubscribe candidates with a 30-day undo window', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 76000);
+    assert.match(block, /_UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData'/,
+        'dead-channel staging must persist into subscriptionUnsubscribeStagingData');
+    assert.match(block, /_UNSUB_STAGE_TTL_MS:\s*30 \* 24 \* 60 \* 60 \* 1000/,
+        'dead-channel staging must use a 30-day undo window');
+    assert.match(block, /_STALE_CHANNEL_MIN_AGE_DAYS:\s*365/,
+        'dead-channel candidates must require at least one year of rendered inactivity');
+    assert.match(block, /_extractCardAgeDays\(text\)/,
+        'dead-channel detection must parse rendered card age text');
+    assert.match(block, /_collectDeadChannelCandidates\(\)/,
+        'dead-channel detection must collect explicit candidates before staging');
+    assert.match(block, /ageDays === null \|\| ageDays < this\._STALE_CHANNEL_MIN_AGE_DAYS/,
+        'candidate collection must reject fresh or unknown-age cards');
+    assert.match(block, /card\.classList\.contains\('ytkit-sub-hidden-by-group'\)/,
+        'candidate collection must respect the active group filter');
+    assert.match(block, /_stageDeadChannelUnsubscribes\(\)/,
+        'toolbar action must route through the staging helper');
+    assert.match(block, /undoUntil:\s*now \+ this\._UNSUB_STAGE_TTL_MS/,
+        'staged records must carry the explicit undoUntil timestamp');
+    assert.match(block, /_undoStagedUnsubscribes\(channelIds\)/,
+        'staged records must be reversible by channel ID');
+    assert.match(block, /dataset\.action = 'stage-unsubscribe'/,
+        'toolbar must expose a stage-unsubscribe action');
+    assert.match(block, /ytkit-sub-dead-badge/,
+        'rendered stale candidates must receive a visible stale marker');
+    assert.match(block, /ytkit-sub-staged-badge/,
+        'staged candidates must receive a visible staged marker');
+    assert.match(block, /No YouTube unsubscribe buttons are clicked/,
+        'the stage button must disclose that it does not click YouTube unsubscribe controls');
+    assert.doesNotMatch(block, /unsubscribe[^;]{0,120}\.click\(/i,
+        'bulk unsubscribe staging must not directly click unsubscribe controls');
+    assert.deepEqual(defaultSettings.subscriptionUnsubscribeStagingData, {},
+        'default-settings.json must seed an empty unsubscribe staging map');
+    const entry = settingsSchemaModule.SETTINGS_SCHEMA.find((e) => e.key === 'subscriptionUnsubscribeStagingData');
+    assert.ok(entry, 'settings-schema must catalogue subscriptionUnsubscribeStagingData');
+    assert.equal(entry.type, 'object', 'subscriptionUnsubscribeStagingData must be object typed');
+});
+
+test('videoNotes stores local per-video notes with export and a 1000-note LRU cap', () => {
+    const start = ytkitSource.indexOf("id: 'videoNotes'");
+    assert.ok(start > -1, 'videoNotes feature must exist');
+    const block = ytkitSource.slice(start, start + 30000);
+    assert.match(block, /_DATA_KEY: 'videoNotesData'/,
+        'videoNotes must persist notes into videoNotesData');
+    assert.match(block, /_MAX_NOTES: 1000/,
+        'videoNotes must cap the archive at 1000 notes');
+    assert.match(block, /_MAX_NOTE_CHARS: 5000/,
+        'videoNotes must cap each note body');
+    assert.match(block, /_enforceNotesCap\(notes\)/,
+        'videoNotes must centralize cap enforcement');
+    assert.match(block, /entries\.sort\(\(a, b\) => \(Number\(b\[1\]\?\.updatedAt\) \|\| 0\) - \(Number\(a\[1\]\?\.updatedAt\) \|\| 0\)\)/,
+        'videoNotes cap must be LRU by updatedAt descending');
+    assert.match(block, /Object\.fromEntries\(entries\.slice\(0, this\._MAX_NOTES\)\)/,
+        'videoNotes cap must keep only the newest 1000 records');
+    assert.match(block, /appState\.settings\[this\._DATA_KEY\] = capped/,
+        'videoNotes writes must remain inside the settings snapshot for export/import');
+    assert.match(block, /textarea\.maxLength = this\._MAX_NOTE_CHARS/,
+        'videoNotes UI must enforce note length at the textarea');
+    assert.match(block, /textarea\.addEventListener\('input', \(\) => this\._scheduleSave\(textarea\.value\)\)/,
+        'videoNotes UI must debounce local saves from textarea input');
+    assert.match(block, /handleFileExport\(`astra-deck-video-notes-/,
+        'videoNotes must expose an explicit notes export');
+    assert.match(block, /schemaVersion:\s*1/,
+        'videoNotes export payload must be versioned');
+    assert.match(block, /addNavigateRule\(this\.id, this\._navRule\)/,
+        'videoNotes must reattach across SPA navigation');
+    assert.match(block, /removeNavigateRule\(this\.id\)/,
+        'videoNotes must remove its navigate rule on destroy');
+    assert.equal(defaultSettings.videoNotes, false,
+        'videoNotes must be off by default');
+    assert.deepEqual(defaultSettings.videoNotesData, {},
+        'videoNotesData must default to an empty object');
+    const toggleEntry = settingsSchemaModule.SETTINGS_SCHEMA.find((e) => e.key === 'videoNotes');
+    const dataEntry = settingsSchemaModule.SETTINGS_SCHEMA.find((e) => e.key === 'videoNotesData');
+    assert.ok(toggleEntry, 'settings-schema must catalogue videoNotes');
+    assert.ok(dataEntry, 'settings-schema must catalogue videoNotesData');
+    assert.equal(toggleEntry.type, 'boolean', 'videoNotes must be a boolean toggle');
+    assert.equal(dataEntry.type, 'object', 'videoNotesData must be object typed');
+});
+
+test('timestampBookmarks enforces a deterministic write-time cap on the real bookmark map', () => {
+    const start = ytkitSource.indexOf("id: 'timestampBookmarks'");
+    assert.ok(start > -1, 'timestampBookmarks feature must exist');
+    const block = ytkitSource.slice(start, start + 12000);
+
+    assert.match(ytkitSource, /function sanitizeTimestampBookmarks\(value, limits = IMPORT_LIMITS\)/,
+        'timestamp bookmark cap must live in a shared sanitizer');
+    assert.match(ytkitSource, /sanitizedEntries\.sort\(\(left, right\) => \(\(Number\(right\.d\) \|\| 0\) - \(Number\(left\.d\) \|\| 0\)\) \|\| \(left\.t - right\.t\)\)/,
+        'per-video bookmark eviction must keep newest edited bookmarks before restoring chronological render order');
+    assert.match(ytkitSource, /videos\.sort\(\(left, right\) => \(right\[2\] - left\[2\]\) \|\| left\[0\]\.localeCompare\(right\[0\]\)\)/,
+        'bookmark video eviction must sort by newest edit and then video id for deterministic ties');
+    assert.match(ytkitSource, /videos\.slice\(0, limits\.bookmarkVideos\)/,
+        'bookmark sanitizer must cap the number of videos retained');
+    assert.match(block, /_MAX_BOOKMARK_VIDEOS: IMPORT_LIMITS\.bookmarkVideos/,
+        'timestampBookmarks must document its video-map cap');
+    assert.match(block, /_MAX_BOOKMARKS_PER_VIDEO: IMPORT_LIMITS\.bookmarksPerVideo/,
+        'timestampBookmarks must document its per-video cap');
+    assert.match(block, /_writeBookmarks\(bookmarks\)/,
+        'timestampBookmarks must centralize capped writes');
+    assert.match(block, /this\._writeBookmarks\(bookmarks\)/,
+        'adding a bookmark must persist through the capped write helper');
+    assert.match(block, /this\._writeBookmarks\(nextBookmarks\)/,
+        'undo restore must persist through the capped write helper');
+    assert.match(block, /bks\[videoId\]\[idx\]\.d = Date\.now\(\)/,
+        'note edits must refresh LRU timestamp before capped persistence');
+});
+
+test('watch progress and watch-time stores enforce deterministic caps on write', () => {
+    const progressStart = ytkitSource.indexOf("id: 'watchProgress'");
+    assert.ok(progressStart > -1, 'watchProgress feature must exist');
+    const progressBlock = ytkitSource.slice(progressStart, progressStart + 8000);
+    const trackerStart = ytkitSource.indexOf("id: 'watchTimeTracker'");
+    assert.ok(trackerStart > -1, 'watchTimeTracker feature must exist');
+    const trackerBlock = ytkitSource.slice(trackerStart, trackerStart + 8000);
+
+    assert.match(ytkitSource, /function sanitizeWatchProgressStore\(value, nowMs = Date\.now\(\)\)/,
+        'watch progress cap must live in a shared sanitizer');
+    assert.match(ytkitSource, /entries\.slice\(0, STORAGE_CAPS\.watchProgressVideos\)/,
+        'watch progress sanitizer must cap retained videos');
+    assert.match(progressBlock, /_MAX_PROGRESS_VIDEOS: STORAGE_CAPS\.watchProgressVideos/,
+        'watchProgress must document its retained-video cap');
+    assert.match(progressBlock, /_writeProgress\(progress\)/,
+        'watchProgress must centralize capped writes');
+    assert.match(progressBlock, /this\._writeProgress\(progress\)/,
+        'watchProgress save path must persist through the capped write helper');
+    assert.match(ytkitSource, /function sanitizeWatchTimeStats\(value, nowDate = new Date\(\)\)/,
+        'watch-time stats cap must live in a shared sanitizer');
+    assert.match(ytkitSource, /days\.slice\(0, STORAGE_CAPS\.watchTimeDays\)/,
+        'watch-time sanitizer must cap retained day keys');
+    assert.match(trackerBlock, /_writeStats\(stats\)/,
+        'watchTimeTracker must centralize capped writes');
+    assert.match(trackerBlock, /this\._writeStats\(stats\)/,
+        'watchTimeTracker tick path must persist through the capped write helper');
 });
 
 // ── v3.30.0 P1: Research workspace invariants ──
@@ -2390,16 +3127,50 @@ test('localAiSummary checks for Chrome built-in Summarizer and never falls throu
         '_summarize() must not use XHR');
 });
 
-test('researchSpacedReview emits a CSV with header + escapes embedded quotes', () => {
+test('researchSpacedReview exports study/work data to Markdown and CSV', () => {
     const start = ytkitSource.indexOf("id: 'researchSpacedReview'");
     assert.ok(start > -1, 'researchSpacedReview must exist');
-    const block = ytkitSource.slice(start, start + 8000);
-    assert.match(block, /\['front', 'back', 'tags'\]/,
-        'CSV header must be front, back, tags');
+    const block = ytkitSource.slice(start, start + 18000);
+    assert.match(block, /name: 'Study \/ Work Export'/,
+        'feature label must reflect the broader study/work export surface');
+    assert.match(block, /_collectStudyWorkData\(\)/,
+        'must gather watch time, focused mode, digital wellbeing, and bookmarks before export');
+    assert.match(block, /_buildStudyMarkdown\(data = this\._collectStudyWorkData\(\)\)/,
+        'must build a Markdown export');
+    assert.match(block, /_buildStudyCsv\(data = this\._collectStudyWorkData\(\)\)/,
+        'must build a CSV export');
+    assert.match(block, /entry\?\.t \?\? entry\?\.time \?\? entry\?\.seconds/,
+        'bookmark export must read the live timestampBookmarks t field and legacy aliases');
+    assert.match(block, /entry\?\.n \?\? entry\?\.note \?\? entry\?\.text/,
+        'bookmark export must read the live timestampBookmarks n field and legacy aliases');
+    assert.match(block, /ytkit-watch-time/,
+        'study/work export must include Watch Time Tracker data');
+    assert.match(block, /dwWatchTimeToday/,
+        'study/work export must include Digital Wellbeing day state');
+    assert.match(block, /focusedMode/,
+        'study/work export must include Focused Mode state');
+    assert.match(block, /row_type', 'exported_at', 'date', 'video_id'/,
+        'CSV header must expose stable study/work columns');
     assert.match(block, /_csvEscape/,
         'must declare a CSV escaper');
     assert.match(block, /s\.replace\(\/"\/g, '""'\)/,
         'CSV escaper must double-quote embedded quotes');
+    assert.match(block, /astra-deck-study-work-\$\{today\}\.\$\{isCsv \? 'csv' : 'md'\}/,
+        'exports must use a dated study/work filename');
+    assert.match(block, /text\/csv;charset=utf-8/,
+        'CSV downloads must use a text/csv MIME type');
+    assert.match(block, /text\/markdown;charset=utf-8/,
+        'Markdown downloads must use a text/markdown MIME type');
+    assert.match(block, /Export study MD/,
+        'watch-page UI must expose a Markdown export action');
+    assert.match(block, /Export study CSV/,
+        'watch-page UI must expose a CSV export action');
+    const exportIdx = ytkitSource.indexOf('function handleFileExport');
+    const exportBlock = ytkitSource.slice(exportIdx, exportIdx + 500);
+    assert.match(exportBlock, /type = 'application\/json'/,
+        'shared export helper must keep JSON as the default MIME type');
+    assert.match(exportBlock, /new Blob\(\[content\], \{ type \}\)/,
+        'shared export helper must honor per-export MIME types');
 });
 
 test('researchTranscriptIndex stores transcripts in IndexedDB keyed by videoId', () => {
@@ -3001,7 +3772,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
 
 test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     assert.match(block, /_parseCompactViewCount/,
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
@@ -3138,7 +3909,7 @@ test('PageTypes covers music, embed, and live_chat surfaces', () => {
 
 test('subscriptionGroups uses an inline dialog instead of window.prompt', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     // Hardening pass replaced window.prompt with _showNewGroupDialog.
     assert.match(block, /_showNewGroupDialog/,
         'subscriptionGroups must expose the inline new-group dialog');
@@ -3148,7 +3919,7 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
         'subscriptionGroups must not call window.prompt(...)');
     // The dialog must focus-trap (aria-modal) and clean up on destroy.
     const dlgIdx = block.indexOf('_showNewGroupDialog');
-    const dlgBody = block.slice(dlgIdx, dlgIdx + 8000);
+    const dlgBody = block.slice(dlgIdx, dlgIdx + 10000);
     assert.match(dlgBody, /setAttribute\('aria-modal', 'true'\)/,
         'dialog must declare aria-modal so screen readers trap focus');
     assert.match(dlgBody, /key === 'Escape'/,
@@ -3157,13 +3928,48 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
 
 test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
+    const capIdx = block.indexOf('_capLastVisitMap');
+    const capBody = block.slice(capIdx, capIdx + 1200);
     const stampIdx = block.indexOf('_stampLastVisit()');
     const stampBody = block.slice(stampIdx, stampIdx + 1500);
-    assert.match(stampBody, /LAST_VISIT_CAP/,
-        '_stampLastVisit must declare a cap constant');
-    assert.match(stampBody, /sort\(\(a, b\)/,
+    assert.match(capBody, /LAST_VISIT_CAP/,
+        'last-visit pruning must declare a cap constant');
+    assert.match(capBody, /sort\(\(a, b\)/,
         'cap pruning must sort by timestamp before dropping the oldest entries');
+    assert.match(stampBody, /this\._writeLastVisit\(this\._capLastVisitMap\(lastVisit\)\)/,
+        '_stampLastVisit must route writes through the shared cap helper');
+});
+
+test('subscriptionGroups renders group digest counts and mark-read controls', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 76000);
+    assert.match(block, /_digestPanel:\s*null/,
+        'subscriptionGroups must track the digest panel for teardown and rerenders');
+    assert.match(block, /_extractCardAgeMs\(text\)/,
+        'digest/new-since logic must parse rendered relative age text to milliseconds');
+    assert.match(block, /_isCardNewSinceLastVisit\(card, channelId, lastVisit = this\._readLastVisit\(\)\)/,
+        'digest counts must use the shared new-since-last-visit predicate');
+    assert.match(block, /_collectRenderedCardSummaries\(lastVisit = this\._readLastVisit\(\)\)/,
+        'digest rendering must gather rendered video/channel summaries');
+    assert.match(block, /_buildGroupDigestEntries\(groups = this\._readGroups\(\), lastVisit = this\._readLastVisit\(\)\)/,
+        'digest must expose per-group count entries');
+    assert.match(block, /ytkit-sub-digest-panel/,
+        'digest panel CSS/DOM class must be present');
+    assert.match(block, /ytkit-sub-digest-row/,
+        'digest must render per-group rows');
+    assert.match(block, /dataset\.action = 'digest'/,
+        'toolbar must expose a Digest action');
+    assert.match(block, /Mark read/,
+        'digest rows must offer a mark-read control');
+    assert.match(block, /this\._writeLastVisit\(this\._capLastVisitMap\(next\)\)/,
+        'mark-read must update last-visit data through the bounded writer path');
+    assert.match(block, /if \(this\._digestPanel\) this\._renderDigestPanel\(\)/,
+        'feed mutations/stamps must refresh an open digest panel');
+    const destroyIdx = block.indexOf('destroy()');
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
+    assert.match(destroyBlock, /this\._closeDigestPanel\(\)/,
+        'destroy() must close the digest panel');
 });
 
 test('selector stats and emittedMisses are bounded', () => {
@@ -3245,7 +4051,7 @@ test('subscriptionAiTags persists generated tags into subscriptionAiTagData per 
 
 test('subscriptionAiTags renders chip suffix and binds shift+click for regeneration', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 76000);
     assert.match(block, /aiTagData\[id\]\?\.tags\?\.length/,
         'chip render must check for stored tags');
     assert.match(block, /Shift\+click to regenerate/,
@@ -3272,11 +4078,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    // v4.47.0 NF9: +2 keys (wheelSeek + wheelSeekStepSec) lifted the
-    // pin from 357 to 359. Keep the literal so a future schema
+    // Per-video notes added videoNotes + videoNotesData, lifting the pin from
+    // 360 to 362. Keep the literal so a future schema
     // addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 359,
-        'SETTINGS_SCHEMA must cover all 359 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 362,
+        'SETTINGS_SCHEMA must cover all 362 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
@@ -3417,6 +4223,41 @@ function loadPolicyProfileModule() {
     return stub;
 }
 
+function makeNonDefaultSchemaValue(entry) {
+    switch (entry.type) {
+    case 'boolean':
+        return !entry.defaultValue;
+    case 'number':
+        return Number(entry.defaultValue || 0) + 1;
+    case 'array':
+        return ['__schema_export_test__', entry.key];
+    case 'object':
+        return { __schemaExportTest: entry.key };
+    case 'null':
+        return '__schema_export_test_null__';
+    case 'string':
+    default:
+        return `__schema_export_test_${entry.key}__`;
+    }
+}
+
+function schemaKeyLooksCredentialBearing(key) {
+    const raw = String(key || '');
+    const compact = raw.replace(/[_-]/g, '').toLowerCase();
+    return compact.includes('apikey')
+        || compact.endsWith('token')
+        || compact.includes('bearer')
+        || compact.includes('secret')
+        || compact.includes('password')
+        || compact.includes('credential')
+        || /(?:private|access|refresh|session|signing)key$/.test(compact)
+        || compact.endsWith('cookie')
+        || compact.endsWith('cookies')
+        || compact.endsWith('cookiejar')
+        || /^auth/i.test(raw)
+        || /[a-z]Auth/.test(raw);
+}
+
 test('v5.0.0 feature-lifecycle: defineFeature validates required hooks', () => {
     const core = loadLifecycleModule();
     const lc = core.createLifecycle({ logger: { warn() {} } });
@@ -3541,6 +4382,103 @@ test('v5.0.0 policy-profile: store-safe export reverts github-full keys to schem
     assert.equal(out.ageRestrictionBypass, false,
         'github-full toggle must revert to its schema default on a store-safe export');
     assert.equal(out.sponsorBlock, true);
+});
+
+test('v5.0.0 policy-profile: store-safe export covers every github-full schema key', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const githubFullEntries = SETTINGS_SCHEMA.filter((entry) => entry.profile === 'github-full');
+    assert.ok(githubFullEntries.length > 0,
+        'schema must keep at least one github-full-gated key for this regression');
+
+    const input = {};
+    for (const entry of SETTINGS_SCHEMA) {
+        input[entry.key] = makeNonDefaultSchemaValue(entry);
+    }
+
+    const { settings: out, effective } = pp.buildExportSnapshot(input, { effective: 'store-safe' });
+    assert.equal(effective, 'store-safe');
+
+    for (const entry of githubFullEntries) {
+        if (pp.shouldScrubKey(entry.key)) {
+            assert.equal(entry.key in out, false,
+                `${entry.key} is credential-shaped and must be removed before profile defaulting`);
+        } else {
+            assert.deepEqual(out[entry.key], entry.defaultValue,
+                `${entry.key} must revert to its schema default in a store-safe export`);
+        }
+    }
+});
+
+test('v5.0.0 policy-profile: github-full export still scrubs credential-shaped schema keys', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const credentialEntries = SETTINGS_SCHEMA.filter((entry) => schemaKeyLooksCredentialBearing(entry.key));
+    assert.ok(credentialEntries.some((entry) => entry.key === 'aiSummaryApiKey'),
+        'live schema credential coverage must include the BYO AI key');
+
+    const input = {};
+    for (const entry of SETTINGS_SCHEMA) {
+        input[entry.key] = makeNonDefaultSchemaValue(entry);
+    }
+
+    for (const entry of credentialEntries) {
+        assert.equal(pp.shouldScrubKey(entry.key), true,
+            `${entry.key} looks credential-bearing and must match shouldScrubKey`);
+    }
+
+    for (const effective of ['store-safe', 'github-full']) {
+        const { settings: out } = pp.buildExportSnapshot(input, { effective });
+        for (const entry of credentialEntries) {
+            assert.equal(entry.key in out, false,
+                `${entry.key} must be absent from ${effective} export snapshots`);
+        }
+    }
+});
+
+test('policy-profile validates schema-shaped settings backup payloads', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const valid = pp.validateSettingsSnapshot({
+        sponsorBlock: true,
+        videosPerRow: 4,
+        hiddenChatElements: ['header', 'polls'],
+        subscriptionGroupData: {},
+        lowPowerProfileBackup: null
+    });
+    assert.equal(valid.ok, true, valid.errors.join('; '));
+    assert.deepEqual(valid.settings.hiddenChatElements, ['header', 'polls']);
+
+    const invalid = pp.validateSettingsSnapshot(JSON.parse(
+        '{"sponsorBlock":"true","videosPerRow":"4","unknownFutureSetting":true,"__proto__":true}'
+    ));
+    assert.equal(invalid.ok, false, 'shape drift and unknown keys must be rejected');
+    assert.ok(invalid.errors.some((msg) => msg.includes('invalid type for "sponsorBlock"')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('invalid type for "videosPerRow"')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('unknown setting "unknownFutureSetting"')));
+    assert.ok(invalid.errors.some((msg) => msg.includes('unsafe setting key "__proto__"')));
+});
+
+test('policy-profile schema-only export drops unknown keys and reports scrubbed credentials', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const snap = pp.buildExportSnapshot({
+        sponsorBlock: true,
+        aiSummaryApiKey: 'sk-test',
+        unknownFutureSetting: 'keep me out'
+    }, { effective: 'github-full', schemaOnly: true });
+
+    assert.equal(snap.settings.sponsorBlock, true);
+    assert.equal('aiSummaryApiKey' in snap.settings, false,
+        'credential-bearing setting value must not be present in schema-only export');
+    assert.equal('unknownFutureSetting' in snap.settings, false,
+        'unknown settings must not be present in schema-only export');
+    assert.ok(snap.scrubbedKeys.includes('aiSummaryApiKey'),
+        'schema-only export should declare that aiSummaryApiKey was scrubbed');
+    assert.equal(pp.validateSettingsSnapshot(snap.settings).ok, true,
+        'schema-only export output must validate as an importable settings snapshot');
 });
 
 test('v5.0.0 policy-profile: countByProfile partitions the schema cleanly', () => {
@@ -3990,6 +4928,16 @@ test('v4.11.0 data-flow: Cobalt fallback origin is catalogued (was missing pre-v
         'Cobalt is github-full only (user-supplied instance, off by default)');
     assert.ok(cobalt.requiredByFeatures.includes('downloadCobaltFallback'),
         'Cobalt origin must be driven by downloadCobaltFallback');
+
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    assert.ok((manifest.host_permissions || []).includes('https://api.cobalt.tools/*'),
+        'github-full source manifest must grant Cobalt for the full-profile artifact');
+    assert.ok((manifest.content_security_policy?.extension_pages || '').includes('https://api.cobalt.tools'),
+        'github-full source manifest CSP must allow Cobalt connect-src');
+    assert.match(backgroundSource, /'https:\/\/api\.cobalt\.tools'/,
+        'background EXT_FETCH allowlist must include Cobalt for the full-profile artifact');
 });
 
 test('v4.11.0 data-flow: PARENT_FEATURE inheritance map names only real parent features', () => {
@@ -4744,6 +5692,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
     );
     const expectedModules = [
+        'extension/core/styles.js',
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
@@ -4751,10 +5700,19 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/runtime-flags.js',
+        'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
         'extension/features/theme-css/index.js',
+        'extension/features/wave-8-css/index.js',
+        'extension/features/home-subs-css/index.js',
+        'extension/features/chat-style-comments/index.js',
+        'extension/features/sticky-video/index.js',
+        'extension/features/video-hider/index.js',
+        'extension/features/player-dock/index.js',
+        'extension/features/youtube-music-compat/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     for (const mod of expectedModules) {
@@ -4775,19 +5733,34 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
     const endIdx = userscript.indexOf('// ── END v5.0.0 bundled core modules ──');
     assert.ok(beginIdx > -1 && endIdx > beginIdx, 'bundle markers must be present and ordered');
     const bundle = userscript.slice(beginIdx, endIdx);
+    assert.equal((userscript.match(/^\/\/ ==UserScript==$/gm) || []).length, 1,
+        'userscript must contain exactly one metadata header');
+    assert.equal((bundle.match(/^\/\/ ==UserScript==$/gm) || []).length, 0,
+        'bundle must not contain a second userscript metadata header');
+    assert.ok(bundle.includes('matched the *suffix* `apiKey$` / `token$` plus the exact'),
+        'bundle replacement must preserve literal $` policy-profile text');
     const fingerprints = {
+        'core/styles.js':                    'function createCssLifecycleSpec(options',
         'core/settings-schema.js':              'const SETTINGS_SCHEMA = Object.freeze(',
         'core/feature-lifecycle.js':            'function createLifecycle(options',
         'core/policy-profile.js':               'function createPolicyProfile(options',
         'core/selector-health.js':              'function createSelectorHealth(options',
         'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
         'core/toast.js':                        'function inferToastTone(color)',
+        'core/toast-dom.js':                    'function createToastSystem(deps',
         'core/runtime-flags.js':                'core.runtimeFlags = flags;',
         'core/capability-probe.js':             'core.capabilityProbe = surface;',
         'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
         'features/video-filters/index.js':      'function buildVideoFilterCss(settings)',
         'features/blue-light-filter/index.js':  'function buildBlueLightRgba(settings)',
         'features/theme-css/index.js':          'function buildProgressBarCss(settings)',
+        'features/wave-8-css/index.js':         'function buildHideNotificationButtonCss()',
+        'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
+        'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
+        'features/sticky-video/index.js':       'function buildSplitShellCss()',
+        'features/video-hider/index.js':        'function createHideVideosFromHomeFeature',
+        'features/player-dock/index.js':        'function createFloatingLogoOnWatchFeature',
+        'features/youtube-music-compat/index.js': 'function createYoutubeMusicCompatFeature',
         'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
     };
     for (const [mod, fingerprint] of Object.entries(fingerprints)) {
@@ -4811,6 +5784,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
     // V5_BUNDLE_MODULES. That order in turn mirrors the manifest's
     // content_scripts.js load order for these modules.
     const expectedOrder = [
+        'extension/core/styles.js',
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
@@ -4826,6 +5800,11 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/theme-css/index.js',
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
+        'extension/features/chat-style-comments/index.js',
+        'extension/features/sticky-video/index.js',
+        'extension/features/video-hider/index.js',
+        'extension/features/player-dock/index.js',
+        'extension/features/youtube-music-compat/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     assert.deepEqual(bundleOrder, expectedOrder,
@@ -4841,8 +5820,10 @@ test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the
     );
     assert.match(sync, /const V5_BUNDLE_MODULES = \[/,
         'sync-userscript.js must declare V5_BUNDLE_MODULES');
-    assert.match(sync, /BUNDLE_BEGIN_RE = \/\\\/\\\/ ── BEGIN v5\\\.0\\\.0 bundled core modules ──/,
+    assert.ok(sync.includes('const BUNDLE_BEGIN_RE = /^[ \\t]*\\/\\/ ── BEGIN v5\\.0\\.0 bundled core modules ──\\r?\\n[\\s\\S]*?^[ \\t]*\\/\\/ ── END v5\\.0\\.0 bundled core modules ──/m;'),
         'sync-userscript.js must define the BEGIN/END marker regex');
+    assert.match(sync, /userscriptText = userscriptText\.replace\(BUNDLE_BEGIN_RE,\s*\(\) => parts\.join\('\\n'\)\);/,
+        'bundle replacement must use a callback so literal $ sequences are preserved');
 });
 
 // ── v4.21.0 NX1: theme-css extended with forceDark + accentColor builders ──
@@ -6588,6 +7569,55 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.46.0 validate workflow provisions Qt offscreen runtime for downloader tests', () => {
+    // GitHub's Ubuntu runners do not ship the PyQt6 runtime libraries
+    // Astra Downloader needs at module import time. Keep the workflow
+    // explicitly provisioning those packages so the Python job fails with
+    // an actionable preflight message instead of a collection-time
+    // ImportError such as "libEGL.so.1: cannot open shared object file".
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
+    );
+    assert.match(workflow, /QT_QPA_PLATFORM:\s*offscreen/,
+        'validate.yml Python job must run Qt under the offscreen platform');
+    assert.match(workflow, /ASTRA_DOWNLOADER_NO_BOOTSTRAP:\s*["']1["']/,
+        'validate.yml must disable runtime bootstrap during CI dependency checks');
+    assert.match(workflow, /sudo apt-get install[\s\S]*libegl1/,
+        'validate.yml must install libegl1 so PyQt6 can load libEGL.so.1');
+    assert.match(workflow, /sudo apt-get install[\s\S]*libxcb-cursor0/,
+        'validate.yml must install Qt xcb support libraries for PyQt6 wheels');
+    assert.match(workflow, /python -m pip install pytest pytest-asyncio pytest-qt/,
+        'validate.yml must install pytest plugins that own pytest.ini config keys');
+    assert.match(workflow, /Verify PyQt Runtime[\s\S]*PyQt6 runtime unavailable/,
+        'validate.yml must run a clear PyQt runtime preflight before pytest');
+    assert.match(workflow, /python -m pytest astra_downloader/,
+        'validate.yml must still run the full downloader pytest suite');
+});
+
+test('v4.46.0 validate workflow audits Python dependencies and PR dependency changes', () => {
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
+    );
+    assert.match(workflow, /name:\s*Dependency review[\s\S]*github\.event_name == 'pull_request'/,
+        'validate.yml must run dependency review only for pull requests');
+    assert.match(workflow, /actions\/dependency-review-action@v5/,
+        'validate.yml must use the current dependency-review action major');
+    assert.match(workflow, /fail-on-severity:\s*moderate/,
+        'dependency review must fail moderate-or-higher vulnerable dependency changes');
+    assert.match(workflow, /vulnerability-check:\s*true/,
+        'dependency review must keep vulnerability checks enabled');
+    assert.match(workflow, /license-check:\s*false/,
+        'dependency review must not introduce a license policy without a maintainer decision');
+    assert.match(workflow, /name:\s*Python dependency audit[\s\S]*python-version:\s*'3\.12'/,
+        'validate.yml must run a Python 3.12 dependency audit job');
+    assert.match(workflow, /python -m pip install pip-audit/,
+        'validate.yml must install pip-audit for the companion dependency gate');
+    assert.match(workflow, /python -m pip_audit -r astra_downloader\/requirements\.txt --format json --progress-spinner off --output pip-audit\.json/,
+        'validate.yml must audit astra_downloader/requirements.txt and capture JSON output');
+    assert.match(workflow, /name:\s*astra-downloader-pip-audit[\s\S]*path:\s*pip-audit\.json/,
+        'validate.yml must upload the Python audit JSON artifact for release review');
+});
+
 test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
     // NF7: the array-type editor was a raw JSON textarea, which is
     // power-user-only UX for the four hidden* entries whose tokens
@@ -6660,9 +7690,8 @@ test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismiss
     // clicking it removes the key from chrome.storage.local. Subsequent
     // YouTube page loads re-enable the install prompt naturally.
     //
-    // The full NF6 scope (auto-update, Reinstall button that triggers a
-    // download, code-signing) is a separate set of follow-up items;
-    // this slice fixes the recoverability gap only.
+    // The full NF6 companion self-update path is pinned in the next test;
+    // this slice keeps the dismissed-prompt recovery button from drifting.
     assert.match(popupHtmlSource, /id="reenable-mediadl-btn"/,
         'popup.html must declare the Re-enable Downloader Prompts button');
     assert.match(popupHtmlSource, /aria-label="Re-enable Astra Downloader install prompts"/,
@@ -6698,6 +7727,87 @@ test('v4.47.0 NF6 — Reinstall Astra Downloader popup action clears the dismiss
         assert.ok(enMessages[k] && enMessages[k].message,
             `extension/_locales/en/messages.json must declare ${k}`);
     }
+});
+
+test('v4.47.0 NF6 — Astra Downloader companion /update endpoint and popup action round-trip', () => {
+    // NF6: update the local companion itself, not just yt-dlp. The popup
+    // routes through the active YouTube content script so it never owns the
+    // local token; MediaDLManager calls /update; the Python service compares
+    // APP_VERSION, downloads AstraDownloader.exe atomically, schedules an
+    // after-exit replace/restart, and blocks while downloads are active.
+    assert.match(popupHtmlSource, /id="update-companion-btn"/,
+        'popup.html must declare the companion update button');
+    const updateBtnMatch = popupHtmlSource.match(/<button[^>]*id="update-companion-btn"[^>]*>/);
+    assert.ok(updateBtnMatch, 'update-companion button declaration must exist');
+    assert.ok(!/\bhidden\b/.test(updateBtnMatch[0]),
+        'update-companion button must be visible by default');
+    assert.match(updateBtnMatch[0], /aria-label="Update Astra Downloader companion"/,
+        'update-companion button must carry an aria-label');
+
+    const updateMethodStart = ytkitSource.indexOf('async updateCompanion()');
+    assert.ok(updateMethodStart > -1,
+        'MediaDLManager must define an async updateCompanion() method');
+    const updateBlock = ytkitSource.slice(updateMethodStart, updateMethodStart + 1600);
+    assert.match(updateBlock, /await this\.check\(true\)/,
+        'updateCompanion must force-probe health before POSTing');
+    assert.match(updateBlock, /\/update/,
+        'updateCompanion must hit the companion /update endpoint');
+    assert.match(updateBlock, /['"]X-Auth-Token['"]:\s*probe\.token/,
+        'updateCompanion must forward the per-install token');
+    assert.match(updateBlock, /timeout:\s*180000/,
+        'updateCompanion must allow enough time for exe download and scheduling');
+    assert.match(ytkitSource, /ASTRA_DOWNLOADER_RELEASE_EXE_URL = 'https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe'/,
+        'installer and companion update paths must point at the GitHub Release exe, not a raw-root file');
+
+    const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_COMPANION'");
+    assert.ok(handlerStart > -1,
+        'ytkit.js must handle YTKIT_UPDATE_COMPANION');
+    const handlerBlock = ytkitSource.slice(handlerStart, handlerStart + 700);
+    assert.match(handlerBlock, /MediaDLManager\.updateCompanion\(\)/,
+        'YTKIT_UPDATE_COMPANION handler must call MediaDLManager.updateCompanion()');
+    assert.match(handlerBlock, /return true;/,
+        'YTKIT_UPDATE_COMPANION handler must keep sendResponse open');
+
+    assert.match(popupSource, /const updateCompanionButton = \$\('#update-companion-btn'\)/,
+        'popup.js must capture update-companion-btn');
+    assert.match(popupSource, /async function updateCompanionNow\(\)/,
+        'popup.js must define updateCompanionNow');
+    const popupHandlerStart = popupSource.indexOf('async function updateCompanionNow');
+    const popupHandlerBlock = popupSource.slice(popupHandlerStart, popupHandlerStart + 3000);
+    assert.match(popupHandlerBlock, /YOUTUBE_TAB_URLS/,
+        'updateCompanionNow must query YouTube tabs for a loaded content script');
+    assert.match(popupHandlerBlock, /type:\s*['"]YTKIT_UPDATE_COMPANION['"]/,
+        'updateCompanionNow must send YTKIT_UPDATE_COMPANION');
+    assert.match(popupHandlerBlock, /current_version/,
+        'updateCompanionNow must surface current_version');
+    assert.match(popupHandlerBlock, /latest_version/,
+        'updateCompanionNow must surface latest_version');
+    assert.match(popupHandlerBlock, /updateCompanionButton\.disabled\s*=\s*true/,
+        'updateCompanionNow must disable the button while in flight');
+
+    const downloaderSource = fs.readFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'), 'utf8'
+    );
+    assert.match(downloaderSource, /@api\.route\(['"]\/update['"],\s*methods=\['POST'\]\)/,
+        'astra_downloader.py must declare /update as a POST route');
+    assert.match(downloaderSource, /def fetch_latest_companion_version/,
+        'downloader must fetch the latest companion APP_VERSION');
+    assert.match(downloaderSource, /COMPANION_UPDATE_EXE_URL = "https:\/\/github\.com\/SysAdminDoc\/Astra-Deck\/releases\/latest\/download\/AstraDownloader\.exe"/,
+        'downloader must download companion binaries from GitHub Releases');
+    assert.match(downloaderSource, /def _run_companion_self_update/,
+        'downloader must expose the companion self-update runner');
+    assert.match(downloaderSource, /def schedule_companion_update_restart/,
+        'downloader must schedule delayed replace and restart');
+    assert.match(downloaderSource, /MoveFileEx/,
+        'Windows delayed updater must use MoveFileEx for replace-existing semantics');
+    const endpointStart = downloaderSource.indexOf("@api.route('/update'");
+    const endpointBlock = downloaderSource.slice(endpointStart, endpointStart + 1700);
+    assert.match(endpointBlock, /in_flight = dl_manager\.active_count\(\)/,
+        '/update must consult dl_manager.active_count');
+    assert.match(endpointBlock, /409/,
+        '/update must return 409 when downloads are active');
+    assert.match(endpointBlock, /atomically replacing/,
+        '/update 409 message must explain the executable replacement race');
 });
 
 test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores it', () => {
@@ -6770,11 +7880,10 @@ test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores i
 
 test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifecycle', () => {
     // The v4.7.0 lifecycle module shipped but had zero defineFeature
-    // callers until v4.47.0. Wave 1 is "register-only": each peel module
-    // exposes a featureSpec with init/destroy no-ops and calls
-    // defineFeature() at module-evaluation time. ytkit.js's inline
-    // cssFeature() blocks still own the real mount/teardown — wave 2
-    // will flip them to delegate via lifecycle.start/.destroy.
+    // callers until v4.47.0. The invariant remains: each peel module
+    // exposes lifecycle specs and calls defineFeature() at module-eval
+    // time. Later waves can make those specs active, but registration
+    // must never drift away.
     //
     // Pin the call-site shape so future refactors can't silently drop a
     // module's registration. Loading the modules under Node loses the
@@ -6826,7 +7935,7 @@ test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifec
     const registered = ctx.__snap.find((r) => r.id === 'test-css-only-spec');
     assert.ok(registered, 'lifecycle.snapshot() must include the just-defined spec');
     assert.equal(registered.started, false,
-        'wave-1 specs are register-only — snapshot must show started:false until start() is called');
+        'registered specs must show started:false until start() is called');
 });
 
 test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant', () => {
@@ -7258,8 +8367,8 @@ test('v4.47.0 NF23 — nyan-cat theme asset resolves via getRepoAssetUrl, not a 
 test('v4.47.0 R6 — policy-profile scrub regex catches the broader API-key shapes', () => {
     // The previous scrub regex matched only the *suffix* `apiKey$` /
     // `token$` plus the exact `aiSummaryApiKey`. R6 broadens coverage
-    // to catch `apikey_v2`, `bearerToken`, `webhookSecret`,
-    // `authToken`, etc. Pin the new shapes so a future refactor
+    // to catch `apikey_v2`, `api_key`, `bearerToken`, `webhookSecret`,
+    // `authToken`, private keys, cookie snapshots, etc. Pin the new shapes so a future refactor
     // can't silently narrow the scrubber.
     delete require.cache[require.resolve('../extension/core/policy-profile.js')];
     const ppMod = require('../extension/core/policy-profile.js');
@@ -7274,32 +8383,42 @@ test('v4.47.0 R6 — policy-profile scrub regex catches the broader API-key shap
         aiSummaryApiKey: 'sk-yyyyy',
         sessionToken: 'tok-1',
         apikey_v2: 'sk-zzz',
+        api_key: 'sk-underscore',
+        'api-key': 'sk-dash',
         bearerToken: 'bear-1',
         accessBearer: 'bear-2',
         webhookSecret: 'whsec_1',
         authToken: 'auth-1',
         userAuth: 'auth-2',
+        accountPassword: 'pass-1',
+        serviceCredential: 'cred-1',
+        privateKey: '-----BEGIN PRIVATE KEY-----',
+        accessKey: 'access-1',
+        youtubeCookies: 'cookie-1',
+        cookieJar: 'cookie-2',
         // Should NOT be scrubbed (benign / unrelated):
         aiSummaryProvider: 'openai',
         autoMaxResolution: true,
         videosPerRow: 0,
-        // Edge: a key with "apiKeyId" — under the old anchored regex
-        // this would also be scrubbed (matches apiKey$); we accept
-        // that here because storing an api-key-id is rare and erring
-        // on the side of scrubbing is safer.
+        // Edge: a key with "apiKeyId" names an identifier for an API key,
+        // not the key material itself. Keep the negative look-ahead pinned.
+        apiKeyId: 'id-1',
     };
     const snap = profile.buildExportSnapshot(fakeSettings, { effective: 'github-full' });
     const exported = Object.keys(snap.settings);
 
     // Scrubbed keys must be absent.
     for (const sensitive of ['apiKey', 'aiSummaryApiKey', 'sessionToken',
-        'apikey_v2', 'bearerToken', 'accessBearer', 'webhookSecret',
-        'authToken', 'userAuth']) {
+        'apikey_v2', 'api_key', 'api-key', 'bearerToken', 'accessBearer',
+        'webhookSecret', 'authToken', 'userAuth', 'accountPassword',
+        'serviceCredential', 'privateKey', 'accessKey', 'youtubeCookies',
+        'cookieJar']) {
         assert.ok(!exported.includes(sensitive),
             `${sensitive} must be scrubbed from the export snapshot`);
     }
     // Benign keys must survive.
-    for (const benign of ['aiSummaryProvider', 'autoMaxResolution', 'videosPerRow']) {
+    for (const benign of ['aiSummaryProvider', 'autoMaxResolution', 'videosPerRow',
+        'apiKeyId']) {
         assert.ok(exported.includes(benign),
             `${benign} must NOT be scrubbed (it carries no secret)`);
     }
@@ -7439,21 +8558,12 @@ test('v4.47.0 NF10 — manifest loads capability-probe.js before ytkit.js in eve
     }
 });
 
-test('v4.47.0 NF5 wave 2 — ytkit.js cssFeature notifies the lifecycle on init/destroy', () => {
-    // Wave 1 (commit 3f22e0e) registered the 21 peeled CSS-only
-    // feature ids with the v4.7.0 lifecycle module but kept the
-    // inline cssFeature() blocks as the source of truth for
-    // init/destroy work. The lifecycle snapshot() therefore showed
-    // started:false for every registered id even when the feature
-    // was visibly active on the page.
-    //
-    // Wave 2 adds a notify-on-state-change hook inside cssFeature so
-    // lifecycle.start(id) fires when the style is injected and
-    // lifecycle.destroy(id) fires when it is removed. The actual
-    // CSS injection + body-class toggle still happens in the closure
-    // (full delegate is a wave-3 refactor — needs injectStyle
-    // accessible from peel modules). What this wave guarantees is
-    // that production state matches snapshot() state.
+test('v4.47.0 NF5 wave 3 — cssFeature delegates registered CSS injection to lifecycle specs', () => {
+    // Wave 1 registered peeled CSS ids with the v4.7.0 lifecycle module.
+    // Wave 2 only mirrored cssFeature state into lifecycle snapshots while
+    // keeping CSS injection in the monolith. Wave 3 flips the happy path:
+    // registered CSS specs own inject/remove through core/styles.js, and
+    // cssFeature remains the thin compatibility wrapper/fallback.
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
     );
@@ -7466,42 +8576,89 @@ test('v4.47.0 NF5 wave 2 — ytkit.js cssFeature notifies the lifecycle on init/
     // 2. cssFeature.init notifies the lifecycle on style injection.
     const cssFeatureStart = ytkitSrc.indexOf('function cssFeature(');
     assert.ok(cssFeatureStart > -1, 'cssFeature factory must exist');
-    const cssFeatureBody = ytkitSrc.slice(cssFeatureStart, cssFeatureStart + 1600);
+    const cssFeatureBody = ytkitSrc.slice(cssFeatureStart, cssFeatureStart + 2400);
+    assert.match(cssFeatureBody, /const hasLifecycleSpec = \(\) => !!\(Lifecycle && Lifecycle\._features && Lifecycle\._features\.has\(id\)\);/,
+        'cssFeature must detect registered lifecycle specs before injecting directly');
+    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id,\s*\{ css, isRaw, bodyClass \}\);/,
+        'cssFeature.init must pass CSS context to Lifecycle.start for registered specs');
+    assert.match(cssFeatureBody, /this\._lifecycleDelegated = true;[\s\S]*?return;/,
+        'cssFeature.init must return after successful lifecycle delegation');
     assert.match(cssFeatureBody, /this\._styleElement = injectStyle\(css, this\.id, isRaw\);/,
-        'cssFeature.init must still inject the CSS via injectStyle');
+        'cssFeature.init must keep direct injectStyle fallback for unregistered specs');
     assert.match(cssFeatureBody, /document\.body\.classList\.add\(bodyClass\);/,
-        'cssFeature.init must still add the body class');
-    assert.match(cssFeatureBody, /Lifecycle && Lifecycle\._features && Lifecycle\._features\.has\(this\.id\)/,
-        'cssFeature.init must guard the lifecycle notification on registration');
-    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id\);/,
-        'cssFeature.init must call Lifecycle.start(id) after the CSS is injected');
+        'cssFeature fallback must still add the body class');
 
-    // 3. cssFeature.destroy notifies the lifecycle on teardown.
+    // 3. cssFeature.destroy delegates teardown when init delegated.
+    assert.match(cssFeatureBody, /if \(this\._lifecycleDelegated && hasLifecycleSpec\(\)\)/,
+        'cssFeature.destroy must branch on delegated lifecycle ownership');
+    assert.match(cssFeatureBody, /Lifecycle\.destroy\(this\.id,\s*\{ css, isRaw, bodyClass \}\);/,
+        'cssFeature.destroy must pass CSS context to Lifecycle.destroy for registered specs');
     assert.match(cssFeatureBody, /this\._styleElement\?\.remove\(\); this\._styleElement = null;/,
-        'cssFeature.destroy must still remove the style element');
-    assert.match(cssFeatureBody, /Lifecycle\.destroy\(this\.id\);/,
-        'cssFeature.destroy must call Lifecycle.destroy(id) after teardown');
+        'cssFeature.destroy must keep direct cleanup fallback for unregistered specs');
 
-    // 4. Sandbox the contract: spin up an isolated lifecycle
-    // singleton, define a feature with a wave-1 no-op spec, then
-    // exercise start/destroy and check the snapshot transitions.
-    delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
-    const lifecycleModule = require('../extension/core/feature-lifecycle.js');
-    const lc = lifecycleModule.createLifecycle();
-    lc.defineFeature({
-        id: 'sandbox-feat',
-        category: 'shell',
-        init() { /* reason: wave-1 register-only no-op */ },
-        destroy() { /* reason: wave-1 register-only no-op */ },
-    });
-    let snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
-    assert.equal(snap.started, false, 'sandbox feature must start as not-started');
-    lc.start('sandbox-feat');
-    snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
-    assert.equal(snap.started, true, 'after lifecycle.start, snapshot must show started:true');
-    lc.destroy('sandbox-feat');
-    snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
-    assert.equal(snap.started, false, 'after lifecycle.destroy, snapshot must show started:false again');
+    // 4. Sandbox the contract: a real CSS lifecycle spec owns style
+    // insertion/removal while lifecycle snapshot state follows start/destroy.
+    const originalCore = globalThis.YTKitCore;
+    const originalDocument = globalThis.document;
+    const styles = new Map();
+    const bodyClasses = new Set();
+    globalThis.YTKitCore = {};
+    globalThis.document = {
+        createElement(tag) {
+            return {
+                tagName: tag,
+                id: '',
+                textContent: '',
+                remove() { styles.delete(this.id); }
+            };
+        },
+        getElementById(id) { return styles.get(id) || null; },
+        head: {
+            appendChild(style) {
+                styles.set(style.id, style);
+                return style;
+            }
+        },
+        documentElement: null,
+        body: {
+            classList: {
+                add(value) { bodyClasses.add(value); },
+                remove(value) { bodyClasses.delete(value); }
+            }
+        }
+    };
+    try {
+        delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
+        delete require.cache[require.resolve('../extension/core/styles.js')];
+        const lifecycleModule = require('../extension/core/feature-lifecycle.js');
+        const stylesModule = require('../extension/core/styles.js');
+        const lc = lifecycleModule.createLifecycle();
+        const spec = stylesModule.createCssLifecycleSpec({
+            id: 'sandbox-feat',
+            category: 'shell',
+            buildCss() { return '.sandbox-feat { display: none !important; }'; },
+        });
+        lc.defineFeature(spec);
+        let snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+        assert.equal(snap.started, false, 'sandbox feature must start as not-started');
+        lc.start('sandbox-feat');
+        snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+        assert.equal(snap.started, true, 'after lifecycle.start, snapshot must show started:true');
+        assert.ok(styles.has('yt-suite-style-sandbox-feat'),
+            'lifecycle spec must inject the feature style on start');
+        assert.ok(bodyClasses.has('ytkit-sandbox-feat'),
+            'lifecycle spec must add the feature body class on start');
+        lc.destroy('sandbox-feat');
+        snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+        assert.equal(snap.started, false, 'after lifecycle.destroy, snapshot must show started:false again');
+        assert.equal(styles.has('yt-suite-style-sandbox-feat'), false,
+            'lifecycle spec must remove the feature style on destroy');
+        assert.equal(bodyClasses.has('ytkit-sandbox-feat'), false,
+            'lifecycle spec must remove the feature body class on destroy');
+    } finally {
+        globalThis.YTKitCore = originalCore;
+        globalThis.document = originalDocument;
+    }
 });
 
 test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pattern wins)', () => {

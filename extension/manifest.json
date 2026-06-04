@@ -35,18 +35,19 @@
     "https://i.ytimg.com/*",
     "https://sponsor.ajay.app/*",
     "https://returnyoutubedislikeapi.com/*",
+    "https://www.reddit.com/*",
+    "https://old.reddit.com/*",
     "https://api.openai.com/*",
     "https://api.anthropic.com/*",
     "https://generativelanguage.googleapis.com/*",
-    "https://www.reddit.com/*",
-    "https://old.reddit.com/*",
+    "https://api.cobalt.tools/*",
+    "http://127.0.0.1:11434/*",
     "http://127.0.0.1:9751/*",
     "http://127.0.0.1:9761/*",
     "http://127.0.0.1:9771/*",
     "http://127.0.0.1:9781/*",
     "http://127.0.0.1:9791/*",
-    "http://127.0.0.1:9851/*",
-    "http://127.0.0.1:11434/*"
+    "http://127.0.0.1:9851/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -156,6 +157,11 @@
         "features/theme-css/index.js",
         "features/wave-8-css/index.js",
         "features/home-subs-css/index.js",
+        "features/chat-style-comments/index.js",
+        "features/sticky-video/index.js",
+        "features/video-hider/index.js",
+        "features/player-dock/index.js",
+        "features/youtube-music-compat/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -229,6 +235,11 @@
         "features/theme-css/index.js",
         "features/wave-8-css/index.js",
         "features/home-subs-css/index.js",
+        "features/chat-style-comments/index.js",
+        "features/sticky-video/index.js",
+        "features/video-hider/index.js",
+        "features/player-dock/index.js",
+        "features/youtube-music-compat/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
@@ -250,6 +261,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://sponsor.ajay.app https://returnyoutubedislikeapi.com http://127.0.0.1:9751 http://127.0.0.1:9761 http://127.0.0.1:9771 http://127.0.0.1:9781 http://127.0.0.1:9791 http://127.0.0.1:9851 http://127.0.0.1:11434"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.youtube.com https://*.youtube-nocookie.com https://youtu.be https://i.ytimg.com https://sponsor.ajay.app https://returnyoutubedislikeapi.com https://www.reddit.com https://old.reddit.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.cobalt.tools http://127.0.0.1:11434 http://127.0.0.1:9751 http://127.0.0.1:9761 http://127.0.0.1:9771 http://127.0.0.1:9781 http://127.0.0.1:9791 http://127.0.0.1:9851"
   }
 }

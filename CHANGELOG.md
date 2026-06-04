@@ -6,6 +6,232 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Python companion dependency audit gate.** The `Validate` workflow now runs
+  `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
+  artifact for release review, and runs GitHub dependency review on pull
+  requests so moderate-or-higher vulnerable dependency changes fail before
+  merge.
+
+- **Cross-store privacy and Firefox consent packet.** Added
+  `docs/privacy-policy.md` as the stable policy source linked from README and
+  store-submission docs. The policy covers local storage, third-party API calls,
+  local companion handoff, YouTube cookie use, BYO-key provider behavior,
+  retention/export/delete controls, no telemetry/ads/sale, and the Chrome
+  Limited Use statement. Firefox artifacts now require Firefox 140+ and declare
+  built-in `data_collection_permissions` for browsing activity, website
+  content, website activity, and authentication information.
+
+- **GitHub Validate Python job restored.** The `Validate` workflow now installs
+  the Linux Qt runtime packages needed by PyQt6, runs downloader tests with
+  `QT_QPA_PLATFORM=offscreen`, installs the pytest plugins that own the repo's
+  `pytest.ini` keys, disables downloader runtime bootstrap in CI, and runs a
+  PyQt preflight that emits a clear workflow error before pytest if the runner
+  is missing `libEGL` or xcb support libraries.
+
+- **Liquid-glass watch-page capture unblocked.** Added
+  `scripts/capture-watch-mhtml.js` and `npm run capture:watch`, which launches
+  Chrome Stable with a temporary profile, waits for `ytd-watch-flexy`,
+  `#movie_player`, and `.ytp-delhi-modern`, stops page loading, then captures
+  `mhtml/WatchPage.mhtml` with CDP. The refreshed ignored capture regenerated
+  `yt-watch.tokens.txt` and `selector-surface-matches.json`, proving
+  `ytp-delhi-modern`, `ytp-overflow-panel`, and `ytp-time-wrapper-delhi` from a
+  current watch page.
+
+- **Return YouTube Dislike estimate disclosure.** Successful RYD renders now
+  show a compact `est.` affordance next to the restored count, with tooltip and
+  `aria-label` copy explaining that counts are estimates after YouTube removed
+  public dislike totals and low-traffic videos can be less accurate. The
+  userscript RYD path, ratio labels, locale seed descriptions, README, data-flow
+  review copy, and hardening tests now carry the same disclosure.
+
+- **Schema-validated settings backups.** Popup and in-page backup exports now
+  emit a scrubbed `exportVersion: 4` JSON payload with settings-schema version,
+  active profile, scrubbed-key, and profile-defaulted-key metadata. Import now
+  migrates first, then rejects unknown, unsafe, or shape-mismatched settings
+  before writing storage. `policy-profile.js` owns the shared schema validator
+  and schema-only export mode, and userscript output is synced to the same
+  contract.
+
+- **Version-surface docs clarified.** Active documentation now names v4.46.0 as
+  the current shipped product line across the five checked product-version
+  sources and labels legacy v5/v6 roadmap references as internal planning-track
+  names, not released extension/userscript versions.
+
+- **Store-review permission rationale.** Added
+  `docs/store-permission-rationale.md` as the copy-paste source for the Chrome
+  Web Store / AMO single-purpose, data-handling, manifest-permission, and
+  host-permission review fields. The CWS checklist now points to it, and a
+  hardening test checks the doc against live manifest permissions plus generated
+  store-safe/GitHub-full host grants.
+
+- **yt-dlp cookie threat model.** Added
+  `docs/yt-dlp-cookie-threat-model.md` documenting the CVE-2023-35934 /
+  GHSA-v8mc-9377-rwjj redirect-cookie leak class, Astra's YouTube-only cookie
+  bridge, per-download Netscape cookie jars, `--cookies` invocation, jar cleanup
+  and stale sweep, exact `yt-dlp==2026.3.17` pin, and residual local-machine
+  risk. The downloader test suite now pins the doc against live mitigation
+  names.
+
+- **Settings migration full-profile fixture.** Added a pinned
+  `SETTINGS_VERSION` v1 full-profile settings blob covering every current
+  default key, migration override, future-default classification, and retired
+  setting. The migration round-trip suite now proves the 362-key schema is
+  preserved, defaulted, overridden, or intentionally stripped during forward
+  import, so accidental key drops fail deterministically.
+
+- **Long-session leak regression.** Added `tests/long-session.test.js`, a
+  deterministic DOM/timer/RAF/MutationObserver harness that simulates 1000
+  route changes and mutation batches against the real navigation and diagnostic
+  modules. The test pins one shared mutation observer, scoped-rule early exits,
+  capped DiagnosticLog ring/counters, and listener/observer cleanup.
+
+- **Cobalt fallback diagnostics.** When Astra Downloader is offline and the
+  GitHub-full Cobalt fallback request fails, Astra Deck now writes an actionable
+  `DiagnosticLog` entry under `cobalt-fallback`. The message records only the
+  configured instance origin, explains that the local downloader was offline,
+  and points users to `downloadCobaltInstance` or starting Astra Downloader.
+
+- **Policy-profile scrub coverage.** The export scrubber now catches
+  separator-aware API-key names (`api_key`, `api-key`), password/credential
+  fields, private/access/refresh/session/signing key aliases, cookie snapshots,
+  bearer/secret/token/auth-shaped keys, and unknown secret-shaped forward-compat
+  settings before passthrough. Schema-derived hardening tests now prove every
+  GitHub-full key is defaulted out of store-safe exports unless scrubbed, and
+  every credential-shaped schema key is absent from both store-safe and
+  GitHub-full export snapshots.
+
+- **Storage-growth caps for notes, bookmarks, and watch history.** Added shared
+  deterministic sanitizers for `ytkit-bookmarks`, `ytkit-watch-progress`, and
+  `ytkit-watch-time`, then routed extension and userscript write paths through
+  them before persistence. `storageQuotaLRU` now sweeps the real top-level
+  stores plus `videoNotesData`, not the stale `timestampBookmarks` toggle.
+
+- **Downloader request-field allowlist.** The Flask `/download` boundary now
+  accepts only reviewed extension wire fields before Deno checks, cookie writes,
+  queueing, or subprocess setup. Client-supplied yt-dlp argv / flag fields and
+  unknown fields return explicit 400 responses, with API tests proving an
+  unexpected `ytDlpArgs` payload is rejected before any download is queued.
+
+- **Firefox programmatic-injection pre-flight.** Added
+  `scripts/check-firefox-injection.js` to `npm run check` so future
+  `scripting.executeScript`, `tabs.executeScript`, or dynamic content-script
+  registration call sites under `extension/` fail until audited for Firefox
+  149/152 `moz-extension://` behavior. The audit note records the current
+  zero-call-site inventory and the official Mozilla / MDN source behavior.
+
+- **Selector fixture match harness.** `npm run build:fixtures` now writes
+  `tests/fixtures/selector-surface-matches.json` alongside the token fixtures.
+  The builder parses decoded MHTML markup with a dependency-free DOM subset
+  matcher, then records which `playerChrome` and `liveChat` selector-pack
+  entries resolve. Selector regression tests now fail if the match report drifts
+  from the current packs or if critical live-chat / liquid-glass selectors stop
+  matching their captured fixture.
+
+- **Monthly yt-dlp smoke gate.** Downloader requirements now exact-pin
+  `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` so Dependabot opens reviewed
+  extractor-bump PRs. A new `yt-dlp-smoke.yml` workflow runs monthly or on
+  `workflow_dispatch`, installs those pins, and uses `scripts/yt-dlp-smoke.py`
+  to perform a bounded real media download against a stable public YouTube
+  fixture before a bump can be trusted.
+
+- **Store-safe / GitHub-full artifact split.** `build-extension.js` now emits
+  profile-named Chrome and Firefox packages from the same extension source:
+  store-safe artifacts strip AI, Cobalt, and local-loopback host grants/CSP,
+  while GitHub-full artifacts retain the full data-flow catalogue including
+  Cobalt. The packager also accepts `--profile store-safe|github-full|both`,
+  and the background proxy allowlist now includes Cobalt so the full-profile
+  fallback can reach its default API instance.
+
+- **Feature-definition i18n.** The full in-page settings panel now resolves
+  feature names and descriptions through generated `feature_<id>_name` /
+  `feature_<id>_desc` locale keys before falling back to inline English.
+  Runtime feature registry entries carry `nameKey` / `descriptionKey`, page
+  quick-control cards share the same resolver, and all 10 locale bundles now
+  seed the 306 feature-definition name/description pairs with existing
+  quick-toggle translations reused where available.
+
+- **Study / Work export.** The `researchSpacedReview` watch-page action now
+  exports a Study / Work report as Markdown or CSV, combining Watch Time Tracker
+  totals, current Digital Wellbeing day state, Focused Mode state, and timestamp
+  bookmarks with deep links. The bookmark reader now handles the live
+  `timestampBookmarks` `t`/`n` fields, and the shared file-export helper accepts
+  per-format MIME types.
+
+- **Group notifications digest.** Subscription Groups now has a toolbar Digest
+  panel with all-subscriptions and per-group new-video counts based on rendered
+  relative age text versus `subscriptionLastVisitData`. The panel supports
+  nested group rows, View shortcuts, and bounded Mark read updates that reuse the
+  2000-channel last-visit cap.
+
+- **NF1 per-video notes.** Added the `videoNotes` watch-page panel with
+  debounced local saves into `videoNotesData`, delete/undo for the current
+  video, and a versioned JSON export (`astra-deck-video-notes-YYYY-MM-DD.json`).
+  Notes are sanitized on read/write and capped to the 1000 most recently edited
+  videos by `updatedAt`.
+
+- **Dead-channel unsubscribe staging.** Subscription Groups now flags rendered
+  subscription-feed cards whose newest visible upload is at least 365 days old,
+  stores staged review records in `subscriptionUnsubscribeStagingData` with a
+  30-day `undoUntil` window, and adds Scan Stale / Stage Stale / Undo Staged
+  toolbar actions. The staging path marks cards for review only; it does not
+  click YouTube unsubscribe controls.
+
+- **NF2 nested subscription groups.** Subscription group records now support a
+  depth-2 `parentId` shape, export as schema v2, and import via a two-pass
+  normalizer that preserves valid parent links while rejecting child-of-child
+  depth. Selecting a parent group includes channels from its child groups, the
+  toolbar renders child chips with depth styling, and a `+ Subgroup` action is
+  available only when a top-level group is active.
+
+- **NF6 Astra Downloader companion self-update.** Added a protected `/update`
+  endpoint that compares companion `APP_VERSION`, blocks while downloads are
+  active, downloads the latest GitHub Release `AstraDownloader.exe`, validates
+  the binary, schedules an after-exit atomic replace/restart, and reports
+  structured current/update/error states. The popup now exposes an **Update
+  Companion** action that routes through the active YouTube content script so
+  the local auth token stays in the page bridge. The existing installer action
+  now targets the GitHub Release executable instead of a missing raw-root file;
+  `APP_VERSION` remains `1.5.1` until the next matching companion binary release
+  is produced.
+
+- **Next-2 peel: player dock and YouTube Music compatibility.** Added
+  `features/player-dock/index.js` and
+  `features/youtube-music-compat/index.js`, wired both into MV3 and userscript
+  load order, and made `ytkit.js` prefer the module-owned
+  `floatingLogoOnWatch` / `youtubeMusicCompat` runtime objects while retaining
+  inline object fallbacks.
+
+- **Top-3 peel: hideVideosFromHome runtime.** Added
+  `features/video-hider/index.js` with `createHideVideosFromHomeFeature(deps)`,
+  wired it into MV3 and userscript load order, and made `ytkit.js` prefer the
+  module-owned Video Hider runtime while retaining the inline object fallback.
+
+- **Top-3 peel: stickyVideo runtime.** `features/sticky-video/index.js` now
+  exports `createStickyVideoFeature(deps)` and owns the primary Theater Split
+  runtime/state object; `ytkit.js` prefers that factory and keeps its inline
+  object only as a compatibility fallback.
+
+- **Top-3 peel seed: stickyVideo styles.** Added
+  `features/sticky-video/index.js` with the Theater Split shell/meta/comments
+  style builders, wired the module into MV3 and userscript load order, and made
+  the monolith prefer the module while keeping inline fallback CSS byte-pinned.
+
+- **Top-3 peel: chatStyleComments runtime.** The Studio Comments module now owns
+  comment normalization, reply-dialog styling, selection guarding, mutation
+  scheduling, and teardown; `ytkit.js` instantiates that runtime and keeps the
+  old inline observer path only as fallback.
+
+- **Top-3 peel seed: chatStyleComments styles.** Added
+  `features/chat-style-comments/index.js` with the Studio Comments style
+  builders, wired the module into MV3 and userscript load order, and made the
+  monolith prefer the module while keeping inline fallback CSS byte-pinned.
+
+- **NF5 Wave 3 lifecycle CSS delegation.** CSS peel modules now register real
+  style lifecycle specs through `core/styles.js#createCssLifecycleSpec`, and
+  `cssFeature` delegates registered features to lifecycle start/destroy with
+  direct injection kept only as fallback. The userscript bundle now includes
+  `core/styles.js` so the same helper is available outside MV3.
+
 - **Monolith catch-reason lint coverage.** `extension/ytkit.js` now runs the
   custom `require-catch-reason` ESLint rule. The remaining intentional silent
   catches in the monolith carry explicit `reason:` comments, and the lint
@@ -53,8 +279,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **H21 liquid-glass selector canaries.** A 2026-06-04 headful Chrome DOM probe
   confirmed YouTube's current player root uses `ytp-delhi-modern`, with
   `ytp-overflow-panel` and `ytp-time-wrapper-delhi` present in the live DOM.
-  Those three selectors are now release-blocking canaries. Full watch-page
-  MHTML capture remains gated because DevTools MHTML snapshots time out.
+  Those three selectors are now release-blocking canaries. Follow-up work added
+  the stopped-loading Chrome Stable MHTML capture helper and refreshed the
+  committed watch fixture from the new chrome.
 
 - **Deep audit hardening pass (H26).** Repo-wide principal-engineer audit
   across every surface — service worker, popup, core modules, the `ytkit.js`

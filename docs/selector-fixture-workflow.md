@@ -31,6 +31,27 @@ pair `mhtml/LiveChat.mhtml` with a rendered watch-page DOM probe for:
 Document the video id, date, and probe result in the changelog or hardening
 notes when these wrapper selectors change.
 
+### Watch-page CDP capture
+
+For player-chrome refreshes, try the stopped-loading Chrome Stable helper before
+falling back to a manual browser save:
+
+```powershell
+npm run capture:watch
+npm run build:fixtures
+```
+
+`scripts/capture-watch-mhtml.js` launches a temporary Chrome profile, waits for
+`ytd-watch-flexy`, `#movie_player`, and `.ytp-delhi-modern`, pauses/stops page
+loading with `Page.stopLoading`, then calls `Page.captureSnapshot`. This avoids
+many long-running media/ad requests that make a plain DevTools MHTML snapshot
+time out. If Chrome still times out, the helper writes a single-part MHTML from
+the settled rendered DOM (`captureMode: "dom-mhtml-fallback"`) so selector
+fixtures can still be regenerated from browser evidence. The raw
+`mhtml/WatchPage.mhtml` file remains gitignored; commit only the regenerated
+`tests/fixtures/yt-watch.tokens.txt` and
+`tests/fixtures/selector-surface-matches.json` deltas.
+
 ## Regenerate
 
 Run:
@@ -40,19 +61,29 @@ npm run build:fixtures
 npm test -- --test-name-pattern "Selector"
 ```
 
-The fixture builder decodes the MHTML HTML part and regenerates committed token signatures in `tests/fixtures/*.tokens.txt`. Raw `.mhtml` files remain local and gitignored.
+The fixture builder decodes the MHTML text parts and regenerates committed token
+signatures in `tests/fixtures/*.tokens.txt`. It also writes
+`tests/fixtures/selector-surface-matches.json`, a DOM-subset match report for the
+MHTML-backed `playerChrome` and `liveChat` selector packs. Raw `.mhtml` files
+remain local and gitignored.
 
 ## Review
 
 1. Inspect the fixture diff for removed `ytd-*`, `yt-*`, `ytp-*`, `html5-*`, and `movie_player` tokens.
-2. Compare the diff with `ytkit.exportSelectorHealth()` from a live page when available.
-3. Promote confirmed replacements into `extension/core/selectors.js` as stable selectors when they are structural, role/data/aria-based, or custom-element based.
-4. Keep older selectors as fallbacks during A/B rollout windows.
-5. Update `tests/selector-regression.test.js` when a promoted selector should become a release-blocking canary.
+2. Inspect `tests/fixtures/selector-surface-matches.json`; a `matched: false`
+   row for a critical `playerChrome` or `liveChat` selector means the selector
+   pack must be refreshed before release.
+3. Compare the diff with `ytkit.exportSelectorHealth()` from a live page when available.
+4. Promote confirmed replacements into `extension/core/selectors.js` as stable selectors when they are structural, role/data/aria-based, or custom-element based.
+5. Keep older selectors as fallbacks during A/B rollout windows.
+6. Update `tests/selector-regression.test.js` when a promoted selector should become a release-blocking canary.
 
 ## Acceptance
 
 - `npm run build:fixtures` completes without missing capture files.
 - `npm test -- --test-name-pattern "Selector"` passes.
+- `selector-surface-matches.json` stays synced to the current `playerChrome` and
+  `liveChat` selector-pack stable/fallback arrays.
 - New player/UI variants keep legacy and new selectors in the chain.
-- Live-chat changes are documented as capture-needed until a committed fixture strategy exists.
+- Live-chat wrapper-only changes are documented with the rendered watch-page
+  probe when a full watch-page MHTML capture still times out.

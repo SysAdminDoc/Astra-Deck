@@ -6,11 +6,10 @@
     // Player chrome (controls strip, progress bar, right controls).
     // The fallback list deliberately bundles legacy + new-player
     // ("Delhi modern", action-pill, overflow-panel) candidates so the
-    // resolver still hits during the A/B transition. needsFreshCapture
-    // stays false to match pre-peel behaviour even though roadmap.md
-    // notes a fresh liquid-glass capture is desirable — flipping the
-    // flag would change selector-health.js summary counts and belongs
-    // in a separate slice paired with the actual fresh capture.
+    // resolver still hits during the A/B transition. The 2026-06-04
+    // stopped-loading Chrome Stable capture proves Delhi + overflow
+    // selectors; action-pill/action-container remain unmatched
+    // fallback watchlist entries until that rollout variant appears.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     const registry = core.SurfacePackRegistry || (core.SurfacePackRegistry = new Map());
@@ -39,6 +38,6 @@
         lastVerified: '2026-06-04',
         highChurn: true,
         needsFreshCapture: false,
-        notes: 'Player redesign transition surface; 2026-06-04 DOM probe confirmed Delhi shell, overflow panel, and time-wrapper selectors.'
+        notes: 'Player redesign transition surface; 2026-06-04 stopped-loading Chrome Stable capture confirmed Delhi shell, overflow panel, and time-wrapper selectors. Action-pill/action-container remain fallback watchlist entries until captured.'
     }));
 })();

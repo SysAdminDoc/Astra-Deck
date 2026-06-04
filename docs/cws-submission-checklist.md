@@ -41,6 +41,13 @@ must use Google's standardized vocabulary to declare data categories.
 
 - [ ] Privacy policy hosted at a stable URL (CWS will reject if the
       URL returns 404 during review).
+- [ ] Tracked source for that policy is
+      [docs/privacy-policy.md](privacy-policy.md); publish that content at the
+      project homepage or another maintainer-controlled stable URL before
+      filling the CWS/AMO listing fields.
+- [ ] Copy the current single-purpose statement, data-handling statement, and
+      permission/host justifications from
+      [store-permission-rationale.md](store-permission-rationale.md).
 - [ ] Declares EACH category Astra Deck uses against the [Chrome
       Web Store Permissions Justification template](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy):
   - **Authentication info** — YouTube session cookies via
@@ -61,6 +68,9 @@ must use Google's standardized vocabulary to declare data categories.
 - [ ] Data-handling disclosure: explicitly states data is local-only
       (no telemetry, no remote storage) for everything except
       user-initiated BYO-key AI summary calls.
+- [ ] Limited Use disclosure: explicitly states Astra Deck's use and transfer of
+      information received from Google APIs adheres to the Chrome Web Store User
+      Data Policy, including Limited Use requirements.
 
 ---
 
@@ -68,10 +78,18 @@ must use Google's standardized vocabulary to declare data categories.
 
 - [ ] Build clean via `node build-extension.js --bump patch` —
       version bumped, all four artifacts present in `build/`.
+- [ ] Release package built locally with `ytkit.pem` via
+      `npm run build:userscript`; CI build artifacts are provenance evidence,
+      not the public CRX signing source.
+- [ ] Release SBOM and checksums generated with
+      `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`
+      and `npm run release:manifest`.
 - [ ] `npm run check` passes (syntax / versions / i18n / lint /
       a11y / contrast).
 - [ ] `npm test` passes (all `tests/*.test.js` + `tests/features/*.test.js`).
 - [ ] `npm audit --omit=dev` clean.
+- [ ] `pip-audit` clean for `astra_downloader/requirements.txt`; attach or
+      link the `astra-downloader-pip-audit` JSON artifact for release review.
 - [ ] CHANGELOG entry for the new version.
 - [ ] Screenshots captured at the current popup dimensions (system DPI
       must be 100 % for CWS — they reject scaled captures).
@@ -83,8 +101,12 @@ must use Google's standardized vocabulary to declare data categories.
 
 ## 4. CWS-specific permissions justifications
 
-Each permission needs a one-paragraph justification in the CWS
-dashboard. Astra Deck's set:
+Each permission needs a one-paragraph justification in the CWS dashboard. The
+copy-paste source of truth is
+[store-permission-rationale.md](store-permission-rationale.md), which is pinned
+by `tests/hardening.test.js` against the live manifest and build-profile host
+grants. Submit the `store-safe` package to public stores; reserve `github-full`
+for GitHub/self-hosted installs.
 
 | Permission | Justification |
 |---|---|
@@ -93,10 +115,11 @@ dashboard. Astra Deck's set:
 | `cookies` | The Astra Downloader companion downloads authenticated YouTube content. The extension reads YouTube cookies via `chrome.cookies.getAll` and posts them to the localhost downloader (127.0.0.1:9751 only). Never sent off-machine. |
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |
 | `host_permissions: youtube.com / youtu.be / youtube-nocookie.com / i.ytimg.com` | Content script attachment + thumbnail-replacement. |
-| `host_permissions: sponsor.ajay.app` | SponsorBlock + DeArrow API calls. Hash-prefix anonymized — no plaintext videoIds leave the user. |
-| `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | BYO-key AI summary feature. Per-user opt-in; the key + the call body never touch our infrastructure. |
-| `host_permissions: 127.0.0.1:9751-9851` | Astra Downloader local probe (one of six fallback ports). |
-| `host_permissions: 127.0.0.1:11434` | Optional local Ollama for AI summary. |
+| `host_permissions: sponsor.ajay.app / returnyoutubedislikeapi.com / reddit.com` | Optional user-visible enrichment calls for SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, and the Reddit discussion panel. No cookies are sent. |
+| `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary feature; per-user opt-in and direct to provider. |
+| `host_permissions: api.cobalt.tools` | GitHub-full only. Optional Cobalt fallback when Astra Downloader is offline. |
+| `host_permissions: 127.0.0.1:9751-9851` | GitHub-full only. Astra Downloader local probe and explicit download handoff across six fallback ports. |
+| `host_permissions: 127.0.0.1:11434` | GitHub-full only. Optional local Ollama for AI summary. |
 
 ---
 
@@ -144,4 +167,12 @@ differences:
   privacy policies (CWS requires AMO-hosted text in some flows).
 - AMO requires source code submission for any minified / obfuscated
   asset. Astra Deck ships readable so this is a no-op.
+- Firefox artifacts require Firefox 140+ and use the built-in data collection
+  consent prompt. `scripts/manifest-patch.js` injects
+  `browser_specific_settings.gecko.data_collection_permissions.required` with:
+  `browsingActivity`, `websiteContent`, `websiteActivity`, and
+  `authenticationInfo`.
+- AMO reviewer notes should point at [privacy-policy.md](privacy-policy.md) and
+  the Firefox Data Consent section of
+  [store-permission-rationale.md](store-permission-rationale.md).
 - AMO unlisted reviews land in 2-4 weeks at the time of writing.

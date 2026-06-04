@@ -125,6 +125,11 @@ ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
 YTDLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
+COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
+COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe"
+COMPANION_UPDATE_SHA256_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256"
+COMPANION_UPDATE_TIMEOUT_SECONDS = 120
+COMPANION_UPDATE_MIN_BYTES = 1024
 
 DEFAULT_CONFIG = {
     # v1.2.2: default to the profile's Videos folder directly (was Videos/YouTube
@@ -246,6 +251,29 @@ MAX_TEXT_FIELD = 500
 MAX_PATH_FIELD = 2048
 LOG_MAX_BYTES = 1024 * 1024
 _LOG_LOCK = threading.Lock()
+DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
+    'url',
+    'audioOnly',
+    'format',
+    'quality',
+    'outputDir',
+    'title',
+    'referer',
+    'cookies',
+})
+DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS = frozenset({
+    'args',
+    'argv',
+    'flags',
+    'extraArgs',
+    'extractorArgs',
+    'postprocessorArgs',
+    'postprocessor_args',
+    'externalDownloaderArgs',
+    'ytDlpArgs',
+    'ytdlpArgs',
+    'yt_dlp_args',
+})
 
 
 def write_persistent_log(message, path=LOG_PATH):
@@ -1123,6 +1151,222 @@ def maybe_auto_update_ytdlp(config, active_count_fn=None):
     ).start()
 
 
+# ── v4.47.0 NF6: companion self-update helpers ──
+def parse_companion_version_source(source_text):
+    """Extract APP_VERSION from the raw astra_downloader.py source."""
+    if not isinstance(source_text, str):
+        return ''
+    m = re.search(r'^APP_VERSION\s*=\s*["\']([^"\']{1,32})["\']', source_text, re.MULTILINE)
+    return m.group(1).strip() if m else ''
+
+
+def fetch_latest_companion_version(timeout=15):
+    """Read the latest companion APP_VERSION from the canonical repo source."""
+    response = http_requests.get(COMPANION_UPDATE_VERSION_URL, timeout=timeout)
+    response.raise_for_status()
+    version = parse_companion_version_source((response.text or '')[:200000])
+    if not version:
+        raise RuntimeError('Could not read APP_VERSION from the update manifest.')
+    return version
+
+
+def validate_companion_update_binary(path):
+    """Cheap integrity sanity check before scheduling an exe replacement."""
+    path = Path(path)
+    if not path.exists():
+        raise RuntimeError('Downloaded Astra Downloader update is missing.')
+    if path.stat().st_size < COMPANION_UPDATE_MIN_BYTES:
+        raise RuntimeError('Downloaded Astra Downloader update is too small to trust.')
+    with open(path, 'rb') as fh:
+        header = fh.read(2)
+    if header != b'MZ':
+        raise RuntimeError('Downloaded Astra Downloader update is not a Windows executable.')
+    return True
+
+
+def _safe_update_paths(update_path, target_path=None):
+    install_root = INSTALL_DIR.resolve()
+    update = Path(update_path).resolve()
+    target = Path(target_path or install_target_exe()).resolve()
+    if target.name != 'AstraDownloader.exe':
+        raise RuntimeError(f'Refusing to update unexpected target: {target}')
+    if target.parent != install_root:
+        raise RuntimeError(f'Refusing to update outside install dir: {target}')
+    if update.parent != install_root or not update.name.startswith('.AstraDownloader.update.'):
+        raise RuntimeError(f'Refusing to apply untrusted update path: {update}')
+    return update, target
+
+
+def schedule_companion_update_restart(update_path, target_path=None, restart_args=None, pid=None):
+    """Schedule after-exit replacement and relaunch of AstraDownloader.exe.
+
+    The running PyInstaller executable cannot be overwritten in-place on
+    Windows. A detached helper waits for this PID to exit, atomically replaces
+    the managed install-dir executable, then starts the new build.
+    """
+    update, target = _safe_update_paths(update_path, target_path)
+    restart_args = list(restart_args or ['--start-server'])
+    current_pid = int(pid or os.getpid())
+    INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+
+    if sys.platform == 'win32':
+        script = INSTALL_DIR / f".AstraDownloader.apply-update.{uuid.uuid4().hex}.ps1"
+        script.write_text(r'''
+param(
+    [int] $ProcessId,
+    [string] $SourcePath,
+    [string] $TargetPath,
+    [string] $RestartArgs
+)
+$ErrorActionPreference = 'Stop'
+try {
+    Wait-Process -Id $ProcessId -Timeout 45
+} catch {
+    Start-Sleep -Seconds 2
+}
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class AstraDeckMoveFile {
+    [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+    public static extern bool MoveFileEx(string existingFileName, string newFileName, int flags);
+}
+'@
+$MOVEFILE_REPLACE_EXISTING = 0x1
+$MOVEFILE_WRITE_THROUGH = 0x8
+$flags = $MOVEFILE_REPLACE_EXISTING -bor $MOVEFILE_WRITE_THROUGH
+$ok = [AstraDeckMoveFile]::MoveFileEx($SourcePath, $TargetPath, $flags)
+if (-not $ok) {
+    $err = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+    throw "MoveFileEx failed with Win32 error $err"
+}
+Start-Process -FilePath $TargetPath -ArgumentList $RestartArgs
+Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue
+'''.lstrip(), encoding='utf-8')
+        args = [
+            'powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+            '-File', str(script),
+            '-ProcessId', str(current_pid),
+            '-SourcePath', str(update),
+            '-TargetPath', str(target),
+            '-RestartArgs', command_line(restart_args),
+        ]
+        subprocess.Popen(args, creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
+    else:
+        script = INSTALL_DIR / f".AstraDownloader.apply-update.{uuid.uuid4().hex}.py"
+        script.write_text('''\
+import os
+import subprocess
+import sys
+import time
+
+pid = int(sys.argv[1])
+source = sys.argv[2]
+target = sys.argv[3]
+restart_args = sys.argv[4:]
+deadline = time.time() + 45
+while time.time() < deadline:
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        break
+    time.sleep(0.25)
+os.replace(source, target)
+subprocess.Popen([target] + restart_args)
+try:
+    os.remove(__file__)
+except OSError:
+    pass
+''', encoding='utf-8')
+        subprocess.Popen([sys.executable, str(script), str(current_pid), str(update), str(target)] + restart_args)
+    return {'scheduled': True, 'target': str(target), 'source': str(update)}
+
+
+def schedule_companion_process_exit(delay=0.6):
+    """Exit after the HTTP response has a chance to flush."""
+    def _exit_later():
+        time.sleep(delay)
+        write_persistent_log('Exiting for Astra Downloader self-update.')
+        os._exit(0)
+
+    threading.Thread(target=_exit_later, daemon=True, name='AstraDownloaderSelfUpdateExit').start()
+
+
+def _run_companion_self_update(restart=True):
+    current_version = APP_VERSION
+    try:
+        latest_version = fetch_latest_companion_version()
+    except Exception as e:  # noqa: BLE001
+        write_persistent_log(f"Companion update version check failed: {e}")
+        return {
+            'ok': False,
+            'error': f'Could not check latest Astra Downloader version: {e}',
+            'error_code': 'version-check-failed',
+            'current_version': current_version,
+            'latest_version': '',
+        }
+
+    if _compare_semver(latest_version, current_version) <= 0:
+        return {
+            'ok': True,
+            'update_available': False,
+            'status': 'current',
+            'current_version': current_version,
+            'latest_version': latest_version,
+        }
+
+    update_path = INSTALL_DIR / f".AstraDownloader.update.{uuid.uuid4().hex}.exe"
+    try:
+        download_file_atomic(
+            COMPANION_UPDATE_EXE_URL,
+            update_path,
+            timeout=COMPANION_UPDATE_TIMEOUT_SECONDS,
+            chunk_size=65536,
+        )
+        validate_companion_update_binary(update_path)
+        expected_hash = fetch_expected_sha256(
+            COMPANION_UPDATE_SHA256_URL,
+            target_asset='AstraDownloader.exe',
+            timeout=15,
+        )
+        hash_verified = verify_file_sha256(update_path, expected_hash)
+        if expected_hash and not hash_verified:
+            raise RuntimeError('SHA-256 verification failed for companion update')
+        if not expected_hash:
+            write_persistent_log(
+                'Companion update SHA-256 sidecar unavailable; '
+                'proceeding with MZ + size validation only.'
+            )
+        schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
+        if restart:
+            schedule_companion_process_exit()
+        write_persistent_log(
+            f"Companion update scheduled ({current_version} -> {latest_version}) via {update_path}"
+        )
+        return {
+            'ok': True,
+            'update_available': True,
+            'status': 'restart_scheduled',
+            'current_version': current_version,
+            'latest_version': latest_version,
+            'restart': bool(restart),
+            'target': schedule.get('target'),
+        }
+    except Exception as e:  # noqa: BLE001
+        write_persistent_log(f"Companion update failed: {e}")
+        try:
+            update_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        return {
+            'ok': False,
+            'error': f'Could not install Astra Downloader update: {e}',
+            'error_code': 'install-failed',
+            'current_version': current_version,
+            'latest_version': latest_version,
+        }
+
+
 # ── v1.2.0: integrations stamp (idempotent shortcut/protocol/task registration) ──
 def _get_integrations_stamp():
     if sys.platform != 'win32':
@@ -1247,6 +1491,37 @@ def normalize_url(value):
     if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         return None, "Enter a valid http or https URL."
     return url, None
+
+
+def validate_download_request_body(body):
+    """Validate the client-owned /download wire fields.
+
+    yt-dlp argv is intentionally built only from reviewed server-side config,
+    normalized URL/output fields, and fixed helper functions. If a future
+    extension feature tries to send arbitrary flags, reject at the Flask
+    boundary before Deno checks, cookie writes, queueing, or subprocess setup.
+    """
+    if not isinstance(body, dict) or not body.get('url'):
+        return None, "Missing download URL.", None
+
+    keys = {str(key) for key in body.keys()}
+    forbidden = sorted(keys & DOWNLOAD_REQUEST_FORBIDDEN_YTDLP_ARG_FIELDS)
+    if forbidden:
+        return (
+            None,
+            "Client-supplied yt-dlp flags are not allowed. The companion builds yt-dlp arguments server-side.",
+            "unsupported-ytdlp-flags",
+        )
+
+    unknown = sorted(keys - DOWNLOAD_REQUEST_ALLOWED_FIELDS)
+    if unknown:
+        return (
+            None,
+            "Unsupported /download field(s): {}.".format(", ".join(unknown)),
+            "unsupported-download-fields",
+        )
+
+    return body, None, None
 
 
 def normalize_output_dir(value, default_dir=None, allowed_roots=None):
@@ -2695,9 +2970,12 @@ def create_api(config, dl_manager, history):
                 429,
                 extra_headers={"Retry-After": str(int(retry_after) + 1)},
             )
-        body = request.get_json(silent=True)
-        if not isinstance(body, dict) or not body.get('url'):
-            return cors_response({"error": "Missing download URL."}, 400)
+        body, body_err, body_code = validate_download_request_body(request.get_json(silent=True))
+        if body_err:
+            payload = {"error": body_err}
+            if body_code:
+                payload["code"] = body_code
+            return cors_response(payload, 400)
         url, url_err = normalize_url(body['url'])
         if url_err:
             return cors_response({"error": url_err}, 400)
@@ -2894,6 +3172,36 @@ def create_api(config, dl_manager, history):
         # 200 with ok:true on success; 500 with ok:false otherwise so the
         # popup can branch on HTTP status as well as the body field.
         status = 200 if result.get('ok') else 500
+        return cors_response(result, status)
+
+    @api.route('/update', methods=['POST'])
+    def update_companion():
+        """v4.47.0 NF6: update the Astra Downloader companion itself.
+
+        This is separate from /update-ytdlp. It compares the running
+        APP_VERSION to the canonical repo source, downloads the latest
+        AstraDownloader.exe into the managed install directory, schedules an
+        after-exit atomic replace, then exits so the helper can relaunch the
+        new companion. Active downloads block the update because a restart
+        would terminate their yt-dlp subprocesses.
+        """
+        if not check_auth():
+            return cors_response({"error": "Astra Downloader rejected the request. Refresh the private token in Astra Deck."}, 401)
+        in_flight = dl_manager.active_count()
+        if in_flight > 0:
+            return cors_response(
+                {
+                    "error": f"{in_flight} download(s) in flight — wait for them to finish, then try again. "
+                             f"The companion update must restart Astra Downloader after atomically replacing the executable.",
+                    "ok": False,
+                    "inFlight": in_flight,
+                },
+                409,
+            )
+        result = _run_companion_self_update(restart=True)
+        if result.get('ok'):
+            return cors_response(result, 200)
+        status = 502 if result.get('error_code') == 'version-check-failed' else 500
         return cors_response(result, status)
 
     @api.route('/shutdown')

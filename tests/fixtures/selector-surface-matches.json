@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/build-selector-fixtures.js",
+  "matcher": "decoded-mhtml-dom-subset",
+  "surfaces": {
+    "playerChrome": {
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 1623,
+      "stable": [
+        {
+          "selector": ".ytp-chrome-bottom",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-right-controls",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-progress-bar",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-progress-bar-padding",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": ".ytp-delhi-modern .ytp-chrome-bottom",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-delhi-modern",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-overflow-panel",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-action-pill",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": ".ytp-actions-container",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        ".ytp-chrome-bottom",
+        ".ytp-right-controls",
+        ".ytp-progress-bar",
+        ".ytp-progress-bar-padding",
+        ".ytp-delhi-modern .ytp-chrome-bottom",
+        ".ytp-delhi-modern",
+        ".ytp-overflow-panel"
+      ]
+    },
+    "liveChat": {
+      "source": "mhtml/LiveChat.mhtml",
+      "fixture": "yt-live-chat.tokens.txt",
+      "elementCount": 6776,
+      "stable": [
+        {
+          "selector": "yt-live-chat-app",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "yt-live-chat-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "yt-live-chat-item-list-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-live-chat-text-message-renderer",
+          "matched": true,
+          "matchCount": 75
+        },
+        {
+          "selector": "yt-live-chat-message-input-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-live-chat-app",
+        "yt-live-chat-renderer",
+        "yt-live-chat-item-list-renderer",
+        "yt-live-chat-text-message-renderer"
+      ]
+    }
+  }
+}

@@ -238,6 +238,56 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.get_json()["error"], "Missing download URL.")
 
+    def test_download_request_body_allows_reviewed_extension_fields(self):
+        body = {
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "audioOnly": False,
+            "format": "mp4",
+            "quality": "1080",
+            "outputDir": str(Path(tempfile.gettempdir())),
+            "title": "Fixture",
+            "referer": "https://www.youtube.com/",
+            "cookies": [],
+        }
+        validated, err, code = ad.validate_download_request_body(body)
+        self.assertIs(validated, body)
+        self.assertIsNone(err)
+        self.assertIsNone(code)
+
+    def test_download_request_body_rejects_client_supplied_ytdlp_flags(self):
+        _validated, err, code = ad.validate_download_request_body({
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "ytDlpArgs": ["--netrc-cmd", "calc.exe"],
+        })
+        self.assertEqual(code, "unsupported-ytdlp-flags")
+        self.assertIn("Client-supplied yt-dlp flags are not allowed", err)
+
+    def test_download_request_body_rejects_unknown_fields(self):
+        _validated, err, code = ad.validate_download_request_body({
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "writeInfoJson": True,
+        })
+        self.assertEqual(code, "unsupported-download-fields")
+        self.assertIn("writeInfoJson", err)
+
+    def test_download_endpoint_rejects_ytdlp_args_before_queueing(self):
+        token = "h" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().post(
+            "/download",
+            json={
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "ytDlpArgs": ["--netrc-cmd", "calc.exe"],
+            },
+            headers={"X-Auth-Token": token},
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.get_json()["code"], "unsupported-ytdlp-flags")
+        self.assertEqual(manager.downloads, {})
+
     def test_history_limit_is_clamped(self):
         token = "d" * 32
         history = FakeHistory()
@@ -570,6 +620,29 @@ class CookieJarSweepTests(unittest.TestCase):
                 self.assertTrue(unrelated.exists(), "non-cookie files must not be touched")
             finally:
                 ad.INSTALL_DIR = original
+
+
+class CookieThreatModelDocTests(unittest.TestCase):
+    """Keep the cookie-risk documentation tied to live mitigations."""
+
+    def test_doc_records_advisory_and_companion_cookie_controls(self):
+        doc_path = Path(__file__).resolve().parent.parent / "docs" / "yt-dlp-cookie-threat-model.md"
+        body = doc_path.read_text(encoding="utf-8")
+        for needle in [
+            "CVE-2023-35934",
+            "GHSA-v8mc-9377-rwjj",
+            "2023.07.06",
+            "yt-dlp==2026.3.17",
+            "ALLOWED_COOKIE_DOMAINS",
+            ".youtube.com",
+            "write_cookies_netscape()",
+            "--cookies",
+            "200 entries",
+            "cleanup_stale_cookie_jars()",
+            "300 seconds",
+            "127.0.0.1",
+        ]:
+            self.assertIn(needle, body)
 
 
 class ApiRateLimitTests(unittest.TestCase):
@@ -2097,6 +2170,124 @@ class UpdateYtdlpEndpointTests(unittest.TestCase):
             self.assertIn(required, result,
                           f"_run_ytdlp_self_update result must carry {required!r}")
         self.assertEqual(result['source'], 'unit-test')
+
+
+class CompanionUpdateEndpointTests(unittest.TestCase):
+    """v4.47.0 NF6 — on-demand Astra Downloader self-update via /update."""
+
+    TOKEN = "v" * 32
+
+    def _client(self, *, in_flight=0):
+        config = FakeConfig({"ServerToken": self.TOKEN})
+
+        class _FakeManager:
+            downloads = {}
+            _lock = threading.Lock()
+
+            def active_count(_self):
+                return in_flight
+
+        manager = _FakeManager()
+        api = ad.create_api(config, manager, FakeHistory())
+        return api.test_client()
+
+    def test_parse_companion_version_source_extracts_app_version(self):
+        self.assertEqual(
+            ad.parse_companion_version_source('APP_VERSION = "1.2.3"\n'),
+            "1.2.3",
+        )
+        self.assertEqual(ad.parse_companion_version_source("no version"), "")
+
+    def test_unauthenticated_request_is_rejected(self):
+        client = self._client()
+        resp = client.post("/update")
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn("rejected", resp.get_json()["error"])
+
+    def test_in_flight_downloads_block_companion_update_with_409(self):
+        client = self._client(in_flight=3)
+        resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+        self.assertEqual(resp.status_code, 409)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("inFlight"), 3)
+        self.assertIn("restart", body["error"])
+        self.assertIn("atomically replacing", body["error"])
+
+    def test_current_version_returns_200_without_download(self):
+        client = self._client()
+        with mock.patch.object(ad, 'fetch_latest_companion_version', return_value=ad.APP_VERSION), \
+             mock.patch.object(ad, 'download_file_atomic') as download:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertFalse(body.get("update_available"))
+        self.assertEqual(body.get("status"), "current")
+        download.assert_not_called()
+
+    def test_version_check_failure_returns_502(self):
+        client = self._client()
+        with mock.patch.object(ad, 'fetch_latest_companion_version', side_effect=RuntimeError("offline")):
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 502)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertEqual(body.get("error_code"), "version-check-failed")
+        self.assertIn("offline", body.get("error"))
+
+    def test_successful_companion_update_schedules_replace_and_restart(self):
+        client = self._client()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES))
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=None), \
+             mock.patch.object(ad, 'schedule_companion_update_restart',
+                               return_value={'scheduled': True, 'target': str(Path(tmp) / "AstraDownloader.exe")}) as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertTrue(body.get("update_available"))
+        self.assertEqual(body.get("status"), "restart_scheduled")
+        self.assertEqual(body.get("current_version"), ad.APP_VERSION)
+        self.assertEqual(body.get("latest_version"), "9.9.9")
+        schedule.assert_called_once()
+        exit_later.assert_called_once()
+
+    def test_companion_update_rejects_sha256_mismatch(self):
+        """When the SHA-256 sidecar is reachable but doesn't match, the
+        update must fail before scheduling a replace."""
+        client = self._client()
+        fake_hash = "a" * 64
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES))
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=fake_hash), \
+             mock.patch.object(ad, 'schedule_companion_update_restart') as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertIn("SHA-256", body.get("error", ""))
+        schedule.assert_not_called()
+        exit_later.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -294,11 +294,14 @@ Origin path.
 
 ## H21 — YouTube "liquid glass" player chrome redesign audit (v3.23.0, N6)
 
-**Status: partial.** The 2026-06-04 live DOM probe confirmed concrete
-new-player selectors on Chrome (`ytp-delhi-modern`, `ytp-overflow-panel`,
-`ytp-time-wrapper-delhi`) and promoted them to release-blocking selector
-canaries. Full watch-page MHTML capture still times out through DevTools
-automation, so the raw MHTML refresh remains browser/manual gated.
+**Status: closed for the Delhi shell variant.** The 2026-06-04 live DOM probe
+confirmed concrete new-player selectors on Chrome (`ytp-delhi-modern`,
+`ytp-overflow-panel`, `ytp-time-wrapper-delhi`) and promoted them to
+release-blocking selector canaries. A plain `Page.captureSnapshot` still timed
+out after 70 seconds, but the stopped-loading Chrome Stable helper
+(`npm run capture:watch`) captured a fresh watch-page MHTML after the player
+settled, then `npm run build:fixtures` regenerated the committed watch tokens
+and selector match report.
 
 **What rolled out (public signal).** Late 2025 → early 2026, YouTube began
 serving a redesigned video player with the following user-visible changes:
@@ -345,23 +348,26 @@ Refs:
   `ytp-overflow-panel`, and the time wrapper exists as
   `ytp-time-wrapper-delhi`. These three tokens are now in
   `CRITICAL_SELECTORS`; `playerChrome.lastVerified` is updated to
-  2026-06-04. `Page.captureSnapshot({ format: "mhtml" })` still timed out
-  after 30 seconds in both headless and off-screen headful Chrome.
+  2026-06-04.
+- 2026-06-04 capture close-out: a plain stable-Chrome CDP MHTML capture against
+  `https://www.youtube.com/watch?v=jNQXAC9IVRw` rendered the Delhi shell but
+  timed out after 70 seconds. `scripts/capture-watch-mhtml.js` fixed the path by
+  blocking media/ad streams, waiting for `ytd-watch-flexy`, `#movie_player`, and
+  `.ytp-delhi-modern`, pausing/stopping page loading with `Page.stopLoading`,
+  then calling `Page.captureSnapshot({ format: "mhtml" })`. The resulting
+  4.0 MB local `mhtml/WatchPage.mhtml` regenerated
+  `tests/fixtures/yt-watch.tokens.txt` and proved `ytp-delhi-modern`,
+  `ytp-overflow-panel`, and `ytp-time-wrapper-delhi` in fixture tests.
 
-**What's pending (concrete next-action checklist).**
+**Remaining watchlist.**
 
-1. Capture a watch-page MHTML on a profile served the new chrome
-   (`File → Save Page As → MHTML` in Chrome stable).
-2. Save under `mhtml/yt-watch-liquid-glass.mhtml` (gitignored alongside
-   existing mhtml captures).
-3. `npm run build:fixtures` to regenerate
-   `tests/fixtures/yt-watch.tokens.txt`.
-4. Grep the new tokens for the remaining unresolved surfaces in
-   `LIQUID_GLASS_WATCHLIST` and identify the real class names. Promote
-   concrete winners to `CRITICAL_SELECTORS` (keep legacy + new both).
-5. Manual smoke: screenshot, mini-player bar, speed control chip,
-   theater split divider all render on the new chrome.
-6. Update this section with the concrete deltas.
+- `ytp-action-pill` and `ytp-actions-container` remain fallback selectors, not
+  release-blocking canaries, because this captured rollout variant did not
+  include those nodes. Keep them in `LIQUID_GLASS_WATCHLIST` until a capture
+  from that variant lands.
+- Manual smoke still belongs with any player-feature code change: screenshot,
+  mini-player bar, speed control chip, theater split divider, and injected
+  player buttons should render on both legacy and Delhi chrome.
 
 ---
 

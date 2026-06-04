@@ -1,0 +1,33 @@
+name: yt-dlp Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Monthly extractor drift check, before the regular Monday Dependabot window.
+    - cron: "18 10 1 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Pinned yt-dlp extractor smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: astra_downloader/requirements.txt
+
+      - name: Install pinned downloader dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r astra_downloader/requirements.txt
+          python -m pip check
+
+      - name: Smoke yt-dlp extractor and download
+        run: python scripts/yt-dlp-smoke.py
