@@ -159,6 +159,8 @@
         "features/chat-style-comments/index.js",
         "features/sticky-video/index.js",
         "features/video-hider/index.js",
+        "features/player-dock/index.js",
+        "features/youtube-music-compat/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -235,6 +237,8 @@
         "features/chat-style-comments/index.js",
         "features/sticky-video/index.js",
         "features/video-hider/index.js",
+        "features/player-dock/index.js",
+        "features/youtube-music-compat/index.js",
         "ytkit.js"
       ],
       "all_frames": true,

@@ -68,6 +68,8 @@ const V5_BUNDLE_MODULES = [
     'extension/features/chat-style-comments/index.js',
     'extension/features/sticky-video/index.js',
     'extension/features/video-hider/index.js',
+    'extension/features/player-dock/index.js',
+    'extension/features/youtube-music-compat/index.js',
     'extension/core/lifecycle-route-bridge.js'
 ];
 
