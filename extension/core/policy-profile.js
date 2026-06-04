@@ -44,6 +44,17 @@
             || (schemaScope && schemaScope.findSettingEntry)
             || ((key) => schema.find((e) => e.key === key) || null);
 
+        function isPlainObject(value) {
+            return !!value && typeof value === 'object' && !Array.isArray(value);
+        }
+
+        function isSafeObjectKey(key) {
+            return typeof key === 'string'
+                && key !== '__proto__'
+                && key !== 'prototype'
+                && key !== 'constructor';
+        }
+
         function resolveEffectiveProfile(settings = {}) {
             const safe = settings.safeStoreProfile !== false;          // default true
             const full = settings.githubFullProfile === true;          // default false
@@ -131,29 +142,101 @@
             return ALWAYS_SCRUB_KEY_PATTERNS.some((re) => re.test(key));
         }
 
+        function isSettingValueValid(value, entry) {
+            if (!entry || typeof entry.type !== 'string') return false;
+            switch (entry.type) {
+            case 'boolean':
+                return typeof value === 'boolean';
+            case 'string':
+                return typeof value === 'string';
+            case 'number':
+                return typeof value === 'number' && Number.isFinite(value);
+            case 'array':
+                return Array.isArray(value);
+            case 'object':
+                return isPlainObject(value);
+            case 'null':
+                return value === null;
+            default:
+                return false;
+            }
+        }
+
+        function validateSettingsSnapshot(settings = {}, options = {}) {
+            const allowUnknown = options.allowUnknown === true;
+            const errors = [];
+            const out = {};
+
+            if (!isPlainObject(settings)) {
+                return {
+                    ok: false,
+                    errors: ['settings must be a plain object'],
+                    settings: out
+                };
+            }
+
+            for (const [key, value] of Object.entries(settings)) {
+                if (!isSafeObjectKey(key)) {
+                    errors.push(`unsafe setting key "${key}"`);
+                    continue;
+                }
+
+                const entry = findEntry(key);
+                if (!entry) {
+                    if (allowUnknown) {
+                        out[key] = value;
+                    } else {
+                        errors.push(`unknown setting "${key}"`);
+                    }
+                    continue;
+                }
+
+                if (!isSettingValueValid(value, entry)) {
+                    errors.push(`invalid type for "${key}": expected ${entry.type}`);
+                    continue;
+                }
+
+                out[key] = value;
+            }
+
+            return {
+                ok: errors.length === 0,
+                errors,
+                settings: out
+            };
+        }
+
         // Build a scrubbed snapshot suitable for export. Removes
         // always-scrub keys and replaces github-full-only entries with
         // their schema default when exporting under store-safe.
         function buildExportSnapshot(settings = {}, options = {}) {
             const effective = options.effective || resolveEffectiveProfile(settings);
+            const schemaOnly = options.schemaOnly === true;
             const out = {};
+            const scrubbedKeys = [];
+            const defaultedKeys = [];
             for (const key of Object.keys(settings)) {
-                if (shouldScrubKey(key)) continue;
+                if (shouldScrubKey(key)) {
+                    scrubbedKeys.push(key);
+                    continue;
+                }
                 const entry = findEntry(key);
                 if (!entry) {
                     // Unknown non-secret keys travel through opaquely
                     // (forward-compat with newer schema versions). Unknown
                     // secret-shaped keys were already removed by the scrubber.
+                    if (schemaOnly) continue;
                     out[key] = settings[key];
                     continue;
                 }
                 if (entry.profile === 'github-full' && effective === 'store-safe') {
                     out[key] = entry.defaultValue;
+                    defaultedKeys.push(key);
                     continue;
                 }
                 out[key] = settings[key];
             }
-            return { settings: out, effective };
+            return { settings: out, effective, scrubbedKeys, defaultedKeys };
         }
 
         // Compute counts for the data-flow panel: how many keys are
@@ -175,6 +258,8 @@
             isKeyAllowedInProfile,
             filterSettingsForProfile,
             shouldScrubKey,
+            isSettingValueValid,
+            validateSettingsSnapshot,
             buildExportSnapshot,
             countByProfile
         };

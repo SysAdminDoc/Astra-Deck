@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Schema-validated settings backups.** Popup and in-page backup exports now
+  emit a scrubbed `exportVersion: 4` JSON payload with settings-schema version,
+  active profile, scrubbed-key, and profile-defaulted-key metadata. Import now
+  migrates first, then rejects unknown, unsafe, or shape-mismatched settings
+  before writing storage. `policy-profile.js` owns the shared schema validator
+  and schema-only export mode, and userscript output is synced to the same
+  contract.
+
 - **Settings migration full-profile fixture.** Added a pinned
   `SETTINGS_VERSION` v1 full-profile settings blob covering every current
   default key, migration override, future-default classification, and retired
