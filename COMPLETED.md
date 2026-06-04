@@ -42,6 +42,8 @@ release-level details live in `CHANGELOG.md`.
   from store-safe packages.
 - Monthly yt-dlp smoke CI now gates extractor bumps with exact pins and a
   bounded real YouTube media download.
+- Selector fixture regeneration now emits a DOM-match report for live-chat and
+  liquid-glass player-chrome selector chains.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -126,6 +128,12 @@ carry only open work.
   `yt-dlp-smoke.yml` workflow installs those pins and runs
   `scripts/yt-dlp-smoke.py` for a bounded real media download against a stable
   YouTube fixture. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Selector-resilience test harness over `mhtml/` fixtures —
+  `scripts/build-selector-fixtures.js` now emits
+  `tests/fixtures/selector-surface-matches.json` from decoded MHTML markup, and
+  `tests/selector-regression.test.js` fails if the `playerChrome` or `liveChat`
+  selector-pack chains drift from the report or lose critical fixture matches.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 

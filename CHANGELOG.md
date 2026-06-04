@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Selector fixture match harness.** `npm run build:fixtures` now writes
+  `tests/fixtures/selector-surface-matches.json` alongside the token fixtures.
+  The builder parses decoded MHTML markup with a dependency-free DOM subset
+  matcher, then records which `playerChrome` and `liveChat` selector-pack
+  entries resolve. Selector regression tests now fail if the match report drifts
+  from the current packs or if critical live-chat / liquid-glass selectors stop
+  matching their captured fixture.
+
 - **Monthly yt-dlp smoke gate.** Downloader requirements now exact-pin
   `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` so Dependabot opens reviewed
   extractor-bump PRs. A new `yt-dlp-smoke.yml` workflow runs monthly or on
