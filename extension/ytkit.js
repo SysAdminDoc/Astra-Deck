@@ -2426,6 +2426,7 @@ return response;
         _lastCheck: 0,
         _serverVersion: null,
         _autoStartAttempted: false,
+        _checkPromise: null,
         _CHECK_INTERVAL: 30000, // Re-check every 30s
 
         // GitHub Release URL for the compiled installer exe
@@ -2458,7 +2459,13 @@ return response;
             if (!force && this._status === 'running' && this._token && (now - this._lastCheck < this._CHECK_INTERVAL)) {
                 return { ok: true, token: this._token, version: this._serverVersion, port: this._port };
             }
+            if (this._checkPromise) return this._checkPromise;
+            this._checkPromise = this._checkImpl(force).finally(() => { this._checkPromise = null; });
+            return this._checkPromise;
+        },
 
+        async _checkImpl(force) {
+            const now = Date.now();
             const tryPort = async (port) => {
                 try {
                     const { data } = await extensionFetchJson({
