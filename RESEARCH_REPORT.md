@@ -253,7 +253,7 @@ Top remaining opportunities (one-liners):
 2. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-3. Reconcile release automation docs with the current local-signed artifact
+3. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
 4. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
@@ -563,7 +563,7 @@ Closed since the 2026-06-03 baseline:
   attached/linkable in store or release review packets.
   [Needs validation]
 - How release docs should present the split between `gh attestation verify` for
-  CI-built artifacts and digest comparison for local-signed public release
+  CI-built artifacts and digest comparison for maintainer-local public release
   assets. [Needs validation]
 - Downloader signing budget and CWS/AMO submission intent (gates the signed
   installer work). [Needs validation]
