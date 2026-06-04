@@ -15,9 +15,7 @@ Recommended next item:
 
 1. P2 - Reconcile release automation docs with the maintainer-local artifact
    contract.
-2. P2 - Remove stale current-report wording that still says shipped release,
-   privacy, and Python audit artifacts are absent.
-3. P3 - Add a verification grep for stale release-publication wording in future
+2. P3 - Add a verification grep for stale release-publication wording in future
    release docs updates.
 
 ## Evidence Reviewed
