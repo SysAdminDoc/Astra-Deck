@@ -45,7 +45,9 @@ test('typical local payload is not storage.sync eligible', () => {
     // added another 39 bytes.
     // Dead-channel unsubscribe staging adds `subscriptionUnsubscribeStagingData`
     // to the settings catalogue, adding another 40 bytes.
-    assert.equal(assessment.totalBytes, 177941);
+    // NF1 videoNotes adds `videoNotes` + `videoNotesData`, adding another
+    // 39 bytes to the empty settings payload.
+    assert.equal(assessment.totalBytes, 177980);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

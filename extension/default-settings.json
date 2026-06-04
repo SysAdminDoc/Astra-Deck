@@ -163,6 +163,8 @@
   "redirectHomeToSubs": false,
   "notInterestedButton": false,
   "timestampBookmarks": false,
+  "videoNotes": false,
+  "videoNotesData": {},
   "blueLightFilter": false,
   "blueLightIntensity": 30,
   "disableInfiniteScroll": false,
