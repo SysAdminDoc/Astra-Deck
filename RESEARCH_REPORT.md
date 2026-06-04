@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 19 code-scanning pass on 2026-06-04 found that GitHub
+  code scanning is not configured: default setup reports `state:
+  not-configured`, alerts return `no analysis found`, and there is no CodeQL
+  workflow or `security-events: write` job. The repo already has dependency
+  audit, secret scanning, no-eval checks, and release attestations, but no
+  semantic SAST layer over privileged JavaScript extension code or the Python
+  companion. ROADMAP now carries a P1 item to add CodeQL for JavaScript and
+  Python, record baseline findings, and decide whether the CodeQL check becomes
+  required after a clean run. Detailed evidence lives in
+  `docs/research-cycle-19-code-scanning.md`.
 - [Verified] Cycle 18 security-disclosure pass on 2026-06-04 found no root
   `SECURITY.md`, no `.github` security policy file, private vulnerability
   reporting disabled, and zero repository security advisories. Current
@@ -563,6 +573,12 @@ Closed since the 2026-06-03 baseline:
   audit` job with a retained `astra-downloader-pip-audit` JSON artifact.
   Dependency review remains blocked by dependency-graph enablement rather than
   a concrete vulnerable dependency finding. [Verified]
+- **Semantic source scanning**: GitHub code scanning is not configured for the
+  current JavaScript/Python source tree. The repository has narrow bespoke
+  checks such as `check-no-eval.js`, but no CodeQL Security-tab baseline for
+  message-passing, DOM/TrustedHTML, request-forgery, Flask route, subprocess,
+  or local-token data flows. ROADMAP P1 now queues CodeQL for JavaScript and
+  Python. [Verified]
 - **Testability**: 19 spec files including hardening (474 KB),
   selector-regression, and userscript-parity; in-page overlay a11y is not yet
   automated. [Verified]
@@ -610,6 +626,10 @@ Closed since the 2026-06-03 baseline:
   vulnerability reporting is disabled, so sensitive reports currently lack a
   clear private path. ROADMAP P1 now queues a security policy plus private
   vulnerability reporting enablement.
+- **Code scanning** [Verified]: GitHub code scanning default setup is
+  `not-configured`, no `.github/workflows/codeql*.yml` exists, and the code
+  scanning alerts API reports no analysis. ROADMAP P1 now queues a CodeQL
+  baseline for JavaScript and Python before adding more third-party SARIF tools.
 - **GitHub Actions supply chain** [Verified]: default workflow token
   permissions are read-only, but repository Actions policy still allows all
   action sources and does not require full-length SHA pins. Current workflow
@@ -669,6 +689,12 @@ Closed since the 2026-06-03 baseline:
   consent/control page. [Needs validation]
 - Whether Python dependency audit JSON should remain a CI artifact only or be
   attached/linkable in store or release review packets.
+  [Needs validation]
+- Whether CodeQL should become a required `main` check immediately after first
+  success or remain advisory until the initial JavaScript/Python baseline is
+  triaged. [Needs validation]
+- Whether CodeQL should start with `security-extended` only or include
+  `security-and-quality` after measuring runtime and false-positive volume.
   [Needs validation]
 - How release docs should present the split between `gh attestation verify` for
   CI-built artifacts and digest comparison for maintainer-local public release
