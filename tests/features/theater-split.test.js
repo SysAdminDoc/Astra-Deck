@@ -66,12 +66,37 @@ test('stickyVideo module exports the Theater Split style builders', () => {
     assert.equal(typeof mod.buildSplitShellCss, 'function');
     assert.equal(typeof mod.buildSplitMetaCss, 'function');
     assert.equal(typeof mod.buildSplitCommentsCss, 'function');
+    assert.equal(typeof mod.createStickyVideoFeature, 'function');
     assert.deepEqual(mod.STYLE_IDS, {
         shell: 'stickyVideo',
         meta: 'stickyVideo-meta-layout',
         comments: 'stickyVideo-comments'
     });
     assert.equal(typeof exported.buildSplitShellCss, 'function');
+    assert.equal(typeof exported.createStickyVideoFeature, 'function');
+});
+
+test('stickyVideo factory returns the full Theater Split runtime surface', () => {
+    const { mod } = loadModule();
+    const feature = mod.createStickyVideoFeature();
+
+    assert.equal(feature.id, 'stickyVideo');
+    assert.equal(feature.name, 'Theater Split');
+    assert.deepEqual(feature.pages, ['watch']);
+    for (const method of [
+        'init',
+        'destroy',
+        '_activate',
+        '_mountOverlay',
+        '_expandSplit',
+        '_collapseSplit',
+        '_unmount',
+        '_dockSplitHeader'
+    ]) {
+        assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
+    }
+    assert.equal(feature._isActive, false);
+    assert.equal(feature._isSplit, false);
 });
 
 test('stickyVideo style builders preserve the monolith fallback CSS', () => {
@@ -94,6 +119,38 @@ test('stickyVideo monolith delegates style payloads through the feature module',
     ]) {
         assert.match(block, new RegExp('stickyVideoFeatures\\.' + builder),
             'ytkit.js must delegate to ' + builder + ' when the module is loaded');
+    }
+});
+
+test('stickyVideo monolith prefers the module runtime factory before inline fallback', () => {
+    const factoryNeedle = 'globalThis.YTKitFeatures?.stickyVideo?.createStickyVideoFeature?.({';
+    const factoryIndex = sources.ytkit.indexOf(factoryNeedle);
+    assert.ok(factoryIndex > -1, 'ytkit.js must construct stickyVideo through the module factory');
+    const fallbackIndex = sources.ytkit.indexOf("id: 'stickyVideo'", factoryIndex);
+    assert.ok(fallbackIndex > factoryIndex, 'ytkit.js must retain the inline stickyVideo fallback after the factory call');
+    assert.ok(sources.ytkit.slice(factoryIndex, fallbackIndex).includes('}) || {'),
+        'module factory path must fall back to the inline feature object');
+
+    for (const dep of [
+        'PageTypes',
+        'VideoTypeDetector',
+        'getVideoId',
+        '_rw',
+        'getFeatureById',
+        'storageRead',
+        'storageWrite',
+        'DebugManager',
+        'checkAllButtons',
+        'waitForElement',
+        'injectStyle',
+        'stripCommentRestyleCss',
+        'addNavigateRule',
+        'removeNavigateRule'
+    ]) {
+        assert.ok(
+            sources.ytkit.slice(factoryIndex, fallbackIndex).includes(dep),
+            'ytkit.js factory dependency bag must include ' + dep
+        );
     }
 });
 

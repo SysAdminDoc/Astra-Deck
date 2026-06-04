@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Top-3 peel: stickyVideo runtime.** `features/sticky-video/index.js` now
+  exports `createStickyVideoFeature(deps)` and owns the primary Theater Split
+  runtime/state object; `ytkit.js` prefers that factory and keeps its inline
+  object only as a compatibility fallback.
+
 - **Top-3 peel seed: stickyVideo styles.** Added
   `features/sticky-video/index.js` with the Theater Split shell/meta/comments
   style builders, wired the module into MV3 and userscript load order, and made

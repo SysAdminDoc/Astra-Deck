@@ -8451,7 +8451,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
         cssFeature('hideDescriptionRow', 'Hide Description', 'Remove the video description panel below the player', 'Watch Page', 'file-minus',
             'ytd-watch-metadata #bottom-row'),
-        {
+        (globalThis.YTKitFeatures?.stickyVideo?.createStickyVideoFeature?.({
+            PageTypes,
+            VideoTypeDetector,
+            getVideoId,
+            _rw,
+            getFeatureById,
+            storageRead,
+            storageWrite,
+            DebugManager,
+            checkAllButtons,
+            waitForElement,
+            injectStyle,
+            stripCommentRestyleCss,
+            addNavigateRule,
+            removeNavigateRule
+        }) || {
             id: 'stickyVideo',
             name: 'Theater Split',
             description: 'Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen.',
@@ -13249,7 +13264,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._splitCommentsStyleEl = null;
                 removeNavigateRule(this._navRuleId);
             }
-        },
+        }),
 
         // ─── Quality ───
         {
