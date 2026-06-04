@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 12 - 2026-06-04.
+> Last researched: Cycle 13 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,55 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 13 - 2026-06-04)
+
+- [x] 🔬 `actions-node24-readiness-2026-06-04` - inspected current
+  workflow action pins, the latest `Validate` and `Build & Release` logs,
+  open Dependabot PRs, GitHub's Node 20 runner deprecation notice, and current
+  GitHub-owned action release majors. Detailed notes live in
+  `docs/research-cycle-13-actions-node24-readiness.md`.
+- [ ] 🔬🤖 P1 — Migrate GitHub Actions workflows to Node 24 action majors
+  - Why: GitHub-hosted runners start defaulting JavaScript actions to Node 24
+    on 2026-06-16 and remove Node 20 later in 2026. Astra Deck's current
+    validation and release jobs are green, but they already emit Node 20
+    deprecation warnings. Leaving the release workflow on old action majors
+    risks discovering a platform/runtime break during the next tag build rather
+    than in a normal PR.
+  - Evidence: `gh run view 26953094214 --log` on the latest `main` `Validate`
+    run reports Node 20 warnings for `actions/checkout@v4`,
+    `actions/setup-node@v4`, `actions/setup-python@v5`, and
+    `actions/upload-artifact@v4`. `gh run view 26951406026 --log` on the latest
+    `Build & Release` tag run reports the same warning family for
+    `actions/checkout@v4`, `actions/setup-node@v4`, and
+    `actions/upload-artifact@v4`. `rg -n "uses:" .github/workflows` shows those
+    pins repeated across `validate.yml`, `build.yml`, and `yt-dlp-smoke.yml`.
+    Official GitHub changelog says runners begin using Node 24 by default on
+    2026-06-16 and tells workflow users to update to latest action versions that
+    run on Node 24. Current official releases are `actions/checkout@v6.0.3`,
+    `actions/setup-node@v6.4.0`, `actions/setup-python@v6.2.0`, and
+    `actions/upload-artifact@v7.0.1`; their READMEs/release notes document Node
+    24-ready major versions and minimum runner requirements already satisfied
+    by the hosted runner version seen in the logs. [Verified]
+  - Touches: `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
+    `.github/workflows/yt-dlp-smoke.yml`, and possibly `.github/dependabot.yml`
+    if grouping or review order should prevent one action bump from being
+    stranded behind another.
+  - Acceptance: all workflow uses of `actions/checkout@v4`,
+    `actions/setup-node@v4`, `actions/setup-python@v5`, and
+    `actions/upload-artifact@v4` are migrated to Node 24-ready majors. Coordinate
+    with the dependency-graph enablement item so PR #11's setup-python bump is
+    not blocked by an unsupported Dependency review check. `Validate` passes on
+    a PR and on `main`; `Build & Release` passes on a tag ref, either a
+    throwaway tag push or `workflow_dispatch --ref <tag>`, so tag-only
+    attestations are exercised; `yt-dlp Smoke` passes on `workflow_dispatch`.
+    The completed runs no longer contain the Node 20 deprecation warning.
+  - Verify: run or inspect `gh pr checks` for the migration PR, then check each
+    completed workflow log with `gh run view <run-id> --log | Select-String
+    "Node.js 20 actions are deprecated"`. Confirm no matches for `Validate`,
+    `Build & Release`, or `yt-dlp Smoke`, and confirm the artifact/SBOM upload
+    paths still publish expected artifacts after the upload-artifact migration.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 12 - 2026-06-04)
 
