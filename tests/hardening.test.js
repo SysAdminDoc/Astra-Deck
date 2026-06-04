@@ -1961,10 +1961,18 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
     // Required origins that popup.js or the legitimate AI/SponsorBlock /
     // localhost downloader flows may legitimately fetch.
     const requiredOrigins = [
+        'https://*.youtube.com',
+        'https://*.youtube-nocookie.com',
+        'https://youtu.be',
+        'https://i.ytimg.com',
+        'https://sponsor.ajay.app',
+        'https://returnyoutubedislikeapi.com',
+        'https://www.reddit.com',
+        'https://old.reddit.com',
         'https://api.openai.com',
         'https://api.anthropic.com',
         'https://generativelanguage.googleapis.com',
-        'https://sponsor.ajay.app',
+        'https://api.cobalt.tools',
         'http://127.0.0.1:9751',
         'http://127.0.0.1:11434',
     ];
@@ -1978,6 +1986,70 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
     // Negative assertion: connect-src must NOT be a wildcard.
     assert.ok(!/connect-src[^;]*\*\s*[;'"]/.test(csp),
         'connect-src must not be a wildcard — defeats the purpose');
+});
+
+test('build-extension emits distinct store-safe and github-full manifest profiles', () => {
+    const builder = require('../build-extension.js');
+    const baseManifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8',
+    ));
+
+    assert.deepEqual(builder.expandBuildProfileSelection('both'), ['store-safe', 'github-full']);
+    assert.equal(builder.getArtifactBaseName('store-safe', 'chrome', '4.46.0'),
+        'astra-deck-store-safe-chrome-v4.46.0');
+    assert.equal(builder.getArtifactBaseName('github-full', 'firefox', '4.46.0'),
+        'astra-deck-github-full-firefox-v4.46.0');
+
+    const storeManifest = builder.patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(baseManifest)), 'store-safe');
+    const fullManifest = builder.patchManifestForBuildProfile(
+        JSON.parse(JSON.stringify(baseManifest)), 'github-full');
+
+    const storeHosts = storeManifest.host_permissions || [];
+    const fullHosts = fullManifest.host_permissions || [];
+    for (const required of [
+        'https://*.youtube.com/*',
+        'https://*.youtube-nocookie.com/*',
+        'https://youtu.be/*',
+        'https://i.ytimg.com/*',
+        'https://sponsor.ajay.app/*',
+        'https://returnyoutubedislikeapi.com/*',
+        'https://www.reddit.com/*',
+        'https://old.reddit.com/*'
+    ]) {
+        assert.ok(storeHosts.includes(required), 'store-safe manifest must include ' + required);
+        assert.ok(fullHosts.includes(required), 'github-full manifest must include ' + required);
+    }
+
+    for (const fullOnly of [
+        'https://api.openai.com/*',
+        'https://api.anthropic.com/*',
+        'https://generativelanguage.googleapis.com/*',
+        'https://api.cobalt.tools/*',
+        'http://127.0.0.1:9751/*',
+        'http://127.0.0.1:11434/*'
+    ]) {
+        assert.ok(!storeHosts.includes(fullOnly),
+            'store-safe manifest must not include github-full host ' + fullOnly);
+        assert.ok(fullHosts.includes(fullOnly),
+            'github-full manifest must include ' + fullOnly);
+    }
+
+    const storeCsp = storeManifest.content_security_policy?.extension_pages || '';
+    const fullCsp = fullManifest.content_security_policy?.extension_pages || '';
+    assert.ok(!storeCsp.includes('https://api.openai.com'),
+        'store-safe CSP must exclude OpenAI');
+    assert.ok(!storeCsp.includes('https://api.cobalt.tools'),
+        'store-safe CSP must exclude Cobalt');
+    assert.ok(!storeCsp.includes('http://127.0.0.1:9751'),
+        'store-safe CSP must exclude local downloader loopback');
+    assert.ok(fullCsp.includes('https://api.openai.com'),
+        'github-full CSP must include OpenAI');
+    assert.ok(fullCsp.includes('https://api.cobalt.tools'),
+        'github-full CSP must include Cobalt');
+    assert.ok(fullCsp.includes('http://127.0.0.1:9751'),
+        'github-full CSP must include local downloader loopback');
 });
 
 // ── v3.23.0 N3: Reaction Spammer default-OFF + cooldown floor ──
@@ -4369,6 +4441,16 @@ test('v4.11.0 data-flow: Cobalt fallback origin is catalogued (was missing pre-v
         'Cobalt is github-full only (user-supplied instance, off by default)');
     assert.ok(cobalt.requiredByFeatures.includes('downloadCobaltFallback'),
         'Cobalt origin must be driven by downloadCobaltFallback');
+
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    ));
+    assert.ok((manifest.host_permissions || []).includes('https://api.cobalt.tools/*'),
+        'github-full source manifest must grant Cobalt for the full-profile artifact');
+    assert.ok((manifest.content_security_policy?.extension_pages || '').includes('https://api.cobalt.tools'),
+        'github-full source manifest CSP must allow Cobalt connect-src');
+    assert.match(backgroundSource, /'https:\/\/api\.cobalt\.tools'/,
+        'background EXT_FETCH allowlist must include Cobalt for the full-profile artifact');
 });
 
 test('v4.11.0 data-flow: PARENT_FEATURE inheritance map names only real parent features', () => {

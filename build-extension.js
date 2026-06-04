@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// build-extension.js -- Packages extension/ into Chrome (.zip + .crx) and Firefox (.zip + .xpi)
-// Usage: node build-extension.js [--bump patch|minor|major]
+// build-extension.js -- Packages extension/ into profile-split Chrome + Firefox artifacts
+// Usage: node build-extension.js [--profile store-safe|github-full|both] [--bump patch|minor|major]
 
 const fs = require('fs');
 const path = require('path');
@@ -13,6 +13,7 @@ const {
 } = require('./scripts/catalog-utils');
 const { patchManifestForFirefox } = require('./scripts/manifest-patch');
 const { buildDefaultsFromSchema } = require('./extension/core/settings-schema');
+const { ORIGIN_CATALOGUE } = require('./extension/core/data-flow');
 
 const EXT_DIR = path.join(__dirname, 'extension');
 const BUILD_DIR = path.join(__dirname, 'build');
@@ -24,10 +25,62 @@ const USERSCRIPT = resolveUserscriptPath(__dirname);
 const USERSCRIPT_BASENAME = getUserscriptBasename(__dirname);
 const CRX_KEY = path.join(__dirname, 'ytkit.pem');
 
-// Parse args
-const args = process.argv.slice(2);
+const BUILD_PROFILE_IDS = Object.freeze(['store-safe', 'github-full']);
+const BUILD_PROFILES = Object.freeze({
+    'store-safe': Object.freeze({
+        id: 'store-safe',
+        catalogueProfiles: Object.freeze(['store-safe'])
+    }),
+    'github-full': Object.freeze({
+        id: 'github-full',
+        catalogueProfiles: Object.freeze(['store-safe', 'github-full'])
+    })
+});
+
+const CONTENT_HOST_PERMISSIONS = Object.freeze([
+    'https://*.youtube.com/*',
+    'https://*.youtube-nocookie.com/*',
+    'https://youtu.be/*'
+]);
+
+const ORIGIN_HOST_PERMISSION_ALIASES = Object.freeze({
+    'https://www.reddit.com': Object.freeze([
+        'https://www.reddit.com/*',
+        'https://old.reddit.com/*'
+    ]),
+    'http://127.0.0.1:9751-9851': Object.freeze([
+        'http://127.0.0.1:9751/*',
+        'http://127.0.0.1:9761/*',
+        'http://127.0.0.1:9771/*',
+        'http://127.0.0.1:9781/*',
+        'http://127.0.0.1:9791/*',
+        'http://127.0.0.1:9851/*'
+    ])
+});
+
+function unique(values) {
+    return Array.from(new Set(values));
+}
+
+function normalizeBuildProfile(profile) {
+    if (!BUILD_PROFILE_IDS.includes(profile)) {
+        throw new Error('Invalid build profile: ' + profile + ' (use store-safe, github-full, or both)');
+    }
+    return profile;
+}
+
+function expandBuildProfileSelection(profile) {
+    if (!profile || profile === 'both') return BUILD_PROFILE_IDS.slice();
+    return [normalizeBuildProfile(profile)];
+}
+
+// Parse args. Keep imports side-effect-free so tests can require the profile
+// helpers without inheriting the parent process' CLI flags.
+const IS_CLI = require.main === module;
+const args = IS_CLI ? process.argv.slice(2) : [];
 const INCLUDE_USERSCRIPT = args.includes('--with-userscript');
 const bumpIndex = args.indexOf('--bump');
+const profileIndex = args.indexOf('--profile');
 // Guard: `--bump` with no following arg previously silently no-op'd because
 // `bumpType` was undefined and fell through the `if (bumpType)` check. Fail
 // loudly instead so the user knows the bump didn't apply.
@@ -43,6 +96,19 @@ if (bumpIndex !== -1) {
         process.exit(1);
     }
 }
+let profileType = 'both';
+if (profileIndex !== -1) {
+    profileType = args[profileIndex + 1];
+    if (!profileType || profileType.startsWith('--')) {
+        console.error('--profile requires a type: store-safe | github-full | both');
+        process.exit(1);
+    }
+    if (![...BUILD_PROFILE_IDS, 'both'].includes(profileType)) {
+        console.error('Invalid profile type: ' + profileType + ' (use store-safe, github-full, or both)');
+        process.exit(1);
+    }
+}
+const SELECTED_BUILD_PROFILES = expandBuildProfileSelection(profileType);
 
 // Read manifest
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
@@ -123,13 +189,6 @@ if (bumpType) {
     console.log('Bumped version to ' + version);
 }
 
-writeDefaultSettingsCatalog(ytkitSource);
-writeSettingsMetaCatalog(ytkitSource);
-
-// Clean and create build dir
-if (fs.existsSync(BUILD_DIR)) fs.rmSync(BUILD_DIR, { recursive: true });
-fs.mkdirSync(BUILD_DIR, { recursive: true });
-
 const STAGE_SKIP_NAMES = new Set([
     '.git',
     '.DS_Store',
@@ -188,6 +247,61 @@ function createZip(sourceDir, zipPath) {
 
 function formatSize(filePath) {
     return (fs.statSync(filePath).size / 1024).toFixed(1);
+}
+
+function hostPermissionsForOrigin(origin) {
+    const alias = ORIGIN_HOST_PERMISSION_ALIASES[origin];
+    if (alias) return alias.slice();
+    return [origin.replace(/\/+$/, '') + '/*'];
+}
+
+function getManifestProfileHostPermissions(profile) {
+    const normalized = normalizeBuildProfile(profile);
+    const allowedCatalogueProfiles = new Set(BUILD_PROFILES[normalized].catalogueProfiles);
+    const hosts = CONTENT_HOST_PERMISSIONS.slice();
+    for (const entry of ORIGIN_CATALOGUE) {
+        if (!allowedCatalogueProfiles.has(entry.profile)) continue;
+        hosts.push(...hostPermissionsForOrigin(entry.origin));
+    }
+    return unique(hosts);
+}
+
+function cspSourceFromHostPermission(permission) {
+    return String(permission).replace(/\/\*$/, '').replace(/\/+$/, '');
+}
+
+function buildExtensionPagesCsp(profile) {
+    const connectSources = unique([
+        "'self'",
+        ...getManifestProfileHostPermissions(profile).map(cspSourceFromHostPermission)
+    ]);
+    return [
+        "script-src 'self'",
+        "object-src 'self'",
+        'connect-src ' + connectSources.join(' ')
+    ].join('; ');
+}
+
+function patchManifestForBuildProfile(profileManifest, profile) {
+    const normalized = normalizeBuildProfile(profile);
+    profileManifest.host_permissions = getManifestProfileHostPermissions(normalized);
+    profileManifest.content_security_policy = {
+        ...(profileManifest.content_security_policy || {}),
+        extension_pages: buildExtensionPagesCsp(normalized)
+    };
+    return profileManifest;
+}
+
+function getArtifactBaseName(profile, browser, artifactVersion = version) {
+    return 'astra-deck-' + normalizeBuildProfile(profile) + '-' + browser + '-v' + artifactVersion;
+}
+
+function patchStagedManifest(stageDir, profile, browser) {
+    const manifestPath = path.join(stageDir, 'manifest.json');
+    const stagedManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    patchManifestForBuildProfile(stagedManifest, profile);
+    if (browser === 'firefox') patchManifestForFirefox(stagedManifest);
+    fs.writeFileSync(manifestPath, JSON.stringify(stagedManifest, null, 2) + '\n', 'utf8');
 }
 
 // Collect all files in a directory recursively (relative paths)
@@ -262,80 +376,16 @@ function readUserscriptSource() {
 }
 
 async function build() {
-    // ── Chrome Build ──
-    const chromeStageDir = path.join(BUILD_DIR, 'chrome-stage');
-    // Wrap the whole build in try/finally so an exception mid-flight cannot
-    // leave orphan `chrome-stage/` or `firefox-stage/` directories behind in
-    // `build/` that would confuse the next run.
-    let firefoxStageDir = null;
-    try {
-    copyDir(EXT_DIR, chromeStageDir);
+    writeDefaultSettingsCatalog(ytkitSource);
+    writeSettingsMetaCatalog(ytkitSource);
 
-    const chromeZipName = 'astra-deck-chrome-v' + version + '.zip';
-    const chromeZipPath = path.join(BUILD_DIR, chromeZipName);
+    // Clean and create build dir
+    if (fs.existsSync(BUILD_DIR)) fs.rmSync(BUILD_DIR, { recursive: true });
+    fs.mkdirSync(BUILD_DIR, { recursive: true });
 
-    try {
-        const size = createZip(chromeStageDir, chromeZipPath);
-        console.log('Chrome ZIP: build/' + chromeZipName + ' (' + size + ' KB)');
-    } catch (e) {
-        throw new Error('Chrome ZIP failed: ' + e.message);
+    for (const profile of SELECTED_BUILD_PROFILES) {
+        await buildProfileArtifacts(profile);
     }
-
-    // ── Chrome CRX Build ──
-    const chromeCrxName = 'astra-deck-chrome-v' + version + '.crx';
-    const chromeCrxPath = path.join(BUILD_DIR, chromeCrxName);
-
-    try {
-        const crxFiles = listFiles(chromeStageDir);
-        const keyPath = fs.existsSync(CRX_KEY) ? CRX_KEY : undefined;
-
-        await crx3(crxFiles, {
-            keyPath: keyPath,
-            crxPath: chromeCrxPath,
-            zipPath: undefined // already have the ZIP
-        });
-
-        // crx3 generates a key file if one didn't exist
-        if (!keyPath) {
-            // Move auto-generated key to project root for reuse
-            const generatedKey = chromeCrxPath.replace('.crx', '.pem');
-            if (fs.existsSync(generatedKey)) {
-                fs.renameSync(generatedKey, CRX_KEY);
-                console.log('Generated signing key: ytkit.pem (keep this file for consistent extension ID)');
-            }
-        }
-
-        console.log('Chrome CRX: build/' + chromeCrxName + ' (' + formatSize(chromeCrxPath) + ' KB)');
-    } catch (e) {
-        throw new Error('Chrome CRX failed: ' + e.message);
-    }
-
-    // ── Firefox Build ──
-    firefoxStageDir = path.join(BUILD_DIR, 'firefox-stage');
-    copyDir(EXT_DIR, firefoxStageDir);
-
-    // Modify manifest for Firefox
-    const ffManifestPath = path.join(firefoxStageDir, 'manifest.json');
-    const ffManifest = JSON.parse(fs.readFileSync(ffManifestPath, 'utf8'));
-    patchManifestForFirefox(ffManifest);
-    fs.writeFileSync(ffManifestPath, JSON.stringify(ffManifest, null, 2) + '\n', 'utf8');
-
-    const firefoxZipName = 'astra-deck-firefox-v' + version + '.zip';
-    const firefoxZipPath = path.join(BUILD_DIR, firefoxZipName);
-
-    try {
-        const size = createZip(firefoxStageDir, firefoxZipPath);
-        console.log('Firefox ZIP: build/' + firefoxZipName + ' (' + size + ' KB)');
-    } catch (e) {
-        throw new Error('Firefox ZIP failed: ' + e.message);
-    }
-
-    // ── Firefox XPI Build ──
-    // XPI is just a ZIP with .xpi extension
-    const firefoxXpiName = 'astra-deck-firefox-v' + version + '.xpi';
-    const firefoxXpiPath = path.join(BUILD_DIR, firefoxXpiName);
-    fs.copyFileSync(firefoxZipPath, firefoxXpiPath);
-    console.log('Firefox XPI: build/' + firefoxXpiName + ' (' + formatSize(firefoxXpiPath) + ' KB)');
 
     // ── Optional Userscript Build Artifact ──
     if (INCLUDE_USERSCRIPT) {
@@ -347,9 +397,76 @@ async function build() {
         console.log('Userscript:  skipped (extension-native build)');
     }
 
-    console.log('\nAll artifacts built for v' + version);
+    console.log('\nAll artifacts built for v' + version + ' (' + SELECTED_BUILD_PROFILES.join(', ') + ')');
+}
+
+async function buildProfileArtifacts(profile) {
+    // Wrap each profile build in try/finally so an exception mid-flight cannot
+    // leave orphan staging directories behind in `build/` that confuse the next run.
+    const chromeStageDir = path.join(BUILD_DIR, profile + '-chrome-stage');
+    let firefoxStageDir = null;
+    try {
+        copyDir(EXT_DIR, chromeStageDir);
+        patchStagedManifest(chromeStageDir, profile, 'chrome');
+
+        const chromeZipName = getArtifactBaseName(profile, 'chrome') + '.zip';
+        const chromeZipPath = path.join(BUILD_DIR, chromeZipName);
+
+        try {
+            const size = createZip(chromeStageDir, chromeZipPath);
+            console.log(profile + ' Chrome ZIP: build/' + chromeZipName + ' (' + size + ' KB)');
+        } catch (e) {
+            throw new Error(profile + ' Chrome ZIP failed: ' + e.message);
+        }
+
+        const chromeCrxName = getArtifactBaseName(profile, 'chrome') + '.crx';
+        const chromeCrxPath = path.join(BUILD_DIR, chromeCrxName);
+
+        try {
+            const crxFiles = listFiles(chromeStageDir);
+            const keyPath = fs.existsSync(CRX_KEY) ? CRX_KEY : undefined;
+
+            await crx3(crxFiles, {
+                keyPath: keyPath,
+                crxPath: chromeCrxPath,
+                zipPath: undefined // already have the ZIP
+            });
+
+            // crx3 generates a key file if one didn't exist
+            if (!keyPath) {
+                // Move auto-generated key to project root for reuse
+                const generatedKey = chromeCrxPath.replace('.crx', '.pem');
+                if (fs.existsSync(generatedKey)) {
+                    fs.renameSync(generatedKey, CRX_KEY);
+                    console.log('Generated signing key: ytkit.pem (keep this file for consistent extension ID)');
+                }
+            }
+
+            console.log(profile + ' Chrome CRX: build/' + chromeCrxName + ' (' + formatSize(chromeCrxPath) + ' KB)');
+        } catch (e) {
+            throw new Error(profile + ' Chrome CRX failed: ' + e.message);
+        }
+
+        firefoxStageDir = path.join(BUILD_DIR, profile + '-firefox-stage');
+        copyDir(EXT_DIR, firefoxStageDir);
+        patchStagedManifest(firefoxStageDir, profile, 'firefox');
+
+        const firefoxZipName = getArtifactBaseName(profile, 'firefox') + '.zip';
+        const firefoxZipPath = path.join(BUILD_DIR, firefoxZipName);
+
+        try {
+            const size = createZip(firefoxStageDir, firefoxZipPath);
+            console.log(profile + ' Firefox ZIP: build/' + firefoxZipName + ' (' + size + ' KB)');
+        } catch (e) {
+            throw new Error(profile + ' Firefox ZIP failed: ' + e.message);
+        }
+
+        // XPI is just a ZIP with .xpi extension.
+        const firefoxXpiName = getArtifactBaseName(profile, 'firefox') + '.xpi';
+        const firefoxXpiPath = path.join(BUILD_DIR, firefoxXpiName);
+        fs.copyFileSync(firefoxZipPath, firefoxXpiPath);
+        console.log(profile + ' Firefox XPI: build/' + firefoxXpiName + ' (' + formatSize(firefoxXpiPath) + ' KB)');
     } finally {
-        // Cleanup staging dirs even when the build throws mid-way.
         if (chromeStageDir && fs.existsSync(chromeStageDir)) {
             try { fs.rmSync(chromeStageDir, { recursive: true, force: true }); } catch (_) {}
         }
@@ -359,4 +476,16 @@ async function build() {
     }
 }
 
-build().catch(e => { console.error('Build failed:', e); process.exit(1); });
+if (IS_CLI) {
+    build().catch(e => { console.error('Build failed:', e); process.exit(1); });
+}
+
+module.exports = {
+    BUILD_PROFILE_IDS,
+    BUILD_PROFILES,
+    buildExtensionPagesCsp,
+    expandBuildProfileSelection,
+    getArtifactBaseName,
+    getManifestProfileHostPermissions,
+    patchManifestForBuildProfile
+};

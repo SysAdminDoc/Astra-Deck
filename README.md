@@ -321,9 +321,8 @@ The popup language dropdown's "Auto (browser default)" option shows the
 detected language inline. The selection writes
 `chrome.storage.local._localeOverride`; the in-page YouTube workspace
 picks up the override on next page navigation. Feature-definition entries
-(150+ name + description pairs) inside `ytkit.js` are still hardcoded
-English — community translations welcome via PR against
-`extension/_locales/<lang>/messages.json`.
+inside `ytkit.js` resolve through generated locale keys with English fallbacks;
+community translations welcome via PR against `extension/_locales/<lang>/messages.json`.
 
 ---
 
@@ -346,15 +345,19 @@ English — community translations welcome via PR against
 npm ci
 npm test
 npm run check
-npm run build                             # Build at current version
-npm run build:userscript                  # Include userscript artifact
+npm run build                             # Build store-safe + GitHub-full artifacts
+npm run build:userscript                  # Include userscript artifact too
+node build-extension.js --profile store-safe
+node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
 node build-extension.js --bump minor --with-userscript
 ```
 
 Outputs in `build/`:
-- `astra-deck-chrome-v*.zip` + `.crx` (CRX3 signed with `ytkit.pem`)
-- `astra-deck-firefox-v*.zip` + `.xpi`
+- `astra-deck-store-safe-chrome-v*.zip` + `.crx` (Chrome Web Store posture)
+- `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
+- `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)
+- `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript`)
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
