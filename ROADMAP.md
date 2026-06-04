@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 21 - 2026-06-04.
+> Last researched: Cycle 22 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,70 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 22 - 2026-06-04)
+
+- [x] 🔬 `companion-update-release-channel-2026-06-04` - inspected the live
+  latest GitHub Release, companion `/update` source/version contract,
+  PyInstaller output path, release-manifest sidecar generation, release
+  workflow, local release checklist, Cycle 8 integrity notes, and external
+  release/update-security guidance. Detailed notes live in
+  `docs/research-cycle-22-companion-update-assets.md`.
+- [ ] P1 - 🔬🤖🔧 Prove the Astra Downloader self-update release-channel contract
+  - Why: `/update` now compares the companion's local `APP_VERSION` to the raw
+    `main` source and downloads `AstraDownloader.exe` from the latest GitHub
+    Release, but the current latest public release `v4.46.0` does not include
+    `AstraDownloader.exe` or `AstraDownloader.exe.sha256`. A future source
+    version bump can therefore advertise an update before the release channel can
+    serve or verify the payload.
+  - Evidence: `astra_downloader/astra_downloader.py:94` keeps `APP_VERSION =
+    "1.5.1"`; `astra_downloader/astra_downloader.py:128-130` points update
+    checks at raw `main` and `/releases/latest/download/AstraDownloader.exe` /
+    `.sha256`; `astra_downloader/astra_downloader.py:432-441` treats the
+    sidecar as best effort; `astra_downloader/astra_downloader.py:1296-1339`
+    proceeds after MZ/size validation when the sidecar is unavailable; and
+    `astra_downloader/astra_downloader.py:3177-3185` exposes `/update`.
+    `scripts/generate-release-manifest.js:10` reads `build/`,
+    `scripts/generate-release-manifest.js:72-89` knows the EXE/sidecar names,
+    `scripts/generate-release-manifest.js:101-112` does not require them, and
+    `scripts/generate-release-manifest.js:134-139` emits the sidecar only when
+    `build/AstraDownloader.exe` exists. `astra_downloader/build.py:3-4`, `:31`,
+    and `:96-99` output the PyInstaller EXE to the repo root instead of
+    `build/`; `.github/workflows/build.yml:16` and `:38-47` build/upload only
+    `build/*` on Ubuntu; `docs/signing-keys.md:198-216` has no companion EXE
+    staging step; and `docs/research-cycle-8-ci-release-integrity.md:118`,
+    `:202-203`, and `:280-281` already marked the companion sidecar/release
+    shape partial. [Verified]
+  - Touches: `astra_downloader/build.py` or a companion staging script,
+    `scripts/generate-release-manifest.js`, `docs/signing-keys.md`,
+    `.github/workflows/build.yml` if a Windows CI job is chosen,
+    `astra_downloader/astra_downloader.py`, and
+    `astra_downloader/test_astra_downloader.py`.
+  - Acceptance: a documented local or CI-safe path stages
+    `AstraDownloader.exe` in `build/` before `npm run release:manifest`;
+    `scripts/generate-release-manifest.js` emits `AstraDownloader.exe.sha256`
+    and includes the EXE/sidecar in `release-manifest.json` and `SHA256SUMS`
+    whenever the EXE is present; release docs state whether the companion EXE
+    attaches to the same product release or a separate companion release, and
+    how `APP_VERSION` relates to the selected release tag/source; `APP_VERSION`
+    is not bumped above the deployed version until the intended update release
+    contains both assets; release-channel self-update fails clearly when the
+    sidecar is missing after update-channel activation, or docs explain the
+    residual risk if optional hash behavior is intentionally retained; tests
+    cover missing asset, missing sidecar, generated sidecar, manifest inclusion,
+    and successful hash verification; a live dry-run downloads the EXE/sidecar
+    and compares hashes. The signed MSI row remains open unless signing is also
+    funded and shipped.
+  - Verify: `py -3.12 astra_downloader/build.py`; stage the EXE into `build/`
+    by the new documented path; `npm run release:manifest`; `Get-FileHash
+    build\AstraDownloader.exe -Algorithm SHA256`; `Get-Content
+    build\AstraDownloader.exe.sha256`; inspect `build\release-manifest.json`
+    and `build\SHA256SUMS`; `py -3.12 -m pytest
+    astra_downloader/test_astra_downloader.py -q`; for the release dry-run,
+    `gh release view <tag> --json assets`, `gh release download <tag> -p
+    AstraDownloader.exe -p AstraDownloader.exe.sha256`, and a local hash
+    comparison.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 21 - 2026-06-04)
 
