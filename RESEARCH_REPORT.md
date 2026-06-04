@@ -74,6 +74,12 @@ or maintainer action to confirm.
   explicitly called out as a churn risk; and YouTube Data API subscription reads
   require OAuth and have documented quota cost, supporting the local-first DOM
   staging approach for this slice.
+- [Verified, external] Package/security freshness check: `npm audit --omit=dev
+  --audit-level=moderate` is clean, `crx3` is current at 2.0.0, and ESLint has
+  low-risk patch/minor drift (`10.2.1` installed; npm reports `10.4.1` current).
+  The dirty companion source/test work in the live tree already targets the
+  existing yt-dlp flag-allowlist roadmap row, so this pass updated that row's
+  status instead of adding a duplicate.
 
 ## Executive Summary
 
