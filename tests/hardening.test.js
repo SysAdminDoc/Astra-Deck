@@ -7537,6 +7537,30 @@ test('v4.46.0 validate workflow provisions Qt offscreen runtime for downloader t
         'validate.yml must still run the full downloader pytest suite');
 });
 
+test('v4.46.0 validate workflow audits Python dependencies and PR dependency changes', () => {
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
+    );
+    assert.match(workflow, /name:\s*Dependency review[\s\S]*github\.event_name == 'pull_request'/,
+        'validate.yml must run dependency review only for pull requests');
+    assert.match(workflow, /actions\/dependency-review-action@v5/,
+        'validate.yml must use the current dependency-review action major');
+    assert.match(workflow, /fail-on-severity:\s*moderate/,
+        'dependency review must fail moderate-or-higher vulnerable dependency changes');
+    assert.match(workflow, /vulnerability-check:\s*true/,
+        'dependency review must keep vulnerability checks enabled');
+    assert.match(workflow, /license-check:\s*false/,
+        'dependency review must not introduce a license policy without a maintainer decision');
+    assert.match(workflow, /name:\s*Python dependency audit[\s\S]*python-version:\s*'3\.12'/,
+        'validate.yml must run a Python 3.12 dependency audit job');
+    assert.match(workflow, /python -m pip install pip-audit/,
+        'validate.yml must install pip-audit for the companion dependency gate');
+    assert.match(workflow, /python -m pip_audit -r astra_downloader\/requirements\.txt --format json --progress-spinner off --output pip-audit\.json/,
+        'validate.yml must audit astra_downloader/requirements.txt and capture JSON output');
+    assert.match(workflow, /name:\s*astra-downloader-pip-audit[\s\S]*path:\s*pip-audit\.json/,
+        'validate.yml must upload the Python audit JSON artifact for release review');
+});
+
 test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
     // NF7: the array-type editor was a raw JSON textarea, which is
     // power-user-only UX for the four hidden* entries whose tokens

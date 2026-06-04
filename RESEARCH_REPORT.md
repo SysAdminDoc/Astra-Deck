@@ -22,9 +22,10 @@ or maintainer action to confirm.
   preventive hardening gap rather than an active advisory: Dependabot covers pip
   and the current `pip-audit 2.10.0` probe against
   `astra_downloader/requirements.txt` found no known vulnerabilities across 25
-  resolved packages, but CI only gates npm vulnerabilities today. ROADMAP now
-  carries a P2 item for a Python companion dependency audit gate, with detailed
-  evidence in `docs/research-cycle-10-python-dependency-audit.md`.
+  resolved packages. The build lane closed the gap by adding a dedicated
+  `Validate` Python dependency-audit job with JSON artifact upload plus PR
+  dependency-review coverage. Detailed evidence lives in
+  `docs/research-cycle-10-python-dependency-audit.md`.
 - [Verified] Cycle 9 privacy/consent-readiness pass on 2026-06-04 found a
   non-duplicate release-readiness gap: Astra Deck has strong store permission
   rationale and profile-split artifacts, but no concrete privacy-policy source
@@ -191,49 +192,40 @@ or maintainer action to confirm.
 ## Executive Summary
 
 Astra Deck is a mature, single-developer YouTube enhancement platform spanning a
-Manifest V3 extension (Chrome/Edge/Brave/Firefox 128+), a Tampermonkey/Violent-
+Manifest V3 extension (Chrome/Edge/Brave/Firefox 140+), a Tampermonkey/Violent-
 monkey userscript built from the same source, and a local Python/Flask + PyQt6 +
 yt-dlp companion downloader. [Verified] It carries a 362-key flat settings schema,
 27 `extension/core/` runtime modules, 11 peeled `extension/features/` modules, a
 28-surface capture-provenanced selector-pack system, 10 bundled UI locales, and a
 strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
-deps audit, plus a build/release workflow). [Verified]
+JavaScript dependency audit, Python dependency audit, dependency review, plus a
+build/release workflow). [Verified]
 
-The engineering arc is sound; the dominant risks are (1) **CI/release-channel
-drift** because `Validate` is currently red and public latest release still
-serves v4.5.2, (2) **privacy disclosure / Firefox data-consent readiness**
-because the profile split is strong but the public policy and generated Firefox
-data-consent path are not pinned, (3) **runtime DOM churn** against YouTube's
-high-velocity redesigns, and (4) **upgrade data-safety** for the 362-key schema.
+The engineering arc is sound; the dominant risks are (1) **release-channel
+drift** because public latest release still serves v4.5.2 while the source and
+generated artifacts are v4.46.0, (2) **runtime DOM churn** against YouTube's
+high-velocity redesigns, (3) **Firefox release parity** before AMO or
+self-distributed Firefox updates, and (4) **overlay accessibility and locale
+proofing** beyond the popup and English source bundle.
 
 Top remaining opportunities (one-liners):
 
-1. Restore green GitHub `Validate` for Python downloader tests by fixing the
-   Ubuntu PyQt6 / Qt runtime collection failure. [Verified]
-2. Publish a v4.46+ release catch-up with all profile-split artifacts, checksum
+1. Publish a v4.46+ release catch-up with all profile-split artifacts, checksum
    manifest/sidecars, and release provenance or a documented local-signing
    exception. [Verified]
-3. Ship a cross-store privacy disclosure and Firefox data-consent packet:
-   publish a stable policy source, document Chrome dashboard data-use
-   categories, and either raise Firefox support to 140+ with
-   `data_collection_permissions` or add a custom consent/control flow for
-   Firefox 128-139. [Verified]
-4. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+2. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-5. Add a Python companion dependency audit gate so
-   `astra_downloader/requirements.txt` gets `pip-audit` / dependency-review
-   coverage comparable to the existing npm audit gate. [Verified]
-6. MHTML capture-week expansion across Shorts, channel, search, history,
+3. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-7. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+4. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-8. Locale proofing queue for identical-to-English feature names/descriptions in
+5. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-9. Signed Astra Downloader installer/MSI once the signing budget and submission
+6. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -258,9 +250,8 @@ Top remaining opportunities (one-liners):
 - `.github/workflows/build.yml`, `validate.yml`, and `yt-dlp-smoke.yml` (test +
   check gate, tag-driven release with version-surface verification, and monthly
   `workflow_dispatch` yt-dlp extractor smoke). [Verified]
-- GitHub Actions run `26946855242` and `gh run list --workflow Validate --limit
-  12` (12 consecutive `Validate` failures on `main`; latest failure is Python
-  test collection importing PyQt6 without `libEGL.so.1`). [Verified]
+- GitHub Actions Validate runs `26950005859` and `26950502914` are green on
+  `main` after the Python Qt-runtime fix and privacy/consent packet. [Verified]
 - Latest GitHub release `v4.5.2` vs local v4.46.0 build outputs (eight
   profile-split artifacts in `build/`). [Verified]
 - `tests/` (19 spec files incl. hardening, selector-regression,
