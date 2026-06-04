@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Top-3 peel seed: chatStyleComments styles.** Added
+  `features/chat-style-comments/index.js` with the Studio Comments style
+  builders, wired the module into MV3 and userscript load order, and made the
+  monolith prefer the module while keeping inline fallback CSS byte-pinned.
+
 - **NF5 Wave 3 lifecycle CSS delegation.** CSS peel modules now register real
   style lifecycle specs through `core/styles.js#createCssLifecycleSpec`, and
   `cssFeature` delegates registered features to lifecycle start/destroy with
