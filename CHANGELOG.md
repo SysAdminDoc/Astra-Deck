@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Monolith catch-reason lint coverage.** `extension/ytkit.js` now runs the
+  custom `require-catch-reason` ESLint rule. The remaining intentional silent
+  catches in the monolith carry explicit `reason:` comments, and the lint
+  script plus hardening tests pin the widened scope.
+
 - **Core catch-reason lint coverage.** `npm run lint` now applies the
   custom `require-catch-reason` rule to direct `extension/core/*.js` modules,
   with the remaining intentional silent catches annotated and the stale
