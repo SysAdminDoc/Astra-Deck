@@ -128,7 +128,7 @@ function entryPassesFilters(entry, filters) {
     return true;
 }
 // Lookup a schema entry by storage key. Lazily memoised because the
-// schema is frozen and ~360 entries — a Map keyed by `key` keeps the
+// schema is frozen and ~362 entries — a Map keyed by `key` keeps the
 // per-toggle filter check at O(1).
 let _schemaIndex = null;
 function getSchemaIndex() {

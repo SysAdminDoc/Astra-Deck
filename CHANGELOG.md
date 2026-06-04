@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF1 per-video notes.** Added the `videoNotes` watch-page panel with
+  debounced local saves into `videoNotesData`, delete/undo for the current
+  video, and a versioned JSON export (`astra-deck-video-notes-YYYY-MM-DD.json`).
+  Notes are sanitized on read/write and capped to the 1000 most recently edited
+  videos by `updatedAt`.
+
 - **Dead-channel unsubscribe staging.** Subscription Groups now flags rendered
   subscription-feed cards whose newest visible upload is at least 365 days old,
   stores staged review records in `subscriptionUnsubscribeStagingData` with a

@@ -2441,6 +2441,48 @@ test('subscriptionGroups stages dead-channel unsubscribe candidates with a 30-da
     assert.equal(entry.type, 'object', 'subscriptionUnsubscribeStagingData must be object typed');
 });
 
+test('videoNotes stores local per-video notes with export and a 1000-note LRU cap', () => {
+    const start = ytkitSource.indexOf("id: 'videoNotes'");
+    assert.ok(start > -1, 'videoNotes feature must exist');
+    const block = ytkitSource.slice(start, start + 30000);
+    assert.match(block, /_DATA_KEY: 'videoNotesData'/,
+        'videoNotes must persist notes into videoNotesData');
+    assert.match(block, /_MAX_NOTES: 1000/,
+        'videoNotes must cap the archive at 1000 notes');
+    assert.match(block, /_MAX_NOTE_CHARS: 5000/,
+        'videoNotes must cap each note body');
+    assert.match(block, /_enforceNotesCap\(notes\)/,
+        'videoNotes must centralize cap enforcement');
+    assert.match(block, /entries\.sort\(\(a, b\) => \(Number\(b\[1\]\?\.updatedAt\) \|\| 0\) - \(Number\(a\[1\]\?\.updatedAt\) \|\| 0\)\)/,
+        'videoNotes cap must be LRU by updatedAt descending');
+    assert.match(block, /Object\.fromEntries\(entries\.slice\(0, this\._MAX_NOTES\)\)/,
+        'videoNotes cap must keep only the newest 1000 records');
+    assert.match(block, /appState\.settings\[this\._DATA_KEY\] = capped/,
+        'videoNotes writes must remain inside the settings snapshot for export/import');
+    assert.match(block, /textarea\.maxLength = this\._MAX_NOTE_CHARS/,
+        'videoNotes UI must enforce note length at the textarea');
+    assert.match(block, /textarea\.addEventListener\('input', \(\) => this\._scheduleSave\(textarea\.value\)\)/,
+        'videoNotes UI must debounce local saves from textarea input');
+    assert.match(block, /handleFileExport\(`astra-deck-video-notes-/,
+        'videoNotes must expose an explicit notes export');
+    assert.match(block, /schemaVersion:\s*1/,
+        'videoNotes export payload must be versioned');
+    assert.match(block, /addNavigateRule\(this\.id, this\._navRule\)/,
+        'videoNotes must reattach across SPA navigation');
+    assert.match(block, /removeNavigateRule\(this\.id\)/,
+        'videoNotes must remove its navigate rule on destroy');
+    assert.equal(defaultSettings.videoNotes, false,
+        'videoNotes must be off by default');
+    assert.deepEqual(defaultSettings.videoNotesData, {},
+        'videoNotesData must default to an empty object');
+    const toggleEntry = settingsSchemaModule.SETTINGS_SCHEMA.find((e) => e.key === 'videoNotes');
+    const dataEntry = settingsSchemaModule.SETTINGS_SCHEMA.find((e) => e.key === 'videoNotesData');
+    assert.ok(toggleEntry, 'settings-schema must catalogue videoNotes');
+    assert.ok(dataEntry, 'settings-schema must catalogue videoNotesData');
+    assert.equal(toggleEntry.type, 'boolean', 'videoNotes must be a boolean toggle');
+    assert.equal(dataEntry.type, 'object', 'videoNotesData must be object typed');
+});
+
 // ── v3.30.0 P1: Research workspace invariants ──
 
 test('localAiSummary checks for Chrome built-in Summarizer and never falls through to remote providers', () => {
@@ -3345,11 +3387,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    // Dead-channel unsubscribe staging added subscriptionUnsubscribeStagingData,
-    // lifting the pin from 359 to 360. Keep the literal so a future schema
+    // Per-video notes added videoNotes + videoNotesData, lifting the pin from
+    // 360 to 362. Keep the literal so a future schema
     // addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 360,
-        'SETTINGS_SCHEMA must cover all 360 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 362,
+        'SETTINGS_SCHEMA must cover all 362 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

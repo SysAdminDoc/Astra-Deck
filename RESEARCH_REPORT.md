@@ -14,6 +14,31 @@ Claim labels: [Verified] = read in-tree or confirmed against a cited source;
 default not directly confirmed; [Needs validation] = requires a device, browser,
 or maintainer action to confirm.
 
+## 2026-06-04 Freshness Refresh
+
+- [Verified] The live working tree has advanced beyond the 2026-06-03 report:
+  NF6 companion self-update, NF2 nested subscription groups, dead-channel
+  detection / unsubscribe staging, and NF1 per-video notes are now represented
+  in `ROADMAP.md`, `extension/ytkit.js`, the settings schema/defaults,
+  userscript bundle, and hardening tests. The subscription implementation uses
+  rendered-feed DOM heuristics and a 30-day local undo/staging window rather
+  than a YouTube Data API unsubscribe path; the notes implementation stays
+  local-first with versioned JSON export and a 1000-note cap.
+- [Verified] Narrow validation on 2026-06-04: `npm audit --audit-level=high
+  --omit=dev` found 0 vulnerabilities; `npm outdated --json` showed only
+  dev-only `eslint` behind (`10.2.1` installed, `10.4.1` wanted/latest); and
+  `node --test tests/hardening.test.js` passed 415 checks. Full `npm test` and
+  `npm run check` were not rerun in this research-only pass.
+- [Verified, external] Current source check did not create a new roadmap row:
+  Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
+  code / permission-rationale items relevant; MDN's `scripting.executeScript`
+  page is still the right Firefox MV3 compatibility anchor; Mozilla's Firefox
+  128 MV3 MAIN-world support keeps the Firefox pre-flight item actionable; yt-dlp
+  `2026.03.17` remains the latest stable release observed, with YouTube support
+  explicitly called out as a churn risk; and YouTube Data API subscription reads
+  require OAuth and have documented quota cost, supporting the local-first DOM
+  staging approach for this slice.
+
 ## Executive Summary
 
 Astra Deck is a mature, single-developer YouTube enhancement platform spanning a
@@ -104,7 +129,7 @@ excluded by design. [Verified]
 | Title/thumbnail (DeArrow-class) | settings schema + `ytkit.js` | Shipped | [Likely] |
 | Return YouTube Dislike | `returnyoutubedislikeapi.com` host | Shipped | No estimate-disclosure UI [Verified] |
 | Feed/comment/channel filtering (BlockTube-class) | `features/video-hider/`, `ytkit.js` | Shipped | ReDoS-guarded; channel-key cache [Verified] |
-| Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Flat groups; per-group sort persists; no nesting/sync [Verified] |
+| Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Depth-2 groups and dead-channel staging are shipped; external sync remains absent [Verified] |
 | Theater split / sticky player | `features/sticky-video/`, `player-dock/` | Shipped | Lifecycle-unified chat observer [Verified] |
 | Theming / OLED tokens | `features/theme-css/`, `wave-8-css/`, `home-subs-css/` | Shipped | Schema-driven [Verified] |
 | Transcript viewer + IndexedDB search | `core/transcript-service.js` | Shipped | [Verified] |
@@ -223,8 +248,9 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 - Live-stream MHTML capture window for full live-chat iframe internals — repeated
   headless-capture timeouts mean this needs a manual/stable-browser save path.
   [Needs validation]
-- Dead-channel detection method (Data API vs DOM heuristics) without requiring a
-  YouTube Data API key. [Needs validation]
+- Real-browser QA for the DOM-heuristic dead-channel staging flow, especially on
+  large subscription feeds and YouTube layouts outside the current rendered-card
+  selectors. [Needs validation]
 - Whether the v5/v6 numbering should be retired entirely or formally re-baselined
   onto the 4.46.x line. [Needs validation]
 - Lifecycle-migration cadence and which feature category owners are available for

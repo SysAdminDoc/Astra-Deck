@@ -50,7 +50,7 @@ background.js (MV3 service worker)
 Toolbar popup (on demand)
     popup.html               Hero card + storage stats + data-flow panel
                              + selector-health dashboard + quick toggles
-                             + schema overview (all 360 keys editable).
+                             + schema overview (all 362 keys editable).
     Bundles                  core/settings-schema.js, core/policy-profile.js,
                              core/data-flow.js, core/selector-health.js.
                              Communicates with content scripts via
@@ -107,12 +107,12 @@ User opens the popup:
 
 | Concern | Lives in | Why |
 |---------|----------|-----|
-| Feature settings (default values) | `extension/core/settings-schema.js` + `extension/default-settings.json` (mirror, parity-gated by `scripts/check-settings.js`) | Single source of truth for 360 keys + their metadata |
+| Feature settings (default values) | `extension/core/settings-schema.js` + `extension/default-settings.json` (mirror, parity-gated by `scripts/check-settings.js`) | Single source of truth for 362 keys + their metadata |
 | Feature definitions | `extension/ytkit.js` `features` array (~200 entries) | Each has `{id, name, description, group, icon, init, destroy, pages?, dependsOn?}` |
 | CSS-only feature helpers | `extension/features/*/index.js` (6 modules, 21 ids) | Pure `buildCss(settings)` helpers; ytkit.js inline blocks delegate to them. Also call `getLifecycle().defineFeature` at module-eval (NF5 wave 1). |
 | MAIN-world bridge | `extension/ytkit-main.js` | `canPlayType` patching for codec/format filtering; the only MAIN-world reach. Talks to ISOLATED via `data-ytkit-codec` attribute. |
 | Background service worker | `extension/background.js` | Cross-origin fetch proxy (SSRF-defended allowlist); chrome.downloads bridge; cookie bridge; explicit error on unknown message type. |
-| Toolbar popup UI | `extension/popup.html` + `popup.js` + `popup.css` | Hero card, storage stats, data-flow panel, selector-health dashboard + Copy report button, quick toggles, schema overview editing all 360 keys. |
+| Toolbar popup UI | `extension/popup.html` + `popup.js` + `popup.css` | Hero card, storage stats, data-flow panel, selector-health dashboard + Copy report button, quick toggles, schema overview editing all 362 keys. |
 | Selector resolution | `extension/core/selectors.js` + `extension/core/selector-packs/*.js` | 28 surfaces + 2 aliases, each with `stable[]` + `fallback[]` + `captureEvidence[]` + `lastVerified` + `highChurn` flag. |
 | Lifecycle contract | `extension/core/feature-lifecycle.js` | `createLifecycle()` + `defineFeature` + `start` + `apply` + `destroy` + AbortController + monotonic route token. Singleton via `getLifecycle()`. |
 | Policy profile (store-safe vs github-full) | `extension/core/policy-profile.js` | `createPolicyProfile()` resolves the effective profile, partitions schema entries, scrubs api-key-shaped values for export. |
@@ -193,4 +193,4 @@ Same as the CSS-only path through step 2, then:
 
 ## Where to push next
 
-See [ROADMAP.md](../ROADMAP.md) for the active backlog. The current residue is mostly browser-bounded captures (live-chat, liquid-glass player), per-category lifecycle adoption, and the Subscription Manager v2 / Per-video notes / Astra Downloader signing larger bets.
+See [ROADMAP.md](../ROADMAP.md) for the active backlog. The current residue is mostly browser-bounded captures (live-chat, liquid-glass player), per-category lifecycle adoption, and the Subscription Manager v2 / Astra Downloader signing larger bets.
