@@ -5509,10 +5509,10 @@ test('v4.31.0 every surface now resolves through SurfaceSelectorMap (no regressi
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence (proves it came from a pack file)`);
     }
-    // High-churn / fresh-capture flags must survive the peel.
+    // High-churn / capture-state flags must survive the peel.
     assert.equal(core.SurfaceSelectorMap.feed.highChurn, true);
     assert.equal(core.SurfaceSelectorMap.watch.highChurn, true);
-    assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, true);
+    assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, false);
 });
 
 test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified', () => {
@@ -5521,13 +5521,11 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
     assert.equal(entry.lastVerified, '2026-05-19');
-    // The live-chat trio carries `lastVerified: null` because the
-    // current MHTML captures don't include the iframe contents —
-    // exercises the freezeEntry default path (lastVerified || null).
-    const unverified = core.getSurfaceSelectorEntry('liveChat');
-    assert.ok(Array.isArray(unverified.captureEvidence), 'liveChat captureEvidence must be an array');
-    assert.equal(unverified.lastVerified, null,
-        'liveChat lastVerified must be null until a fresh capture lands');
+    const liveChat = core.getSurfaceSelectorEntry('liveChat');
+    assert.ok(Array.isArray(liveChat.captureEvidence), 'liveChat captureEvidence must be an array');
+    assert.ok(liveChat.captureEvidence.includes('mhtml/LiveChat.mhtml'),
+        'liveChat captureEvidence must list the fresh popout-chat MHTML capture');
+    assert.equal(liveChat.lastVerified, '2026-06-04');
 });
 
 // ── v4.32.0 NX1: selector-pack batch 2 (feed-shell) ──
@@ -5877,23 +5875,21 @@ test('v4.37.0 live-chat pack files exist with the v4.31.0 schema fields', () => 
         assert.ok(fs.existsSync(full), `${rel} must exist in extension/`);
         const body = fs.readFileSync(full, 'utf8');
         assert.match(body, /SurfacePackRegistry/);
-        assert.match(body, /needsFreshCapture: true/,
-            `${rel} must declare needsFreshCapture=true (no usable iframe capture exists)`);
+        assert.match(body, /needsFreshCapture: false/,
+            `${rel} must declare needsFreshCapture=false after the EI8 capture refresh`);
         assert.match(body, /registry\.has\(/);
     }
 });
 
-test('v4.37.0 live-chat surfaces come from the pack registry and carry needsFreshCapture=true', () => {
+test('v4.37.0 live-chat surfaces come from the pack registry and carry fresh capture metadata', () => {
     const core = loadSelectorPackContext();
     for (const surface of V437_LIVECHAT_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
-        assert.equal(entry.needsFreshCapture, true,
-            `${surface} must keep needsFreshCapture=true after the v4.37.0 peel`);
-        // lastVerified is intentionally null — the live-chat iframe
-        // contents are not preserved in the current MHTML captures.
-        assert.equal(entry.lastVerified, null,
-            `${surface} lastVerified must stay null until a fresh capture workflow lands`);
+        assert.equal(entry.needsFreshCapture, false,
+            `${surface} must be marked capture-backed after the EI8 refresh`);
+        assert.equal(entry.lastVerified, '2026-06-04',
+            `${surface} lastVerified must track the EI8 live-chat refresh date`);
     }
 });
 

@@ -6,10 +6,12 @@
 // The raw MHTML files in mhtml/ are ~5 MB each and are gitignored by the
 // blanket `*.mhtml` rule. The selector-regression test needs a portable,
 // repo-committed artifact derived from them. This script produces one
-// sorted token list per MHTML file, each one the set of distinct DOM
+// sorted token list per MHTML file, each one the set of distinct DOM/CSS
 // identifiers our code could plausibly target (ytd-*, ytp-*, yt-*,
 // html5-*, the `movie_player` element id, and a few common YT layout
-// ids).
+// ids). The full MHTML text is decoded rather than only the first HTML
+// part because YouTube keeps some custom-element selector tokens in CSS
+// parts, especially in the live-chat popout capture.
 //
 // Run after refreshing mhtml/:
 //     npm run build:fixtures
@@ -26,6 +28,7 @@ const FIXTURE_DIR = path.join(REPO_ROOT, 'tests', 'fixtures');
 const SOURCES = [
     { mhtml: 'YouTube.mhtml', out: 'yt-home.tokens.txt' },
     { mhtml: 'WatchPage.mhtml', out: 'yt-watch.tokens.txt' },
+    { mhtml: 'LiveChat.mhtml', out: 'yt-live-chat.tokens.txt' },
 ];
 
 // Patterns we care to canary. YouTube uses ytd-* for Polymer elements,
@@ -49,27 +52,12 @@ function decodeQuotedPrintable(str) {
         );
 }
 
-function extractFirstHtmlPart(mhtmlPath) {
+function extractTokenText(mhtmlPath) {
     const raw = fs.readFileSync(mhtmlPath, 'utf8');
-    const htmlHeaderIdx = raw.search(/Content-Type:\s*text\/html/i);
-    if (htmlHeaderIdx < 0) {
-        throw new Error(`${mhtmlPath}: no text/html part found`);
+    if (!/Content-Type:\s*text\/(?:html|css)/i.test(raw)) {
+        throw new Error(`${mhtmlPath}: no text/html or text/css part found`);
     }
-    const partHeadersEnd = raw.indexOf('\n\n', htmlHeaderIdx);
-    const partHeadersEndCrlf = raw.indexOf('\r\n\r\n', htmlHeaderIdx);
-    const bodyStart = (partHeadersEndCrlf > -1 &&
-        (partHeadersEnd === -1 || partHeadersEndCrlf < partHeadersEnd))
-        ? partHeadersEndCrlf + 4
-        : (partHeadersEnd > -1 ? partHeadersEnd + 2 : -1);
-    if (bodyStart <= 0) {
-        throw new Error(`${mhtmlPath}: could not locate blank line after part headers`);
-    }
-    const partHeaderBlock = raw.slice(htmlHeaderIdx, bodyStart);
-    const isQuotedPrintable = /Content-Transfer-Encoding:\s*quoted-printable/i.test(partHeaderBlock);
-    const nextBoundary = raw.indexOf('\n------MultipartBoundary', bodyStart);
-    const bodyEnd = nextBoundary > -1 ? nextBoundary : raw.length;
-    const body = raw.slice(bodyStart, bodyEnd);
-    return isQuotedPrintable ? decodeQuotedPrintable(body) : body;
+    return decodeQuotedPrintable(raw);
 }
 
 function extractTokens(html) {
@@ -99,8 +87,8 @@ function main() {
             console.error(`[build-selector-fixtures] missing: ${mhtmlPath}`);
             process.exit(1);
         }
-        const html = extractFirstHtmlPart(mhtmlPath);
-        const tokens = extractTokens(html);
+        const fixtureText = extractTokenText(mhtmlPath);
+        const tokens = extractTokens(fixtureText);
         const outPath = path.join(FIXTURE_DIR, out);
         const header = [
             '# Selector-regression canary fixture.',

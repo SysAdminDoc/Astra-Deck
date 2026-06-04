@@ -6,8 +6,8 @@
     // Inside the live chat iframe (selectors only resolve when the
     // content script is loaded in the iframe context — see the
     // dedicated all-frames content_scripts entry in manifest.json).
-    // needsFreshCapture stays true because the iframe DOM was never
-    // captured.
+    // Capture-backed by the popout live-chat MHTML fixture generated from
+    // a currently active stream on 2026-06-04.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     const registry = core.SurfacePackRegistry || (core.SurfacePackRegistry = new Map());
@@ -24,10 +24,10 @@
             'yt-live-chat-text-message-renderer',
             'yt-live-chat-message-input-renderer'
         ]),
-        captureEvidence: Object.freeze(['ROADMAP.md#live-chat-iframe-capture-workflow']),
-        lastVerified: null,
+        captureEvidence: Object.freeze(['mhtml/LiveChat.mhtml']),
+        lastVerified: '2026-06-04',
         highChurn: true,
-        needsFreshCapture: true,
-        notes: 'Live chat iframe document surface; capture required before major live-chat rewrites.'
+        needsFreshCapture: false,
+        notes: 'Live chat iframe document surface verified from a popout chat MHTML capture.'
     }));
 })();

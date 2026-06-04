@@ -246,7 +246,8 @@ test('surface selector map promotes roadmap surfaces with stable-first fallback 
     }
 
     assert.ok(core.SurfaceSelectorMap.feed.highChurn, 'feed should be marked high churn');
-    assert.ok(core.SurfaceSelectorMap.liveChat.needsFreshCapture, 'live chat should require a fresh capture');
+    assert.equal(core.SurfaceSelectorMap.liveChat.needsFreshCapture, false,
+        'live chat should be backed by the committed popout-chat token fixture');
     assert.ok(core.getSurfaceSelectorChain('playerChrome').includes('.ytp-delhi-modern'),
         'player chrome chain should include new-player transition selectors');
 });
