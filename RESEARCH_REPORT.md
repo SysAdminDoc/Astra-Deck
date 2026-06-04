@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 15 secret-scanning pass on 2026-06-04 found one open GitHub
+  secret-scanning alert in the public repository: alert 1, type
+  `google_api_key`, created 2026-01-26, unresolved, `publicly_leaked: true`,
+  `multi_repo: true`, and `validity: unknown`. Locations include current and
+  historical generated userscript/extension files, but the secret value was not
+  printed or committed during research. ROADMAP now carries a P0 item to triage
+  whether this is a real credential or an intentional public YouTube/Innertube
+  bootstrap key, resolve the alert with an explicit rationale, and enable
+  additional secret-scanning settings where available. Detailed evidence lives
+  in `docs/research-cycle-15-secret-scanning-alert.md`.
 - [Verified] Cycle 14 release-doc contract reconciliation pass on 2026-06-04
   found that the release process is now split between CI-built/attested
   workflow artifacts and maintainer-local public release assets, but current
@@ -247,28 +257,30 @@ runtime migrations that make them durable.
 
 Top remaining opportunities (one-liners):
 
-1. Migrate GitHub Actions workflows to Node 24-ready action majors before
+1. Triage and resolve the open Google API Key secret-scanning alert without
+   exposing the secret value. [Verified]
+2. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-2. Enable dependency graph / Dependabot alert settings so the PR-only
+3. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-3. Reconcile release automation docs with the current maintainer-local artifact
+4. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-4. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+5. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-5. MHTML capture-week expansion across Shorts, channel, search, history,
+6. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-6. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+7. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-7. Locale proofing queue for identical-to-English feature names/descriptions in
+8. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-8. Signed Astra Downloader installer/MSI once the signing budget and submission
+9. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -310,7 +322,14 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-11-main-protection-status-checks.md`, and
   `docs/research-cycle-12-dependency-review-enablement.md`, and
   `docs/research-cycle-13-actions-node24-readiness.md`, and
-  `docs/research-cycle-14-release-doc-contract-reconciliation.md`. [Verified]
+  `docs/research-cycle-14-release-doc-contract-reconciliation.md`, and
+  `docs/research-cycle-15-secret-scanning-alert.md`. [Verified]
+- Secret scanning alert probe: GitHub reports one open `google_api_key` alert
+  with `publicly_leaked: true`, `multi_repo: true`, and `validity: unknown`;
+  locations include current/historical generated userscript and extension files.
+  Secret scanning and push protection are enabled, while non-provider pattern
+  scanning and validity checks are disabled in the current repository
+  security-analysis response. [Verified]
 - Open Dependabot PR #11 and run `26950993002`: Dependency review fails with
   GitHub's dependency-graph enablement message while the other `Validate` jobs
   pass. The repository security-analysis API response shows a public repository
@@ -521,6 +540,10 @@ Closed since the 2026-06-03 baseline:
   expose SHA-256 digest fields. The tag workflow creates attestations for
   CI-built artifacts, while public CRX assets intentionally remain
   maintainer-local because `ytkit.pem` does not enter CI.
+- **Secret scanning** [Verified]: baseline secret scanning and push protection
+  are enabled, but one open Google API Key alert remains unresolved with
+  validity unknown. Non-provider pattern scanning and validity checks are
+  disabled in the current repository security-analysis response.
 - **Privacy disclosure / consent** [Verified]: `docs/privacy-policy.md` is the
   stable policy source linked from README/submission docs; it covers Chrome data
   categories, external destinations, local storage/export/delete, cookies, no
@@ -550,6 +573,9 @@ Closed since the 2026-06-03 baseline:
 - Whether `main` should use classic branch-protection required checks or a
   repository ruleset, and whether all `main` updates should go through PRs.
   [Needs validation]
+- Whether the open Google API Key secret-scanning alert is an intentional public
+  YouTube/Innertube bootstrap key or a private quota-bearing credential that
+  must be revoked. [Needs validation]
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
