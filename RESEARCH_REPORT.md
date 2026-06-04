@@ -41,12 +41,13 @@ or maintainer action to confirm.
   disclosure and Firefox data-consent packet, with detailed evidence in
   `docs/research-cycle-9-privacy-consent-readiness.md`.
 - [Verified] Cycle 8 CI/release-integrity pass on 2026-06-04 found two
-  non-duplicate delivery risks: `Validate` is red on `main` because the Python
-  downloader job fails test collection on Ubuntu with missing `libEGL.so.1`
-  during PyQt6 import, and the public latest GitHub release is still v4.5.2 while
-  the source tree/build outputs are v4.46.0. ROADMAP now carries a P0 CI-recovery
-  item plus a P1 release catch-up / checksum / provenance item, with detailed
-  evidence in `docs/research-cycle-8-ci-release-integrity.md`.
+  non-duplicate delivery risks: `Validate` was red on `main` because the Python
+  downloader job failed test collection on Ubuntu with missing `libEGL.so.1`,
+  and the public latest GitHub release still served v4.5.2 while the source
+  tree/build outputs were v4.46.0. The build lane closed both gaps: `Validate`
+  is green and public latest release is now `v4.46.0` with 12 assets,
+  `SHA256SUMS`, release manifest, SBOM, and a documented local-signing path.
+  Detailed evidence lives in `docs/research-cycle-8-ci-release-integrity.md`.
 - [Verified] Cycle 2 refresh on 2026-06-04 fetched and compared `origin/main`
   (`git rev-list --left-right --count HEAD...@{u}` returned `0 0`) after the
   selector-capture implementation landed separately on the build lane. The
@@ -208,35 +209,30 @@ strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
 JavaScript dependency audit, Python dependency audit, dependency review, plus a
 build/release workflow). [Verified]
 
-The engineering arc is sound; the dominant risks are (1) **release-channel
-drift** because public latest release still serves v4.5.2 while the source and
-generated artifacts are v4.46.0, (2) **main-branch governance** because the
-stronger validation workflow is not yet required by GitHub branch protection,
-(3) **runtime DOM churn** against YouTube's high-velocity redesigns, (4)
-**Firefox release parity** before AMO or self-distributed Firefox updates, and
-(5) **overlay accessibility and locale proofing** beyond the popup and English
-source bundle.
+The engineering arc is sound; the dominant risks are (1) **main-branch
+governance** because the stronger validation workflow is not yet required by
+GitHub branch protection, (2) **runtime DOM churn** against YouTube's
+high-velocity redesigns, (3) **Firefox release parity** before AMO or
+self-distributed Firefox updates, and (4) **overlay accessibility and locale
+proofing** beyond the popup and English source bundle.
 
 Top remaining opportunities (one-liners):
 
-1. Publish a v4.46+ release catch-up with all profile-split artifacts, checksum
-   manifest/sidecars, and release provenance or a documented local-signing
-   exception. [Verified]
-2. Require green `Validate` checks before `main` updates by enabling branch
+1. Require green `Validate` checks before `main` updates by enabling branch
    protection required status checks or an active repository ruleset. [Verified]
-3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+2. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-4. MHTML capture-week expansion across Shorts, channel, search, history,
+3. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+4. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-6. Locale proofing queue for identical-to-English feature names/descriptions in
+5. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-7. Signed Astra Downloader installer/MSI once the signing budget and submission
+6. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -261,10 +257,13 @@ Top remaining opportunities (one-liners):
 - `.github/workflows/build.yml`, `validate.yml`, and `yt-dlp-smoke.yml` (test +
   check gate, tag-driven release with version-surface verification, and monthly
   `workflow_dispatch` yt-dlp extractor smoke). [Verified]
-- GitHub Actions Validate runs `26950005859` and `26950502914` are green on
-  `main` after the Python Qt-runtime fix and privacy/consent packet. [Verified]
-- Latest GitHub release `v4.5.2` vs local v4.46.0 build outputs (eight
-  profile-split artifacts in `build/`). [Verified]
+- GitHub Actions Validate runs `26950005859`, `26950502914`, `26950889307`,
+  and `26951303023` are green on `main` after the Python Qt-runtime fix,
+  privacy/consent packet, Python dependency audit gate, and release-tooling
+  update. [Verified]
+- Latest GitHub release `v4.46.0` now points at `ac6a363` and attaches 12
+  assets: eight profile-split artifacts, userscript, SBOM, `release-manifest.json`,
+  and `SHA256SUMS`. [Verified]
 - `tests/` (19 spec files incl. hardening, selector-regression,
   settings-migration-roundtrip, userscript-parity). [Verified]
 - `docs/architecture.md`, `docs/cws-submission-checklist.md`,
