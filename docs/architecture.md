@@ -4,7 +4,7 @@ This document orients a new contributor to the moving parts. It is descriptive (
 
 ## The four moving parts
 
-1. **MV3 extension** — Chrome / Edge / Brave / Firefox 128+ — lives in `extension/`.
+1. **MV3 extension** — Chrome / Edge / Brave / Firefox 140+ — lives in `extension/`.
 2. **Userscript** — `YTKit.user.js` at the repo root — Tampermonkey / Violentmonkey targets. Built from `extension/ytkit.js` by `sync-userscript.js`.
 3. **Astra Downloader** (Python companion) — `astra_downloader/` — Flask + PyQt6 + yt-dlp + ffmpeg, packaged as `AstraDownloader.exe` via PyInstaller.
 4. **Toolbar popup** — `extension/popup.html` + `popup.js` + `popup.css` — the *only* extension surface for settings management (the standalone options page was retired in v3.19.0).

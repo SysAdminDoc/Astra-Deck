@@ -12,6 +12,8 @@ Source check 2026-06-04:
   https://developer.chrome.com/docs/webstore/program-policies/quality-guidelines-faq
 - Chrome Web Store privacy fields:
   https://developer.chrome.com/docs/webstore/cws-dashboard-privacy
+- Firefox built-in consent for data collection and transmission:
+  https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/
 
 ## Submission Profile
 
@@ -42,6 +44,46 @@ limited to user-visible YouTube enhancement features. Third-party API calls are
 feature-gated, use no extension telemetry, and avoid cookies unless explicitly
 noted. BYO-key AI calls are GitHub-full only, opt-in, and sent directly from the
 user's browser to the selected provider or local runtime.
+
+Stable privacy policy source: [privacy-policy.md](privacy-policy.md).
+
+## Firefox Data Consent
+
+Firefox builds require Firefox 140+ so Astra Deck can use Firefox's built-in
+data collection and transmission consent flow instead of a custom consent screen
+for Firefox 128-139. The generated Firefox manifest declares:
+
+```json
+{
+  "browser_specific_settings": {
+    "gecko": {
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "browsingActivity",
+          "websiteContent",
+          "websiteActivity",
+          "authenticationInfo"
+        ]
+      }
+    }
+  }
+}
+```
+
+Reviewer mapping:
+
+| Firefox category | Why it is required |
+| --- | --- |
+| `browsingActivity` | YouTube URLs, video IDs, channel/page context, and Reddit/SponsorBlock/RYD lookups are part of user-visible YouTube enhancement features. |
+| `websiteContent` | Astra Deck reads visible YouTube text, captions/transcripts, thumbnails, comments, metadata, and cookies needed for enabled features. |
+| `websiteActivity` | Astra Deck stores user actions such as settings changes, watch progress, note/export/download actions, hidden videos, and subscription group state. |
+| `authenticationInfo` | YouTube cookies can be read for an explicit authenticated local-download handoff to Astra Downloader. |
+
+`technicalAndInteraction` is not declared because Astra Deck does not transmit
+telemetry, usage metrics, crash reports, or diagnostic bundles automatically.
+Diagnostics are local and exported only when the user manually downloads a
+support bundle.
 
 ## Manifest Permissions
 
