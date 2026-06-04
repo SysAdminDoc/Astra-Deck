@@ -3934,6 +3934,7 @@ return response;
             subscriptionSortMode: 'default',           // legacy/all-feed fallback; groups persist their own sortMode
             subscriptionShowNewSinceLastVisit: true,
             subscriptionLastVisitData: {},             // { channelId: lastVisitMs }
+            subscriptionUnsubscribeStagingData: {},    // { channelId: { channelId, channelName, ageDays, stagedAt, undoUntil, reason, source } }
             subscriptionAiTags: false,                 // Master toggle for AI-generated group tags
             subscriptionAiTagData: {},                 // { groupId: { tags: string[], generatedAt: ms } }
             // v3.30.0 — Research workspace
@@ -31407,6 +31408,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _navRule: null,
             _GROUPS_KEY: 'subscriptionGroupData',
             _LAST_VISIT_KEY: 'subscriptionLastVisitData',
+            _UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData',
+            _UNSUB_STAGE_TTL_MS: 30 * 24 * 60 * 60 * 1000,
+            _STALE_CHANNEL_MIN_AGE_DAYS: 365,
             _SORT_MODES: Object.freeze(['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular']),
 
             _ensureStyles() {
@@ -31417,10 +31421,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;}
                     .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
+                    .ytkit-sub-toolbar button[data-action="scan-stale"]{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.32);color:#bfdbfe;}
+                    .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
+                    .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
                     .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
                     .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                     .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
                     .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-dead-card{outline:1px solid rgba(245,158,11,0.34);outline-offset:-1px;}
+                    .ytkit-sub-staged-card{outline:1px solid rgba(34,197,94,0.42);outline-offset:-1px;}
+                    .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-dead-badge{background:#f59e0b;color:#1f1300;}
+                    .ytkit-sub-staged-badge{background:#22c55e;color:#022c14;}
                     .ytkit-sub-hidden-by-group{display:none !important;}
                 `, 'subscription-groups');
             },
@@ -31445,6 +31457,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 appState.settings[this._LAST_VISIT_KEY] = next;
                 try { settingsManager.save(appState.settings); }
                 catch (e) { DebugManager.log('SubGroups', `Save failed: ${e.message}`); }
+            },
+
+            _readUnsubscribeStaging() {
+                const data = appState?.settings?.[this._UNSUB_STAGE_KEY];
+                return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+            },
+
+            _writeUnsubscribeStaging(next) {
+                appState.settings[this._UNSUB_STAGE_KEY] = next;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SubGroups', `Unsubscribe staging save failed: ${e.message}`); }
             },
 
             _normalizeSubscriptionSortMode(mode) {
@@ -31564,6 +31587,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (typeof showToast === 'function') showToast(`Imported ${Object.keys(sanitized).length} subscription groups`, '#22c55e');
                     this._renderToolbar();
                     this._applyGroupFilter();
+                    this._renderDeadChannelMarkers();
                 } catch (e) {
                     if (typeof showToast === 'function') showToast(`Import failed: ${e.message}`, '#ef4444');
                 }
@@ -31637,6 +31661,168 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     for (const k of drop) delete lastVisit[k];
                 }
                 this._writeLastVisit(lastVisit);
+            },
+
+            _extractCardAgeDays(text) {
+                const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
+                if (!raw) return null;
+                const match = raw.match(/\b(\d+(?:[,.]\d+)?)\s*(minute|hour|day|week|month|year)s?\s+ago\b/);
+                if (!match) return null;
+                const value = Number.parseFloat(match[1].replace(',', '.'));
+                if (!Number.isFinite(value) || value < 0) return null;
+                const unit = match[2];
+                if (unit === 'minute' || unit === 'hour') return 0;
+                if (unit === 'day') return Math.round(value);
+                if (unit === 'week') return Math.round(value * 7);
+                if (unit === 'month') return Math.round(value * 30);
+                if (unit === 'year') return Math.round(value * 365);
+                return null;
+            },
+
+            _extractChannelNameFromCard(card, channelId = '') {
+                const selectors = [
+                    'ytd-channel-name #text a',
+                    'ytd-channel-name a',
+                    '#channel-name a',
+                    'a[href*="/channel/"]',
+                    'a[href*="/@"]'
+                ];
+                for (const selector of selectors) {
+                    const text = (card.querySelector(selector)?.textContent || '').trim();
+                    if (text) return text.slice(0, 120);
+                }
+                return String(channelId || '').slice(0, 120);
+            },
+
+            _collectDeadChannelCandidates() {
+                const candidates = new Map();
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    if (card.classList.contains('ytkit-sub-hidden-by-group')) return;
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId) return;
+                    const metaText = [
+                        card.querySelector('#metadata-line')?.textContent,
+                        card.querySelector('ytd-video-meta-block')?.textContent,
+                        card.querySelector('#meta')?.textContent,
+                        card.textContent
+                    ].filter(Boolean).join(' ');
+                    const ageDays = this._extractCardAgeDays(metaText);
+                    if (ageDays === null || ageDays < this._STALE_CHANNEL_MIN_AGE_DAYS) return;
+                    const current = candidates.get(channelId);
+                    if (current && current.ageDays >= ageDays) return;
+                    candidates.set(channelId, {
+                        channelId,
+                        channelName: this._extractChannelNameFromCard(card, channelId),
+                        ageDays,
+                        card
+                    });
+                });
+                return Array.from(candidates.values()).sort((a, b) => b.ageDays - a.ageDays);
+            },
+
+            _renderDeadChannelMarkers(candidates = this._collectDeadChannelCandidates()) {
+                const byId = new Map(candidates.map(candidate => [candidate.channelId, candidate]));
+                const staged = this._readUnsubscribeStaging();
+                document.querySelectorAll('.ytkit-sub-dead-badge, .ytkit-sub-staged-badge').forEach(el => el.remove());
+                document.querySelectorAll('[data-ytkit-dead-channel], [data-ytkit-staged-unsubscribe]').forEach(card => {
+                    card.classList.remove('ytkit-sub-dead-card', 'ytkit-sub-staged-card');
+                    delete card.dataset.ytkitDeadChannel;
+                    delete card.dataset.ytkitChannelAgeDays;
+                    delete card.dataset.ytkitStagedUnsubscribe;
+                });
+                document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId) return;
+                    const target = card.querySelector('#metadata-line, ytd-video-meta-block, #meta');
+                    const candidate = byId.get(channelId);
+                    if (candidate) {
+                        card.classList.add('ytkit-sub-dead-card');
+                        card.dataset.ytkitDeadChannel = '1';
+                        card.dataset.ytkitChannelAgeDays = String(candidate.ageDays);
+                        if (target) {
+                            const badge = document.createElement('span');
+                            badge.className = 'ytkit-sub-dead-badge';
+                            badge.textContent = 'STALE';
+                            badge.title = `${candidate.ageDays} days since the newest rendered upload on this card`;
+                            target.appendChild(badge);
+                        }
+                    }
+                    if (staged[channelId]) {
+                        card.classList.add('ytkit-sub-staged-card');
+                        card.dataset.ytkitStagedUnsubscribe = '1';
+                        if (target) {
+                            const undoDate = Number(staged[channelId].undoUntil) || 0;
+                            const badge = document.createElement('span');
+                            badge.className = 'ytkit-sub-staged-badge';
+                            badge.textContent = 'STAGED';
+                            badge.title = undoDate
+                                ? `Unsubscribe staged. Undo window ends ${new Date(undoDate).toLocaleDateString()}.`
+                                : 'Unsubscribe staged for review.';
+                            target.appendChild(badge);
+                        }
+                    }
+                });
+                return candidates;
+            },
+
+            _stageDeadChannelUnsubscribes() {
+                const candidates = this._collectDeadChannelCandidates();
+                this._renderDeadChannelMarkers(candidates);
+                if (!candidates.length) {
+                    if (typeof showToast === 'function') showToast('No stale subscription cards found in the rendered feed.', '#6b7280');
+                    return;
+                }
+                const now = Date.now();
+                const current = this._readUnsubscribeStaging();
+                const next = { ...current };
+                const stagedIds = [];
+                for (const candidate of candidates) {
+                    const channelId = candidate.channelId;
+                    if (!channelId) continue;
+                    next[channelId] = {
+                        channelId,
+                        channelName: candidate.channelName || channelId,
+                        ageDays: candidate.ageDays,
+                        stagedAt: current[channelId]?.stagedAt || now,
+                        undoUntil: now + this._UNSUB_STAGE_TTL_MS,
+                        reason: `${candidate.ageDays} days since newest rendered upload`,
+                        source: 'dead-channel'
+                    };
+                    stagedIds.push(channelId);
+                }
+                this._writeUnsubscribeStaging(next);
+                this._renderDeadChannelMarkers(candidates);
+                this._renderToolbar();
+                if (typeof showToast === 'function') {
+                    showToast(`Staged ${stagedIds.length} stale channel${stagedIds.length === 1 ? '' : 's'} for unsubscribe review`, '#f59e0b', {
+                        duration: 8,
+                        tone: 'warn',
+                        action: {
+                            text: 'Undo',
+                            onClick: () => this._undoStagedUnsubscribes(stagedIds)
+                        }
+                    });
+                }
+            },
+
+            _undoStagedUnsubscribes(channelIds) {
+                const ids = new Set(Array.isArray(channelIds) ? channelIds : [channelIds]);
+                const current = this._readUnsubscribeStaging();
+                const next = { ...current };
+                let removed = 0;
+                for (const id of ids) {
+                    if (id && next[id]) {
+                        delete next[id];
+                        removed++;
+                    }
+                }
+                if (!removed) return;
+                this._writeUnsubscribeStaging(next);
+                this._renderDeadChannelMarkers();
+                this._renderToolbar();
+                if (typeof showToast === 'function') {
+                    showToast(`Removed ${removed} staged unsubscribe${removed === 1 ? '' : 's'}`, '#22c55e', { duration: 4 });
+                }
             },
 
             _parseCompactViewCount(text) {
@@ -31848,6 +32034,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 bar.appendChild(groupLabel);
 
                 const groups = this._readGroups();
+                const stagedUnsubscribes = this._readUnsubscribeStaging();
                 const allChip = document.createElement('button');
                 allChip.type = 'button';
                 allChip.className = 'ytkit-sub-group-chip';
@@ -31858,6 +32045,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._renderToolbar();
                     this._applyGroupFilter();
                     this._applySort();
+                    this._renderDeadChannelMarkers();
                 });
                 bar.appendChild(allChip);
 
@@ -31890,6 +32078,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._renderToolbar();
                         this._applyGroupFilter();
                         this._applySort();
+                        this._renderDeadChannelMarkers();
                     });
                     bar.appendChild(chip);
                 };
@@ -31936,6 +32125,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 sortSelect.addEventListener('change', () => {
                     const mode = this._setActiveSortMode(sortSelect.value);
                     this._applySort(mode);
+                    this._renderDeadChannelMarkers();
                 });
                 bar.appendChild(sortSelect);
 
@@ -31962,6 +32152,44 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 bar.appendChild(importBtn);
 
+                const staleLabel = document.createElement('span');
+                staleLabel.className = 'ytkit-sub-toolbar__label';
+                staleLabel.textContent = 'Stale';
+                bar.appendChild(staleLabel);
+
+                const scanBtn = document.createElement('button');
+                scanBtn.type = 'button';
+                scanBtn.dataset.action = 'scan-stale';
+                scanBtn.textContent = 'Scan Stale';
+                scanBtn.addEventListener('click', () => {
+                    const candidates = this._renderDeadChannelMarkers();
+                    if (typeof showToast === 'function') {
+                        showToast(`${candidates.length} stale channel${candidates.length === 1 ? '' : 's'} flagged`, candidates.length ? '#f59e0b' : '#6b7280', {
+                            duration: 5,
+                            tone: candidates.length ? 'warn' : 'neutral'
+                        });
+                    }
+                });
+                bar.appendChild(scanBtn);
+
+                const stageBtn = document.createElement('button');
+                stageBtn.type = 'button';
+                stageBtn.dataset.action = 'stage-unsubscribe';
+                stageBtn.textContent = 'Stage Stale';
+                stageBtn.title = 'Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked.';
+                stageBtn.addEventListener('click', () => this._stageDeadChannelUnsubscribes());
+                bar.appendChild(stageBtn);
+
+                const stagedCount = Object.keys(stagedUnsubscribes).length;
+                if (stagedCount > 0) {
+                    const undoStageBtn = document.createElement('button');
+                    undoStageBtn.type = 'button';
+                    undoStageBtn.dataset.action = 'undo-staged-unsubscribe';
+                    undoStageBtn.textContent = `Undo Staged (${stagedCount})`;
+                    undoStageBtn.addEventListener('click', () => this._undoStagedUnsubscribes(Object.keys(this._readUnsubscribeStaging())));
+                    bar.appendChild(undoStageBtn);
+                }
+
                 target.parentElement.insertBefore(bar, target);
                 this._toolbar = bar;
             },
@@ -31975,26 +32203,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         this._renderToolbar();
                         this._applyGroupFilter();
                         this._applyNewSinceMarkers();
+                        this._renderDeadChannelMarkers();
                         this._applySort();
                     }, 1200);
                     setTimeout(() => this._stampLastVisit(), 8000);
                 };
                 addNavigateRule(this.id, this._navRule);
-                addMutationRule(this.id, () => {
+                addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer', () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
                     this._applyGroupFilter();
+                    this._renderDeadChannelMarkers();
                 });
                 this._navRule();
             },
 
             destroy() {
                 removeNavigateRule(this.id);
-                removeMutationRule(this.id);
+                removeScopedMutationRule(this.id);
                 this._navRule = null;
                 this._toolbar?.remove();
                 this._toolbar = null;
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
+                document.querySelectorAll('.ytkit-sub-dead-badge, .ytkit-sub-staged-badge').forEach(el => el.remove());
+                document.querySelectorAll('[data-ytkit-dead-channel], [data-ytkit-staged-unsubscribe]').forEach(el => {
+                    el.classList.remove('ytkit-sub-dead-card', 'ytkit-sub-staged-card');
+                    delete el.dataset.ytkitDeadChannel;
+                    delete el.dataset.ytkitChannelAgeDays;
+                    delete el.dataset.ytkitStagedUnsubscribe;
+                });
                 // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();

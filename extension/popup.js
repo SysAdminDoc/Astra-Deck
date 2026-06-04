@@ -128,7 +128,7 @@ function entryPassesFilters(entry, filters) {
     return true;
 }
 // Lookup a schema entry by storage key. Lazily memoised because the
-// schema is frozen and ~354 entries — a Map keyed by `key` keeps the
+// schema is frozen and ~360 entries — a Map keyed by `key` keeps the
 // per-toggle filter check at O(1).
 let _schemaIndex = null;
 function getSchemaIndex() {
@@ -2078,7 +2078,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
     } else if (entry.type === 'array' || entry.type === 'object') {
         // v4.41.0: array / object JSON editor. The schema overview
         // can now edit every type — closes the editor coverage from
-        // ~340 to 354 schema keys. The editor renders the current
+        // ~340 to all schema keys. The editor renders the current
         // value via JSON.stringify(value, null, 2) and persists on
         // commit (change/blur) via JSON.parse. If parse fails the
         // row shows a parse-error pill below the textarea and skips

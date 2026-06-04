@@ -31,6 +31,7 @@ release-level details live in `CHANGELOG.md`.
 - On-demand yt-dlp self-update endpoint and popup action.
 - On-demand Astra Downloader companion self-update endpoint and popup action.
 - Nested subscription groups with depth-2 JSON import/export.
+- Dead-channel subscription detection with 30-day unsubscribe staging and undo.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -87,6 +88,11 @@ carry only open work.
 - [x] Nested subscription groups (NF2) — `subscriptionGroupData` now supports
   depth-2 `parentId` records, schema v2 export/import, parent filters that union
   child group channels, and toolbar child chips plus `+ Subgroup` creation.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Dead-channel detection + bulk unsubscribe staging — rendered subscription
+  cards now flag channels whose newest visible upload is at least 365 days old,
+  and `subscriptionUnsubscribeStagingData` records staged review entries with a
+  30-day undo window instead of directly clicking unsubscribe controls.
   *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
