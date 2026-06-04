@@ -58,6 +58,9 @@ release-level details live in `CHANGELOG.md`.
 - Cobalt fallback failures now write an actionable `DiagnosticLog`
   `cobalt-fallback` entry with origin-only endpoint context and remediation
   steps when Astra Downloader is offline.
+- Long-session route/mutation stress now has a deterministic regression test
+  covering shared observer count, scoped-rule early exits, capped diagnostics,
+  and route listener / observer cleanup.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript

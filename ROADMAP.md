@@ -254,12 +254,19 @@ phased feature plan) is preserved at
     Downloader. A hardening test pins the origin-only formatter and remediation
     text.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
-- [ ] P3 — Add a long-session memory-leak test (G3)
+- [x] P3 — Add a long-session memory-leak test (G3)
   - Why: rich grid cards recycle aggressively; observer/diagnostic growth needs a
     standing regression guard.
   - Touches: `tests/`.
   - Acceptance: a long-session test shows bounded observer work and no unbounded
     diagnostics maps.
+  - Status 2026-06-04: delivered. `tests/long-session.test.js` now loads the
+    real `core/navigation.js` and `core/diagnostic-log.js` modules in a stubbed
+    DOM/timer/RAF/MutationObserver harness, simulates 1000 route changes and
+    mutation batches, asserts the shared observer count stays flat, scoped rules
+    only run for matching rich-grid card additions, the diagnostic ring and
+    per-context counter map stay capped, and all route listeners / observers
+    disconnect after cleanup.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
 
 > Open decisions carried forward: downloader signing budget, CWS/AMO submission
