@@ -37,16 +37,21 @@ cleanup they agree at v4.46.0.
 
 ### Browser-Bounded Captures
 
-- [ ] P0 — Capture YouTube liquid-glass player chrome (HARDENING H21, EI9)
+- [x] P0 — Capture YouTube liquid-glass player chrome (HARDENING H21, EI9)
   - Why: the watch-page player redesign (`.ytp-delhi-modern`, action pills,
     overflow panels, bottom controls) is high-churn; large player UI work needs
     a fresh capture-backed selector set.
   - Touches: `mhtml/`, `extension/core/selector-packs/`, critical selector set.
   - Acceptance: the watch-page fixture is refreshed and liquid-glass selectors
-    are promoted into the critical selector set. _(Partial 2026-06-04: DOM probe
-    confirmed and promoted `ytp-delhi-modern`, `ytp-overflow-panel`, and
-    `ytp-time-wrapper-delhi`; full watch-page MHTML capture still times out under
-    DevTools automation and needs a manual/stable-browser save path.)_
+    are promoted into the critical selector set. _(Delivered 2026-06-04:
+    `scripts/capture-watch-mhtml.js` added a stopped-loading Chrome Stable CDP
+    capture path after plain `Page.captureSnapshot` timed out at 70s. The
+    refreshed local `mhtml/WatchPage.mhtml` from `jNQXAC9IVRw` regenerated
+    `tests/fixtures/yt-watch.tokens.txt` and
+    `tests/fixtures/selector-surface-matches.json`; the fixture now proves
+    `ytp-delhi-modern`, `ytp-overflow-panel`, and `ytp-time-wrapper-delhi`.
+    `ytp-action-pill` / `ytp-actions-container` remain unmatched fallback
+    watchlist entries for rollout variants not present in this capture.)_
   - Source: ROADMAP.md Active Backlog (Browser-Bounded Captures)
 - [ ] P2 — MHTML capture-week expansion (EI15 + NF19)
   - Why: Shorts, channel, search, history, watch-later, embedded player, and

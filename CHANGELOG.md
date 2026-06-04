@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Liquid-glass watch-page capture unblocked.** Added
+  `scripts/capture-watch-mhtml.js` and `npm run capture:watch`, which launches
+  Chrome Stable with a temporary profile, waits for `ytd-watch-flexy`,
+  `#movie_player`, and `.ytp-delhi-modern`, stops page loading, then captures
+  `mhtml/WatchPage.mhtml` with CDP. The refreshed ignored capture regenerated
+  `yt-watch.tokens.txt` and `selector-surface-matches.json`, proving
+  `ytp-delhi-modern`, `ytp-overflow-panel`, and `ytp-time-wrapper-delhi` from a
+  current watch page.
+
 - **Return YouTube Dislike estimate disclosure.** Successful RYD renders now
   show a compact `est.` affordance next to the restored count, with tooltip and
   `aria-label` copy explaining that counts are estimates after YouTube removed
@@ -248,8 +257,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **H21 liquid-glass selector canaries.** A 2026-06-04 headful Chrome DOM probe
   confirmed YouTube's current player root uses `ytp-delhi-modern`, with
   `ytp-overflow-panel` and `ytp-time-wrapper-delhi` present in the live DOM.
-  Those three selectors are now release-blocking canaries. Full watch-page
-  MHTML capture remains gated because DevTools MHTML snapshots time out.
+  Those three selectors are now release-blocking canaries. Follow-up work added
+  the stopped-loading Chrome Stable MHTML capture helper and refreshed the
+  committed watch fixture from the new chrome.
 
 - **Deep audit hardening pass (H26).** Repo-wide principal-engineer audit
   across every surface — service worker, popup, core modules, the `ytkit.js`

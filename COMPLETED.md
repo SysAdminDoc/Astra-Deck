@@ -48,6 +48,9 @@ package versions; the live product-version sources currently agree at v4.46.0.
   bounded real YouTube media download.
 - Selector fixture regeneration now emits a DOM-match report for live-chat and
   liquid-glass player-chrome selector chains.
+- Liquid-glass watch-page capture now has a reusable stopped-loading Chrome
+  Stable CDP helper (`npm run capture:watch`), and the refreshed watch fixture
+  proves the Delhi player shell, overflow panel, and time-wrapper selectors.
 - Firefox programmatic-injection pre-flight now blocks future `executeScript`
   call sites until `moz-extension://` behavior is audited.
 - Flask `/download` now rejects client-supplied yt-dlp argv/flag fields and
