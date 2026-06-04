@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **EI-NEW5 video hider channel-key cache.** Blocked-channel records now keep
+  a precomputed identity-key `Set`, so per-card feed filtering checks direct
+  key membership instead of rescanning every blocked channel record.
+
 - **EI-NEW1 chatStyleComments selector fallback.** The reply-dialog
   `:has()` rule is now explicitly fenced with `@supports selector(:has(*))`,
   with a no-`:has()` fallback that uses the existing `.ytkit-replying` class to

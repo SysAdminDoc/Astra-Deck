@@ -4949,8 +4949,9 @@ return response;
                     videoHider._allowedSet = new Set(allowedVideos);
                 }
                 if (filteredChanges[STORAGE_KEYS.blockedChannels]) {
-                    videoHider._channelsCache = videoHider._normalizeBlockedChannels?.(filteredChanges[STORAGE_KEYS.blockedChannels].newValue || [])
+                    const channels = videoHider._normalizeBlockedChannels?.(filteredChanges[STORAGE_KEYS.blockedChannels].newValue || [])
                         || [];
+                    videoHider._setBlockedChannelCache?.(channels);
                 }
                 if (videoHider._initialized) {
                     try { videoHider._processAllVideos?.(); } catch (error) {
@@ -15618,6 +15619,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _allowedSet: null,
             _allowedList: null,
             _channelsCache: null,
+            _channelKeyCache: null,
             _removedVideoNodes: [],
             _subsBannerCollapsed: false,
             _subsLoadState: {
@@ -15973,11 +15975,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _normalizeBlockedChannels(channels) {
                 return sanitizeImportedBlockedChannels(Array.isArray(channels) ? channels : []);
             },
+            _setBlockedChannelCache(channels) {
+                const cachedChannels = Array.isArray(channels) ? channels : [];
+                const keyCache = new Set();
+                for (const channel of cachedChannels) {
+                    this._getChannelIdentityKeys(channel).forEach(key => keyCache.add(key));
+                }
+                this._channelsCache = cachedChannels;
+                this._channelKeyCache = keyCache;
+                return cachedChannels;
+            },
             _getBlockedChannels() {
                 if (this._channelsCache === null) {
                     const stored = storageRead(this._CHANNELS_KEY, []);
                     const sanitized = this._normalizeBlockedChannels(stored);
-                    this._channelsCache = sanitized;
+                    this._setBlockedChannelCache(sanitized);
                     try {
                         if (JSON.stringify(stored) !== JSON.stringify(sanitized)) storageWrite(this._CHANNELS_KEY, sanitized);
                     } catch (error) {
@@ -15988,8 +16000,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _setBlockedChannels(channels) {
                 const sanitized = this._normalizeBlockedChannels(channels);
-                this._channelsCache = sanitized;
+                this._setBlockedChannelCache(sanitized);
                 storageWrite(this._CHANNELS_KEY, sanitized);
+            },
+            _getBlockedChannelKeys() {
+                if (this._channelKeyCache === null) this._getBlockedChannels();
+                return this._channelKeyCache || new Set();
             },
             _getChannelIdentityKeys(channelInfo) {
                 return getBlockedChannelIdentityKeys(channelInfo);
@@ -16001,9 +16017,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             _isChannelBlocked(channelInfo) {
                 if (!channelInfo) return false;
-                const keys = new Set(this._getChannelIdentityKeys(channelInfo));
-                if (keys.size === 0) return false;
-                return this._getBlockedChannels().some(channel => this._getChannelIdentityKeys(channel).some(key => keys.has(key)));
+                const keys = this._getChannelIdentityKeys(channelInfo);
+                if (keys.length === 0) return false;
+                const blockedKeys = this._getBlockedChannelKeys();
+                return keys.some(key => blockedKeys.has(key));
             },
             _addBlockedChannel(channelInfo) {
                 const record = normalizeBlockedChannelRecord({
