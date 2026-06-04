@@ -7442,6 +7442,31 @@ test('v4.46.0 pytest.ini pins asyncio_default_fixture_loop_scope', () => {
         'pytest.ini must set asyncio_default_fixture_loop_scope = function');
 });
 
+test('v4.46.0 validate workflow provisions Qt offscreen runtime for downloader tests', () => {
+    // GitHub's Ubuntu runners do not ship the PyQt6 runtime libraries
+    // Astra Downloader needs at module import time. Keep the workflow
+    // explicitly provisioning those packages so the Python job fails with
+    // an actionable preflight message instead of a collection-time
+    // ImportError such as "libEGL.so.1: cannot open shared object file".
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'validate.yml'), 'utf8'
+    );
+    assert.match(workflow, /QT_QPA_PLATFORM:\s*offscreen/,
+        'validate.yml Python job must run Qt under the offscreen platform');
+    assert.match(workflow, /ASTRA_DOWNLOADER_NO_BOOTSTRAP:\s*["']1["']/,
+        'validate.yml must disable runtime bootstrap during CI dependency checks');
+    assert.match(workflow, /sudo apt-get install[\s\S]*libegl1/,
+        'validate.yml must install libegl1 so PyQt6 can load libEGL.so.1');
+    assert.match(workflow, /sudo apt-get install[\s\S]*libxcb-cursor0/,
+        'validate.yml must install Qt xcb support libraries for PyQt6 wheels');
+    assert.match(workflow, /python -m pip install pytest pytest-asyncio pytest-qt/,
+        'validate.yml must install pytest plugins that own pytest.ini config keys');
+    assert.match(workflow, /Verify PyQt Runtime[\s\S]*PyQt6 runtime unavailable/,
+        'validate.yml must run a clear PyQt runtime preflight before pytest');
+    assert.match(workflow, /python -m pytest astra_downloader/,
+        'validate.yml must still run the full downloader pytest suite');
+});
+
 test('v4.47.0 NF7 — array schema entries with knownValues render checkbox grids', () => {
     // NF7: the array-type editor was a raw JSON textarea, which is
     // power-user-only UX for the four hidden* entries whose tokens
