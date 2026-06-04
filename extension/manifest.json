@@ -157,6 +157,7 @@
         "features/wave-8-css/index.js",
         "features/home-subs-css/index.js",
         "features/chat-style-comments/index.js",
+        "features/sticky-video/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -231,6 +232,7 @@
         "features/wave-8-css/index.js",
         "features/home-subs-css/index.js",
         "features/chat-style-comments/index.js",
+        "features/sticky-video/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
