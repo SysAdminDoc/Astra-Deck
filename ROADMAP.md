@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 18 - 2026-06-04.
+> Last researched: Cycle 19 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,70 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 19 - 2026-06-04)
+
+- [x] 🔬 `codeql-code-scanning-gate-2026-06-04` - inspected current
+  workflows, code-scanning default setup, extension trust boundaries, Python
+  companion subprocess/Flask paths, and current static-analysis docs. Detailed
+  notes live in `docs/research-cycle-19-code-scanning.md`.
+- [ ] P1 - 🔬🤖 Enable CodeQL code scanning for JavaScript extension code and the Python companion
+  - Why: Astra Deck now has dependency audit, secret scanning, release
+    provenance, no-eval checks, and security-disclosure planning, but it still
+    has no semantic code-scanning gate for the actual extension/companion code.
+    That leaves privileged message passing, DOM/TrustedHTML sinks, external
+    fetch proxying, local Flask routes, subprocess/update paths, and loopback
+    token handling covered mainly by bespoke tests and manual review instead of
+    GitHub Security-tab alerts.
+  - Evidence: `.github/workflows/validate.yml:19` grants only `contents: read`
+    and contains JS, Python dependency-audit, and Python test jobs but no
+    CodeQL/code-scanning job. `rg --files .github` lists no
+    `.github/workflows/codeql*.yml`. `gh api
+    repos/SysAdminDoc/Astra-Deck/code-scanning/default-setup --jq .` returns
+    `state: not-configured` with detected `javascript`,
+    `javascript-typescript`, and `python` languages, and
+    `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/alerts?state=open`
+    returns 404 `no analysis found`. Security-sensitive surfaces include
+    `extension/background.js:151` / `extension/background.js:459` /
+    `extension/background.js:523` / `extension/background.js:581`,
+    `extension/manifest.json:25` / `extension/manifest.json:31` /
+    `extension/manifest.json:263`, `extension/ytkit.js:5193`,
+    `extension/ytkit.js:28939`, `extension/ytkit.js:31157`,
+    `astra_downloader/astra_downloader.py:87`,
+    `astra_downloader/astra_downloader.py:1496`,
+    `astra_downloader/astra_downloader.py:2552`, and
+    `astra_downloader/astra_downloader.py:2813`. GitHub docs say CodeQL
+    advanced setup can matrix languages and add Python after initial setup, and
+    the built-in `security-extended` suite adds additional security queries
+    beyond `default` (https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options,
+    https://docs.github.com/en/enterprise-cloud@latest/code-security/concepts/code-scanning/codeql/codeql-query-suites).
+    [Verified]
+  - Touches: `.github/workflows/codeql.yml` or equivalent, optional
+    `.github/codeql.yml`, `docs/repo-settings.md`, branch-protection required
+    checks / ruleset settings if the CodeQL job is made required, and
+    `RESEARCH_REPORT.md` / release checklist notes after the gate is proven.
+  - Acceptance: a CodeQL workflow scans `javascript` and `python` on PRs,
+    pushes to `main`, and a weekly schedule; uses
+    `github/codeql-action/init` / `analyze` with least-privilege permissions
+    (`contents: read`, `security-events: write`, `actions: read` only if
+    needed); selects `security-extended` or a documented `security-and-quality`
+    tradeoff; excludes `node_modules`, `build`, `mhtml`, `archive`, and
+    generated release artifacts; runs without building or mutating release
+    assets; uploads alerts to GitHub code scanning; records baseline findings
+    and triage policy in docs; and, after at least one clean run, either adds
+    the exact CodeQL check name to required status checks or records why it
+    remains advisory-only.
+  - Verify: `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/default-setup --jq
+    .state` is no longer `not-configured` or the advanced setup workflow has a
+    successful run; `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/alerts
+    --jq length` no longer returns `no analysis found`; `gh run list --workflow
+    "CodeQL"` shows a green run on `main`; the Security -> Code scanning page
+    shows JavaScript and Python analyses; `rg -n "security-events: write|queries:
+    security-extended|language:|javascript|python" .github/workflows
+    .github/codeql.yml docs/repo-settings.md` proves the intended contract; and
+    a seeded harmless fixture or local CodeQL dry run proves the workflow fails
+    or reports when a relevant test query fires.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 18 - 2026-06-04)
 
