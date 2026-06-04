@@ -548,7 +548,7 @@ means implemented/closed by the build lane.
     `pytest-asyncio` / `pytest-qt` so `pytest.ini` config keys are owned, and
     runs a PyQt runtime preflight before pytest with a GitHub error annotation
     for missing `libEGL` / xcb support libraries.
-- [ ] 🔬🤖 P1 — Publish a v4.46+ release catch-up with checksums and provenance
+- [x] 🔬🤖 P1 — Publish a v4.46+ release catch-up with checksums and provenance
   - Why: the source tree and generated build artifacts are on v4.46.0, but
     `https://github.com/SysAdminDoc/Astra-Deck/releases/latest` still serves
     v4.5.2. Users following README "latest release" links miss the profile-split
@@ -593,6 +593,17 @@ means implemented/closed by the build lane.
     attested, and companion `/update` hash verification against the published
     `.sha256` sidecar.
   - Complexity: M
+  - Status 2026-06-04: delivered as
+    `https://github.com/SysAdminDoc/Astra-Deck/releases/tag/v4.46.0`. The public
+    release targets `ac6a3633165547bbb0358191e43fe2038dbfbf73`, is the latest
+    release, and attaches 12 assets: eight profile-split extension artifacts,
+    userscript, CycloneDX npm SBOM, `release-manifest.json`, and `SHA256SUMS`.
+    Local digest comparison verified every uploaded GitHub release asset against
+    the local files / `SHA256SUMS`. The tag `Build & Release` run
+    `26951406026` passed and produced CI build/SBOM attestations for CI-built
+    artifacts; public CRX assets intentionally remain local-signed with
+    `ytkit.pem`, so `gh release verify-asset` is not expected to validate those
+    local release assets.
 
 ### Researcher Queue (Cycle 7 - 2026-06-04)
 
