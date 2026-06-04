@@ -13,6 +13,31 @@ const fs = require('fs');
 const path = require('path');
 const { sources, config, extractFeatureBlock } = require('../helpers/source');
 
+const MODULE_PATH = '../../extension/features/sticky-video/index.js';
+
+function loadModule() {
+    const originalFeatures = globalThis.YTKitFeatures;
+    delete require.cache[require.resolve(MODULE_PATH)];
+    globalThis.YTKitFeatures = {};
+    const mod = require(MODULE_PATH);
+    const exported = globalThis.YTKitFeatures.stickyVideo;
+    globalThis.YTKitFeatures = originalFeatures;
+    return { mod, exported };
+}
+
+function extractTemplate(block, name) {
+    const tick = String.fromCharCode(96);
+    const needle = 'const ' + name + ' = ';
+    const start = block.indexOf(needle);
+    assert.ok(start > -1, 'stickyVideo block must declare ' + name);
+    const open = block.indexOf(tick, start + needle.length);
+    assert.ok(open > -1, name + ' must be a template literal fallback');
+    for (let i = open + 1; i < block.length; i++) {
+        if (block[i] === tick && block[i - 1] !== '\\') return block.slice(open + 1, i);
+    }
+    throw new Error('unterminated template literal: ' + name);
+}
+
 test('Theater Split userscript companion is present at v1.0.7 or later', () => {
     // The v3.20.3 H8 hardening pass closed a divider-drag SPA-nav
     // memory leak in v1.0.7. Make sure the shipped userscript hasn't
@@ -34,6 +59,53 @@ test('stickyVideo + scoped CSS rules exist in the extension build', () => {
     // check that the inline path is still wired.
     assert.match(sources.ytkit, /stickyVideo/,
         'stickyVideo feature flag must exist in ytkit.js');
+});
+
+test('stickyVideo module exports the Theater Split style builders', () => {
+    const { mod, exported } = loadModule();
+    assert.equal(typeof mod.buildSplitShellCss, 'function');
+    assert.equal(typeof mod.buildSplitMetaCss, 'function');
+    assert.equal(typeof mod.buildSplitCommentsCss, 'function');
+    assert.deepEqual(mod.STYLE_IDS, {
+        shell: 'stickyVideo',
+        meta: 'stickyVideo-meta-layout',
+        comments: 'stickyVideo-comments'
+    });
+    assert.equal(typeof exported.buildSplitShellCss, 'function');
+});
+
+test('stickyVideo style builders preserve the monolith fallback CSS', () => {
+    const { mod } = loadModule();
+    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+
+    assert.equal(mod.buildSplitShellCss(), extractTemplate(block, 'css'));
+    assert.equal(mod.buildSplitMetaCss(), extractTemplate(block, 'splitMetaCss'));
+    assert.equal(mod.buildSplitCommentsCss(), extractTemplate(block, 'splitCommentsCss'));
+});
+
+test('stickyVideo monolith delegates style payloads through the feature module', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+    assert.match(block, /globalThis\.YTKitFeatures && globalThis\.YTKitFeatures\.stickyVideo/,
+        'ytkit.js must read the stickyVideo feature namespace');
+    for (const builder of [
+        'buildSplitShellCss',
+        'buildSplitMetaCss',
+        'buildSplitCommentsCss'
+    ]) {
+        assert.match(block, new RegExp('stickyVideoFeatures\\.' + builder),
+            'ytkit.js must delegate to ' + builder + ' when the module is loaded');
+    }
+});
+
+test('stickyVideo module loads before ytkit.js in content scripts', () => {
+    for (const scriptGroup of config.manifest.content_scripts) {
+        const scripts = scriptGroup.js || [];
+        const ytkitIndex = scripts.indexOf('ytkit.js');
+        if (ytkitIndex === -1) continue;
+        const moduleIndex = scripts.indexOf('features/sticky-video/index.js');
+        assert.ok(moduleIndex > -1, 'manifest content script must include sticky-video module');
+        assert.ok(moduleIndex < ytkitIndex, 'sticky-video module must load before ytkit.js');
+    }
 });
 
 test('stickyVideo chat observer lifecycle uses one teardown path (NF32)', () => {

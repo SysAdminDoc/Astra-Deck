@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Top-3 peel seed: stickyVideo styles.** Added
+  `features/sticky-video/index.js` with the Theater Split shell/meta/comments
+  style builders, wired the module into MV3 and userscript load order, and made
+  the monolith prefer the module while keeping inline fallback CSS byte-pinned.
+
 - **Top-3 peel: chatStyleComments runtime.** The Studio Comments module now owns
   comment normalization, reply-dialog styling, selection guarding, mutation
   scheduling, and teardown; `ytkit.js` instantiates that runtime and keeps the
