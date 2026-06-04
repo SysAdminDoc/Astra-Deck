@@ -4762,6 +4762,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/features/home-subs-css/index.js',
         'extension/features/chat-style-comments/index.js',
         'extension/features/sticky-video/index.js',
+        'extension/features/video-hider/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     for (const mod of expectedModules) {
@@ -4807,6 +4808,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
         'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
         'features/sticky-video/index.js':       'function buildSplitShellCss()',
+        'features/video-hider/index.js':        'function createHideVideosFromHomeFeature',
         'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
     };
     for (const [mod, fingerprint] of Object.entries(fingerprints)) {
@@ -4848,6 +4850,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/home-subs-css/index.js',
         'extension/features/chat-style-comments/index.js',
         'extension/features/sticky-video/index.js',
+        'extension/features/video-hider/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     assert.deepEqual(bundleOrder, expectedOrder,
