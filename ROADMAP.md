@@ -118,12 +118,17 @@ phased feature plan) is preserved at
     locale bundles include the seeded feature keys with quick-toggle
     translations reused where they already existed.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P3 — Store-safe vs GitHub-full separate build artifacts
+- [x] P3 — Store-safe vs GitHub-full separate build artifacts
   - Why: download / ad-skip / Cobalt features may require GitHub-full only; a
     single artifact risks store-policy rejection.
   - Touches: `build-extension.js`, policy-profile, release packaging.
   - Acceptance: store-safe and GitHub-full artifacts are generated separately
-    from one source of truth.
+    from one source of truth. _(Delivered 2026-06-04: `build-extension.js`
+    now derives store-safe and GitHub-full manifest host grants / CSP from the
+    data-flow catalogue, emits profile-named Chrome and Firefox artifacts by
+    default, supports `--profile store-safe|github-full|both`, and the
+    GitHub-full manifest/proxy path now includes Cobalt while the store-safe
+    build strips AI, Cobalt, and local-loopback hosts.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 
 ### Hardening And Cross-Browser

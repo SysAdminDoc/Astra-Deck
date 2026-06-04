@@ -37,6 +37,9 @@ release-level details live in `CHANGELOG.md`.
 - Study / Work export to Markdown and CSV from local watch/bookmark state.
 - Feature-definition names and descriptions now route through generated i18n
   keys in all locale bundles before falling back to inline English.
+- Store-safe and GitHub-full release artifacts are generated separately from the
+  data-flow catalogue, with full-only AI, Cobalt, and loopback grants stripped
+  from store-safe packages.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -111,6 +114,11 @@ carry only open work.
   Watch Time Tracker totals, current Digital Wellbeing state, Focused Mode state,
   and timestamp bookmarks with deep links as Markdown or CSV. *(Delivered
   2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Store-safe vs GitHub-full separate build artifacts — `build-extension.js`
+  now emits profile-named Chrome/Firefox packages from the shared source tree,
+  deriving host permissions and CSP from `core/data-flow.js`; store-safe strips
+  AI, Cobalt, and local-loopback grants while GitHub-full retains them.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 
