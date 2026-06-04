@@ -13,26 +13,32 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 7 - 2026-06-04.
+> Last researched: Cycle 8 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
-This roadmap is fed continuously by the research machine. On every pass, the
-build machine should:
+This roadmap is fed continuously by an automated research machine. On every
+pass, the implementing machine should:
 
-1. Start with the next unchecked item that is not marked `🔧` or otherwise
-   externally gated.
-2. Re-read the row's evidence, acceptance criteria, and source links before
-   changing code; avoid reopening archived dossier items unless live source or
-   current external policy makes them newly actionable.
-3. Implement only the smallest coherent slice needed to satisfy the row, then
-   update `ROADMAP.md`, `COMPLETED.md`, and `CHANGELOG.md` when it ships.
-4. Use the existing Node 22 gate as the verification floor:
+1. `git pull --rebase` to get the latest researched items before starting.
+2. Work the open 🤖 items top-down by priority (P0 -> P3). Build them properly:
+   multi-file structure, real error handling, no runtime auto-install hacks,
+   version strings synced, docs/CHANGELOG updated in the same commit.
+3. In ADDITION to building items, run a FULL UX AUDIT each pass -- do not skip
+   it even when the queue is full. Walk every screen / page / dialog / form /
+   table / empty-loading-error-disabled state across light/dark/high-contrast
+   themes. Check: onboarding, navigation clarity, spacing/contrast/alignment,
+   clipping/overflow, hierarchy, microcopy, destructive-action guards,
+   keyboard + screen-reader accessibility, and trust signals. Fix what you
+   find, or file it back as a new 🤖 roadmap item if it is larger than a pass.
+4. Check off ✅ each item you complete (leave it in place with the checkmark),
+   commit per logical change with a "why" message, and push.
+5. Never edit this Implementer Instructions block or the 🔬 Researcher Queue
+   headings -- the research machine owns those. Never force-push.
+6. Use the existing Node 22 gate as the verification floor:
    `npm run check`, `npm test`, `npm run build`, `node sync-userscript.js`, and
    targeted Python downloader tests for companion changes.
-5. Keep browser-bounded work evidence-backed. Selector rows should land with
-   refreshed `mhtml/` fixtures or a documented manual browser-capture blocker.
-6. Preserve the profile split: store-safe artifacts must keep AI, Cobalt, and
+7. Preserve the profile split: store-safe artifacts must keep AI, Cobalt, and
    loopback grants stripped while GitHub-full keeps the complete data-flow
    catalogue.
 
@@ -320,6 +326,91 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 8 - 2026-06-04)
+
+- [x] 🔬 `cycle-8-ci-release-trust-2026-06-04` - inspected current
+  `origin/main`, recent GitHub Actions runs, release assets, profile-split build
+  outputs, companion checksum verification, signing-key policy, and primary
+  Qt/GitHub/npm/Mozilla/Chrome supply-chain docs. Detailed notes live in
+  `docs/research-cycle-8-ci-release-integrity.md`.
+- [ ] 🔬🤖 P0 — Restore green GitHub Validate for Python downloader tests
+  - Why: every recent push on `main` is failing the `Validate` workflow even
+    though the JS job is green; release and roadmap-drain confidence are now
+    gated by a Python collection error, not by product behavior.
+  - Evidence: `gh run list --workflow Validate --limit 12` returned 12
+    consecutive failures on 2026-06-04. The latest run
+    `https://github.com/SysAdminDoc/Astra-Deck/actions/runs/26946855242`
+    shows `Python downloader tests` failing during collection with
+    `ImportError: libEGL.so.1: cannot open shared object file` after
+    `astra_downloader/astra_downloader.py` imports `PyQt6.QtWidgets` at module
+    import time. `.github/workflows/validate.yml` installs Python packages and
+    runs `python -m pytest astra_downloader` without Linux Qt/X11/OpenGL system
+    libraries or an offscreen/Xvfb wrapper. Qt's Linux requirements document
+    lists xcb platform-plugin dependencies and OpenGL dependencies for Qt GUI /
+    Widgets on Linux (https://doc.qt.io/qt-6/linux-requirements.html). [Verified]
+  - Touches: `.github/workflows/validate.yml`, possibly
+    `.github/workflows/build.yml`, `pytest.ini`,
+    `astra_downloader/astra_downloader.py`, and
+    `astra_downloader/test_astra_downloader.py`.
+  - Acceptance: the Python CI job collects and runs the full downloader test
+    suite on `ubuntu-latest`; the job either installs the minimal Qt runtime
+    libraries (`libegl1` / xcb / xkbcommon family as needed) and runs GUI tests
+    under `QT_QPA_PLATFORM=offscreen` or `xvfb-run`, or lazy-loads GUI imports so
+    API-only tests do not require Qt platform libraries. Existing `qt_api` /
+    asyncio pytest config warnings are removed or pinned by an installed plugin
+    set. A future missing-Qt-runtime regression fails with a clear workflow
+    message rather than an import-time crash.
+  - Verify: push or dispatch `Validate`, then confirm both jobs pass with
+    `gh run view <run-id> --json jobs`; locally run
+    `python -m pytest astra_downloader` and the existing `npm test` /
+    `npm run check` gates.
+  - Complexity: S
+- [ ] 🔬🤖 P1 — Publish a v4.46+ release catch-up with checksums and provenance
+  - Why: the source tree and generated build artifacts are on v4.46.0, but
+    `https://github.com/SysAdminDoc/Astra-Deck/releases/latest` still serves
+    v4.5.2. Users following README "latest release" links miss the profile-split
+    v4.46.0 artifacts and dozens of shipped hardening/features; the companion
+    updater also expects `AstraDownloader.exe.sha256`, while the release workflow
+    currently uploads `build/*` without an explicit release manifest, checksum
+    sidecars, SBOM attachment, or artifact attestation step.
+  - Evidence: `package.json` / `extension/manifest.json` are v4.46.0; local
+    `build/` contains eight profile-split v4.46.0 extension artifacts; `gh
+    release view --json tagName,assets` reports latest release `v4.5.2` from
+    2026-05-21 with only five legacy assets; `.github/workflows/build.yml`
+    uploads `build/*` via `gh release create ... --generate-notes`; companion
+    update code fetches
+    `https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256`;
+    GitHub release assets expose SHA-256 `digest` fields
+    (https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28);
+    GitHub supports artifact and SBOM attestations through `actions/attest`
+    (https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations);
+    `npm sbom` can emit SPDX or CycloneDX SBOMs
+    (https://docs.npmjs.com/cli/commands/npm-sbom/); Mozilla requires signed
+    add-ons for default Firefox release/beta installs and supports signing
+    self-distributed WebExtensions with `web-ext sign`
+    (https://devdoc.net/web/developer.mozilla.org/en-US/docs/Mozilla/Add-ons/Distribution.html).
+    [Verified]
+  - Touches: release checklist/docs, `.github/workflows/build.yml`,
+    `build-extension.js` or a new release-manifest script, README release
+    instructions, `docs/signing-keys.md`, and companion release packaging if
+    `AstraDownloader.exe` is attached.
+  - Acceptance: after the P0 CI fix, the latest GitHub release tag matches the
+    live product version, includes all eight store-safe/GitHub-full Chrome and
+    Firefox artifacts plus userscript and companion assets when present, and
+    attaches a machine-readable `SHA256SUMS` / release manifest with file name,
+    size, profile, browser, version, and SHA-256 for every asset. If artifacts
+    are CI-built, the workflow grants `id-token: write` and `attestations: write`
+    and creates release/SBOM attestations that `gh release verify-asset` can
+    validate. If CRX/XPI must remain maintainer-local because of `ytkit.pem`,
+    `docs/signing-keys.md` and the release checklist explicitly document that
+    path and require local checksum sidecars before upload.
+  - Verify: `node scripts/check-versions.js --tag <version>`,
+    `npm run build:userscript`, checksum-manifest generation, `gh release view
+    <tag> --json assets`, `gh release verify-asset <tag> <asset>` where
+    attested, and companion `/update` hash verification against the published
+    `.sha256` sidecar.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 7 - 2026-06-04)
 

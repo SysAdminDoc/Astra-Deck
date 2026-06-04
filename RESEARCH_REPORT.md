@@ -18,6 +18,13 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 8 CI/release-integrity pass on 2026-06-04 found two
+  non-duplicate delivery risks: `Validate` is red on `main` because the Python
+  downloader job fails test collection on Ubuntu with missing `libEGL.so.1`
+  during PyQt6 import, and the public latest GitHub release is still v4.5.2 while
+  the source tree/build outputs are v4.46.0. ROADMAP now carries a P0 CI-recovery
+  item plus a P1 release catch-up / checksum / provenance item, with detailed
+  evidence in `docs/research-cycle-8-ci-release-integrity.md`.
 - [Verified] Cycle 2 refresh on 2026-06-04 fetched and compared `origin/main`
   (`git rev-list --left-right --count HEAD...@{u}` returned `0 0`) after the
   selector-capture implementation landed separately on the build lane. The
@@ -178,28 +185,33 @@ yt-dlp companion downloader. [Verified] It carries a 362-key flat settings schem
 strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
 deps audit, plus a build/release workflow). [Verified]
 
-The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
-against YouTube's high-velocity redesigns, (2) **store-policy / trust surface**
-from a broad permission and host set mitigated by profile-split artifacts,
-(3) **upgrade data-safety** for the 362-key schema, and (4) **version-surface confusion** —
-the product ships as 4.46.0 while older docs described an internal
-planning-track "v5.0.0 foundation complete" and v5/v6 plan.
+The engineering arc is sound; the dominant risks are (1) **CI/release-channel
+drift** because `Validate` is currently red and public latest release still
+serves v4.5.2, (2) **runtime DOM churn** against YouTube's high-velocity
+redesigns, (3) **store-policy / trust surface** from a broad permission and host
+set mitigated by profile-split artifacts, and (4) **upgrade data-safety** for
+the 362-key schema.
 
 Top remaining opportunities (one-liners):
 
-1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+1. Restore green GitHub `Validate` for Python downloader tests by fixing the
+   Ubuntu PyQt6 / Qt runtime collection failure. [Verified]
+2. Publish a v4.46+ release catch-up with all profile-split artifacts, checksum
+   manifest/sidecars, and release provenance or a documented local-signing
+   exception. [Verified]
+3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-2. MHTML capture-week expansion across Shorts, channel, search, history,
+4. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-3. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-4. Locale proofing queue for identical-to-English feature names/descriptions in
+6. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-5. Signed Astra Downloader installer/MSI once the signing budget and submission
+7. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -224,6 +236,11 @@ Top remaining opportunities (one-liners):
 - `.github/workflows/build.yml`, `validate.yml`, and `yt-dlp-smoke.yml` (test +
   check gate, tag-driven release with version-surface verification, and monthly
   `workflow_dispatch` yt-dlp extractor smoke). [Verified]
+- GitHub Actions run `26946855242` and `gh run list --workflow Validate --limit
+  12` (12 consecutive `Validate` failures on `main`; latest failure is Python
+  test collection importing PyQt6 without `libEGL.so.1`). [Verified]
+- Latest GitHub release `v4.5.2` vs local v4.46.0 build outputs (eight
+  profile-split artifacts in `build/`). [Verified]
 - `tests/` (19 spec files incl. hardening, selector-regression,
   settings-migration-roundtrip, userscript-parity). [Verified]
 - `docs/architecture.md`, `docs/cws-submission-checklist.md`,
@@ -232,7 +249,8 @@ Top remaining opportunities (one-liners):
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
   Chrome Web Store MV3 program policy; AMO Firefox MV3; WCAG 2.2 AA; yt-dlp
-  cookie-handling advisories. [Verified, external]
+  cookie-handling advisories; Qt Linux runtime requirements; GitHub release asset
+  digests and artifact/SBOM attestations; npm SBOM. [Verified, external]
 
 ## Current Product Map
 
@@ -303,6 +321,16 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 
 Current open risk:
 
+- **[Critical] Red CI on `main`.** The latest 12 `Validate` workflow runs failed;
+  the current failure is Python test collection importing `PyQt6.QtWidgets`
+  without Linux `libEGL.so.1`. JS validation is green, so this is an environment
+  or import-boundary problem rather than a failing product assertion. → ROADMAP
+  P0 CI recovery. [Verified]
+- **[High] Release-channel lag.** Source/docs/build outputs are v4.46.0, but the
+  public latest GitHub release remains v4.5.2 and README links users to that
+  latest-release URL. The v4.46 profile split and companion checksum contract are
+  therefore not available to users through the documented install path. →
+  ROADMAP P1 release catch-up / checksums / provenance. [Verified]
 - **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
   but no `web-ext lint` or clean-profile Firefox MV3 load gate exercises the
   artifact before AMO or self-distributed Firefox updates. → ROADMAP P1 Firefox
@@ -361,7 +389,10 @@ Closed since the 2026-06-03 baseline:
   fallbacks after peeling — intentional, not dead, but a long-tail cleanup target. [Likely]
 - **Release automation**: `workflow_dispatch` + tag-driven build/release with a
   `check-versions --tag` gate and `gh release` upload — matches the house CI
-  standard; Firefox build is patched but not smoke-tested (ROADMAP P1). [Verified]
+  standard, but current public latest release lags the source tree by many
+  versions and the release workflow does not yet attach a project-owned checksum
+  manifest or provenance. Firefox build is patched but not smoke-tested
+  (ROADMAP P1). [Verified]
 
 ## Security / Privacy / Data Safety
 
@@ -382,6 +413,10 @@ Closed since the 2026-06-03 baseline:
   `/download` request-field allowlisting that blocks client-supplied yt-dlp
   argv / flag payloads before queueing. The yt-dlp cookie-handling threat model
   is documented; signed installer/MSI trust polish remains gated.
+- **Release integrity** [Verified]: GitHub release assets expose SHA-256 digest
+  fields and GitHub supports artifact/SBOM attestations, but Astra's current
+  release workflow only uploads `build/*`; a project-owned `SHA256SUMS` manifest,
+  companion sidecar publication, and attestation path are not yet in place.
 
 ## UX & Accessibility
 
@@ -403,6 +438,11 @@ Closed since the 2026-06-03 baseline:
 
 ## Open Questions
 
+- Whether the next public release should be v4.46.0 exactly or a new v4.47.0
+  after the CI and release-integrity fixes land. [Needs validation]
+- Whether CRX/XPI artifacts remain maintainer-local because of `ytkit.pem`, or
+  whether CI should attest only ZIP/userscript/SBOM artifacts while local-signed
+  CRX/XPI are attached with checksum sidecars. [Needs validation]
 - Downloader signing budget and CWS/AMO submission intent (gates the signed
   installer work). [Needs validation]
 - Live-stream MHTML capture window for full live-chat iframe internals — repeated
