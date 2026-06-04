@@ -18,6 +18,17 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 16 GitHub Actions supply-chain policy pass on 2026-06-04
+  found that repository Actions permissions are enabled but broad
+  (`allowed_actions: all`) and do not require full-length SHA pins
+  (`sha_pinning_required: false`). Workflows currently use tag-pinned
+  GitHub-owned actions across `validate.yml`, `build.yml`, and
+  `yt-dlp-smoke.yml`; default `GITHUB_TOKEN` permissions are already read-only.
+  ROADMAP now carries a P2 item to complete the Node 24 action-major migration,
+  pin external action refs to full SHAs with Dependabot-friendly version
+  comments, then switch repository Actions permissions to selected sources with
+  SHA pinning required. Detailed evidence lives in
+  `docs/research-cycle-16-actions-sha-pinning.md`.
 - [Verified] Cycle 15 secret-scanning pass on 2026-06-04 found one open GitHub
   secret-scanning alert in the public repository: alert 1, type
   `google_api_key`, created 2026-01-26, unresolved, `publicly_leaked: true`,
@@ -262,25 +273,28 @@ Top remaining opportunities (one-liners):
 2. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-3. Enable dependency graph / Dependabot alert settings so the PR-only
+3. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+   action sources / SHA-pinning policy after the Node 24 action-major migration.
+   [Verified]
+4. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-4. Reconcile release automation docs with the current maintainer-local artifact
+5. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-5. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+6. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-6. MHTML capture-week expansion across Shorts, channel, search, history,
+7. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-7. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+8. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-8. Locale proofing queue for identical-to-English feature names/descriptions in
+9. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-9. Signed Astra Downloader installer/MSI once the signing budget and submission
+10. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -323,7 +337,16 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-12-dependency-review-enablement.md`, and
   `docs/research-cycle-13-actions-node24-readiness.md`, and
   `docs/research-cycle-14-release-doc-contract-reconciliation.md`, and
-  `docs/research-cycle-15-secret-scanning-alert.md`. [Verified]
+  `docs/research-cycle-15-secret-scanning-alert.md`, and
+  `docs/research-cycle-16-actions-sha-pinning.md`. [Verified]
+- GitHub Actions policy probe: repository Actions permissions are currently
+  `allowed_actions: all` and `sha_pinning_required: false`; workflow defaults
+  keep `GITHUB_TOKEN` read-only and prevent workflow-created PR approvals. The
+  current workflows contain tag-pinned GitHub-owned action refs across
+  `Validate`, `Build & Release`, and `yt-dlp Smoke`. GitHub's secure-use docs
+  say full-length commit SHAs are the immutable action-reference option, and
+  repository settings / REST APIs can require SHA pins and selected action
+  sources. [Verified]
 - Secret scanning alert probe: GitHub reports one open `google_api_key` alert
   with `publicly_leaked: true`, `multi_repo: true`, and `validity: unknown`;
   locations include current/historical generated userscript and extension files.
@@ -540,6 +563,11 @@ Closed since the 2026-06-03 baseline:
   expose SHA-256 digest fields. The tag workflow creates attestations for
   CI-built artifacts, while public CRX assets intentionally remain
   maintainer-local because `ytkit.pem` does not enter CI.
+- **GitHub Actions supply chain** [Verified]: default workflow token
+  permissions are read-only, but repository Actions policy still allows all
+  action sources and does not require full-length SHA pins. Current workflow
+  refs are tag-pinned; ROADMAP P2 now queues a post-Node-24 SHA-pinning and
+  selected-actions policy pass.
 - **Secret scanning** [Verified]: baseline secret scanning and push protection
   are enabled, but one open Google API Key alert remains unresolved with
   validity unknown. Non-provider pattern scanning and validity checks are
@@ -582,6 +610,9 @@ Closed since the 2026-06-03 baseline:
 - Whether GitHub Actions migrations should jump to the latest observed majors
   (`checkout@v6`, `setup-node@v6`, `setup-python@v6`, `upload-artifact@v7`) or
   the lowest Node 24-ready majors to reduce behavior drift. [Needs validation]
+- Whether GitHub Actions SHA pinning should remain coupled to the Node 24 major
+  migration or land as a separate hardening PR after the action-major update.
+  [Needs validation]
 - Whether Firefox support should move from 128 to 140 to use built-in data
   collection consent cleanly, or keep 128-139 support with a custom
   consent/control page. [Needs validation]
