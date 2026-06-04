@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, Return YouTube Dislike, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 10 bundled UI locales. Beats every public-OSS competitor on at least one axis per the competitive matrix in ROADMAP.md.
+  Premium YouTube enhancement extension for Chrome and Firefox with 200+ features — SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, BlockTube-grade filtering, downloads with format/quality controls, transcript viewer + IndexedDB search, AI summary (BYO key or Chrome built-in), subscription groups, theater split, OLED token-bridge theming, and 10 bundled UI locales. Beats every public-OSS competitor on at least one axis per the competitive matrix in ROADMAP.md.
 </p>
 
 <p align="center">
@@ -87,6 +87,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Expand Video Width / Disable Ambient Mode | On |
 | Hide Merch, AI Summary, Hashtags, Pinned Comments, Info Panels | On |
 | Clean Share URLs — strip tracking params | On |
+| Return YouTube Dislike — estimated dislike count with `est.` disclosure + ratio | Off |
 | Auto-Expand Description / Sticky Chat / Scroll to Player | Off |
 
 ### Video Player

@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Return YouTube Dislike estimate disclosure.** Successful RYD renders now
+  show a compact `est.` affordance next to the restored count, with tooltip and
+  `aria-label` copy explaining that counts are estimates after YouTube removed
+  public dislike totals and low-traffic videos can be less accurate. The
+  userscript RYD path, ratio labels, locale seed descriptions, README, data-flow
+  review copy, and hardening tests now carry the same disclosure.
+
 - **Schema-validated settings backups.** Popup and in-page backup exports now
   emit a scrubbed `exportVersion: 4` JSON payload with settings-schema version,
   active profile, scrubbed-key, and profile-defaulted-key metadata. Import now

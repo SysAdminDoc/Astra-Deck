@@ -60,6 +60,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
 - yt-dlp cookie threat model now documents the CVE-2023-35934 advisory class,
   YouTube-only cookie bridge, temporary Netscape jars, `--cookies` invocation,
   cleanup/sweep controls, current pin safety, and residual local-machine risk.
+- Return YouTube Dislike restored counts now disclose their estimated nature via
+  a visible `est.` affordance, tooltip, and `aria-label` in both extension and
+  userscript paths; ratio labels, locale seed descriptions, README, and review
+  docs now use estimated-count wording.
 - Storage growth for `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`,
   and `ytkit-watch-time` is now capped at write time with deterministic eviction
   in both extension and userscript paths.

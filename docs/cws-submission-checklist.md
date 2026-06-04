@@ -100,7 +100,7 @@ for GitHub/self-hosted installs.
 | `cookies` | The Astra Downloader companion downloads authenticated YouTube content. The extension reads YouTube cookies via `chrome.cookies.getAll` and posts them to the localhost downloader (127.0.0.1:9751 only). Never sent off-machine. |
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |
 | `host_permissions: youtube.com / youtu.be / youtube-nocookie.com / i.ytimg.com` | Content script attachment + thumbnail-replacement. |
-| `host_permissions: sponsor.ajay.app / returnyoutubedislikeapi.com / reddit.com` | Optional user-visible enrichment calls for SponsorBlock, DeArrow, Return YouTube Dislike, and the Reddit discussion panel. No cookies are sent. |
+| `host_permissions: sponsor.ajay.app / returnyoutubedislikeapi.com / reddit.com` | Optional user-visible enrichment calls for SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, and the Reddit discussion panel. No cookies are sent. |
 | `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary feature; per-user opt-in and direct to provider. |
 | `host_permissions: api.cobalt.tools` | GitHub-full only. Optional Cobalt fallback when Astra Downloader is offline. |
 | `host_permissions: 127.0.0.1:9751-9851` | GitHub-full only. Astra Downloader local probe and explicit download handoff across six fallback ports. |
