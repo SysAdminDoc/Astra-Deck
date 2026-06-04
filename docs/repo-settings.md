@@ -100,3 +100,26 @@ Target policy:
   required `main` check.
 - After a clean or fully triaged baseline, add the exact CodeQL check context to
   branch protection or record why the gate remains advisory-only.
+
+## Code Owners
+
+Current snapshot from 2026-06-04:
+
+- `.github/CODEOWNERS`: absent.
+- Root `CODEOWNERS`: absent.
+- `docs/CODEOWNERS`: absent.
+- Repository owner: `@SysAdminDoc`.
+- Current viewer permission from `gh repo view`: `ADMIN`.
+- Required approving reviews on `main`: 1.
+- Require code-owner reviews on `main`: disabled.
+- CODEOWNERS errors endpoint: `404 Not Found` while no CODEOWNERS file exists.
+
+Target policy:
+
+- Add `.github/CODEOWNERS` for security-sensitive workflow, release, signing,
+  security-policy, extension-permission, background-proxy, data-flow,
+  redaction, and companion-loopback paths.
+- Use only users or teams with write access.
+- Check `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq ".errors"`
+  before enabling enforcement.
+- Enable `require_code_owner_reviews` after CODEOWNERS exists on `main`.
