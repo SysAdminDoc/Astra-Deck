@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 17 - 2026-06-04.
+> Last researched: Cycle 18 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,56 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 18 - 2026-06-04)
+
+- [x] 🔬 `security-disclosure-channel-2026-06-04` - inspected root
+  security-policy files, issue templates, contributor docs, repository security
+  advisory state, private vulnerability reporting setting, and GitHub security
+  policy / private reporting docs. Detailed notes live in
+  `docs/research-cycle-18-security-disclosure.md`.
+- [ ] 🔬🤖🔧 P1 — Publish security disclosure policy and enable private vulnerability reporting
+  - Why: Astra Deck now has explicit secret-scanning, signing-key, release, and
+    dependency-security queues, but the public repository has no `SECURITY.md`
+    and private vulnerability reporting is disabled. A researcher who finds a
+    key leak, extension privilege issue, companion loopback weakness, or release
+    integrity failure currently has to use public issues or guess a private
+    contact path. That conflicts with the signing-key leak runbook, which
+    already refers to adding a `SECURITY.md` section during incident response.
+  - Evidence: `Get-ChildItem -Path . -Force -File` shows no root
+    `SECURITY.md`, and `.github/` contains issue templates plus PR/dependency
+    workflow config but no security-policy file. `rg -n "SECURITY\.md|security
+    policy|private vulnerability|report a vulnerability|security advisory"`
+    finds release/signing references but no current disclosure instructions.
+    `gh api repos/SysAdminDoc/Astra-Deck/private-vulnerability-reporting --jq
+    .` returns `enabled: false`, and `gh api
+    repos/SysAdminDoc/Astra-Deck/security-advisories --jq length` returns `0`.
+    GitHub docs say a `SECURITY.md` gives instructions for reporting
+    vulnerabilities, and private vulnerability reporting gives public-repo
+    researchers a structured private path without resorting to public
+    disclosure or informal channels. [Verified]
+  - Touches: root `SECURITY.md`, `README.md`/`CONTRIBUTING.md` links,
+    `docs/signing-keys.md` leak-response wording, `docs/repo-settings.md`, and
+    GitHub Settings -> Advanced Security -> Private vulnerability reporting.
+  - Acceptance: root `SECURITY.md` exists and names supported versions,
+    preferred private reporting path, expected response windows, what not to
+    include in public issues, and high-priority classes such as signing-key
+    exposure, extension permission bypass, companion loopback auth bypass,
+    dependency compromise, and release artifact/provenance mismatch. Private
+    vulnerability reporting is enabled for the repository; maintainer
+    notifications are configured by watching the repo for all activity or
+    security alerts; README/CONTRIBUTING link to the policy; and signing-key
+    leak response points to repository security advisories instead of an
+    ad-hoc future `SECURITY.md` section.
+  - Verify: `Test-Path SECURITY.md` is true; `rg -n "Report a vulnerability|private
+    vulnerability|security advisory|supported versions" SECURITY.md README.md
+    CONTRIBUTING.md docs/signing-keys.md` finds the intended references.
+    `gh api repos/SysAdminDoc/Astra-Deck/private-vulnerability-reporting --jq
+    .enabled` returns `true`, and the repository Security page exposes the
+    private report path. A dry-run review confirms the policy tells users not
+    to paste secrets, keys, exploit payloads, or private logs into public
+    issues.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 17 - 2026-06-04)
 
