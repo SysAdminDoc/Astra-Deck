@@ -51,6 +51,10 @@ release-level details live in `CHANGELOG.md`.
 - Storage growth for `videoNotesData`, `ytkit-bookmarks`, `ytkit-watch-progress`,
   and `ytkit-watch-time` is now capped at write time with deterministic eviction
   in both extension and userscript paths.
+- `policy-profile.js` scrub coverage now spans separator-aware API-key names,
+  password/credential/key-alias/cookie/token/bearer/secret/auth-shaped keys, and
+  live schema-derived export tests for every GitHub-full and credential-shaped
+  setting.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
