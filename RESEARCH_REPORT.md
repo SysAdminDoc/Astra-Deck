@@ -36,6 +36,12 @@ or maintainer action to confirm.
   that still described settings import/export, onboarding, diagnostics export,
   RYD estimate disclosure, settings migration, and the yt-dlp cookie threat model
   as gaps after those items had shipped.
+- [Verified] Cycle 4 capture-matrix pass on 2026-06-04 found that
+  `scripts/build-selector-fixtures.js` still registers only home, watch, and
+  live-chat MHTML sources, with DOM-subset matching limited to `playerChrome`
+  and `liveChat`. ROADMAP P2 now lists the exact missing capture files, mapped
+  selector packs, builder/test hooks, and verification path for the capture-week
+  expansion.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
@@ -168,7 +174,8 @@ Top remaining opportunities (one-liners):
 
 1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates. [Verified]
 2. MHTML capture-week expansion across Shorts, channel, search, history,
-   watch-later, embedded player, and notifications surfaces. [Verified]
+   watch-later, embedded player, and notifications surfaces, including fixture
+   builder and selector-match coverage for each registered pack. [Verified]
 3. WCAG 2.2 AA audit for in-page overlays, not just the popup. [Verified]
 4. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles. [Verified]
@@ -282,8 +289,9 @@ Current open risk:
   [Verified]
 - **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed,
   but Shorts, channel, search, history, watch-later, embedded player, and
-  notifications surfaces still lack capture-backed selector fixtures. → ROADMAP
-  P2 capture-week expansion. [Verified]
+  notifications surfaces still lack capture-backed selector fixtures; the
+  fixture builder currently registers only home, watch, and live-chat captures.
+  → ROADMAP P2 capture-week expansion. [Verified]
 - **[Med] In-page overlay accessibility.** Popup a11y/contrast is CI-gated, but
   transcript, notes, theater split, subscription manager, and toast overlays are
   not yet under the WCAG 2.2 target-size/focus-appearance gate. → ROADMAP P2
