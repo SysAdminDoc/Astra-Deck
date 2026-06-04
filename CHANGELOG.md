@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Long-session leak regression.** Added `tests/long-session.test.js`, a
+  deterministic DOM/timer/RAF/MutationObserver harness that simulates 1000
+  route changes and mutation batches against the real navigation and diagnostic
+  modules. The test pins one shared mutation observer, scoped-rule early exits,
+  capped DiagnosticLog ring/counters, and listener/observer cleanup.
+
 - **Cobalt fallback diagnostics.** When Astra Downloader is offline and the
   GitHub-full Cobalt fallback request fails, Astra Deck now writes an actionable
   `DiagnosticLog` entry under `cobalt-fallback`. The message records only the
