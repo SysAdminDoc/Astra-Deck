@@ -11,8 +11,10 @@
 //     background.js was the initial scope; popup.js joined in v4.47.0
 //     after a per-file audit confirmed 100 % compliance (8 empty
 //     catches total, 7 already documented, 1 annotated in the same
-//     commit). Further widening to extension/core/*.js and ytkit.js
-//     stays gated behind a per-file annotation pass.
+//     commit). The v4.47.0 core pass extends the invariant to direct
+//     extension/core/*.js modules after annotating the remaining silent
+//     catches. Further widening to ytkit.js stays gated behind a
+//     monolith annotation pass.
 
 const noPostAwaitAddListener = require('./scripts/eslint-rules/no-post-await-addlistener.js');
 const requireCatchReason = require('./scripts/eslint-rules/require-catch-reason.js');
@@ -80,6 +82,28 @@ module.exports = [
         // no-post-await-addlistener rule does not apply to the popup
         // (no chrome.*.addListener calls).
         files: ['extension/popup.js'],
+        plugins: {
+            local: {
+                rules: {
+                    'require-catch-reason': requireCatchReason,
+                },
+            },
+        },
+        rules: {
+            'local/require-catch-reason': 'error',
+        },
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'script',
+            globals: sharedBrowserGlobals,
+        },
+    },
+    {
+        // v4.47.0 Phase L follow-up: direct core modules now enforce the
+        // same silent-catch invariant. Selector-pack files are generated-like
+        // data modules with no catch surface and are intentionally outside
+        // this glob; the roadmap item is extension/core/*.js.
+        files: ['extension/core/*.js'],
         plugins: {
             local: {
                 rules: {
