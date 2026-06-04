@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Cobalt fallback diagnostics.** When Astra Downloader is offline and the
+  GitHub-full Cobalt fallback request fails, Astra Deck now writes an actionable
+  `DiagnosticLog` entry under `cobalt-fallback`. The message records only the
+  configured instance origin, explains that the local downloader was offline,
+  and points users to `downloadCobaltInstance` or starting Astra Downloader.
+
 - **Policy-profile scrub coverage.** The export scrubber now catches
   separator-aware API-key names (`api_key`, `api-key`), password/credential
   fields, private/access/refresh/session/signing key aliases, cookie snapshots,

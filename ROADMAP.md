@@ -241,11 +241,18 @@ phased feature plan) is preserved at
     and every credential-shaped schema key is absent from both store-safe and
     GitHub-full export snapshots.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
-- [ ] P3 — Surface a Cobalt fallback unreachable diagnostic (R8)
+- [x] P3 — Surface a Cobalt fallback unreachable diagnostic (R8)
   - Why: when the Cobalt fallback is unreachable the failure is currently silent.
   - Touches: downloader fallback path, diagnostic-log.
   - Acceptance: an unreachable Cobalt instance produces an actionable local
     diagnostic.
+  - Status 2026-06-04: delivered. `downloadCobaltFallback` now records a
+    `DiagnosticLog` entry with ctx `cobalt-fallback` whenever the Cobalt request
+    fails after Astra Downloader is confirmed offline. The diagnostic uses only
+    the configured instance origin, explains that the local downloader was
+    offline, and points users to `downloadCobaltInstance` or starting Astra
+    Downloader. A hardening test pins the origin-only formatter and remediation
+    text.
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
 - [ ] P3 — Add a long-session memory-leak test (G3)
   - Why: rich grid cards recycle aggressively; observer/diagnostic growth needs a

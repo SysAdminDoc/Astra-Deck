@@ -55,6 +55,9 @@ release-level details live in `CHANGELOG.md`.
   password/credential/key-alias/cookie/token/bearer/secret/auth-shaped keys, and
   live schema-derived export tests for every GitHub-full and credential-shaped
   setting.
+- Cobalt fallback failures now write an actionable `DiagnosticLog`
+  `cobalt-fallback` entry with origin-only endpoint context and remediation
+  steps when Astra Downloader is offline.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
