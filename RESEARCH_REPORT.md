@@ -21,9 +21,10 @@ or maintainer action to confirm.
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
   digest, Study / Work export, feature-definition i18n, and store-safe /
   GitHub-full release artifact split, monthly yt-dlp smoke CI, and the
-  selector-fixture match harness are now
+  selector-fixture match harness, and the Firefox programmatic-injection
+  pre-flight are now
   represented in `ROADMAP.md`, `extension/ytkit.js`, docs, the packager,
-  workflows, fixture generation, and hardening tests. The
+  workflows, fixture generation, static checks, and hardening tests. The
   subscription implementation uses rendered-feed DOM heuristics, local
   last-visit data, and a 30-day local undo/staging window rather than a YouTube
   Data API unsubscribe path; the notes and study/work exports stay local-first
@@ -33,7 +34,9 @@ or maintainer action to confirm.
   grants while GitHub-full keeps the complete data-flow catalogue; yt-dlp
   bumps now run through exact Python package pins plus a bounded real-download
   smoke workflow; selector fixture regeneration now proves `playerChrome` and
-  `liveChat` selector-pack chains against decoded MHTML markup.
+  `liveChat` selector-pack chains against decoded MHTML markup; Firefox
+  pre-flight now blocks future programmatic injection APIs until their
+  `moz-extension://` targets are reviewed.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -54,6 +57,13 @@ or maintainer action to confirm.
   `npm run build:fixtures`, `node --check tests/selector-regression.test.js`,
   `node --test tests/selector-regression.test.js` (33 checks), `npm run check`,
   `npm test` (621 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the Firefox injection audit batch:
+  `node --check scripts/check-firefox-injection.js`,
+  `node scripts/check-firefox-injection.js`, `node --check
+  tests/firefox-injection-audit.test.js`, and `node --test
+  tests/firefox-injection-audit.test.js` (3 checks), `npm run check`,
+  `npm test` (624 checks), `npm run build`, `node sync-userscript.js`, and
   `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
