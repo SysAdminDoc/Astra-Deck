@@ -18,17 +18,17 @@ or maintainer action to confirm.
 
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
-  detection / unsubscribe staging, and NF1 per-video notes are now represented
-  in `ROADMAP.md`, `extension/ytkit.js`, the settings schema/defaults,
-  userscript bundle, and hardening tests. The subscription implementation uses
-  rendered-feed DOM heuristics and a 30-day local undo/staging window rather
-  than a YouTube Data API unsubscribe path; the notes implementation stays
+  detection / unsubscribe staging, NF1 per-video notes, and the group
+  notifications digest are now represented in `ROADMAP.md`, `extension/ytkit.js`,
+  docs, and hardening tests. The subscription implementation uses rendered-feed
+  DOM heuristics, local last-visit data, and a 30-day local undo/staging window
+  rather than a YouTube Data API unsubscribe path; the notes implementation stays
   local-first with versioned JSON export and a 1000-note cap.
-- [Verified] Narrow validation on 2026-06-04: `npm audit --audit-level=high
-  --omit=dev` found 0 vulnerabilities; `npm outdated --json` showed only
-  dev-only `eslint` behind (`10.2.1` installed, `10.4.1` wanted/latest); and
-  `node --test tests/hardening.test.js` passed 415 checks. Full `npm test` and
-  `npm run check` were not rerun in this research-only pass.
+- [Verified] Validation on 2026-06-04 after the group-digest batch:
+  `node --check extension/ytkit.js`, `node --test tests/hardening.test.js`
+  (417 checks), `npm run check`, `npm test` (612 checks), and `npm run build`
+  all passed. The build emitted Chrome ZIP/CRX and Firefox ZIP/XPI artifacts for
+  v4.46.0.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`
@@ -129,13 +129,13 @@ excluded by design. [Verified]
 | Title/thumbnail (DeArrow-class) | settings schema + `ytkit.js` | Shipped | [Likely] |
 | Return YouTube Dislike | `returnyoutubedislikeapi.com` host | Shipped | No estimate-disclosure UI [Verified] |
 | Feed/comment/channel filtering (BlockTube-class) | `features/video-hider/`, `ytkit.js` | Shipped | ReDoS-guarded; channel-key cache [Verified] |
-| Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Depth-2 groups and dead-channel staging are shipped; external sync remains absent [Verified] |
+| Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Depth-2 groups, dead-channel staging, and group digest are shipped; external sync remains absent [Verified] |
 | Theater split / sticky player | `features/sticky-video/`, `player-dock/` | Shipped | Lifecycle-unified chat observer [Verified] |
 | Theming / OLED tokens | `features/theme-css/`, `wave-8-css/`, `home-subs-css/` | Shipped | Schema-driven [Verified] |
 | Transcript viewer + IndexedDB search | `core/transcript-service.js` | Shipped | [Verified] |
 | AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | [Verified] |
 | Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint; no /update UX item open [Verified] |
-| Per-video notes | — | Planned (NF1) | Not yet built [Verified] |
+| Per-video notes | `videoNotes` feature | Shipped | Local-first notes, versioned export, 1000-note LRU cap [Verified] |
 | Settings import/export | — | Gap | No first-class surface [Verified] |
 | Selector-pack health | `core/selector-health.js` | Shipped | Now reports attribute-shape drift [Verified] |
 

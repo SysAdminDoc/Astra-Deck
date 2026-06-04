@@ -86,10 +86,14 @@ phased feature plan) is preserved at
   - Acceptance: a signed installer/MSI is produced. _(Deferred until CWS
     submission intent and signing budget are decided.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P3 — Group notifications digest panel
+- [x] P3 — Group notifications digest panel
   - Why: users want per-group new-video awareness without opening every group.
   - Touches: subscription-groups feature module, popup/overlay UI.
   - Acceptance: a panel shows per-group new-video counts since last visit.
+    _(Delivered 2026-06-04: the Subscription Groups toolbar now exposes a
+    Digest panel with all-subscriptions and per-group rendered-video/new-video
+    counts, child-group row styling, relative-age based new-since detection, and
+    bounded mark-read updates through `subscriptionLastVisitData`.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 - [ ] P3 — Study/work mode export to Markdown/CSV
   - Why: research-mode users want to export tracked time / focused history.
