@@ -9,11 +9,11 @@ and CI-attestation gaps, and `docs/signing-keys.md` now records the local
 signing policy. A few current docs still describe the pre-closure release model
 or imply that CI directly creates GitHub Releases. That is now inaccurate: CI
 builds validation artifacts and attestations, while the maintainer publishes
-local-signed public assets.
+maintainer-local public assets.
 
 Recommended next item:
 
-1. P2 - Reconcile release automation docs with the local-signed artifact
+1. P2 - Reconcile release automation docs with the maintainer-local artifact
    contract.
 2. P2 - Remove stale current-report wording that still says shipped release,
    privacy, and Python audit artifacts are absent.
@@ -97,7 +97,7 @@ remaining implementation item is to bring non-planning docs, especially
 
 Add one P2 implementation item:
 
-**Reconcile release automation docs with local-signed artifact contract.**
+**Reconcile release automation docs with maintainer-local artifact contract.**
 
 Acceptance shape:
 
@@ -106,12 +106,12 @@ Acceptance shape:
 - The release docs name the current split:
   - CI validates, builds, uploads workflow artifacts, and attests CI-built
     outputs.
-  - The maintainer publishes local-signed CRX/XPI release assets with
-    `SHA256SUMS`.
+  - The maintainer publishes locally signed CRX artifacts, Firefox ZIP/XPI
+    artifacts, and `SHA256SUMS`.
 - Verification docs distinguish:
   - `gh attestation verify` for CI-built artifacts.
   - `gh release view --json assets` digest comparison against `SHA256SUMS` for
-    local-signed public release assets.
+    maintainer-local public release assets.
 - Current docs no longer say the latest public release lags v4.46.0 or that
   privacy / Python audit / release manifest artifacts are absent.
 
