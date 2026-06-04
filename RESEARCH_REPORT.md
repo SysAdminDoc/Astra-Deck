@@ -20,9 +20,10 @@ or maintainer action to confirm.
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
   digest, Study / Work export, feature-definition i18n, and store-safe /
-  GitHub-full release artifact split, and monthly yt-dlp smoke CI are now
+  GitHub-full release artifact split, monthly yt-dlp smoke CI, and the
+  selector-fixture match harness are now
   represented in `ROADMAP.md`, `extension/ytkit.js`, docs, the packager,
-  workflows, and hardening tests. The
+  workflows, fixture generation, and hardening tests. The
   subscription implementation uses rendered-feed DOM heuristics, local
   last-visit data, and a 30-day local undo/staging window rather than a YouTube
   Data API unsubscribe path; the notes and study/work exports stay local-first
@@ -31,7 +32,8 @@ or maintainer action to confirm.
   English; the store-safe package now strips AI, Cobalt, and loopback host
   grants while GitHub-full keeps the complete data-flow catalogue; yt-dlp
   bumps now run through exact Python package pins plus a bounded real-download
-  smoke workflow.
+  smoke workflow; selector fixture regeneration now proves `playerChrome` and
+  `liveChat` selector-pack chains against decoded MHTML markup.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -47,6 +49,12 @@ or maintainer action to confirm.
   `py -3.12 scripts/yt-dlp-smoke.py` (downloaded `dQw4w9WgXcQ.mp4`, 3441508
   bytes), `py -3.12 -m pytest astra_downloader` (117 tests), `npm run check`,
   `npm test` (619 checks), and `npm run build` all passed.
+- [Verified] Validation on 2026-06-04 after the selector-resilience harness
+  batch: `node --check scripts/build-selector-fixtures.js`,
+  `npm run build:fixtures`, `node --check tests/selector-regression.test.js`,
+  `node --test tests/selector-regression.test.js` (33 checks), `npm run check`,
+  `npm test` (621 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`

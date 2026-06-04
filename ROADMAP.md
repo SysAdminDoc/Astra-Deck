@@ -151,12 +151,18 @@ phased feature plan) is preserved at
     media download against a stable YouTube fixture with static tests pinning
     the workflow and script invariants.)_
   - Source: docs/archive/research/ (iter-1-scored NEXT-1), PHASE-2-5-SUMMARY
-- [ ] P2 — Selector-resilience test harness over `mhtml/` fixtures (research NEXT-5)
+- [x] P2 — Selector-resilience test harness over `mhtml/` fixtures (research NEXT-5)
   - Why: runtime DOM churn is the top carried risk; a fixture-backed harness
     catches selector rot before users do.
   - Touches: `scripts/build-selector-fixtures.js`, `tests/`, `mhtml/`.
   - Acceptance: a test fails when a critical selector no longer matches its
     captured fixture; coverage spans the live-chat and liquid-glass packs.
+    _(Delivered 2026-06-04: `npm run build:fixtures` now emits
+    `tests/fixtures/selector-surface-matches.json` by parsing decoded MHTML
+    markup through a small DOM subset matcher. `tests/selector-regression.test.js`
+    now verifies the report stays synced to the `playerChrome` and `liveChat`
+    selector-pack chains and fails when the critical live-chat or liquid-glass
+    selectors no longer resolve against their captured fixture.)_
   - Source: docs/archive/research/ (iter-1-scored NEXT-5)
 - [ ] P2 — Firefox 149 pre-flight `scripting.executeScript` audit (research NEXT-6)
   - Why: Firefox MV3 `scripting.executeScript` has diverged from Chromium; a
