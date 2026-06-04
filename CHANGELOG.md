@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Monthly yt-dlp smoke gate.** Downloader requirements now exact-pin
+  `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` so Dependabot opens reviewed
+  extractor-bump PRs. A new `yt-dlp-smoke.yml` workflow runs monthly or on
+  `workflow_dispatch`, installs those pins, and uses `scripts/yt-dlp-smoke.py`
+  to perform a bounded real media download against a stable public YouTube
+  fixture before a bump can be trusted.
+
 - **Store-safe / GitHub-full artifact split.** `build-extension.js` now emits
   profile-named Chrome and Firefox packages from the same extension source:
   store-safe artifacts strip AI, Cobalt, and local-loopback host grants/CSP,

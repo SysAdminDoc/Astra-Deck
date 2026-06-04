@@ -137,14 +137,19 @@ phased feature plan) is preserved at
 > confirmed still-actionable against current code; the already-shipped NOW/NEXT
 > items from that pass are recorded in `COMPLETED.md`.
 
-- [ ] P2 — Monthly yt-dlp version-bump + smoke-test CI (research NEXT-1)
+- [x] P2 — Monthly yt-dlp version-bump + smoke-test CI (research NEXT-1)
   - Why: yt-dlp is the highest-churn dependency; silent extractor breakage ships
     a non-functional downloader. Dependabot opens dependency PRs but there is no
     automated download smoke test to gate a yt-dlp bump.
   - Touches: `.github/workflows/`, `astra_downloader/requirements.txt`.
   - Acceptance: a scheduled/`workflow_dispatch` job installs the pinned yt-dlp,
     runs a minimal extract/download against a known stable video, and turns red
-    on a deliberately-broken pin.
+    on a deliberately-broken pin. _(Delivered 2026-06-04: downloader
+    requirements now exact-pin `yt-dlp==2026.3.17` and `curl_cffi==0.15.0`,
+    `.github/workflows/yt-dlp-smoke.yml` runs monthly and on
+    `workflow_dispatch`, and `scripts/yt-dlp-smoke.py` performs a bounded real
+    media download against a stable YouTube fixture with static tests pinning
+    the workflow and script invariants.)_
   - Source: docs/archive/research/ (iter-1-scored NEXT-1), PHASE-2-5-SUMMARY
 - [ ] P2 — Selector-resilience test harness over `mhtml/` fixtures (research NEXT-5)
   - Why: runtime DOM churn is the top carried risk; a fixture-backed harness
@@ -215,12 +220,11 @@ MV3 program policy, AMO Firefox MV3, WCAG 2.2 AA, the SponsorBlock / DeArrow /
 Enhancer for YouTube / PocketTube / BlockTube / Return YouTube Dislike ecosystem,
 and yt-dlp cookie-handling advisories).
 
-2026-06-04 refresh: NF6, NF2, and dead-channel staging have moved into the live
-dirty tree, with `node --test tests/hardening.test.js` passing 415 checks and
-`npm audit --audit-level=high --omit=dev` finding 0 vulnerabilities. Current
-Chrome Web Store, Firefox MV3, yt-dlp, and YouTube Data API source checks keep
-the existing store-policy, Firefox smoke, yt-dlp smoke, and local-first
-subscription-staging rows relevant; no new duplicate research row was promoted.
+2026-06-04 refresh: NF6, NF2, dead-channel staging, store-safe / GitHub-full
+artifact split, and monthly yt-dlp smoke CI have moved into completed work.
+Current Chrome Web Store, Firefox MV3, and YouTube Data API source checks keep
+the existing store-policy, Firefox smoke, and local-first subscription-staging
+rows relevant; no new duplicate research row was promoted.
 
 ### Phase 1 Competitive Matrix Carry-Forward
 
@@ -253,15 +257,18 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     "v6.0.0" finds only planning-track-labelled mentions.
   - Complexity: S
 - [ ] P1 — Add per-permission justification + single-purpose store note for review
-  - Why: the extension requests `cookies` + `downloads` and 14 host origins
-    spanning YouTube, SponsorBlock, Return YouTube Dislike, three AI providers
-    (OpenAI/Anthropic/Gemini), Reddit, and seven `127.0.0.1` companion ports.
+  - Why: the extension requests `cookies` + `downloads`; the source/full-profile
+    manifest carries 19 host origins spanning YouTube, SponsorBlock, Return
+    YouTube Dislike, Cobalt, three AI providers (OpenAI/Anthropic/Gemini),
+    Reddit, and seven `127.0.0.1` companion ports, while store-safe artifacts
+    strip the full-only grants down to 8 hosts.
     Chrome Web Store MV3 policy flags "toolbars that provide a broad array of
     functionality" and requires a written justification per sensitive permission;
     missing/insufficient justification is a top rejection cause.
   - Evidence: `extension/manifest.json` `permissions` (`cookies`, `downloads`,
-    `unlimitedStorage`) and 17-origin `host_permissions`; CWS MV3 program policy
-    on single-purpose + permission justification. [Verified]
+    `unlimitedStorage`) and full-profile `host_permissions`; `build-extension.js`
+    store-safe profile output; CWS MV3 program policy on single-purpose +
+    permission justification. [Verified]
   - Touches: `docs/cws-submission-checklist.md`, a new "permissions rationale"
     doc section; manifest unchanged.
   - Acceptance: each requested permission and host origin has a one-line, copy-
