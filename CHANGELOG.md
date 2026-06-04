@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Group notifications digest.** Subscription Groups now has a toolbar Digest
+  panel with all-subscriptions and per-group new-video counts based on rendered
+  relative age text versus `subscriptionLastVisitData`. The panel supports
+  nested group rows, View shortcuts, and bounded Mark read updates that reuse the
+  2000-channel last-visit cap.
+
 - **NF1 per-video notes.** Added the `videoNotes` watch-page panel with
   debounced local saves into `videoNotesData`, delete/undo for the current
   video, and a versioned JSON export (`astra-deck-video-notes-YYYY-MM-DD.json`).

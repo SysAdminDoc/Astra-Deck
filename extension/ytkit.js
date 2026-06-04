@@ -31692,6 +31692,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             pages: [PageTypes.SUBSCRIPTIONS],
             _styleElement: null,
             _toolbar: null,
+            _digestPanel: null,
             _activeGroupId: '',     // '' = all subscriptions
             _observer: null,
             _navRule: null,
@@ -31711,12 +31712,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
                     .ytkit-sub-toolbar button[data-action="scan-stale"]{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.32);color:#bfdbfe;}
+                    .ytkit-sub-toolbar button[data-action="digest"]{background:rgba(14,165,233,0.12);border-color:rgba(14,165,233,0.32);color:#bae6fd;}
                     .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
                     .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
+                    .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
                     .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
                     .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                     .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
                     .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
+                    .ytkit-sub-digest-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                    .ytkit-sub-digest-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+                    .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
+                    .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
+                    .ytkit-sub-digest-close,.ytkit-sub-digest-row button{padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-digest-close:hover,.ytkit-sub-digest-row button:hover{background:rgba(255,255,255,0.08);}
+                    .ytkit-sub-digest-list{display:flex;flex-direction:column;gap:6px;}
+                    .ytkit-sub-digest-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto auto;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
+                    .ytkit-sub-digest-row[data-depth="1"]{margin-left:16px;}
+                    .ytkit-sub-digest-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:700;}
+                    .ytkit-sub-digest-count{font-variant-numeric:tabular-nums;color:#bae6fd;font-weight:700;}
+                    .ytkit-sub-digest-muted{color:rgba(226,232,240,0.58);font-variant-numeric:tabular-nums;}
+                    .ytkit-sub-digest-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
                     .ytkit-sub-dead-card{outline:1px solid rgba(245,158,11,0.34);outline-offset:-1px;}
                     .ytkit-sub-staged-card{outline:1px solid rgba(34,197,94,0.42);outline-offset:-1px;}
                     .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
@@ -31746,6 +31762,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 appState.settings[this._LAST_VISIT_KEY] = next;
                 try { settingsManager.save(appState.settings); }
                 catch (e) { DebugManager.log('SubGroups', `Save failed: ${e.message}`); }
+            },
+
+            _capLastVisitMap(lastVisit) {
+                const LAST_VISIT_CAP = 2000;
+                const next = { ...(lastVisit || {}) };
+                const keys = Object.keys(next);
+                if (keys.length <= LAST_VISIT_CAP) return next;
+                const sorted = keys.sort((a, b) => (next[a] || 0) - (next[b] || 0));
+                const drop = sorted.slice(0, keys.length - LAST_VISIT_CAP);
+                for (const key of drop) delete next[key];
+                return next;
             },
 
             _readUnsubscribeStaging() {
@@ -31910,16 +31937,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _applyNewSinceMarkers() {
+                document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                 if (!appState?.settings?.subscriptionShowNewSinceLastVisit) return;
                 const lastVisit = this._readLastVisit();
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
                     const channelId = this._extractChannelIdFromCard(card);
                     if (!channelId) return;
-                    // Heuristic: card includes "X minutes/hours/days ago" — if absolute
-                    // time isn't directly available, just mark every card whose channel
-                    // has no recorded last-visit yet (i.e. first time we've seen this
-                    // channel since toggling the feature on). Conservative; users opt in.
-                    if (!lastVisit[channelId] && !card.querySelector('.ytkit-sub-new-badge')) {
+                    if (this._isCardNewSinceLastVisit(card, channelId, lastVisit)) {
                         const target = card.querySelector('#metadata-line, ytd-video-meta-block, #meta');
                         if (target) {
                             const badge = document.createElement('span');
@@ -31938,34 +31962,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const channelId = this._extractChannelIdFromCard(card);
                     if (channelId) lastVisit[channelId] = now;
                 });
-                // Cap the map at 2000 channels (already-seen tracking grows with
-                // every distinct channel the user has ever surfaced). When over
-                // cap, prune the oldest visits by timestamp — the heuristic only
-                // needs recent state to mark things "new since last visit".
-                const LAST_VISIT_CAP = 2000;
-                const keys = Object.keys(lastVisit);
-                if (keys.length > LAST_VISIT_CAP) {
-                    const sorted = keys.sort((a, b) => (lastVisit[a] || 0) - (lastVisit[b] || 0));
-                    const drop = sorted.slice(0, keys.length - LAST_VISIT_CAP);
-                    for (const k of drop) delete lastVisit[k];
-                }
-                this._writeLastVisit(lastVisit);
+                this._writeLastVisit(this._capLastVisitMap(lastVisit));
+                if (this._digestPanel) this._renderDigestPanel();
             },
 
-            _extractCardAgeDays(text) {
+            _getCardMetaText(card) {
+                return [
+                    card.querySelector('#metadata-line')?.textContent,
+                    card.querySelector('ytd-video-meta-block')?.textContent,
+                    card.querySelector('#meta')?.textContent,
+                    card.querySelector('[aria-label*="ago"]')?.getAttribute?.('aria-label'),
+                    card.querySelector('[aria-label*="view"]')?.getAttribute?.('aria-label'),
+                    card.textContent
+                ].filter(Boolean).join(' ');
+            },
+
+            _extractCardAgeMs(text) {
                 const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
                 if (!raw) return null;
                 const match = raw.match(/\b(\d+(?:[,.]\d+)?)\s*(minute|hour|day|week|month|year)s?\s+ago\b/);
                 if (!match) return null;
                 const value = Number.parseFloat(match[1].replace(',', '.'));
                 if (!Number.isFinite(value) || value < 0) return null;
-                const unit = match[2];
-                if (unit === 'minute' || unit === 'hour') return 0;
-                if (unit === 'day') return Math.round(value);
-                if (unit === 'week') return Math.round(value * 7);
-                if (unit === 'month') return Math.round(value * 30);
-                if (unit === 'year') return Math.round(value * 365);
-                return null;
+                const unitMs = {
+                    minute: 60 * 1000,
+                    hour: 60 * 60 * 1000,
+                    day: 24 * 60 * 60 * 1000,
+                    week: 7 * 24 * 60 * 60 * 1000,
+                    month: 30 * 24 * 60 * 60 * 1000,
+                    year: 365 * 24 * 60 * 60 * 1000
+                }[match[2]];
+                return unitMs ? Math.round(value * unitMs) : null;
+            },
+
+            _extractCardAgeDays(text) {
+                const ageMs = this._extractCardAgeMs(text);
+                if (ageMs === null) return null;
+                return Math.round(ageMs / (24 * 60 * 60 * 1000));
             },
 
             _extractChannelNameFromCard(card, channelId = '') {
@@ -31983,19 +32016,205 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return String(channelId || '').slice(0, 120);
             },
 
+            _extractVideoTitleFromCard(card) {
+                const selectors = ['#video-title', '[id="video-title"]', 'a#video-title-link', 'a[href*="/watch"]'];
+                for (const selector of selectors) {
+                    const text = (card.querySelector(selector)?.textContent || '').trim();
+                    if (text) return text.slice(0, 160);
+                }
+                return '';
+            },
+
+            _isCardNewSinceLastVisit(card, channelId, lastVisit = this._readLastVisit()) {
+                const id = String(channelId || '');
+                if (!id) return false;
+                const lastSeen = Number(lastVisit?.[id]) || 0;
+                if (!lastSeen) return true;
+                const ageMs = this._extractCardAgeMs(this._getCardMetaText(card));
+                if (ageMs === null) return false;
+                return (Date.now() - ageMs) > lastSeen;
+            },
+
+            _collectRenderedCardSummaries(lastVisit = this._readLastVisit()) {
+                return Array.from(document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer'))
+                    .map(card => {
+                        const channelId = this._extractChannelIdFromCard(card);
+                        if (!channelId) return null;
+                        return {
+                            card,
+                            channelId,
+                            channelName: this._extractChannelNameFromCard(card, channelId),
+                            title: this._extractVideoTitleFromCard(card),
+                            isNew: this._isCardNewSinceLastVisit(card, channelId, lastVisit)
+                        };
+                    })
+                    .filter(Boolean);
+            },
+
+            _buildGroupDigestEntries(groups = this._readGroups(), lastVisit = this._readLastVisit()) {
+                const summaries = this._collectRenderedCardSummaries(lastVisit);
+                const buildEntry = (groupId, depth) => {
+                    const allowed = this._getGroupChannelIdSet(groupId, groups);
+                    const matches = summaries.filter(item => allowed.has(item.channelId));
+                    const newMatches = matches.filter(item => item.isNew);
+                    return {
+                        groupId,
+                        name: groups[groupId]?.name || groupId,
+                        depth,
+                        renderedVideos: matches.length,
+                        newVideos: newMatches.length,
+                        newChannels: new Set(newMatches.map(item => item.channelId)).size
+                    };
+                };
+                const entries = [];
+                for (const id of this._getTopLevelGroupIds(groups)) {
+                    entries.push(buildEntry(id, 0));
+                    for (const childId of this._getChildGroupIds(id, groups)) {
+                        entries.push(buildEntry(childId, 1));
+                    }
+                }
+                return entries;
+            },
+
+            _closeDigestPanel() {
+                this._digestPanel?.remove();
+                this._digestPanel = null;
+            },
+
+            _markGroupDigestRead(groupId = '') {
+                const groups = this._readGroups();
+                const safeGroupId = groupId && groups[groupId] ? groupId : '';
+                const allowed = safeGroupId ? this._getGroupChannelIdSet(safeGroupId, groups) : null;
+                const summaries = this._collectRenderedCardSummaries();
+                const next = { ...this._readLastVisit() };
+                const now = Date.now();
+                let marked = 0;
+                for (const item of summaries) {
+                    if (allowed && !allowed.has(item.channelId)) continue;
+                    next[item.channelId] = now;
+                    marked++;
+                }
+                if (allowed && marked === 0) {
+                    for (const channelId of allowed) {
+                        next[channelId] = now;
+                        marked++;
+                    }
+                }
+                this._writeLastVisit(this._capLastVisitMap(next));
+                this._applyNewSinceMarkers();
+                this._applySort();
+                this._renderDigestPanel();
+                if (typeof showToast === 'function') {
+                    const label = safeGroupId ? (groups[safeGroupId]?.name || safeGroupId) : 'rendered subscriptions';
+                    showToast(`Marked ${marked} ${marked === 1 ? 'channel' : 'channels'} read for ${label}`, '#22c55e', { duration: 4 });
+                }
+            },
+
+            _toggleDigestPanel() {
+                if (this._digestPanel) {
+                    this._closeDigestPanel();
+                    return;
+                }
+                this._renderDigestPanel();
+            },
+
+            _renderDigestPanel() {
+                if (!this._toolbar?.isConnected) this._renderToolbar();
+                if (!this._toolbar?.isConnected) return;
+                const lastVisit = this._readLastVisit();
+                const summaries = this._collectRenderedCardSummaries(lastVisit);
+                const entries = this._buildGroupDigestEntries(this._readGroups(), lastVisit);
+                const allNew = summaries.filter(item => item.isNew);
+                this._closeDigestPanel();
+
+                const panel = document.createElement('section');
+                panel.className = 'ytkit-sub-digest-panel';
+                panel.setAttribute('role', 'region');
+                panel.setAttribute('aria-label', 'Group notifications digest');
+
+                const head = document.createElement('div');
+                head.className = 'ytkit-sub-digest-head';
+                const titleWrap = document.createElement('div');
+                const title = document.createElement('h3');
+                title.className = 'ytkit-sub-digest-title';
+                title.textContent = 'Group Digest';
+                const meta = document.createElement('div');
+                meta.className = 'ytkit-sub-digest-meta';
+                meta.textContent = `${allNew.length} new of ${summaries.length} rendered videos`;
+                titleWrap.append(title, meta);
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'ytkit-sub-digest-close';
+                close.textContent = 'Close';
+                close.addEventListener('click', () => this._closeDigestPanel());
+                head.append(titleWrap, close);
+
+                const list = document.createElement('div');
+                list.className = 'ytkit-sub-digest-list';
+
+                const appendRow = (entry) => {
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-sub-digest-row';
+                    row.dataset.depth = String(entry.depth || 0);
+                    const name = document.createElement('div');
+                    name.className = 'ytkit-sub-digest-name';
+                    name.textContent = entry.name;
+                    const count = document.createElement('div');
+                    count.className = 'ytkit-sub-digest-count';
+                    count.textContent = `${entry.newVideos} new`;
+                    const rendered = document.createElement('div');
+                    rendered.className = 'ytkit-sub-digest-muted';
+                    rendered.textContent = `${entry.renderedVideos} shown / ${entry.newChannels} channel${entry.newChannels === 1 ? '' : 's'}`;
+                    const actions = document.createElement('div');
+                    const mark = document.createElement('button');
+                    mark.type = 'button';
+                    mark.textContent = 'Mark read';
+                    mark.disabled = entry.newVideos === 0;
+                    mark.addEventListener('click', () => this._markGroupDigestRead(entry.groupId || ''));
+                    const view = document.createElement('button');
+                    view.type = 'button';
+                    view.textContent = 'View';
+                    view.addEventListener('click', () => {
+                        this._activeGroupId = entry.groupId || '';
+                        this._renderToolbar();
+                        this._applyGroupFilter();
+                        this._applyNewSinceMarkers();
+                        this._renderDeadChannelMarkers();
+                        this._applySort();
+                    });
+                    actions.append(mark, view);
+                    row.append(name, count, rendered, actions);
+                    list.appendChild(row);
+                };
+
+                appendRow({
+                    groupId: '',
+                    name: 'All subscriptions',
+                    depth: 0,
+                    renderedVideos: summaries.length,
+                    newVideos: allNew.length,
+                    newChannels: new Set(allNew.map(item => item.channelId)).size
+                });
+                entries.forEach(appendRow);
+                if (!entries.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-sub-digest-empty';
+                    empty.textContent = 'Create subscription groups to split new-video counts by topic.';
+                    list.appendChild(empty);
+                }
+
+                panel.append(head, list);
+                this._toolbar.insertAdjacentElement('afterend', panel);
+                this._digestPanel = panel;
+            },
+
             _collectDeadChannelCandidates() {
                 const candidates = new Map();
                 document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer').forEach(card => {
                     if (card.classList.contains('ytkit-sub-hidden-by-group')) return;
                     const channelId = this._extractChannelIdFromCard(card);
                     if (!channelId) return;
-                    const metaText = [
-                        card.querySelector('#metadata-line')?.textContent,
-                        card.querySelector('ytd-video-meta-block')?.textContent,
-                        card.querySelector('#meta')?.textContent,
-                        card.textContent
-                    ].filter(Boolean).join(' ');
-                    const ageDays = this._extractCardAgeDays(metaText);
+                    const ageDays = this._extractCardAgeDays(this._getCardMetaText(card));
                     if (ageDays === null || ageDays < this._STALE_CHANNEL_MIN_AGE_DAYS) return;
                     const current = candidates.get(channelId);
                     if (current && current.ageDays >= ageDays) return;
@@ -32132,6 +32351,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!container) return;
                 const cards = Array.from(container.querySelectorAll(':scope > ytd-rich-item-renderer, :scope > ytd-video-renderer'));
                 if (!cards.length) return;
+                const lastVisit = mode === 'new-since-last-visit' ? this._readLastVisit() : null;
                 const score = (card) => {
                     const text = card.textContent || '';
                     if (mode === 'duration-asc') {
@@ -32148,8 +32368,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                     if (mode === 'new-since-last-visit') {
                         const channelId = this._extractChannelIdFromCard(card);
-                        const lv = this._readLastVisit();
-                        return lv[channelId] ? 1 : 0;  // unknown channels first
+                        return this._isCardNewSinceLastVisit(card, channelId, lastVisit) ? 0 : 1;
                     }
                     if (mode === 'popular') {
                         // v3.29 deferred: heuristic popularity = view count desc.
@@ -32313,6 +32532,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _renderToolbar() {
                 const target = document.querySelector('ytd-rich-grid-renderer, ytd-section-list-renderer');
                 if (!target || !target.parentElement) return;
+                const hadDigestPanel = Boolean(this._digestPanel);
+                this._closeDigestPanel();
                 this._toolbar?.remove();
                 const bar = document.createElement('div');
                 bar.className = 'ytkit-sub-toolbar';
@@ -32418,6 +32639,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 bar.appendChild(sortSelect);
 
+                const digestBtn = document.createElement('button');
+                digestBtn.type = 'button';
+                digestBtn.dataset.action = 'digest';
+                digestBtn.textContent = 'Digest';
+                digestBtn.addEventListener('click', () => this._toggleDigestPanel());
+                bar.appendChild(digestBtn);
+
                 const exportBtn = document.createElement('button');
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
@@ -32481,6 +32709,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 target.parentElement.insertBefore(bar, target);
                 this._toolbar = bar;
+                if (hadDigestPanel) this._renderDigestPanel();
             },
 
             init() {
@@ -32501,7 +32730,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer', () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
                     this._applyGroupFilter();
+                    this._applyNewSinceMarkers();
                     this._renderDeadChannelMarkers();
+                    if (this._digestPanel) this._renderDigestPanel();
                 });
                 this._navRule();
             },
@@ -32510,6 +32741,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 removeNavigateRule(this.id);
                 removeScopedMutationRule(this.id);
                 this._navRule = null;
+                this._closeDigestPanel();
                 this._toolbar?.remove();
                 this._toolbar = null;
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));

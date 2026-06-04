@@ -33,6 +33,7 @@ release-level details live in `CHANGELOG.md`.
 - Nested subscription groups with depth-2 JSON import/export.
 - Dead-channel subscription detection with 30-day unsubscribe staging and undo.
 - Per-video notes with JSON export and a 1000-note LRU cap.
+- Group notifications digest with per-group new-video counts and Mark read.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -98,6 +99,10 @@ carry only open work.
 - [x] Per-video notes (`videoNotes`) — watch pages now have a local notes panel
   backed by `videoNotesData`, versioned JSON export, delete/undo for the current
   video, and a deterministic 1000-note LRU cap by `updatedAt`.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Group notifications digest panel — Subscription Groups now has a Digest
+  panel with all-subscriptions and per-group rendered/new-video counts, child
+  row styling, and bounded Mark read updates through `subscriptionLastVisitData`.
   *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
