@@ -20,6 +20,21 @@ permissions:
   contents: read
 
 jobs:
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: moderate
+          vulnerability-check: true
+          license-check: false
+
   js:
     name: JS tests + check gate
     runs-on: ubuntu-latest
@@ -52,6 +67,34 @@ jobs:
         with:
           name: astra-deck-sbom
           path: sbom.json
+          if-no-files-found: ignore
+
+  python-audit:
+    name: Python dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: astra_downloader/requirements.txt
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit
+
+      - name: pip-audit requirements
+        run: |
+          python -m pip_audit -r astra_downloader/requirements.txt --format json --progress-spinner off --output pip-audit.json
+
+      - name: Upload Python audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: astra-downloader-pip-audit
+          path: pip-audit.json
           if-no-files-found: ignore
 
   python:

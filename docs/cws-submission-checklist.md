@@ -82,6 +82,8 @@ must use Google's standardized vocabulary to declare data categories.
       a11y / contrast).
 - [ ] `npm test` passes (all `tests/*.test.js` + `tests/features/*.test.js`).
 - [ ] `npm audit --omit=dev` clean.
+- [ ] `pip-audit` clean for `astra_downloader/requirements.txt`; attach or
+      link the `astra-downloader-pip-audit` JSON artifact for release review.
 - [ ] CHANGELOG entry for the new version.
 - [ ] Screenshots captured at the current popup dimensions (system DPI
       must be 100 % for CWS — they reject scaled captures).

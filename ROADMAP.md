@@ -335,7 +335,7 @@ means implemented/closed by the build lane.
   review guidance. Ran a local `pip-audit` probe against the downloader
   requirements; detailed notes live in
   `docs/research-cycle-10-python-dependency-audit.md`.
-- [ ] 🔬🤖 P2 — Add a Python companion dependency audit gate
+- [x] 🔬🤖 P2 — Add a Python companion dependency audit gate
   - Why: `npm run check` already gates JavaScript production dependency
     vulnerabilities with `npm audit --omit=dev --audit-level=moderate`, and
     Dependabot opens Python dependency PRs, but the Astra Downloader companion
@@ -379,6 +379,14 @@ means implemented/closed by the build lane.
     throwaway branch. Keep the existing `python -m pytest astra_downloader`,
     `npm run check`, and `npm test` gates green.
   - Complexity: S
+  - Status 2026-06-04: delivered. `Validate` now has a dedicated Python
+    dependency-audit job that installs `pip-audit`, audits
+    `astra_downloader/requirements.txt` as JSON, uploads
+    `astra-downloader-pip-audit`, and fails the push/PR gate on any known
+    vulnerability finding that has not been explicitly ignored. Pull requests
+    also run `actions/dependency-review-action@v5` with moderate-or-higher
+    vulnerability failure and license policy disabled until a maintainer sets
+    one.
 
 ### Researcher Queue (Cycle 9 - 2026-06-04)
 

@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Python companion dependency audit gate.** The `Validate` workflow now runs
+  `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
+  artifact for release review, and runs GitHub dependency review on pull
+  requests so moderate-or-higher vulnerable dependency changes fail before
+  merge.
+
 - **Cross-store privacy and Firefox consent packet.** Added
   `docs/privacy-policy.md` as the stable policy source linked from README and
   store-submission docs. The policy covers local storage, third-party API calls,
