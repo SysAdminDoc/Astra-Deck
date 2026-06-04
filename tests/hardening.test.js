@@ -3941,6 +3941,41 @@ function loadPolicyProfileModule() {
     return stub;
 }
 
+function makeNonDefaultSchemaValue(entry) {
+    switch (entry.type) {
+    case 'boolean':
+        return !entry.defaultValue;
+    case 'number':
+        return Number(entry.defaultValue || 0) + 1;
+    case 'array':
+        return ['__schema_export_test__', entry.key];
+    case 'object':
+        return { __schemaExportTest: entry.key };
+    case 'null':
+        return '__schema_export_test_null__';
+    case 'string':
+    default:
+        return `__schema_export_test_${entry.key}__`;
+    }
+}
+
+function schemaKeyLooksCredentialBearing(key) {
+    const raw = String(key || '');
+    const compact = raw.replace(/[_-]/g, '').toLowerCase();
+    return compact.includes('apikey')
+        || compact.endsWith('token')
+        || compact.includes('bearer')
+        || compact.includes('secret')
+        || compact.includes('password')
+        || compact.includes('credential')
+        || /(?:private|access|refresh|session|signing)key$/.test(compact)
+        || compact.endsWith('cookie')
+        || compact.endsWith('cookies')
+        || compact.endsWith('cookiejar')
+        || /^auth/i.test(raw)
+        || /[a-z]Auth/.test(raw);
+}
+
 test('v5.0.0 feature-lifecycle: defineFeature validates required hooks', () => {
     const core = loadLifecycleModule();
     const lc = core.createLifecycle({ logger: { warn() {} } });
@@ -4065,6 +4100,60 @@ test('v5.0.0 policy-profile: store-safe export reverts github-full keys to schem
     assert.equal(out.ageRestrictionBypass, false,
         'github-full toggle must revert to its schema default on a store-safe export');
     assert.equal(out.sponsorBlock, true);
+});
+
+test('v5.0.0 policy-profile: store-safe export covers every github-full schema key', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const githubFullEntries = SETTINGS_SCHEMA.filter((entry) => entry.profile === 'github-full');
+    assert.ok(githubFullEntries.length > 0,
+        'schema must keep at least one github-full-gated key for this regression');
+
+    const input = {};
+    for (const entry of SETTINGS_SCHEMA) {
+        input[entry.key] = makeNonDefaultSchemaValue(entry);
+    }
+
+    const { settings: out, effective } = pp.buildExportSnapshot(input, { effective: 'store-safe' });
+    assert.equal(effective, 'store-safe');
+
+    for (const entry of githubFullEntries) {
+        if (pp.shouldScrubKey(entry.key)) {
+            assert.equal(entry.key in out, false,
+                `${entry.key} is credential-shaped and must be removed before profile defaulting`);
+        } else {
+            assert.deepEqual(out[entry.key], entry.defaultValue,
+                `${entry.key} must revert to its schema default in a store-safe export`);
+        }
+    }
+});
+
+test('v5.0.0 policy-profile: github-full export still scrubs credential-shaped schema keys', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    const { SETTINGS_SCHEMA } = settingsSchemaModule;
+    const credentialEntries = SETTINGS_SCHEMA.filter((entry) => schemaKeyLooksCredentialBearing(entry.key));
+    assert.ok(credentialEntries.some((entry) => entry.key === 'aiSummaryApiKey'),
+        'live schema credential coverage must include the BYO AI key');
+
+    const input = {};
+    for (const entry of SETTINGS_SCHEMA) {
+        input[entry.key] = makeNonDefaultSchemaValue(entry);
+    }
+
+    for (const entry of credentialEntries) {
+        assert.equal(pp.shouldScrubKey(entry.key), true,
+            `${entry.key} looks credential-bearing and must match shouldScrubKey`);
+    }
+
+    for (const effective of ['store-safe', 'github-full']) {
+        const { settings: out } = pp.buildExportSnapshot(input, { effective });
+        for (const entry of credentialEntries) {
+            assert.equal(entry.key in out, false,
+                `${entry.key} must be absent from ${effective} export snapshots`);
+        }
+    }
 });
 
 test('v5.0.0 policy-profile: countByProfile partitions the schema cleanly', () => {
@@ -7904,8 +7993,8 @@ test('v4.47.0 NF23 — nyan-cat theme asset resolves via getRepoAssetUrl, not a 
 test('v4.47.0 R6 — policy-profile scrub regex catches the broader API-key shapes', () => {
     // The previous scrub regex matched only the *suffix* `apiKey$` /
     // `token$` plus the exact `aiSummaryApiKey`. R6 broadens coverage
-    // to catch `apikey_v2`, `bearerToken`, `webhookSecret`,
-    // `authToken`, etc. Pin the new shapes so a future refactor
+    // to catch `apikey_v2`, `api_key`, `bearerToken`, `webhookSecret`,
+    // `authToken`, private keys, cookie snapshots, etc. Pin the new shapes so a future refactor
     // can't silently narrow the scrubber.
     delete require.cache[require.resolve('../extension/core/policy-profile.js')];
     const ppMod = require('../extension/core/policy-profile.js');
@@ -7920,32 +8009,42 @@ test('v4.47.0 R6 — policy-profile scrub regex catches the broader API-key shap
         aiSummaryApiKey: 'sk-yyyyy',
         sessionToken: 'tok-1',
         apikey_v2: 'sk-zzz',
+        api_key: 'sk-underscore',
+        'api-key': 'sk-dash',
         bearerToken: 'bear-1',
         accessBearer: 'bear-2',
         webhookSecret: 'whsec_1',
         authToken: 'auth-1',
         userAuth: 'auth-2',
+        accountPassword: 'pass-1',
+        serviceCredential: 'cred-1',
+        privateKey: '-----BEGIN PRIVATE KEY-----',
+        accessKey: 'access-1',
+        youtubeCookies: 'cookie-1',
+        cookieJar: 'cookie-2',
         // Should NOT be scrubbed (benign / unrelated):
         aiSummaryProvider: 'openai',
         autoMaxResolution: true,
         videosPerRow: 0,
-        // Edge: a key with "apiKeyId" — under the old anchored regex
-        // this would also be scrubbed (matches apiKey$); we accept
-        // that here because storing an api-key-id is rare and erring
-        // on the side of scrubbing is safer.
+        // Edge: a key with "apiKeyId" names an identifier for an API key,
+        // not the key material itself. Keep the negative look-ahead pinned.
+        apiKeyId: 'id-1',
     };
     const snap = profile.buildExportSnapshot(fakeSettings, { effective: 'github-full' });
     const exported = Object.keys(snap.settings);
 
     // Scrubbed keys must be absent.
     for (const sensitive of ['apiKey', 'aiSummaryApiKey', 'sessionToken',
-        'apikey_v2', 'bearerToken', 'accessBearer', 'webhookSecret',
-        'authToken', 'userAuth']) {
+        'apikey_v2', 'api_key', 'api-key', 'bearerToken', 'accessBearer',
+        'webhookSecret', 'authToken', 'userAuth', 'accountPassword',
+        'serviceCredential', 'privateKey', 'accessKey', 'youtubeCookies',
+        'cookieJar']) {
         assert.ok(!exported.includes(sensitive),
             `${sensitive} must be scrubbed from the export snapshot`);
     }
     // Benign keys must survive.
-    for (const benign of ['aiSummaryProvider', 'autoMaxResolution', 'videosPerRow']) {
+    for (const benign of ['aiSummaryProvider', 'autoMaxResolution', 'videosPerRow',
+        'apiKeyId']) {
         assert.ok(exported.includes(benign),
             `${benign} must NOT be scrubbed (it carries no secret)`);
     }
