@@ -54,12 +54,159 @@
         });
     }
 
-                                                                                                                                // ── BEGIN v5.0.0 bundled core modules ──
+    // ── BEGIN v5.0.0 bundled core modules ──
     // Auto-bundled by sync-userscript.js — do NOT hand-edit. To refresh, run:
     //     node sync-userscript.js
     //
     // The hardening test `v4.20.0 userscript bundles every v5.0.0 core module
     // verbatim` pins the parity contract.
+
+    // ── bundled module: extension/core/styles.js ──
+    (() => {
+        'use strict';
+
+        const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
+        if (core.appendStyleSheet) return;
+
+        function appendStyleSheet(css) {
+            const style = document.createElement('style');
+            style.textContent = css;
+            (document.head || document.documentElement).appendChild(style);
+            return style;
+        }
+
+        function injectStyle(selector, featureId, isRawCss = false) {
+            const id = `yt-suite-style-${featureId}`;
+            document.getElementById(id)?.remove();
+            const style = document.createElement('style');
+            style.id = id;
+            style.textContent = isRawCss ? selector : `${selector} { display: none !important; }`;
+            (document.head || document.documentElement).appendChild(style);
+            return style;
+        }
+
+        const lifecycleStyleRecords = new Map();
+
+        function createCssLifecycleSpec(options = {}) {
+            const {
+                id,
+                category,
+                buildCss,
+                isRawCss,
+                bodyClass = `ytkit-${id}`
+            } = options;
+
+            return {
+                id,
+                category,
+                buildCss,
+                init(ctx = {}) {
+                    const settings = ctx.settings || {};
+                    const css = typeof buildCss === 'function'
+                        ? buildCss(settings, ctx)
+                        : ctx.css;
+                    if (!css) return;
+                    const raw = typeof isRawCss === 'boolean'
+                        ? isRawCss
+                        : String(css).includes('{');
+                    const className = ctx.bodyClass || bodyClass;
+                    const style = injectStyle(css, id, raw);
+                    if (className && document.body) document.body.classList.add(className);
+                    lifecycleStyleRecords.set(id, { style, bodyClass: className });
+                },
+                apply(ctx = {}) {
+                    const record = lifecycleStyleRecords.get(id);
+                    if (!record || typeof buildCss !== 'function') return;
+                    const css = buildCss(ctx.settings || {}, ctx);
+                    if (!css) {
+                        record.style?.remove();
+                        lifecycleStyleRecords.delete(id);
+                        return;
+                    }
+                    record.style.textContent = css;
+                },
+                destroy(ctx = {}) {
+                    const record = lifecycleStyleRecords.get(id);
+                    if (record) {
+                        record.style?.remove();
+                        if (record.bodyClass && document.body) {
+                            document.body.classList.remove(record.bodyClass);
+                        }
+                        lifecycleStyleRecords.delete(id);
+                        return;
+                    }
+                    const className = ctx.bodyClass || bodyClass;
+                    document.getElementById(`yt-suite-style-${id}`)?.remove();
+                    if (className && document.body) document.body.classList.remove(className);
+                }
+            };
+        }
+
+        function stripCommentRestyleCss(css = '') {
+            if (!css) return css;
+            const commentPattern = /(#comments\b|#simple-box\b|#placeholder-area\b|#action-buttons\b|#vote-count-middle\b|#reply-button-end\b|#header-author\b|#author-thumbnail\b|#contenteditable-textarea\b|#contenteditable-root\b|ytd-comments\b|ytd-comments-header-renderer\b|ytd-comment(?:-[a-z-]+)?\b|ytd-commentbox\b|ytd-comment-engagement-bar\b|ytd-comment-replies-renderer\b|yt-user-mention-autosuggest-input\b|ytkit-comment-|ytSubThread|thread-hitbox\.style-scope\.ytd-comment-thread-renderer|#author-text\b|#published-time-text\b|#content-text\b|#action-menu\.ytd-comment|\[data-ytkit-comment-current)/i;
+            return css
+                .split('}')
+                .map((chunk) => chunk.trim())
+                .filter(Boolean)
+                .filter((chunk) => !commentPattern.test(chunk))
+                .map((chunk) => `${chunk}}`)
+                .join('');
+        }
+
+        function cleanupRetiredCommentUi(root = document) {
+            if (!root?.querySelectorAll) return;
+            [
+                'chatStyleComments',
+                'chatStyleComments-premium',
+                'chatStyleComments-premium-2',
+                'commentEnhancements',
+                'commentNavigator',
+                'autoExpandComments',
+                'hideCommentDislikeButton',
+                'hideCommentActionMenu',
+                'condenseComments',
+                'hideCommentTeaser',
+                'watchPageRestyle-comments'
+            ].forEach((styleId) => {
+                root.querySelector(`#yt-suite-style-${styleId}`)?.remove();
+            });
+            root.querySelectorAll('.ytkit-comment-search, #ytkit-comment-nav, .ytkit-vote-badge, .ytkit-heat-indicator').forEach((el) => el.remove());
+            root.querySelectorAll('[data-ytkit-chat], [data-ytkit-pinned], [data-ytkit-heart], [data-ytkit-linked], [data-ytkit-enhanced], [data-ytkit-creator], [data-ytkit-comment-current]').forEach((el) => {
+                delete el.dataset.ytkitChat;
+                delete el.dataset.ytkitPinned;
+                delete el.dataset.ytkitHeart;
+                delete el.dataset.ytkitLinked;
+                delete el.dataset.ytkitEnhanced;
+                delete el.dataset.ytkitCreator;
+                delete el.dataset.ytkitCommentCurrent;
+            });
+            root.querySelectorAll('.ytkit-replying').forEach((el) => el.classList.remove('ytkit-replying'));
+            root.querySelectorAll('ytd-comment-thread-renderer').forEach((thread) => {
+                if (thread instanceof HTMLElement && thread.style.display === 'none' && thread.dataset.ytkitPinnedCommentHidden !== '1') {
+                    thread.style.display = '';
+                }
+            });
+        }
+
+        Object.assign(core, {
+            appendStyleSheet,
+            cleanupRetiredCommentUi,
+            createCssLifecycleSpec,
+            injectStyle,
+            stripCommentRestyleCss
+        });
+
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = {
+                appendStyleSheet,
+                cleanupRetiredCommentUi,
+                createCssLifecycleSpec,
+                injectStyle,
+                stripCommentRestyleCss
+            };
+        }
+    })();
 
     // ── bundled module: extension/core/settings-schema.js ──
     'use strict';
@@ -228,6 +375,13 @@
         Object.freeze({ key: "hideLiveChatEngagement", category: "live-chat", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "premiumLiveChat", category: "live-chat", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "reactionSpammer", category: "live-chat", type: "boolean", defaultValue: false, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        // v4.47.0 EI-NEW3: configurable floor for the reactionSpammer
+        // interval. The hardcoded 500 ms safety floor is preserved at the
+        // call site (raw < 500 -> clamped to 500); admins can tighten the
+        // floor to 1000+ ms to stay further from YouTube's automated-
+        // behavior heuristics. Cannot be lowered below 500 — that would
+        // defeat the safety guarantee documented in v3.23.0 N3.
+        Object.freeze({ key: "reactionSpammerMinIntervalMs", category: "live-chat", type: "number", defaultValue: 500, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "_reactionSpammerAck", category: "live-chat", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
 
         // ─── watch-player ───
@@ -266,6 +420,14 @@
         Object.freeze({ key: "hideVideosDurationFilter", category: "content-filter", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosSubsLoadLimit", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosSubsLoadThreshold", category: "content-filter", type: "number", defaultValue: 3, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+        // v4.47.0 NF33: hidden-ratio cutoff for the subs-load pause gate.
+        // Previous gate was "100% hidden in N consecutive batches"; the
+        // new gate is "hiddenRatio >= cutoff in N consecutive batches".
+        // Default 0.8 lets a feed where 20% of cards survive the filter
+        // continue to paginate normally instead of locking after one
+        // unlucky batch streak. Invalid values fall back to 0.8 at the
+        // call site; range is documented as (0, 1].
+        Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
         Object.freeze({ key: "hideVideosRemoveHiddenCards", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosShowQuickHideButton", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "hideVideosAllowChannelBlock", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -386,6 +548,16 @@
         // ─── watch-player ───
         Object.freeze({ key: "cinemaAmbientGlow", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "transcriptViewer", category: "watch-player", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        // v4.47.0 NF29: language preference for the transcript viewer.
+        // 'auto' = derive from navigator.language (default); empty string
+        // also treated as auto. Otherwise a 2-letter ISO 639-1 code
+        // ('es', 'fr', 'ja', 'pt', etc.). Selection precedence inside
+        // ytkit.js#transcriptViewer._loadTranscript:
+        //   1. exact languageCode match for the preference
+        //   2. exact languageCode match for navigator.language base
+        //   3. exact 'en' (the v4.46.0 hardcoded fallback)
+        //   4. first available track
+        Object.freeze({ key: "transcriptPreferredLanguage", category: "watch-player", type: "string", defaultValue: "auto", risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
 
         // ─── playback-audio ───
         Object.freeze({ key: "searchFilterDefaults", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -610,6 +782,8 @@
         Object.freeze({ key: "downloadScreenshotFormat", category: "playback-audio", type: "string", defaultValue: "png", risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "downloadSubtitlesWithScreenshot", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "volumeWheelMode", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "wheelSeek", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+        Object.freeze({ key: "wheelSeekStepSec", category: "playback-audio", type: "number", defaultValue: 5, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "disableLoudnessNormalization", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "perChannelIntroOutro", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
         Object.freeze({ key: "perChannelIntroOutroData", category: "playback-audio", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
@@ -1192,10 +1366,38 @@
             // shared/sync export under any profile. Anything carrying a
             // secret (BYO API key) lands here regardless of the user's
             // sync allowlist.
+            //
+            // v4.47.0 R6: regex set broadened. Previous coverage only
+            // matched the *suffix* `apiKey$` / `token$` plus the exact
+            // `aiSummaryApiKey`. A user-supplied key named `apikey_v2`
+            // or `bearerToken` would have slipped through because the
+            // anchored suffix didn't fire on the underscore-separator or
+            // the `bearer` prefix. New patterns:
+            //
+            //   apikey(?!_id$) anywhere  — catches apikey_v2 / apiKey1 / api_key
+            //   bearer anywhere           — catches bearerToken / bearer_secret
+            //   secret anywhere           — catches webhookSecret etc.
+            //   ^auth / _auth / Auth$    — catches authToken / apiAuth / userAuth
+            //
+            // The negative-lookahead on `apikey(?!_id$)` prevents matching
+            // benign keys that store an ID-of-API-key rather than the key
+            // itself (none today, but a defensive carve-out).
             const ALWAYS_SCRUB_KEY_PATTERNS = Object.freeze([
                 /apiKey$/i,
                 /^aiSummaryApiKey$/,
-                /token$/i
+                /token$/i,
+                // Broader patterns added in v4.47.0 R6.
+                /apikey(?!_id$)/i,
+                /bearer/i,
+                /secret/i,
+                // Two patterns for camelCase "auth" coverage:
+                //   /^auth/i        — settings starting with "auth" (authToken)
+                //   /[a-z]Auth/     — camelCase "Auth" mid-word (userAuth)
+                // Combined with the no-current-conflicting-keys check
+                // (no schema key today contains "author" or similar) so
+                // the broad coverage doesn't cause false positives.
+                /^auth/i,
+                /[a-z]Auth/,
             ]);
 
             function shouldScrubKey(key) {
@@ -1270,9 +1472,10 @@
         //
         //   1. summarize(snapshot) — high-level rollup (counts, top problem
         //      surfaces, fresh-capture flags) suitable for at-a-glance UI.
-        //   2. rankProblemSurfaces(snapshot, limit) — worst-N by miss rate,
-        //      filtering out surfaces with zero attempts so untested entries
-        //      do not crowd out actual regressions.
+        //   2. rankProblemSurfaces(snapshot, limit) — worst-N by miss/error
+        //      rate plus shape drift, filtering out surfaces with zero attempts
+        //      and no drift so untested entries do not crowd out actual
+        //      regressions.
         //   3. formatCopyReport(snapshot, options) — multi-line plain-text
         //      report ready for the popup "Copy selector report" button. The
         //      output is line-oriented, ASCII-safe, and always begins with a
@@ -1290,27 +1493,54 @@
             return Number.isFinite(n) ? n : 0;
         }
 
+        function getSurfaceShapeDrifts(surface) {
+            const selectors = Array.isArray(surface?.selectors) ? surface.selectors : [];
+            if (selectors.length) {
+                return selectors.reduce((sum, selector) => sum + safeNumber(selector.shapeDrifts), 0);
+            }
+            return safeNumber(surface?.shapeDrifts);
+        }
+
+        function hasSurfaceShapeSample(surface) {
+            const selectors = Array.isArray(surface?.selectors) ? surface.selectors : [];
+            if (selectors.length) {
+                return selectors.some(selector =>
+                    selector.hasShapeSample === true
+                    || selector.firstShape != null
+                    || selector.lastShape != null);
+            }
+            return surface?.hasShapeSample === true;
+        }
+
         function summarize(snapshot) {
             const surfaces = Array.isArray(snapshot) ? snapshot : [];
             let totalAttempts = 0;
             let totalHits = 0;
             let totalMisses = 0;
             let totalErrors = 0;
+            let totalShapeDrifts = 0;
             let highChurnSurfaces = 0;
             let needsFreshCapture = 0;
             let surfacesWithMisses = 0;
+            let surfacesWithShapeDrift = 0;
+            let surfacesWithoutShapeSample = 0;
 
             for (const s of surfaces) {
                 const hits = safeNumber(s.hitCount);
                 const misses = safeNumber(s.missCount);
                 const errors = safeNumber(s.errorCount);
+                const attempts = hits + misses + errors;
+                const shapeDrifts = getSurfaceShapeDrifts(s);
                 totalHits += hits;
                 totalMisses += misses;
                 totalErrors += errors;
-                totalAttempts += hits + misses + errors;
+                totalAttempts += attempts;
+                totalShapeDrifts += shapeDrifts;
                 if (s.highChurn) highChurnSurfaces += 1;
                 if (s.needsFreshCapture) needsFreshCapture += 1;
                 if (misses > 0 || errors > 0) surfacesWithMisses += 1;
+                if (shapeDrifts > 0) surfacesWithShapeDrift += 1;
+                if (attempts > 0 && !hasSurfaceShapeSample(s)) surfacesWithoutShapeSample += 1;
             }
 
             const missRate = totalAttempts > 0
@@ -1326,6 +1556,9 @@
                 totalHits,
                 totalMisses,
                 totalErrors,
+                totalShapeDrifts,
+                surfacesWithShapeDrift,
+                surfacesWithoutShapeSample,
                 missRate
             };
         }
@@ -1338,12 +1571,16 @@
                 const misses = safeNumber(s.missCount);
                 const errors = safeNumber(s.errorCount);
                 const attempts = hits + misses + errors;
+                const shapeDrifts = getSurfaceShapeDrifts(s);
                 // Skip untested surfaces (zero attempts). They are not problems —
-                // they have nothing to report.
-                if (attempts === 0) continue;
+                // they have nothing to report unless shape drift was recorded by
+                // an external snapshot provider.
+                if (attempts === 0 && shapeDrifts === 0) continue;
                 const failures = misses + errors;
-                if (failures === 0) continue;
-                const failureRate = failures / attempts;
+                if (failures === 0 && shapeDrifts === 0) continue;
+                const failureRate = attempts > 0 ? failures / attempts : 0;
+                const churnRate = attempts > 0 ? shapeDrifts / attempts : shapeDrifts;
+                const problemScore = failureRate + churnRate;
                 scored.push({
                     surface: s.surface,
                     attempts,
@@ -1352,15 +1589,20 @@
                     errors,
                     failures,
                     failureRate,
+                    shapeDrifts,
+                    hasShapeSample: hasSurfaceShapeSample(s),
+                    problemScore,
                     highChurn: !!s.highChurn,
                     needsFreshCapture: !!s.needsFreshCapture
                 });
             }
             scored.sort((a, b) => {
-                // Primary key: failure rate descending.
-                if (b.failureRate !== a.failureRate) return b.failureRate - a.failureRate;
+                // Primary key: combined failure + shape-drift score descending.
+                if (b.problemScore !== a.problemScore) return b.problemScore - a.problemScore;
                 // Tie-break: more raw failures first.
                 if (b.failures !== a.failures) return b.failures - a.failures;
+                // Then more observed shape drift.
+                if (b.shapeDrifts !== a.shapeDrifts) return b.shapeDrifts - a.shapeDrifts;
                 // Stable: alphabetic by surface.
                 return a.surface < b.surface ? -1 : a.surface > b.surface ? 1 : 0;
             });
@@ -1386,10 +1628,13 @@
             lines.push('  high-churn surfaces:     ' + summary.highChurnSurfaces);
             lines.push('  needs fresh capture:     ' + summary.needsFreshCapture);
             lines.push('  surfaces with misses:    ' + summary.surfacesWithMisses);
+            lines.push('  surfaces with drift:     ' + summary.surfacesWithShapeDrift);
+            lines.push('  unsampled hit surfaces:   ' + summary.surfacesWithoutShapeSample);
             lines.push('  total attempts:          ' + summary.totalAttempts);
             lines.push('  total hits:              ' + summary.totalHits);
             lines.push('  total misses:            ' + summary.totalMisses);
             lines.push('  total errors:            ' + summary.totalErrors);
+            lines.push('  total shape drifts:      ' + summary.totalShapeDrifts);
             lines.push('  miss rate:               ' + summary.missRate + '%');
             lines.push('');
 
@@ -1398,21 +1643,25 @@
                 return lines.join('\n');
             }
 
-            lines.push('top ' + top.length + ' problem surface(s) by failure rate:');
+            lines.push('top ' + top.length + ' problem surface(s) by failure/drift score:');
             for (const t of top) {
                 const flags = [];
                 if (t.highChurn) flags.push('high-churn');
                 if (t.needsFreshCapture) flags.push('needs-fresh-capture');
                 const flagStr = flags.length ? '  [' + flags.join(', ') + ']' : '';
                 const ratePct = Math.round(t.failureRate * 10000) / 100;
+                const driftStr = t.shapeDrifts > 0
+                    ? '; ' + t.shapeDrifts + ' shape drift' + (t.shapeDrifts === 1 ? '' : 's')
+                    : '';
                 lines.push('  - ' + t.surface + ': ' + t.failures + '/' + t.attempts +
-                    ' attempts failed (' + ratePct + '%)' + flagStr);
+                    ' attempts failed (' + ratePct + '%)' + driftStr + flagStr);
             }
             lines.push('');
             lines.push('Investigate by:');
             lines.push('  1. Capturing a fresh MHTML of the failing surface (subscriptions/watch/live-chat).');
             lines.push('  2. Running scripts/build-selector-fixtures.js against the new capture.');
-            lines.push('  3. Updating extension/core/selectors.js stable/fallback selectors.');
+            lines.push('  3. Comparing shape drift for class/attribute churn before updating selector packs.');
+            lines.push('  4. Updating extension/core/selectors.js stable/fallback selectors.');
             return lines.join('\n');
         }
 
@@ -2154,7 +2403,6 @@
             // = ports.length * PROBE_TIMEOUT_MS but realistic case = one
             // round trip on the canonical port.
             for (const port of MEDIA_DL_PORTS) {
-                // eslint-disable-next-line no-await-in-loop
                 const ok = await fetchWithTimeout(`http://127.0.0.1:${port}/health`, PROBE_TIMEOUT_MS);
                 if (ok) return true;
             }
@@ -2181,7 +2429,7 @@
                 // Unknown capability — be defensive, return false rather
                 // than throw, so a stale UI element doesn't crash the
                 // popup on an unknown name.
-                return entry ? entry.run() : false;
+                return false;
             }
             return entry.run();
         }
@@ -2703,20 +2951,34 @@
                 + '                    }\n                ';
         }
 
-        // v4.47.0 NF5 wave 1: lifecycle specs for the seven theme-css
-        // feature ids this module owns. All register-only (init / destroy
-        // no-op); inline ytkit.js cssFeature() blocks still own the actual
-        // injectStyle / cleanup. The categories below match the
-        // settings-schema entries — schema parity is pinned by the
-        // hardening test.
+        function createLifecycleSpec(id, category, buildCss) {
+            const factory = globalThis.YTKitCore
+                && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
+                && globalThis.YTKitCore.createCssLifecycleSpec;
+            if (factory) return factory({ id, category, buildCss });
+            return {
+                id,
+                category,
+                buildCss,
+                init() { /* reason: styles core helper unavailable in this context */ },
+                destroy() { /* reason: styles core helper unavailable in this context */ }
+            };
+        }
+
+        // v4.47.0 NF5 wave 3: lifecycle specs for the seven theme-css
+        // feature ids this module owns. The specs now carry the style
+        // injection/teardown implementation via core/styles.js; manual
+        // feature blocks can delegate once their non-CSS side effects move.
+        // The categories below match the settings-schema entries — schema
+        // parity is pinned by the hardening test.
         const LIFECYCLE_SPECS = Object.freeze([
-            { id: 'customProgressBarColor', category: 'shell' },
-            { id: 'customSelectionColor',   category: 'shell' },
-            { id: 'grayscaleThumbnails',    category: 'shell' },
-            { id: 'forceDarkEverywhere',    category: 'shell' },
-            { id: 'themeAccentColor',       category: 'shell' },
-            { id: 'compactUnfixedHeader',   category: 'shell' },
-            { id: 'hideVideoEndContent',    category: 'watch-player' },
+            createLifecycleSpec('customProgressBarColor', 'shell',        buildProgressBarCss),
+            createLifecycleSpec('customSelectionColor',   'shell',        buildSelectionColorCss),
+            createLifecycleSpec('grayscaleThumbnails',    'shell',        buildGrayscaleThumbnailsCss),
+            createLifecycleSpec('forceDarkEverywhere',    'shell',        buildForceDarkEverywhereCss),
+            createLifecycleSpec('themeAccentColor',       'shell',        buildAccentColorCss),
+            createLifecycleSpec('compactUnfixedHeader',   'shell',        buildCompactUnfixedHeaderCss),
+            createLifecycleSpec('hideVideoEndContent',    'watch-player', buildHideVideoEndContentCss),
         ]);
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -2736,12 +2998,7 @@
                 const lc = globalThis.YTKitCore.getLifecycle();
                 for (const spec of LIFECYCLE_SPECS) {
                     try {
-                        lc.defineFeature({
-                            id: spec.id,
-                            category: spec.category,
-                            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
-                            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
-                        });
+                        lc.defineFeature(spec);
                     } catch (_) {
                         // reason: duplicate id from a prior load — safe to skip
                     }
@@ -2821,16 +3078,30 @@
                 @keyframes ytkit-nyan-rainbow { 0% { background-position: 0% 0%; } 100% { background-position: 0% 100%; } }`;
         }
 
-        // v4.47.0 NF5 wave 1: lifecycle specs for the five wave-8 CSS-only
-        // feature ids this module owns. Register-only; inline ytkit.js
-        // cssFeature() blocks still own init/destroy. Category sourced
-        // from the settings-schema entries.
+        function createLifecycleSpec(id, category, buildCss) {
+            const factory = globalThis.YTKitCore
+                && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
+                && globalThis.YTKitCore.createCssLifecycleSpec;
+            if (factory) return factory({ id, category, buildCss });
+            return {
+                id,
+                category,
+                buildCss,
+                init() { /* reason: styles core helper unavailable in this context */ },
+                destroy() { /* reason: styles core helper unavailable in this context */ }
+            };
+        }
+
+        // v4.47.0 NF5 wave 3: lifecycle specs for the five wave-8 CSS-only
+        // feature ids this module owns. These specs now own style injection
+        // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
+        // is only the compatibility wrapper/fallback.
         const LIFECYCLE_SPECS = Object.freeze([
-            { id: 'hideNotificationButton', category: 'comments'      },
-            { id: 'noFrostedGlass',         category: 'shell'         },
-            { id: 'hideLatestPosts',        category: 'feed'          },
-            { id: 'disableMiniPlayer',      category: 'watch-player'  },
-            { id: 'nyanCatProgressBar',     category: 'shell'         },
+            createLifecycleSpec('hideNotificationButton', 'comments',     buildHideNotificationButtonCss),
+            createLifecycleSpec('noFrostedGlass',         'shell',        buildNoFrostedGlassCss),
+            createLifecycleSpec('hideLatestPosts',        'feed',         buildHideLatestPostsCss),
+            createLifecycleSpec('disableMiniPlayer',      'watch-player', buildDisableMiniPlayerCss),
+            createLifecycleSpec('nyanCatProgressBar',     'shell',        buildNyanCatProgressBarCss),
         ]);
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -2848,12 +3119,7 @@
                 const lc = globalThis.YTKitCore.getLifecycle();
                 for (const spec of LIFECYCLE_SPECS) {
                     try {
-                        lc.defineFeature({
-                            id: spec.id,
-                            category: spec.category,
-                            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
-                            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
-                        });
+                        lc.defineFeature(spec);
                     } catch (_) {
                         // reason: duplicate id from a prior load — safe to skip
                     }
@@ -2923,18 +3189,31 @@
             return 'ytd-browse[page-subtype="subscriptions"] ytd-rich-section-renderer:has(.grid-subheader)';
         }
 
-        // v4.47.0 NF5 wave 1: lifecycle specs for the six home-subs CSS-only
-        // feature ids this module owns. Register-only; inline ytkit.js
-        // cssFeature() blocks still own init/destroy. Categories sourced
-        // from settings-schema (verified via scripts/check-settings.js
-        // parity gate).
+        function createLifecycleSpec(id, category, buildCss) {
+            const factory = globalThis.YTKitCore
+                && typeof globalThis.YTKitCore.createCssLifecycleSpec === 'function'
+                && globalThis.YTKitCore.createCssLifecycleSpec;
+            if (factory) return factory({ id, category, buildCss });
+            return {
+                id,
+                category,
+                buildCss,
+                init() { /* reason: styles core helper unavailable in this context */ },
+                destroy() { /* reason: styles core helper unavailable in this context */ }
+            };
+        }
+
+        // v4.47.0 NF5 wave 3: lifecycle specs for the six home-subs CSS-only
+        // feature ids this module owns. These specs now own style injection
+        // and body-class teardown via core/styles.js; ytkit.js's cssFeature()
+        // is only the compatibility wrapper/fallback.
         const LIFECYCLE_SPECS = Object.freeze([
-            { id: 'hideCreateButton',        category: 'nav'           },
-            { id: 'hideVoiceSearch',         category: 'nav'           },
-            { id: 'widenSearchBar',          category: 'shell'         },
-            { id: 'disablePlayOnHover',      category: 'shorts'        },
-            { id: 'fullWidthSubscriptions',  category: 'shell'         },
-            { id: 'hideSubscriptionOptions', category: 'watch-player'  },
+            createLifecycleSpec('hideCreateButton',        'nav',          buildHideCreateButtonCss),
+            createLifecycleSpec('hideVoiceSearch',         'nav',          buildHideVoiceSearchCss),
+            createLifecycleSpec('widenSearchBar',          'shell',        buildWidenSearchBarCss),
+            createLifecycleSpec('disablePlayOnHover',      'shorts',       buildDisablePlayOnHoverCss),
+            createLifecycleSpec('fullWidthSubscriptions',  'shell',        buildFullWidthSubscriptionsCss),
+            createLifecycleSpec('hideSubscriptionOptions', 'watch-player', buildHideSubscriptionOptionsCss),
         ]);
 
         const features = globalThis.YTKitFeatures || (globalThis.YTKitFeatures = {});
@@ -2953,12 +3232,7 @@
                 const lc = globalThis.YTKitCore.getLifecycle();
                 for (const spec of LIFECYCLE_SPECS) {
                     try {
-                        lc.defineFeature({
-                            id: spec.id,
-                            category: spec.category,
-                            init() { /* reason: wave-1 register-only; inline ytkit.js owns init */ },
-                            destroy() { /* reason: wave-1 register-only; inline ytkit.js owns destroy */ }
-                        });
+                        lc.defineFeature(spec);
                     } catch (_) {
                         // reason: duplicate id from a prior load — safe to skip
                     }

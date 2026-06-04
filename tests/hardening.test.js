@@ -4744,6 +4744,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         path.join(__dirname, '..', 'YTKit.user.js'), 'utf8'
     );
     const expectedModules = [
+        'extension/core/styles.js',
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
@@ -4751,10 +4752,14 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/data-flow.js',
         'extension/core/toast.js',
         'extension/core/toast-dom.js',
+        'extension/core/runtime-flags.js',
+        'extension/core/capability-probe.js',
         'extension/features/subtitles/index.js',
         'extension/features/video-filters/index.js',
         'extension/features/blue-light-filter/index.js',
         'extension/features/theme-css/index.js',
+        'extension/features/wave-8-css/index.js',
+        'extension/features/home-subs-css/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     for (const mod of expectedModules) {
@@ -4775,19 +4780,29 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
     const endIdx = userscript.indexOf('// ── END v5.0.0 bundled core modules ──');
     assert.ok(beginIdx > -1 && endIdx > beginIdx, 'bundle markers must be present and ordered');
     const bundle = userscript.slice(beginIdx, endIdx);
+    assert.equal((userscript.match(/^\/\/ ==UserScript==$/gm) || []).length, 1,
+        'userscript must contain exactly one metadata header');
+    assert.equal((bundle.match(/^\/\/ ==UserScript==$/gm) || []).length, 0,
+        'bundle must not contain a second userscript metadata header');
+    assert.ok(bundle.includes('matched the *suffix* `apiKey$` / `token$` plus the exact'),
+        'bundle replacement must preserve literal $` policy-profile text');
     const fingerprints = {
+        'core/styles.js':                    'function createCssLifecycleSpec(options',
         'core/settings-schema.js':              'const SETTINGS_SCHEMA = Object.freeze(',
         'core/feature-lifecycle.js':            'function createLifecycle(options',
         'core/policy-profile.js':               'function createPolicyProfile(options',
         'core/selector-health.js':              'function createSelectorHealth(options',
         'core/data-flow.js':                    'const ORIGIN_CATALOGUE = Object.freeze',
         'core/toast.js':                        'function inferToastTone(color)',
+        'core/toast-dom.js':                    'function createToastSystem(deps',
         'core/runtime-flags.js':                'core.runtimeFlags = flags;',
         'core/capability-probe.js':             'core.capabilityProbe = surface;',
         'features/subtitles/index.js':          'function buildSubtitleCss(settings)',
         'features/video-filters/index.js':      'function buildVideoFilterCss(settings)',
         'features/blue-light-filter/index.js':  'function buildBlueLightRgba(settings)',
         'features/theme-css/index.js':          'function buildProgressBarCss(settings)',
+        'features/wave-8-css/index.js':         'function buildHideNotificationButtonCss()',
+        'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
         'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
     };
     for (const [mod, fingerprint] of Object.entries(fingerprints)) {
@@ -4811,6 +4826,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
     // V5_BUNDLE_MODULES. That order in turn mirrors the manifest's
     // content_scripts.js load order for these modules.
     const expectedOrder = [
+        'extension/core/styles.js',
         'extension/core/settings-schema.js',
         'extension/core/feature-lifecycle.js',
         'extension/core/policy-profile.js',
@@ -4841,8 +4857,10 @@ test('v4.20.0 sync-userscript.js declares the same V5_BUNDLE_MODULES list as the
     );
     assert.match(sync, /const V5_BUNDLE_MODULES = \[/,
         'sync-userscript.js must declare V5_BUNDLE_MODULES');
-    assert.match(sync, /BUNDLE_BEGIN_RE = \/\\\/\\\/ ── BEGIN v5\\\.0\\\.0 bundled core modules ──/,
+    assert.ok(sync.includes('const BUNDLE_BEGIN_RE = /^[ \\t]*\\/\\/ ── BEGIN v5\\.0\\.0 bundled core modules ──\\r?\\n[\\s\\S]*?^[ \\t]*\\/\\/ ── END v5\\.0\\.0 bundled core modules ──/m;'),
         'sync-userscript.js must define the BEGIN/END marker regex');
+    assert.match(sync, /userscriptText = userscriptText\.replace\(BUNDLE_BEGIN_RE,\s*\(\) => parts\.join\('\\n'\)\);/,
+        'bundle replacement must use a callback so literal $ sequences are preserved');
 });
 
 // ── v4.21.0 NX1: theme-css extended with forceDark + accentColor builders ──
@@ -6770,11 +6788,10 @@ test('v4.47.0 EI2 — Reset writes a session-scoped snapshot and Undo restores i
 
 test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifecycle', () => {
     // The v4.7.0 lifecycle module shipped but had zero defineFeature
-    // callers until v4.47.0. Wave 1 is "register-only": each peel module
-    // exposes a featureSpec with init/destroy no-ops and calls
-    // defineFeature() at module-evaluation time. ytkit.js's inline
-    // cssFeature() blocks still own the real mount/teardown — wave 2
-    // will flip them to delegate via lifecycle.start/.destroy.
+    // callers until v4.47.0. The invariant remains: each peel module
+    // exposes lifecycle specs and calls defineFeature() at module-eval
+    // time. Later waves can make those specs active, but registration
+    // must never drift away.
     //
     // Pin the call-site shape so future refactors can't silently drop a
     // module's registration. Loading the modules under Node loses the
@@ -6826,7 +6843,7 @@ test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifec
     const registered = ctx.__snap.find((r) => r.id === 'test-css-only-spec');
     assert.ok(registered, 'lifecycle.snapshot() must include the just-defined spec');
     assert.equal(registered.started, false,
-        'wave-1 specs are register-only — snapshot must show started:false until start() is called');
+        'registered specs must show started:false until start() is called');
 });
 
 test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant', () => {
@@ -7439,21 +7456,12 @@ test('v4.47.0 NF10 — manifest loads capability-probe.js before ytkit.js in eve
     }
 });
 
-test('v4.47.0 NF5 wave 2 — ytkit.js cssFeature notifies the lifecycle on init/destroy', () => {
-    // Wave 1 (commit 3f22e0e) registered the 21 peeled CSS-only
-    // feature ids with the v4.7.0 lifecycle module but kept the
-    // inline cssFeature() blocks as the source of truth for
-    // init/destroy work. The lifecycle snapshot() therefore showed
-    // started:false for every registered id even when the feature
-    // was visibly active on the page.
-    //
-    // Wave 2 adds a notify-on-state-change hook inside cssFeature so
-    // lifecycle.start(id) fires when the style is injected and
-    // lifecycle.destroy(id) fires when it is removed. The actual
-    // CSS injection + body-class toggle still happens in the closure
-    // (full delegate is a wave-3 refactor — needs injectStyle
-    // accessible from peel modules). What this wave guarantees is
-    // that production state matches snapshot() state.
+test('v4.47.0 NF5 wave 3 — cssFeature delegates registered CSS injection to lifecycle specs', () => {
+    // Wave 1 registered peeled CSS ids with the v4.7.0 lifecycle module.
+    // Wave 2 only mirrored cssFeature state into lifecycle snapshots while
+    // keeping CSS injection in the monolith. Wave 3 flips the happy path:
+    // registered CSS specs own inject/remove through core/styles.js, and
+    // cssFeature remains the thin compatibility wrapper/fallback.
     const ytkitSrc = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'ytkit.js'), 'utf8'
     );
@@ -7466,42 +7474,89 @@ test('v4.47.0 NF5 wave 2 — ytkit.js cssFeature notifies the lifecycle on init/
     // 2. cssFeature.init notifies the lifecycle on style injection.
     const cssFeatureStart = ytkitSrc.indexOf('function cssFeature(');
     assert.ok(cssFeatureStart > -1, 'cssFeature factory must exist');
-    const cssFeatureBody = ytkitSrc.slice(cssFeatureStart, cssFeatureStart + 1600);
+    const cssFeatureBody = ytkitSrc.slice(cssFeatureStart, cssFeatureStart + 2400);
+    assert.match(cssFeatureBody, /const hasLifecycleSpec = \(\) => !!\(Lifecycle && Lifecycle\._features && Lifecycle\._features\.has\(id\)\);/,
+        'cssFeature must detect registered lifecycle specs before injecting directly');
+    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id,\s*\{ css, isRaw, bodyClass \}\);/,
+        'cssFeature.init must pass CSS context to Lifecycle.start for registered specs');
+    assert.match(cssFeatureBody, /this\._lifecycleDelegated = true;[\s\S]*?return;/,
+        'cssFeature.init must return after successful lifecycle delegation');
     assert.match(cssFeatureBody, /this\._styleElement = injectStyle\(css, this\.id, isRaw\);/,
-        'cssFeature.init must still inject the CSS via injectStyle');
+        'cssFeature.init must keep direct injectStyle fallback for unregistered specs');
     assert.match(cssFeatureBody, /document\.body\.classList\.add\(bodyClass\);/,
-        'cssFeature.init must still add the body class');
-    assert.match(cssFeatureBody, /Lifecycle && Lifecycle\._features && Lifecycle\._features\.has\(this\.id\)/,
-        'cssFeature.init must guard the lifecycle notification on registration');
-    assert.match(cssFeatureBody, /Lifecycle\.start\(this\.id\);/,
-        'cssFeature.init must call Lifecycle.start(id) after the CSS is injected');
+        'cssFeature fallback must still add the body class');
 
-    // 3. cssFeature.destroy notifies the lifecycle on teardown.
+    // 3. cssFeature.destroy delegates teardown when init delegated.
+    assert.match(cssFeatureBody, /if \(this\._lifecycleDelegated && hasLifecycleSpec\(\)\)/,
+        'cssFeature.destroy must branch on delegated lifecycle ownership');
+    assert.match(cssFeatureBody, /Lifecycle\.destroy\(this\.id,\s*\{ css, isRaw, bodyClass \}\);/,
+        'cssFeature.destroy must pass CSS context to Lifecycle.destroy for registered specs');
     assert.match(cssFeatureBody, /this\._styleElement\?\.remove\(\); this\._styleElement = null;/,
-        'cssFeature.destroy must still remove the style element');
-    assert.match(cssFeatureBody, /Lifecycle\.destroy\(this\.id\);/,
-        'cssFeature.destroy must call Lifecycle.destroy(id) after teardown');
+        'cssFeature.destroy must keep direct cleanup fallback for unregistered specs');
 
-    // 4. Sandbox the contract: spin up an isolated lifecycle
-    // singleton, define a feature with a wave-1 no-op spec, then
-    // exercise start/destroy and check the snapshot transitions.
-    delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
-    const lifecycleModule = require('../extension/core/feature-lifecycle.js');
-    const lc = lifecycleModule.createLifecycle();
-    lc.defineFeature({
-        id: 'sandbox-feat',
-        category: 'shell',
-        init() { /* reason: wave-1 register-only no-op */ },
-        destroy() { /* reason: wave-1 register-only no-op */ },
-    });
-    let snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
-    assert.equal(snap.started, false, 'sandbox feature must start as not-started');
-    lc.start('sandbox-feat');
-    snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
-    assert.equal(snap.started, true, 'after lifecycle.start, snapshot must show started:true');
-    lc.destroy('sandbox-feat');
-    snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
-    assert.equal(snap.started, false, 'after lifecycle.destroy, snapshot must show started:false again');
+    // 4. Sandbox the contract: a real CSS lifecycle spec owns style
+    // insertion/removal while lifecycle snapshot state follows start/destroy.
+    const originalCore = globalThis.YTKitCore;
+    const originalDocument = globalThis.document;
+    const styles = new Map();
+    const bodyClasses = new Set();
+    globalThis.YTKitCore = {};
+    globalThis.document = {
+        createElement(tag) {
+            return {
+                tagName: tag,
+                id: '',
+                textContent: '',
+                remove() { styles.delete(this.id); }
+            };
+        },
+        getElementById(id) { return styles.get(id) || null; },
+        head: {
+            appendChild(style) {
+                styles.set(style.id, style);
+                return style;
+            }
+        },
+        documentElement: null,
+        body: {
+            classList: {
+                add(value) { bodyClasses.add(value); },
+                remove(value) { bodyClasses.delete(value); }
+            }
+        }
+    };
+    try {
+        delete require.cache[require.resolve('../extension/core/feature-lifecycle.js')];
+        delete require.cache[require.resolve('../extension/core/styles.js')];
+        const lifecycleModule = require('../extension/core/feature-lifecycle.js');
+        const stylesModule = require('../extension/core/styles.js');
+        const lc = lifecycleModule.createLifecycle();
+        const spec = stylesModule.createCssLifecycleSpec({
+            id: 'sandbox-feat',
+            category: 'shell',
+            buildCss() { return '.sandbox-feat { display: none !important; }'; },
+        });
+        lc.defineFeature(spec);
+        let snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+        assert.equal(snap.started, false, 'sandbox feature must start as not-started');
+        lc.start('sandbox-feat');
+        snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+        assert.equal(snap.started, true, 'after lifecycle.start, snapshot must show started:true');
+        assert.ok(styles.has('yt-suite-style-sandbox-feat'),
+            'lifecycle spec must inject the feature style on start');
+        assert.ok(bodyClasses.has('ytkit-sandbox-feat'),
+            'lifecycle spec must add the feature body class on start');
+        lc.destroy('sandbox-feat');
+        snap = lc.snapshot().find((r) => r.id === 'sandbox-feat');
+        assert.equal(snap.started, false, 'after lifecycle.destroy, snapshot must show started:false again');
+        assert.equal(styles.has('yt-suite-style-sandbox-feat'), false,
+            'lifecycle spec must remove the feature style on destroy');
+        assert.equal(bodyClasses.has('ytkit-sandbox-feat'), false,
+            'lifecycle spec must remove the feature body class on destroy');
+    } finally {
+        globalThis.YTKitCore = originalCore;
+        globalThis.document = originalDocument;
+    }
 });
 
 test('v4.47.0 NF14 — confirm-shell modal is retired (immediate-apply + undo pattern wins)', () => {
