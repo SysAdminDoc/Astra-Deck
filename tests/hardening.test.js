@@ -1609,6 +1609,63 @@ test('build-extension.js updates package-lock version during --bump', () => {
         'build-extension.js must update packages[""].version so lockfile drift cannot ship');
 });
 
+test('release manifest generation pins checksums, SBOM, attestations, and local signing policy', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'build.yml'), 'utf8'
+    );
+    const scriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'generate-release-manifest.js'), 'utf8'
+    );
+    const { expectedReleaseNames, parseAssetName } = require('../scripts/generate-release-manifest');
+
+    assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/,
+        'package.json must expose release:manifest for the local release recipe');
+    assert.match(workflow, /npm sbom --omit=dev --sbom-format cyclonedx > build\/astra-deck-npm-sbom\.cdx\.json/,
+        'build.yml must emit a release SBOM into build/');
+    assert.match(workflow, /npm run release:manifest/,
+        'build.yml must generate SHA256SUMS and release-manifest.json');
+    assert.match(workflow, /actions\/attest-build-provenance@v4/,
+        'tag builds must create build-provenance attestations for CI-built artifacts');
+    assert.match(workflow, /actions\/attest-sbom@v4/,
+        'tag builds must create SBOM attestations for CI-built artifacts');
+    assert.doesNotMatch(workflow, /gh release create/,
+        'CI must not publish GitHub Releases because ytkit.pem stays local');
+    assert.match(scriptSource, /SHA256SUMS_NAME = 'SHA256SUMS'/,
+        'release manifest script must write SHA256SUMS');
+    assert.match(scriptSource, /MANIFEST_NAME = 'release-manifest\.json'/,
+        'release manifest script must write release-manifest.json');
+    assert.match(scriptSource, /localSigningRequired:\s*true/,
+        'release manifest must disclose the local signing requirement');
+    assert.match(scriptSource, /AstraDownloader\.exe\.sha256/,
+        'release manifest script must create the companion hash sidecar when the exe is present');
+
+    const expected = expectedReleaseNames(pkg.version);
+    assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 9,
+        'expected release set must include eight extension artifacts plus userscript');
+    assert.ok(expected.includes('astra-deck-npm-sbom.cdx.json'),
+        'expected release set must include the npm SBOM asset');
+
+    const parsed = parseAssetName(`astra-deck-store-safe-firefox-v${pkg.version}.xpi`, pkg.version);
+    assert.deepEqual(
+        {
+            kind: parsed.kind,
+            profile: parsed.profile,
+            browser: parsed.browser,
+            artifactType: parsed.artifactType,
+            version: parsed.version
+        },
+        {
+            kind: 'extension',
+            profile: 'store-safe',
+            browser: 'firefox',
+            artifactType: 'xpi',
+            version: pkg.version
+        },
+        'release manifest metadata must classify Firefox store-safe XPI assets'
+    );
+});
+
 test('check-syntax dynamically covers every extension and script JS file', () => {
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'check-syntax.js'),
