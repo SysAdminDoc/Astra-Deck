@@ -11,6 +11,26 @@ product dossier (competitive matrix, feature catalog, technical reconnaissance,
 phased feature plan) is preserved at
 [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md).
 
+> Last researched: Cycle 1 - 2026-06-04.
+
+## Implementer Instructions
+
+- Treat this roadmap as the active planning queue. Shipped work belongs in
+  `COMPLETED.md` and release detail belongs in `CHANGELOG.md`; avoid re-opening
+  archived dossier items unless live source or current external policy changes
+  make them newly actionable.
+- Preserve the profile split: store-safe artifacts must keep AI, Cobalt, and
+  loopback grants stripped while GitHub-full keeps the complete data-flow
+  catalogue.
+- Use the existing Node 22 gate as the local verification floor:
+  `npm run check`, `npm test`, `npm run build`, `node sync-userscript.js`, and
+  targeted Python downloader tests for companion changes.
+- Keep browser-bounded work evidence-backed. Selector rows should land with
+  refreshed `mhtml/` fixtures or a documented manual browser-capture blocker.
+- Researcher-queue ownership tags: `🤖` means implementer-actionable, `🔧`
+  means user/external/manual gated, `🔬` means researcher-added this cycle, and
+  `✅` means implemented/closed by the build lane.
+
 ## Existing Planned Work
 
 ### Browser-Bounded Captures
@@ -184,6 +204,10 @@ phased feature plan) is preserved at
   - Touches: `astra_downloader/astra_downloader.py`.
   - Acceptance: yt-dlp invocation rejects any flag outside a reviewed allowlist;
     a test asserts an unexpected flag is refused.
+  - Status 2026-06-04: active dirty implementation exists in
+    `astra_downloader/astra_downloader.py` and
+    `astra_downloader/test_astra_downloader.py`; verify and land that source/test
+    lane separately rather than creating a duplicate roadmap item.
   - Source: docs/archive/research/ (iter-1-scored under-consideration / NEXT)
 
 ### Carried Risks And Open Questions
@@ -221,6 +245,16 @@ phased feature plan) is preserved at
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 1 - 2026-06-04)
+
+- [x] 🔬 `policy-firefox-ytdlp-npm-refresh-2026-06-04` - rechecked Chrome Web
+  Store program policy, MDN `scripting.executeScript`, Mozilla Firefox 128 MV3
+  MAIN-world notes, yt-dlp releases, and npm package metadata. Existing CWS,
+  Firefox, selector-capture, and yt-dlp smoke rows remain current; `crx3` is
+  current, `npm audit --omit=dev --audit-level=moderate` is clean, and ESLint
+  has only a low-risk patch/minor freshness drift (`10.2.1` installed,
+  `10.4.1` current). No new non-duplicate row was promoted.
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing
 Planned Work.*
