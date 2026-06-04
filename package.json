@@ -31,6 +31,6 @@
     "crx3": "^2.0.0"
   },
   "devDependencies": {
-    "eslint": "^10.2.1"
+    "eslint": "^10.4.1"
   }
 }
