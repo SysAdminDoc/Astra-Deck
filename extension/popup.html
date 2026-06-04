@@ -216,6 +216,10 @@
              chrome.storage.local. Recovery path for users who change
              their mind after dismissing the prompt. -->
         <button id="reenable-mediadl-btn" class="undo-action" type="button" hidden data-i18n-attr-aria-label="reenableMediadlAria" aria-label="Re-enable Astra Downloader install prompts" data-i18n="reenableMediadlBtn">Enable Downloader Prompts</button>
+        <!-- v4.47.0 NF6: companion self-update. Calls Astra Downloader's
+             /update endpoint through the active YouTube content script so
+             the popup never owns the local auth token. -->
+        <button id="update-companion-btn" class="undo-action" type="button" aria-label="Update Astra Downloader companion">Update Companion</button>
         <!-- v4.47.0 NF18: on-demand yt-dlp self-update. When YouTube
              breaks the user's current yt-dlp build, this fixes it
              without waiting up to 24 h for the auto-update throttle.
