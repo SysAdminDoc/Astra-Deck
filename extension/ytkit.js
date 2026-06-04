@@ -609,7 +609,7 @@ return response;
                                     try {
                                         this._prCache = JSON.parse(match[1]);
                                         break;
-                                    } catch (_) { /* try next pattern */ }
+                                    } catch (_) { /* reason: invalid JSON candidate; try next pattern */ }
                                 }
                             }
                             if (this._prCache) break;
@@ -1019,7 +1019,7 @@ return response;
                     fallbackLogged = true;
                 }
             } catch (_) {
-                // DiagnosticLog not ready yet — retry on next setHTML/create call.
+                // reason: DiagnosticLog not ready yet; retry on next setHTML/create call.
             }
         };
 
@@ -3381,7 +3381,7 @@ return response;
                         target = el;
                         break;
                     }
-                } catch (e) { /* skip */ }
+                } catch (e) { /* reason: selector fallback may be invalid on old DOM shapes */ }
             }
         }
 
@@ -7738,7 +7738,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                     parent.setAttribute('ytkit-hidden', key);
                                 }
                             }
-                        } catch(e) { /* Polymer Symbol object - skip */ }
+                        } catch(e) { /* reason: Polymer Symbol/Proxy object; skip unsafe parent */ }
                     }
                 });
             },
@@ -7856,7 +7856,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             let modified = false;
                             STRIP_PARAMS.forEach(p => { if (u.searchParams.has(p)) { u.searchParams.delete(p); modified = true; } });
                             if (modified) history.replaceState(history.state, '', u.toString());
-                        } catch {}
+                        } catch { /* reason: address-bar cleanup is best-effort */ }
                     }
                 };
                 addNavigateRule('cleanShareUrlBar', this._cleanAddressBar);
@@ -8823,7 +8823,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             if (!Number.isNaN(parsed.getTime())) return parsed;
                         }
                     }
-                } catch {}
+                } catch { /* reason: player response date unavailable; fallback to page text */ }
 
                 const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
                 const metaValue = meta?.getAttribute('content');
@@ -8886,7 +8886,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const viewText = this._formatSplitViewCount(playerResponse?.videoDetails?.viewCount);
                         if (viewText) return viewText;
                     }
-                } catch {}
+                } catch { /* reason: player response view count unavailable; fallback to DOM text */ }
                 return this._getSplitFallbackViewCountText();
             },
 
@@ -8899,7 +8899,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     const title = _rw.ytInitialPlayerResponse?.videoDetails?.title;
                     if (title) return String(title).replace(/\s+/g, ' ').trim();
-                } catch {}
+                } catch { /* reason: player response title unavailable; fallback to document title */ }
                 return document.title.replace(/\s+-\s+YouTube\s*$/i, '').trim() || 'Live video';
             },
 
@@ -8921,7 +8921,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (text) return text;
                 try {
                     return String(_rw.ytInitialPlayerResponse?.videoDetails?.author || '').replace(/\s+/g, ' ').trim();
-                } catch {}
+                } catch { /* reason: player response author unavailable; fallback to DOM text */ }
                 return '';
             },
 
@@ -8973,7 +8973,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const isLive = playerResponse?.videoDetails?.isLive || playerResponse?.videoDetails?.isLiveContent || !!liveDetails;
                     const viewText = isLive ? this._formatSplitViewCount(playerResponse?.videoDetails?.viewCount).replace(/\s+views$/i, ' watching') : '';
                     if (viewText) return viewText;
-                } catch {}
+                } catch { /* reason: player response live count unavailable; fallback to visible metadata */ }
                 return parts.find(text => /\bviews?\b/i.test(text))
                     || this._getSplitViewCountText();
             },
@@ -17011,7 +17011,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     // page doesn't permanently disable filters across the
                     // session (the design doc promises route-level recovery,
                     // not session-wide auto-disable).
-                    try { this._predicateCache?.evaluator?.reset?.(); } catch (_) { /* */ }
+                    try { this._predicateCache?.evaluator?.reset?.(); } catch (_) { /* reason: route-level predicate reset is best-effort */ }
                     this._processAllVideosDebounced(500);
                     checkPages();
                 });
@@ -18807,7 +18807,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             infoEl.dataset.ytkitPrecise = '1';
                         }
                     }
-                } catch(e) {}
+                } catch(e) { /* reason: precise view replacement can fall back to native text */ }
             },
 
             init() {
@@ -19287,7 +19287,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             watchTitle.textContent = original;
                             watchTitle.setAttribute('ytkit-antitranslate', '1');
                         }
-                    } catch {}
+                    } catch { /* reason: title un-translate can fall back to visible title */ }
                 }
                 // v3.23.0 (NX8): Watch page DESCRIPTION un-translate.
                 // YouTube auto-translates the description into the user's
@@ -20478,7 +20478,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove(); this._btn = null;
                 if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
                 // Close any open PiP window
-                if (this._pipWindow) { try { this._pipWindow.close(); } catch {} this._pipWindow = null; }
+                if (this._pipWindow) { try { this._pipWindow.close(); } catch { /* reason: PiP window may already be closed */ } this._pipWindow = null; }
             }
         },
 
@@ -21145,7 +21145,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (this._glowEl) {
                         this._glowEl.style.background = `radial-gradient(ellipse at center, rgba(${r},${g},${b},0.6) 0%, transparent 70%)`;
                     }
-                } catch(e) { /* cross-origin video, silently skip */ }
+                } catch(e) { /* reason: cross-origin video cannot be sampled; skip ambient color */ }
                 this._raf = requestAnimationFrame(() => {
                     this._hiddenTimer = setTimeout(() => this._sample(video), 500);
                 });
@@ -22025,7 +22025,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         codecStr = stats.codecs || codecStr;
                         resolution = stats.resolution || resolution;
                     }
-                } catch(e) { /* API may not exist */ }
+                } catch(e) { /* reason: optional player stats API may not exist */ }
 
                 // Bandwidth estimate
                 const conn = navigator.connection;
@@ -22234,7 +22234,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         await navigator.clipboard.writeText(text);
                         return true;
                     } catch (_) {
-                        // Fall through to the legacy copy path below.
+                        // reason: clipboard permission may be denied; fall through to legacy copy path.
                     }
                 }
 
@@ -22436,7 +22436,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             if (!Number.isNaN(parsed.getTime())) return parsed;
                         }
                     }
-                } catch {}
+                } catch { /* reason: player response date unavailable; fallback to metadata/text */ }
 
                 const meta = document.querySelector('meta[itemprop="datePublished"], meta[itemprop="uploadDate"]');
                 const metaValue = meta?.getAttribute('content');
@@ -22668,7 +22668,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     const playerApi = document.querySelector('#movie_player');
                     if (playerApi?.setVolume) playerApi.setVolume(level);
-                } catch(e) {}
+                } catch(e) { /* reason: movie_player volume API is optional; HTMLMediaElement volume still applies */ }
             },
 
             _saveHandler: null,
@@ -23088,7 +23088,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             await navigator.clipboard.writeText(text);
                             return true;
                         } catch (_) {
-                            // Fall back to the legacy copy path below.
+                            // reason: clipboard permission may be denied; fall back to legacy copy path.
                         }
                     }
 
@@ -24246,7 +24246,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             return candidate;
                         }
                     } catch (_) {
-                        // Try the next thumbnail candidate.
+                        // reason: thumbnail candidate may 404 or timeout; try the next candidate.
                     }
                 }
 
@@ -25635,7 +25635,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (now - store.lastCall < 800) await executeThrottled();
                         store.lastCall = now;
                         handler();
-                    } catch(e) {}
+                    } catch(e) { /* reason: timer wrapper must keep throttling pump alive after handler errors */ }
                 };
                 const schedule = (origFn) => (func, ms = 0, ...args) => {
                     if (typeof func === 'function') {
@@ -25694,7 +25694,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (normalizedPath) {
                         return `${parsed.origin}${normalizedPath}`.toLowerCase();
                     }
-                } catch {}
+                } catch { /* reason: invalid author URL falls back to visible text */ }
                 return author?.textContent?.trim() || null;
             },
 
@@ -29284,7 +29284,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
                 for (const re of rules.regexes) {
                     try { if (re.test(body) || re.test(author)) return true; }
-                    catch { /* eval error — skip */ }
+                    catch { /* reason: regex evaluation error only invalidates the current rule */ }
                 }
                 return false;
             },
@@ -29426,7 +29426,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
                     const seg = url.pathname.split('/').filter(Boolean);
                     if (seg[0] === 'shorts' && /^[A-Za-z0-9_-]{11}$/.test(seg[1] || '')) return seg[1];
-                } catch { /* invalid url */ }
+                } catch { /* reason: invalid card URL has no bulk-action video id */ }
                 return '';
             },
 
@@ -29641,7 +29641,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _clearBackup() {
                 try { storageWriteJSON?.(this._BACKUP_KEY, null); }
-                catch { /* ignore */ }
+                catch { /* reason: backup cleanup failure is non-critical */ }
             },
 
             _apply() {
@@ -29779,13 +29779,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 e.stopPropagation();
                 const movie = window.movie_player || player;
                 let current = 50;
-                try { current = movie?.getVolume?.() ?? 50; } catch { /* movie_player not ready */ }
+                try { current = movie?.getVolume?.() ?? 50; } catch { /* reason: movie_player not ready; use default volume */ }
                 const delta = e.deltaY > 0 ? -5 : 5;
                 const next = Math.max(0, Math.min(100, current + delta));
                 try {
                     movie?.setVolume?.(next);
                     if (next > 0 && movie?.unMute) movie.unMute();
-                } catch { /* api unavailable */ }
+                } catch { /* reason: movie_player volume API unavailable; HTMLMediaElement fallback still runs */ }
                 const video = document.querySelector('video.html5-main-video');
                 if (video) video.volume = Math.max(0, Math.min(1, next / 100));
                 this._showHud(next);
@@ -29921,7 +29921,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const upper = Number.isFinite(video.duration) ? video.duration : Number.MAX_SAFE_INTEGER;
                 const next = Math.max(0, Math.min(upper, (video.currentTime || 0) + deltaSec));
                 try { video.currentTime = next; }
-                catch { /* movie_player not seekable yet */ }
+                catch { /* reason: movie_player not seekable yet */ }
                 this._showHud(deltaSec, next);
             },
             _attach() {
@@ -30031,8 +30031,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (document.visibilityState !== 'visible') return;
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) return;
-                if (mode === 'play') { try { video.play().catch(() => { /* user-gesture required */ }); } catch { /* */ } }
-                else if (mode === 'pause') { try { video.pause(); } catch { /* */ } }
+                if (mode === 'play') { try { video.play().catch(() => { /* user-gesture required */ }); } catch { /* reason: player may reject scripted play */ } }
+                else if (mode === 'pause') { try { video.pause(); } catch { /* reason: player may reject scripted pause */ } }
             },
             init() {
                 this._navRule = () => { setTimeout(() => this._apply(), 1200); };
@@ -30058,8 +30058,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (document.visibilityState === 'visible') return;
                 const video = document.querySelector('video.html5-main-video');
                 if (!video) return;
-                if (mode === 'play') { try { video.play().catch(() => { /* gesture-required in bg tabs */ }); } catch { /* */ } }
-                else if (mode === 'pause') { try { video.pause(); } catch { /* */ } }
+                if (mode === 'play') { try { video.play().catch(() => { /* gesture-required in bg tabs */ }); } catch { /* reason: background tab may reject scripted play */ } }
+                else if (mode === 'pause') { try { video.pause(); } catch { /* reason: background tab may reject scripted pause */ } }
             },
             init() {
                 this._navRule = () => { setTimeout(() => this._apply(), 1200); };
@@ -30125,7 +30125,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const cutoff = this._video.duration - offsets.outro;
                     if (this._video.currentTime >= cutoff) {
                         this._outroSkipped = true;
-                        try { this._video.currentTime = this._video.duration; } catch { /* end-of-stream */ }
+                        try { this._video.currentTime = this._video.duration; } catch { /* reason: end-of-stream seek can fail on some videos */ }
                     }
                 }
             },
@@ -30341,7 +30341,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const m = t.match(/ytInitialPlayerResponse\s*=\s*(\{[\s\S]*?\});\s*(?:var |window\.|$)/);
                     if (!m) continue;
                     try { return JSON.parse(m[1]); }
-                    catch { /* try next script tag */ }
+                    catch { /* reason: invalid player-response JSON; try next script tag */ }
                 }
                 return null;
             },
@@ -30635,7 +30635,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             try {
                                 const ts = new Date(entry.completedAt || entry.timestamp);
                                 parts.push(ts.toLocaleString());
-                            } catch { /* invalid date */ }
+                            } catch { /* reason: invalid history timestamp; omit date metadata */ }
                         }
                         meta.textContent = parts.join(' \u2022 ');
                         li.append(title, meta);
@@ -30729,7 +30729,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     keys.sort((a, b) => (this._cache[a].ts || 0) - (this._cache[b].ts || 0));
                     for (const k of keys.slice(0, keys.length - 500)) delete this._cache[k];
                 }
-                try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* quota */ }
+                try { storageWriteJSON('ytkit-ryd-cache', this._cache); } catch { /* reason: RYD cache is opportunistic and may exceed quota */ }
             },
 
             _allowFetch() {
@@ -31614,7 +31614,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const dismiss = () => {
                     overlay.remove();
-                    if (anchorEl?.focus) try { anchorEl.focus(); } catch { /* focus restore best-effort */ }
+                    if (anchorEl?.focus) try { anchorEl.focus(); } catch { /* reason: focus restore is best-effort */ }
                 };
                 const submit = () => {
                     const name = (input.value || '').trim().slice(0, 80);
@@ -32460,7 +32460,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _clearBackup() {
-                try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* */ }
+                try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: backup cleanup failure is non-critical */ }
             },
 
             _apply() {
@@ -33538,7 +33538,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         buildSettingsPanel._panelObs = new MutationObserver(() => {
             const isOpen = document.body.classList.contains('ytkit-panel-open');
             if (_wasPanelOpen && !isOpen) {
-                _panelCleanups.forEach(fn => { try { fn(); } catch(e) {} });
+                _panelCleanups.forEach(fn => { try { fn(); } catch(e) { /* reason: one panel cleanup must not block the rest */ } });
                 _panelCleanups.length = 0;
                 // Panel listeners persist on document with isSettingsPanelOpen() guards —
                 // do NOT reset _panelUIListenersAttached here, or duplicates stack on each open.
@@ -36326,7 +36326,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Reinitialize the feature to apply changes immediately
                 if (feature) {
                     if (typeof feature.destroy === 'function') {
-                        try { destroyFeatureLifecycle(feature, 'select'); } catch (e) { /* ignore */ }
+                        try { destroyFeatureLifecycle(feature, 'select'); } catch (e) { /* reason: select reinit should continue even if destroy fails */ }
                     }
                     if (typeof feature.init === 'function') {
                         try { initFeatureLifecycle(feature, 'select'); } catch (e) { console.warn('[YTKit] Feature reinit error:', e); }

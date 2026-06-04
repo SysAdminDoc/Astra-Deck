@@ -62,8 +62,11 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   `extension/core/*.js` modules now run the custom lint rule, the lint script
   includes the core glob, and remaining intentional silent catches carry
   `reason:` comments.)_
-- [ ] **P3 / L — `require-catch-reason` to `ytkit.js`** after annotating the
-  large monolith catch surface.
+- [x] **P3 / L — `require-catch-reason` to `ytkit.js`** after annotating the
+  large monolith catch surface. _(Delivered 2026-06-04: the monolith's
+  intentional silent catches now carry `reason:` comments, ESLint runs the
+  custom rule against `extension/ytkit.js`, and the lint script/test assertions
+  pin the widened scope.)_
 - [ ] **P2 / L — Wave 3 lifecycle full delegate**: move CSS injection ownership
   into peel modules and make `cssFeature` a thin lifecycle wrapper.
 - [ ] **P2 / XL — Top-3 monolith peel**: split `stickyVideo`,
