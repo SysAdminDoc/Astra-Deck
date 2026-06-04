@@ -294,10 +294,11 @@ Origin path.
 
 ## H21 — YouTube "liquid glass" player chrome redesign audit (v3.23.0, N6)
 
-**Status: deferred / partial.** This pass documents the rollout window but
-cannot promote concrete selectors until a fresh MHTML capture lands. The
-roadmap N6 acceptance criteria 1-3 (fresh capture, canary additions, manual
-smoke) require the maintainer at a browser running the new chrome.
+**Status: partial.** The 2026-06-04 live DOM probe confirmed concrete
+new-player selectors on Chrome (`ytp-delhi-modern`, `ytp-overflow-panel`,
+`ytp-time-wrapper-delhi`) and promoted them to release-blocking selector
+canaries. Full watch-page MHTML capture still times out through DevTools
+automation, so the raw MHTML refresh remains browser/manual gated.
 
 **What rolled out (public signal).** Late 2025 → early 2026, YouTube began
 serving a redesigned video player with the following user-visible changes:
@@ -338,6 +339,14 @@ Refs:
 - Comment in `CRITICAL_SELECTORS` documenting the rollout window
   semantics (keep the old + new selector both during the transition so
   users on the legacy chrome don't regress).
+- 2026-06-04 follow-up: headful Chrome DOM probe on
+  `https://www.youtube.com/watch?v=dQw4w9WgXcQ` confirmed the player root
+  carries `ytp-delhi-modern`, the overflow surface exists as
+  `ytp-overflow-panel`, and the time wrapper exists as
+  `ytp-time-wrapper-delhi`. These three tokens are now in
+  `CRITICAL_SELECTORS`; `playerChrome.lastVerified` is updated to
+  2026-06-04. `Page.captureSnapshot({ format: "mhtml" })` still timed out
+  after 30 seconds in both headless and off-screen headful Chrome.
 
 **What's pending (concrete next-action checklist).**
 
@@ -347,9 +356,9 @@ Refs:
    existing mhtml captures).
 3. `npm run build:fixtures` to regenerate
    `tests/fixtures/yt-watch.tokens.txt`.
-4. Grep the new tokens for the surfaces in `LIQUID_GLASS_WATCHLIST` and
-   identify the real class names. Promote concrete winners to
-   `CRITICAL_SELECTORS` (keep legacy + new both).
+4. Grep the new tokens for the remaining unresolved surfaces in
+   `LIQUID_GLASS_WATCHLIST` and identify the real class names. Promote
+   concrete winners to `CRITICAL_SELECTORS` (keep legacy + new both).
 5. Manual smoke: screenshot, mini-player bar, speed control chip,
    theater split divider all render on the new chrome.
 6. Update this section with the concrete deltas.
@@ -1689,4 +1698,3 @@ Deliverables:
   color contrast, a11y audit pass (subprocesses)
 
 Result: check pipeline now includes 3 gates. Tests: 145 → 151 (+6 regressions).
-

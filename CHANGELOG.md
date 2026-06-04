@@ -14,6 +14,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   DOM probe because full watch-page MHTML snapshots time out under headless
   Chrome.
 
+- **H21 liquid-glass selector canaries.** A 2026-06-04 headful Chrome DOM probe
+  confirmed YouTube's current player root uses `ytp-delhi-modern`, with
+  `ytp-overflow-panel` and `ytp-time-wrapper-delhi` present in the live DOM.
+  Those three selectors are now release-blocking canaries. Full watch-page
+  MHTML capture remains gated because DevTools MHTML snapshots time out.
+
 - **Deep audit hardening pass (H26).** Repo-wide principal-engineer audit
   across every surface — service worker, popup, core modules, the `ytkit.js`
   content script, the userscripts, and the Python downloader — verified
