@@ -60,3 +60,20 @@ Do not enable the SHA-pinning policy before all external `uses:` entries are
 pinned to full 40-character commit SHAs; otherwise existing validation and
 release workflows can be blocked by repository policy before the workflow patch
 lands.
+
+## Private Vulnerability Reporting
+
+Current snapshot from 2026-06-04:
+
+- Private vulnerability reporting: disabled.
+- Repository security advisory count: 0.
+- Public issues: enabled.
+- Root `SECURITY.md`: absent.
+
+Target policy:
+
+- Add root `SECURITY.md` with supported versions and private reporting
+  instructions.
+- Enable private vulnerability reporting for the public repository.
+- Keep public bug-report templates for non-sensitive bugs only.
+- Ensure maintainers receive notifications for private vulnerability reports.
