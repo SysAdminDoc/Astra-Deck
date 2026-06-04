@@ -57,8 +57,11 @@ pre-consolidation research plans archived under `docs/archive/research/`.
 
 ### Lint And Lifecycle
 
-- [ ] **P2 / M — `require-catch-reason` to `extension/core/*.js`** after the
-  per-file catch annotation pass.
+- [x] **P2 / M — `require-catch-reason` to `extension/core/*.js`** after the
+  per-file catch annotation pass. _(Delivered 2026-06-04: direct
+  `extension/core/*.js` modules now run the custom lint rule, the lint script
+  includes the core glob, and remaining intentional silent catches carry
+  `reason:` comments.)_
 - [ ] **P3 / L — `require-catch-reason` to `ytkit.js`** after annotating the
   large monolith catch surface.
 - [ ] **P2 / L — Wave 3 lifecycle full delegate**: move CSS injection ownership

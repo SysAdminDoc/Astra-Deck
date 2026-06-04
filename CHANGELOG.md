@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Core catch-reason lint coverage.** `npm run lint` now applies the
+  custom `require-catch-reason` rule to direct `extension/core/*.js` modules,
+  with the remaining intentional silent catches annotated and the stale
+  no-await disable removed from the capability probe.
+
 - **EI-NEW6 selector-health attribute drift.** Default selector shape samples
   now include hashed attribute-name and class-list signatures, and
   selector-health summaries, rankings, and copy reports surface shape drift even

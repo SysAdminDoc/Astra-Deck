@@ -124,8 +124,8 @@
             state.ctxCounts = Object.create(null);
             state.countsResynced = true;
             try { saveSettings(settings); } catch (_) {
-                // saveSettings is best-effort; clear() returns successfully even
-                // if the persistence path throws (the in-memory ring is reset).
+                // reason: saveSettings is best-effort; clear() returns successfully
+                // even if the persistence path throws (the in-memory ring is reset).
             }
         }
 
