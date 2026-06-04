@@ -78,6 +78,12 @@ must use Google's standardized vocabulary to declare data categories.
 
 - [ ] Build clean via `node build-extension.js --bump patch` —
       version bumped, all four artifacts present in `build/`.
+- [ ] Release package built locally with `ytkit.pem` via
+      `npm run build:userscript`; CI build artifacts are provenance evidence,
+      not the public CRX signing source.
+- [ ] Release SBOM and checksums generated with
+      `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`
+      and `npm run release:manifest`.
 - [ ] `npm run check` passes (syntax / versions / i18n / lint /
       a11y / contrast).
 - [ ] `npm test` passes (all `tests/*.test.js` + `tests/features/*.test.js`).

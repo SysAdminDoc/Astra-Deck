@@ -356,6 +356,8 @@ npm test
 npm run check
 npm run build                             # Build store-safe + GitHub-full artifacts
 npm run build:userscript                  # Include userscript artifact too
+npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json
+npm run release:manifest                  # Generate release-manifest.json + SHA256SUMS
 node build-extension.js --profile store-safe
 node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
@@ -368,6 +370,7 @@ Outputs in `build/`:
 - `astra-deck-github-full-chrome-v*.zip` + `.crx` (AI, local companion, Cobalt)
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript`)
+- `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
 
