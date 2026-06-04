@@ -4760,6 +4760,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/features/theme-css/index.js',
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
+        'extension/features/chat-style-comments/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     for (const mod of expectedModules) {
@@ -4803,6 +4804,7 @@ test('v4.20.0 userscript bundles the verbatim contents of each v5.0.0 module', (
         'features/theme-css/index.js':          'function buildProgressBarCss(settings)',
         'features/wave-8-css/index.js':         'function buildHideNotificationButtonCss()',
         'features/home-subs-css/index.js':      'function buildHideCreateButtonCss()',
+        'features/chat-style-comments/index.js': 'function buildCommentRestyleCss()',
         'core/lifecycle-route-bridge.js':       'function installLifecycleRouteBridge(options'
     };
     for (const [mod, fingerprint] of Object.entries(fingerprints)) {
@@ -4842,6 +4844,7 @@ test('v4.20.0 userscript bundle order matches the manifest content_scripts run o
         'extension/features/theme-css/index.js',
         'extension/features/wave-8-css/index.js',
         'extension/features/home-subs-css/index.js',
+        'extension/features/chat-style-comments/index.js',
         'extension/core/lifecycle-route-bridge.js'
     ];
     assert.deepEqual(bundleOrder, expectedOrder,

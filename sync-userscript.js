@@ -65,6 +65,7 @@ const V5_BUNDLE_MODULES = [
     'extension/features/theme-css/index.js',
     'extension/features/wave-8-css/index.js',
     'extension/features/home-subs-css/index.js',
+    'extension/features/chat-style-comments/index.js',
     'extension/core/lifecycle-route-bridge.js'
 ];
 
