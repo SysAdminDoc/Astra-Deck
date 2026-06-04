@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 22 companion-update release-channel pass on 2026-06-04 found
+  that `/update` is implemented but the live latest release `v4.46.0` does not
+  attach `AstraDownloader.exe` or `AstraDownloader.exe.sha256`. The updater
+  compares against raw `main`, the build script outputs the PyInstaller EXE to
+  the repo root, the release manifest generator only writes a sidecar if
+  `build/AstraDownloader.exe` already exists, and the local release checklist
+  has no companion EXE staging step. ROADMAP now carries a P1 item to prove the
+  self-update release-channel contract before any companion `APP_VERSION` bump.
+  Detailed evidence lives in
+  `docs/research-cycle-22-companion-update-assets.md`.
 - [Verified] Cycle 21 CODEOWNERS pass on 2026-06-04 found no CODEOWNERS file
   in `.github/`, root, or `docs/`; `main` requires one approving review but
   does not require code-owner review; the repository is a personal public repo
@@ -328,38 +338,42 @@ Top remaining opportunities (one-liners):
 4. Enable CodeQL code scanning for JavaScript extension code and the Python
    companion, then decide whether the CodeQL check becomes required after a
    clean baseline run. [Verified]
-5. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
+5. Prove the Astra Downloader self-update release-channel contract before
+   bumping companion `APP_VERSION`: stage/publish `AstraDownloader.exe` and
+   `AstraDownloader.exe.sha256`, include both in release manifests/checksums,
+   and dry-run the live download/hash path. [Verified]
+6. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
    extension permission/proxy, data-flow, and companion loopback paths, then
    enable code-owner review once owner references and syntax are proven.
    [Verified]
-6. Convert optional store-safe enrichment hosts to runtime-granted optional
+7. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]
-7. Migrate GitHub Actions workflows to Node 24-ready action majors before
+8. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-8. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+9. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-9. Enable dependency graph / Dependabot alert settings so the PR-only
+10. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-10. Reconcile release automation docs with the current maintainer-local artifact
+11. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-11. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+12. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-12. MHTML capture-week expansion across Shorts, channel, search, history,
+13. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-13. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+14. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-14. Locale proofing queue for identical-to-English feature names/descriptions in
+15. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-15. Signed Astra Downloader installer/MSI once the signing budget and submission
+16. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -408,7 +422,17 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-18-security-disclosure.md`, and
   `docs/research-cycle-19-code-scanning.md`, and
   `docs/research-cycle-20-optional-permissions.md`, and
-  `docs/research-cycle-21-codeowners.md`. [Verified]
+  `docs/research-cycle-21-codeowners.md`, and
+  `docs/research-cycle-22-companion-update-assets.md`. [Verified]
+- Companion update release-channel probe: `astra_downloader/astra_downloader.py`
+  keeps `APP_VERSION = "1.5.1"`, reads the latest version from raw `main`, and
+  points update downloads at `/releases/latest/download/AstraDownloader.exe` and
+  `.sha256`; latest release `v4.46.0` has no `AstraDownloader.exe` or sidecar;
+  `astra_downloader/build.py` outputs the EXE to the repo root; the release
+  manifest generator only emits `AstraDownloader.exe.sha256` when
+  `build/AstraDownloader.exe` already exists; the tag workflow uploads `build/*`
+  from Ubuntu without a Windows companion build; and local release docs have no
+  companion EXE staging step. [Verified]
 - CODEOWNERS probe: `.github/CODEOWNERS`, root `CODEOWNERS`, and
   `docs/CODEOWNERS` are absent; `gh repo view SysAdminDoc/Astra-Deck --json
   owner,viewerPermission` reports owner `SysAdminDoc` and viewer permission
@@ -554,6 +578,12 @@ Current risk status:
   all eight profile-split extension artifacts, userscript, SBOM,
   `release-manifest.json`, and `SHA256SUMS`; release docs record the local
   `ytkit.pem` signing path. [Verified]
+- **[High] Companion self-update release-channel proof missing.** The `/update`
+  endpoint is shipped, but latest release `v4.46.0` has no
+  `AstraDownloader.exe` or `.sha256` sidecar, the build script outputs the EXE
+  to the repo root instead of `build/`, and the release checklist does not stage
+  the companion payload before manifest/checksum generation. → ROADMAP P1
+  companion update release-channel proof. [Verified]
 - **[Closed] Main branch did not require green checks.** Classic branch
   protection now records required `Validate` check contexts in
   `docs/repo-settings.md`; force-push/deletion protections and admin enforcement
@@ -645,7 +675,10 @@ Closed since the 2026-06-03 baseline:
   GitHub Release publication remains maintainer-local for `ytkit.pem`-signed
   CRX artifacts; current architecture docs still need reconciliation so they do
   not imply CI itself runs `gh release create`. Firefox build is patched but not
-  smoke-tested (ROADMAP P1). [Verified]
+  smoke-tested (ROADMAP P1). Companion self-update assets are not yet part of
+  this release contract because `AstraDownloader.exe` is built to the repo root
+  and the manifest generator only covers it after it is staged into `build/`
+  (ROADMAP P1). [Verified]
 
 ## Security / Privacy / Data Safety
 
@@ -665,13 +698,17 @@ Closed since the 2026-06-03 baseline:
   bearer-token, DNS-rebinding Host-header defense, yt-dlp pinned, and Flask
   `/download` request-field allowlisting that blocks client-supplied yt-dlp
   argv / flag payloads before queueing. The yt-dlp cookie-handling threat model
-  is documented; signed installer/MSI trust polish remains gated.
+  is documented; signed installer/MSI trust polish remains gated, and the
+  companion self-update release channel still needs EXE/sidecar publication
+  proof before `APP_VERSION` moves.
 - **Release integrity** [Verified]: v4.46.0 is the public latest release and
   attaches all eight profile-split extension artifacts, userscript, CycloneDX
   npm SBOM, `release-manifest.json`, and `SHA256SUMS`; GitHub release assets
   expose SHA-256 digest fields. The tag workflow creates attestations for
   CI-built artifacts, while public CRX assets intentionally remain
-  maintainer-local because `ytkit.pem` does not enter CI.
+  maintainer-local because `ytkit.pem` does not enter CI. The latest release
+  does not attach the companion EXE or `.sha256` sidecar, so companion
+  self-update integrity remains a separate P1 release-channel item.
 - **Signing-key custody** [Verified]: `ytkit.pem` is ignored and untracked, but
   the local checkout contains a private-key-shaped root file and the build
   script hardcodes / auto-generates that root path. ROADMAP P0 now queues an
