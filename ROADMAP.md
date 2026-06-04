@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 16 - 2026-06-04.
+> Last researched: Cycle 17 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,54 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 17 - 2026-06-04)
+
+- [x] 🔬 `signing-key-custody-path-2026-06-04` - inspected local
+  `ytkit.pem` tracking state without printing key material, `.gitignore`,
+  signing-key policy docs, release checklist references, and the CRX build
+  path in `build-extension.js`. Detailed notes live in
+  `docs/research-cycle-17-signing-key-custody.md`.
+- [ ] 🔬🤖🔧 P0 — Move CRX signing key custody out of the repo worktree
+  - Why: the CRX signing key is a long-lived private key that controls the
+    self-distributed Chrome extension identity. Current docs say `ytkit.pem`
+    lives outside the repo, but the build script hardcodes
+    `path.join(__dirname, 'ytkit.pem')`, auto-moves a generated key back into
+    the repo root, and this local checkout contains an ignored private-key file
+    at that path. It is not tracked by git, but keeping real key material inside
+    the repo worktree still raises accidental archive, tooling, prompt/log, and
+    copy-risk beyond the documented custody model.
+  - Evidence: `git ls-files --stage -- ytkit.pem` returns no tracked entry and
+    `git log --oneline -- ytkit.pem` returns no history, while
+    `git check-ignore -v -- ytkit.pem` resolves to `.gitignore:3:*.pem`.
+    `Get-Item ytkit.pem` shows a 1732-byte local file, and a header-only boolean
+    check confirms it begins like a private key; the key body was not printed.
+    `docs/signing-keys.md` says "Never commit `ytkit.pem`" and "`ytkit.pem`
+    lives outside the repo", but `build-extension.js` defines `CRX_KEY =
+    path.join(__dirname, 'ytkit.pem')` and moves a generated CRX key into that
+    root path when none exists. Chrome's extension docs say the `.pem` file
+    contains the extension private key, and GitHub's ignore-file docs describe
+    `.gitignore` as a commit-exclusion mechanism, not a storage-control
+    boundary. [Verified]
+  - Touches: `build-extension.js`, release/signing docs, local release
+    checklist, `scripts/generate-release-manifest.js` if the manifest should
+    record an external key-path policy, and maintainer machine key custody.
+  - Acceptance: the build path accepts an explicit external signing-key path
+    such as `ASTRA_CRX_KEY_PATH` or a CLI option, refuses to auto-generate or
+    auto-move `ytkit.pem` into the repo root unless an explicit legacy override
+    is set, and fails release builds with a clear message when the key path is
+    missing. The maintainer moves the real key outside the repo worktree to the
+    encrypted local-key location named in `docs/signing-keys.md`, keeps an
+    offline backup, and verifies the old root `ytkit.pem` is absent from the
+    repo checkout before release packaging. Docs and release checklist commands
+    use the external key path and do not require printing key material.
+  - Verify: `git status --ignored --short -- ytkit.pem` shows no root key file
+    in the checkout; `Test-Path ytkit.pem` is false on the release checkout;
+    `npm run build:userscript` fails with an intentional missing-key message
+    when no external path is supplied, then succeeds when the external key path
+    is supplied. Generated CRX extension ID is compared against the previous
+    self-distributed ID before publishing, and no command prints PEM contents.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 16 - 2026-06-04)
 

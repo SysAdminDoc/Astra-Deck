@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 17 signing-key custody pass on 2026-06-04 found that
+  `ytkit.pem` is not tracked by git and has no history for that path, but this
+  local checkout contains an ignored private-key-shaped file in the repo root.
+  Current key-management docs say the key lives outside the repo, while
+  `build-extension.js` hardcodes `path.join(__dirname, 'ytkit.pem')` and
+  auto-moves generated key material back into that root path. ROADMAP now
+  carries a P0 item to move the CRX signing key to an explicit external path,
+  fail closed when the key path is missing, and verify the self-distributed
+  extension ID without printing key material. Detailed evidence lives in
+  `docs/research-cycle-17-signing-key-custody.md`.
 - [Verified] Cycle 16 GitHub Actions supply-chain policy pass on 2026-06-04
   found that repository Actions permissions are enabled but broad
   (`allowed_actions: all`) and do not require full-length SHA pins
@@ -270,31 +280,34 @@ Top remaining opportunities (one-liners):
 
 1. Triage and resolve the open Google API Key secret-scanning alert without
    exposing the secret value. [Verified]
-2. Migrate GitHub Actions workflows to Node 24-ready action majors before
+2. Move CRX signing key custody out of the repo worktree and require an
+   explicit external key path for maintainer-local CRX release builds.
+   [Verified]
+3. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-3. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+4. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-4. Enable dependency graph / Dependabot alert settings so the PR-only
+5. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-5. Reconcile release automation docs with the current maintainer-local artifact
+6. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-6. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+7. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-7. MHTML capture-week expansion across Shorts, channel, search, history,
+8. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-8. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+9. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-9. Locale proofing queue for identical-to-English feature names/descriptions in
+10. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-10. Signed Astra Downloader installer/MSI once the signing budget and submission
+11. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -338,7 +351,14 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-13-actions-node24-readiness.md`, and
   `docs/research-cycle-14-release-doc-contract-reconciliation.md`, and
   `docs/research-cycle-15-secret-scanning-alert.md`, and
-  `docs/research-cycle-16-actions-sha-pinning.md`. [Verified]
+  `docs/research-cycle-16-actions-sha-pinning.md`, and
+  `docs/research-cycle-17-signing-key-custody.md`. [Verified]
+- CRX signing-key custody probe: `ytkit.pem` is ignored by `.gitignore` and is
+  not tracked in current git state, but the local checkout has a 1732-byte
+  private-key-shaped root file. `docs/signing-keys.md` says the key lives
+  outside the repo, while `build-extension.js` hardcodes the repo-root
+  `ytkit.pem` path and moves generated key material there if no key exists.
+  The key body was not printed. [Verified]
 - GitHub Actions policy probe: repository Actions permissions are currently
   `allowed_actions: all` and `sha_pinning_required: false`; workflow defaults
   keep `GITHUB_TOKEN` read-only and prevent workflow-created PR approvals. The
@@ -563,6 +583,10 @@ Closed since the 2026-06-03 baseline:
   expose SHA-256 digest fields. The tag workflow creates attestations for
   CI-built artifacts, while public CRX assets intentionally remain
   maintainer-local because `ytkit.pem` does not enter CI.
+- **Signing-key custody** [Verified]: `ytkit.pem` is ignored and untracked, but
+  the local checkout contains a private-key-shaped root file and the build
+  script hardcodes / auto-generates that root path. ROADMAP P0 now queues an
+  external key-path contract before the next maintainer-local CRX release.
 - **GitHub Actions supply chain** [Verified]: default workflow token
   permissions are read-only, but repository Actions policy still allows all
   action sources and does not require full-length SHA pins. Current workflow
@@ -604,6 +628,8 @@ Closed since the 2026-06-03 baseline:
 - Whether the open Google API Key secret-scanning alert is an intentional public
   YouTube/Innertube bootstrap key or a private quota-bearing credential that
   must be revoked. [Needs validation]
+- Whether CRX release builds should use `ASTRA_CRX_KEY_PATH`, a CLI flag, or
+  both for the external signing-key path. [Needs validation]
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
