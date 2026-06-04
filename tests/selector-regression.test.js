@@ -27,6 +27,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const vm = require('node:vm');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const YTKIT_SOURCE = fs.readFileSync(
@@ -67,6 +68,44 @@ function escapeRegExp(value) {
 function sourceReferencesToken(selector) {
     const token = escapeRegExp(selector);
     return new RegExp(`(^|[^A-Za-z0-9_-])${token}($|[^A-Za-z0-9_-])`).test(RUNTIME_SOURCE);
+}
+
+function loadSelectorPackContext() {
+    const ctx = {
+        console,
+        Date,
+        Math,
+        globalThis: null,
+        dispatchEvent() {},
+    };
+    ctx.globalThis = ctx;
+    vm.createContext(ctx);
+
+    const packsDir = path.join(REPO_ROOT, 'extension', 'core', 'selector-packs');
+    const packFiles = fs.readdirSync(packsDir)
+        .filter((file) => file.endsWith('.js'))
+        .sort();
+    const files = [
+        'extension/core/registry.js',
+        ...packFiles.map((file) => `extension/core/selector-packs/${file}`),
+        'extension/core/selectors.js',
+    ];
+
+    for (const rel of files) {
+        const src = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
+        vm.runInContext(src, ctx, { filename: rel });
+    }
+    return ctx.globalThis.YTKitCore;
+}
+
+function loadSelectorSurfaceMatches() {
+    const p = path.join(REPO_ROOT, 'tests', 'fixtures', 'selector-surface-matches.json');
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+}
+
+function selectorMatchRow(surface, selector) {
+    return [...surface.stable, ...surface.fallback]
+        .find((row) => row.selector === selector);
 }
 
 const FIXTURES = {
@@ -256,6 +295,70 @@ test('live-chat fixture contains iframe-document selector tokens', () => {
             tokens.has(selector),
             `live-chat fixture must include ${selector} from the popout chat MHTML capture`
         );
+    }
+});
+
+test('selector surface match fixture stays synced to player-chrome and live-chat packs', () => {
+    const fixture = loadSelectorSurfaceMatches();
+    const core = loadSelectorPackContext();
+    const expectedSurfaces = ['liveChat', 'playerChrome'];
+
+    assert.equal(fixture.schemaVersion, 1);
+    assert.equal(fixture.generatedBy, 'scripts/build-selector-fixtures.js');
+    assert.equal(fixture.matcher, 'decoded-mhtml-dom-subset');
+    assert.deepEqual(Object.keys(fixture.surfaces).sort(), expectedSurfaces);
+
+    for (const surfaceName of expectedSurfaces) {
+        const snapshot = fixture.surfaces[surfaceName];
+        const live = core.SurfaceSelectorMap[surfaceName];
+        assert.ok(snapshot, `${surfaceName} must exist in selector-surface-matches.json`);
+        assert.ok(live, `${surfaceName} must exist in SurfaceSelectorMap`);
+        assert.ok(snapshot.elementCount > 100,
+            `${surfaceName} fixture parsed only ${snapshot.elementCount} elements`);
+        assert.deepEqual(
+            snapshot.stable.map((row) => row.selector),
+            [...live.stable],
+            `${surfaceName} stable selectors changed; regenerate with npm run build:fixtures`
+        );
+        assert.deepEqual(
+            snapshot.fallback.map((row) => row.selector),
+            [...live.fallback],
+            `${surfaceName} fallback selectors changed; regenerate with npm run build:fixtures`
+        );
+    }
+});
+
+test('selector surface match fixture proves live-chat and liquid-glass selectors resolve', () => {
+    const fixture = loadSelectorSurfaceMatches();
+    const required = {
+        playerChrome: [
+            '.ytp-chrome-bottom',
+            '.ytp-delhi-modern .ytp-chrome-bottom',
+            '.ytp-delhi-modern',
+            '.ytp-overflow-panel',
+        ],
+        liveChat: [
+            'yt-live-chat-app',
+            'yt-live-chat-renderer',
+            'yt-live-chat-item-list-renderer',
+            'yt-live-chat-text-message-renderer',
+        ],
+    };
+
+    for (const [surfaceName, selectors] of Object.entries(required)) {
+        const surface = fixture.surfaces[surfaceName];
+        assert.ok(surface, `${surfaceName} must be present in selector-surface-matches.json`);
+
+        for (const selector of selectors) {
+            const row = selectorMatchRow(surface, selector);
+            assert.ok(row, `${surfaceName} must record selector "${selector}"`);
+            assert.equal(row.matched, true,
+                `${surfaceName} selector "${selector}" no longer matches ${surface.source}; refresh selector packs before shipping`);
+            assert.ok(row.matchCount > 0,
+                `${surfaceName} selector "${selector}" must have a positive fixture match count`);
+            assert.ok(surface.matchedSelectors.includes(selector),
+                `${surfaceName} matchedSelectors must include "${selector}"`);
+        }
     }
 });
 
