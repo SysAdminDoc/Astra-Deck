@@ -400,6 +400,7 @@
   "subscriptionSortMode": "default",
   "subscriptionShowNewSinceLastVisit": true,
   "subscriptionLastVisitData": {},
+  "subscriptionUnsubscribeStagingData": {},
   "subscriptionAiTags": false,
   "subscriptionAiTagData": {},
   "localAiSummary": false,

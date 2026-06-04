@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Dead-channel unsubscribe staging.** Subscription Groups now flags rendered
+  subscription-feed cards whose newest visible upload is at least 365 days old,
+  stores staged review records in `subscriptionUnsubscribeStagingData` with a
+  30-day `undoUntil` window, and adds Scan Stale / Stage Stale / Undo Staged
+  toolbar actions. The staging path marks cards for review only; it does not
+  click YouTube unsubscribe controls.
+
 - **NF2 nested subscription groups.** Subscription group records now support a
   depth-2 `parentId` shape, export as schema v2, and import via a two-pass
   normalizer that preserves valid parent links while rejecting child-of-child

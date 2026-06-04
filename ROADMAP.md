@@ -58,12 +58,16 @@ phased feature plan) is preserved at
     parent filters include child-group channels, and the toolbar renders child
     chips plus a top-level-only `+ Subgroup` action.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P2 — Dead-channel detection + bulk unsubscribe staging
+- [x] P2 — Dead-channel detection + bulk unsubscribe staging
   - Why: stale channels accumulate; bulk unsubscribe is irreversible without a
     safety surface.
   - Touches: subscription-groups feature module, undo/staging UI.
   - Acceptance: stale channels are flagged and bulk unsubscribe routes through a
-    30-day undo window.
+    30-day undo window. _(Delivered 2026-06-04: rendered subscription cards now
+    parse age text, flag channels whose newest rendered upload is at least 365
+    days old, stage review records in `subscriptionUnsubscribeStagingData` with
+    `undoUntil` set 30 days out, and expose scan/stage/undo toolbar actions
+    without clicking YouTube unsubscribe controls.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 - [ ] P2 — Per-video notes (`videoNotes`) (NF1)
   - Why: a local-first per-video notes surface is a top product gap versus

@@ -2301,20 +2301,20 @@ test('monetizationIndicator paints exactly one pill and removes it on destroy', 
 test('subscriptionGroups keys by channel ID and survives SPA navigation', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
     assert.ok(start > -1, 'subscriptionGroups must exist');
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /_GROUPS_KEY: 'subscriptionGroupData'/,
         'must persist groups to subscriptionGroupData');
     assert.match(block, /a\[href\*="\/channel\/"]/,
         'must extract channel IDs from /channel/UC… links');
     assert.match(block, /addNavigateRule\(this\.id/,
         'must hook the SPA navigate event so groups re-apply on route changes');
-    assert.match(block, /addMutationRule\(this\.id/,
-        'must hook the mutation rule so newly-rendered cards get filtered');
+    assert.match(block, /addScopedMutationRule\(this\.id, 'ytd-rich-item-renderer, ytd-video-renderer'/,
+        'must hook a scoped mutation rule so newly-rendered cards get filtered without reacting to injected badges');
 });
 
 test('subscriptionGroups exports + imports JSON with schema version', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /schemaVersion:\s*2/,
         'export payload must declare schemaVersion 2');
     assert.match(block, /astra-deck-subscription-groups-/,
@@ -2330,7 +2330,7 @@ test('subscriptionGroups exports + imports JSON with schema version', () => {
 
 test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and new-since badges', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /_toolbar\?\.remove\(\)/,
@@ -2343,7 +2343,7 @@ test('subscriptionGroups destroy() clears toolbar, hidden-by-group classes, and 
 
 test('subscriptionGroups sort modes cover unwatched / duration / new-since', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /'duration-asc'/, 'must support duration-asc sort');
     assert.match(block, /'unwatched'/, 'must support unwatched sort');
     assert.match(block, /'new-since-last-visit'/, 'must support new-since-last-visit sort');
@@ -2351,7 +2351,7 @@ test('subscriptionGroups sort modes cover unwatched / duration / new-since', () 
 
 test('subscriptionGroups persists sort mode per active group (NF31)', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /_SORT_MODES:\s*Object\.freeze\(\['default', 'date-desc', 'duration-asc', 'unwatched', 'new-since-last-visit', 'popular'\]\)/,
         'subscriptionGroups must centralize the allowed sort modes');
     assert.match(block, /_getActiveSortMode\(groups = this\._readGroups\(\)\)[\s\S]*groups\[this\._activeGroupId\]\?\.sortMode/,
@@ -2372,7 +2372,7 @@ test('subscriptionGroups persists sort mode per active group (NF31)', () => {
 
 test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (NF2)', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 42000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /_getGroupParentId\(groupId, groups = this\._readGroups\(\)\)/,
         'subscriptionGroups must expose parentId normalization for nested groups');
     assert.match(block, /grandParentId && groups\[grandParentId\] \? '' : parentId/,
@@ -2399,6 +2399,46 @@ test('subscriptionGroups supports depth-2 parentId groups with JSON round-trip (
         'toolbar chips must expose depth for child-group styling');
     assert.match(block, /\+ Subgroup/,
         'toolbar must expose a subgroup creation action for top-level active groups');
+});
+
+test('subscriptionGroups stages dead-channel unsubscribe candidates with a 30-day undo window', () => {
+    const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
+    const block = ytkitSource.slice(start, start + 62000);
+    assert.match(block, /_UNSUB_STAGE_KEY: 'subscriptionUnsubscribeStagingData'/,
+        'dead-channel staging must persist into subscriptionUnsubscribeStagingData');
+    assert.match(block, /_UNSUB_STAGE_TTL_MS:\s*30 \* 24 \* 60 \* 60 \* 1000/,
+        'dead-channel staging must use a 30-day undo window');
+    assert.match(block, /_STALE_CHANNEL_MIN_AGE_DAYS:\s*365/,
+        'dead-channel candidates must require at least one year of rendered inactivity');
+    assert.match(block, /_extractCardAgeDays\(text\)/,
+        'dead-channel detection must parse rendered card age text');
+    assert.match(block, /_collectDeadChannelCandidates\(\)/,
+        'dead-channel detection must collect explicit candidates before staging');
+    assert.match(block, /ageDays === null \|\| ageDays < this\._STALE_CHANNEL_MIN_AGE_DAYS/,
+        'candidate collection must reject fresh or unknown-age cards');
+    assert.match(block, /card\.classList\.contains\('ytkit-sub-hidden-by-group'\)/,
+        'candidate collection must respect the active group filter');
+    assert.match(block, /_stageDeadChannelUnsubscribes\(\)/,
+        'toolbar action must route through the staging helper');
+    assert.match(block, /undoUntil:\s*now \+ this\._UNSUB_STAGE_TTL_MS/,
+        'staged records must carry the explicit undoUntil timestamp');
+    assert.match(block, /_undoStagedUnsubscribes\(channelIds\)/,
+        'staged records must be reversible by channel ID');
+    assert.match(block, /dataset\.action = 'stage-unsubscribe'/,
+        'toolbar must expose a stage-unsubscribe action');
+    assert.match(block, /ytkit-sub-dead-badge/,
+        'rendered stale candidates must receive a visible stale marker');
+    assert.match(block, /ytkit-sub-staged-badge/,
+        'staged candidates must receive a visible staged marker');
+    assert.match(block, /No YouTube unsubscribe buttons are clicked/,
+        'the stage button must disclose that it does not click YouTube unsubscribe controls');
+    assert.doesNotMatch(block, /unsubscribe[^;]{0,120}\.click\(/i,
+        'bulk unsubscribe staging must not directly click unsubscribe controls');
+    assert.deepEqual(defaultSettings.subscriptionUnsubscribeStagingData, {},
+        'default-settings.json must seed an empty unsubscribe staging map');
+    const entry = settingsSchemaModule.SETTINGS_SCHEMA.find((e) => e.key === 'subscriptionUnsubscribeStagingData');
+    assert.ok(entry, 'settings-schema must catalogue subscriptionUnsubscribeStagingData');
+    assert.equal(entry.type, 'object', 'subscriptionUnsubscribeStagingData must be object typed');
 });
 
 // ── v3.30.0 P1: Research workspace invariants ──
@@ -3034,7 +3074,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
 
 test('subscriptionGroups popularity sort reads view-count from card metadata', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /_parseCompactViewCount/,
         'subscriptionGroups must declare _parseCompactViewCount()');
     assert.match(block, /mode === 'popular'/,
@@ -3171,7 +3211,7 @@ test('PageTypes covers music, embed, and live_chat surfaces', () => {
 
 test('subscriptionGroups uses an inline dialog instead of window.prompt', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     // Hardening pass replaced window.prompt with _showNewGroupDialog.
     assert.match(block, /_showNewGroupDialog/,
         'subscriptionGroups must expose the inline new-group dialog');
@@ -3181,7 +3221,7 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
         'subscriptionGroups must not call window.prompt(...)');
     // The dialog must focus-trap (aria-modal) and clean up on destroy.
     const dlgIdx = block.indexOf('_showNewGroupDialog');
-    const dlgBody = block.slice(dlgIdx, dlgIdx + 8000);
+    const dlgBody = block.slice(dlgIdx, dlgIdx + 10000);
     assert.match(dlgBody, /setAttribute\('aria-modal', 'true'\)/,
         'dialog must declare aria-modal so screen readers trap focus');
     assert.match(dlgBody, /key === 'Escape'/,
@@ -3190,7 +3230,7 @@ test('subscriptionGroups uses an inline dialog instead of window.prompt', () => 
 
 test('subscriptionLastVisitData is capped to prevent unbounded growth', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     const stampIdx = block.indexOf('_stampLastVisit()');
     const stampBody = block.slice(stampIdx, stampIdx + 1500);
     assert.match(stampBody, /LAST_VISIT_CAP/,
@@ -3278,7 +3318,7 @@ test('subscriptionAiTags persists generated tags into subscriptionAiTagData per 
 
 test('subscriptionAiTags renders chip suffix and binds shift+click for regeneration', () => {
     const start = ytkitSource.indexOf("id: 'subscriptionGroups'");
-    const block = ytkitSource.slice(start, start + 36000);
+    const block = ytkitSource.slice(start, start + 62000);
     assert.match(block, /aiTagData\[id\]\?\.tags\?\.length/,
         'chip render must check for stored tags');
     assert.match(block, /Shift\+click to regenerate/,
@@ -3305,11 +3345,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    // v4.47.0 NF9: +2 keys (wheelSeek + wheelSeekStepSec) lifted the
-    // pin from 357 to 359. Keep the literal so a future schema
+    // Dead-channel unsubscribe staging added subscriptionUnsubscribeStagingData,
+    // lifting the pin from 359 to 360. Keep the literal so a future schema
     // addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 359,
-        'SETTINGS_SCHEMA must cover all 359 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 360,
+        'SETTINGS_SCHEMA must cover all 360 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
