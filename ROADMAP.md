@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 2 - 2026-06-04.
+> Last researched: Cycle 3 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -291,6 +291,15 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 3 - 2026-06-04)
+
+- [x] 🔬 `cycle-3-report-reconciliation-2026-06-04` - reconciled
+  `RESEARCH_REPORT.md` after the build lane shipped settings migration,
+  settings import/export scrub, companion onboarding, Return YouTube Dislike
+  estimate disclosure, diagnostics export, yt-dlp cookie threat-model docs, and
+  selector-capture refresh work. This pass updated stale gap/risk language
+  without adding duplicate implementation rows.
 
 ### Researcher Queue (Cycle 2 - 2026-06-04)
 

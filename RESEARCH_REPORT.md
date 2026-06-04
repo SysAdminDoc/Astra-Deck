@@ -32,6 +32,10 @@ or maintainer action to confirm.
   pin remains aligned with the latest stable GitHub release observed on this
   pass; PO-token churn remains a companion watch item, but the existing Deno /
   PO-token health and yt-dlp smoke rows already cover it.
+- [Verified] Cycle 3 reconciliation on 2026-06-04 updated stale report sections
+  that still described settings import/export, onboarding, diagnostics export,
+  RYD estimate disclosure, settings migration, and the yt-dlp cookie threat model
+  as gaps after those items had shipped.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
@@ -229,7 +233,7 @@ excluded by design. [Verified]
 |------|-------|----------|----------|
 | Sponsor/segment skip (SponsorBlock) | `extension/ytkit.js`, `sponsor.ajay.app` host | Shipped | Hardened, rate-limited [Likely] |
 | Title/thumbnail (DeArrow-class) | settings schema + `ytkit.js` | Shipped | [Likely] |
-| Return YouTube Dislike | `returnyoutubedislikeapi.com` host | Shipped | No estimate-disclosure UI [Verified] |
+| Return YouTube Dislike | `returnyoutubedislikeapi.com` host | Shipped | Estimate disclosure now appears in count/ratio UI, locale copy, title, and aria-label paths [Verified] |
 | Feed/comment/channel filtering (BlockTube-class) | `features/video-hider/`, `ytkit.js` | Shipped | ReDoS-guarded; channel-key cache [Verified] |
 | Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Depth-2 groups, dead-channel staging, and group digest are shipped; external sync remains absent [Verified] |
 | Theater split / sticky player | `features/sticky-video/`, `player-dock/` | Shipped | Lifecycle-unified chat observer [Verified] |
@@ -239,7 +243,7 @@ excluded by design. [Verified]
 | AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | GitHub-full artifact only [Verified] |
 | Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint and popup action; local loopback grants stay GitHub-full [Verified] |
 | Per-video notes | `videoNotes` feature | Shipped | Local-first notes, versioned export, 1000-note LRU cap [Verified] |
-| Settings import/export | — | Gap | No first-class surface [Verified] |
+| Settings import/export | popup + `policy-profile.js` | Shipped | Schema-validated local backup/import with credential scrub and schema-only export [Verified] |
 | Selector-pack health | `core/selector-health.js` | Shipped | Now reports attribute-shape drift [Verified] |
 
 ## Competitive Landscape
@@ -257,7 +261,8 @@ excluded by design. [Verified]
 - **BlockTube**: rule-based filtering; Astra's filter engine is the planned
   superset (predicate-sandbox already exists for safe DSL evaluation). [Verified]
 - **Return YouTube Dislike**: estimate-based for post-2021/low-traffic videos —
-  Astra surfaces counts but does not yet disclose the estimate caveat. [Verified]
+  Astra now discloses that caveat in the rendered count/ratio UI and locale
+  descriptions. [Verified]
 
 Standards: Chrome Web Store MV3 program policy (no remotely hosted code;
 single-purpose; per-permission justification; specific host patterns over
@@ -269,22 +274,37 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
 
 ## Quality & Friction Findings
 
-- **[High] Upgrade data-safety.** 362 flat keys + `unlimitedStorage`; the existing
-  round-trip test does not load a pinned old-version blob → silent config loss on
-  a botched migration is the top data-loss risk. → ROADMAP P0 migration test. [Verified]
-- **[High] Version-surface confusion.** Ship line 4.46.0 vs documented internal
-  planning-track "v5.0.0 complete" / v5-v6 plan; a contributor or reviewer
-  cannot tell releases from planning. → ROADMAP P1 version reconciliation.
+Current open risk:
+
+- **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
+  but no clean-profile Firefox MV3 smoke gate exercises the artifact before AMO
+  or self-distributed Firefox updates. → ROADMAP P1 Firefox parity smoke.
   [Verified]
-- **[Med] Onboarding / empty-state friction.** Popup is the only surface; the
-  companion connection fails silently until the user happens to launch the
-  PyInstaller app. → ROADMAP P2 onboarding + empty/permission states. [Verified]
-- **[Med] No first-class backup.** No settings import/export → no cross-browser
-  migration and no recovery path, while PocketTube ships sync. → ROADMAP P1
-  import/export with scrub. [Verified]
-- **[Med] Diagnostics trapped in console.** `diagnostic-log` / `selector-health`
-  exist but cannot be exported for an issue. → ROADMAP P3 diagnostics bundle. [Verified]
-- **[Low] RYD estimate not disclosed.** → ROADMAP P2 estimate affordance. [Verified]
+- **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed,
+  but Shorts, channel, search, history, watch-later, embedded player, and
+  notifications surfaces still lack capture-backed selector fixtures. → ROADMAP
+  P2 capture-week expansion. [Verified]
+- **[Med] In-page overlay accessibility.** Popup a11y/contrast is CI-gated, but
+  transcript, notes, theater split, subscription manager, and toast overlays are
+  not yet under the WCAG 2.2 target-size/focus-appearance gate. → ROADMAP P2
+  overlay a11y audit. [Verified]
+- **[Med] Locale proofing debt.** The feature-definition i18n extraction shipped,
+  but `docs/i18n-coverage.md` still reports 37-73 identical-to-English strings
+  per non-EN locale. → ROADMAP P3 locale proofing queue. [Verified]
+- **[Gated] Downloader installer trust.** Companion onboarding is now explicit,
+  but the signed installer/MSI remains blocked on signing budget and submission
+  intent. → ROADMAP P2 signed installer/MSI. [Needs validation]
+
+Closed since the 2026-06-03 baseline:
+
+- Settings migration safety is now pinned by an old-version full-profile fixture.
+  [Verified]
+- Version-surface confusion was reconciled to the live v4.x ship line. [Verified]
+- Settings import/export now has schema validation and credential scrub. [Verified]
+- Companion onboarding, empty states, install prompt recovery, and update action
+  are shipped. [Verified]
+- Diagnostics export now produces a scrubbed bug-report bundle. [Verified]
+- RYD estimate disclosure now appears in the UI and locale copy. [Verified]
 
 ## Architecture & Technical Findings
 
@@ -324,15 +344,15 @@ redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
   bar (ROADMAP P1 store note).
 - **No remote code** [Likely]: `check-no-eval.js` gate + MV3 prohibition; consistent
   with policy.
-- **Credential handling** [Verified]: `policy-profile.js` scrubs gated/credential
-  fields; AI keys are BYO and must never appear in exports/diagnostics — which is
-  exactly why import/export (P1) and diagnostics export (P3) must run through the
-  scrubber, and R6 (finish scrub-regex coverage) is in Existing Planned Work.
+- **Credential handling** [Verified]: `policy-profile.js` now backs settings
+  import/export, schema-only export, and diagnostics bundle redaction; AI keys,
+  endpoint URLs, custom CSS, cookies, bearer/auth tokens, and credential-shaped
+  fields must continue to route through the scrubber for any future export path.
 - **Companion** [Verified]: loopback-only (`127.0.0.1`, never `localhost`),
   bearer-token, DNS-rebinding Host-header defense, yt-dlp pinned, and Flask
   `/download` request-field allowlisting that blocks client-supplied yt-dlp
-  argv / flag payloads before queueing. The yt-dlp cookie-leak class warrants a
-  written threat model (ROADMAP P2).
+  argv / flag payloads before queueing. The yt-dlp cookie-handling threat model
+  is documented; signed installer/MSI trust polish remains gated.
 
 ## UX & Accessibility
 
