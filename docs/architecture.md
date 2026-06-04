@@ -1,6 +1,6 @@
 # Astra Deck — Architecture Map
 
-This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.0+), not prescriptive (which direction to push). For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog and v5.0.0 → v6.0.0 plan, plus [RESEARCH_REPORT.md](../RESEARCH_REPORT.md) for research context and archived feature-plan sources.
+This document orients a new contributor to the moving parts. It is descriptive (what is, today, at v4.46.0+), not prescriptive (which direction to push). Product-version sources (`package.json`, `extension/manifest.json`, `extension/ytkit.js`, `YTKit.user.js`, and `package-lock.json`) currently agree at v4.46.0. For where to push, see [ROADMAP.md](../ROADMAP.md) for the active backlog. Legacy v5/v6 labels in older docs are internal planning-track names, not shipped release versions; [RESEARCH_REPORT.md](../RESEARCH_REPORT.md) links the archived feature-plan sources.
 
 ## The four moving parts
 

@@ -14,6 +14,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   and schema-only export mode, and userscript output is synced to the same
   contract.
 
+- **Version-surface docs clarified.** Active documentation now names v4.46.0 as
+  the current shipped product line across the five checked product-version
+  sources and labels legacy v5/v6 roadmap references as internal planning-track
+  names, not released extension/userscript versions.
+
 - **Settings migration full-profile fixture.** Added a pinned
   `SETTINGS_VERSION` v1 full-profile settings blob covering every current
   default key, migration override, future-default classification, and retired

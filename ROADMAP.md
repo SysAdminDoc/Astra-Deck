@@ -6,10 +6,12 @@
 Shipped work is summarized in [COMPLETED.md](COMPLETED.md) and detailed in
 [CHANGELOG.md](CHANGELOG.md). Research is summarized in
 [RESEARCH_REPORT.md](RESEARCH_REPORT.md). The pre-consolidation research plans
-are archived under `docs/archive/research/`, and the legacy v5.2.0 → v6.0.0
-product dossier (competitive matrix, feature catalog, technical reconnaissance,
-phased feature plan) is preserved at
+are archived under `docs/archive/research/`, and the legacy
+internal-planning-track dossier labelled v5.2.0 -> v6.0.0 (competitive matrix, feature catalog,
+technical reconnaissance, phased feature plan) is preserved at
 [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md).
+Current shipped product-version sources remain on the v4.x line; at this
+cleanup they agree at v4.46.0.
 
 > Last researched: Cycle 1 - 2026-06-04.
 
@@ -317,16 +319,18 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Quick Wins
 
-- [ ] P1 — Reconcile version surfaces and retire the "v5.0.0 foundation" framing
+- [x] P1 — Reconcile version surfaces and label legacy internal planning-track "v5.0.0 foundation" framing
   - Why: the shipping product is `4.46.0` (`package.json`, `extension/manifest.json`,
-    `docs/architecture.md`), yet `COMPLETED.md` and the archived dossier describe a
-    "v5.0.0 foundation arc effectively complete" and a v5.0.0 → v6.0.0 plan. A
+    `docs/architecture.md`), yet `COMPLETED.md` and the archived dossier used an
+    internal planning-track "v5.0.0 foundation arc effectively complete" and
+    internal planning-track v5.0.0 -> v6.0.0 plan. A
     reader cannot tell the real release line from the planning line, and
     `check-versions.js` only validates the surfaces it knows about.
   - Evidence: `package.json` version `4.46.0`; `extension/manifest.json` version
-    `4.46.0`; `docs/architecture.md` "(what is, today, at v4.46.0+)"; COMPLETED.md
-    "v5.0.0 Foundation Arc" / "v5.1 Carry-Forward Arc"; archived dossier
-    "v5.0.0 foundation arc effectively complete." [Verified]
+    `4.46.0`; `docs/architecture.md` "(what is, today, at v4.46.0+)";
+    COMPLETED.md internal planning-track "v5.0.0 Foundation Arc" / internal
+    planning-track "v5.1 Carry-Forward Arc"; archived dossier internal
+    planning-track "v5.0.0 foundation arc effectively complete." [Verified]
   - Touches: `COMPLETED.md`, `RESEARCH_REPORT.md`, `docs/architecture.md` doc
     prose only (no code).
   - Acceptance: every doc states the real shipped version (4.46.x) and labels the
@@ -334,6 +338,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: `node scripts/check-versions.js` stays green; grep for "v5.0.0" /
     "v6.0.0" finds only planning-track-labelled mentions.
   - Complexity: S
+  - Status 2026-06-04: delivered. Active documentation now states that
+    `package.json`, `extension/manifest.json`, `extension/ytkit.js`,
+    `YTKit.user.js`, and `package-lock.json` are the product-version sources and
+    agree at v4.46.0. The v5/v6 labels in `COMPLETED.md`,
+    `RESEARCH_REPORT.md`, `docs/architecture.md`, and the archived dossier are
+    explicitly marked as legacy internal planning-track labels, not shipped
+    release versions.
 - [ ] P1 — Add per-permission justification + single-purpose store note for review
   - Why: the extension requests `cookies` + `downloads`; the source/full-profile
     manifest carries 19 host origins spanning YouTube, SponsorBlock, Return
