@@ -19,17 +19,20 @@ or maintainer action to confirm.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
-  digest, and Study / Work export are now represented in `ROADMAP.md`,
-  `extension/ytkit.js`, docs, and hardening tests. The subscription
-  implementation uses rendered-feed DOM heuristics, local last-visit data, and a
-  30-day local undo/staging window rather than a YouTube Data API unsubscribe
-  path; the notes and study/work exports stay local-first with versioned JSON,
-  Markdown, or CSV downloads.
-- [Verified] Validation on 2026-06-04 after the Study / Work export batch:
-  `node --check extension/ytkit.js` and `node --test tests/hardening.test.js`
-  (417 checks), `npm run check`, `npm test` (612 checks), and `npm run build`
-  all passed. The build emitted Chrome ZIP/CRX and Firefox ZIP/XPI artifacts for
-  v4.46.0.
+  digest, Study / Work export, and feature-definition i18n are now represented
+  in `ROADMAP.md`, `extension/ytkit.js`, docs, and hardening tests. The
+  subscription implementation uses rendered-feed DOM heuristics, local
+  last-visit data, and a 30-day local undo/staging window rather than a YouTube
+  Data API unsubscribe path; the notes and study/work exports stay local-first
+  with versioned JSON, Markdown, or CSV downloads; the settings-panel feature
+  labels now resolve through the locale layer before falling back to inline
+  English.
+- [Verified] Validation on 2026-06-04 after the feature-definition i18n batch:
+  `node --check extension/ytkit.js`, `node --check extension/core/registry.js`,
+  `node --check tests/hardening.test.js`, `node scripts/check-i18n.js`,
+  `node --test tests/hardening.test.js` (420 checks), `npm run check`,
+  `npm test` (615 checks), and `npm run build` all passed. The build emitted
+  Chrome ZIP/CRX and Firefox ZIP/XPI artifacts for v4.46.0.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
   code / permission-rationale items relevant; MDN's `scripting.executeScript`

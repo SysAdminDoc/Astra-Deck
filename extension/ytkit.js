@@ -198,6 +198,46 @@
         return (fallback != null) ? fallback : key;
     }
 
+    function getFeatureI18nKey(featureOrId, field) {
+        const featureId = typeof featureOrId === 'string'
+            ? featureOrId
+            : featureOrId?.id;
+        const safeId = String(featureId || '').trim().replace(/[^A-Za-z0-9]/g, '_');
+        if (!safeId) return '';
+        const suffix = field === 'description' || field === 'desc' ? 'desc' : 'name';
+        return `feature_${safeId}_${suffix}`;
+    }
+
+    function ensureFeatureI18nKeys(feature) {
+        if (!feature?.id) return feature;
+        if (typeof feature.nameKey !== 'string' || !feature.nameKey.trim()) {
+            feature.nameKey = getFeatureI18nKey(feature, 'name');
+        }
+        if (typeof feature.descriptionKey !== 'string' || !feature.descriptionKey.trim()) {
+            feature.descriptionKey = getFeatureI18nKey(feature, 'description');
+        }
+        return feature;
+    }
+
+    function getFeatureI18nText(feature, field) {
+        if (!feature) return '';
+        ensureFeatureI18nKeys(feature);
+        const isDescription = field === 'description' || field === 'desc';
+        const key = isDescription ? feature.descriptionKey : feature.nameKey;
+        const fallback = isDescription
+            ? String(feature.description || '')
+            : String(feature.name || feature.id || '');
+        return key ? t(key, fallback) : fallback;
+    }
+
+    function getFeatureName(feature) {
+        return getFeatureI18nText(feature, 'name');
+    }
+
+    function getFeatureDescription(feature) {
+        return getFeatureI18nText(feature, 'description');
+    }
+
     function sendRuntimeMessage(message) {
         return new Promise((resolve, reject) => {
             if (!hasExtensionContext()) {
@@ -4691,7 +4731,7 @@ return response;
             setFeatureHealth(feature.id, {
                 status,
                 source,
-                name: feature.name || feature.id,
+                name: getFeatureName(feature) || feature.id,
                 category: feature.group || null,
                 settingKey: getFeatureSettingKey(feature),
                 initialized: !!feature._initialized,
@@ -34117,6 +34157,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     ];
 
     const RETIRED_COMMENT_FEATURE_IDS = RETIRED_SETTING_KEYS;
+    features.forEach(ensureFeatureI18nKeys);
 
     function isRetiredCommentFeature(featureOrId) {
         const featureId = typeof featureOrId === 'string' ? featureOrId : featureOrId?.id;
@@ -34144,7 +34185,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             if (!getRegisteredFeature(feature.id)) {
                 registerFeature({
                     id: feature.id,
-                    name: feature.name || feature.id,
+                    name: getFeatureName(feature) || feature.id,
+                    description: getFeatureDescription(feature),
+                    nameKey: feature.nameKey,
+                    descriptionKey: feature.descriptionKey,
                     category: feature.group || null,
                     type: feature.type || 'toggle',
                     settingKey: getFeatureSettingKey(feature),
@@ -36676,6 +36720,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     function buildFeatureCard(f, accentColor, isSubFeature = false) {
         const card = document.createElement('div');
         const featureType = f.type || 'toggle';
+        const featureName = getFeatureName(f);
+        const featureDescription = String(getFeatureDescription(f) || '').trim();
         card.className = 'ytkit-feature-card'
             + ` ytkit-feature-card--${featureType}`
             + (isSubFeature ? ' ytkit-sub-card' : '')
@@ -36687,7 +36733,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         card.dataset.featureId = f.id;
         card.dataset.featureType = featureType;
         card.setAttribute('role', 'group');
-        card.setAttribute('aria-label', f.name);
+        card.setAttribute('aria-label', featureName);
         if (accentColor) card.style.setProperty('--cat-color', accentColor);
 
         // Apply enabled accent stripe for boolean features
@@ -36733,10 +36779,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         const name = document.createElement('h3');
         name.className = 'ytkit-feature-name';
-        name.textContent = f.name;
+        name.textContent = featureName;
 
-        const descriptionText = String(f.description || '').trim();
-        card.title = descriptionText || f.name;
+        const descriptionText = featureDescription;
+        card.title = descriptionText || featureName;
 
         if (hasMeta) info.appendChild(meta);
         info.appendChild(name);
@@ -36774,7 +36820,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const textarea = document.createElement('textarea');
             textarea.className = 'ytkit-input';
             textarea.id = `ytkit-input-${f.id}`;
-            textarea.setAttribute('aria-label', f.name);
+            textarea.setAttribute('aria-label', featureName);
             textarea.placeholder = f.placeholder || 'word1, word2, phrase';
             textarea.value = appState.settings[f.settingKey || f.id] ?? '';
             // Auto-save on blur for textarea features
@@ -36796,7 +36842,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const select = document.createElement('select');
             select.className = 'ytkit-select';
             select.id = `ytkit-select-${f.id}`;
-            select.setAttribute('aria-label', f.name);
+            select.setAttribute('aria-label', featureName);
             select.name = f.settingKey || f.id;
             const options = normalizeSelectOptions(f.options);
             const settingKey = f.settingKey || f.id;
@@ -36829,7 +36875,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             slider.value = currentVal;
             slider.className = 'ytkit-range';
             slider.id = `ytkit-range-${f.id}`;
-            slider.setAttribute('aria-label', f.name);
+            slider.setAttribute('aria-label', featureName);
             const valDisplay = document.createElement('span');
             valDisplay.className = 'ytkit-range-value';
             valDisplay.textContent = f.formatValue ? f.formatValue(currentVal) : currentVal;
@@ -36845,13 +36891,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             const colorInput = document.createElement('input');
             colorInput.type = 'color';
             colorInput.id = `ytkit-color-${f.id}`;
-            colorInput.setAttribute('aria-label', f.name);
+            colorInput.setAttribute('aria-label', featureName);
             colorInput.value = currentVal || '#3b82f6';
             colorInput.className = 'ytkit-color-input';
             const clearBtn = document.createElement('button');
             clearBtn.type = 'button';
             clearBtn.className = 'ytkit-color-clear';
-            clearBtn.setAttribute('aria-label', `Clear ${f.name}`);
+            clearBtn.setAttribute('aria-label', `Clear ${featureName}`);
             clearBtn.textContent = 'Clear';
             clearBtn.onclick = () => { colorInput.value = '#3b82f6'; colorInput.dispatchEvent(new Event('change', { bubbles: true })); };
             wrapper.appendChild(colorInput);
@@ -36870,7 +36916,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             input.type = 'checkbox';
             input.className = 'ytkit-feature-cb';
             input.id = `ytkit-toggle-${f.id}`;
-            input.setAttribute('aria-label', f.name);
+            input.setAttribute('aria-label', featureName);
             input.checked = isEnabled;
 
             const track = document.createElement('span');
@@ -37328,9 +37374,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             });
                             const conflictNames = activeConflicts.map(cid => {
                                 const cf = getFeatureById(cid);
-                                return cf?.name || cid;
+                                return getFeatureName(cf) || cid;
                             }).join(', ');
-                            showToast('Auto-disabled ' + conflictNames + ' — ' + (CONFLICT_MAP[featureId].reason || 'conflicts with ' + (feature?.name || featureId)), '#f59e0b', { duration: 5 });
+                            showToast('Auto-disabled ' + conflictNames + ' — ' + (CONFLICT_MAP[featureId].reason || 'conflicts with ' + (getFeatureName(feature) || featureId)), '#f59e0b', { duration: 5 });
                         }
                     }
 
@@ -37448,7 +37494,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 const selectedText = e.target.options[e.target.selectedIndex].text;
-                createToast(`${feature?.name || 'Setting'} changed to ${selectedText}`, 'success');
+                createToast(`${getFeatureName(feature) || 'Setting'} changed to ${selectedText}`, 'success');
             }
             // Range slider — debounce reinit to avoid destroy/init churn during drag
             if (e.target.matches('.ytkit-range')) {
@@ -39135,7 +39181,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         availableFeatures.forEach(({ id: fid, label, feature: feat }) => {
             const isOn = !!appState.settings[fid];
-            const desc = String(feat.description || '').trim();
+            const featureName = label || getFeatureName(feat);
+            const desc = String(getFeatureDescription(feat) || '').trim();
             const descId = desc ? `ytkit-pm-desc-${fid}` : '';
 
             const card = document.createElement('button');
@@ -39144,7 +39191,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             card.dataset.fid = fid;
             card.setAttribute('role', 'switch');
             card.setAttribute('aria-checked', String(isOn));
-            card.setAttribute('aria-label', `${label || feat.name}. ${isOn ? 'Enabled' : 'Disabled'}.`);
+            card.setAttribute('aria-label', `${featureName}. ${isOn ? 'Enabled' : 'Disabled'}.`);
             if (descId) card.setAttribute('aria-describedby', descId);
 
             // Icon area
@@ -39159,7 +39206,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
             const cardLabel = document.createElement('span');
             cardLabel.className = 'ytkit-pm-card-label';
-            cardLabel.textContent = label || feat.name;
+            cardLabel.textContent = featureName;
 
             const cardDesc = document.createElement('span');
             cardDesc.className = 'ytkit-pm-card-desc';
@@ -39200,7 +39247,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 }
                 card.classList.toggle('on', newVal);
                 card.setAttribute('aria-checked', String(newVal));
-                card.setAttribute('aria-label', `${label || feat.name}. ${newVal ? 'Enabled' : 'Disabled'}.`);
+                card.setAttribute('aria-label', `${featureName}. ${newVal ? 'Enabled' : 'Disabled'}.`);
                 cardState.classList.toggle('on', newVal);
                 cardState.textContent = newVal ? 'On' : 'Off';
                 const nextEnabledCount = availableFeatures.filter(({ id }) => !!appState.settings[id]).length;

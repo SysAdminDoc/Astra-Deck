@@ -50,6 +50,135 @@ function runNodeCommand(args) {
     });
 }
 
+function literalString(node) {
+    return node && node.type === 'Literal' && typeof node.value === 'string'
+        ? node.value
+        : null;
+}
+
+function objectPropertyMap(node) {
+    const entries = [];
+    for (const prop of node.properties || []) {
+        if (prop.type !== 'Property') continue;
+        const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value;
+        entries.push([key, prop.value]);
+    }
+    return new Map(entries);
+}
+
+function evaluateStringExpression(node, scope = Object.create(null)) {
+    if (!node) return null;
+    if (node.type === 'Literal' && typeof node.value === 'string') return node.value;
+    if (node.type === 'Identifier' && typeof scope[node.name] === 'string') return scope[node.name];
+    if (node.type === 'BinaryExpression' && node.operator === '+') {
+        const left = evaluateStringExpression(node.left, scope);
+        const right = evaluateStringExpression(node.right, scope);
+        return left !== null && right !== null ? left + right : null;
+    }
+    return null;
+}
+
+function extractObjectFeatureDefinition(node, scope = Object.create(null)) {
+    if (!node || node.type !== 'ObjectExpression') return null;
+    const props = objectPropertyMap(node);
+    const id = evaluateStringExpression(props.get('id'), scope);
+    const name = evaluateStringExpression(props.get('name'), scope);
+    const desc = evaluateStringExpression(props.get('description'), scope);
+    return id && name && desc ? { id, name, desc } : null;
+}
+
+function extractSpreadFeatureDefinitions(node) {
+    const call = node?.argument;
+    if (call?.type !== 'CallExpression') return [];
+    if (call.callee?.type !== 'MemberExpression') return [];
+    const property = call.callee.property;
+    const propertyName = property?.type === 'Identifier' ? property.name : property?.value;
+    if (propertyName !== 'map') return [];
+    const sourceArray = call.callee.object;
+    const callback = call.arguments[0];
+    if (sourceArray?.type !== 'ArrayExpression' || callback?.type !== 'ArrowFunctionExpression') return [];
+    const pattern = callback.params[0];
+    if (pattern?.type !== 'ArrayPattern') return [];
+    const body = callback.body?.type === 'ObjectExpression'
+        ? callback.body
+        : callback.body?.type === 'BlockStatement'
+            ? callback.body.body.find((stmt) => stmt.type === 'ReturnStatement')?.argument
+            : null;
+    if (!body || body.type !== 'ObjectExpression') return [];
+    const rows = [];
+    for (const tuple of sourceArray.elements || []) {
+        if (tuple?.type !== 'ArrayExpression') continue;
+        const scope = Object.create(null);
+        pattern.elements.forEach((param, index) => {
+            if (param?.type !== 'Identifier') return;
+            const value = literalString(tuple.elements[index]);
+            if (value !== null) scope[param.name] = value;
+        });
+        const row = extractObjectFeatureDefinition(body, scope);
+        if (row) rows.push(row);
+    }
+    return rows;
+}
+
+let ytkitFeatureDefinitionCache = null;
+function extractYtkitFeatureDefinitions() {
+    if (ytkitFeatureDefinitionCache) return ytkitFeatureDefinitionCache;
+    const espree = require('espree');
+    const ast = espree.parse(ytkitSource, {
+        ecmaVersion: 'latest',
+        sourceType: 'script',
+        range: true
+    });
+    let featuresArray = null;
+    const walk = (node) => {
+        if (!node || featuresArray) return;
+        if (Array.isArray(node)) {
+            node.forEach(walk);
+            return;
+        }
+        if (node.type === 'VariableDeclarator' && node.id?.name === 'features') {
+            featuresArray = node.init;
+            return;
+        }
+        for (const value of Object.values(node)) {
+            if (value && typeof value === 'object') walk(value);
+        }
+    };
+    walk(ast);
+    assert.equal(featuresArray?.type, 'ArrayExpression',
+        'ytkit.js must expose the canonical features array');
+    const definitions = [];
+    for (const element of featuresArray.elements || []) {
+        if (!element) continue;
+        if (element.type === 'ObjectExpression') {
+            const row = extractObjectFeatureDefinition(element);
+            if (row) definitions.push(row);
+            continue;
+        }
+        if (element.type === 'CallExpression' && element.callee?.name === 'cssFeature') {
+            const id = literalString(element.arguments[0]);
+            const name = literalString(element.arguments[1]);
+            const desc = literalString(element.arguments[2]);
+            if (id && name && desc) definitions.push({ id, name, desc });
+            continue;
+        }
+        if (element.type === 'SpreadElement') {
+            definitions.push(...extractSpreadFeatureDefinitions(element));
+            continue;
+        }
+        if (element.type === 'LogicalExpression') {
+            const row = extractObjectFeatureDefinition(element.right);
+            if (row) definitions.push(row);
+        }
+    }
+    ytkitFeatureDefinitionCache = definitions;
+    return definitions;
+}
+
+function featureMessageKey(id, suffix) {
+    return `feature_${String(id).trim().replace(/[^A-Za-z0-9]/g, '_')}_${suffix}`;
+}
+
 // ── v3.14.0 C1: ReDoS guard in videoHider ──
 
 test('videoHider ReDoS guard catches alternation-wrapped quantifier stacks', () => {
@@ -1535,6 +1664,72 @@ test('check-i18n.js exists and all __MSG_ references in manifest resolve', () =>
     }
     assert.equal(exitCode, 0,
         'check-i18n must exit 0 on the current tree — all __MSG_ and getMessage() keys must resolve');
+});
+
+test('feature definitions are annotated with generated i18n metadata keys', () => {
+    const definitions = extractYtkitFeatureDefinitions();
+    assert.ok(definitions.length >= 300,
+        `expected at least 300 feature label definitions, found ${definitions.length}`);
+    const ids = new Set(definitions.map((def) => def.id));
+    assert.equal(ids.size, definitions.length,
+        'feature i18n extraction must not produce duplicate ids');
+    assert.match(ytkitSource, /function getFeatureI18nKey\s*\(/,
+        'ytkit.js must define a feature i18n key helper');
+    assert.match(ytkitSource, /function ensureFeatureI18nKeys\s*\(/,
+        'ytkit.js must annotate feature definitions with nameKey/descriptionKey');
+    assert.match(ytkitSource, /features\.forEach\(ensureFeatureI18nKeys\)/,
+        'the canonical features array must be annotated before registry/UI use');
+    assert.match(ytkitSource, /nameKey:\s*feature\.nameKey/,
+        'runtime feature registry entries must expose nameKey');
+    assert.match(ytkitSource, /descriptionKey:\s*feature\.descriptionKey/,
+        'runtime feature registry entries must expose descriptionKey');
+});
+
+test('all locales carry feature-definition name and description messages', () => {
+    const definitions = extractYtkitFeatureDefinitions();
+    const localesDir = path.join(__dirname, '..', 'extension', '_locales');
+    const localeDirs = fs.readdirSync(localesDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name);
+    const failures = [];
+    for (const locale of localeDirs) {
+        const messages = JSON.parse(fs.readFileSync(
+            path.join(localesDir, locale, 'messages.json'),
+            'utf8'
+        ));
+        for (const def of definitions) {
+            for (const suffix of ['name', 'desc']) {
+                const key = featureMessageKey(def.id, suffix);
+                if (typeof messages[key]?.message !== 'string' || !messages[key].message.trim()) {
+                    failures.push(`${locale}: missing ${key}`);
+                }
+            }
+        }
+    }
+    assert.ok(failures.length === 0,
+        `feature i18n locale gaps:\n  ${failures.join('\n  ')}`);
+});
+
+test('settings panel feature cards render labels through feature i18n helpers', () => {
+    const start = ytkitSource.indexOf('function buildFeatureCard');
+    assert.ok(start > -1, 'buildFeatureCard must exist');
+    const block = ytkitSource.slice(start, start + 4500);
+    assert.match(block, /const featureName = getFeatureName\(f\)/,
+        'feature cards must resolve the display name through getFeatureName');
+    assert.match(block, /getFeatureDescription\(f\)/,
+        'feature cards must resolve the description through getFeatureDescription');
+    assert.doesNotMatch(block, /\bf\.name\b/,
+        'feature card display paths must not read f.name directly');
+    assert.doesNotMatch(block, /\bf\.description\b/,
+        'feature card display paths must not read f.description directly');
+
+    const quickStart = ytkitSource.indexOf('availableFeatures.forEach');
+    assert.ok(quickStart > -1, 'page quick-settings feature loop must exist');
+    const quickBlock = ytkitSource.slice(quickStart, quickStart + 1800);
+    assert.match(quickBlock, /getFeatureName\(feat\)/,
+        'page quick-settings cards must resolve names through getFeatureName');
+    assert.match(quickBlock, /getFeatureDescription\(feat\)/,
+        'page quick-settings cards must resolve descriptions through getFeatureDescription');
 });
 
 // ── Pass 17 L9: DiagnosticLog clear button ──
