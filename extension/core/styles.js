@@ -21,6 +21,63 @@
         return style;
     }
 
+    const lifecycleStyleRecords = new Map();
+
+    function createCssLifecycleSpec(options = {}) {
+        const {
+            id,
+            category,
+            buildCss,
+            isRawCss,
+            bodyClass = `ytkit-${id}`
+        } = options;
+
+        return {
+            id,
+            category,
+            buildCss,
+            init(ctx = {}) {
+                const settings = ctx.settings || {};
+                const css = typeof buildCss === 'function'
+                    ? buildCss(settings, ctx)
+                    : ctx.css;
+                if (!css) return;
+                const raw = typeof isRawCss === 'boolean'
+                    ? isRawCss
+                    : String(css).includes('{');
+                const className = ctx.bodyClass || bodyClass;
+                const style = injectStyle(css, id, raw);
+                if (className && document.body) document.body.classList.add(className);
+                lifecycleStyleRecords.set(id, { style, bodyClass: className });
+            },
+            apply(ctx = {}) {
+                const record = lifecycleStyleRecords.get(id);
+                if (!record || typeof buildCss !== 'function') return;
+                const css = buildCss(ctx.settings || {}, ctx);
+                if (!css) {
+                    record.style?.remove();
+                    lifecycleStyleRecords.delete(id);
+                    return;
+                }
+                record.style.textContent = css;
+            },
+            destroy(ctx = {}) {
+                const record = lifecycleStyleRecords.get(id);
+                if (record) {
+                    record.style?.remove();
+                    if (record.bodyClass && document.body) {
+                        document.body.classList.remove(record.bodyClass);
+                    }
+                    lifecycleStyleRecords.delete(id);
+                    return;
+                }
+                const className = ctx.bodyClass || bodyClass;
+                document.getElementById(`yt-suite-style-${id}`)?.remove();
+                if (className && document.body) document.body.classList.remove(className);
+            }
+        };
+    }
+
     function stripCommentRestyleCss(css = '') {
         if (!css) return css;
         const commentPattern = /(#comments\b|#simple-box\b|#placeholder-area\b|#action-buttons\b|#vote-count-middle\b|#reply-button-end\b|#header-author\b|#author-thumbnail\b|#contenteditable-textarea\b|#contenteditable-root\b|ytd-comments\b|ytd-comments-header-renderer\b|ytd-comment(?:-[a-z-]+)?\b|ytd-commentbox\b|ytd-comment-engagement-bar\b|ytd-comment-replies-renderer\b|yt-user-mention-autosuggest-input\b|ytkit-comment-|ytSubThread|thread-hitbox\.style-scope\.ytd-comment-thread-renderer|#author-text\b|#published-time-text\b|#content-text\b|#action-menu\.ytd-comment|\[data-ytkit-comment-current)/i;
@@ -71,7 +128,18 @@
     Object.assign(core, {
         appendStyleSheet,
         cleanupRetiredCommentUi,
+        createCssLifecycleSpec,
         injectStyle,
         stripCommentRestyleCss
     });
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = {
+            appendStyleSheet,
+            cleanupRetiredCommentUi,
+            createCssLifecycleSpec,
+            injectStyle,
+            stripCommentRestyleCss
+        };
+    }
 })();

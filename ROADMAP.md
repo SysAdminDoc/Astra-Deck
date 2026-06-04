@@ -67,8 +67,13 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   intentional silent catches now carry `reason:` comments, ESLint runs the
   custom rule against `extension/ytkit.js`, and the lint script/test assertions
   pin the widened scope.)_
-- [ ] **P2 / L — Wave 3 lifecycle full delegate**: move CSS injection ownership
-  into peel modules and make `cssFeature` a thin lifecycle wrapper.
+- [x] **P2 / L — Wave 3 lifecycle full delegate**: move CSS injection ownership
+  into peel modules and make `cssFeature` a thin lifecycle wrapper. _(Delivered
+  2026-06-04: `core/styles.js` now exposes `createCssLifecycleSpec`, the
+  home/subs, wave-8, and theme CSS peels register real style specs, `cssFeature`
+  delegates registered specs through lifecycle start/destroy with direct
+  injection only as fallback, and the userscript bundle includes `core/styles.js`
+  so extension/userscript style ownership stays aligned.)_
 - [ ] **P2 / XL — Top-3 monolith peel**: split `stickyVideo`,
   `hideVideosFromHome`, and `chatStyleComments` into feature modules.
 - [ ] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
