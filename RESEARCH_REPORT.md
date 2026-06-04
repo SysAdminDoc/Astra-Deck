@@ -44,7 +44,9 @@ or maintainer action to confirm.
   token/bearer/secret/auth-shaped values before profile or forward-compat
   export passthrough; and Cobalt fallback failures now record an actionable
   `cobalt-fallback` diagnostic with origin-only endpoint context when Astra
-  Downloader is offline.
+  Downloader is offline; and a new long-session route/mutation stress test now
+  pins shared observer count, scoped-rule early exits, capped diagnostic maps,
+  and listener/observer cleanup.
 - [Verified] Validation on 2026-06-04 after the profile-split artifact batch:
   `node --check build-extension.js`, `node --check extension/background.js`,
   `node --check tests/hardening.test.js`, `node --test tests/hardening.test.js`
@@ -95,6 +97,11 @@ or maintainer action to confirm.
   `node --check tests/hardening.test.js`, and
   `node --test tests/hardening.test.js` (427 checks), `npm run check`,
   `npm test` (631 checks), `npm run build`, `node sync-userscript.js`, and
+  `git diff --check` all passed.
+- [Verified] Validation on 2026-06-04 after the long-session memory-leak
+  regression batch: `node --check tests/long-session.test.js` and
+  `node --test tests/long-session.test.js` (1 check), `npm run check`,
+  `npm test` (632 checks), `npm run build`, `node sync-userscript.js`, and
   `git diff --check` all passed.
 - [Verified, external] Current source check did not create a new roadmap row:
   Chrome Web Store policy still keeps the single-purpose / no-remotely-hosted-
