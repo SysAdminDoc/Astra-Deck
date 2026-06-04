@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 6 - 2026-06-04.
+> Last researched: Cycle 7 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -321,6 +321,14 @@ means implemented/closed by the build lane.
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 7 - 2026-06-04)
+
+- [x] 🔬 `locale-proofing-current-counts-2026-06-04` - regenerated
+  `docs/i18n-coverage.md` with `node scripts/i18n-coverage.js` after the
+  feature-definition i18n extraction. The report now reflects 860 EN keys rather
+  than the stale 247-key snapshot, and the locale-proofing row now calls out the
+  feature-key-specific proofing debt.
+
 ### Researcher Queue (Cycle 6 - 2026-06-04)
 
 - [x] 🔬 `overlay-a11y-target-map-2026-06-04` - inspected
@@ -365,15 +373,18 @@ means implemented/closed by the build lane.
   instead of adding duplicate rows.
 - [ ] 🔬🤖 P3 — Locale proofing queue for identical-to-English feature copy
   - Why: the feature-definition i18n extraction is shipped, but the generated
-    coverage report still shows 15%-29.6% identical-to-English strings across
-    non-EN locales. Chrome and MDN extension i18n guidance both treat
+    coverage report now shows only 23.5%-27.7% translated coverage across
+    non-EN locales after feature keys were added. Chrome and MDN extension i18n
+    guidance both treat
     `messages.json` as the user-visible string source of truth, so seeded
     English placeholders should be tracked separately from intentional brand or
     technical terms.
-  - Evidence: `docs/i18n-coverage.md` reports 37-73 identical-to-EN strings per
-    non-EN locale and explicitly says some may be untranslated placeholders;
-    `scripts/i18n-coverage.js` is informational only; Chrome i18n docs require
-    user-visible strings in locale `messages.json`
+  - Evidence: refreshed `docs/i18n-coverage.md` profiles 860 EN keys and reports
+    622-658 identical-to-EN strings per non-EN locale; a feature-key spot check
+    found 584 of 612 `feature_*_(name|desc)` keys still identical-to-EN in every
+    non-EN locale. `scripts/i18n-coverage.js` is informational only and does not
+    separate intentional brand/technical matches from untranslated feature copy;
+    Chrome i18n docs require user-visible strings in locale `messages.json`
     (https://developer.chrome.com/docs/extensions/reference/api/i18n);
     MDN documents the same WebExtensions i18n model
     (https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization).
@@ -382,10 +393,12 @@ means implemented/closed by the build lane.
     `extension/_locales/*/messages.json`, `docs/i18n-coverage.md`,
     `CONTRIBUTING.md`.
   - Acceptance: coverage output separates intentional brand/technical matches
-    from unresolved identical-to-EN placeholders, feature name/description keys
-    are proofed or queued per locale, and a warning threshold prevents newly
-    extracted user-facing strings from silently shipping as English in non-EN
-    locale bundles.
+    from unresolved identical-to-EN placeholders, emits per-locale feature
+    name/description identical counts plus sample keys, and supports a warning
+    threshold so newly extracted user-facing strings cannot silently ship as
+    English in non-EN locale bundles. The generator keeps a reviewed
+    do-not-translate list for brands/technical tokens and the contributor guide
+    explains how to submit native-speaker proofing patches.
   - Verify: `node scripts/i18n-coverage.js`, `npm run check`, and review one
     generated locale diff to confirm brand/technical terms were not
     over-translated.
