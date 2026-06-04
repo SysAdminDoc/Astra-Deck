@@ -18,6 +18,14 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 24 retired-options-page copy pass on 2026-06-04 found one
+  shipped runtime error that still tells users to set `aiSummaryApiKey` "via
+  options page" even though v3.19.0 removed the standalone options page, the
+  manifest has no `options_ui`, hardening tests pin that removal, and README
+  points users to the in-page full settings panel or toolbar popup. ROADMAP now
+  carries a P2 item to replace the stale copy, sync the userscript bundle, and
+  add targeted copy regression coverage. Detailed evidence lives in
+  `docs/research-cycle-24-retired-options-copy.md`.
 - [Verified] Cycle 23 repo-working-notes pass on 2026-06-04 found that
   `AGENTS.md` delegates repo operating instructions to `CLAUDE.md`, but the
   delegated file points to a missing `CODEX-CHANGELOG.md`, carries old Firefox
@@ -384,10 +392,13 @@ Top remaining opportunities (one-liners):
 15. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-16. Locale proofing queue for identical-to-English feature names/descriptions in
+16. Replace the retired options-page runtime error copy with current
+   settings-panel / toolbar-popup guidance and add a copy regression.
+   [Verified]
+17. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-17. Signed Astra Downloader installer/MSI once the signing budget and submission
+18. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -438,7 +449,14 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-20-optional-permissions.md`, and
   `docs/research-cycle-21-codeowners.md`, and
   `docs/research-cycle-22-companion-update-assets.md`, and
-  `docs/research-cycle-23-repo-working-notes-drift.md`. [Verified]
+  `docs/research-cycle-23-repo-working-notes-drift.md`, and
+  `docs/research-cycle-24-retired-options-copy.md`. [Verified]
+- Retired options-page copy probe: `extension/ytkit.js` still throws
+  `Set aiSummaryApiKey first (via options page)` on the summary-provider
+  missing-key path, while `extension/manifest.json` has `action.default_popup =
+  "popup.html"` and no `options_ui`; hardening tests assert the options page is
+  removed; README points users to the YouTube gear icon or toolbar popup `Open
+  Full Settings` action. [Verified]
 - Repo working-notes drift probe: `AGENTS.md` delegates repo working notes to
   `CLAUDE.md`; `CLAUDE.md` points at missing `CODEX-CHANGELOG.md`, contains
   old Firefox 128+ support statements, and describes direct `main` push /
@@ -612,6 +630,10 @@ Current risk status:
   `gh release create` release flow while the current repo uses Firefox 140+,
   protected-main PRs, and maintainer-local signing. → ROADMAP P2 repo working
   notes reconciliation. [Verified]
+- **[Med] Retired settings-surface copy.** The standalone options page is
+  removed and tested as absent, but the summary-provider key error still tells
+  users to use an options page. → ROADMAP P2 retired options-page copy fix.
+  [Verified]
 - **[Closed] Main branch did not require green checks.** Classic branch
   protection now records required `Validate` check contexts in
   `docs/repo-settings.md`; force-push/deletion protections and admin enforcement
@@ -712,6 +734,10 @@ Closed since the 2026-06-03 baseline:
   release and Firefox support statements. ROADMAP P2 now queues a docs-only
   reconciliation so first-read instructions match the current release and
   browser-support contracts. [Verified]
+- **Settings surfaces**: the toolbar popup and in-page settings panel are the
+  current settings paths, and tests assert the standalone options page remains
+  removed. One runtime summary-provider error still names that removed surface;
+  ROADMAP P2 now queues the copy fix and regression. [Verified]
 
 ## Security / Privacy / Data Safety
 

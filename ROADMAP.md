@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 23 - 2026-06-04.
+> Last researched: Cycle 24 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,42 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 24 - 2026-06-04)
+
+- [x] 🔬 `retired-options-page-copy-2026-06-04` - inspected the retired
+  options-page contract, manifest settings surface, runtime summary-provider
+  error path, README settings-panel guidance, hardening tests, shipped extension
+  files, and Chrome / Mozilla / accessibility guidance for extension UI and
+  actionable error copy. Detailed notes live in
+  `docs/research-cycle-24-retired-options-copy.md`.
+- [ ] P2 - 🔬🤖 Replace retired options-page runtime copy with current settings-panel guidance
+  - Why: the standalone options page was removed in v3.19.0 and the toolbar
+    popup/full settings panel are now the supported settings paths, but the
+    summary-provider key error still tells users to set `aiSummaryApiKey` via an
+    options page that does not ship.
+  - Evidence: `extension/ytkit.js:28979-28982` throws `Set aiSummaryApiKey
+    first (via options page)`; `extension/manifest.json:15-18` declares
+    `action.default_popup = "popup.html"`; the manifest has no `options_ui`;
+    `Get-ChildItem extension -File` shows no `options.html` or `options.js`;
+    `tests/hardening.test.js:536-550` asserts the standalone options page stays
+    removed; `README.md:241-252` points users to the YouTube gear icon or the
+    toolbar popup `Open Full Settings` action; and `docs/architecture.md:10`
+    says the toolbar popup is the only extension surface for settings
+    management. [Verified]
+  - Touches: `extension/ytkit.js`, synced `YTKit.user.js`, and
+    `tests/hardening.test.js` or another targeted copy-regression test.
+  - Acceptance: the key-missing error points to the real in-page settings panel
+    or toolbar popup `Open Full Settings` action; no shipped runtime string tells
+    users to use an options page; the userscript bundle is synced after the
+    source change; a regression test fails if `via options page` or equivalent
+    retired runtime copy returns; historical comments/docs may keep clearly
+    historical options-page references.
+  - Verify: `rg -n "via options page|options page" extension/ytkit.js
+    YTKit.user.js extension/_locales`; `node sync-userscript.js`;
+    `npm run check`; `npm test`; manual or screenshot QA on the summary feature
+    missing-key path confirms the copy names an existing settings path.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 23 - 2026-06-04)
 
