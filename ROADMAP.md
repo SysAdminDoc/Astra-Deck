@@ -19,7 +19,10 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   capture timed out in headless Chrome.)_
 - [ ] **P0 / S — Capture YouTube liquid-glass player chrome (HARDENING H21,
   EI9)**: refresh the watch-page fixture and promote liquid-glass selectors into
-  the critical selector set.
+  the critical selector set. _(Partial 2026-06-04: DOM probe confirmed and
+  promoted `ytp-delhi-modern`, `ytp-overflow-panel`, and
+  `ytp-time-wrapper-delhi`; full watch-page MHTML capture still times out under
+  DevTools automation and needs a manual/stable-browser save path.)_
 - [ ] **P2 / M — MHTML capture-week expansion (EI15 + NF19)**: add fixtures and
   selector packs for Shorts, channel, search, history, watch-later, embedded
   player, and notifications surfaces.

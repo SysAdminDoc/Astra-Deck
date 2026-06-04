@@ -33,11 +33,12 @@
         ]),
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
-            'Worldwide Societal Collapse... - YouTube.mhtml'
+            'Worldwide Societal Collapse... - YouTube.mhtml',
+            'HARDENING.md#h21'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-04',
         highChurn: true,
         needsFreshCapture: false,
-        notes: 'Player redesign transition surface; keep legacy and Delhi/new-player candidates together.'
+        notes: 'Player redesign transition surface; 2026-06-04 DOM probe confirmed Delhi shell, overflow panel, and time-wrapper selectors.'
     }));
 })();
