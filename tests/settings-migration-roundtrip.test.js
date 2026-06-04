@@ -14,6 +14,10 @@ const fixture = JSON.parse(fs.readFileSync(
     path.join(repoRoot, 'tests', 'fixtures', 'settings-import-roundtrip.json'),
     'utf8'
 ));
+const fullProfileFixture = JSON.parse(fs.readFileSync(
+    path.join(repoRoot, 'tests', 'fixtures', 'settings-legacy-v1-full-profile.json'),
+    'utf8'
+));
 
 function isPlainObject(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -128,4 +132,106 @@ test('settings import fixtures round-trip every prior schema version into the cu
     }
 
     assert.equal({}.polluted, undefined, 'unsafe __proto__ fixture key must not pollute Object.prototype');
+});
+
+test('pinned v1 full-profile fixture migrates without dropping catalogued settings', () => {
+    const currentVersion = settingsMeta.settingsVersion;
+    assert.equal(fullProfileFixture.schemaVersion, 1, 'full-profile fixture must remain a v1 import snapshot');
+
+    const { manager, diagnostics } = createSettingsManagerFromSource(ytkitSource);
+    assert.equal(manager.SETTINGS_VERSION, currentVersion, 'extracted manager must match generated metadata');
+
+    const sourceSettings = clone(fullProfileFixture.settings);
+    const expectedOverrides = fullProfileFixture.expectedOverrides || {};
+    const expectedDefaulted = new Set(fullProfileFixture.expectedDefaulted || []);
+    const expectedAbsent = new Set(fullProfileFixture.expectedAbsent || []);
+
+    for (const key of Object.keys(defaultSettings)) {
+        assert.ok(
+            Object.hasOwn(sourceSettings, key) || expectedDefaulted.has(key),
+            `v1 full-profile fixture must either carry ${key} or list it under expectedDefaulted`
+        );
+    }
+
+    for (const key of expectedDefaulted) {
+        assert.ok(
+            Object.hasOwn(defaultSettings, key),
+            `v1 full-profile expectedDefaulted key ${key} must exist in default-settings`
+        );
+        assert.equal(
+            Object.hasOwn(sourceSettings, key),
+            false,
+            `v1 full-profile expectedDefaulted key ${key} must be absent from the legacy fixture`
+        );
+    }
+
+    for (const key of expectedAbsent) {
+        assert.ok(
+            Object.hasOwn(sourceSettings, key),
+            `v1 full-profile expectedAbsent key ${key} must be present in the legacy fixture`
+        );
+    }
+
+    const result = manager._prepareImportedSettings(sourceSettings);
+    assert.equal(result._settingsVersion, currentVersion, 'v1 full-profile import stamps current schema');
+
+    for (const key of Object.keys(defaultSettings)) {
+        assert.ok(Object.hasOwn(result, key), `v1 full-profile import should restore default key ${key}`);
+
+        if (key === '_errors') {
+            assert.deepEqual(
+                result._errors.slice(0, sourceSettings._errors.length),
+                sourceSettings._errors,
+                'v1 full-profile import should preserve pre-existing diagnostics before migration entries'
+            );
+        } else if (Object.hasOwn(expectedOverrides, key)) {
+            assert.deepEqual(
+                result[key],
+                expectedOverrides[key],
+                `v1 full-profile import should apply migration override for ${key}`
+            );
+        } else if (expectedDefaulted.has(key)) {
+            assert.deepEqual(
+                result[key],
+                defaultSettings[key],
+                `v1 full-profile import should default intentionally missing key ${key}`
+            );
+        } else {
+            assert.deepEqual(
+                result[key],
+                fullProfileFixture.settings[key],
+                `v1 full-profile import should preserve legacy value for ${key}`
+            );
+        }
+    }
+
+    for (const key of expectedAbsent) {
+        assert.equal(
+            Object.hasOwn(result, key),
+            false,
+            `v1 full-profile import should drop retired key ${key}`
+        );
+    }
+
+    for (const key of Object.keys(fullProfileFixture.settings)) {
+        if (key === '_settingsVersion' || expectedAbsent.has(key) || !Object.hasOwn(defaultSettings, key)) {
+            continue;
+        }
+        assert.ok(Object.hasOwn(result, key), `v1 full-profile import should not drop legacy key ${key}`);
+    }
+
+    const migrationEntries = (result._errors || []).filter((entry) => entry?.ctx === 'settings-migration');
+    assert.equal(
+        migrationEntries.length,
+        currentVersion - fullProfileFixture.schemaVersion,
+        'v1 full-profile import should log one diagnostic per migration step'
+    );
+    assert.equal(
+        diagnostics.filter((entry) => entry.ctx === 'settings-migration').length,
+        currentVersion - fullProfileFixture.schemaVersion,
+        'v1 full-profile import should record migration steps in DiagnosticLog'
+    );
+
+    const secondImport = manager._prepareImportedSettings(result);
+    assert.deepEqual(secondImport, result, 'v1 full-profile migrated settings should be idempotent on re-import');
 });
