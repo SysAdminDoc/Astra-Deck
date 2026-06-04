@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 23 repo-working-notes pass on 2026-06-04 found that
+  `AGENTS.md` delegates repo operating instructions to `CLAUDE.md`, but the
+  delegated file points to a missing `CODEX-CHANGELOG.md`, carries old Firefox
+  128+ support statements beside current Firefox 140+ notes, and describes
+  direct `main` push / `gh release create` release flow even though the current
+  contract is protected-main PRs plus maintainer-local `ytkit.pem` signing.
+  ROADMAP now carries a P2 item to reconcile the repo-local working notes with
+  current release and browser-support docs while preserving the separate Cycle
+  14 release-doc reconciliation item. Detailed evidence lives in
+  `docs/research-cycle-23-repo-working-notes-drift.md`.
 - [Verified] Cycle 22 companion-update release-channel pass on 2026-06-04 found
   that `/update` is implemented but the live latest release `v4.46.0` does not
   attach `AstraDownloader.exe` or `AstraDownloader.exe.sha256`. The updater
@@ -361,19 +371,23 @@ Top remaining opportunities (one-liners):
 11. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-12. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+12. Reconcile repo-local working notes with the current protected-main,
+   maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
+   first-read operator docs no longer point to missing or stale guidance.
+   [Verified]
+13. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-13. MHTML capture-week expansion across Shorts, channel, search, history,
+14. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-14. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+15. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-15. Locale proofing queue for identical-to-English feature names/descriptions in
+16. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-16. Signed Astra Downloader installer/MSI once the signing budget and submission
+17. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -423,7 +437,15 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-19-code-scanning.md`, and
   `docs/research-cycle-20-optional-permissions.md`, and
   `docs/research-cycle-21-codeowners.md`, and
-  `docs/research-cycle-22-companion-update-assets.md`. [Verified]
+  `docs/research-cycle-22-companion-update-assets.md`, and
+  `docs/research-cycle-23-repo-working-notes-drift.md`. [Verified]
+- Repo working-notes drift probe: `AGENTS.md` delegates repo working notes to
+  `CLAUDE.md`; `CLAUDE.md` points at missing `CODEX-CHANGELOG.md`, contains
+  old Firefox 128+ support statements, and describes direct `main` push /
+  `gh release create` release flow. Current sources instead show Firefox 140+
+  in README, architecture, CWS/AMO checklist, and `scripts/manifest-patch.js`,
+  and maintainer-local release publication in `docs/signing-keys.md`.
+  [Verified]
 - Companion update release-channel probe: `astra_downloader/astra_downloader.py`
   keeps `APP_VERSION = "1.5.1"`, reads the latest version from raw `main`, and
   points update downloads at `/releases/latest/download/AstraDownloader.exe` and
@@ -584,6 +606,12 @@ Current risk status:
   to the repo root instead of `build/`, and the release checklist does not stage
   the companion payload before manifest/checksum generation. → ROADMAP P1
   companion update release-channel proof. [Verified]
+- **[Med] Repo-local working notes drift.** `AGENTS.md` points future work to
+  `CLAUDE.md`, but that delegated file references a missing handoff log, carries
+  old Firefox 128+ support statements, and describes direct `main` push /
+  `gh release create` release flow while the current repo uses Firefox 140+,
+  protected-main PRs, and maintainer-local signing. → ROADMAP P2 repo working
+  notes reconciliation. [Verified]
 - **[Closed] Main branch did not require green checks.** Classic branch
   protection now records required `Validate` check contexts in
   `docs/repo-settings.md`; force-push/deletion protections and admin enforcement
@@ -679,6 +707,11 @@ Closed since the 2026-06-03 baseline:
   this release contract because `AstraDownloader.exe` is built to the repo root
   and the manifest generator only covers it after it is staged into `build/`
   (ROADMAP P1). [Verified]
+- **Repo working notes**: `AGENTS.md` makes `CLAUDE.md` the first-read working
+  note source, but `CLAUDE.md` still mixes current 2026-06-04 notes with old
+  release and Firefox support statements. ROADMAP P2 now queues a docs-only
+  reconciliation so first-read instructions match the current release and
+  browser-support contracts. [Verified]
 
 ## Security / Privacy / Data Safety
 
