@@ -165,8 +165,9 @@ Suggested implementation order:
 2. Update all workflow action pins in one commit so mixed old/new action majors
    do not keep warnings alive in separate jobs.
 3. Use a normal PR so required checks prove the migration.
-4. After merge, run `Build & Release` via `workflow_dispatch` or a throwaway tag
-   to prove release artifact upload and attestations still work.
+4. After merge, run `Build & Release` against a tag ref, either with a
+   throwaway tag push or `gh workflow run "Build & Release" --ref <tag>`, so
+   tag-only artifact upload and attestation steps are exercised.
 5. Run `yt-dlp Smoke` manually because its scheduled cadence is monthly.
 
 ## Verification Ideas
@@ -186,7 +187,7 @@ Expected:
 Release workflow:
 
 ```powershell
-gh workflow run "Build & Release"
+gh workflow run "Build & Release" --ref <tag>
 gh run view <build-run-id> --log | Select-String "Node.js 20 actions are deprecated"
 ```
 
@@ -194,6 +195,7 @@ Expected:
 
 - Build artifacts still upload.
 - SBOM / release manifest generation still succeeds.
+- Tag-only provenance and SBOM attestation steps are exercised.
 - The warning search returns no matches.
 
 Smoke workflow:

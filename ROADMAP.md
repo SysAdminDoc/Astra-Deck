@@ -365,9 +365,10 @@ means implemented/closed by the build lane.
     `actions/upload-artifact@v4` are migrated to Node 24-ready majors. Coordinate
     with the dependency-graph enablement item so PR #11's setup-python bump is
     not blocked by an unsupported Dependency review check. `Validate` passes on
-    a PR and on `main`; `Build & Release` passes on `workflow_dispatch` or a
-    throwaway tag; `yt-dlp Smoke` passes on `workflow_dispatch`. The completed
-    runs no longer contain the Node 20 deprecation warning.
+    a PR and on `main`; `Build & Release` passes on a tag ref, either a
+    throwaway tag push or `workflow_dispatch --ref <tag>`, so tag-only
+    attestations are exercised; `yt-dlp Smoke` passes on `workflow_dispatch`.
+    The completed runs no longer contain the Node 20 deprecation warning.
   - Verify: run or inspect `gh pr checks` for the migration PR, then check each
     completed workflow log with `gh run view <run-id> --log | Select-String
     "Node.js 20 actions are deprecated"`. Confirm no matches for `Validate`,
