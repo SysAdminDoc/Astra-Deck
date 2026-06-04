@@ -398,7 +398,7 @@ means implemented/closed by the build lane.
   outputs, companion checksum verification, signing-key policy, and primary
   Qt/GitHub/npm/Mozilla/Chrome supply-chain docs. Detailed notes live in
   `docs/research-cycle-8-ci-release-integrity.md`.
-- [ ] 🔬🤖 P0 — Restore green GitHub Validate for Python downloader tests
+- [x] 🔬🤖 P0 — Restore green GitHub Validate for Python downloader tests
   - Why: every recent push on `main` is failing the `Validate` workflow even
     though the JS job is green; release and roadmap-drain confidence are now
     gated by a Python collection error, not by product behavior.
@@ -430,6 +430,12 @@ means implemented/closed by the build lane.
     `python -m pytest astra_downloader` and the existing `npm test` /
     `npm run check` gates.
   - Complexity: S
+  - Status 2026-06-04: delivered. The Python CI job now installs the minimal
+    Linux Qt runtime package set, exports `QT_QPA_PLATFORM=offscreen`, disables
+    downloader auto-bootstrap during CI dependency checks, installs
+    `pytest-asyncio` / `pytest-qt` so `pytest.ini` config keys are owned, and
+    runs a PyQt runtime preflight before pytest with a GitHub error annotation
+    for missing `libEGL` / xcb support libraries.
 - [ ] 🔬🤖 P1 — Publish a v4.46+ release catch-up with checksums and provenance
   - Why: the source tree and generated build artifacts are on v4.46.0, but
     `https://github.com/SysAdminDoc/Astra-Deck/releases/latest` still serves

@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **GitHub Validate Python job restored.** The `Validate` workflow now installs
+  the Linux Qt runtime packages needed by PyQt6, runs downloader tests with
+  `QT_QPA_PLATFORM=offscreen`, installs the pytest plugins that own the repo's
+  `pytest.ini` keys, disables downloader runtime bootstrap in CI, and runs a
+  PyQt preflight that emits a clear workflow error before pytest if the runner
+  is missing `libEGL` or xcb support libraries.
+
 - **Liquid-glass watch-page capture unblocked.** Added
   `scripts/capture-watch-mhtml.js` and `npm run capture:watch`, which launches
   Chrome Stable with a temporary profile, waits for `ytd-watch-flexy`,
