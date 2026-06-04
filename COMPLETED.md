@@ -34,6 +34,7 @@ release-level details live in `CHANGELOG.md`.
 - Dead-channel subscription detection with 30-day unsubscribe staging and undo.
 - Per-video notes with JSON export and a 1000-note LRU cap.
 - Group notifications digest with per-group new-video counts and Mark read.
+- Study / Work export to Markdown and CSV from local watch/bookmark state.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -104,6 +105,10 @@ carry only open work.
   panel with all-subscriptions and per-group rendered/new-video counts, child
   row styling, and bounded Mark read updates through `subscriptionLastVisitData`.
   *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Study/work mode export to Markdown/CSV — `researchSpacedReview` now exports
+  Watch Time Tracker totals, current Digital Wellbeing state, Focused Mode state,
+  and timestamp bookmarks with deep links as Markdown or CSV. *(Delivered
+  2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 
