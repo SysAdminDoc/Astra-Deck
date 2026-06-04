@@ -28,3 +28,20 @@ test('userscript hardens blank-target navigation and CPU tamer cleanup', () => {
     assert.match(userscriptSource, /this\._pumpInterval = origSetInterval\(/);
     assert.match(userscriptSource, /clearInterval\.call\(window,\s*this\._pumpInterval\)/);
 });
+
+test('userscript ships videoNotes defaults and local notes runtime', () => {
+    assert.match(userscriptSource, /videoNotes:\s*false/);
+    assert.match(userscriptSource, /videoNotesData:\s*\{\}/);
+    const start = userscriptSource.indexOf("id: 'videoNotes'");
+    assert.ok(start > -1, 'userscript must include the videoNotes runtime feature');
+    const block = userscriptSource.slice(start, start + 30000);
+    assert.match(block, /_DATA_KEY: 'videoNotesData'/);
+    assert.match(block, /_MAX_NOTES: 1000/);
+    assert.match(block, /_MAX_NOTE_CHARS: 5000/);
+    assert.match(block, /Object\.fromEntries\(entries\.slice\(0, this\._MAX_NOTES\)\)/);
+    assert.match(block, /injectStyle\([\s\S]*'video-notes', true\)/,
+        'userscript injectStyle must receive raw CSS for the notes panel');
+    assert.match(block, /handleFileExport\(`astra-deck-video-notes-/);
+    assert.match(block, /addNavigateRule\(this\.id, this\._navRule\)/);
+    assert.match(block, /removeNavigateRule\(this\.id\)/);
+});

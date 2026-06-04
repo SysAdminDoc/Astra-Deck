@@ -69,11 +69,15 @@ phased feature plan) is preserved at
     `undoUntil` set 30 days out, and expose scan/stage/undo toolbar actions
     without clicking YouTube unsubscribe controls.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P2 — Per-video notes (`videoNotes`) (NF1)
+- [x] P2 — Per-video notes (`videoNotes`) (NF1)
   - Why: a local-first per-video notes surface is a top product gap versus
     YouTube Alchemy / research tools.
   - Touches: `videoNotes` schema/UI, export, storage caps.
-  - Acceptance: notes schema/UI ships with export support and a 1000-note LRU cap.
+  - Acceptance: notes schema/UI ships with export support and a 1000-note LRU
+    cap. _(Delivered 2026-06-04: `videoNotes` adds a watch-page local notes
+    panel, stores sanitized records in `videoNotesData`, exports a versioned
+    `astra-deck-video-notes-YYYY-MM-DD.json` archive, and keeps the 1000 most
+    recently updated notes by `updatedAt`.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 - [ ] P2 — Astra Downloader signed installer + MSI
   - Why: an unsigned companion is a trust/onboarding friction point for non-dev
@@ -173,8 +177,9 @@ phased feature plan) is preserved at
   - Source: ROADMAP.md Active Backlog (Carried Risks And Questions)
 
 > Open decisions carried forward: downloader signing budget, CWS/AMO submission
-> intent, dead-channel detection method, lifecycle migration cadence, live-chat
-> capture window, and i18n coverage warning policy.
+> intent, real-browser QA for dead-channel staging at large feed scale,
+> lifecycle migration cadence, live-chat capture window, and i18n coverage
+> warning policy.
 
 ---
 
@@ -189,6 +194,13 @@ companion service) and to the competitive / standards landscape (Chrome Web Stor
 MV3 program policy, AMO Firefox MV3, WCAG 2.2 AA, the SponsorBlock / DeArrow /
 Enhancer for YouTube / PocketTube / BlockTube / Return YouTube Dislike ecosystem,
 and yt-dlp cookie-handling advisories).
+
+2026-06-04 refresh: NF6, NF2, and dead-channel staging have moved into the live
+dirty tree, with `node --test tests/hardening.test.js` passing 415 checks and
+`npm audit --audit-level=high --omit=dev` finding 0 vulnerabilities. Current
+Chrome Web Store, Firefox MV3, yt-dlp, and YouTube Data API source checks keep
+the existing store-policy, Firefox smoke, yt-dlp smoke, and local-first
+subscription-staging rows relevant; no new duplicate research row was promoted.
 
 ### Phase 1 Competitive Matrix Carry-Forward
 

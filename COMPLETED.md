@@ -32,6 +32,7 @@ release-level details live in `CHANGELOG.md`.
 - On-demand Astra Downloader companion self-update endpoint and popup action.
 - Nested subscription groups with depth-2 JSON import/export.
 - Dead-channel subscription detection with 30-day unsubscribe staging and undo.
+- Per-video notes with JSON export and a 1000-note LRU cap.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -93,6 +94,10 @@ carry only open work.
   cards now flag channels whose newest visible upload is at least 365 days old,
   and `subscriptionUnsubscribeStagingData` records staged review entries with a
   30-day undo window instead of directly clicking unsubscribe controls.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Per-video notes (`videoNotes`) — watch pages now have a local notes panel
+  backed by `videoNotesData`, versioned JSON export, delete/undo for the current
+  video, and a deterministic 1000-note LRU cap by `updatedAt`.
   *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
