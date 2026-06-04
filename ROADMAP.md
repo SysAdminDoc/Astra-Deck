@@ -95,10 +95,15 @@ phased feature plan) is preserved at
     counts, child-group row styling, relative-age based new-since detection, and
     bounded mark-read updates through `subscriptionLastVisitData`.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
-- [ ] P3 — Study/work mode export to Markdown/CSV
+- [x] P3 — Study/work mode export to Markdown/CSV
   - Why: research-mode users want to export tracked time / focused history.
   - Touches: study/work-mode feature, export helpers.
-  - Acceptance: study/work mode data exports to Markdown and CSV.
+  - Acceptance: study/work mode data exports to Markdown and CSV. _(Delivered
+    2026-06-04: `researchSpacedReview` now exports a Study / Work report as
+    Markdown or CSV, including Watch Time Tracker totals, current Digital
+    Wellbeing day state, Focused Mode state, and timestamp bookmarks with deep
+    links. The exporter now reads the live bookmark `t`/`n` fields and the
+    shared file-export helper accepts per-format MIME types.)_
   - Source: ROADMAP.md Active Backlog (Companion, Subscriptions, And Research)
 - [ ] P3 — i18n feature-definition labels out of `ytkit.js` (EI6)
   - Why: feature-definition labels are inline English in the monolith, blocking
