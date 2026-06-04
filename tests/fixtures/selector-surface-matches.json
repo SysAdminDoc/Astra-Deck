@@ -6,7 +6,7 @@
     "playerChrome": {
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
-      "elementCount": 7306,
+      "elementCount": 1623,
       "stable": [
         {
           "selector": ".ytp-chrome-bottom",

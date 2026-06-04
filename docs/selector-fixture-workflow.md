@@ -31,6 +31,27 @@ pair `mhtml/LiveChat.mhtml` with a rendered watch-page DOM probe for:
 Document the video id, date, and probe result in the changelog or hardening
 notes when these wrapper selectors change.
 
+### Watch-page CDP capture
+
+For player-chrome refreshes, try the stopped-loading Chrome Stable helper before
+falling back to a manual browser save:
+
+```powershell
+npm run capture:watch
+npm run build:fixtures
+```
+
+`scripts/capture-watch-mhtml.js` launches a temporary Chrome profile, waits for
+`ytd-watch-flexy`, `#movie_player`, and `.ytp-delhi-modern`, pauses/stops page
+loading with `Page.stopLoading`, then calls `Page.captureSnapshot`. This avoids
+many long-running media/ad requests that make a plain DevTools MHTML snapshot
+time out. If Chrome still times out, the helper writes a single-part MHTML from
+the settled rendered DOM (`captureMode: "dom-mhtml-fallback"`) so selector
+fixtures can still be regenerated from browser evidence. The raw
+`mhtml/WatchPage.mhtml` file remains gitignored; commit only the regenerated
+`tests/fixtures/yt-watch.tokens.txt` and
+`tests/fixtures/selector-surface-matches.json` deltas.
+
 ## Regenerate
 
 Run:
