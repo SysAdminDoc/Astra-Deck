@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 22 - 2026-06-04.
+> Last researched: Cycle 23 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,58 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 23 - 2026-06-04)
+
+- [x] 🔬 `repo-working-notes-drift-2026-06-04` - inspected the repo-local
+  instruction chain, `CLAUDE.md` current/historical sections, release policy,
+  Firefox support claims, signing-key release checklist, architecture map, CWS
+  / AMO checklist, manifest patch, current branch-protection behavior, and
+  official GitHub / Mozilla / Chrome guidance. Detailed notes live in
+  `docs/research-cycle-23-repo-working-notes-drift.md`.
+- [ ] P2 - 🔬🤖 Reconcile repo-local working notes with current release and browser-support contracts
+  - Why: future repo work starts from `AGENTS.md`, which delegates to
+    `CLAUDE.md`; that file now references a missing handoff log, includes stale
+    Firefox 128+ statements, and describes direct `main` push / `gh release
+    create` release flow even though protected `main`, local `ytkit.pem`
+    signing, profile-split release artifacts, and Firefox 140+ data-consent
+    requirements are the current contract.
+  - Evidence: `AGENTS.md:1-7` delegates repo working notes to `CLAUDE.md`;
+    `CLAUDE.md:3-4` points at `CODEX-CHANGELOG.md`, while `Test-Path
+    CODEX-CHANGELOG.md` returns `False`; `CLAUDE.md:68-76` says to push `main`,
+    run `gh release create`, and require Firefox 128+; `CLAUDE.md:382-385`,
+    `:706-708`, and `:884-889` present old five-artifact / v3.20.x state in
+    historical sections; and `CLAUDE.md:432-435` repeats
+    `strict_min_version: 128.0`. Current sources instead say Firefox 140+ and
+    maintainer-local release publication: `scripts/manifest-patch.js:7` and
+    `:18-24`, `README.md:49` and `:342-344`, `docs/architecture.md:7`,
+    `docs/cws-submission-checklist.md:170-174`, and
+    `docs/signing-keys.md:185-193` / `:198-215`. `docs/architecture.md:127`
+    still has related release-flow drift already covered by Cycle 14. [Verified]
+  - Touches: `CLAUDE.md`, possibly `docs/architecture.md`,
+    `docs/signing-keys.md`, `README.md`, `CONTRIBUTING.md`, and an optional
+    docs-drift check if the implementer wants one.
+  - Acceptance: the missing handoff-log pointer is removed, replaced with an
+    existing tracked file, or backed by a real tracked log; current release
+    instructions describe branch/PR publication for protected `main`, local
+    `ytkit.pem` signing, eight profile-split extension artifacts, userscript,
+    SBOM, manifest/checksum assets, and the separate companion EXE release item;
+    every current browser-support statement says Firefox 140+ for extension
+    artifacts and references `scripts/manifest-patch.js` data-consent behavior;
+    old v3/v4 release summaries are clearly marked as historical or moved under
+    an archive-style section so they cannot be mistaken for current state; the
+    Cycle 14 release-doc item is either updated or cross-linked so
+    `docs/architecture.md` no longer contradicts the signing-key release policy.
+  - Verify: `Test-Path CODEX-CHANGELOG.md` is true only if the file is meant to
+    exist, otherwise `rg -n "CODEX-CHANGELOG" CLAUDE.md AGENTS.md docs README.md`
+    returns no stale pointer; `rg -n "strict_min_version: \"128\\.0\"|requires
+    Firefox 128|Firefox 128\\+" CLAUDE.md README.md docs` returns no current
+    contract statements; `rg -n "push main|gh release create|All 5 artifacts"
+    CLAUDE.md docs README.md` returns only historical sections or no matches;
+    `node scripts/check-versions.js`; and docs-only diff review confirms no
+    feature source or generated artifact changed unless a docs-drift check was
+    deliberately added.
+  - Complexity: S/M
 
 ### Researcher Queue (Cycle 22 - 2026-06-04)
 
