@@ -77,3 +77,26 @@ Target policy:
 - Enable private vulnerability reporting for the public repository.
 - Keep public bug-report templates for non-sensitive bugs only.
 - Ensure maintainers receive notifications for private vulnerability reports.
+
+## Code Scanning
+
+Current snapshot from 2026-06-04:
+
+- GitHub code-scanning default setup: `not-configured`.
+- Detected languages from the default-setup API: `actions`, `javascript`,
+  `javascript-typescript`, `python`, `typescript`.
+- Code-scanning alerts API: `404 no analysis found`.
+- CodeQL workflow file: absent.
+- `security-events: write` workflow permission: absent.
+
+Target policy:
+
+- Add an advanced CodeQL workflow for `javascript` and `python`.
+- Prefer `security-extended` for the first baseline; document any move to
+  `security-and-quality` after runtime and false-positive volume are known.
+- Keep generated outputs, `node_modules`, `build`, `mhtml`, and archived
+  research/release artifacts out of the scan target.
+- Record first-run findings and triage decisions before making CodeQL a
+  required `main` check.
+- After a clean or fully triaged baseline, add the exact CodeQL check context to
+  branch protection or record why the gate remains advisory-only.
