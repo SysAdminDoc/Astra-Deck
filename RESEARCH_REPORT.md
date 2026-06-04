@@ -18,6 +18,15 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 14 release-doc contract reconciliation pass on 2026-06-04
+  found that the release process is now split between CI-built/attested
+  workflow artifacts and maintainer-local public release assets, but current
+  docs still carry stale claims that CI creates GitHub Releases directly or that
+  release checksum/provenance, Python audit, and privacy artifacts are absent.
+  This report now updates those current sections, and ROADMAP carries a P2 item
+  to reconcile non-planning docs such as `docs/architecture.md` with
+  `docs/signing-keys.md`. Detailed evidence lives in
+  `docs/research-cycle-14-release-doc-contract-reconciliation.md`.
 - [Verified] Cycle 13 Actions Node 24 readiness pass on 2026-06-04 found that
   the latest green `Validate` run on `main` and latest `Build & Release` tag run
   both emit GitHub's Node 20 JavaScript action deprecation warning. Current
@@ -244,19 +253,22 @@ Top remaining opportunities (one-liners):
 2. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+3. Reconcile release automation docs with the current maintainer-local artifact
+   contract so architecture/release docs do not imply CI publishes public CRX
+   releases. [Verified]
+4. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-4. MHTML capture-week expansion across Shorts, channel, search, history,
+5. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+6. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-6. Locale proofing queue for identical-to-English feature names/descriptions in
+7. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-7. Signed Astra Downloader installer/MSI once the signing budget and submission
+8. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -297,7 +309,8 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-10-python-dependency-audit.md`,
   `docs/research-cycle-11-main-protection-status-checks.md`, and
   `docs/research-cycle-12-dependency-review-enablement.md`, and
-  `docs/research-cycle-13-actions-node24-readiness.md`. [Verified]
+  `docs/research-cycle-13-actions-node24-readiness.md`, and
+  `docs/research-cycle-14-release-doc-contract-reconciliation.md`. [Verified]
 - Open Dependabot PR #11 and run `26950993002`: Dependency review fails with
   GitHub's dependency-graph enablement message while the other `Validate` jobs
   pass. The repository security-analysis API response shows a public repository
@@ -308,6 +321,12 @@ Top remaining opportunities (one-liners):
   deprecation warning. `.github/workflows/validate.yml`, `build.yml`, and
   `yt-dlp-smoke.yml` still pin Node 20-era `checkout`, `setup-node`,
   `setup-python`, and `upload-artifact` action majors. [Verified]
+- Release contract reconciliation probe: `.github/workflows/build.yml` uploads
+  `build/*` as a workflow artifact and creates CI build/SBOM attestations on tag
+  refs, while `docs/signing-keys.md` says public GitHub Releases remain a
+  maintainer-local upload path because `ytkit.pem` never enters CI.
+  `docs/architecture.md` still says the CI row ends in `gh release create`.
+  [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
@@ -420,12 +439,11 @@ Current risk status:
   but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
   strings per non-EN locale, with 584 of 612 feature name/description keys still
   identical to EN. → ROADMAP P3 locale proofing queue. [Verified]
-- **[Low/Med] Python dependency audit gap.** Dependabot watches
-  `astra_downloader/requirements.txt` and the current `pip-audit` baseline is
-  clean, but CI has no Python vulnerability gate comparable to `npm audit`.
-  This can let a future Flask/Waitress/PyQt6/requests/yt-dlp transitive advisory
-  wait for manual review rather than failing validation immediately. → ROADMAP
-  P2 Python dependency audit gate. [Verified]
+- **[Closed] Python dependency audit gap.** `Validate / Python dependency
+  audit` now runs `pip-audit` against `astra_downloader/requirements.txt` and
+  uploads `astra-downloader-pip-audit` JSON. The remaining dependency-security
+  blocker is repository dependency-graph enablement for PR-time Dependency
+  review. → ROADMAP P1 dependency graph enablement. [Verified]
 - **[Gated] Downloader installer trust.** Companion onboarding is now explicit,
   but the signed installer/MSI remains blocked on signing budget and submission
   intent. → ROADMAP P2 signed installer/MSI. [Needs validation]
@@ -460,19 +478,23 @@ Closed since the 2026-06-03 baseline:
   gated in CI; yt-dlp is the highest-churn dependency and now has exact
   package pins plus a monthly/manual smoke workflow that downloads a bounded
   YouTube fixture before extractor bumps are trusted. Python dependency
-  vulnerability auditing is not yet a CI gate, though the current local
-  `pip-audit` probe is clean. [Verified]
+  vulnerability auditing now runs as a dedicated `Validate / Python dependency
+  audit` job with a retained `astra-downloader-pip-audit` JSON artifact.
+  Dependency review remains blocked by dependency-graph enablement rather than
+  a concrete vulnerable dependency finding. [Verified]
 - **Testability**: 19 spec files including hardening (474 KB),
   selector-regression, and userscript-parity; in-page overlay a11y is not yet
   automated. [Verified]
 - **Dead code**: `ytkit.js` retains inline feature objects as compatibility
   fallbacks after peeling — intentional, not dead, but a long-tail cleanup target. [Likely]
-- **Release automation**: `workflow_dispatch` + tag-driven build/release with a
-  `check-versions --tag` gate and `gh release` upload — matches the house CI
-  standard, but current public latest release lags the source tree by many
-  versions and the release workflow does not yet attach a project-owned checksum
-  manifest or provenance. Firefox build is patched but not smoke-tested
-  (ROADMAP P1). [Verified]
+- **Release automation**: `workflow_dispatch` + tag-driven CI validates,
+  version-checks, builds userscript/profile artifacts, emits CycloneDX SBOM,
+  generates `release-manifest.json` / `SHA256SUMS`, uploads `build/*` as a
+  workflow artifact, and creates CI build/SBOM attestations on tag refs. Public
+  GitHub Release publication remains maintainer-local for `ytkit.pem`-signed
+  CRX artifacts; current architecture docs still need reconciliation so they do
+  not imply CI itself runs `gh release create`. Firefox build is patched but not
+  smoke-tested (ROADMAP P1). [Verified]
 
 ## Security / Privacy / Data Safety
 
@@ -493,17 +515,17 @@ Closed since the 2026-06-03 baseline:
   `/download` request-field allowlisting that blocks client-supplied yt-dlp
   argv / flag payloads before queueing. The yt-dlp cookie-handling threat model
   is documented; signed installer/MSI trust polish remains gated.
-- **Release integrity** [Verified]: GitHub release assets expose SHA-256 digest
-  fields and GitHub supports artifact/SBOM attestations, but Astra's current
-  release workflow only uploads `build/*`; a project-owned `SHA256SUMS` manifest,
-  companion sidecar publication, and attestation path are not yet in place.
-- **Privacy disclosure / consent** [Verified]: store-safe permission rationale
-  exists, but a linkable privacy policy and Firefox data-consent build contract
-  are not yet shipped. Chrome requires privacy-field data-use certification and
-  policy consistency; Mozilla treats data handled outside the add-on/local
-  browser as transmission and requires consent/control, with built-in
-  `data_collection_permissions` available for Firefox 140+ while the current
-  generated manifest still targets Firefox 128.
+- **Release integrity** [Verified]: v4.46.0 is the public latest release and
+  attaches all eight profile-split extension artifacts, userscript, CycloneDX
+  npm SBOM, `release-manifest.json`, and `SHA256SUMS`; GitHub release assets
+  expose SHA-256 digest fields. The tag workflow creates attestations for
+  CI-built artifacts, while public CRX assets intentionally remain
+  maintainer-local because `ytkit.pem` does not enter CI.
+- **Privacy disclosure / consent** [Verified]: `docs/privacy-policy.md` is the
+  stable policy source linked from README/submission docs; it covers Chrome data
+  categories, external destinations, local storage/export/delete, cookies, no
+  telemetry/ads/sale, and Chrome Limited Use. The Firefox path is now Firefox
+  140+ with generated required `data_collection_permissions`.
 
 ## UX & Accessibility
 
@@ -525,8 +547,6 @@ Closed since the 2026-06-03 baseline:
 
 ## Open Questions
 
-- Whether the next public release should be v4.46.0 exactly or a new v4.47.0
-  after the CI and release-integrity fixes land. [Needs validation]
 - Whether `main` should use classic branch-protection required checks or a
   repository ruleset, and whether all `main` updates should go through PRs.
   [Needs validation]
@@ -539,15 +559,12 @@ Closed since the 2026-06-03 baseline:
 - Whether Firefox support should move from 128 to 140 to use built-in data
   collection consent cleanly, or keep 128-139 support with a custom
   consent/control page. [Needs validation]
-- Where the stable privacy policy should live: tracked docs rendered through the
-  project homepage, README one-click link, or another maintainer-controlled URL.
+- Whether Python dependency audit JSON should remain a CI artifact only or be
+  attached/linkable in store or release review packets.
   [Needs validation]
-- Whether Python dependency auditing should use PyPI advisories only, OSV, or
-  both; and whether audit JSON should be retained as a release artifact.
-  [Needs validation]
-- Whether CRX/XPI artifacts remain maintainer-local because of `ytkit.pem`, or
-  whether CI should attest only ZIP/userscript/SBOM artifacts while local-signed
-  CRX/XPI are attached with checksum sidecars. [Needs validation]
+- How release docs should present the split between `gh attestation verify` for
+  CI-built artifacts and digest comparison for maintainer-local public release
+  assets. [Needs validation]
 - Downloader signing budget and CWS/AMO submission intent (gates the signed
   installer work). [Needs validation]
 - Live-stream MHTML capture window for full live-chat iframe internals — repeated
