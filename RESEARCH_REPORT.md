@@ -18,6 +18,17 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 20 optional-permissions pass on 2026-06-04 found that the
+  store-safe profile split strips GitHub-full AI/Cobalt/Ollama/loopback hosts,
+  but still grants optional enrichment API hosts at install time. The manifest
+  builder has no `optional_host_permissions` path, there is no runtime
+  `permissions.request` / `permissions.contains` helper, and tests currently
+  require `i.ytimg.com`, SponsorBlock, Return YouTube Dislike, and Reddit hosts
+  in store-safe `host_permissions`. ROADMAP now carries a P2 item to convert
+  eligible enrichment hosts to runtime-granted optional host permissions with
+  denied/revoked UI, diagnostics, CSP, Chrome/Firefox manifest, and regression
+  coverage. Detailed evidence lives in
+  `docs/research-cycle-20-optional-permissions.md`.
 - [Verified] Cycle 19 code-scanning pass on 2026-06-04 found that GitHub
   code scanning is not configured: default setup reports `state:
   not-configured`, alerts return `no analysis found`, and there is no CodeQL
@@ -305,31 +316,37 @@ Top remaining opportunities (one-liners):
 3. Publish `SECURITY.md` and enable private vulnerability reporting so
    signing-key, extension, companion, dependency, and release-integrity reports
    do not go through public issues. [Verified]
-4. Migrate GitHub Actions workflows to Node 24-ready action majors before
+4. Enable CodeQL code scanning for JavaScript extension code and the Python
+   companion, then decide whether the CodeQL check becomes required after a
+   clean baseline run. [Verified]
+5. Convert optional store-safe enrichment hosts to runtime-granted optional
+   host permissions, preserving required YouTube hosts and denied/revoked
+   feature states. [Verified]
+6. Migrate GitHub Actions workflows to Node 24-ready action majors before
    GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
    [Verified]
-5. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+7. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-6. Enable dependency graph / Dependabot alert settings so the PR-only
+8. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-7. Reconcile release automation docs with the current maintainer-local artifact
+9. Reconcile release automation docs with the current maintainer-local artifact
    contract so architecture/release docs do not imply CI publishes public CRX
    releases. [Verified]
-8. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+10. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-9. MHTML capture-week expansion across Shorts, channel, search, history,
+11. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-10. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+12. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-11. Locale proofing queue for identical-to-English feature names/descriptions in
+13. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-12. Signed Astra Downloader installer/MSI once the signing budget and submission
+14. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -375,7 +392,16 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-15-secret-scanning-alert.md`, and
   `docs/research-cycle-16-actions-sha-pinning.md`, and
   `docs/research-cycle-17-signing-key-custody.md`, and
-  `docs/research-cycle-18-security-disclosure.md`. [Verified]
+  `docs/research-cycle-18-security-disclosure.md`, and
+  `docs/research-cycle-19-code-scanning.md`, and
+  `docs/research-cycle-20-optional-permissions.md`. [Verified]
+- Runtime optional-permissions probe: `extension/manifest.json:31` defines
+  install-time host permissions and lines 35-39 include optional enrichment
+  hosts; `build-extension.js:258` through `build-extension.js:287` generate
+  profile `host_permissions` and CSP without an `optional_host_permissions`
+  path; `extension/core/data-flow.js:46`, `:54`, `:62`, and `:70` map those
+  hosts to feature keys; and hardening tests currently require store-safe
+  install-time inclusion for the same hosts. [Verified]
 - Security disclosure probe: no root `SECURITY.md` or `.github` security-policy
   file exists; private vulnerability reporting returns `enabled: false`; public
   issue templates are the only visible reporting path; and the repository has
