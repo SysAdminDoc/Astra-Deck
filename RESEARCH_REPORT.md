@@ -18,6 +18,13 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 10 Python dependency-audit pass on 2026-06-04 found a
+  preventive hardening gap rather than an active advisory: Dependabot covers pip
+  and the current `pip-audit 2.10.0` probe against
+  `astra_downloader/requirements.txt` found no known vulnerabilities across 25
+  resolved packages, but CI only gates npm vulnerabilities today. ROADMAP now
+  carries a P2 item for a Python companion dependency audit gate, with detailed
+  evidence in `docs/research-cycle-10-python-dependency-audit.md`.
 - [Verified] Cycle 9 privacy/consent-readiness pass on 2026-06-04 found a
   non-duplicate release-readiness gap: Astra Deck has strong store permission
   rationale and profile-split artifacts, but no concrete privacy-policy source
@@ -214,16 +221,19 @@ Top remaining opportunities (one-liners):
 4. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-5. MHTML capture-week expansion across Shorts, channel, search, history,
+5. Add a Python companion dependency audit gate so
+   `astra_downloader/requirements.txt` gets `pip-audit` / dependency-review
+   coverage comparable to the existing npm audit gate. [Verified]
+6. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-6. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+7. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-7. Locale proofing queue for identical-to-English feature names/descriptions in
+8. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-8. Signed Astra Downloader installer/MSI once the signing budget and submission
+9. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -258,7 +268,8 @@ Top remaining opportunities (one-liners):
 - `docs/architecture.md`, `docs/cws-submission-checklist.md`,
   `docs/screen-reader-smoke.md`, `docs/signing-keys.md`,
   `docs/store-permission-rationale.md`, and
-  `docs/research-cycle-9-privacy-consent-readiness.md`. [Verified]
+  `docs/research-cycle-9-privacy-consent-readiness.md`,
+  `docs/research-cycle-10-python-dependency-audit.md`. [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
@@ -266,7 +277,8 @@ Top remaining opportunities (one-liners):
   cookie-handling advisories; Qt Linux runtime requirements; GitHub release asset
   digests and artifact/SBOM attestations; npm SBOM; Chrome Web Store privacy
   fields / Limited Use policy; Mozilla add-on data-transmission consent and
-  Firefox built-in `data_collection_permissions`. [Verified, external]
+  Firefox built-in `data_collection_permissions`; PyPA `pip-audit`,
+  `pypa/gh-action-pip-audit`, and GitHub dependency review. [Verified, external]
 
 ## Current Product Map
 
@@ -371,6 +383,12 @@ Current open risk:
   but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
   strings per non-EN locale, with 584 of 612 feature name/description keys still
   identical to EN. → ROADMAP P3 locale proofing queue. [Verified]
+- **[Low/Med] Python dependency audit gap.** Dependabot watches
+  `astra_downloader/requirements.txt` and the current `pip-audit` baseline is
+  clean, but CI has no Python vulnerability gate comparable to `npm audit`.
+  This can let a future Flask/Waitress/PyQt6/requests/yt-dlp transitive advisory
+  wait for manual review rather than failing validation immediately. → ROADMAP
+  P2 Python dependency audit gate. [Verified]
 - **[Gated] Downloader installer trust.** Companion onboarding is now explicit,
   but the signed installer/MSI remains blocked on signing budget and submission
   intent. → ROADMAP P2 signed installer/MSI. [Needs validation]
@@ -404,7 +422,9 @@ Closed since the 2026-06-03 baseline:
 - **Dependency health**: minimal npm deps (`crx3`, `eslint`); `npm audit`
   gated in CI; yt-dlp is the highest-churn dependency and now has exact
   package pins plus a monthly/manual smoke workflow that downloads a bounded
-  YouTube fixture before extractor bumps are trusted. [Verified]
+  YouTube fixture before extractor bumps are trusted. Python dependency
+  vulnerability auditing is not yet a CI gate, though the current local
+  `pip-audit` probe is clean. [Verified]
 - **Testability**: 19 spec files including hardening (474 KB),
   selector-regression, and userscript-parity; in-page overlay a11y is not yet
   automated. [Verified]
@@ -475,6 +495,9 @@ Closed since the 2026-06-03 baseline:
   consent/control page. [Needs validation]
 - Where the stable privacy policy should live: tracked docs rendered through the
   project homepage, README one-click link, or another maintainer-controlled URL.
+  [Needs validation]
+- Whether Python dependency auditing should use PyPI advisories only, OSV, or
+  both; and whether audit JSON should be retained as a release artifact.
   [Needs validation]
 - Whether CRX/XPI artifacts remain maintainer-local because of `ytkit.pem`, or
   whether CI should attest only ZIP/userscript/SBOM artifacts while local-signed

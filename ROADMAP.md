@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 9 - 2026-06-04.
+> Last researched: Cycle 10 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,59 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 10 - 2026-06-04)
+
+- [x] 🔬 `python-dependency-audit-gate-2026-06-04` - inspected
+  Dependabot config, validation workflow, companion requirements, existing npm
+  audit gate, prior dependency research, and current PyPA/GitHub dependency
+  review guidance. Ran a local `pip-audit` probe against the downloader
+  requirements; detailed notes live in
+  `docs/research-cycle-10-python-dependency-audit.md`.
+- [ ] 🔬🤖 P2 — Add a Python companion dependency audit gate
+  - Why: `npm run check` already gates JavaScript production dependency
+    vulnerabilities with `npm audit --omit=dev --audit-level=moderate`, and
+    Dependabot opens Python dependency PRs, but the Astra Downloader companion
+    has no equivalent CI vulnerability audit for `astra_downloader/requirements.txt`.
+    The current requirements resolution is clean, so this is a preventive
+    supply-chain gate rather than an emergency patch.
+  - Evidence: `.github/dependabot.yml` covers npm, pip, and GitHub Actions;
+    `.github/workflows/validate.yml` installs Python dependencies and runs
+    `python -m pytest astra_downloader`, but it does not run `pip-audit` or a
+    dependency-review check. `package.json` wires `audit:deps` into
+    `npm run check`, so only the Node side has a standing vulnerability gate.
+    Local probe on 2026-06-04:
+    `py -3.12 -m pip_audit -r astra_downloader/requirements.txt --format json --progress-spinner off`
+    exited 0 and reported no known vulnerabilities across 25 resolved packages
+    (yt-dlp, curl-cffi, PyQt6, Flask, requests, waitress, and transitive deps).
+    PyPA documents `pip-audit -r ./requirements.txt` for requirements-file
+    audits and exit code 1 on known vulnerabilities
+    (https://github.com/pypa/pip-audit). The official `pypa/gh-action-pip-audit`
+    action accepts requirements-style `inputs`, PyPI/OSV vulnerability services,
+    and explicit ignore lists
+    (https://github.com/pypa/gh-action-pip-audit). GitHub's dependency review
+    action can fail PRs that introduce vulnerable dependency versions
+    (https://docs.github.com/en/code-security/concepts/supply-chain-security/about-dependency-review).
+    [Verified]
+  - Touches: `.github/workflows/validate.yml`, optionally a dedicated
+    dependency-review workflow/config, `astra_downloader/requirements.txt`
+    comments for any temporary advisory ignore, `docs/cws-submission-checklist.md`
+    / release checklist, and `RESEARCH_REPORT.md` once implemented.
+  - Acceptance: PR/push validation runs a Python dependency audit for
+    `astra_downloader/requirements.txt` after dependency install or through
+    `pypa/gh-action-pip-audit@v1.1.0`; moderate-or-higher fixable advisories
+    fail CI unless a documented temporary ignore with advisory ID, reason,
+    applicability analysis, and expiry is present. Dependency-change PRs also
+    get dependency-review coverage so a Dependabot bump cannot introduce a
+    vulnerable transitive package unnoticed. The audit result is visible in the
+    workflow summary or an uploaded JSON artifact for release review.
+  - Verify: intentionally run the audit step locally with
+    `py -3.12 -m pip_audit -r astra_downloader/requirements.txt --format json`;
+    dispatch or push `Validate`; confirm the Python audit step passes on the
+    clean baseline and fails on a temporary known-vulnerable requirement in a
+    throwaway branch. Keep the existing `python -m pytest astra_downloader`,
+    `npm run check`, and `npm test` gates green.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 9 - 2026-06-04)
 
