@@ -34,6 +34,50 @@ release-level details live in `CHANGELOG.md`.
   background fetch proxying, Trusted Types, selector regressions, and userscript
   parity remain detailed in `CHANGELOG.md` and `HARDENING.md`.
 
+## Active Backlog Ships Folded Into COMPLETED (2026-06-03)
+
+These items were marked `[x]` in the ROADMAP.md "Active Backlog" before the
+2026-06-03 roadmap consolidation. They are recorded here so the lean ROADMAP can
+carry only open work.
+
+### Shipped Features
+
+- [x] Capture live-chat MHTML fixtures (EI8) — refreshed the three live-chat
+  selector packs and token fixture. *(Delivered 2026-06-04: committed
+  `yt-live-chat.tokens.txt` from `mhtml/LiveChat.mhtml`; wrapper selectors were
+  verified by rendered watch-page DOM probe because full watch-page MHTML capture
+  timed out in headless Chrome.)* — *Source: ROADMAP.md Active Backlog*
+- [x] `stickyVideo` unify chat observer lifecycle (NF32) — merged the duplicate
+  chat watcher paths into one `_chatObserver` + `_chatObserverTimer` init/destroy
+  lifecycle. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] `subscriptionGroups` per-group sort persistence (NF31) — active group
+  records now persist `sortMode`; `subscriptionSortMode` remains only as the
+  all-subscriptions / legacy fallback. *(Delivered 2026-06-04.)* — *Source:
+  ROADMAP.md Active Backlog*
+- [x] `chatStyleComments` selector fallbacks (EI-NEW1) — reply-dialog `:has()`
+  hiding is fenced by `@supports selector(:has(*))` with a `.ytkit-replying`
+  class fallback. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] `hideVideosFromHome` channel-key cache (EI-NEW5) — blocked-channel records
+  maintain a cached identity-key `Set`; per-card checks use direct key membership.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] `selector-health` attribute-drift detection (EI-NEW6) — selector health now
+  samples hashed class/attribute signatures and surfaces shape drift even when
+  selectors keep hitting. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] `require-catch-reason` lint rule extended to `extension/core/*.js` and
+  `extension/ytkit.js` after the per-file catch-annotation pass. *(Delivered
+  2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Wave 3 lifecycle full delegate — `core/styles.js` exposes
+  `createCssLifecycleSpec`; home/subs, wave-8, and theme CSS peels register real
+  style specs and `cssFeature` delegates through lifecycle start/destroy.
+  *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Top-3 monolith peel — split `stickyVideo`, `hideVideosFromHome`, and
+  `chatStyleComments` into `features/*` modules with monolith delegation and
+  inline fallbacks preserved. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Next-2 monolith peel — split `youtubeMusicCompat`
+  (`features/youtube-music-compat/`) and `floatingLogoOnWatch`
+  (`features/player-dock/`) into feature modules. *(Delivered 2026-06-04.)* —
+  *Source: ROADMAP.md Active Backlog*
+
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 
 Items below were triaged out of the local factory-loop research pass
