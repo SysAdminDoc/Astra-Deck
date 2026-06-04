@@ -13,8 +13,8 @@
 //     catches total, 7 already documented, 1 annotated in the same
 //     commit). The v4.47.0 core pass extends the invariant to direct
 //     extension/core/*.js modules after annotating the remaining silent
-//     catches. Further widening to ytkit.js stays gated behind a
-//     monolith annotation pass.
+//     catches. The v4.47.0 monolith pass extends the invariant to
+//     ytkit.js after annotating its silent catch surface.
 
 const noPostAwaitAddListener = require('./scripts/eslint-rules/no-post-await-addlistener.js');
 const requireCatchReason = require('./scripts/eslint-rules/require-catch-reason.js');
@@ -104,6 +104,27 @@ module.exports = [
         // data modules with no catch surface and are intentionally outside
         // this glob; the roadmap item is extension/core/*.js.
         files: ['extension/core/*.js'],
+        plugins: {
+            local: {
+                rules: {
+                    'require-catch-reason': requireCatchReason,
+                },
+            },
+        },
+        rules: {
+            'local/require-catch-reason': 'error',
+        },
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'script',
+            globals: sharedBrowserGlobals,
+        },
+    },
+    {
+        // v4.47.0 monolith pass: ytkit.js now enforces the same
+        // silent-catch invariant after every intentional swallow in the
+        // monolith was annotated with a `reason:` comment.
+        files: ['extension/ytkit.js'],
         plugins: {
             local: {
                 rules: {

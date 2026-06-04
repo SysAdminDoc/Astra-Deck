@@ -6832,9 +6832,8 @@ test('v4.47.0 NF5 wave 1 — every CSS-only peel module registers with the lifec
 test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 invariant', () => {
     // The rule must exist on disk, be required from eslint.config.js,
     // and be enabled as `error` on the background.js file group plus
-    // (v4.47.0 Phase L) the popup.js and direct extension/core/*.js
-    // file groups. Further widening to ytkit.js stays gated behind a
-    // monolith annotation pass.
+    // (v4.47.0 Phase L) the popup.js, direct extension/core/*.js, and
+    // monolith ytkit.js file groups.
     const eslintConfig = fs.readFileSync(
         path.join(__dirname, '..', 'eslint.config.js'), 'utf8'
     );
@@ -6851,6 +6850,8 @@ test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 inv
         'eslint.config.js must declare the extension/popup.js file group (Phase L)');
     assert.match(eslintConfig, /files:\s*\['extension\/core\/\*\.js'\]/,
         'eslint.config.js must declare the direct extension/core/*.js file group (Phase L follow-up)');
+    assert.match(eslintConfig, /files:\s*\['extension\/ytkit\.js'\]/,
+        'eslint.config.js must declare the ytkit.js file group (monolith follow-up)');
     // The npm-lint script must pass both files to eslint so the rule
     // actually runs on both during npm run check.
     const pkg = JSON.parse(fs.readFileSync(
@@ -6862,6 +6863,8 @@ test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 inv
         'package.json lint script must include popup.js (Phase L)');
     assert.match(pkg.scripts.lint, /extension\/core\/\*\.js/,
         'package.json lint script must include direct core modules (Phase L follow-up)');
+    assert.match(pkg.scripts.lint, /extension\/ytkit\.js/,
+        'package.json lint script must include ytkit.js (monolith follow-up)');
 
     const rulePath = path.join(__dirname, '..', 'scripts', 'eslint-rules', 'require-catch-reason.js');
     assert.ok(fs.existsSync(rulePath), 'rule source must exist at scripts/eslint-rules/require-catch-reason.js');
