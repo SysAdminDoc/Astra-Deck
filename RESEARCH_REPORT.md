@@ -1,66 +1,231 @@
 # Astra Deck Research Report
 
-This is the canonical research summary. Full pre-consolidation source documents
-are archived at:
+Deep-research and product-map pass conducted 2026-06-03. This is the canonical
+research summary; actionable items live in [ROADMAP.md](ROADMAP.md) under
+"Research-Driven Additions." Pre-consolidation source documents are archived at:
 
 - `docs/archive/research/RESEARCH_FEATURE_PLAN.md`
 - `docs/archive/research/RESEARCH_FEATURE_PLAN_PASS3.md`
+- `docs/archive/roadmap-dossier-2026-05-21.md` (the legacy v5.0.0 → v6.0.0 product
+  plan, competitive matrix, feature catalog, and technical reconnaissance)
 
-## Current Findings
+Claim labels: [Verified] = read in-tree or confirmed against a cited source;
+[Likely] = strong inference from in-tree evidence; [Assumption] = reasonable
+default not directly confirmed; [Needs validation] = requires a device, browser,
+or maintainer action to confirm.
 
-- Astra Deck is a mature YouTube enhancement layer with MV3 Chrome/Firefox,
-  userscript, and local downloader surfaces.
-- The active risk cluster is runtime DOM churn: selector fixtures exist, but
-  live-chat and liquid-glass player captures still need maintainer/browser time.
-- The largest engineering track remains gradual monolith peeling and lifecycle
-  adoption for high-risk features such as `stickyVideo`, `hideVideosFromHome`,
-  and `chatStyleComments`.
-- The highest product gaps are subscription manager depth, per-video notes,
-  companion updater/install polish, and store-safe versus GitHub-full artifact
-  separation.
+## Executive Summary
 
-## Evidence Sources
+Astra Deck is a mature, single-developer YouTube enhancement platform spanning a
+Manifest V3 extension (Chrome/Edge/Brave/Firefox 128+), a Tampermonkey/Violent-
+monkey userscript built from the same source, and a local Python/Flask + PyQt6 +
+yt-dlp companion downloader. [Verified] It carries a 354-key flat settings schema,
+27 `extension/core/` runtime modules, 11 peeled `extension/features/` modules, a
+28-surface capture-provenanced selector-pack system, 10 bundled UI locales, and a
+strong CI gate (syntax, versions, i18n, settings, no-eval, lint, a11y, contrast,
+deps audit, plus a build/release workflow). [Verified]
 
-- Local planning artifacts, manifest, settings schema, extension core modules,
-  modular feature directories, userscripts, downloader service, tests, build
-  scripts, workflows, and contributor docs.
-- Prior competitor and parity work covering SponsorBlock, DeArrow, Return
-  YouTube Dislike, Enhancer for YouTube, Unhook, Improve YouTube, PocketTube,
-  UnTrap, BlockTube, YouTube Alchemy, YouFocus, and related tools.
-- Existing local MHTML captures and selector fixtures, with live-chat and
-  newer player-chrome captures still called out as gaps.
+The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
+against YouTube's high-velocity redesigns, (2) **store-policy / trust surface**
+from a broad permission and host set bundled into one extension, (3) **upgrade
+data-safety** for the 354-key schema, and (4) **version-surface confusion** —
+the product ships as 4.46.0 while the docs describe a "v5.0.0 foundation complete"
+and a v5/v6 plan.
 
-## Research Archive Use
+Top opportunities (one-liners):
 
-- `RESEARCH_FEATURE_PLAN.md` preserves the detailed v4.46+ active backlog,
-  evidence, non-goals, risks, and open questions as they existed before this
-  consolidation.
-- `RESEARCH_FEATURE_PLAN_PASS3.md` preserves the external-research pass,
-  opportunity ranking, file inventory, ecosystem notes, and could-not-verify
-  sections.
+1. Standing migration test that loads a pinned old-version settings blob and
+   proves lossless forward migration (highest data-loss risk). [Verified]
+2. Reconcile version surfaces — ship line is 4.46.x, not v5/v6. [Verified]
+3. Per-permission justification + single-purpose store note before CWS/AMO. [Verified]
+4. Settings import/export with schema validation + credential scrub (PocketTube
+   sync is the competitive baseline; stay local-first). [Verified]
+5. Firefox MV3 parity smoke gate before AMO (Enhancer-for-YouTube's Firefox gap
+   is the clearest competitive opening). [Verified]
+6. First-run onboarding + companion empty/permission states (no silent failure). [Verified]
+7. WCAG 2.2 AA audit for in-page overlays, not just the popup. [Verified]
+8. Document the yt-dlp cookie-handling threat model for the `cookies` permission. [Verified]
+9. Disclose Return-YouTube-Dislike estimate accuracy in the UI. [Verified]
+10. One-click scrubbed diagnostics export for bug reports / selector-rot repro. [Verified]
 
-## Local Factory-Loop Research Pass (2026-04-24)
+## Evidence Reviewed
 
-A separate L1 factory-loop research pass (charter: "maintenance mode only —
-security focused") produced a 103-item harvest scored across six axes and
-tiered into NOW / NEXT / LATER / under-consideration / rejected buckets. Its raw
-artifacts (`iter-1-*.md`, `iter-4/5/8-*.md`, `PHASE-2-5-SUMMARY.md`, the
-`docs/research/README.md` index) live under the gitignored `docs/research/`
-tree and are intentionally local-only — they are working notes, not shipped
-documentation.
+- `package.json` (v4.46.0, node ≥22, crx3 dep, full `check`/`test` scripts). [Verified]
+- `extension/manifest.json` (MV3 v4.46.0, 4 permissions, 17 host origins,
+  document_start MAIN + ISOLATED dual-world content scripts, live-chat excluded
+  from the main scripts). [Verified]
+- `extension/core/` (27 modules: registry, selectors, navigation, api-limiter,
+  trusted-html, predicate-sandbox, transcript-service, storage-manager,
+  diagnostic-log, policy-profile, selector-health, settings-schema 107 KB, etc.). [Verified]
+- `extension/features/` (11 peeled modules) and `extension/ytkit.js` (2.1 MB
+  monolith) + `ytkit-main.js` MAIN-world bridge. [Verified]
+- `extension/default-settings.json` (354 keys). [Verified]
+- `astra_downloader/` (Flask + PyQt6 + yt-dlp companion; loopback 9751 + 5
+  fallbacks; bearer-token + Host-header allowlist per `docs/architecture.md`). [Verified]
+- `scripts/` (build, fixtures, i18n, storage audit, a11y/contrast audits,
+  version/settings/no-eval checks, manifest-patch for Gecko). [Verified]
+- `.github/workflows/build.yml` + `validate.yml` (test + check gate, tag-driven
+  release with version-surface verification). [Verified]
+- `tests/` (19 spec files incl. hardening, selector-regression,
+  settings-migration-roundtrip, userscript-parity). [Verified]
+- `docs/architecture.md`, `docs/cws-submission-checklist.md`,
+  `docs/screen-reader-smoke.md`, `docs/signing-keys.md`. [Verified]
+- `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
+- Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
+  Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
+  Chrome Web Store MV3 program policy; AMO Firefox MV3; WCAG 2.2 AA; yt-dlp
+  cookie-handling advisories. [Verified, external]
 
-On 2026-06-03 that pass was triaged into the canonical trio:
+## Current Product Map
 
-- All three NOW security items — yt-dlp/curl_cffi pins, the Flask
-  DNS-rebinding Host-header defense, and the Trusted Types `createPolicy`
-  collision guard — were verified already shipped and recorded in
-  `COMPLETED.md`.
-- NEXT-2/3 (`chrome.storage.session` migration) and NEXT-4 (the
-  `no-post-await-addlistener` ESLint rule) were likewise verified shipped.
-- The still-actionable remainder — yt-dlp smoke-test CI (NEXT-1 second half),
-  the selector-resilience harness (NEXT-5), the Firefox 149 `executeScript`
-  pre-flight audit (NEXT-6), and the yt-dlp flag allowlist — moved into
-  `ROADMAP.md` under "Hardening And Cross-Browser".
-- The "no further features" charter cap and the 18+ rejected landscape
-  candidates were marked `[STALE]` in `COMPLETED.md`, superseded by the
-  2026-05-21 v5.0.0 foundation sprint and current feature backlog.
+Four moving parts communicating across three trust boundaries (per
+`docs/architecture.md`): [Verified]
+
+1. **MV3 extension** (`extension/`) — content scripts inject at `document_start`
+   in both MAIN (`ytkit-main.js`) and ISOLATED (`core/*` + selector packs +
+   `ytkit.js`) worlds; a dedicated all-frame injection handles the live-chat
+   iframe; `background.js` is the service worker.
+2. **Userscript** (`YTKit.user.js`) — built from `extension/ytkit.js` via
+   `sync-userscript.js`; parity guarded by `userscript-parity.test.js`.
+3. **Astra Downloader** — Python companion, HTTP on `127.0.0.1:9751` (+ five
+   fallback ports), bearer-token auth + DNS-rebinding Host-header defense.
+4. **Toolbar popup** — the only settings surface (the options page was retired in
+   v3.19.0).
+
+Target surface: YouTube desktop web + `youtube-nocookie.com` + `youtu.be` +
+live-chat iframe + `i.ytimg.com`; `m.youtube.com` and `studio.youtube.com`
+excluded by design. [Verified]
+
+## Feature Inventory
+
+| Area | Where | Maturity | Coverage |
+|------|-------|----------|----------|
+| Sponsor/segment skip (SponsorBlock) | `extension/ytkit.js`, `sponsor.ajay.app` host | Shipped | Hardened, rate-limited [Likely] |
+| Title/thumbnail (DeArrow-class) | settings schema + `ytkit.js` | Shipped | [Likely] |
+| Return YouTube Dislike | `returnyoutubedislikeapi.com` host | Shipped | No estimate-disclosure UI [Verified] |
+| Feed/comment/channel filtering (BlockTube-class) | `features/video-hider/`, `ytkit.js` | Shipped | ReDoS-guarded; channel-key cache [Verified] |
+| Subscription groups (PocketTube-class) | subscription-groups feature | Shipped | Flat groups; per-group sort persists; no nesting/sync [Verified] |
+| Theater split / sticky player | `features/sticky-video/`, `player-dock/` | Shipped | Lifecycle-unified chat observer [Verified] |
+| Theming / OLED tokens | `features/theme-css/`, `wave-8-css/`, `home-subs-css/` | Shipped | Schema-driven [Verified] |
+| Transcript viewer + IndexedDB search | `core/transcript-service.js` | Shipped | [Verified] |
+| AI summary (BYO key / local) | OpenAI/Anthropic/Gemini + Ollama hosts | Shipped, opt-in | [Verified] |
+| Downloader companion | `astra_downloader/` | Shipped | Self-update endpoint; no /update UX item open [Verified] |
+| Per-video notes | — | Planned (NF1) | Not yet built [Verified] |
+| Settings import/export | — | Gap | No first-class surface [Verified] |
+| Selector-pack health | `core/selector-health.js` | Shipped | Now reports attribute-shape drift [Verified] |
+
+## Competitive Landscape
+
+- **SponsorBlock / DeArrow** (same author): community-sourced segment skip and
+  title/thumbnail correction; 4.7★; the de-facto baseline Astra already mirrors. [Verified]
+- **Enhancer for YouTube**: deep player control (quality/codec/FPS, popup player)
+  but documented Firefox reliability gaps and YouTube-update compatibility churn —
+  the clearest opening for Astra cross-browser parity. [Verified]
+- **Improve YouTube!**: open-source, frequent updates, strong Firefox support —
+  Astra's nearest open-source rival on reliability. [Verified]
+- **PocketTube** (200k+ users): nested subscription groups, custom icons,
+  "play all," and cross-device sync via Google Drive / Chrome profile — Astra's
+  subscription roadmap is differentiated by local-first but lacks sync/import-export. [Verified]
+- **BlockTube**: rule-based filtering; Astra's filter engine is the planned
+  superset (predicate-sandbox already exists for safe DSL evaluation). [Verified]
+- **Return YouTube Dislike**: estimate-based for post-2021/low-traffic videos —
+  Astra surfaces counts but does not yet disclose the estimate caveat. [Verified]
+
+Standards: Chrome Web Store MV3 program policy (no remotely hosted code;
+single-purpose; per-permission justification; specific host patterns over
+`<all_urls>`). Astra correctly avoids `<all_urls>` but bundles a broad feature
+set + sensitive permissions, raising the single-purpose/justification bar. WCAG
+2.2 AA adds focus-appearance and target-size criteria relevant to in-page
+overlays. yt-dlp has a cookie-leak advisory class (cross-host leakage on
+redirect, CVE-2023-35934) relevant to the `cookies` permission. [Verified]
+
+## Quality & Friction Findings
+
+- **[High] Upgrade data-safety.** 354 flat keys + `unlimitedStorage`; the existing
+  round-trip test does not load a pinned old-version blob → silent config loss on
+  a botched migration is the top data-loss risk. → ROADMAP P0 migration test. [Verified]
+- **[High] Version-surface confusion.** Ship line 4.46.0 vs documented "v5.0.0
+  complete" / v5–v6 plan; a contributor or reviewer cannot tell releases from
+  planning. → ROADMAP P1 version reconciliation. [Verified]
+- **[Med] Onboarding / empty-state friction.** Popup is the only surface; the
+  companion connection fails silently until the user happens to launch the
+  PyInstaller app. → ROADMAP P2 onboarding + empty/permission states. [Verified]
+- **[Med] No first-class backup.** No settings import/export → no cross-browser
+  migration and no recovery path, while PocketTube ships sync. → ROADMAP P1
+  import/export with scrub. [Verified]
+- **[Med] Diagnostics trapped in console.** `diagnostic-log` / `selector-health`
+  exist but cannot be exported for an issue. → ROADMAP P3 diagnostics bundle. [Verified]
+- **[Low] RYD estimate not disclosed.** → ROADMAP P2 estimate affordance. [Verified]
+
+## Architecture & Technical Findings
+
+- **Boundaries** are clean and documented: three explicit trust boundaries,
+  dual-world content scripts, bearer-token + Host-header companion. [Verified]
+- **Persistence**: `chrome.storage` + `chrome.storage.session` for transient SW
+  state; IndexedDB for transcripts; `unlimitedStorage`. Growth bounds for
+  `videoNotes` / `timestampBookmarks` / `videoHistory` are an open carried risk
+  (R4, Existing Planned Work). [Verified]
+- **Concurrency / lifecycle**: `feature-lifecycle.js`, `lifecycle-route-bridge.js`,
+  and AbortController machinery shipped; per-category adoption is deferred to a
+  multi-slice initiative (Existing Planned Work). [Verified]
+- **Error handling**: a custom `require-catch-reason` lint rule now spans
+  `core/*.js` and `ytkit.js`; silent catches must carry a `reason:`. [Verified]
+- **Dependency health**: minimal npm deps (`crx3`, `eslint`); `npm audit`
+  gated in CI; yt-dlp is the highest-churn dependency (pinned with a smoke-test CI
+  gap, Existing Planned Work NEXT-1). [Verified]
+- **Testability**: 19 spec files including hardening (474 KB),
+  selector-regression, and userscript-parity; in-page overlay a11y is not yet
+  automated. [Verified]
+- **Dead code**: `ytkit.js` retains inline feature objects as compatibility
+  fallbacks after peeling — intentional, not dead, but a long-tail cleanup target. [Likely]
+- **Release automation**: `workflow_dispatch` + tag-driven build/release with a
+  `check-versions --tag` gate and `gh release` upload — matches the house CI
+  standard; Firefox build is patched but not smoke-tested (ROADMAP P1). [Verified]
+
+## Security / Privacy / Data Safety
+
+- **Permission surface** [Verified]: `cookies`, `downloads`, `unlimitedStorage`,
+  `storage`; 17 host origins incl. three AI providers, Reddit, and seven loopback
+  ports. No `<all_urls>`; specific patterns used. The breadth raises the
+  single-purpose/justification bar (ROADMAP P1 store note).
+- **No remote code** [Likely]: `check-no-eval.js` gate + MV3 prohibition; consistent
+  with policy.
+- **Credential handling** [Verified]: `policy-profile.js` scrubs gated/credential
+  fields; AI keys are BYO and must never appear in exports/diagnostics — which is
+  exactly why import/export (P1) and diagnostics export (P3) must run through the
+  scrubber, and R6 (finish scrub-regex coverage) is in Existing Planned Work.
+- **Companion** [Verified]: loopback-only (`127.0.0.1`, never `localhost`),
+  bearer-token, DNS-rebinding Host-header defense, yt-dlp pinned. The yt-dlp
+  cookie-leak class warrants a written threat model (ROADMAP P2).
+
+## UX & Accessibility
+
+- Popup a11y + contrast are CI-gated; `docs/screen-reader-smoke.md` is a manual
+  procedure. [Verified]
+- In-page overlays (theater split, transcript, notes, subscription manager,
+  toasts) have no automated a11y gate and are the WCAG 2.2 AA target-size /
+  focus-appearance risk (ROADMAP P2). [Verified]
+- House rules honored: dark/OLED, dense, no confirmation dialogs, no keyboard
+  shortcuts (the `commands` surface was removed in v4.5.3). [Verified]
+
+## Explicit Non-Goals
+
+- `m.youtube.com` and `studio.youtube.com` support (excluded by design). [Verified]
+- Keyboard shortcuts (removed in v4.5.3; must not return). [Verified]
+- Remotely hosted code / analytics / opaque auto-update (trust posture). [Verified]
+- Cloud account sync as a default — Astra stays local-first; any sync must be
+  explicit and opt-in (contrast with PocketTube's Google-Drive sync). [Assumption]
+
+## Open Questions
+
+- Downloader signing budget and CWS/AMO submission intent (gates the signed
+  installer + store-profile split). [Needs validation]
+- Live-stream MHTML capture window for full live-chat iframe internals — repeated
+  headless-capture timeouts mean this needs a manual/stable-browser save path.
+  [Needs validation]
+- Dead-channel detection method (Data API vs DOM heuristics) without requiring a
+  YouTube Data API key. [Needs validation]
+- Whether the v5/v6 numbering should be retired entirely or formally re-baselined
+  onto the 4.46.x line. [Needs validation]
+- Lifecycle-migration cadence and which feature category owners are available for
+  the paired DOM-walking peels + visible-behaviour QA. [Needs validation]
