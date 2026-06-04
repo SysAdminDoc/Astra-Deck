@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **EI8 live-chat selector fixture refresh.** Captured a fresh popout
+  live-chat MHTML from active video `c5iz06NyjIE`, added the committed
+  `yt-live-chat.tokens.txt` canary, and marked the three live-chat selector
+  packs verified on 2026-06-04. The watch-page wrapper selectors
+  (`ytd-live-chat-frame#chat`, `iframe#chatframe`) were verified by rendered
+  DOM probe because full watch-page MHTML snapshots time out under headless
+  Chrome.
+
 - **Deep audit hardening pass (H26).** Repo-wide principal-engineer audit
   across every surface — service worker, popup, core modules, the `ytkit.js`
   content script, the userscripts, and the Python downloader — verified

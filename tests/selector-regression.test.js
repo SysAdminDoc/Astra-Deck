@@ -62,6 +62,7 @@ function sourceReferencesToken(selector) {
 const FIXTURES = {
     home: 'yt-home.tokens.txt',
     watch: 'yt-watch.tokens.txt',
+    liveChat: 'yt-live-chat.tokens.txt',
 };
 
 // Critical selectors. Each must appear as a token in at least one fixture
@@ -187,7 +188,7 @@ test('liquid-glass watchlist exists as a transition-period anchor (informational
         'LIQUID_GLASS_WATCHLIST must document at least one transition selector');
 });
 
-test('live-chat placeholder selectors are promoted while fresh MHTML coverage is pending', () => {
+test('live-chat placeholder selectors remain promoted after the fresh fixture refresh', () => {
     for (const selector of LIVE_CHAT_PLACEHOLDER_SELECTORS) {
         assert.ok(
             sourceReferencesToken(selector),
@@ -206,7 +207,10 @@ test('fresh-capture fixture workflow is documented', () => {
 });
 
 test('selector fixtures exist and contain a non-trivial token set', () => {
-    for (const [label, file] of Object.entries(FIXTURES)) {
+    for (const [label, file] of Object.entries({
+        home: FIXTURES.home,
+        watch: FIXTURES.watch,
+    })) {
         const tokens = loadTokens(file);
         assert.ok(
             tokens.size >= 30,
@@ -215,6 +219,29 @@ test('selector fixtures exist and contain a non-trivial token set', () => {
         assert.ok(
             tokens.has('ytd-app'),
             `${label} fixture must include ytd-app as a sanity baseline`
+        );
+    }
+});
+
+test('live-chat fixture contains iframe-document selector tokens', () => {
+    const tokens = loadTokens(FIXTURES.liveChat);
+    const expected = [
+        'yt-live-chat-app',
+        'yt-live-chat-renderer',
+        'yt-live-chat-item-list-renderer',
+        'yt-live-chat-text-message-renderer',
+        'yt-live-chat-message-input-renderer',
+    ];
+
+    assert.ok(
+        tokens.size >= 50,
+        `live-chat fixture (${FIXTURES.liveChat}) has only ${tokens.size} tokens — likely stale or misbuilt. Run: npm run build:fixtures`
+    );
+
+    for (const selector of expected) {
+        assert.ok(
+            tokens.has(selector),
+            `live-chat fixture must include ${selector} from the popout chat MHTML capture`
         );
     }
 });

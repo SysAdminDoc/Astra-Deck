@@ -18,10 +18,13 @@
         surface: 'liveChatPlaceholder',
         stable: Object.freeze(['ytd-live-chat-frame', '#chat']),
         fallback: Object.freeze(['iframe#chatframe', 'ytd-live-chat-frame iframe']),
-        captureEvidence: Object.freeze(['ROADMAP.md#live-chat-iframe-capture-workflow']),
-        lastVerified: null,
+        captureEvidence: Object.freeze([
+            'mhtml/LiveChat.mhtml',
+            'docs/selector-fixture-workflow.md#watch-page-wrapper-probe'
+        ]),
+        lastVerified: '2026-06-04',
         highChurn: true,
-        needsFreshCapture: true,
-        notes: 'Placeholder canary for top-level pages where the iframe exists but chat DOM is isolated.'
+        needsFreshCapture: false,
+        notes: 'Placeholder canary verified by rendered watch-page DOM probe; iframe internals are capture-backed by LiveChat.mhtml.'
     }));
 })();
