@@ -722,8 +722,8 @@ test('split live chat gets a video info header and neutral divider hover', () =>
         'extension split should create a live video info header');
     assert.ok(videoTypeSource.includes("const type = domType === 'live' ? 'live' : (responseType || domType || 'standard');"),
         'extension video type detection should let hydrated DOM live signals override stale playerResponse VOD');
-    assert.ok(source.includes("if (chatEl) this._videoType = VideoTypeDetector.refresh();"),
-        'extension split should re-detect chat video type at expand time');
+    assert.match(source, /if \(chatEl\) \{\s*const detectedType = VideoTypeDetector\.refresh\(\);\s*this\._videoType = detectedType === 'standard' \? 'live' : detectedType;\s*\}/,
+        'extension split should re-detect chat video type at expand time and treat a present chat frame as live');
     assert.ok(source.includes("classList.toggle('ytkit-split-live', type === 'live')"),
         'extension split should mark live splits distinctly for cleanup and styling');
     assert.ok(source.includes('ytkit-split-live-header'),

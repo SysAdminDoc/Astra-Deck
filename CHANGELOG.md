@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **NF32 stickyVideo chat observer lifecycle.** Theater Split now uses one
+  `_chatObserver` + `_chatObserverTimer` path for both split-open chat
+  positioning and standard-page late-chat reclassification. `_unmount()` and
+  `destroy()` both route through `_stopChatObserver()`, preventing the previous
+  duplicate watcher state from drifting across SPA navigation.
+
 - **EI8 live-chat selector fixture refresh.** Captured a fresh popout
   live-chat MHTML from active video `c5iz06NyjIE`, added the committed
   `yt-live-chat.tokens.txt` canary, and marked the three live-chat selector
