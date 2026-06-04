@@ -84,12 +84,15 @@ pre-consolidation research plans archived under `docs/archive/research/`.
     selection guard, comment normalization, reply-dialog styling, mutation
     scheduling, and teardown into the chat-style feature module with inline
     monolith fallback retained.
-  - [ ] Split `stickyVideo` into a feature module.
+  - [x] Split `stickyVideo` into a feature module.
     - [x] 2026-06-04: seeded `stickyVideo` as
       `features/sticky-video/index.js` with byte-pinned Theater Split
       shell/meta/comments style builders, MV3/userscript load-order wiring,
       and monolith delegation with inline CSS fallbacks preserved.
-    - [ ] Extract remaining `stickyVideo` runtime/state ownership.
+    - [x] 2026-06-04: extracted the remaining `stickyVideo` runtime/state
+      ownership into `createStickyVideoFeature(deps)`; the module now owns the
+      primary Theater Split feature object while `ytkit.js` keeps the inline
+      object only as a compatibility fallback.
   - [ ] Split `hideVideosFromHome` into a feature module.
 - [ ] **P2 / L — Next-2 monolith peel**: split `youtubeMusicCompat` and
   `floatingLogoOnWatch`.
