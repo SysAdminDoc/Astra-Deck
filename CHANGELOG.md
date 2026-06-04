@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **EI-NEW6 selector-health attribute drift.** Default selector shape samples
+  now include hashed attribute-name and class-list signatures, and
+  selector-health summaries, rankings, and copy reports surface shape drift even
+  when selectors still hit.
+
 - **EI-NEW5 video hider channel-key cache.** Blocked-channel records now keep
   a precomputed identity-key `Set`, so per-card feed filtering checks direct
   key membership instead of rescanning every blocked channel record.

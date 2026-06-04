@@ -49,8 +49,11 @@ pre-consolidation research plans archived under `docs/archive/research/`.
   _(Delivered 2026-06-04: blocked-channel records now maintain a cached
   identity-key `Set`, and per-card `_isChannelBlocked` checks use direct key
   membership instead of walking every stored channel.)_
-- [ ] **P3 / M — `selector-health` attribute-drift detection (EI-NEW6)**: expand
-  selector health beyond miss counts to class/attribute churn.
+- [x] **P3 / M — `selector-health` attribute-drift detection (EI-NEW6)**: expand
+  selector health beyond miss counts to class/attribute churn. _(Delivered
+  2026-06-04: default selector shape samples now include hashed
+  class/attribute signatures, and selector-health summaries, rankings, and copy
+  reports surface shape drift even when selectors keep hitting.)_
 
 ### Lint And Lifecycle
 
