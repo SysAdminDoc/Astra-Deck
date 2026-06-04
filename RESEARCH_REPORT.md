@@ -18,6 +18,13 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 11 main-protection pass on 2026-06-04 found that GitHub
+  branch protection exists for `main`, but required status checks are not
+  enabled and repository rulesets are empty. Recent `Validate` runs are green
+  after the CI/dependency fixes, but earlier failed `main` pushes still landed,
+  so ROADMAP now carries a P1 manual-gated item to require green `Validate`
+  checks before `main` updates. Detailed evidence lives in
+  `docs/research-cycle-11-main-protection-status-checks.md`.
 - [Verified] Cycle 10 Python dependency-audit pass on 2026-06-04 found a
   preventive hardening gap rather than an active advisory: Dependabot covers pip
   and the current `pip-audit 2.10.0` probe against
@@ -203,29 +210,33 @@ build/release workflow). [Verified]
 
 The engineering arc is sound; the dominant risks are (1) **release-channel
 drift** because public latest release still serves v4.5.2 while the source and
-generated artifacts are v4.46.0, (2) **runtime DOM churn** against YouTube's
-high-velocity redesigns, (3) **Firefox release parity** before AMO or
-self-distributed Firefox updates, and (4) **overlay accessibility and locale
-proofing** beyond the popup and English source bundle.
+generated artifacts are v4.46.0, (2) **main-branch governance** because the
+stronger validation workflow is not yet required by GitHub branch protection,
+(3) **runtime DOM churn** against YouTube's high-velocity redesigns, (4)
+**Firefox release parity** before AMO or self-distributed Firefox updates, and
+(5) **overlay accessibility and locale proofing** beyond the popup and English
+source bundle.
 
 Top remaining opportunities (one-liners):
 
 1. Publish a v4.46+ release catch-up with all profile-split artifacts, checksum
    manifest/sidecars, and release provenance or a documented local-signing
    exception. [Verified]
-2. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+2. Require green `Validate` checks before `main` updates by enabling branch
+   protection required status checks or an active repository ruleset. [Verified]
+3. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-3. MHTML capture-week expansion across Shorts, channel, search, history,
+4. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-4. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+5. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-5. Locale proofing queue for identical-to-English feature names/descriptions in
+6. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-6. Signed Astra Downloader installer/MSI once the signing budget and submission
+7. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -260,7 +271,8 @@ Top remaining opportunities (one-liners):
   `docs/screen-reader-smoke.md`, `docs/signing-keys.md`,
   `docs/store-permission-rationale.md`, and
   `docs/research-cycle-9-privacy-consent-readiness.md`,
-  `docs/research-cycle-10-python-dependency-audit.md`. [Verified]
+  `docs/research-cycle-10-python-dependency-audit.md`,
+  `docs/research-cycle-11-main-protection-status-checks.md`. [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
@@ -350,6 +362,12 @@ Current open risk:
   latest-release URL. The v4.46 profile split and companion checksum contract are
   therefore not available to users through the documented install path. →
   ROADMAP P1 release catch-up / checksums / provenance. [Verified]
+- **[High] Main branch does not require green checks.** Branch protection exists
+  and force-push/deletion protections are enabled, but required status checks are
+  not configured and there are no repository rulesets. Failed `Validate` pushes
+  landed earlier on 2026-06-04 before the CI fixes, so the improved validation
+  surface should be enforced by GitHub settings rather than only observed after
+  the fact. → ROADMAP P1 required status checks / ruleset. [Verified]
 - **[High] Privacy/data-consent artifacts incomplete.** The repo has
   store-safe/GitHub-full permission rationale, but no stable privacy-policy
   source and no Firefox data-transmission consent path in the generated Firefox
@@ -481,6 +499,9 @@ Closed since the 2026-06-03 baseline:
 
 - Whether the next public release should be v4.46.0 exactly or a new v4.47.0
   after the CI and release-integrity fixes land. [Needs validation]
+- Whether `main` should use classic branch-protection required checks or a
+  repository ruleset, and whether all `main` updates should go through PRs.
+  [Needs validation]
 - Whether Firefox support should move from 128 to 140 to use built-in data
   collection consent cleanly, or keep 128-139 support with a custom
   consent/control page. [Needs validation]

@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 10 - 2026-06-04.
+> Last researched: Cycle 11 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,48 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 11 - 2026-06-04)
+
+- [x] 🔬 `main-required-status-checks-2026-06-04` - inspected live GitHub
+  branch-protection/ruleset settings, recent `Validate` runs, and GitHub
+  protected-branch/ruleset documentation. Detailed notes live in
+  `docs/research-cycle-11-main-protection-status-checks.md`.
+- [ ] 🔬🤖🔧 P1 — Require green validation checks before `main` updates
+  - Why: the CI and dependency gates are now stronger, but `main` protection
+    does not currently require them before updates. Earlier failed `Validate`
+    runs still landed on `main`; branch protection should enforce the same
+    standard the roadmap asks implementers to meet.
+  - Evidence: `gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection`
+    shows branch protection exists with `enforce_admins.enabled: true`,
+    `required_conversation_resolution.enabled: true`, and force pushes/deletions
+    disabled, but `gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_status_checks`
+    returns HTTP 404 with `Required status checks not enabled`. `gh api
+    repos/SysAdminDoc/Astra-Deck/rulesets` returns `[]`. Recent `gh run list
+    --workflow Validate --limit 8` shows `Validate` is green after the CI and
+    dependency-audit fixes, but also shows failed `main` pushes from
+    2026-06-04 earlier in the day. GitHub's branch-protection REST docs define
+    `required_status_checks` as the setting that requires status checks before
+    merging and note that `enforce_admins` applies restrictions to repository
+    administrators; GitHub rulesets can layer rules across branches and expose
+    enforcement status for auditing. [Verified]
+  - Touches: GitHub repository settings or API only; no source files required
+    beyond documenting the chosen rule in release/runbook docs.
+  - Acceptance: `main` has either protected-branch required checks or an active
+    branch ruleset targeting `main` that requires the latest successful
+    `Validate` job contexts before merge/update. At minimum require
+    `Validate / JS tests + check gate`, `Validate / Python dependency audit`,
+    and `Validate / Python downloader tests`; for pull requests also require
+    `Validate / Dependency review` once a PR run has established the exact
+    context. Keep force pushes and deletions disabled, keep admin enforcement
+    enabled unless the maintainer explicitly records a bypass policy, and record
+    any required-check context names in a short repo-settings note.
+  - Verify: `gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_status_checks`
+    returns 200 with `strict: true` and the expected checks, or `gh api
+    repos/SysAdminDoc/Astra-Deck/rulesets` shows an active `main` ruleset with
+    equivalent required checks. Open a throwaway PR that changes a dependency or
+    test fixture and confirm merge is blocked until required checks are green.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 10 - 2026-06-04)
 
