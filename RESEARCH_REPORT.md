@@ -18,6 +18,17 @@ or maintainer action to confirm.
 
 ## 2026-06-04 Freshness Refresh
 
+- [Verified] Cycle 12 dependency-review enablement pass on 2026-06-04 found
+  that open Dependabot PR #11 is blocked by platform setup rather than a
+  vulnerable dependency: `Validate / Dependency review` fails with GitHub's
+  message that dependency graph must be enabled, while the same run's JS,
+  Python audit, and Python downloader jobs are green. The repository
+  security-analysis API response shows Dependabot security updates disabled and
+  no dependency-graph field in the returned block. ROADMAP now carries a P1
+  manual-gated item to enable dependency graph / Dependabot alert settings,
+  rerun PR #11, and only require PR-only Dependency review after a successful PR
+  context is proven. Detailed evidence lives in
+  `docs/research-cycle-12-dependency-review-enablement.md`.
 - [Verified] Cycle 11 main-protection pass on 2026-06-04 found that GitHub
   branch protection exists for `main`, but required status checks are not
   enabled and repository rulesets are empty. Recent `Validate` runs are green
@@ -211,24 +222,28 @@ build/release workflow). [Verified]
 
 The engineering arc is sound; the dominant risks are (1) **runtime DOM churn**
 against YouTube's high-velocity redesigns, (2) **Firefox release parity** before
-AMO or self-distributed Firefox updates, and (3) **overlay accessibility and
-locale proofing** beyond the popup and English source bundle.
+AMO or self-distributed Firefox updates, and (3) **repository/settings drift**
+where CI jobs exist before the GitHub security-analysis settings that make them
+actionable.
 
 Top remaining opportunities (one-liners):
 
-1. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+1. Enable dependency graph / Dependabot alert settings so the PR-only
+   Dependency review job can evaluate dependency changes instead of failing on
+   repository setup. [Verified]
+2. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-2. MHTML capture-week expansion across Shorts, channel, search, history,
+3. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-3. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+4. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-4. Locale proofing queue for identical-to-English feature names/descriptions in
+5. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-5. Signed Astra Downloader installer/MSI once the signing budget and submission
+6. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -267,7 +282,13 @@ Top remaining opportunities (one-liners):
   `docs/store-permission-rationale.md`, and
   `docs/research-cycle-9-privacy-consent-readiness.md`,
   `docs/research-cycle-10-python-dependency-audit.md`,
-  `docs/research-cycle-11-main-protection-status-checks.md`. [Verified]
+  `docs/research-cycle-11-main-protection-status-checks.md`, and
+  `docs/research-cycle-12-dependency-review-enablement.md`. [Verified]
+- Open Dependabot PR #11 and run `26950993002`: Dependency review fails with
+  GitHub's dependency-graph enablement message while the other `Validate` jobs
+  pass. The repository security-analysis API response shows a public repository
+  with Dependabot security updates disabled and no dependency-graph field in the
+  returned block. [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
@@ -489,6 +510,9 @@ Closed since the 2026-06-03 baseline:
   after the CI and release-integrity fixes land. [Needs validation]
 - Whether `main` should use classic branch-protection required checks or a
   repository ruleset, and whether all `main` updates should go through PRs.
+  [Needs validation]
+- Whether dependency graph / Dependabot alerts should be enabled alone first, or
+  Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
 - Whether Firefox support should move from 128 to 140 to use built-in data
   collection consent cleanly, or keep 128-139 support with a custom
