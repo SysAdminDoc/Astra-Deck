@@ -52,6 +52,11 @@ or maintainer action to confirm.
   health/history panels remain manual via `docs/screen-reader-smoke.md`. ROADMAP
   P2 now names these targets and the first-pass target-size/focus/name/live-region
   assertions.
+- [Verified] Cycle 7 locale-proofing pass on 2026-06-04 regenerated
+  `docs/i18n-coverage.md` after feature-definition i18n extraction. The current
+  report profiles 860 EN keys and shows 622-658 identical-to-English strings per
+  non-EN locale; 584 of 612 feature name/description keys are still identical to
+  EN across non-EN locale bundles.
 - [Verified] The live working tree has advanced beyond the 2026-06-03 report:
   NF6 companion self-update, NF2 nested subscription groups, dead-channel
   detection / unsubscribe staging, NF1 per-video notes, the group notifications
@@ -192,7 +197,8 @@ Top remaining opportunities (one-liners):
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
 4. Locale proofing queue for identical-to-English feature names/descriptions in
-   non-EN bundles. [Verified]
+   non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
+   feature keys landed. [Verified]
 5. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
@@ -311,8 +317,9 @@ Current open risk:
   not yet under the WCAG 2.2 target-size/focus-appearance gate; `audit:a11y` is
   currently popup-only. → ROADMAP P2 overlay a11y audit. [Verified]
 - **[Med] Locale proofing debt.** The feature-definition i18n extraction shipped,
-  but `docs/i18n-coverage.md` still reports 37-73 identical-to-English strings
-  per non-EN locale. → ROADMAP P3 locale proofing queue. [Verified]
+  but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
+  strings per non-EN locale, with 584 of 612 feature name/description keys still
+  identical to EN. → ROADMAP P3 locale proofing queue. [Verified]
 - **[Gated] Downloader installer trust.** Companion onboarding is now explicit,
   but the signed installer/MSI remains blocked on signing budget and submission
   intent. → ROADMAP P2 signed installer/MSI. [Needs validation]
