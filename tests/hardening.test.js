@@ -2128,6 +2128,42 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         'github-full CSP must include local downloader loopback');
 });
 
+test('store permission rationale covers live manifest permissions and profile host grants', () => {
+    const builder = require('../build-extension.js');
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8',
+    ));
+    const rationale = fs.readFileSync(
+        path.join(__dirname, '..', 'docs', 'store-permission-rationale.md'),
+        'utf8',
+    );
+    const checklist = fs.readFileSync(
+        path.join(__dirname, '..', 'docs', 'cws-submission-checklist.md'),
+        'utf8',
+    );
+
+    assert.ok(checklist.includes('store-permission-rationale.md'),
+        'CWS checklist must point reviewers to the copy-paste rationale doc');
+    assert.ok(rationale.includes('## Single-Purpose Statement'),
+        'rationale doc must include a single-purpose statement');
+    assert.ok(rationale.includes('## Data-Handling Statement'),
+        'rationale doc must include a data-handling statement');
+
+    for (const permission of manifest.permissions || []) {
+        assert.ok(rationale.includes('`' + permission + '`'),
+            'rationale doc must mention manifest permission ' + permission);
+    }
+
+    for (const profile of ['store-safe', 'github-full']) {
+        const hosts = builder.getManifestProfileHostPermissions(profile);
+        for (const host of hosts) {
+            assert.ok(rationale.includes('`' + host + '`'),
+                'rationale doc must mention ' + profile + ' host permission ' + host);
+        }
+    }
+});
+
 // ── v3.23.0 N3: Reaction Spammer default-OFF + cooldown floor ──
 
 test('reactionSpammer defaults to false in both ytkit.js source and the generated catalog', () => {
