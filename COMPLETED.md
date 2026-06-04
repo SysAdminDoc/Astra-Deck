@@ -40,6 +40,8 @@ release-level details live in `CHANGELOG.md`.
 - Store-safe and GitHub-full release artifacts are generated separately from the
   data-flow catalogue, with full-only AI, Cobalt, and loopback grants stripped
   from store-safe packages.
+- Monthly yt-dlp smoke CI now gates extractor bumps with exact pins and a
+  bounded real YouTube media download.
 - Premium welcome-card and dynamic-status microcopy polish.
 - Earlier hardening passes across DeArrow, SponsorBlock, settings, downloader,
   background fetch proxying, Trusted Types, selector regressions, and userscript
@@ -119,6 +121,11 @@ carry only open work.
   deriving host permissions and CSP from `core/data-flow.js`; store-safe strips
   AI, Cobalt, and local-loopback grants while GitHub-full retains them.
   *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
+- [x] Monthly yt-dlp version-bump + smoke-test CI — `requirements.txt` exact-pins
+  `yt-dlp==2026.3.17` and `curl_cffi==0.15.0`; the monthly/manual
+  `yt-dlp-smoke.yml` workflow installs those pins and runs
+  `scripts/yt-dlp-smoke.py` for a bounded real media download against a stable
+  YouTube fixture. *(Delivered 2026-06-04.)* — *Source: ROADMAP.md Active Backlog*
 
 ## Consolidated From Legacy Planning Documents (2026-06-03)
 
