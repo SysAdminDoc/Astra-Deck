@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 14 - 2026-06-04.
+> Last researched: Cycle 15 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -326,6 +326,58 @@ means implemented/closed by the build lane.
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 15 - 2026-06-04)
+
+- [x] 🔬 `secret-scanning-alert-triage-2026-06-04` - inspected live GitHub
+  secret-scanning alert state, alert locations without printing the secret
+  value, current repository security-analysis settings, and GitHub secret
+  scanning / alert remediation documentation. Detailed notes live in
+  `docs/research-cycle-15-secret-scanning-alert.md`.
+- [ ] 🔬🤖🔧 P0 — Triage and resolve open Google API Key secret-scanning alert
+  - Why: GitHub currently reports an open `google_api_key` secret-scanning
+    alert on the public repository. The alert is marked `publicly_leaked: true`,
+    `multi_repo: true`, and `validity: unknown`; leaving it open makes it
+    unclear whether Astra Deck is shipping a deliberately public YouTube
+    bootstrap key, an accidentally committed credential, or a stale historical
+    leak that has already been revoked.
+  - Evidence: `gh api repos/SysAdminDoc/Astra-Deck/secret-scanning/alerts?state=open`
+    returns one open alert: number 1, type `google_api_key`, created
+    2026-01-26, unresolved, validity unknown. Its locations include current and
+    historical generated userscript/extension paths such as `YTKit.user.js`,
+    `extension/ytkit.js`, `extension/core/transcript-service.js`, and archived
+    userscript snapshots; the secret value was not printed during research.
+    `gh api repos/SysAdminDoc/Astra-Deck --jq ".security_and_analysis"` shows
+    secret scanning and push protection enabled, but
+    `secret_scanning_non_provider_patterns` and
+    `secret_scanning_validity_checks` disabled. GitHub docs say secret scanning
+    alerts should be evaluated for validity/metadata where supported and then
+    remediated or resolved with an explicit resolution such as revoked,
+    false-positive, used-in-tests, or wont-fix. [Verified]
+  - Touches: GitHub Security -> Secret scanning alert 1, Google Cloud/API key
+    owner action if the key is real, current source/generated userscript files
+    if the embedded key must be removed or replaced, and `docs/repo-settings.md`
+    if repository secret-scanning settings change.
+  - Acceptance: alert 1 is explicitly triaged without exposing the secret value.
+    If it is a real credential, revoke/rotate it in the provider console, remove
+    it from current source/build outputs, and resolve the GitHub alert as
+    revoked only after replacement artifacts are clean. If it is an intentional
+    public YouTube/Innertube bootstrap key, document that rationale in the
+    source or release/security notes, confirm no private quota-bearing key is
+    involved, and resolve the alert with the appropriate non-secret resolution.
+    Enable secret-scanning validity checks and non-provider pattern scanning
+    where the repository/account exposes those settings, or record why they are
+    unavailable.
+  - Verify: `gh api repos/SysAdminDoc/Astra-Deck/secret-scanning/alerts/1 --jq
+    "{state,resolution,resolved_at,validity,publicly_leaked,multi_repo}"`
+    shows a resolved state with a deliberate resolution, or an open state only
+    while provider revocation is actively in progress. `gh api
+    repos/SysAdminDoc/Astra-Deck/secret-scanning/alerts?state=open --jq
+    "length"` returns `0` after remediation. `gh api
+    repos/SysAdminDoc/Astra-Deck --jq ".security_and_analysis"` records the
+    final secret-scanning setting statuses. Do not log, paste, or commit the
+    secret value while verifying.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 14 - 2026-06-04)
 
