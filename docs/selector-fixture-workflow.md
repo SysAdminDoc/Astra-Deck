@@ -12,7 +12,24 @@ Astra Deck treats saved YouTube MHTML captures as selector ground truth. Use thi
 6. Replace the local gitignored capture under `mhtml/`:
    - `mhtml/YouTube.mhtml` for the home feed.
    - `mhtml/WatchPage.mhtml` for the watch page and player.
-   - Add a clearly named local capture, such as `mhtml/LiveChat.mhtml`, for temporary investigation.
+   - `mhtml/LiveChat.mhtml` for the live-chat popout iframe document.
+7. For live chat, use a non-headless Chrome user-agent when capturing through
+   DevTools automation. YouTube rejects `HeadlessChrome` on the popout chat URL
+   as an old browser.
+
+### Watch-page wrapper probe
+
+Full watch-page MHTML snapshots can time out because the live video page keeps
+loading media and chat resources. When refreshing live-chat wrapper selectors,
+pair `mhtml/LiveChat.mhtml` with a rendered watch-page DOM probe for:
+
+- `ytd-live-chat-frame#chat`
+- `ytd-live-chat-frame`
+- `iframe#chatframe`
+- `ytd-live-chat-frame iframe`
+
+Document the video id, date, and probe result in the changelog or hardening
+notes when these wrapper selectors change.
 
 ## Regenerate
 

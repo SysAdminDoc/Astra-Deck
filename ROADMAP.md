@@ -11,9 +11,12 @@ pre-consolidation research plans archived under `docs/archive/research/`.
 
 ### Browser-Bounded Captures
 
-- [ ] **P0 / S — Capture live-chat MHTML fixtures (EI8)**: refresh the three
+- [x] **P0 / S — Capture live-chat MHTML fixtures (EI8)**: refresh the three
   live-chat selector packs and token fixture, then run
-  `npm run build:fixtures && npm test`.
+  `npm run build:fixtures && npm test`. _(Delivered 2026-06-04: committed
+  `yt-live-chat.tokens.txt` from `mhtml/LiveChat.mhtml`; wrapper selectors were
+  verified by rendered watch-page DOM probe because full watch-page MHTML
+  capture timed out in headless Chrome.)_
 - [ ] **P0 / S — Capture YouTube liquid-glass player chrome (HARDENING H21,
   EI9)**: refresh the watch-page fixture and promote liquid-glass selectors into
   the critical selector set.
@@ -128,7 +131,7 @@ Net: 7 new `extension/core/` modules, 4 feature carve-outs covering 10 monolith 
 
 Carry-forward for the next session (v5.1.0+ work — v5.0.0 foundation is now sound enough to start any of these in isolation):
 
-1. **Versioned selector packs** — [x] migration COMPLETE in 7 batches (v4.31.0–v4.37.0). All 28 surfaces (+ 2 aliases) now live in their own `extension/core/selector-packs/<surface>.js` file with `captureEvidence` + `lastVerified`. `INLINE_SURFACES` is `{}`. The live-chat trio carries `needsFreshCapture: true` and `lastVerified: null` — the dedicated live-chat iframe capture workflow is a follow-up v5.1.x slice rather than a prerequisite.
+1. **Versioned selector packs** — [x] migration COMPLETE in 7 batches (v4.31.0–v4.37.0). All 28 surfaces (+ 2 aliases) now live in their own `extension/core/selector-packs/<surface>.js` file with `captureEvidence` + `lastVerified`. `INLINE_SURFACES` is `{}`. The live-chat trio was refreshed on 2026-06-04 with `mhtml/LiveChat.mhtml`, committed `yt-live-chat.tokens.txt` coverage, and watch-wrapper DOM probe evidence.
 2. **Continue feature peels (long tail)** — [~] +11 peels this session (v4.38.0 wave-8 CSS quintet → `features/wave-8-css/`; v4.43.0 home-subs CSS sextet → `features/home-subs-css/`). Total peeled: 21 of ~200 monolith blocks. v5.2.0+ scope: continue batch-by-batch (next likely batches are wave-10 alchemy CSS, watch-page CSS, and comments CSS clusters). DOM-walking observers are blocked on slice #3 and remain v5.2.0+ work.
 3. **Per-feature lifecycle adoption** — [~] deferred to v5.2.0+ as a multi-slice initiative. Adopting the v4.7.0 `feature-lifecycle.js` contract per category changes feature-internal init/destroy semantics and needs paired DOM-walking peels + visible-behaviour QA per category — not safe to land mechanically in a single session. The contract + route-token + AbortController machinery shipped in v4.7.0–v4.9.0 remain ready for adoption when category owners are available.
 4. **DOM-layer toast extraction** — [x] shipped in v4.42.0. `extension/core/toast-dom.js` exports `createToastSystem({ zIndex, inferToastTone, getToastRgb, getToastBadgeLabel })` → `{ showToast, dismissToast }`. ytkit.js delegates via a cached system instance; the existing inline body remains as the byte-identical fallback for the userscript / module-unavailable path. The unified live-region overlay primitive (announcement role coordination across toast + a11y live region) remains a v5.2.0+ refinement.
