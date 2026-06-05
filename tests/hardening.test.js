@@ -2396,6 +2396,36 @@ test('npm run audit:a11y reports no popup a11y issues', () => {
         'npm run audit:a11y must pass — all buttons must be labeled, dialog semantics must be present');
 });
 
+test('npm run audit:overlays covers in-page overlays and mutation canaries', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    assert.match(pkg.scripts.check, /npm run audit:overlays/,
+        'npm run check must include the in-page overlay a11y audit');
+    assert.match(pkg.scripts['audit:overlays'] || '', /scripts\/audit-overlays-a11y\.js/,
+        'package.json must expose npm run audit:overlays');
+
+    const scriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'audit-overlays-a11y.js'),
+        'utf8'
+    );
+    for (const marker of [
+        'unlabeled close button',
+        'missing focus-visible',
+        'sub-24px target',
+        'Download options dialog',
+        'Transcript search dialog',
+        'Subscription group modal'
+    ]) {
+        assert.ok(scriptSource.includes(marker), `overlay audit must cover ${marker}`);
+    }
+
+    const result = runNodeCommand([
+        path.join(__dirname, '..', 'scripts', 'audit-overlays-a11y.js'),
+        '--self-test'
+    ]);
+    assert.equal(result.status, 0,
+        `npm run audit:overlays -- --self-test must pass\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+});
+
 test('popup selector-health stats are rendered without template innerHTML', () => {
     assert.match(popupSource, /function\s+appendSelectorMetric\s*\(/,
         'popup.js must use a DOM helper for selector-health metrics');

@@ -44,8 +44,13 @@
   maintainer-local release, eight-artifact, and Firefox 140+ contracts:
   `AGENTS.md` now points at tracked loop/planning/audit files, names the release
   policy sources, and labels ignored `CLAUDE.md` as optional local scratch
-  rather than committed source of truth. Repository selected-actions and
-  required-SHA settings remain a hosted follow-up after merge.
+  rather than committed source of truth. The in-page overlay WCAG 2.2 gate was
+  then shipped: `npm run check` now runs `audit:overlays`, generated overlay
+  controls gained missing names, live-status labels, focus-visible styling, and
+  24px-plus target floors, and mutation canaries prove the audit fails for
+  unlabeled close buttons, missing focus-visible rules, and sub-24px controls.
+  Repository selected-actions and required-SHA settings remain a hosted
+  follow-up after merge.
 
 ## Verification
 
@@ -243,6 +248,13 @@
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
   through `npm run check`.
+- Cycle 26 in-page overlay accessibility verification passed:
+  - `node scripts/audit-overlays-a11y.js --self-test`
+  - `node --test tests/hardening.test.js --test-name-pattern="audit:overlays|overlay|WCAG"`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
 
 ## Next Cycle
 
@@ -256,5 +268,6 @@
   dependency-review workflow remains blocked until the repository dependency
   graph is enabled. Optional-permissions code is in place; manual unpacked
   Chrome/Firefox prompt/grant/deny/revoke smoke remains before treating the
-  store-safe permission UX as release-smoked. The next local P2 candidate is
-  repo working-note reconciliation from Cycle 23.
+  store-safe permission UX as release-smoked. After the overlay a11y cycle is
+  pushed, continue with the next open high-priority item that is locally
+  implementable without hosted settings or release-maintainer credentials.

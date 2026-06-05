@@ -18,6 +18,16 @@ or maintainer action to confirm.
 
 ## 2026-06-05 Implementation Refresh
 
+- [Verified] In-page overlay accessibility coverage now extends beyond the
+  popup. `npm run check` runs `npm run audit:overlays`, which statically verifies
+  generated overlay semantics for toast DOM/inline fallback, downloader install
+  / options / health / history surfaces, transcript viewer/search, video notes,
+  and subscription group toolbar/digest/modal controls. Runtime-generated
+  controls gained missing region/dialog names, polite status labels, accessible
+  action names, focus-visible CSS, and explicit WCAG 2.2 24px target-size floors
+  where the new gate needed deterministic coverage. Mutation canaries prove the
+  audit fails for an unlabeled close button, missing `:focus-visible`, and a
+  sub-24px target; manual screen-reader smoke remains for announcement quality.
 - [Verified] Security disclosure is now published. Root `SECURITY.md` defines
   supported versions, private vulnerability reporting, public-issue boundaries,
   5-business-day acknowledgement and 10-business-day triage windows, and
