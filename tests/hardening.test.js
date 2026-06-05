@@ -97,6 +97,23 @@ function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function stripHtmlTags(value) {
+    let out = '';
+    let inTag = false;
+    for (const ch of String(value || '')) {
+        if (ch === '<') {
+            inTag = true;
+            continue;
+        }
+        if (inTag) {
+            if (ch === '>') inTag = false;
+            continue;
+        }
+        out += ch;
+    }
+    return out;
+}
+
 function extractObjectFeatureDefinition(node, scope = Object.create(null)) {
     if (!node || node.type !== 'ObjectExpression') return null;
     const props = objectPropertyMap(node);
@@ -2050,6 +2067,12 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
             `${label} SPA navigation must resolve hrefs through URL`);
         assert.match(source, /url\.protocol !== 'http:' && url\.protocol !== 'https:'/,
             `${label} SPA navigation must reject non-http(s) schemes`);
+        assert.match(source, /_normalizeQuickLinkUrl\(value\)/,
+            `${label} Quick Links must normalize configured URLs through a shared helper`);
+        assert.match(source, /new URL\(raw,\s*window\.location\.origin\)/,
+            `${label} Quick Links must parse configured URLs before assigning anchor hrefs`);
+        assert.match(source, /const itemUrl = this\._normalizeQuickLinkUrl\(item\.url\)/,
+            `${label} Quick Links must re-check normalized URLs at the anchor sink`);
         assert.match(source, /_positions\s*=\s*this\._toPositionMap\(/,
             `${label} resume storage must normalize persisted data into a Map`);
         assert.match(source, /Object\.fromEntries\(this\._positions\)/,
@@ -2098,8 +2121,10 @@ test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity ord
             `${label} must decode &amp; after other entities to avoid double-unescaping`);
     }
 
-    assert.match(auditPopupSource, /\.replace\(\/<\[\^>\]\+>\/g,\s*''\)/,
-        'popup a11y audit should use one generic tag strip for accessible-text checks');
+    assert.match(auditPopupSource, /function\s+stripHtmlTags\(value\)/,
+        'popup a11y audit should use a scanner for accessible-text checks');
+    assert.doesNotMatch(auditPopupSource, /\.replace\(\s*\/<\[\^>\]\+>\//,
+        'popup a11y audit must not strip tags with a regex replacement');
     assert.doesNotMatch(auditPopupSource, /<script\[\\s\\S\]\*\?/,
         'popup a11y audit must not rely on a fragile script tag regex');
     assert.doesNotMatch(auditPopupSource, /<style\[\\s\\S\]\*\?/,
@@ -2128,8 +2153,8 @@ test('branch CodeQL file-race and Python error disclosure guardrails stay fixed'
         'package.json version bump must read through readUtf8IfPresent');
     assert.match(buildSource, /const pkgLockRaw = readUtf8IfPresent\(pkgLockPath\)/,
         'package-lock version bump must read through readUtf8IfPresent');
-    assert.match(downloaderSource, /write_persistent_log\(f"FolderPickerService failed: \{e\}"\)/,
-        'FolderPickerService must log the detailed exception locally');
+    assert.match(downloaderSource, /write_persistent_log\("FolderPickerService failed"\)/,
+        'FolderPickerService must log a local generic failure marker');
     assert.match(downloaderSource, /'error': 'Folder picker failed\. Check Astra Downloader logs for details\.'/,
         'FolderPickerService response must return a generic user-facing error');
     assert.doesNotMatch(downloaderSource, /response_q\.put\(\{'error': str\(e\)\}\)/,
@@ -2499,7 +2524,7 @@ test('all popup buttons carry aria-label or visible text for a11y', () => {
     for (const [, attrs, body] of buttons) {
         const id = (attrs.match(/\bid="([^"]+)"/) || [])[1] || '(anonymous button)';
         const hasAriaLabel = /\baria-label="[^"]+"/.test(attrs);
-        const hasVisibleText = body.replace(/<[^>]+>/g, '').replace(/&times;/g, 'x').trim().length > 0;
+        const hasVisibleText = stripHtmlTags(body).replace(/&times;/g, 'x').trim().length > 0;
         assert.ok(
             hasAriaLabel || hasVisibleText,
             `Button ${id} must have aria-label or visible text`
