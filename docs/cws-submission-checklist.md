@@ -17,9 +17,9 @@ Run before the first submission AND before every subsequent update.
 - [ ] `permissions` array contains ONLY what's actually used. Audit
       with `node -e 'console.log(require("./extension/manifest.json").permissions)'`
       and grep for each in `extension/ytkit.js` + `extension/background.js`.
-- [ ] `host_permissions` array follows the same audit — every entry
-      must appear in a `chrome.scripting.executeScript` or `fetch`
-      call site.
+- [ ] `host_permissions` and `optional_host_permissions` arrays follow the same
+      audit — every entry must appear in a content-script match, an optional
+      runtime-grant map, or a `fetch` call site.
 - [ ] `content_scripts` `matches` patterns are bounded — no `<all_urls>`.
 - [ ] `default_locale` set (`"en"`); `_locales/<lang>/messages.json`
       present for every locale referenced in
@@ -117,8 +117,9 @@ for GitHub/self-hosted installs.
 | `unlimitedStorage` | Long-term users accumulate DeArrow + SponsorBlock caches past Chrome's 10 MB `chrome.storage.local` default. The LRU cleanup task trims hot caches every 5 min; the cap exists only to prevent silent quota errors on a busy account. |
 | `cookies` | The Astra Downloader companion downloads authenticated YouTube content. The extension reads YouTube cookies via `chrome.cookies.getAll` and posts them to the localhost downloader (127.0.0.1:9751 only). Never sent off-machine. |
 | `downloads` | Triggering thumbnail + transcript exports + diagnostic-log save from the popup to the user's Downloads folder. |
-| `host_permissions: youtube.com / youtu.be / youtube-nocookie.com / i.ytimg.com` | Content script attachment + thumbnail-replacement. |
-| `host_permissions: sponsor.ajay.app / returnyoutubedislikeapi.com / reddit.com` | Optional user-visible enrichment calls for SponsorBlock, DeArrow, estimated Return YouTube Dislike counts, and the Reddit discussion panel. No cookies are sent. |
+| `host_permissions: youtube.com / youtu.be / youtube-nocookie.com` | Core content script attachment, YouTube page reads, and short-link/embed support. |
+| `host_permissions: sponsor.ajay.app` | SponsorBlock is default-on, so the store-safe package keeps this host as an install-time grant until the SponsorBlock/DeArrow runtime-grant UX is completed. No cookies are sent. |
+| `optional_host_permissions: i.ytimg.com / returnyoutubedislikeapi.com / reddit.com` | Default-off enrichment calls for thumbnail upgrade/download, estimated Return YouTube Dislike counts, and Reddit discussion panel. Requested from the popup when the user enables the matching feature. No cookies are sent. |
 | `host_permissions: api.openai.com / api.anthropic.com / generativelanguage.googleapis.com` | GitHub-full only. BYO-key AI summary feature; per-user opt-in and direct to provider. |
 | `host_permissions: api.cobalt.tools` | GitHub-full only. Optional Cobalt fallback when Astra Downloader is offline. |
 | `host_permissions: 127.0.0.1:9751-9851` | GitHub-full only. Astra Downloader local probe and explicit download handoff across six fallback ports. |

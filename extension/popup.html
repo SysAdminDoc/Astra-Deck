@@ -266,11 +266,12 @@
      the data-flow panel can render the live origin catalogue without
      round-tripping through the content script. Load order matches the
      manifest's content_scripts entry: schema first, then policy-profile,
-     then data-flow. All three are popup-safe (IIFE attached to
-     globalThis.YTKitCore == window). -->
+     then data-flow and optional-host permissions. These core modules are
+     popup-safe (IIFE attached to globalThis.YTKitCore == window). -->
 <script src="core/settings-schema.js"></script>
 <script src="core/policy-profile.js"></script>
 <script src="core/data-flow.js"></script>
+<script src="core/optional-host-permissions.js"></script>
 <!-- v4.47.0: selector-health bundled into the popup so the "Copy
      report" button can format the diagnostic payload locally without
      a second round-trip into the content script. The IIFE checks for

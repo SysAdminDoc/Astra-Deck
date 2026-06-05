@@ -1827,7 +1827,9 @@
         //     requiredByFeatures:   string[],                     // schema keys
         //     credentialsPolicy:    'no-cookies' | 'byo-key' | 'local-loopback' | 'none',
         //     profile:              'store-safe' | 'github-full', // resolved gate
+        //     hostGrant:            'required' | 'runtime-optional',
         //     manifestPermission:   string | null,                // matching host_permission, if present
+        //     optionalManifestPermission: string | null,           // matching optional_host_permissions, if present
         //     currentlyActive:      boolean,                      // true iff any driving feature is enabled
         //     riskBand:             'safe' | 'api' | 'local-companion' | 'experimental' | 'store-risk'
         //   }
@@ -1851,6 +1853,7 @@
                 requiredByFeatures: ['transcriptViewer', 'autoSubtitles'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
+                hostGrant: 'required',
                 riskBand: 'safe'
             }),
             Object.freeze({
@@ -1859,6 +1862,7 @@
                 requiredByFeatures: ['thumbnailQualityUpgrade', 'downloadThumbnail'],
                 credentialsPolicy: 'none',
                 profile: 'store-safe',
+                hostGrant: 'runtime-optional',
                 riskBand: 'safe'
             }),
             Object.freeze({
@@ -1867,6 +1871,7 @@
                 requiredByFeatures: ['sponsorBlock', 'deArrow'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
+                hostGrant: 'required',
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -1875,6 +1880,7 @@
                 requiredByFeatures: ['returnDislike', 'returnDislikeOnCards'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
+                hostGrant: 'runtime-optional',
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -1883,6 +1889,7 @@
                 requiredByFeatures: ['redditComments'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
+                hostGrant: 'runtime-optional',
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -1891,6 +1898,7 @@
                 requiredByFeatures: ['aiVideoSummary'],
                 credentialsPolicy: 'byo-key',
                 profile: 'github-full',
+                hostGrant: 'required',
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -1899,6 +1907,7 @@
                 requiredByFeatures: ['aiVideoSummary'],
                 credentialsPolicy: 'byo-key',
                 profile: 'github-full',
+                hostGrant: 'required',
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -1907,6 +1916,7 @@
                 requiredByFeatures: ['aiVideoSummary'],
                 credentialsPolicy: 'byo-key',
                 profile: 'github-full',
+                hostGrant: 'required',
                 riskBand: 'api'
             }),
             Object.freeze({
@@ -1915,6 +1925,7 @@
                 requiredByFeatures: ['localAiSummary'],
                 credentialsPolicy: 'local-loopback',
                 profile: 'github-full',
+                hostGrant: 'required',
                 riskBand: 'local-companion'
             }),
             Object.freeze({
@@ -1927,6 +1938,7 @@
                 ],
                 credentialsPolicy: 'local-loopback',
                 profile: 'github-full',
+                hostGrant: 'required',
                 riskBand: 'local-companion'
             }),
             Object.freeze({
@@ -1935,9 +1947,35 @@
                 requiredByFeatures: ['downloadCobaltFallback'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'github-full',
+                hostGrant: 'required',
                 riskBand: 'api'
             })
         ]);
+
+        const ORIGIN_HOST_PERMISSION_ALIASES = Object.freeze({
+            'https://www.reddit.com': Object.freeze([
+                'https://www.reddit.com/*',
+                'https://old.reddit.com/*'
+            ]),
+            'http://127.0.0.1:9751-9851': Object.freeze([
+                'http://127.0.0.1:9751/*',
+                'http://127.0.0.1:9761/*',
+                'http://127.0.0.1:9771/*',
+                'http://127.0.0.1:9781/*',
+                'http://127.0.0.1:9791/*',
+                'http://127.0.0.1:9851/*'
+            ])
+        });
+
+        function unique(values) {
+            return Array.from(new Set(values));
+        }
+
+        function hostPermissionsForOrigin(origin) {
+            const alias = ORIGIN_HOST_PERMISSION_ALIASES[origin];
+            if (alias) return alias.slice();
+            return [origin.replace(/\/+$/, '') + '/*'];
+        }
 
         // Sub-toggle inheritance map. Some schema entries are pure sub-knobs
         // of a parent feature — turning the sub-toggle on never makes a new
@@ -1984,6 +2022,26 @@
                 if (origin.startsWith(trimmed) || trimmed.startsWith(origin)) return perm;
             }
             return null;
+        }
+
+        function entryAppliesToFeature(entry, featureKey) {
+            if (!entry || !featureKey) return false;
+            if (entry.requiredByFeatures.includes(featureKey)) return true;
+            const parent = PARENT_FEATURE[featureKey];
+            return Boolean(parent && entry.requiredByFeatures.includes(parent));
+        }
+
+        function getOptionalHostPermissionsForFeature(featureKey, options = {}) {
+            const catalogue = options.catalogue || ORIGIN_CATALOGUE;
+            const profile = options.profile || 'store-safe';
+            const hosts = [];
+            for (const entry of catalogue) {
+                if (entry.profile !== profile) continue;
+                if (entry.hostGrant !== 'runtime-optional') continue;
+                if (!entryAppliesToFeature(entry, featureKey)) continue;
+                hosts.push(...hostPermissionsForOrigin(entry.origin));
+            }
+            return unique(hosts);
         }
 
         function isFeatureCurrentlyActive(featureKey, settings) {
@@ -2034,14 +2092,19 @@
             const hostPermissions = options.hostPermissions
                 || (options.manifest && options.manifest.host_permissions)
                 || [];
+            const optionalHostPermissions = options.optionalHostPermissions
+                || (options.manifest && options.manifest.optional_host_permissions)
+                || [];
 
             function getOrigins(settings = {}) {
                 return catalogue.map((entry) => {
                     const active = entry.requiredByFeatures.some((k) => isFeatureCurrentlyActive(k, settings));
                     const manifestPerm = originMatchesManifest(entry.origin, hostPermissions);
+                    const optionalManifestPerm = originMatchesManifest(entry.origin, optionalHostPermissions);
                     return Object.freeze({
                         ...entry,
                         manifestPermission: manifestPerm,
+                        optionalManifestPermission: optionalManifestPerm,
                         currentlyActive: active
                     });
                 });
@@ -2086,9 +2149,18 @@
         core.ORIGIN_CATALOGUE = ORIGIN_CATALOGUE;
         core.PARENT_FEATURE = PARENT_FEATURE;
         core.findDataFlowCoverageGaps = findCoverageGaps;
+        core.hostPermissionsForDataFlowOrigin = hostPermissionsForOrigin;
+        core.getOptionalHostPermissionsForFeature = getOptionalHostPermissionsForFeature;
 
         if (typeof module !== 'undefined' && module.exports) {
-            module.exports = { createDataFlow, ORIGIN_CATALOGUE, PARENT_FEATURE, findCoverageGaps };
+            module.exports = {
+                createDataFlow,
+                findCoverageGaps,
+                getOptionalHostPermissionsForFeature,
+                hostPermissionsForOrigin,
+                ORIGIN_CATALOGUE,
+                PARENT_FEATURE
+            };
         }
     })();
 

@@ -771,7 +771,39 @@ async function loadSettings() {
 
 // Serialize writes so rapid toggle clicks can't race the merge cycle.
 let _pendingWriteChain = Promise.resolve();
+function getDeclaredOptionalHostsForSetting(key) {
+    const core = window.YTKitCore || {};
+    if (typeof core.getOptionalHostPermissionsForFeature !== 'function') return [];
+    let declared = [];
+    try {
+        declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
+    } catch (_) {
+        declared = [];
+    }
+    if (!Array.isArray(declared) || !declared.length) return [];
+    const declaredSet = new Set(declared);
+    return core.getOptionalHostPermissionsForFeature(key)
+        .filter((origin) => declaredSet.has(origin));
+}
+
+async function requestOptionalHostsForSetting(key, value) {
+    if (value !== true) return true;
+    const origins = getDeclaredOptionalHostsForSetting(key);
+    if (!origins.length) return true;
+    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
+    const helper = (typeof factory === 'function') ? factory() : null;
+    if (!helper || !helper.isSupported()) {
+        throw new Error('Optional host permission prompts are not available in this browser.');
+    }
+    const granted = await helper.request(origins);
+    if (!granted) {
+        throw new Error('Astra Deck needs host access for this optional feature before it can be enabled.');
+    }
+    return true;
+}
+
 async function writeSetting(key, value) {
+    await requestOptionalHostsForSetting(key, value);
     const task = _pendingWriteChain.catch(() => undefined).then(async () => {
         const nextSettings = { ...popupState.settings, [key]: value };
         popupState.settings = nextSettings;

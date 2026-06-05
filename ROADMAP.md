@@ -616,7 +616,8 @@ means implemented/closed by the build lane.
     user-enabled capabilities, so moving their non-core hosts to runtime grants
     would reduce install-time warnings, align access with toggles, and improve
     denied/revoked state handling before store submission.
-  - Evidence: `extension/manifest.json:31` defines install-time
+  - Evidence: original Cycle 20 research found `extension/manifest.json:31`
+    defined install-time
     `host_permissions`, with `extension/manifest.json:35` through
     `extension/manifest.json:39` granting `i.ytimg.com`,
     `sponsor.ajay.app`, `returnyoutubedislikeapi.com`, `www.reddit.com`, and
@@ -645,6 +646,18 @@ means implemented/closed by the build lane.
     Reddit comments, and thumbnail features, `tests/hardening.test.js`,
     `docs/store-permission-rationale.md`, `docs/cws-submission-checklist.md`,
     diagnostics/data-flow docs, and Firefox lint/load verification notes.
+  - Status 2026-06-05: first implementation slice shipped for default-off
+    store-safe enrichment hosts. `extension/core/data-flow.js` now marks
+    `i.ytimg.com`, Return YouTube Dislike, and Reddit as `runtime-optional`;
+    `build-extension.js` emits those hosts in `optional_host_permissions` for
+    store-safe Chrome/Firefox artifacts while keeping them in CSP connect-src;
+    `extension/core/optional-host-permissions.js` plus `popup.js` request
+    declared optional hosts before enabling matching settings; and hardening
+    tests pin the manifest split, data-flow coverage, popup request guard, and
+    helper callback/promise behavior. `sponsor.ajay.app` intentionally remains
+    required because SponsorBlock is default-on; the item stays open for
+    SponsorBlock/DeArrow runtime-grant UX, richer denied/revoked state, and
+    background-fetch grant enforcement.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,

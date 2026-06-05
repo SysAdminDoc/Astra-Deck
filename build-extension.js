@@ -339,7 +339,36 @@ function hostPermissionsForOrigin(origin) {
     return [origin.replace(/\/+$/, '') + '/*'];
 }
 
+function shouldUseRuntimeOptionalHostPermission(entry, profile) {
+    return normalizeBuildProfile(profile) === 'store-safe'
+        && entry.hostGrant === 'runtime-optional';
+}
+
 function getManifestProfileHostPermissions(profile) {
+    const normalized = normalizeBuildProfile(profile);
+    const allowedCatalogueProfiles = new Set(BUILD_PROFILES[normalized].catalogueProfiles);
+    const hosts = CONTENT_HOST_PERMISSIONS.slice();
+    for (const entry of ORIGIN_CATALOGUE) {
+        if (!allowedCatalogueProfiles.has(entry.profile)) continue;
+        if (shouldUseRuntimeOptionalHostPermission(entry, normalized)) continue;
+        hosts.push(...hostPermissionsForOrigin(entry.origin));
+    }
+    return unique(hosts);
+}
+
+function getManifestProfileOptionalHostPermissions(profile) {
+    const normalized = normalizeBuildProfile(profile);
+    const allowedCatalogueProfiles = new Set(BUILD_PROFILES[normalized].catalogueProfiles);
+    const hosts = [];
+    for (const entry of ORIGIN_CATALOGUE) {
+        if (!allowedCatalogueProfiles.has(entry.profile)) continue;
+        if (!shouldUseRuntimeOptionalHostPermission(entry, normalized)) continue;
+        hosts.push(...hostPermissionsForOrigin(entry.origin));
+    }
+    return unique(hosts);
+}
+
+function getManifestProfileConnectHostPermissions(profile) {
     const normalized = normalizeBuildProfile(profile);
     const allowedCatalogueProfiles = new Set(BUILD_PROFILES[normalized].catalogueProfiles);
     const hosts = CONTENT_HOST_PERMISSIONS.slice();
@@ -357,7 +386,7 @@ function cspSourceFromHostPermission(permission) {
 function buildExtensionPagesCsp(profile) {
     const connectSources = unique([
         "'self'",
-        ...getManifestProfileHostPermissions(profile).map(cspSourceFromHostPermission)
+        ...getManifestProfileConnectHostPermissions(profile).map(cspSourceFromHostPermission)
     ]);
     return [
         "script-src 'self'",
@@ -369,6 +398,12 @@ function buildExtensionPagesCsp(profile) {
 function patchManifestForBuildProfile(profileManifest, profile) {
     const normalized = normalizeBuildProfile(profile);
     profileManifest.host_permissions = getManifestProfileHostPermissions(normalized);
+    const optionalHostPermissions = getManifestProfileOptionalHostPermissions(normalized);
+    if (optionalHostPermissions.length) {
+        profileManifest.optional_host_permissions = optionalHostPermissions;
+    } else {
+        delete profileManifest.optional_host_permissions;
+    }
     profileManifest.content_security_policy = {
         ...(profileManifest.content_security_policy || {}),
         extension_pages: buildExtensionPagesCsp(normalized)
@@ -592,6 +627,7 @@ module.exports = {
     expandBuildProfileSelection,
     getArtifactBaseName,
     getManifestProfileHostPermissions,
+    getManifestProfileOptionalHostPermissions,
     patchManifestForBuildProfile,
     resolveCrxSigningConfig
 };
