@@ -40,6 +40,15 @@ const BUILD_PROFILES = Object.freeze({
     })
 });
 
+function readUtf8IfPresent(filePath) {
+    try {
+        return fs.readFileSync(filePath, 'utf8');
+    } catch (error) {
+        if (error && error.code === 'ENOENT') return null;
+        throw error;
+    }
+}
+
 const CONTENT_HOST_PERMISSIONS = Object.freeze([
     'https://*.youtube.com/*',
     'https://*.youtube-nocookie.com/*',
@@ -225,8 +234,9 @@ if (bumpType) {
     // version — `Version everything` (CLAUDE.md) requires all version strings
     // to match across files. The `--with-userscript` flag still controls
     // whether a *build artifact* copy is emitted into `build/` later.
-    if (fs.existsSync(USERSCRIPT)) {
-        let usSrc = fs.readFileSync(USERSCRIPT, 'utf8');
+    const originalUserscript = readUtf8IfPresent(USERSCRIPT);
+    if (originalUserscript !== null) {
+        let usSrc = originalUserscript;
         const before = usSrc;
         const userscriptRawUrl = `https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/${USERSCRIPT_BASENAME}`;
         usSrc = usSrc.replace(/^(\/\/ @name\s+)YTKit v[\d.]+/m, '$1YTKit v' + version);
@@ -244,8 +254,8 @@ if (bumpType) {
     // gate validates all version surfaces, so a bump that leaves the lockfile
     // stale should fail before artifacts are shipped.
     const pkgPath = path.join(__dirname, 'package.json');
-    if (fs.existsSync(pkgPath)) {
-        const pkgRaw = fs.readFileSync(pkgPath, 'utf8');
+    const pkgRaw = readUtf8IfPresent(pkgPath);
+    if (pkgRaw !== null) {
         const updated = pkgRaw.replace(/("version"\s*:\s*")[^"]+(")/, `$1${version}$2`);
         if (updated !== pkgRaw) {
             fs.writeFileSync(pkgPath, updated, 'utf8');
@@ -253,8 +263,9 @@ if (bumpType) {
         }
     }
     const pkgLockPath = path.join(__dirname, 'package-lock.json');
-    if (fs.existsSync(pkgLockPath)) {
-        const lock = JSON.parse(fs.readFileSync(pkgLockPath, 'utf8'));
+    const pkgLockRaw = readUtf8IfPresent(pkgLockPath);
+    if (pkgLockRaw !== null) {
+        const lock = JSON.parse(pkgLockRaw);
         let changed = false;
         if (lock.version !== version) {
             lock.version = version;

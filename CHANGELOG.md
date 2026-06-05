@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Branch-scoped CodeQL alert remediation expanded.** Exact YouTube hostname
+  parsing now replaces URL substring checks in channel/share/navigation paths,
+  Disable SPA Navigation rejects non-http(s) schemes, Resume Playback Position
+  stores sanitized video IDs in a `Map`, Quick Links SVG/label rendering uses
+  DOM-created nodes, transcript XML parsing avoids double-unescaping, build
+  version bumps avoid read races, popup/i18n audit helpers avoid flagged
+  multi-replace sanitizer patterns, and the folder picker returns a generic UI
+  error while logging details locally. Hardening tests now pin the remediated
+  shapes across extension, userscript, scripts, build, and companion code.
+
 - **Selector fixture match matrix expanded.** `npm run build:fixtures` now emits
   DOM-subset match evidence for 15 capture-backed surfaces across the existing
   home, watch, and live-chat MHTML corpus. The selector regression derives the
