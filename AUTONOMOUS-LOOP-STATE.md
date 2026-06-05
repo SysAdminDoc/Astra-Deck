@@ -71,10 +71,11 @@
   notifications-menu captures remain open in the capture-week backlog. The
   branch-scoped CodeQL alerts exposed after that push were then remediated
   across exact URL host/scheme parsing, Resume Playback Position storage,
-  Quick Links URL normalization and DOM construction, userscript TrustedHTML
-  parsing, transcript entity/tag parsing, version-bump file reads, audit-helper
-  sanitizer shapes, and generic folder-picker UI errors/local failure markers,
-  with hardening tests added for each alert class.
+  YouTube-local Quick Links URL normalization and DOM construction, userscript
+  parser-helper removal, transcript entity/tag parsing, version-bump file
+  reads, audit-helper sanitizer shapes, and generic folder-picker UI
+  errors/local failure markers, with hardening tests added for each alert
+  class.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
