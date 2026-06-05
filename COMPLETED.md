@@ -30,6 +30,13 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: GitHub Actions workflow refs were pinned to full 40-character
+  upstream action commits across validation, release, yt-dlp smoke, and CodeQL
+  workflows, each with a same-line version comment for review/update context.
+  The dependency-review job now uses the real `v5.0.0` release commit instead
+  of the nonexistent `v5` tag, and hardening tests reject mutable tag/branch
+  action refs. Repository-level selected-actions and required-SHA enforcement
+  remains a hosted settings follow-up after merge.
 - 2026-06-05: Store-safe enrichment hosts for SponsorBlock/DeArrow, thumbnails,
   Return YouTube Dislike, and Reddit now generate as
   `optional_host_permissions` instead of install-time `host_permissions`; the
