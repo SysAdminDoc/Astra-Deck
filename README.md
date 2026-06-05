@@ -56,6 +56,37 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 
 > SharedAudio remains userscript-only. Extension downloads use Astra Downloader first; the GitHub-full extension artifact can also expose the optional Cobalt fallback when the local companion is offline.
 
+### Astra Downloader Companion Setup
+
+Astra Deck and Astra Downloader are separate installs. The browser extension can
+be installed from the release ZIP/XPI or userscript path above; video and audio
+downloads need the local Astra Downloader companion running on this device.
+
+Current public release state: latest release `v4.46.0` does **not** include
+`AstraDownloader.exe` or `AstraDownloader.exe.sha256`. The in-page setup prompt,
+toolbar recovery action, and companion update button are already wired to the
+future release asset path, but the public download cannot complete until a
+release attaches both the EXE and hash sidecar.
+
+For current source-checkout testing on Windows:
+
+```powershell
+py -3.12 -m pip install -r astra_downloader/requirements.txt
+py -3.12 astra_downloader/astra_downloader.py
+```
+
+The companion stores its config, logs, downloaded `yt-dlp.exe`, and `ffmpeg.exe`
+under `%LOCALAPPDATA%\AstraDownloader`. When a release does carry the companion
+payload, it must attach both `AstraDownloader.exe` and
+`AstraDownloader.exe.sha256`; use the in-page **Download setup** prompt, then
+return to YouTube and choose **Check again**. The toolbar popup also has
+recovery actions to re-enable the setup prompt and request an on-demand
+companion update from a running service.
+
+The PO-token provider and Deno sections below are companion prerequisites. They
+improve downloader reliability after Astra Downloader itself is running; they
+are not browser extension install steps.
+
 ---
 
 ## Features
@@ -134,7 +165,7 @@ A userscript build is also available. Install [Tampermonkey](https://www.tamperm
 | Auto-Download on Visit | Off |
 | Download Thumbnail (maxres) | Off |
 
-> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service. Store-safe artifacts stop there; GitHub-full artifacts can show the Cobalt fallback button when Astra Downloader is offline.
+> Downloads use Astra Downloader, the bundled local yt-dlp + ffmpeg companion. The extension probes `9751` plus fallback ports (`9761`, `9771`, `9781`, `9791`, `9851`) and only accepts health responses that identify as the Astra downloader service. Store-safe artifacts stop there; GitHub-full artifacts can show the Cobalt fallback button when Astra Downloader is offline. See [Astra Downloader Companion Setup](#astra-downloader-companion-setup) for the current install and release-asset state.
 
 ### PO Token provider (optional but recommended)
 
@@ -381,6 +412,11 @@ Outputs in `build/`:
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript`)
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
+
+Companion release assets are intentionally separate from the default extension
+build output. Only a companion release/staging pass should add
+`AstraDownloader.exe` and `AstraDownloader.exe.sha256` to `build/`, and the
+current latest release `v4.46.0` does not include those files.
 
 Requires Node 22+ (the `crx3` packager dependency needs it).
 

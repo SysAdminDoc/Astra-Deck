@@ -335,7 +335,7 @@ means implemented/closed by the build lane.
   docs, latest release asset state, and official release / helper-install
   guidance. Detailed notes live in
   `docs/research-cycle-25-companion-install-docs.md`.
-- [ ] P2 - 🔬🤖 Document the Astra Downloader companion install and release-asset path
+- [x] P2 - 🔬🤖 Document the Astra Downloader companion install and release-asset path
   - Why: README installation covers extension and userscript paths, then later
     says downloads use the Astra Downloader companion. Users need a truthful
     setup section that explains the current companion state, release asset
@@ -366,6 +366,16 @@ means implemented/closed by the build lane.
     `npm run check`; docs-only diff review confirms no feature source, build
     file, manifest, runtime config, or generated artifact changed unless paired
     with the actual release-asset implementation.
+  - Status 2026-06-05: shipped. README now has a standalone Astra Downloader
+    companion setup section, explicitly states that latest release `v4.46.0`
+    lacks `AstraDownloader.exe` and `AstraDownloader.exe.sha256`, documents the
+    current Windows source-checkout launch path, links the Downloads feature
+    note back to that setup section, and frames PO-token/Deno setup as
+    companion prerequisites rather than browser extension install steps.
+    `docs/signing-keys.md` now requires README/release notes to keep the pending
+    companion-asset caveat until both EXE and sidecar assets exist. A hardening
+    regression pins the docs contract. The Cycle 22 release-channel proof and
+    signed installer/MSI item remain open.
   - Complexity: S
 
 ### Researcher Queue (Cycle 24 - 2026-06-04)

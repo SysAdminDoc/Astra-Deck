@@ -270,6 +270,19 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
     `APP_VERSION` above the deployed companion release until that dry-run
     succeeds.
 
+User-facing companion setup docs must stay in sync with the live release:
+
+- If the latest public release lacks `AstraDownloader.exe` or
+  `AstraDownloader.exe.sha256`, README install copy must label the companion
+  release asset as pending and avoid promising that the in-page **Download
+  setup** prompt can complete from GitHub Releases.
+- If the release carries a companion self-update payload, README and release
+  notes may list the EXE only together with the `.sha256` sidecar and the dry-run
+  hash comparison from step 11.
+- The signed installer/MSI roadmap item remains separate. A portable EXE plus
+  sidecar can prove the updater path, but it does not satisfy the signed
+  Windows installer trust milestone.
+
 ## 9. CWS / AMO publication paths
 
 Per the current roadmap NX4, Astra Deck does not have an AMO listing.

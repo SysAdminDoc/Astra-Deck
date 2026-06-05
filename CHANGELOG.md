@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Astra Downloader companion setup docs clarified.** README now separates
+  browser extension install from Astra Downloader companion setup, states that
+  latest release `v4.46.0` does not include `AstraDownloader.exe` or its
+  `.sha256` sidecar, documents the current source-checkout launch path, and
+  frames PO-token/Deno setup as companion prerequisites. Release-checklist docs
+  now require README/release notes to keep that caveat until both companion
+  assets are attached.
+
 - **GitHub Actions workflow refs pinned to full SHAs.** Validation, release,
   yt-dlp smoke, and CodeQL workflows now reference external actions by
   full-length commit SHA with same-line version comments. The dependency-review

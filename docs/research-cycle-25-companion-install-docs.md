@@ -18,6 +18,20 @@ install today, where the companion is expected to come from, what release assets
 will prove it when shipped, and how Deno / PO-token prerequisites relate to the
 companion.
 
+Implementation update 2026-06-05:
+
+- README now has a standalone Astra Downloader companion setup section.
+- The setup section states that latest release `v4.46.0` does not include
+  `AstraDownloader.exe` or `AstraDownloader.exe.sha256`.
+- README documents the current Windows source-checkout launch path and links the
+  Downloads feature note back to companion setup.
+- Deno and PO-token provider setup are framed as companion prerequisites, not
+  browser extension install steps.
+- `docs/signing-keys.md` now guards README/release notes against advertising a
+  downloadable companion until both EXE and sidecar assets exist.
+- Detailed implementation notes live in
+  `docs/audit/2026-06-05-companion-install-docs.md`.
+
 ## Scope And Anti-Duplication
 
 - Cycle 22 queues the EXE/sidecar/update-channel release proof.
@@ -144,7 +158,7 @@ companion.
 
 ## Recommended Roadmap Item
 
-- [ ] P2 - Document the Astra Downloader companion install and release-asset path
+- [x] P2 - Document the Astra Downloader companion install and release-asset path
   - Why: README installation covers extension and userscript paths, then later
     says downloads use the Astra Downloader companion. Users need a truthful
     setup section that explains the current companion state, release asset
@@ -169,6 +183,9 @@ companion.
     `npm run check`; docs-only diff review confirms no feature source, build
     file, manifest, runtime config, or generated artifact changed unless paired
     with the actual release-asset implementation.
+  - Status 2026-06-05: shipped in README, signing/release guardrails, and a
+    README hardening regression. The companion EXE/sidecar release-channel proof
+    and signed installer/MSI roadmap items remain separate.
   - Complexity: S
 
 ## Rejections And Deferrals
@@ -185,7 +202,8 @@ companion.
 - Recommendation count: 1 new roadmap item.
 - Duplicates merged: Cycle 22 release-channel proof and signed installer/MSI
   remain separate and are cited.
-- Done marks changed: none.
+- Done marks changed: the recommended companion setup documentation item is now
+  marked shipped after implementation verification.
 - Source coverage: 32 external URLs plus repo file references and latest-release
   evidence.
 - Security/release covered: unsigned helper caveat, hash sidecar, SBOM/provenance

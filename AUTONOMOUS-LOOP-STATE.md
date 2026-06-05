@@ -29,8 +29,15 @@
   workflows to full-length SHAs with same-line version comments. The
   dependency-review job now points at the real upstream `v5.0.0` release commit
   instead of the nonexistent `v5` tag. Updated roadmap/completed/audit
-  continuity notes after each cycle, while leaving repository-level
-  selected-actions and required-SHA settings as a hosted follow-up after merge.
+  continuity notes after each cycle, then clarified the Astra Downloader
+  companion setup path in the README and signing/release guardrails: the latest
+  public release `v4.46.0` still lacks `AstraDownloader.exe` and
+  `AstraDownloader.exe.sha256`, source-checkout Windows runs stay available via
+  Python, PO-token and Deno setup are framed as companion prerequisites, and
+  future release docs must mention the EXE only with its SHA-256 sidecar. The
+  companion EXE upload/dry-run remains a release-maintainer boundary, while
+  repository-level selected-actions and required-SHA settings remain a hosted
+  follow-up after merge.
 
 ## Verification
 
@@ -180,6 +187,19 @@
   - Repository Actions permissions were not changed in this source-side cycle;
     `allowed_actions: selected` and `sha_pinning_required: true` remain pending
     until the SHA-clean branch lands and hosted workflows pass.
+- Cycle 25 companion setup documentation verification passed:
+  - `gh release view --repo SysAdminDoc/Astra-Deck --json tagName,publishedAt,assets,url --jq '{tagName,publishedAt,url,companionAssets: [.assets[].name | select(. == "AstraDownloader.exe" or . == "AstraDownloader.exe.sha256")], assetCount: (.assets | length)}'`
+    confirmed latest release `v4.46.0` currently has no companion EXE or
+    sidecar assets.
+  - `rg -n "Astra Downloader|AstraDownloader.exe|Deno|PO Token" README.md docs/signing-keys.md docs`
+  - `node --test tests/hardening.test.js --test-name-pattern="companion setup|release manifest generation"`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+  - No runtime/source/build/manifest changes were made beyond documentation and
+    the README hardening regression; no companion EXE was uploaded in this
+    automation pass.
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -189,13 +209,13 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 13, the remaining
+  implementable without exposing secrets. As of Cycle 25, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
-  EXE and sidecar, and CODEOWNERS still needs default-branch validation plus
-  `main` branch-protection enforcement after merge. Optional-permissions code
-  is in place; manual unpacked Chrome/Firefox prompt/grant/deny/revoke smoke
-  remains before treating the store-safe permission UX as release-smoked.
-  GitHub Actions workflow refs are now source-side SHA-pinned; repository
-  selected-actions / required-SHA enforcement remains hosted settings work after
-  merge. Locally implementable candidates include repo working-note
-  reconciliation and companion setup/release-asset documentation.
+  EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
+  branch-protection enforcement after merge, repository selected-actions /
+  required-SHA enforcement remains hosted settings work after merge, and the
+  dependency-review workflow remains blocked until the repository dependency
+  graph is enabled. Optional-permissions code is in place; manual unpacked
+  Chrome/Firefox prompt/grant/deny/revoke smoke remains before treating the
+  store-safe permission UX as release-smoked. The next local P2 candidate is
+  repo working-note reconciliation from Cycle 23.

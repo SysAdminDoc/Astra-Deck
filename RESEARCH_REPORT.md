@@ -57,19 +57,30 @@ or maintainer action to confirm.
   before network fetch. The popup surfaces missing grants as permission-needed
   chips in quick toggles, schema rows, and data-flow grant labels, and shows
   exact denied-request copy.
+- [Verified] Companion setup documentation now separates browser install from
+  the Astra Downloader local companion. README states that latest release
+  `v4.46.0` lacks `AstraDownloader.exe` and
+  `AstraDownloader.exe.sha256`, documents the current Windows source-checkout
+  launch path, links the Downloads feature note back to companion setup, and
+  frames Deno / PO-token setup as companion prerequisites. Release checklist
+  docs now require README/release notes to keep that caveat until both live
+  companion assets exist.
 
 ## 2026-06-04 Freshness Refresh
 
 - [Verified] Cycle 25 companion-install-docs pass on 2026-06-04 found that
-  README installation covers extension and userscript paths, while later README
-  download copy depends on Astra Downloader and documents Deno / PO-token
+  README installation covered extension and userscript paths, while later README
+  download copy depended on Astra Downloader and documented Deno / PO-token
   prerequisites without a parent companion setup section. The release-output
-  list also omits companion EXE/sidecar assets, which is truthful for latest
-  release `v4.46.0` but leaves users without a clear companion install/update
-  explanation. ROADMAP now carries a P2 docs-only item to add truthful
-  companion setup and release-asset guidance without duplicating the signed MSI
-  or Cycle 22 self-update work. Detailed evidence lives in
-  `docs/research-cycle-25-companion-install-docs.md`.
+  list also omitted companion EXE/sidecar assets, which was truthful for latest
+  release `v4.46.0` but left users without a clear companion install/update
+  explanation. Cycle 2026-06-05 closed the docs gap with a standalone README
+  companion setup section, live-release no-EXE/no-sidecar caveat, source-run
+  path, release-checklist guardrails, and hardening coverage. The separate
+  Cycle 22 EXE/sidecar release-channel proof and signed installer/MSI item
+  remain open. Detailed evidence lives in
+  `docs/research-cycle-25-companion-install-docs.md` and
+  `docs/audit/2026-06-05-companion-install-docs.md`.
 - [Verified] Cycle 24 retired-options-page copy pass on 2026-06-04 found one
   shipped runtime error that still tells users to set `aiSummaryApiKey` "via
   options page" even though v3.19.0 removed the standalone options page, the
@@ -429,9 +440,9 @@ Top remaining opportunities (one-liners):
    maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
    first-read operator docs no longer point to missing or stale guidance.
    [Verified]
-7. Document the Astra Downloader companion setup and release-asset path in
-   README/release docs without promising an EXE before the release-channel proof
-   ships. [Verified]
+7. After the companion EXE/sidecar release-channel proof ships, update README
+   and release notes from "pending companion asset" to the verified live
+   download/hash path. The current setup docs are already truthful. [Verified]
 8. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
@@ -498,12 +509,11 @@ Top remaining opportunities (one-liners):
   `docs/research-cycle-23-repo-working-notes-drift.md`, and
   `docs/research-cycle-24-retired-options-copy.md`, and
   `docs/research-cycle-25-companion-install-docs.md`. [Verified]
-- Companion install-docs probe: README installation covers extension and
-  userscript paths, while the Downloads and prerequisite sections depend on
-  Astra Downloader without a parent companion setup section. README release
-  outputs omit `AstraDownloader.exe` and sidecar assets, latest release `v4.46.0`
-  also lacks them, and signing-key docs cover CRX/XPI publication paths but not
-  companion setup. [Verified]
+- Companion install-docs probe: README installation now separates browser
+  extension/userscript install from Astra Downloader setup, labels
+  `AstraDownloader.exe` and sidecar assets as absent from latest release
+  `v4.46.0`, and signing-key docs guard README/release-note claims against the
+  live asset state. [Verified]
 - Retired options-page copy probe: `extension/ytkit.js` still throws
   `Set aiSummaryApiKey first (via options page)` on the summary-provider
   missing-key path, while `extension/manifest.json` has `action.default_popup =
@@ -689,10 +699,12 @@ Current risk status:
   `gh release create` release flow while the current repo uses Firefox 140+,
   protected-main PRs, and maintainer-local signing. → ROADMAP P2 repo working
   notes reconciliation. [Verified]
-- **[Med] Companion setup docs gap.** README install docs cover extension and
-  userscript artifacts but do not give a distinct Astra Downloader setup path,
-  even though Downloads, Deno, and PO-token sections depend on the companion.
-  → ROADMAP P2 companion install documentation. [Verified]
+- **[Closed] Companion setup docs gap.** README now has a distinct Astra
+  Downloader companion setup section, labels the latest release no-EXE/no-sidecar
+  state, documents the source-checkout launch path, and frames Deno / PO-token
+  setup as companion prerequisites. The remaining companion risk is release
+  upload/dry-run proof, tracked separately as the high-priority self-update
+  release-asset item. [Verified]
 - **[Med] Retired settings-surface copy.** The standalone options page is
   removed and tested as absent, but the summary-provider key error still tells
   users to use an options page. → ROADMAP P2 retired options-page copy fix.
