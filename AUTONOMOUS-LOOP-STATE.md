@@ -41,7 +41,7 @@
   of URL substrings, and companion release staging validates and reads the EXE
   from one opened descriptor before writing the staged build asset. Repository
   working notes were then reconciled with the current protected-main,
-  maintainer-local release, eight-artifact, and Firefox 140+ contracts:
+  maintainer-local release, eight-artifact, and Firefox 142+ contracts:
   `AGENTS.md` now points at tracked loop/planning/audit files, names the release
   policy sources, and labels ignored `CLAUDE.md` as optional local scratch
   rather than committed source of truth. The in-page overlay WCAG 2.2 gate was
@@ -49,6 +49,13 @@
   controls gained missing names, live-status labels, focus-visible styling, and
   24px-plus target floors, and mutation canaries prove the audit fails for
   unlabeled close buttons, missing focus-visible rules, and sub-24px controls.
+  The Firefox MV3 release gate was then shipped: `web-ext@10.3.0` is
+  exact-pinned, `npm run check` now stages and lints both Firefox profile
+  manifests with zero `web-ext` findings, the release workflow installs Firefox
+  through pinned `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
+  before running a clean-profile store-safe smoke after artifact generation, and
+  the first gate run fixed non-square PNG icons, the Firefox 142+
+  data-consent floor, and remaining raw TrustedHTML `innerHTML` sinks.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -58,6 +65,12 @@
   - `npm test`
   - `npm run check`
   - `npm run build`
+- Cycle 27 Firefox release-gate verification passed:
+  - `npm run check:firefox`
+  - `npm run smoke:firefox` (Firefox 151.0.3; store-safe MV3 staged manifest;
+    Gecko ID `ytkit@sysadmindoc.github.io`; clean 25-second startup window)
+  - `node --test tests/firefox-injection-audit.test.js`
+  - `node --test tests/hardening.test.js --test-name-pattern="Firefox|manifest PNG|TrustedTypes|workflow actions"`
 - Focused verification passed:
   `node --test tests/hardening.test.js --test-name-pattern="runtime settings guidance|standalone options page"`.
 - Cycle 2 release-doc verification passed:

@@ -108,7 +108,7 @@ or maintainer action to confirm.
 - [Verified] Cycle 23 repo-working-notes pass on 2026-06-04 found that
   `AGENTS.md` delegates repo operating instructions to `CLAUDE.md`, but the
   delegated local notes pointed to a missing handoff log, carried old Firefox
-  support text beside current Firefox 140+ notes, and described direct
+  support text beside current Firefox 142+ notes, and described direct
   protected-branch release flow even though the current contract is
   protected-main PRs plus maintainer-local `ytkit.pem` signing. Cycle
   2026-06-05 closed the committed-doc gap: `AGENTS.md` now points at tracked
@@ -420,7 +420,7 @@ or maintainer action to confirm.
 ## Executive Summary
 
 Astra Deck is a mature, single-developer YouTube enhancement platform spanning a
-Manifest V3 extension (Chrome/Edge/Brave/Firefox 140+), a Tampermonkey/Violent-
+Manifest V3 extension (Chrome/Edge/Brave/Firefox 142+), a Tampermonkey/Violent-
 monkey userscript built from the same source, and a local Python/Flask + PyQt6 +
 yt-dlp companion downloader. [Verified] It carries a 362-key flat settings schema,
 27 `extension/core/` runtime modules, 11 peeled `extension/features/` modules, a
@@ -457,20 +457,14 @@ Top remaining opportunities (one-liners):
 6. Keep repo-local first-read docs aligned when release policy, Firefox support,
    or loop-state files move again. The current tracked `AGENTS.md` contract is
    reconciled with protected-main, maintainer-local release, eight-artifact, and
-   Firefox 140+ guidance. [Verified]
+   Firefox 142+ guidance. [Verified]
 7. After the companion EXE/sidecar release-channel proof ships, update README
    and release notes from "pending companion asset" to the verified live
    download/hash path. The current setup docs are already truthful. [Verified]
-8. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
-   lint both Firefox profiles with `web-ext` and load at least store-safe in a
-   clean Firefox profile. [Verified]
-9. MHTML capture-week expansion across Shorts, channel, search, history,
+8. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-10. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
-   dialogs, transcript panels, video notes, subscription group surfaces, and
-   downloader health/history panels. [Verified]
-11. Locale proofing queue for identical-to-English feature names/descriptions in
+9. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
 12. Signed Astra Downloader installer/MSI once the signing budget and submission
@@ -728,21 +722,22 @@ Current risk status:
   remain enabled. [Verified]
 - **[Closed] Privacy/data-consent artifacts incomplete.** `docs/privacy-policy.md`
   is the stable policy source, Chrome Limited Use and data-category disclosures
-  are documented, and Firefox artifacts require Firefox 140+ with generated
+  are documented, and Firefox artifacts require Firefox 142+ with generated
   `data_collection_permissions`. [Verified]
-- **[High] Browser parity drift.** Firefox artifacts are built and manifest-patched,
-  but no `web-ext lint` or clean-profile Firefox MV3 load gate exercises the
-  artifact before AMO or self-distributed Firefox updates. → ROADMAP P1 Firefox
-  parity smoke. [Verified]
+- **[Closed] Browser parity drift.** `web-ext@10.3.0` is exact-pinned,
+  `npm run check` now stages and lints both Firefox profile manifests with zero
+  `web-ext lint` errors/warnings/notices, and the tag release workflow installs
+  Firefox via a pinned setup action before running a clean-profile store-safe
+  smoke on a stable YouTube watch URL. [Verified]
 - **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed,
   but Shorts, channel, search, history, watch-later, embedded player, and
   notifications surfaces still lack capture-backed selector fixtures; the
   fixture builder currently registers only home, watch, and live-chat captures.
   → ROADMAP P2 capture-week expansion. [Verified]
-- **[Med] In-page overlay accessibility.** Popup a11y/contrast is CI-gated, but
-  transcript, notes, theater split, subscription manager, and toast overlays are
-  not yet under the WCAG 2.2 target-size/focus-appearance gate; `audit:a11y` is
-  currently popup-only. → ROADMAP P2 overlay a11y audit. [Verified]
+- **[Closed] In-page overlay accessibility.** `npm run check` now includes
+  `audit:overlays`, covering generated overlay names, dialog/region semantics,
+  live-region behavior, focus-visible rules, and WCAG 2.2 target-size floors
+  beyond the popup. [Verified]
 - **[Med] Locale proofing debt.** The feature-definition i18n extraction shipped,
   but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
   strings per non-EN locale, with 584 of 612 feature name/description keys still

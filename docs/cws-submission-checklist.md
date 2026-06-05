@@ -170,7 +170,7 @@ differences:
   privacy policies (CWS requires AMO-hosted text in some flows).
 - AMO requires source code submission for any minified / obfuscated
   asset. Astra Deck ships readable so this is a no-op.
-- Firefox artifacts require Firefox 140+ and use the built-in data collection
+- Firefox artifacts require Firefox 142+ and use the built-in data collection
   consent prompt. `scripts/manifest-patch.js` injects
   `browser_specific_settings.gecko.data_collection_permissions.required` with:
   `browsingActivity`, `websiteContent`, `websiteActivity`, and
