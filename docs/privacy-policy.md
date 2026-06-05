@@ -102,7 +102,7 @@ support bundle or other data for support.
 
 ## Firefox Data Collection Permissions
 
-Firefox builds require Firefox 140+ and use Firefox's built-in data collection
+Firefox builds require Firefox 142+ and use Firefox's built-in data collection
 and transmission consent prompt. The generated Firefox manifest declares these
 required data categories:
 

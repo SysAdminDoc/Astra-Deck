@@ -1116,11 +1116,7 @@ return response;
         return {
             setHTML(element, html) {
                 logFallbackOnce();
-                if (policy) {
-                    element.innerHTML = policy.createHTML(html);
-                    return;
-                }
-                // iter-6 N10: delegate the fallback path to the shared
+                // iter-6 N10: delegate HTML writes to the shared
                 // setTrustedHTML helper in extension/core/trusted-html.js
                 // when present (loaded by manifest before ytkit.js).
                 // That helper already implements the parsed-fragment
@@ -1131,16 +1127,17 @@ return response;
                 // DOMParser logic — keeps existing test fixtures working.
                 const core = globalThis.YTKitCore;
                 if (core && typeof core.setTrustedHTML === 'function') {
-                    core.setTrustedHTML(element, html);
+                    core.setTrustedHTML(element, policy ? policy.createHTML(html) : html);
                     return;
                 }
                 // Inline fallback (legacy code path):
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(`<template>${html}</template>`, 'text/html');
-                const template = doc.querySelector('template');
+                const doc = parser.parseFromString(policy ? policy.createHTML(html) : String(html ?? ''), 'text/html');
+                const fragment = document.createDocumentFragment();
+                fragment.append(...Array.from(doc.body?.childNodes || []));
                 element.replaceChildren();
-                if (template && template.content) {
-                    element.appendChild(template.content.cloneNode(true));
+                if (fragment.childNodes.length) {
+                    element.appendChild(fragment);
                 }
             },
             create(html) {

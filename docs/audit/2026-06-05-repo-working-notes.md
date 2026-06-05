@@ -22,7 +22,7 @@ historical release artifact counts.
 - Labeled `CLAUDE.md` as optional ignored local scratch rather than the committed
   source of truth.
 - Directed release-policy readers to `docs/signing-keys.md`, while tracked
-  README/architecture/signing-key/CWS docs keep the current Firefox 140+,
+  README/architecture/signing-key/CWS docs keep the current Firefox 142+,
   profile-split, and maintainer-local release contracts.
 
 ## Verification

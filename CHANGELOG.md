@@ -6,6 +6,17 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Firefox MV3 release gate added.** `web-ext@10.3.0` is exact-pinned and
+  `npm run check` now stages both store-safe and GitHub-full Firefox manifests
+  for `web-ext lint --source-dir`, which passes with zero errors, warnings, or
+  notices. The release workflow installs Firefox through a pinned
+  `browser-actions/setup-firefox` action and runs `npm run smoke:firefox` after
+  artifact generation, launching the store-safe staged manifest in a clean
+  headless Firefox profile against a stable YouTube URL. AMO lint blockers found
+  during the gate were fixed: manifest PNG icons are square, Firefox data
+  consent now requires Firefox 142+, and remaining TrustedHTML writes avoid raw
+  `innerHTML` sinks.
+
 - **In-page overlay accessibility gate added.** `npm run check` now runs a new
   `npm run audit:overlays` static gate for runtime-generated overlays beyond
   the popup. The gate covers toast live-region semantics, downloader install /
@@ -127,7 +138,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   store-submission docs. The policy covers local storage, third-party API calls,
   local companion handoff, YouTube cookie use, BYO-key provider behavior,
   retention/export/delete controls, no telemetry/ads/sale, and the Chrome
-  Limited Use statement. Firefox artifacts now require Firefox 140+ and declare
+  Limited Use statement. Firefox artifacts now require Firefox 142+ and declare
   built-in `data_collection_permissions` for browsing activity, website
   content, website activity, and authentication information.
 

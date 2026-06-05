@@ -40,6 +40,15 @@ jobs:
           ASTRA_CRX_KEY_MODE: ephemeral
         run: npm run build:userscript
 
+      - name: Setup Firefox
+        id: setup-firefox
+        uses: browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795 # v1.7.2
+        with:
+          firefox-version: latest
+
+      - name: Firefox store-safe smoke
+        run: npm run smoke:firefox -- --firefox "${{ steps.setup-firefox.outputs.firefox-path }}"
+
       - name: Emit release SBOM
         run: npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json
 
