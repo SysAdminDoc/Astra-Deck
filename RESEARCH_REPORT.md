@@ -37,6 +37,13 @@ or maintainer action to confirm.
   and local companion-required manifest proof succeeded; the public latest
   release still needs maintainer upload and live `gh release download`
   verification before `APP_VERSION` advances.
+- [Verified] CODEOWNERS source coverage now protects high-risk repository
+  paths on the feature branch. `.github/CODEOWNERS` uses the repository owner
+  `@SysAdminDoc` for policy, dependency manifests, release/signing tooling,
+  hardening gates, extension manifest/background/core code, and companion
+  downloader paths, and the local hardening suite asserts that coverage. The
+  remaining hosted step is to validate CODEOWNERS on the default branch and
+  enable `require_code_owner_reviews` after merge.
 
 ## 2026-06-04 Freshness Refresh
 
@@ -390,10 +397,9 @@ Top remaining opportunities (one-liners):
    `AstraDownloader.exe.sha256` to the target latest release, then dry-run the
    live download/hash path. Code-side staging, manifest, and strict sidecar
    enforcement are already in place. [Verified]
-2. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
-   extension permission/proxy, data-flow, and companion loopback paths, then
-   enable code-owner review once owner references and syntax are proven.
-   [Verified]
+2. Enable CODEOWNERS enforcement after merge: validate `.github/CODEOWNERS` on
+   the default branch, then enable code-owner review in `main` branch
+   protection. Source-side ownership coverage is already in place. [Verified]
 3. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]

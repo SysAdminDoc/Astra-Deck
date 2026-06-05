@@ -1898,6 +1898,41 @@ test('CodeQL scans JavaScript and Python with security-extended queries', () => 
     }
 });
 
+test('CODEOWNERS protects security-sensitive repository paths', () => {
+    const codeowners = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'CODEOWNERS'), 'utf8'
+    );
+    assert.match(codeowners, /Owners listed here must keep write access/,
+        'CODEOWNERS must document the write-access requirement');
+    assert.doesNotMatch(codeowners, /@[A-Za-z0-9-]+\/[A-Za-z0-9._-]+/,
+        'do not reference organization teams until a real write-enabled team exists');
+
+    for (const protectedPath of [
+        '/.github/',
+        '/SECURITY.md',
+        '/package.json',
+        '/package-lock.json',
+        '/build-extension.js',
+        '/scripts/generate-release-manifest.js',
+        '/scripts/stage-companion-release.js',
+        '/scripts/check-*.js',
+        '/docs/signing-keys.md',
+        '/docs/repo-settings.md',
+        '/docs/privacy-policy.md',
+        '/extension/manifest.json',
+        '/extension/background.js',
+        '/extension/core/',
+        '/extension/ytkit.js',
+        '/astra_downloader/'
+    ]) {
+        assert.match(
+            codeowners,
+            new RegExp(`^${protectedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+@SysAdminDoc\\s*$`, 'm'),
+            `${protectedPath} must be owned by @SysAdminDoc`
+        );
+    }
+});
+
 test('check-syntax dynamically covers every extension and script JS file', () => {
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'check-syntax.js'),

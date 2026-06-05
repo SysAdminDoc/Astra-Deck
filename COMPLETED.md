@@ -30,6 +30,13 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: `.github/CODEOWNERS` source coverage was added for repository
+  policy, dependency manifests, release/signing tooling, hardening gates,
+  security/privacy docs, extension manifest/background/core code, and the
+  Python companion, all owned by `@SysAdminDoc`. A hardening regression now
+  asserts the protected path set and avoids non-existent team references;
+  default-branch CODEOWNERS validation and branch-protection enforcement remain
+  open follow-up steps after merge.
 - 2026-06-05: Astra Downloader self-update release tooling now has a
   `release:stage-companion` path, companion-required manifest mode, generated
   EXE sidecar coverage, and strict updater failure when the sidecar is missing.

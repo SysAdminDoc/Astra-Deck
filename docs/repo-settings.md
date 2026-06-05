@@ -152,22 +152,23 @@ Target policy:
 
 ## Code Owners
 
-Current snapshot from 2026-06-04:
+Current snapshot from 2026-06-05:
 
-- `.github/CODEOWNERS`: absent.
+- `.github/CODEOWNERS`: present on the feature branch; pending merge to `main`.
 - Root `CODEOWNERS`: absent.
 - `docs/CODEOWNERS`: absent.
 - Repository owner: `@SysAdminDoc`.
 - Current viewer permission from `gh repo view`: `ADMIN`.
 - Required approving reviews on `main`: 1.
 - Require code-owner reviews on `main`: disabled.
-- CODEOWNERS errors endpoint: `404 Not Found` while no CODEOWNERS file exists.
+- CODEOWNERS errors endpoint on default branch: `404 Not Found` until the file
+  lands on `main`.
 
 Target policy:
 
-- Add `.github/CODEOWNERS` for security-sensitive workflow, release, signing,
-  security-policy, extension-permission, background-proxy, data-flow,
-  redaction, and companion-loopback paths.
+- Keep `.github/CODEOWNERS` covering security-sensitive workflow, release,
+  signing, security-policy, extension-permission, background-proxy, data-flow,
+  trusted-DOM, and companion-loopback paths.
 - Use only users or teams with write access.
 - Check `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq ".errors"`
   before enabling enforcement.
