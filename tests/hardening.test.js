@@ -1845,6 +1845,32 @@ test('GitHub workflows use Node 24-ready GitHub-owned action majors', () => {
     }
 });
 
+test('CodeQL scans JavaScript and Python with security-extended queries', () => {
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'codeql.yml'), 'utf8'
+    );
+    const config = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'codeql.yml'), 'utf8'
+    );
+
+    assert.match(workflow, /name:\s*CodeQL/, 'workflow must keep the expected name');
+    assert.match(workflow, /security-events:\s*write/, 'CodeQL upload needs security-events: write');
+    assert.match(workflow, /github\/codeql-action\/init@v4/, 'CodeQL init should use the supported v4 major');
+    assert.match(workflow, /github\/codeql-action\/analyze@v4/, 'CodeQL analyze should use the supported v4 major');
+    assert.match(workflow, /language:\s*javascript-typescript/, 'JavaScript/TypeScript must be scanned');
+    assert.match(workflow, /language:\s*python/, 'Python companion code must be scanned');
+    assert.match(workflow, /build-mode:\s*none/, 'interpreted languages should use build-mode none');
+    assert.match(workflow, /config-file:\s*\.\/\.github\/codeql\.yml/, 'workflow must load the shared CodeQL config');
+    assert.match(config, /uses:\s*security-extended/, 'CodeQL config must use the security-extended query suite');
+    for (const ignoredPath of ['node_modules/**', 'build/**', 'mhtml/**', 'archive/**', 'docs/archive/**']) {
+        assert.match(
+            config,
+            new RegExp(ignoredPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+            `${ignoredPath} should stay out of the CodeQL source set`
+        );
+    }
+});
+
 test('check-syntax dynamically covers every extension and script JS file', () => {
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'check-syntax.js'),
