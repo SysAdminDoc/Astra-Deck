@@ -49,6 +49,9 @@ pass avoided non-existent organization team references.
 - `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq .` returned
   `404 Not Found` before the CODEOWNERS file exists on the default branch.
 - `node --test tests/hardening.test.js --test-name-pattern="CODEOWNERS protects"`.
+- `gh api
+  "repos/SysAdminDoc/Astra-Deck/codeowners/errors?ref=codex/research-feature-plan-2026-06-05"
+  --jq .` returned `errors: []` after the branch push.
 - `npm test`.
 - `npm run check`.
 - `npm run build`.

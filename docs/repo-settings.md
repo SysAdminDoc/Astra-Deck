@@ -161,6 +161,8 @@ Current snapshot from 2026-06-05:
 - Current viewer permission from `gh repo view`: `ADMIN`.
 - Required approving reviews on `main`: 1.
 - Require code-owner reviews on `main`: disabled.
+- CODEOWNERS errors endpoint on feature branch
+  `codex/research-feature-plan-2026-06-05`: `errors: []`.
 - CODEOWNERS errors endpoint on default branch: `404 Not Found` until the file
   lands on `main`.
 
@@ -170,6 +172,6 @@ Target policy:
   signing, security-policy, extension-permission, background-proxy, data-flow,
   trusted-DOM, and companion-loopback paths.
 - Use only users or teams with write access.
-- Check `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq ".errors"`
-  before enabling enforcement.
+- Re-check `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq
+  ".errors"` after the CODEOWNERS file lands on `main`.
 - Enable `require_code_owner_reviews` after CODEOWNERS exists on `main`.

@@ -97,11 +97,12 @@
   - `gh repo view SysAdminDoc/Astra-Deck --json nameWithOwner,isPrivate,owner,viewerPermission,defaultBranchRef`
   - `gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_pull_request_reviews --jq .`
   - `node --test tests/hardening.test.js --test-name-pattern="CODEOWNERS protects"`
+  - `gh api "repos/SysAdminDoc/Astra-Deck/codeowners/errors?ref=codex/research-feature-plan-2026-06-05" --jq .`
   - `npm test`
   - `npm run check`
   - `npm run build`
-  - hosted CODEOWNERS errors API validation remains pending until the file is
-    pushed and then merged to the default branch
+  - default-branch CODEOWNERS errors API validation remains pending until the
+    file lands on `main`
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
