@@ -68,7 +68,12 @@
   derives its expected surface list from the builder, and every registered
   surface must keep at least one matched stable selector. Dedicated Shorts,
   channel, search-results, history, watch-later, embed-player, and
-  notifications-menu captures remain open in the capture-week backlog.
+  notifications-menu captures remain open in the capture-week backlog. The
+  branch-scoped CodeQL alerts exposed after that push were then remediated
+  across exact URL host/scheme parsing, Resume Playback Position storage,
+  Quick Links DOM construction, transcript entity/tag parsing, version-bump
+  file reads, audit-helper sanitizer shapes, and generic folder-picker UI
+  errors, with hardening tests added for each alert class.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -96,6 +101,23 @@
     matches for `appShell`, `feed`, `feedCard`, `leftNav`, `media`, `nav`,
     `notifications`, `search`, `shortsShelf`, `thumbnail`, `mainVideo`,
     `player`, `playerChrome`, `playerSettings`, and `liveChat`.
+- Cycle 30 branch CodeQL alert remediation verification passed:
+  - `node --check extension/ytkit.js`
+  - `node --check YTKit.user.js`
+  - `node --check build-extension.js`
+  - `node --check extension/core/transcript-service.js`
+  - `node --check scripts/audit-popup-a11y.js`
+  - `node --check scripts/extract-i18n-keys.js`
+  - `python -m py_compile astra_downloader\astra_downloader.py`
+  - `node --test tests/core-transcript-service.test.js tests/hardening.test.js tests/userscript-health.test.js`
+  - `python -m pytest astra_downloader\test_astra_downloader.py -q -k "FolderPickerService or GuiSmoke"`
+  - `npm run audit:a11y`
+  - `node --test tests/hardening.test.js`
+  - `npm test`
+  - `python -m pytest astra_downloader\test_astra_downloader.py -q`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
 - Focused verification passed:
   `node --test tests/hardening.test.js --test-name-pattern="runtime settings guidance|standalone options page"`.
 - Cycle 2 release-doc verification passed:

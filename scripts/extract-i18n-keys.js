@@ -17,6 +17,26 @@ const FILES = [
 
 const keys = new Map();
 
+function decodeSingleQuotedFallback(raw) {
+    let out = '';
+    for (let i = 0; i < raw.length; i += 1) {
+        const ch = raw[i];
+        if (ch !== '\\' || i === raw.length - 1) {
+            out += ch;
+            continue;
+        }
+        const next = raw[i + 1];
+        if (next === 'n') out += '\n';
+        else if (next === "'" || next === '\\') out += next;
+        else {
+            out += ch;
+            out += next;
+        }
+        i += 1;
+    }
+    return out;
+}
+
 function findKeyAndFallback(src) {
     // Walk char-by-char, find each `t(` followed by a quoted key + comma + quoted fallback.
     let i = 0;
@@ -52,9 +72,7 @@ function findKeyAndFallback(src) {
                 if (src[p] === "'") break;
                 p++;
             }
-            fallback = src.slice(start, p);
-            // Unescape \' and \\.
-            fallback = fallback.replace(/\\'/g, "'").replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+            fallback = decodeSingleQuotedFallback(src.slice(start, p));
             p++;
         } else if (src[p] === '`') {
             p++;
