@@ -30,6 +30,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Retired options-page runtime copy was removed from the AI summary
+  missing-key path. The error now names the current in-page settings panel and
+  toolbar popup `Open Full Settings` action, with a hardening regression to keep
+  stale options-page guidance out of shipped runtime code.
 - Quick Links capped at 10 slots.
 - PyQt6 GUI smoke tests for downloader folder picker flows.
 - On-demand yt-dlp self-update endpoint and popup action.

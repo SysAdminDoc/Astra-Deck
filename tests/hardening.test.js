@@ -553,6 +553,28 @@ test('extension bundle no longer ships a standalone options page', () => {
     );
 });
 
+test('runtime settings guidance does not point users at the retired options page', () => {
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+    for (const [name, source] of [
+        ['extension/ytkit.js', ytkitSource],
+        ['YTKit.user.js', userscriptSource]
+    ]) {
+        assert.doesNotMatch(
+            source,
+            /via options page/i,
+            `${name} must not tell users to use the retired options page`
+        );
+        assert.match(
+            source,
+            /Open Full Settings/,
+            `${name} should point users at the current settings surface`
+        );
+    }
+});
+
 test('popup.js import accepts exportVersion >= 3 without an upper cap', () => {
     assert.doesNotMatch(
         popupSource,
