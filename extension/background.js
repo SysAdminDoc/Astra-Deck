@@ -264,6 +264,85 @@ function isUrlAllowed(url) {
     }
 }
 
+function getRuntimeOptionalHostPermissions() {
+    try {
+        const origins = chrome.runtime?.getManifest?.().optional_host_permissions;
+        if (!Array.isArray(origins)) return [];
+        return origins.filter((origin) => typeof origin === 'string' && origin.trim());
+    } catch (_) {
+        // reason: getManifest can be absent in tests or older extension contexts
+        return [];
+    }
+}
+
+function hostPermissionMatchesUrl(pattern, url) {
+    const rawPattern = String(pattern || '').trim();
+    if (!rawPattern.endsWith('/*')) return false;
+    try {
+        const parsed = new URL(url);
+        const originPattern = rawPattern.slice(0, -2);
+        const wildcardMatch = originPattern.match(/^([a-z][a-z0-9+.-]*:)\/\/\*\.([^/:]+)(?::(\d+))?$/i);
+        if (wildcardMatch) {
+            const [, protocol, baseHost, port = ''] = wildcardMatch;
+            const host = parsed.hostname.toLowerCase();
+            const normalizedBase = baseHost.toLowerCase();
+            return parsed.protocol === protocol
+                && (port === '' || parsed.port === port)
+                && (host === normalizedBase || host.endsWith('.' + normalizedBase));
+        }
+        const allowed = new URL(originPattern);
+        return parsed.protocol === allowed.protocol
+            && parsed.hostname === allowed.hostname
+            && (allowed.port === '' || parsed.port === allowed.port);
+    } catch (_) {
+        // reason: malformed URL or manifest pattern is not a match
+        return false;
+    }
+}
+
+function getRuntimeOptionalHostPermissionsForUrl(url) {
+    return getRuntimeOptionalHostPermissions()
+        .filter((pattern) => hostPermissionMatchesUrl(pattern, url));
+}
+
+function permissionsContainsOrigins(origins) {
+    if (!Array.isArray(origins) || origins.length === 0) return Promise.resolve(true);
+    const permissionsApi = chrome.permissions;
+    if (!permissionsApi || typeof permissionsApi.contains !== 'function') {
+        return Promise.reject(new Error('Runtime host permission API is unavailable.'));
+    }
+    return new Promise((resolve, reject) => {
+        let settled = false;
+        const done = (value) => {
+            if (settled) return;
+            settled = true;
+            const lastError = chrome.runtime?.lastError;
+            if (lastError?.message) {
+                reject(new Error(lastError.message));
+                return;
+            }
+            resolve(Boolean(value));
+        };
+        try {
+            const result = permissionsApi.contains({ origins }, done);
+            if (result && typeof result.then === 'function') {
+                result.then(done, reject);
+            }
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+async function requireRuntimeOptionalHostGrant(url) {
+    const origins = getRuntimeOptionalHostPermissionsForUrl(url);
+    if (!origins.length) return;
+    const granted = await permissionsContainsOrigins(origins);
+    if (!granted) {
+        throw new Error('Runtime host permission not granted: ' + origins.join(', '));
+    }
+}
+
 function filterHeaders(headers, blocklist) {
     if (!headers || typeof headers !== 'object') return {};
     const filtered = {};
@@ -538,47 +617,48 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             return false;
         }
 
-        const validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
-        const normalizedMethod = String(method || 'GET').toUpperCase();
-        const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
+        const startFetch = () => {
+            const validMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+            const normalizedMethod = String(method || 'GET').toUpperCase();
+            const safeMethod = validMethods.includes(normalizedMethod) ? normalizedMethod : 'GET';
 
-        const controller = new AbortController();
-        // Default to 30 s when the caller does not pass a timeout so unauthenticated
-        // or hung upstream fetches cannot stall the service worker indefinitely.
-        const DEFAULT_FETCH_TIMEOUT_MS = 30000;
-        const MIN_FETCH_TIMEOUT_MS = 1000;
-        const requestedTimeout = Number.isFinite(timeout) && timeout > 0
-            ? timeout
-            : DEFAULT_FETCH_TIMEOUT_MS;
-        const clampedTimeout = Math.max(MIN_FETCH_TIMEOUT_MS, Math.min(requestedTimeout, MAX_FETCH_TIMEOUT_MS));
-        let timer = null;
-        let responded = false;
+            const controller = new AbortController();
+            // Default to 30 s when the caller does not pass a timeout so unauthenticated
+            // or hung upstream fetches cannot stall the service worker indefinitely.
+            const DEFAULT_FETCH_TIMEOUT_MS = 30000;
+            const MIN_FETCH_TIMEOUT_MS = 1000;
+            const requestedTimeout = Number.isFinite(timeout) && timeout > 0
+                ? timeout
+                : DEFAULT_FETCH_TIMEOUT_MS;
+            const clampedTimeout = Math.max(MIN_FETCH_TIMEOUT_MS, Math.min(requestedTimeout, MAX_FETCH_TIMEOUT_MS));
+            let timer = null;
+            let responded = false;
 
-        timer = setTimeout(() => {
-            if (responded) return;
-            responded = true;
-            controller.abort();
-            sendResponse({ timeout: true });
-        }, clampedTimeout);
+            timer = setTimeout(() => {
+                if (responded) return;
+                responded = true;
+                controller.abort();
+                sendResponse({ timeout: true });
+            }, clampedTimeout);
 
-        const fetchOpts = {
-            method: safeMethod,
-            signal: controller.signal,
-            credentials: shouldSendCredentials(url) ? 'include' : 'omit'
-        };
+            const fetchOpts = {
+                method: safeMethod,
+                signal: controller.signal,
+                credentials: shouldSendCredentials(url) ? 'include' : 'omit'
+            };
 
-        const filteredHeaders = filterRequestHeaders(headers, url);
-        if (isJsonLikePayload(data) && !hasHeader(filteredHeaders, 'content-type')) {
-            filteredHeaders['Content-Type'] = 'application/json';
-        }
-        if (Object.keys(filteredHeaders).length > 0) {
-            fetchOpts.headers = filteredHeaders;
-        }
-        if (data !== null && data !== undefined && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
-            fetchOpts.body = normalizeRequestBody(data, filteredHeaders);
-        }
+            const filteredHeaders = filterRequestHeaders(headers, url);
+            if (isJsonLikePayload(data) && !hasHeader(filteredHeaders, 'content-type')) {
+                filteredHeaders['Content-Type'] = 'application/json';
+            }
+            if (Object.keys(filteredHeaders).length > 0) {
+                fetchOpts.headers = filteredHeaders;
+            }
+            if (data !== null && data !== undefined && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
+                fetchOpts.body = normalizeRequestBody(data, filteredHeaders);
+            }
 
-        fetch(url, fetchOpts).then(async (resp) => {
+            fetch(url, fetchOpts).then(async (resp) => {
             // NOTE: the clampedTimeout deadline intentionally spans the entire
             // connect + headers + body-drain lifecycle. We do NOT clear the
             // timer here on headers arrival — a slowloris upstream that trickles
@@ -697,6 +777,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (responded) return;
             responded = true;
             sendResponse({ error: err.name === 'AbortError' ? 'Request aborted' : err.message });
+        });
+        };
+
+        requireRuntimeOptionalHostGrant(url).then(() => {
+            startFetch();
+        }).catch((err) => {
+            sendResponse({ error: err.message || 'Runtime host permission check failed.' });
         });
 
         return true; // keep sendResponse channel open

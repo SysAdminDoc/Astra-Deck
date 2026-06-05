@@ -654,10 +654,13 @@ means implemented/closed by the build lane.
     `extension/core/optional-host-permissions.js` plus `popup.js` request
     declared optional hosts before enabling matching settings; and hardening
     tests pin the manifest split, data-flow coverage, popup request guard, and
-    helper callback/promise behavior. `sponsor.ajay.app` intentionally remains
+    helper callback/promise behavior. A second same-day slice added background
+    `EXT_FETCH` enforcement so requests to generated runtime-optional origins
+    must pass the existing allowlist and a current `chrome.permissions.contains`
+    grant check before network fetch. `sponsor.ajay.app` intentionally remains
     required because SponsorBlock is default-on; the item stays open for
     SponsorBlock/DeArrow runtime-grant UX, richer denied/revoked state, and
-    background-fetch grant enforcement.
+    manual browser smoke coverage.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,
