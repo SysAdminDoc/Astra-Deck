@@ -1,0 +1,11 @@
+name: Astra Deck CodeQL config
+
+queries:
+  - uses: security-extended
+
+paths-ignore:
+  - node_modules/**
+  - build/**
+  - mhtml/**
+  - archive/**
+  - docs/archive/**
