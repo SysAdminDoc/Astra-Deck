@@ -30,6 +30,14 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: In-page overlay accessibility coverage was added beyond the popup.
+  `npm run check` now runs `npm run audit:overlays`, which statically verifies
+  generated overlay names, dialog/region semantics, live-region behavior,
+  focus-visible rules, and WCAG 2.2 24px target-size floors for toasts,
+  downloader install/options/health/history surfaces, transcript viewer/search,
+  video notes, and subscription group toolbar/digest/modal controls. Mutation
+  canaries prove the gate fails for unlabeled close buttons, missing
+  `:focus-visible`, and sub-24px targets.
 - 2026-06-05: Repo-local first-read instructions were reconciled with the
   current protected-main, maintainer-local release, eight-artifact, and Firefox
   140+ contracts. `AGENTS.md` now points at tracked loop/planning/audit files,
