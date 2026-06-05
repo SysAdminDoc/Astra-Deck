@@ -42,6 +42,7 @@ or maintainer action to confirm.
   `@SysAdminDoc` for policy, dependency manifests, release/signing tooling,
   hardening gates, extension manifest/background/core code, and companion
   downloader paths, and the local hardening suite asserts that coverage. The
+  GitHub CODEOWNERS errors API is clean for the pushed feature-branch ref. The
   remaining hosted step is to validate CODEOWNERS on the default branch and
   enable `require_code_owner_reviews` after merge.
 
