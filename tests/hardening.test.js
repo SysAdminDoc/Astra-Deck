@@ -93,6 +93,10 @@ function evaluateStringExpression(node, scope = Object.create(null)) {
     return null;
 }
 
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function extractObjectFeatureDefinition(node, scope = Object.create(null)) {
     if (!node || node.type !== 'ObjectExpression') return null;
     const props = objectPropertyMap(node);
@@ -1990,7 +1994,7 @@ test('GitHub workflows pin external actions to full-length SHAs with version com
     })) {
         assert.match(
             combined,
-            new RegExp(action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '@' + sha),
+            new RegExp(escapeRegExp(action) + '@' + sha),
             `${action} must stay pinned to its resolved upstream tag commit`
         );
     }
@@ -2018,10 +2022,118 @@ test('CodeQL scans JavaScript and Python with security-extended queries', () => 
     for (const ignoredPath of ['node_modules/**', 'build/**', 'mhtml/**', 'archive/**', 'docs/archive/**']) {
         assert.match(
             config,
-            new RegExp(ignoredPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+            new RegExp(escapeRegExp(ignoredPath)),
             `${ignoredPath} should stay out of the CodeQL source set`
         );
     }
+});
+
+test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+
+    for (const [label, source] of [
+        ['extension/ytkit.js', ytkitSource],
+        ['YTKit.user.js', userscriptSource]
+    ]) {
+        assert.match(source, /function\s+isYouTubeHostname\(/,
+            `${label} must centralize exact YouTube host validation`);
+        assert.doesNotMatch(source, /includes\(['"]youtube\.com['"]\)/,
+            `${label} must not use substring youtube.com host checks`);
+        assert.doesNotMatch(source, /includes\(['"]youtu\.be['"]\)/,
+            `${label} must not use substring youtu.be host checks`);
+        assert.doesNotMatch(source, /href\.includes\(['"]youtube\.com\//,
+            `${label} SPA navigation must parse hrefs instead of substring-matching hosts`);
+        assert.match(source, /new URL\(href,\s*window\.location\.href\)/,
+            `${label} SPA navigation must resolve hrefs through URL`);
+        assert.match(source, /url\.protocol !== 'http:' && url\.protocol !== 'https:'/,
+            `${label} SPA navigation must reject non-http(s) schemes`);
+        assert.match(source, /_positions\s*=\s*this\._toPositionMap\(/,
+            `${label} resume storage must normalize persisted data into a Map`);
+        assert.match(source, /Object\.fromEntries\(this\._positions\)/,
+            `${label} resume storage must serialize the Map back to plain JSON`);
+        assert.doesNotMatch(source, /this\._positions\[[^\]]+\]/,
+            `${label} resume storage must not index persisted object keys directly`);
+        assert.doesNotMatch(source, /delete\s+this\._positions\[[^\]]+\]/,
+            `${label} resume storage must not delete persisted object keys directly`);
+        assert.doesNotMatch(source, /TrustedHTML\.setHTML\(\s*(?:a|del)\s*,/,
+            `${label} quick-link labels and delete icons must be built with DOM APIs`);
+    }
+});
+
+test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity order', () => {
+    const userscriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'YTKit.user.js'),
+        'utf8'
+    );
+    const transcriptServiceSource = fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'core', 'transcript-service.js'),
+        'utf8'
+    );
+    const auditPopupSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'audit-popup-a11y.js'),
+        'utf8'
+    );
+    const extractKeysSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'extract-i18n-keys.js'),
+        'utf8'
+    );
+
+    for (const [label, source] of [
+        ['extension/core/transcript-service.js', transcriptServiceSource],
+        ['YTKit.user.js', userscriptSource]
+    ]) {
+        assert.match(source, /_decodeHTMLEntities\(this\._stripXmlTags\(match\[/,
+            `${label} must strip XML tags before entity decoding`);
+        assert.match(source, /_stripXmlTags\(value\)/,
+            `${label} must keep the explicit XML tag scanner`);
+        assert.doesNotMatch(source, /\.replace\(\s*\/<\[\^>\]\*>\//,
+            `${label} must not reintroduce regex XML tag stripping`);
+        const ltIdx = source.indexOf(".replace(/&lt;/g, '<')");
+        const gtIdx = source.indexOf(".replace(/&gt;/g, '>')");
+        const ampIdx = source.indexOf(".replace(/&amp;/g, '&')");
+        assert.ok(ltIdx > -1 && gtIdx > -1 && ampIdx > gtIdx && ampIdx > ltIdx,
+            `${label} must decode &amp; after other entities to avoid double-unescaping`);
+    }
+
+    assert.match(auditPopupSource, /\.replace\(\/<\[\^>\]\+>\/g,\s*''\)/,
+        'popup a11y audit should use one generic tag strip for accessible-text checks');
+    assert.doesNotMatch(auditPopupSource, /<script\[\\s\\S\]\*\?/,
+        'popup a11y audit must not rely on a fragile script tag regex');
+    assert.doesNotMatch(auditPopupSource, /<style\[\\s\\S\]\*\?/,
+        'popup a11y audit must not rely on a fragile style tag regex');
+    assert.match(extractKeysSource, /function\s+decodeSingleQuotedFallback\(raw\)/,
+        'i18n extractor must use the single-pass fallback decoder');
+    assert.doesNotMatch(extractKeysSource, /replace\(\/\\\\'\/g,[\s\S]*replace\(\/\\\\\\\\\/g,[\s\S]*replace\(\/\\\\n\/g/,
+        'i18n extractor must not return to chained multi-character escaping replacements');
+});
+
+test('branch CodeQL file-race and Python error disclosure guardrails stay fixed', () => {
+    const buildSource = fs.readFileSync(
+        path.join(__dirname, '..', 'build-extension.js'),
+        'utf8'
+    );
+    const downloaderSource = fs.readFileSync(
+        path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'),
+        'utf8'
+    );
+
+    assert.match(buildSource, /function\s+readUtf8IfPresent\(filePath\)/,
+        'version bump reads must use one read helper instead of existsSync/read races');
+    assert.match(buildSource, /const originalUserscript = readUtf8IfPresent\(USERSCRIPT\)/,
+        'userscript version bump must read through readUtf8IfPresent');
+    assert.match(buildSource, /const pkgRaw = readUtf8IfPresent\(pkgPath\)/,
+        'package.json version bump must read through readUtf8IfPresent');
+    assert.match(buildSource, /const pkgLockRaw = readUtf8IfPresent\(pkgLockPath\)/,
+        'package-lock version bump must read through readUtf8IfPresent');
+    assert.match(downloaderSource, /write_persistent_log\(f"FolderPickerService failed: \{e\}"\)/,
+        'FolderPickerService must log the detailed exception locally');
+    assert.match(downloaderSource, /'error': 'Folder picker failed\. Check Astra Downloader logs for details\.'/,
+        'FolderPickerService response must return a generic user-facing error');
+    assert.doesNotMatch(downloaderSource, /response_q\.put\(\{'error': str\(e\)\}\)/,
+        'FolderPickerService must not expose raw exception text to the UI response');
 });
 
 test('CODEOWNERS protects security-sensitive repository paths', () => {
@@ -2053,7 +2165,7 @@ test('CODEOWNERS protects security-sensitive repository paths', () => {
     ]) {
         assert.match(
             codeowners,
-            new RegExp(`^${protectedPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+@SysAdminDoc\\s*$`, 'm'),
+            new RegExp(`^${escapeRegExp(protectedPath)}\\s+@SysAdminDoc\\s*$`, 'm'),
             `${protectedPath} must be owned by @SysAdminDoc`
         );
     }
@@ -5511,7 +5623,7 @@ test('v4.12.0 popup.html bundles the v5.0.0 core modules so the panel can render
         'core/data-flow.js',
         'core/optional-host-permissions.js'
     ]) {
-        assert.match(html, new RegExp('<script src="' + mod.replace(/\//g, '\\/') + '">'),
+        assert.match(html, new RegExp('<script src="' + escapeRegExp(mod) + '">'),
             'popup.html must load ' + mod);
     }
     // popup.js must come AFTER the core modules so its renderDataFlowPanel
@@ -5598,7 +5710,7 @@ test('v4.12.0 background.js fetch allowlist matches the data-flow store-safe ori
         if (e.profile !== 'store-safe') continue;
         if (e.origin.includes('*')) continue;
         if (e.origin.startsWith('http://127.0.0.1')) continue;
-        assert.match(bg, new RegExp(e.origin.replace(/\./g, '\\.')),
+        assert.match(bg, new RegExp(escapeRegExp(e.origin)),
             'background.js ALLOWED_FETCH_ORIGINS must list ' + e.origin);
     }
 });
@@ -5926,7 +6038,7 @@ test('v4.16.0 popup.css defines square-cornered (4px radius) risk badges for eve
     assert.match(css, /\.toggle-risk-badge \{[^}]*border-radius:\s*4px/s,
         'risk badge must use a 4px radius (no pill / stadium backdrops)');
     for (const tone of ['api', 'local-companion', 'experimental', 'store-risk']) {
-        assert.match(css, new RegExp('\\.toggle-risk-badge\\.toggle-risk-' + tone.replace(/-/g, '\\-') + ' \\{'),
+        assert.match(css, new RegExp('\\.toggle-risk-badge\\.toggle-risk-' + escapeRegExp(tone) + ' \\{'),
             'popup.css must declare a colour variant for ' + tone);
     }
 });
@@ -6261,7 +6373,7 @@ test('v4.20.0 userscript bundles every v5.0.0 core module by name', () => {
         'extension/core/lifecycle-route-bridge.js'
     ];
     for (const mod of expectedModules) {
-        assert.match(userscript, new RegExp('// ── bundled module: ' + mod.replace(/\//g, '\\/') + ' ──'),
+        assert.match(userscript, new RegExp('// ── bundled module: ' + escapeRegExp(mod) + ' ──'),
             'userscript must include bundle marker for ' + mod);
     }
 });
@@ -9900,7 +10012,7 @@ test('v4.47.0 EXIST-8 — feature_request issue template asks for the risk profi
     // checkbox list is complete. If a future risk band is added
     // to settings-schema.js the maintainer should also add it here.
     for (const band of ['safe', 'api', 'local-companion', 'experimental', 'store-risk', 'byo-key']) {
-        assert.match(featureTpl, new RegExp(`\\*\\*${band.replace(/[-]/g, '\\-')}\\*\\*`),
+        assert.match(featureTpl, new RegExp(`\\*\\*${escapeRegExp(band)}\\*\\*`),
             `feature_request.md must list the ${band} risk band as a checkbox option`);
     }
     // Competitive parity prompt keeps the maintainer's competitor

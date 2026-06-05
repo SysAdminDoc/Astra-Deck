@@ -816,13 +816,21 @@ return response;
     const YOUTUBE_CHANNEL_ID_PATTERN = /^UC[a-zA-Z0-9_-]{10,}$/;
     const YOUTUBE_CHANNEL_HANDLE_PATTERN = /^@[a-zA-Z0-9._-]{2,100}$/;
 
+    function isYouTubeHostname(hostname) {
+        const host = String(hostname || '').toLowerCase();
+        return host === 'youtu.be'
+            || host === 'youtube.com'
+            || host === 'youtube-nocookie.com'
+            || host.endsWith('.youtube.com')
+            || host.endsWith('.youtube-nocookie.com');
+    }
+
     function normalizeChannelUrlCandidate(value) {
         const raw = typeof value === 'string' ? value.trim() : '';
         if (!raw) return null;
         try {
             const parsed = new URL(raw, window.location.href);
-            const hostname = parsed.hostname.toLowerCase();
-            if (!hostname.includes('youtube.com') && !hostname.includes('youtu.be')) return null;
+            if (!isYouTubeHostname(parsed.hostname)) return null;
             return parsed;
         } catch (error) {
             void error;
@@ -8057,13 +8065,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const cleanUrl = (url) => {
                     try {
                         const u = new URL(url);
-                        const hostname = u.hostname.toLowerCase();
-                        const isYouTubeHost = hostname === 'youtu.be'
-                            || hostname === 'youtube.com'
-                            || hostname === 'youtube-nocookie.com'
-                            || hostname.endsWith('.youtube.com')
-                            || hostname.endsWith('.youtube-nocookie.com');
-                        if (!isYouTubeHost) return url;
+                        if (!isYouTubeHostname(u.hostname)) return url;
                         STRIP_PARAMS.forEach(p => u.searchParams.delete(p));
                         // Convert to short URL if it's a watch page
                         const videoId = getVideoId(u);
@@ -8079,7 +8081,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Intercept clipboard writes
                 this._clipboardHandler = (e) => {
                     const text = e.clipboardData?.getData('text/plain') || '';
-                    if (text && (text.includes('youtube.com') || text.includes('youtu.be'))) {
+                    if (text) {
                         const cleaned = cleanUrl(text);
                         if (cleaned !== text) {
                             e.preventDefault();
@@ -8100,7 +8102,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Also clean address bar on navigation
                 this._cleanAddressBar = () => {
                     const url = window.location.href;
-                    if (!url.includes('youtube.com') && !url.includes('youtu.be')) return;
                     const cleaned = cleanUrl(url);
                     // Don't convert to youtu.be for address bar (would break SPA)
                     if (cleaned !== url) {
@@ -16462,7 +16463,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const queryId = url.searchParams.get('v');
                     if (queryId && VIDEO_ID_PATTERN.test(queryId)) return queryId;
                     const segments = url.pathname.split('/').filter(Boolean);
-                    if (url.hostname.includes('youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) return segments[0];
+                    const hostname = url.hostname.toLowerCase();
+                    if ((hostname === 'youtu.be' || hostname === 'www.youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) return segments[0];
                     for (let i = 0; i < segments.length - 1; i++) {
                         if (['shorts', 'embed', 'live'].includes(segments[i]) && VIDEO_ID_PATTERN.test(segments[i + 1])) {
                             return segments[i + 1];
@@ -17914,7 +17916,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const del = document.createElement('button');
                     del.className = 'ytkit-ql-del';
                     del.title = 'Remove';
-                    TrustedHTML.setHTML(del, `<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 6L6 18M6 6l12 12" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`);
+                    const delIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    delIcon.setAttribute('viewBox', '0 0 24 24');
+                    delIcon.setAttribute('width', '14');
+                    delIcon.setAttribute('height', '14');
+                    const delPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    delPath.setAttribute('d', 'M18 6L6 18M6 6l12 12');
+                    delPath.setAttribute('stroke', '#fff');
+                    delPath.setAttribute('stroke-width', '2');
+                    delPath.setAttribute('fill', 'none');
+                    delPath.setAttribute('stroke-linecap', 'round');
+                    delIcon.appendChild(delPath);
+                    del.appendChild(delIcon);
                     del.onclick = (e) => {
                         e.preventDefault(); e.stopPropagation();
                         const items = self._parseItems();
@@ -22360,23 +22373,37 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _getVideoId() {
                 const url = new URL(location.href);
-                return url.searchParams.get('v');
+                const videoId = url.searchParams.get('v');
+                return VIDEO_ID_PATTERN.test(videoId || '') ? videoId : null;
+            },
+
+            _toPositionMap(raw) {
+                const positions = new Map();
+                if (!raw || typeof raw !== 'object') return positions;
+                for (const [id, value] of Object.entries(raw)) {
+                    if (!isSafeObjectKey(id) || !VIDEO_ID_PATTERN.test(id) || !value || typeof value !== 'object') continue;
+                    const time = Number(value.time);
+                    const ts = Number(value.ts);
+                    if (!Number.isFinite(time) || time <= 0 || !Number.isFinite(ts) || ts <= 0) continue;
+                    positions.set(id, { time, ts });
+                }
+                return positions;
             },
 
             async _load() {
-                this._positions = (await StorageManager.get('ytkit_resume_positions')) || {};
+                this._positions = this._toPositionMap(await StorageManager.get('ytkit_resume_positions'));
             },
 
             async _save() {
                 if (!this._positions) return;
                 // Prune oldest entries if over limit
-                const keys = Object.keys(this._positions);
-                if (keys.length > this._MAX_ENTRIES) {
-                    const sorted = keys.sort((a, b) => (this._positions[a]?.ts || 0) - (this._positions[b]?.ts || 0));
-                    const toRemove = sorted.slice(0, keys.length - this._MAX_ENTRIES);
-                    toRemove.forEach(k => delete this._positions[k]);
+                if (this._positions.size > this._MAX_ENTRIES) {
+                    const sorted = [...this._positions.entries()]
+                        .sort((a, b) => (a[1]?.ts || 0) - (b[1]?.ts || 0));
+                    const toRemove = sorted.slice(0, this._positions.size - this._MAX_ENTRIES);
+                    toRemove.forEach(([k]) => this._positions.delete(k));
                 }
-                await StorageManager.set('ytkit_resume_positions', this._positions);
+                await StorageManager.set('ytkit_resume_positions', Object.fromEntries(this._positions));
             },
 
             _savePosition() {
@@ -22388,19 +22415,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Don't save if near start or end (within 10s)
                 if (time < 10 || (duration - time) < 10) {
                     // Video finished or just started — remove saved position
-                    if (this._positions[vid]) {
-                        delete this._positions[vid];
+                    if (this._positions.has(vid)) {
+                        this._positions.delete(vid);
                         this._save();
                     }
                     return;
                 }
-                this._positions[vid] = { time, ts: Date.now() };
+                this._positions.set(vid, { time, ts: Date.now() });
             },
 
             async _restore() {
                 const vid = this._getVideoId();
                 if (!vid || !this._positions) return;
-                const saved = this._positions[vid];
+                const saved = this._positions.get(vid);
                 if (!saved) return;
 
                 const video = document.querySelector('video');
@@ -27479,16 +27506,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const anchor = e.target.closest('a[href]');
                     if (!anchor) return;
                     const href = anchor.getAttribute('href');
-                    if (!href || href.startsWith('blob:') || href.startsWith('data:') || href.startsWith('#') || href.startsWith('javascript:')) return;
-                    const isInternal = href.startsWith('/') || href.includes('youtube.com/');
-                    if (isInternal) {
-                        const url = href.startsWith('http') ? href : window.location.origin + href;
-                        if (url === window.location.href) return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        window.location.href = url;
+                    if (!href || href.startsWith('#')) return;
+                    let url;
+                    try {
+                        url = new URL(href, window.location.href);
+                    } catch {
+                        return;
                     }
+                    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+                    if (!isYouTubeHostname(url.hostname)) return;
+                    if (url.href === window.location.href) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    window.location.href = url.href;
                 };
                 document.addEventListener('click', this._clickHandler, true);
             },

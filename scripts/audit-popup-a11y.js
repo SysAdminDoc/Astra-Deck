@@ -25,8 +25,6 @@ function attrValue(attrs, name) {
 
 function strippedText(html) {
     return html
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[\s\S]*?<\/style>/gi, '')
         .replace(/<[^>]+>/g, '')
         .replace(/&times;/g, 'x')
         .replace(/\s+/g, ' ')

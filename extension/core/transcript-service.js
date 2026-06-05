@@ -389,8 +389,7 @@
                     const attrs = match[1];
                     const startSeconds = parseFloat((attrs.match(/\bstart="([^"]*)"/) || [])[1]) || 0;
                     const duration = parseFloat((attrs.match(/\bdur="([^"]*)"/) || [])[1]) || 0;
-                    const text = this._decodeHTMLEntities(match[2])
-                        .replace(/<[^>]*>/g, '')
+                    const text = this._decodeHTMLEntities(this._stripXmlTags(match[2]))
                         .trim();
 
                     if (text) {
@@ -403,6 +402,23 @@
                 }
 
                 return segments;
+            },
+
+            _stripXmlTags(value) {
+                let out = '';
+                let inTag = false;
+                for (const ch of String(value || '')) {
+                    if (ch === '<') {
+                        inTag = true;
+                        continue;
+                    }
+                    if (inTag) {
+                        if (ch === '>') inTag = false;
+                        continue;
+                    }
+                    out += ch;
+                }
+                return out;
             },
 
             _formatTranscript(segments) {
@@ -464,20 +480,20 @@
 
             _decodeHTMLEntities(text) {
                 return text
-                    .replace(/&#39;/g, "'")
-                    .replace(/&apos;/g, "'")
-                    .replace(/&quot;/g, '"')
-                    .replace(/&amp;/g, '&')
-                    .replace(/&lt;/g, '<')
-                    .replace(/&gt;/g, '>')
+                    .replace(/&#x([a-fA-F0-9]+);/g, (m, hex) => {
+                        const cp = parseInt(hex, 16);
+                        return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+                    })
                     .replace(/&#(\d+);/g, (m, num) => {
                         const cp = Number(num);
                         return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
                     })
-                    .replace(/&#x([a-fA-F0-9]+);/g, (m, hex) => {
-                        const cp = parseInt(hex, 16);
-                        return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
-                    });
+                    .replace(/&#39;/g, "'")
+                    .replace(/&apos;/g, "'")
+                    .replace(/&quot;/g, '"')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&');
             },
 
             _sanitizeFilename(name) {

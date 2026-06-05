@@ -10304,7 +10304,7 @@
                         const queryId = url.searchParams.get('v');
                         if (queryId && VIDEO_ID_PATTERN.test(queryId)) return queryId;
                         const segments = url.pathname.split('/').filter(Boolean);
-                        if (url.hostname.includes('youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) return segments[0];
+                        if (isYoutuBeHost(url.hostname) && VIDEO_ID_PATTERN.test(segments[0] || '')) return segments[0];
                         for (let i = 0; i < segments.length - 1; i++) {
                             if (['shorts', 'embed', 'live'].includes(segments[i]) && VIDEO_ID_PATTERN.test(segments[i + 1])) {
                                 return segments[i + 1];
@@ -11970,6 +11970,15 @@
         return normalizedHost === 'youtu.be' || normalizedHost === 'www.youtu.be';
     }
 
+    function isYouTubeHostname(host = window.location.hostname) {
+        const normalizedHost = typeof host === 'string' ? host.toLowerCase() : '';
+        return isYoutuBeHost(normalizedHost)
+            || normalizedHost === 'youtube.com'
+            || normalizedHost === 'youtube-nocookie.com'
+            || normalizedHost.endsWith('.youtube.com')
+            || normalizedHost.endsWith('.youtube-nocookie.com');
+    }
+
     function isWatchPagePath(path = window.location.pathname, host = window.location.hostname) {
         if (typeof path === 'string' && path.startsWith('/watch')) return true;
         if (!isYoutuBeHost(host)) return false;
@@ -12614,8 +12623,7 @@
             while ((match = textRegex.exec(content)) !== null) {
                 const startSeconds = parseFloat(match[1]) || 0;
                 const duration = parseFloat(match[2]) || 0;
-                const text = this._decodeHTMLEntities(match[3])
-                    .replace(/<[^>]*>/g, '')
+                const text = this._decodeHTMLEntities(this._stripXmlTags(match[3]))
                     .trim();
 
                 if (text) {
@@ -12653,6 +12661,23 @@
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         },
 
+        _stripXmlTags(value) {
+            let out = '';
+            let inTag = false;
+            for (const ch of String(value || '')) {
+                if (ch === '<') {
+                    inTag = true;
+                    continue;
+                }
+                if (inTag) {
+                    if (ch === '>') inTag = false;
+                    continue;
+                }
+                out += ch;
+            }
+            return out;
+        },
+
         _cachedApiKey: null,
         _getInnertubeApiKey() {
             if (this._cachedApiKey) return this._cachedApiKey;
@@ -12677,20 +12702,20 @@
 
         _decodeHTMLEntities(text) {
             return text
-                .replace(/&#39;/g, "'")
-                .replace(/&apos;/g, "'")
-                .replace(/&quot;/g, '"')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
+                .replace(/&#x([a-fA-F0-9]+);/g, (m, hex) => {
+                    const cp = parseInt(hex, 16);
+                    return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
+                })
                 .replace(/&#(\d+);/g, (m, num) => {
                     const cp = Number(num);
                     return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
                 })
-                .replace(/&#x([a-fA-F0-9]+);/g, (m, hex) => {
-                    const cp = parseInt(hex, 16);
-                    return Number.isInteger(cp) && cp >= 0 && cp <= 0x10FFFF ? String.fromCodePoint(cp) : m;
-                });
+                .replace(/&#39;/g, "'")
+                .replace(/&apos;/g, "'")
+                .replace(/&quot;/g, '"')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&');
         },
 
         _sanitizeFilename(name) {
@@ -15612,12 +15637,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     try {
                         const u = new URL(url);
                         const hostname = u.hostname.toLowerCase();
-                        const isYouTubeHost = hostname === 'youtu.be'
-                            || hostname === 'youtube.com'
-                            || hostname === 'youtube-nocookie.com'
-                            || hostname.endsWith('.youtube.com')
-                            || hostname.endsWith('.youtube-nocookie.com');
-                        if (!isYouTubeHost) return url;
+                        if (!isYouTubeHostname(hostname)) return url;
                         STRIP_PARAMS.forEach(p => u.searchParams.delete(p));
                         // Convert to short URL if it's a watch page
                         const videoId = getVideoId(u);
@@ -15633,7 +15653,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Intercept clipboard writes
                 this._clipboardHandler = (e) => {
                     const text = e.clipboardData?.getData('text/plain') || '';
-                    if (text && (text.includes('youtube.com') || text.includes('youtu.be'))) {
+                    if (text) {
                         const cleaned = cleanUrl(text);
                         if (cleaned !== text) {
                             e.preventDefault();
@@ -15654,7 +15674,6 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 // Also clean address bar on navigation
                 this._cleanAddressBar = () => {
                     const url = window.location.href;
-                    if (!url.includes('youtube.com') && !url.includes('youtu.be')) return;
                     const cleaned = cleanUrl(url);
                     // Don't convert to youtu.be for address bar (would break SPA)
                     if (cleaned !== url) {
@@ -18338,6 +18357,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return { text, url, icon };
                 }).filter(Boolean);
             },
+            _createQuickLinkIcon(pathData) {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.classList.add('ytkit-ql-icon');
+                const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                svgPath.setAttribute('d', pathData);
+                svg.appendChild(svgPath);
+                return svg;
+            },
             _buildMenu(parentEl, dropId) {
                 const existing = parentEl.querySelector('#' + dropId);
                 if (existing) existing.remove();
@@ -18349,13 +18377,25 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const row = document.createElement('div');
                     row.className = 'ytkit-ql-row';
                     const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
-                    TrustedHTML.setHTML(a, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="${item.icon}"></path></svg><span>${item.text}</span>`);
+                    const icon = this._createQuickLinkIcon(item.icon);
+                    const label = document.createElement('span');
+                    label.textContent = item.text;
+                    a.appendChild(icon);
+                    a.appendChild(label);
                     row.appendChild(a);
                     // Delete button (hidden unless editing)
                     const del = document.createElement('button');
                     del.className = 'ytkit-ql-del';
                     del.title = 'Remove';
-                    TrustedHTML.setHTML(del, `<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 6L6 18M6 6l12 12" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`);
+                    const delIcon = this._createQuickLinkIcon('M18 6L6 18M6 6l12 12');
+                    delIcon.setAttribute('width', '14');
+                    delIcon.setAttribute('height', '14');
+                    const delPath = delIcon.querySelector('path');
+                    delPath.setAttribute('stroke', '#fff');
+                    delPath.setAttribute('stroke-width', '2');
+                    delPath.setAttribute('fill', 'none');
+                    delPath.setAttribute('stroke-linecap', 'round');
+                    del.appendChild(delIcon);
                     del.onclick = (e) => {
                         e.preventDefault(); e.stopPropagation();
                         const items = self._parseItems();
@@ -21240,47 +21280,61 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _getVideoId() {
                 const url = new URL(location.href);
-                return url.searchParams.get('v');
+                const videoId = url.searchParams.get('v');
+                return VIDEO_ID_PATTERN.test(videoId || '') ? videoId : null;
+            },
+
+            _toPositionMap(raw) {
+                const positions = new Map();
+                if (!raw || typeof raw !== 'object') return positions;
+                for (const [id, value] of Object.entries(raw)) {
+                    if (!isSafeObjectKey(id) || !VIDEO_ID_PATTERN.test(id) || !value || typeof value !== 'object') continue;
+                    const time = Number(value.time);
+                    const ts = Number(value.ts);
+                    if (!Number.isFinite(time) || time <= 0 || !Number.isFinite(ts) || ts <= 0) continue;
+                    positions.set(id, { time, ts });
+                }
+                return positions;
             },
 
             async _load() {
-                this._positions = (await StorageManager.get('ytkit_resume_positions')) || {};
+                this._positions = this._toPositionMap(await StorageManager.get('ytkit_resume_positions'));
             },
 
             async _save() {
                 if (!this._positions) return;
                 // Prune oldest entries if over limit
-                const keys = Object.keys(this._positions);
-                if (keys.length > this._MAX_ENTRIES) {
-                    const sorted = keys.sort((a, b) => (this._positions[a]?.ts || 0) - (this._positions[b]?.ts || 0));
-                    const toRemove = sorted.slice(0, keys.length - this._MAX_ENTRIES);
-                    toRemove.forEach(k => delete this._positions[k]);
+                if (this._positions.size > this._MAX_ENTRIES) {
+                    const sorted = [...this._positions.entries()]
+                        .sort((a, b) => (a[1]?.ts || 0) - (b[1]?.ts || 0));
+                    const toRemove = sorted.slice(0, this._positions.size - this._MAX_ENTRIES);
+                    toRemove.forEach(([k]) => this._positions.delete(k));
                 }
-                await StorageManager.set('ytkit_resume_positions', this._positions);
+                await StorageManager.set('ytkit_resume_positions', Object.fromEntries(this._positions));
             },
 
             _savePosition() {
                 const vid = this._getVideoId();
                 const video = document.querySelector('video');
-                if (!vid || !video || video.duration < 60) return; // Only for videos > 1 min
+                if (!this._positions || !vid || !video || video.duration < 60) return; // Only for videos > 1 min
                 const time = video.currentTime;
                 const duration = video.duration;
                 // Don't save if near start or end (within 10s)
                 if (time < 10 || (duration - time) < 10) {
                     // Video finished or just started — remove saved position
-                    if (this._positions[vid]) {
-                        delete this._positions[vid];
+                    if (this._positions.has(vid)) {
+                        this._positions.delete(vid);
                         this._save();
                     }
                     return;
                 }
-                this._positions[vid] = { time, ts: Date.now() };
+                this._positions.set(vid, { time, ts: Date.now() });
             },
 
             async _restore() {
                 const vid = this._getVideoId();
                 if (!vid || !this._positions) return;
-                const saved = this._positions[vid];
+                const saved = this._positions.get(vid);
                 if (!saved) return;
 
                 const video = document.querySelector('video');
@@ -24028,16 +24082,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const anchor = e.target.closest('a[href]');
                     if (!anchor) return;
                     const href = anchor.getAttribute('href');
-                    if (!href || href.startsWith('blob:') || href.startsWith('data:') || href.startsWith('#') || href.startsWith('javascript:')) return;
-                    const isInternal = href.startsWith('/') || href.includes('youtube.com/');
-                    if (isInternal) {
-                        const url = href.startsWith('http') ? href : window.location.origin + href;
-                        if (url === window.location.href) return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                        window.location.href = url;
+                    if (!href || href.startsWith('#')) return;
+                    let url;
+                    try {
+                        url = new URL(href, window.location.href);
+                    } catch {
+                        return;
                     }
+                    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+                    if (!isYouTubeHostname(url.hostname)) return;
+                    if (url.href === window.location.href) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    window.location.href = url.href;
                 };
                 document.addEventListener('click', this._clickHandler, true);
             },
