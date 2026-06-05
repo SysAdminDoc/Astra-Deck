@@ -28978,7 +28978,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             async _callLLM(prompt) {
                 const s = appState.settings;
-                if (!s.aiSummaryApiKey && s.aiSummaryProvider !== 'ollama') throw new Error('Set aiSummaryApiKey first (via options page)');
+                if (!s.aiSummaryApiKey && s.aiSummaryProvider !== 'ollama') throw new Error('Set aiSummaryApiKey first in Astra Deck settings (gear icon or toolbar popup Open Full Settings)');
                 const provider = s.aiSummaryProvider || 'openai';
                 const requestJson = async (providerName, url, payload, headers = {}, timeout = 120000) => {
                     const { response, data } = await extensionFetchJson({
