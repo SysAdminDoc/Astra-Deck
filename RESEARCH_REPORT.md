@@ -549,8 +549,8 @@ Top remaining opportunities (one-liners):
   `build/*` as a workflow artifact and creates CI build/SBOM attestations on tag
   refs, while `docs/signing-keys.md` says public GitHub Releases remain a
   maintainer-local upload path because `ytkit.pem` never enters CI.
-  `docs/architecture.md` still says the CI row ends in `gh release create`.
-  [Verified]
+  Cycle 2026-06-05 reconciled `docs/architecture.md` so the CI row names upload
+  artifacts and tag-only attestations instead of `gh release create`. [Verified]
 - `git log -30` (active feature-peel cadence; parallel development in flight). [Verified]
 - Competitive / standards landscape: SponsorBlock, DeArrow, Return YouTube
   Dislike, Enhancer for YouTube, Improve YouTube, PocketTube, BlockTube, Unhook;
@@ -747,8 +747,8 @@ Closed since the 2026-06-03 baseline:
   generates `release-manifest.json` / `SHA256SUMS`, uploads `build/*` as a
   workflow artifact, and creates CI build/SBOM attestations on tag refs. Public
   GitHub Release publication remains maintainer-local for `ytkit.pem`-signed
-  CRX artifacts; current architecture docs still need reconciliation so they do
-  not imply CI itself runs `gh release create`. Firefox build is patched but not
+  CRX artifacts; current architecture docs now mirror that split and no longer
+  imply CI itself runs public release publication. Firefox build is patched but not
   smoke-tested (ROADMAP P1). Companion self-update assets are not yet part of
   this release contract because `AstraDownloader.exe` is built to the repo root
   and the manifest generator only covers it after it is staged into `build/`
@@ -880,9 +880,10 @@ Closed since the 2026-06-03 baseline:
 - Whether CodeQL should start with `security-extended` only or include
   `security-and-quality` after measuring runtime and false-positive volume.
   [Needs validation]
-- How release docs should present the split between `gh attestation verify` for
-  CI-built artifacts and digest comparison for maintainer-local public release
-  assets. [Needs validation]
+- Whether to add side-by-side command examples for `gh attestation verify` on
+  CI-built artifacts and `gh release view --json assets` digest comparison for
+  maintainer-local public release assets. The core release-doc split is now
+  documented in `docs/architecture.md` and `docs/signing-keys.md`. [Needs validation]
 - Downloader signing budget and CWS/AMO submission intent (gates the signed
   installer work). [Needs validation]
 - Live-stream MHTML capture window for full live-chat iframe internals — repeated
