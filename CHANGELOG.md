@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CODEOWNERS source policy added.** `.github/CODEOWNERS` now maps
+  security-sensitive repository policy, release/signing tooling, dependency
+  manifests, hardening gates, extension core/manifest/background code, and the
+  Python companion to `@SysAdminDoc`, with a hardening regression that keeps the
+  high-risk path set covered. Enforcing code-owner review on `main` remains a
+  post-merge repository-protection step.
+
 - **Astra Downloader self-update release contract hardened.** Release tooling
   now has a `release:stage-companion` path for staging `AstraDownloader.exe`
   into `build/`, `release:manifest -- --require-companion` requires the EXE and
