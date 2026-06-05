@@ -7,7 +7,9 @@
 - `extension/core/optional-host-permissions.js`
 - `extension/popup.html`
 - `extension/popup.js`
+- `extension/background.js`
 - `YTKit.user.js`
+- `tests/background.test.js`
 - `tests/hardening.test.js`
 - `docs/store-permission-rationale.md`
 - `docs/cws-submission-checklist.md`
@@ -37,6 +39,9 @@ cycle left that host required and documented it as remaining work.
   compatible wrapper around the browser permissions API.
 - Wired popup setting writes to request declared optional host permissions
   before persisting a matching setting as enabled.
+- Added a background `EXT_FETCH` gate so generated runtime-optional origins
+  still pass the existing allowlist but are rejected before network fetch when
+  the matching optional host grant is missing or revoked.
 - Regenerated `YTKit.user.js` so the bundled data-flow module stays in sync.
 - Updated hardening tests and store-review docs for the split.
 
@@ -44,13 +49,12 @@ cycle left that host required and documented it as remaining work.
 
 - `node sync-userscript.js`.
 - `node --test tests/hardening.test.js --test-name-pattern="optional host|build-extension emits|data-flow|Return YouTube Dislike"`.
+- `node --test tests/background.test.js`.
 
 ## Remaining Work
 
 - Add a SponsorBlock/DeArrow runtime-grant UX before moving
   `sponsor.ajay.app` out of install-time store-safe host permissions.
 - Surface optional-host denied/revoked state in the settings/data-flow UI.
-- Enforce optional-host grant checks in background fetch paths before proxying
-  requests to runtime-optional origins.
 - Run manual unpacked Chrome and Firefox store-safe smoke checks for permission
   prompts, granted behavior, denial, and revocation.

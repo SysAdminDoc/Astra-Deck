@@ -10,8 +10,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Store-safe generated manifests now keep core YouTube and default-on
   SponsorBlock hosts as required while declaring thumbnail, Return YouTube
   Dislike, and Reddit hosts in `optional_host_permissions`. The popup requests
-  declared optional hosts before enabling matching settings, and hardening tests
-  pin the manifest split plus helper behavior. SponsorBlock/DeArrow runtime
+  declared optional hosts before enabling matching settings, and the background
+  `EXT_FETCH` proxy now checks the current runtime host grant before fetching
+  those optional origins. Hardening and background tests pin the manifest split,
+  helper behavior, and granted/denied proxy paths. SponsorBlock/DeArrow runtime
   grant UX remains a follow-up because SponsorBlock is default-on.
 
 - **CODEOWNERS source policy added.** `.github/CODEOWNERS` now maps

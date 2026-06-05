@@ -9,7 +9,12 @@ const vm = require('node:vm');
 const repoRoot = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(repoRoot, 'extension', 'background.js'), 'utf8');
 
-function loadBackground({ fetchImpl, downloadsDownloadImpl } = {}) {
+function loadBackground({
+    fetchImpl,
+    downloadsDownloadImpl,
+    optionalHostPermissions = [],
+    permissionsContainsImpl
+} = {}) {
     let messageListener = null;
     const chrome = {
         commands: {
@@ -24,6 +29,7 @@ function loadBackground({ fetchImpl, downloadsDownloadImpl } = {}) {
         },
         runtime: {
             lastError: null,
+            getManifest: () => ({ optional_host_permissions: optionalHostPermissions }),
             openOptionsPage: async () => {},
             onMessage: {
                 addListener(listener) {
@@ -34,6 +40,9 @@ function loadBackground({ fetchImpl, downloadsDownloadImpl } = {}) {
         downloads: {
             download: downloadsDownloadImpl || ((opts, callback) => callback(1)),
             show() {}
+        },
+        permissions: {
+            contains: permissionsContainsImpl || ((_payload, callback) => callback(true))
         },
         cookies: {
             getAll: async () => []
@@ -111,6 +120,78 @@ test('background EXT_FETCH preserves empty-string request bodies', async () => {
     assert.equal(capturedOptions?.body, '');
     assert.equal(response.status, 200);
     assert.equal(response.responseText, '');
+});
+
+test('background EXT_FETCH rejects runtime optional hosts before fetch when grant is missing', async () => {
+    let capturedPermissionsPayload = null;
+    let fetchCalled = false;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: ['https://returnyoutubedislikeapi.com/*'],
+        permissionsContainsImpl(payload, callback) {
+            capturedPermissionsPayload = payload;
+            callback(false);
+        },
+        fetchImpl: async () => {
+            fetchCalled = true;
+            return new Response('', {
+                status: 200,
+                headers: { 'content-length': '0' }
+            });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'GET',
+            url: 'https://returnyoutubedislikeapi.com/votes?videoId=dQw4w9WgXcQ'
+        }
+    });
+
+    assert.deepEqual(
+        Array.from(capturedPermissionsPayload?.origins || []),
+        ['https://returnyoutubedislikeapi.com/*']
+    );
+    assert.equal(fetchCalled, false);
+    assert.match(response.error, /Runtime host permission not granted/);
+});
+
+test('background EXT_FETCH allows runtime optional hosts after grant is present', async () => {
+    let capturedPermissionsPayload = null;
+    let capturedUrl = null;
+    const { messageListener } = loadBackground({
+        optionalHostPermissions: ['https://www.reddit.com/*'],
+        permissionsContainsImpl(payload, callback) {
+            capturedPermissionsPayload = payload;
+            callback(true);
+        },
+        fetchImpl: async (url) => {
+            capturedUrl = url;
+            return new Response('{"ok":true}', {
+                status: 200,
+                headers: {
+                    'content-length': '11',
+                    'content-type': 'application/json'
+                }
+            });
+        }
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: {
+            method: 'GET',
+            url: 'https://www.reddit.com/search.json?q=url%3Ayoutube.com'
+        }
+    });
+
+    assert.deepEqual(
+        Array.from(capturedPermissionsPayload?.origins || []),
+        ['https://www.reddit.com/*']
+    );
+    assert.equal(capturedUrl, 'https://www.reddit.com/search.json?q=url%3Ayoutube.com');
+    assert.equal(response.status, 200);
+    assert.equal(response.responseText, '{"ok":true}');
 });
 
 test('background DOWNLOAD_FILE sanitizes reserved Windows filenames', async () => {

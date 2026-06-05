@@ -33,10 +33,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 - 2026-06-05: Store-safe default-off enrichment hosts for thumbnails, Return
   YouTube Dislike, and Reddit now generate as `optional_host_permissions`
   instead of install-time `host_permissions`; the popup requests declared
-  optional hosts before enabling matching settings, and hardening tests cover
-  the manifest split, data-flow contract, and callback/promise permission
-  helper. SponsorBlock/DeArrow remains open because `sponsor.ajay.app` backs
-  the default-on SponsorBlock feature.
+  optional hosts before enabling matching settings, and the background
+  `EXT_FETCH` proxy rejects requests to those optional origins unless the
+  runtime grant is currently present. Hardening/background tests cover the
+  manifest split, data-flow contract, callback/promise permission helper, and
+  granted/denied proxy paths. SponsorBlock/DeArrow remains open because
+  `sponsor.ajay.app` backs the default-on SponsorBlock feature.
 - 2026-06-05: `.github/CODEOWNERS` source coverage was added for repository
   policy, dependency manifests, release/signing tooling, hardening gates,
   security/privacy docs, extension manifest/background/core code, and the

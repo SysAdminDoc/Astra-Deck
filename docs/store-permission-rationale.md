@@ -114,7 +114,8 @@ support bundle.
 These hosts are declared in `optional_host_permissions`, not install-time
 `host_permissions`, for the public `store-safe` artifacts. Astra Deck requests
 them from the popup when the user explicitly enables the matching default-off
-feature.
+feature. The background fetch proxy also verifies the current runtime host grant
+before proxying requests to these optional origins.
 
 | Optional host permission | Store justification |
 | --- | --- |
@@ -147,7 +148,8 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 - Store-safe excludes AI provider, Cobalt, Ollama, and Astra Downloader loopback
   host grants from the packaged manifest and CSP.
 - Store-safe declares default-off thumbnail, Return YouTube Dislike, and Reddit
-  hosts as runtime optional grants instead of install-time host permissions.
+  hosts as runtime optional grants instead of install-time host permissions, and
+  the background fetch proxy checks the current grant before proxying them.
 - SponsorBlock remains an install-time store-safe host because it is default-on;
   moving `sponsor.ajay.app` waits for a dedicated default-on runtime grant UX.
 - GitHub-full is intentionally broader and should not be submitted as the public
