@@ -576,10 +576,11 @@ means implemented/closed by the build lane.
     manifests, release/signing tooling, hardening gates, security/privacy docs,
     extension manifest/background/core code, and the companion downloader to
     `@SysAdminDoc`; `tests/hardening.test.js` now asserts those high-risk paths
-    remain covered and avoids non-existent team references. The item stays open
-    until the CODEOWNERS file lands on `main`, the GitHub CODEOWNERS errors API
-    is clean for the default branch, and `main` branch protection enables
-    code-owner review.
+    remain covered and avoids non-existent team references. GitHub's
+    CODEOWNERS errors API returned `errors: []` for
+    `ref=codex/research-feature-plan-2026-06-05`. The item stays open until the
+    CODEOWNERS file lands on `main`, the errors API is clean for the default
+    branch, and `main` branch protection enables code-owner review.
   - Acceptance: `.github/CODEOWNERS` exists on `main`, maps security-sensitive
     files and directories to `@SysAdminDoc` or a real write-enabled team, and
     includes comments explaining why the paths are protected. The CODEOWNERS
