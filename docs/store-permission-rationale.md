@@ -150,6 +150,9 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 - Store-safe declares default-off thumbnail, Return YouTube Dislike, and Reddit
   hosts as runtime optional grants instead of install-time host permissions, and
   the background fetch proxy checks the current grant before proxying them.
+- If a user denies or later revokes an optional host grant, the popup marks the
+  affected setting and data-flow row with a permission-needed state instead of
+  retrying silently.
 - SponsorBlock remains an install-time store-safe host because it is default-on;
   moving `sponsor.ajay.app` waits for a dedicated default-on runtime grant UX.
 - GitHub-full is intentionally broader and should not be submitted as the public

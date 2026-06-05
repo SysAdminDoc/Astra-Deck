@@ -1174,6 +1174,15 @@ body {
   border-color: rgba(78, 200, 165, 0.36);
 }
 
+/* v4.47.0: optional-host permission chip. Appears when a runtime optional
+   host grant was denied or later revoked for an enabled setting. Same compact
+   4 px geometry as other schema chips, with a warning tone. */
+.schema-overview-list .so-key-profile-badge.so-key-permission-missing {
+  background: rgba(255, 184, 77, 0.14);
+  color: #ffd9a8;
+  border-color: rgba(255, 184, 77, 0.38);
+}
+
 /* v4.47.0 NEW-6: per-key reset affordance. Only rendered when the
    schema entry has a defaultValue AND the current setting value
    differs from it. Compact circular button with the ↺ glyph — wraps
@@ -2101,6 +2110,12 @@ button:focus-visible {
   color: #ff8585;
   border-color: rgba(255, 133, 133, 0.32);
   background: rgba(255, 133, 133, 0.08);
+}
+
+.toggle-risk-badge.toggle-risk-permission {
+  color: #ffd9a8;
+  border-color: rgba(255, 184, 77, 0.38);
+  background: rgba(255, 184, 77, 0.12);
 }
 
 .toggle .desc {

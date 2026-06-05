@@ -30,6 +30,11 @@ const popupHtmlSource = fs.readFileSync(
     'utf8'
 );
 
+const popupCssSource = fs.readFileSync(
+    path.join(__dirname, '..', 'extension', 'popup.css'),
+    'utf8'
+);
+
 const backgroundSource = fs.readFileSync(
     path.join(__dirname, '..', 'extension', 'background.js'),
     'utf8'
@@ -518,16 +523,40 @@ test('popup.js requests declared optional hosts before enabling optional feature
         'popup.js must only request hosts declared by the built manifest');
     assert.match(popupSource, /createOptionalHostPermissions/,
         'popup.js must use the shared optional host permission helper');
+    assert.match(popupSource, /function refreshOptionalHostGrantState/,
+        'popup.js must track missing optional-host grants after denial or revocation');
+    assert.match(popupSource, /helper\.contains\(origins\)/,
+        'popup.js must use permissions.contains to detect revoked optional-host grants');
+    assert.match(popupSource, /helper\.onRemoved/,
+        'popup.js must refresh when optional host permissions are removed');
+    assert.match(popupSource, /helper\.onAdded/,
+        'popup.js must refresh when optional host permissions are granted');
+    assert.match(popupSource, /formatSettingWriteError/,
+        'popup.js must surface the optional permission denial message instead of a generic write failure');
+    assert.match(popupSource, /createQuickOptionalHostBadge/,
+        'quick toggles must show a permission-needed chip for enabled settings whose grant is missing');
+    assert.match(popupSource, /optionalHostPermissionAria/,
+        'quick toggles must expose missing optional-host grants in their accessible label');
+    assert.match(popupSource, /createSchemaOptionalHostBadge/,
+        'schema overview rows must show a permission-needed chip for missing optional grants');
+    assert.match(popupSource, /dataFlowOptionalGrantLabel/,
+        'data-flow panel must distinguish granted vs missing runtime optional hosts');
+    assert.match(popupCssSource, /\.toggle-risk-badge\.toggle-risk-permission/,
+        'popup.css must style the quick-toggle permission-needed chip');
+    assert.match(popupCssSource, /\.so-key-profile-badge\.so-key-permission-missing/,
+        'popup.css must style the schema-overview permission-needed chip');
 
     const fnStart = popupSource.indexOf('async function writeSetting');
     assert.ok(fnStart > -1, 'writeSetting must exist');
-    const fnBody = popupSource.slice(fnStart, fnStart + 900);
+    const fnBody = popupSource.slice(fnStart, fnStart + 1200);
     assert.match(fnBody, /await requestOptionalHostsForSetting\(key, value\)/,
         'writeSetting must request optional hosts before persisting enabled state');
     assert.ok(
         fnBody.indexOf('requestOptionalHostsForSetting') < fnBody.indexOf('storageSet'),
         'optional host request must happen before storageSet persists the feature as enabled'
     );
+    assert.match(fnBody, /await refreshOptionalHostGrantState\(\{\s*render:\s*false\s*\}\)/,
+        'writeSetting must refresh optional grant state immediately after successful storage writes');
 });
 
 test('popup.js exposes live result counts and the new data-management controls', () => {

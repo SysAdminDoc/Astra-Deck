@@ -35,10 +35,13 @@ package versions; the live product-version sources currently agree at v4.46.0.
   instead of install-time `host_permissions`; the popup requests declared
   optional hosts before enabling matching settings, and the background
   `EXT_FETCH` proxy rejects requests to those optional origins unless the
-  runtime grant is currently present. Hardening/background tests cover the
-  manifest split, data-flow contract, callback/promise permission helper, and
-  granted/denied proxy paths. SponsorBlock/DeArrow remains open because
-  `sponsor.ajay.app` backs the default-on SponsorBlock feature.
+  runtime grant is currently present. The popup now surfaces denied/revoked
+  grants as permission-needed chips in quick toggles, schema rows, and the
+  data-flow panel, and shows exact permission-denied status copy. Hardening and
+  background tests cover the manifest split, data-flow contract,
+  callback/promise permission helper, granted/denied proxy paths, and
+  revoked-state UI. SponsorBlock/DeArrow remains open because `sponsor.ajay.app`
+  backs the default-on SponsorBlock feature.
 - 2026-06-05: `.github/CODEOWNERS` source coverage was added for repository
   policy, dependency manifests, release/signing tooling, hardening gates,
   security/privacy docs, extension manifest/background/core code, and the

@@ -42,6 +42,9 @@ cycle left that host required and documented it as remaining work.
 - Added a background `EXT_FETCH` gate so generated runtime-optional origins
   still pass the existing allowlist but are rejected before network fetch when
   the matching optional host grant is missing or revoked.
+- Added popup denied/revoked grant-state chips, `permissions.onAdded` /
+  `permissions.onRemoved` refresh, data-flow grant labels, and exact
+  permission-denied status copy.
 - Regenerated `YTKit.user.js` so the bundled data-flow module stays in sync.
 - Updated hardening tests and store-review docs for the split.
 
@@ -50,11 +53,11 @@ cycle left that host required and documented it as remaining work.
 - `node sync-userscript.js`.
 - `node --test tests/hardening.test.js --test-name-pattern="optional host|build-extension emits|data-flow|Return YouTube Dislike"`.
 - `node --test tests/background.test.js`.
+- `node --test tests/hardening.test.js --test-name-pattern="popup.js requests declared optional hosts|optional host"`.
 
 ## Remaining Work
 
 - Add a SponsorBlock/DeArrow runtime-grant UX before moving
   `sponsor.ajay.app` out of install-time store-safe host permissions.
-- Surface optional-host denied/revoked state in the settings/data-flow UI.
 - Run manual unpacked Chrome and Firefox store-safe smoke checks for permission
   prompts, granted behavior, denial, and revocation.
