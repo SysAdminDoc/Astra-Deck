@@ -64,15 +64,17 @@ npm test -- --test-name-pattern "Selector"
 The fixture builder decodes the MHTML text parts and regenerates committed token
 signatures in `tests/fixtures/*.tokens.txt`. It also writes
 `tests/fixtures/selector-surface-matches.json`, a DOM-subset match report for the
-MHTML-backed `playerChrome` and `liveChat` selector packs. Raw `.mhtml` files
-remain local and gitignored.
+MHTML-backed surfaces listed in `SURFACE_MATCH_SOURCES` inside
+`scripts/build-selector-fixtures.js`. Raw `.mhtml` files remain local and
+gitignored.
 
 ## Review
 
 1. Inspect the fixture diff for removed `ytd-*`, `yt-*`, `ytp-*`, `html5-*`, and `movie_player` tokens.
-2. Inspect `tests/fixtures/selector-surface-matches.json`; a `matched: false`
-   row for a critical `playerChrome` or `liveChat` selector means the selector
-   pack must be refreshed before release.
+2. Inspect `tests/fixtures/selector-surface-matches.json`; every registered
+   surface must have at least one matched stable selector, and any required
+   release-blocking selector listed in `tests/selector-regression.test.js` must
+   have `matched: true`.
 3. Compare the diff with `ytkit.exportSelectorHealth()` from a live page when available.
 4. Promote confirmed replacements into `extension/core/selectors.js` as stable selectors when they are structural, role/data/aria-based, or custom-element based.
 5. Keep older selectors as fallbacks during A/B rollout windows.
@@ -82,8 +84,8 @@ remain local and gitignored.
 
 - `npm run build:fixtures` completes without missing capture files.
 - `npm test -- --test-name-pattern "Selector"` passes.
-- `selector-surface-matches.json` stays synced to the current `playerChrome` and
-  `liveChat` selector-pack stable/fallback arrays.
+- `selector-surface-matches.json` stays synced to each capture-backed
+  selector-pack stable/fallback array registered by the fixture builder.
 - New player/UI variants keep legacy and new selectors in the chain.
 - Live-chat wrapper-only changes are documented with the rendered watch-page
   probe when a full watch-page MHTML capture still times out.

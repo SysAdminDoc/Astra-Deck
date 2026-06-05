@@ -3,6 +3,451 @@
   "generatedBy": "scripts/build-selector-fixtures.js",
   "matcher": "decoded-mhtml-dom-subset",
   "surfaces": {
+    "appShell": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-app",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-page-manager",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "body > ytd-app",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-page-manager.style-scope",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-app",
+        "ytd-page-manager",
+        "body > ytd-app",
+        "ytd-page-manager.style-scope"
+      ]
+    },
+    "feed": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-browse ytd-rich-grid-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-rich-grid-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-rich-grid-renderer.style-scope",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#contents.ytd-rich-grid-renderer",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-browse ytd-rich-grid-renderer",
+        "ytd-rich-grid-renderer",
+        "ytd-rich-grid-renderer.style-scope",
+        "#contents.ytd-rich-grid-renderer"
+      ]
+    },
+    "feedCard": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-rich-item-renderer",
+          "matched": true,
+          "matchCount": 32
+        },
+        {
+          "selector": "yt-lockup-view-model",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "ytd-video-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-lockup-view-model.ytd-rich-item-renderer",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "ytd-rich-item-renderer.style-scope",
+          "matched": true,
+          "matchCount": 32
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-rich-item-renderer",
+        "yt-lockup-view-model",
+        "yt-lockup-view-model.ytd-rich-item-renderer",
+        "ytd-rich-item-renderer.style-scope"
+      ]
+    },
+    "leftNav": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-guide-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-mini-guide-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "yt-app-drawer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-mini-guide-entry-renderer.style-scope",
+          "matched": true,
+          "matchCount": 4
+        },
+        {
+          "selector": "ytd-guide-entry-renderer.style-scope",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-mini-guide-renderer",
+        "ytd-mini-guide-entry-renderer.style-scope"
+      ]
+    },
+    "media": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "video",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "img",
+          "matched": true,
+          "matchCount": 54
+        },
+        {
+          "selector": "ytd-thumbnail",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": true,
+          "matchCount": 32
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "#content video",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "#content img",
+          "matched": true,
+          "matchCount": 54
+        },
+        {
+          "selector": "#content ytd-thumbnail",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "img",
+        "yt-thumbnail-view-model",
+        "#content img"
+      ]
+    },
+    "nav": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-masthead",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#masthead-container",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-masthead div.style-scope",
+          "matched": true,
+          "matchCount": 22
+        },
+        {
+          "selector": "#masthead-container div.style-scope",
+          "matched": true,
+          "matchCount": 22
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-masthead",
+        "#masthead-container",
+        "ytd-masthead div.style-scope",
+        "#masthead-container div.style-scope"
+      ]
+    },
+    "notifications": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-notification-topbar-button-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "yt-icon-badge-shape",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-notification-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": ".ytd-notification-topbar-button-renderer .badge-shape-wiz",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-multi-page-menu-renderer ytd-notification-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-notification-topbar-button-renderer",
+        "yt-icon-badge-shape"
+      ]
+    },
+    "search": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "yt-searchbox",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "input#search",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "form[role=\"search\"] input",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-searchbox-input",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-searchbox #container.ytd-searchbox",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-searchbox"
+      ]
+    },
+    "shortsShelf": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "a[href^=\"/shorts\"]",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-shelf-renderer",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-thumbnail-overlay-badge-view-model",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-reel-shelf-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-rich-shelf-renderer",
+        "yt-thumbnail-overlay-badge-view-model"
+      ]
+    },
+    "thumbnail": {
+      "source": "mhtml/YouTube.mhtml",
+      "fixture": "yt-home.tokens.txt",
+      "elementCount": 3277,
+      "stable": [
+        {
+          "selector": "ytd-thumbnail",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": true,
+          "matchCount": 32
+        },
+        {
+          "selector": "a#thumbnail",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytThumbnailViewModelHost",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-thumbnail a#thumbnail",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-thumbnail-view-model"
+      ]
+    },
+    "mainVideo": {
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 1623,
+      "stable": [
+        {
+          "selector": "video.html5-main-video",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#movie_player video",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "video.video-stream",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".html5-video-container video",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "video.html5-main-video",
+        "#movie_player video",
+        "video.video-stream",
+        ".html5-video-container video"
+      ]
+    },
+    "player": {
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 1623,
+      "stable": [
+        {
+          "selector": "#movie_player",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".html5-video-player",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-player #movie_player",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "#player-container #movie_player",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "#movie_player",
+        ".html5-video-player"
+      ]
+    },
     "playerChrome": {
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
@@ -64,6 +509,58 @@
         ".ytp-delhi-modern .ytp-chrome-bottom",
         ".ytp-delhi-modern",
         ".ytp-overflow-panel"
+      ]
+    },
+    "playerSettings": {
+      "source": "mhtml/WatchPage.mhtml",
+      "fixture": "yt-watch.tokens.txt",
+      "elementCount": 1623,
+      "stable": [
+        {
+          "selector": ".ytp-settings-button",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-panel",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-menuitem",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": ".ytp-popup",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": ".ytp-panel-menu",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".ytp-overflow-panel",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#movie_player .ytp-panel-menu",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        ".ytp-settings-button",
+        ".ytp-panel",
+        ".ytp-popup",
+        ".ytp-panel-menu",
+        ".ytp-overflow-panel",
+        "#movie_player .ytp-panel-menu"
       ]
     },
     "liveChat": {

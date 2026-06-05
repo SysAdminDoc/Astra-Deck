@@ -30,6 +30,9 @@ const path = require('path');
 const vm = require('node:vm');
 
 const REPO_ROOT = path.join(__dirname, '..');
+const {
+    SURFACE_MATCH_SOURCES,
+} = require(path.join(REPO_ROOT, 'scripts', 'build-selector-fixtures.js'));
 const YTKIT_SOURCE = fs.readFileSync(
     path.join(REPO_ROOT, 'extension', 'ytkit.js'),
     'utf8'
@@ -309,23 +312,30 @@ test('live-chat fixture contains iframe-document selector tokens', () => {
     }
 });
 
-test('selector surface match fixture stays synced to player-chrome and live-chat packs', () => {
+test('selector surface match fixture stays synced to capture-backed packs', () => {
     const fixture = loadSelectorSurfaceMatches();
     const core = loadSelectorPackContext();
-    const expectedSurfaces = ['liveChat', 'playerChrome'];
+    const expectedSurfaces = SURFACE_MATCH_SOURCES.map(({ surface }) => surface).sort();
 
     assert.equal(fixture.schemaVersion, 1);
     assert.equal(fixture.generatedBy, 'scripts/build-selector-fixtures.js');
     assert.equal(fixture.matcher, 'decoded-mhtml-dom-subset');
     assert.deepEqual(Object.keys(fixture.surfaces).sort(), expectedSurfaces);
 
-    for (const surfaceName of expectedSurfaces) {
+    for (const target of SURFACE_MATCH_SOURCES) {
+        const surfaceName = target.surface;
         const snapshot = fixture.surfaces[surfaceName];
         const live = core.SurfaceSelectorMap[surfaceName];
         assert.ok(snapshot, `${surfaceName} must exist in selector-surface-matches.json`);
         assert.ok(live, `${surfaceName} must exist in SurfaceSelectorMap`);
+        assert.equal(snapshot.source, `mhtml/${target.mhtml}`);
+        assert.equal(snapshot.fixture, target.fixture);
         assert.ok(snapshot.elementCount > 100,
             `${surfaceName} fixture parsed only ${snapshot.elementCount} elements`);
+        assert.ok(snapshot.stable.some((row) => row.matched),
+            `${surfaceName} must match at least one stable selector in ${snapshot.source}`);
+        assert.ok(snapshot.matchedSelectors.length >= 1,
+            `${surfaceName} must record at least one matched selector in ${snapshot.source}`);
         assert.deepEqual(
             snapshot.stable.map((row) => row.selector),
             [...live.stable],
@@ -339,13 +349,61 @@ test('selector surface match fixture stays synced to player-chrome and live-chat
     }
 });
 
-test('selector surface match fixture proves live-chat and liquid-glass selectors resolve', () => {
+test('selector surface match fixture proves expanded capture-backed selectors resolve', () => {
     const fixture = loadSelectorSurfaceMatches();
     const required = {
+        appShell: [
+            'ytd-app',
+            'ytd-page-manager',
+        ],
+        feed: [
+            'ytd-rich-grid-renderer',
+        ],
+        feedCard: [
+            'ytd-rich-item-renderer',
+            'yt-lockup-view-model',
+        ],
+        leftNav: [
+            'ytd-mini-guide-renderer',
+        ],
+        media: [
+            'img',
+            'yt-thumbnail-view-model',
+        ],
+        nav: [
+            'ytd-masthead',
+            '#masthead-container',
+        ],
+        notifications: [
+            'ytd-notification-topbar-button-renderer',
+            'yt-icon-badge-shape',
+        ],
+        search: [
+            'yt-searchbox',
+        ],
+        shortsShelf: [
+            'ytd-rich-shelf-renderer',
+        ],
+        thumbnail: [
+            'yt-thumbnail-view-model',
+        ],
+        mainVideo: [
+            'video.html5-main-video',
+            '#movie_player video',
+        ],
+        player: [
+            '#movie_player',
+            '.html5-video-player',
+        ],
         playerChrome: [
             '.ytp-chrome-bottom',
             '.ytp-delhi-modern .ytp-chrome-bottom',
             '.ytp-delhi-modern',
+            '.ytp-overflow-panel',
+        ],
+        playerSettings: [
+            '.ytp-settings-button',
+            '.ytp-panel',
             '.ytp-overflow-panel',
         ],
         liveChat: [

@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Selector fixture match matrix expanded.** `npm run build:fixtures` now emits
+  DOM-subset match evidence for 15 capture-backed surfaces across the existing
+  home, watch, and live-chat MHTML corpus. The selector regression derives the
+  expected surface list from the fixture builder, keeps stable/fallback arrays
+  synced with live selector packs, and fails if any registered surface loses all
+  stable selector matches or if a release-blocking required selector stops
+  resolving.
+
 - **Chromium optional-host prompt-readiness smoke added.** `npm run
   smoke:optional-hosts` stages the store-safe Chromium manifest, opens the real
   extension popup in a fresh Chromium-family profile, seeds enabled optional
