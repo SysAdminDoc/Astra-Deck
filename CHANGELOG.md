@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Repo working notes reconciled.** `AGENTS.md` now points first-read workers at
+  tracked loop/planning/audit files, describes where to find protected-main and
+  maintainer-local release policy, states that ignored `CLAUDE.md` is optional
+  local scratch, and removes the committed dependency on stale local-only notes.
+
 - **CodeQL PR alerts resolved.** CSP hardening tests now parse exact
   `connect-src` directive tokens instead of checking URL substrings, and the
   companion release staging script validates and reads the EXE from the same

@@ -40,8 +40,12 @@
   push: CSP hardening assertions now parse exact `connect-src` tokens instead
   of URL substrings, and companion release staging validates and reads the EXE
   from one opened descriptor before writing the staged build asset. Repository
-  selected-actions and required-SHA settings remain a hosted follow-up
-  after merge.
+  working notes were then reconciled with the current protected-main,
+  maintainer-local release, eight-artifact, and Firefox 140+ contracts:
+  `AGENTS.md` now points at tracked loop/planning/audit files, names the release
+  policy sources, and labels ignored `CLAUDE.md` as optional local scratch
+  rather than committed source of truth. Repository selected-actions and
+  required-SHA settings remain a hosted follow-up after merge.
 
 ## Verification
 
@@ -216,6 +220,21 @@
   - `node --test tests/hardening.test.js --test-name-pattern="release manifest generation|CSP scopes|build-extension emits|runtime optional host|Cobalt fallback origin"`
   - `rg -n "\.includes\('https?://|\.includes\(\"https?://" tests/hardening.test.js`
     returned no string-URL substring assertions.
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+- Cycle 23 repo working-notes reconciliation verification passed:
+  - `Test-Path -LiteralPath CODEX-CHANGELOG.md` returned `False`, confirming the
+    old pointer would remain broken if kept.
+  - `git check-ignore -v -- CLAUDE.md` confirmed `CLAUDE.md` is intentionally
+    ignored, so the durable fix belongs in tracked `AGENTS.md`.
+  - `rg -n 'CLAUDE.md.*source of truth|CODEX-CHANGELOG|strict_min_version: "128\.0"|Firefox 128|Firefox 128\+|push main|gh release create|All 5 artifacts|all 5 artifacts|Five-artifact|five-artifact' AGENTS.md`
+    returned no stale tracked first-read matches.
+  - `rg -n 'AUTONOMOUS-LOOP-STATE|ROADMAP.md|RESEARCH_REPORT.md|docs/signing-keys.md|docs/audit|optional local context' AGENTS.md`
+    found the current tracked loop, planning, release, audit, and local-scratch
+    guidance.
+  - `node scripts/check-versions.js`
   - `npm test`
   - `npm run check`
   - `npm run build`
