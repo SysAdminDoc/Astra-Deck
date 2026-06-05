@@ -17850,11 +17850,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     const parsed = new URL(raw, window.location.origin);
                     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-                    const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw);
-                    if (!hasExplicitScheme && isYouTubeHostname(parsed.hostname)) {
-                        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+                    if (!isYouTubeHostname(parsed.hostname)) return null;
+                    const host = parsed.hostname.toLowerCase();
+                    const segments = parsed.pathname.replace(/^\/+/, '').split('/');
+                    if ((host === 'youtu.be' || host === 'www.youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) {
+                        const shortUrl = new URL('/watch', window.location.origin);
+                        shortUrl.searchParams.set('v', segments[0]);
+                        parsed.searchParams.forEach((paramValue, paramName) => {
+                            if (paramName !== 'v') shortUrl.searchParams.append(paramName, paramValue);
+                        });
+                        shortUrl.hash = parsed.hash;
+                        return `${shortUrl.pathname}${shortUrl.search}${shortUrl.hash}`;
                     }
-                    return parsed.href;
+                    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
                 } catch {
                     return null;
                 }
@@ -17916,24 +17924,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 parsedItems.forEach((item, idx) => {
                     const itemUrl = this._normalizeQuickLinkUrl(item.url);
                     if (!itemUrl) return;
-                    let itemHref;
+                    let parsedItemUrl;
                     try {
-                        const parsedItemUrl = new URL(itemUrl, window.location.origin);
+                        parsedItemUrl = new URL(itemUrl, window.location.origin);
                         if (parsedItemUrl.protocol !== 'http:' && parsedItemUrl.protocol !== 'https:') return;
-                        const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(itemUrl);
-                        itemHref = hasExplicitScheme
-                            ? parsedItemUrl.href
-                            : `${parsedItemUrl.pathname}${parsedItemUrl.search}${parsedItemUrl.hash}`;
+                        if (!isYouTubeHostname(parsedItemUrl.hostname)) return;
                     } catch {
                         return;
                     }
                     const row = document.createElement('div');
                     row.className = 'ytkit-ql-row';
-                    const a = document.createElement('a'); a.href = itemHref; a.className = 'ytkit-ql-item';
-                    if (/^https?:\/\//i.test(itemHref)) {
-                        a.target = '_blank';
-                        a.rel = 'noopener noreferrer';
-                    }
+                    const a = document.createElement('a');
+                    a.href = 'https://www.youtube.com';
+                    a.pathname = parsedItemUrl.pathname;
+                    a.search = parsedItemUrl.search;
+                    a.hash = parsedItemUrl.hash;
+                    a.className = 'ytkit-ql-item';
                     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.setAttribute('viewBox', '0 0 24 24');
                     svg.classList.add('ytkit-ql-icon');

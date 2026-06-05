@@ -316,7 +316,8 @@ document_idle
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
 - HTTP methods validated, download URLs protocol-checked (HTTP/S only)
-- Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs
+- Quick Links blocks `javascript:`, `data:`, and `vbscript:` URIs and accepts
+  only YouTube-owned destinations
 - Explicit CSP: `script-src 'self'; object-src 'self'; connect-src` allowlists the documented host_permissions (AI providers, SponsorBlock, six Astra Downloader fallback ports, Ollama) — no wildcards
 
 ---

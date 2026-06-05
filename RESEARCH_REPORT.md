@@ -22,9 +22,10 @@ or maintainer action to confirm.
   remediated beyond the earlier CSP/staging cleanup. Exact parsed YouTube host
   checks now replace substring URL handling in extension and userscript channel,
   share, video-id, and SPA navigation paths; Resume Playback Position normalizes
-  stored video IDs through a bounded `Map`; Quick Links normalizes destinations
-  before anchor assignment and builds SVG/label nodes with DOM APIs; the
-  userscript TrustedHTML helper avoids raw `innerHTML`; transcript XML parsing
+  stored video IDs through a bounded `Map`; Quick Links accepts only
+  YouTube-owned destinations, rebuilds anchors from path/search/hash plus a
+  fixed YouTube origin, and builds SVG/label nodes with DOM APIs; the userscript
+  no longer ships a local TrustedHTML parser helper; transcript XML parsing
   strips tags before entity decoding and decodes `&amp;` last; build
   version-bump reads use one read helper instead of `existsSync`/read races;
   popup/i18n audit helpers avoid flagged sanitizer replacement shapes; and the

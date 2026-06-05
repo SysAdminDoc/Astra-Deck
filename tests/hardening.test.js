@@ -2071,12 +2071,24 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
             `${label} Quick Links must normalize configured URLs through a shared helper`);
         assert.match(source, /new URL\(raw,\s*window\.location\.origin\)/,
             `${label} Quick Links must parse configured URLs before assigning anchor hrefs`);
+        assert.match(source, /if \(!isYouTubeHostname\(parsed\.hostname\)\) return null;/,
+            `${label} Quick Links must reject non-YouTube configured URLs`);
+        assert.doesNotMatch(source, /return parsed\.href;/,
+            `${label} Quick Links must not persist external absolute hrefs`);
         assert.match(source, /const itemUrl = this\._normalizeQuickLinkUrl\(item\.url\)/,
             `${label} Quick Links must re-check normalized URLs at the anchor sink`);
-        assert.match(source, /const parsedItemUrl = new URL\(itemUrl,\s*window\.location\.origin\)/,
+        assert.match(source, /parsedItemUrl = new URL\(itemUrl,\s*window\.location\.origin\)/,
             `${label} Quick Links must parse the row URL next to the anchor sink`);
-        assert.match(source, /a\.href = itemHref/,
-            `${label} Quick Links must assign only the locally parsed href`);
+        assert.match(source, /a\.href = 'https:\/\/www\.youtube\.com'/,
+            `${label} Quick Links must start anchors from a fixed YouTube origin`);
+        assert.match(source, /a\.pathname = parsedItemUrl\.pathname/,
+            `${label} Quick Links must assign only the parsed local pathname`);
+        assert.match(source, /a\.search = parsedItemUrl\.search/,
+            `${label} Quick Links must assign only the parsed local search`);
+        assert.match(source, /a\.hash = parsedItemUrl\.hash/,
+            `${label} Quick Links must assign only the parsed local hash`);
+        assert.doesNotMatch(source, /a\.href = itemHref/,
+            `${label} Quick Links must not assign a user-derived href string`);
         assert.match(source, /_sanitizeQuickLinkIconPath\(pathData\)/,
             `${label} Quick Links must sanitize SVG path data before setAttribute`);
         assert.match(source, /_positions\s*=\s*this\._toPositionMap\(/,
@@ -2091,17 +2103,16 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
             `${label} quick-link labels and delete icons must be built with DOM APIs`);
     }
 
-    const userscriptTrustedStart = userscriptSource.indexOf('const TrustedHTML = (() => {');
-    const userscriptTrustedEnd = userscriptSource.indexOf('})();', userscriptTrustedStart);
-    assert.ok(userscriptTrustedStart > -1 && userscriptTrustedEnd > userscriptTrustedStart,
-        'YTKit.user.js TrustedHTML helper must be present');
-    const userscriptTrusted = userscriptSource.slice(userscriptTrustedStart, userscriptTrustedEnd);
-    assert.doesNotMatch(userscriptTrusted, /createPolicy/,
-        'userscript static HTML helper must not expose a pass-through Trusted Types policy');
-    assert.doesNotMatch(userscriptTrusted, /\.innerHTML/,
-        'userscript static HTML helper must not use raw innerHTML');
-    assert.match(userscriptTrusted, /stripDangerousStaticMarkup\(html\)/,
-        'userscript static HTML helper must reject active markup before parsing');
+    assert.doesNotMatch(userscriptSource, /const TrustedHTML = \(\(\) => \{/,
+        'YTKit.user.js must not ship a userscript-local markup parser helper');
+    assert.doesNotMatch(userscriptSource, /TrustedHTML\.setHTML/,
+        'YTKit.user.js static fragments must be built with DOM APIs');
+    assert.doesNotMatch(userscriptSource, /parseFromString/,
+        'YTKit.user.js must not reinterpret text as HTML through DOMParser');
+    assert.match(userscriptSource, /function\s+createFilledPathIcon\(/,
+        'YTKit.user.js must keep DOM SVG helpers for static icon fragments');
+    assert.match(userscriptSource, /appendTextSpan\(badge,/,
+        'YTKit.user.js dynamic badge text must be written with textContent');
 });
 
 test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity order', () => {
