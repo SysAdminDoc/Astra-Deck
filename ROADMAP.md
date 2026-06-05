@@ -657,10 +657,13 @@ means implemented/closed by the build lane.
     helper callback/promise behavior. A second same-day slice added background
     `EXT_FETCH` enforcement so requests to generated runtime-optional origins
     must pass the existing allowlist and a current `chrome.permissions.contains`
-    grant check before network fetch. `sponsor.ajay.app` intentionally remains
-    required because SponsorBlock is default-on; the item stays open for
-    SponsorBlock/DeArrow runtime-grant UX, richer denied/revoked state, and
-    manual browser smoke coverage.
+    grant check before network fetch. A third same-day slice added popup
+    grant-state refresh, `permissions.onAdded`/`onRemoved` listeners,
+    permission-needed chips on quick toggles and schema rows, data-flow
+    granted/needed labels, and exact permission-denied status copy.
+    `sponsor.ajay.app` intentionally remains required because SponsorBlock is
+    default-on; the item stays open for SponsorBlock/DeArrow runtime-grant UX
+    and manual browser smoke coverage.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,

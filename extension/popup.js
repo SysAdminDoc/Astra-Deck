@@ -355,7 +355,11 @@ const popupState = {
     // Null until the probe resolves; treated as "all available" until
     // then so the popup never blocks on the probe (it can fall through
     // to chip-less rendering if the probe rejects or times out).
-    _capabilities: null
+    _capabilities: null,
+    _optionalHostGrantState: {
+        missingKeys: new Set(),
+        missingOrigins: new Set()
+    }
 };
 
 async function ensureCapabilityMap() {
@@ -793,13 +797,135 @@ async function requestOptionalHostsForSetting(key, value) {
     const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
     const helper = (typeof factory === 'function') ? factory() : null;
     if (!helper || !helper.isSupported()) {
-        throw new Error('Optional host permission prompts are not available in this browser.');
+        const error = new Error('Optional host permission prompts are not available in this browser.');
+        error.code = 'OPTIONAL_HOST_PERMISSION_DENIED';
+        throw error;
     }
     const granted = await helper.request(origins);
     if (!granted) {
-        throw new Error('Astra Deck needs host access for this optional feature before it can be enabled.');
+        const error = new Error('Astra Deck needs host access for this optional feature before it can be enabled.');
+        error.code = 'OPTIONAL_HOST_PERMISSION_DENIED';
+        throw error;
     }
     return true;
+}
+
+function isOptionalHostPermissionError(error) {
+    return error?.code === 'OPTIONAL_HOST_PERMISSION_DENIED'
+        || /optional host permission|host access/i.test(error?.message || '');
+}
+
+function formatSettingWriteError(name, error) {
+    if (isOptionalHostPermissionError(error) && error?.message) {
+        return error.message;
+    }
+    return t('toggleUpdateFailTpl', `Couldn't update ${name}. Try again.`).replace('{name}', name);
+}
+
+function setEquals(a, b) {
+    if (!(a instanceof Set) || !(b instanceof Set)) return false;
+    if (a.size !== b.size) return false;
+    for (const value of a) {
+        if (!b.has(value)) return false;
+    }
+    return true;
+}
+
+function isOptionalHostGrantMissing(key) {
+    return popupState._optionalHostGrantState.missingKeys.has(key);
+}
+
+function getOptionalHostGrantTitle(key) {
+    const origins = getDeclaredOptionalHostsForSetting(key);
+    const list = origins.length ? origins.join(', ') : t('optionalHostUnknown', 'optional host access');
+    return t('optionalHostPermissionMissingTooltip',
+        'Host access for this optional feature is denied or was revoked. Enable the setting again to grant access.')
+        + ' ' + list;
+}
+
+function createQuickOptionalHostBadge(key) {
+    if (!isOptionalHostGrantMissing(key)) return null;
+    const badge = document.createElement('span');
+    badge.className = 'toggle-risk-badge toggle-risk-permission';
+    badge.textContent = t('optionalHostPermissionBadge', 'permission needed');
+    badge.title = getOptionalHostGrantTitle(key);
+    badge.setAttribute('aria-label', badge.title);
+    return badge;
+}
+
+function createSchemaOptionalHostBadge(key) {
+    if (!isOptionalHostGrantMissing(key)) return null;
+    const badge = document.createElement('span');
+    badge.className = 'so-key-profile-badge so-key-permission-missing';
+    badge.textContent = t('optionalHostPermissionBadge', 'permission needed');
+    badge.title = getOptionalHostGrantTitle(key);
+    return badge;
+}
+
+function dataFlowOptionalGrantLabel(entry) {
+    if (!entry?.optionalManifestPermission || !entry.currentlyActive) return null;
+    return popupState._optionalHostGrantState.missingOrigins.has(entry.optionalManifestPermission)
+        ? t('dataFlowGrantNeeded', 'permission needed')
+        : t('dataFlowGrantActive', 'granted');
+}
+
+async function refreshOptionalHostGrantState(options = {}) {
+    const settings = popupState.settings || {};
+    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
+    const helper = (typeof factory === 'function') ? factory() : null;
+    const nextMissingKeys = new Set();
+    const nextMissingOrigins = new Set();
+
+    for (const [key, value] of Object.entries(settings)) {
+        if (value !== true) continue;
+        const origins = getDeclaredOptionalHostsForSetting(key);
+        if (!origins.length) continue;
+        let granted = false;
+        if (helper && helper.isSupported()) {
+            try {
+                granted = await helper.contains(origins);
+            } catch (err) {
+                console.warn('[Astra Deck popup] Optional host permission check failed:', err);
+            }
+        }
+        if (!granted) {
+            nextMissingKeys.add(key);
+            for (const origin of origins) nextMissingOrigins.add(origin);
+        }
+    }
+
+    const previous = popupState._optionalHostGrantState;
+    const changed = !setEquals(previous.missingKeys, nextMissingKeys)
+        || !setEquals(previous.missingOrigins, nextMissingOrigins);
+    popupState._optionalHostGrantState = {
+        missingKeys: nextMissingKeys,
+        missingOrigins: nextMissingOrigins
+    };
+    if (!changed) return popupState._optionalHostGrantState;
+
+    if (options.notify && nextMissingKeys.size > 0) {
+        showStatus(t('optionalHostPermissionRevoked',
+            'Optional host access was revoked. Re-enable the affected setting to grant access again.'),
+            'error', 5200);
+    }
+    if (options.render !== false) {
+        render(popupState.settings, q.value);
+        renderDataFlowPanel();
+        renderSchemaOverview();
+    }
+    return popupState._optionalHostGrantState;
+}
+
+function registerOptionalHostPermissionListeners() {
+    const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
+    const helper = (typeof factory === 'function') ? factory() : null;
+    if (!helper) return;
+    helper.onAdded(() => {
+        void refreshOptionalHostGrantState();
+    });
+    helper.onRemoved(() => {
+        void refreshOptionalHostGrantState({ notify: true });
+    });
 }
 
 async function writeSetting(key, value) {
@@ -808,6 +934,7 @@ async function writeSetting(key, value) {
         const nextSettings = { ...popupState.settings, [key]: value };
         popupState.settings = nextSettings;
         await storageSet({ [SETTINGS_STORAGE_KEY]: nextSettings });
+        await refreshOptionalHostGrantState({ render: false });
         return nextSettings;
     });
     _pendingWriteChain = task;
@@ -1215,13 +1342,15 @@ function render(settings, filter) {
             const tName = t(`qt_${item.key}_name`, item.name);
             const tDesc = t(`qt_${item.key}_desc`, item.desc);
             const stateLabel = on ? t('toggleStateOn', 'Enabled') : t('toggleStateOff', 'Disabled');
+            const permissionState = isOptionalHostGrantMissing(item.key)
+                ? ' ' + t('optionalHostPermissionAria', 'Permission needed.') : '';
             const row = document.createElement('button');
             row.type = 'button';
             row.className = 'toggle' + (on ? ' on' : '');
             row.dataset.key = item.key;
             row.setAttribute('role', 'switch');
             row.setAttribute('aria-checked', String(on));
-            row.setAttribute('aria-label', `${tName}. ${tDesc}. ${stateLabel}.`);
+            row.setAttribute('aria-label', `${tName}. ${tDesc}. ${stateLabel}.${permissionState}`);
 
             const label = document.createElement('div');
             label.className = 'label';
@@ -1239,6 +1368,8 @@ function render(settings, filter) {
             // schema module didn't load (CSP regression guard).
             const riskBadge = createSchemaRiskBadge(item.key);
             if (riskBadge) nameRow.appendChild(riskBadge);
+            const permissionBadge = createQuickOptionalHostBadge(item.key);
+            if (permissionBadge) nameRow.appendChild(permissionBadge);
             const desc = document.createElement('div');
             desc.className = 'desc';
             desc.textContent = tDesc;
@@ -1260,7 +1391,7 @@ function render(settings, filter) {
                     showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
                 } catch (error) {
                     console.warn('[Astra Deck popup] Failed to toggle setting:', error);
-                    showStatus(t('toggleUpdateFailTpl', `Couldn't update ${tName}. Try again.`).replace('{name}', tName), 'error', 4200);
+                    showStatus(formatSettingWriteError(tName, error), 'error', 5200);
                 } finally {
                     row.disabled = false;
                 }
@@ -1725,6 +1856,8 @@ function renderDataFlowPanel() {
         appendDataFlowMeta(meta, t('dataFlowProfile', 'profile'), entry.profile);
         appendDataFlowMeta(meta, t('dataFlowCreds', 'creds'), entry.credentialsPolicy);
         appendDataFlowMeta(meta, t('dataFlowRisk', 'risk'), entry.riskBand);
+        const grantLabel = dataFlowOptionalGrantLabel(entry);
+        if (grantLabel) appendDataFlowMeta(meta, t('dataFlowGrant', 'grant'), grantLabel);
         if (entry.requiredByFeatures.length > 0) {
             const featList = entry.requiredByFeatures.length <= 2
                 ? entry.requiredByFeatures.join(', ')
@@ -1995,6 +2128,9 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         row.appendChild(trustChip);
     }
 
+    const optionalHostChip = createSchemaOptionalHostBadge(entry.key);
+    if (optionalHostChip) row.appendChild(optionalHostChip);
+
     if (entry.type === 'boolean') {
         const on = settings[entry.key] === true;
         const btn = document.createElement('button');
@@ -2013,6 +2149,7 @@ function buildSchemaOverviewKeyRow(entry, settings) {
                 renderSchemaOverview();
             } catch (err) {
                 console.warn('[Astra Deck popup] schema-overview toggle failed:', err);
+                showStatus(formatSettingWriteError(entry.key, err), 'error', 5200);
             } finally {
                 btn.disabled = false;
             }
@@ -3467,6 +3604,8 @@ function installWheelScrolling() {
         // every settings-schema category with live enabled/total counts.
         // v4.29.0: expanded-category state restored above.
         renderSchemaOverview();
+        registerOptionalHostPermissionListeners();
+        void refreshOptionalHostGrantState();
     } catch (error) {
         console.warn('[Astra Deck popup] Failed to load settings:', error);
         render({}, '');
@@ -3517,6 +3656,7 @@ function installWheelScrolling() {
             if (!relevant) return;
             void loadSettings().then((settings) => {
                 render(settings, q.value);
+                void refreshOptionalHostGrantState();
                 // v4.12.0: keep the data-flow panel reactive — flipping
                 // privacyDataFlowPanel from the in-page workspace must
                 // surface in the popup on next render.

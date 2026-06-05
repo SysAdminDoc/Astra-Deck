@@ -38,6 +38,5 @@ building headers, credentials mode, timeout state, and the network fetch.
 
 - Add SponsorBlock/DeArrow runtime-grant UX before moving
   `sponsor.ajay.app` out of install-time store-safe host permissions.
-- Surface optional-host denied/revoked state in settings and data-flow UI.
 - Run manual unpacked Chrome and Firefox store-safe smoke checks for prompt,
   grant, denial, and revocation behavior.
