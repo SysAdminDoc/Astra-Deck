@@ -38,6 +38,9 @@ package versions; the live product-version sources currently agree at v4.46.0.
   maintainer-local artifact contract. The architecture map now says CI uploads
   workflow artifacts and creates tag-only build/SBOM attestations, while public
   GitHub Release publication remains local because `ytkit.pem` never enters CI.
+- 2026-06-05: GitHub Actions workflow pins were migrated to Node 24-ready
+  GitHub-owned action majors across validation, release, and yt-dlp smoke
+  workflows, with a hardening test guarding against the old Node 20-era pins.
 - Quick Links capped at 10 slots.
 - PyQt6 GUI smoke tests for downloader folder picker flows.
 - On-demand yt-dlp self-update endpoint and popup action.
