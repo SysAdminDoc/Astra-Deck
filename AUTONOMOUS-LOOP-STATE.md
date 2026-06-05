@@ -120,6 +120,11 @@
   - `npm run check`
   - `npm run build`
   - `git diff --check`
+  - Hosted follow-up after `ff724d2`: branch-scoped CodeQL alert query for
+    `refs/heads/codex/research-feature-plan-2026-06-05` returned `0`; PR
+    checks passed for CodeQL, JS tests/check, Python dependency audit, and
+    Python downloader tests. Dependency review remains failed because the
+    repository dependency graph is not enabled.
 - Focused verification passed:
   `node --test tests/hardening.test.js --test-name-pattern="runtime settings guidance|standalone options page"`.
 - Cycle 2 release-doc verification passed:
