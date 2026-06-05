@@ -67,15 +67,23 @@ users — see §5).
 
 ## 4. Generating a new key
 
+Set the external key path first. The default Windows location used by
+`build-extension.js` is
+`C:\Users\<you>\AppData\Local\Astra-Deck\keys\ytkit.pem`
+(`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem`). Override it with
+`ASTRA_CRX_KEY_PATH` or `node build-extension.js --crx-key <path>` if the
+maintainer key lives in another encrypted local-key store.
+
 ```bash
 # Required: OpenSSL 3.x (Windows: shipped with Git Bash; macOS: `brew install openssl`).
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out ytkit.pem
+mkdir -p "$(dirname "${ASTRA_CRX_KEY_PATH:-$HOME/.config/Astra-Deck/keys/ytkit.pem}")"
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "${ASTRA_CRX_KEY_PATH:-$HOME/.config/Astra-Deck/keys/ytkit.pem}"
 ```
 
 Verify:
 
 ```bash
-openssl rsa -in ytkit.pem -check -noout
+openssl rsa -in "${ASTRA_CRX_KEY_PATH:-$HOME/.config/Astra-Deck/keys/ytkit.pem}" -check -noout
 # Expected: "RSA key ok"
 ```
 
@@ -86,20 +94,30 @@ references:
 node -e '
   const fs = require("fs");
   const crypto = require("crypto");
-  const pem = fs.readFileSync("ytkit.pem", "utf8");
+  const pem = fs.readFileSync(process.env.ASTRA_CRX_KEY_PATH || require("path").join(require("os").homedir(), ".config", "Astra-Deck", "keys", "ytkit.pem"), "utf8");
   const key = crypto.createPrivateKey(pem);
-  const der = key.export({ type: "spki", format: "der" });
+  const der = crypto.createPublicKey(key).export({ type: "spki", format: "der" });
   const hash = crypto.createHash("sha256").update(der).digest("hex").slice(0, 32);
   const id = hash.split("").map(c => String.fromCharCode("a".charCodeAt(0) + parseInt(c, 16))).join("");
   console.log("Extension ID:", id);
 '
 ```
 
-**Never commit `ytkit.pem`.** The repo's `.gitignore` already excludes
-`*.pem` at the root. Re-confirm before staging a build:
+Current self-distributed CRX identity:
+
+- Expected extension ID: `lgbiefafhjdbplelniclnflbbilennlg`
+- Derived on 2026-06-05 from the external maintainer key after moving it out
+  of the repo root. Future release checks should compare generated CRX IDs
+  against this value before publishing unless an intentional key rotation is in
+  progress.
+
+**Never commit `ytkit.pem`, and do not leave the working key in the repo
+root.** The repo's `.gitignore` excludes `*.pem`, but ignored is still the
+wrong custody boundary. Re-confirm before staging a build:
 
 ```bash
-git status ytkit.pem 2>&1 | grep -v 'No such file' && echo "DO NOT COMMIT" || echo "ok"
+test ! -f ytkit.pem && echo "ok: no root key"
+git status --ignored --short -- ytkit.pem
 ```
 
 ---
@@ -184,6 +202,23 @@ CRX/XPI **will not** auto-update to the new build.
 
 `ytkit.pem` lives outside the repo. Specifically:
 
+Default local paths:
+
+- Windows: `C:\Users\<you>\AppData\Local\Astra-Deck\keys\ytkit.pem`
+  (`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem`)
+- macOS/Linux: `${XDG_CONFIG_HOME:-$HOME/.config}/Astra-Deck/keys/ytkit.pem`
+
+The build script enforces this custody boundary:
+
+- `npm run build` uses validation-only ephemeral CRX signing when no external
+  key is supplied and never writes key material to the repo root.
+- `npm run build:userscript` and `node build-extension.js --bump ...` are
+  release builds. They require an external key via `ASTRA_CRX_KEY_PATH`, the
+  default path above, or `--crx-key <path>`, and reject any path inside the
+  repo worktree.
+- CI sets `ASTRA_CRX_KEY_MODE=ephemeral` explicitly so workflow artifacts stay
+  useful for validation/provenance without receiving the maintainer key.
+
 | Where | Why |
 |---|---|
 | Local primary build machine (encrypted home dir) | Daily build use. |
@@ -203,15 +238,19 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
    `node scripts/check-versions.js --tag vX.Y.Z`.
 2. Run the local gates: `npm test`, `npm run check`, and
    `py -3.12 -m pytest astra_downloader`.
-3. Build signed artifacts from the machine that has `ytkit.pem`:
-   `npm run build:userscript`.
-4. Emit the release SBOM:
+3. Confirm the root worktree does not contain a private key:
+   `test ! -f ytkit.pem` (PowerShell: `Test-Path ytkit.pem` should be
+   `False`).
+4. Build signed artifacts from the machine that has the external key:
+   `ASTRA_CRX_KEY_PATH=/path/outside/repo/ytkit.pem npm run build:userscript`
+   (or rely on the default local-key path above).
+5. Emit the release SBOM:
    `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`.
-5. Generate checksums and manifest: `npm run release:manifest`.
-6. Verify `build/SHA256SUMS` names every uploaded artifact and that
+6. Generate checksums and manifest: `npm run release:manifest`.
+7. Verify `build/SHA256SUMS` names every uploaded artifact and that
    `build/release-manifest.json` marks `localSigningRequired: true`.
-7. Create or update the GitHub Release from local `build/*` assets.
-8. After upload, compare `gh release view <tag> --json assets` digest values
+8. Create or update the GitHub Release from local `build/*` assets.
+9. After upload, compare `gh release view <tag> --json assets` digest values
    against `build/SHA256SUMS`.
 
 ## 9. CWS / AMO publication paths
