@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('fs');
+const net = require('net');
 const os = require('os');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
@@ -135,11 +136,11 @@ function parseArgs(argv) {
     return opts;
 }
 
-function chromiumArgs(browserProfile, stageDir, opts) {
+function chromiumArgs(browserProfile, stageDir, opts, devToolsPort) {
     const args = [
         `--user-data-dir=${browserProfile}`,
         `--load-extension=${stageDir}`,
-        '--remote-debugging-port=0',
+        `--remote-debugging-port=${devToolsPort}`,
         '--no-first-run',
         '--no-default-browser-check',
         '--disable-background-networking',
@@ -156,37 +157,60 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function readDevToolsPort(profileDir, timeoutMs) {
-    const portFile = path.join(profileDir, 'DevToolsActivePort');
-    const deadline = Date.now() + timeoutMs;
+function reserveLoopbackPort() {
     return new Promise((resolve, reject) => {
-        const poll = () => {
-            if (fs.existsSync(portFile)) {
-                const [port] = fs.readFileSync(portFile, 'utf8').split(/\r?\n/);
-                resolve(port);
-                return;
-            }
-            if (Date.now() >= deadline) {
-                reject(new Error('Timed out waiting for Chromium DevToolsActivePort.'));
-                return;
-            }
-            setTimeout(poll, 100);
-        };
-        poll();
+        const server = net.createServer();
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', () => {
+            const address = server.address();
+            const port = Number(address && address.port);
+            server.close((error) => {
+                if (error) reject(error);
+                else if (!Number.isInteger(port) || port < 1 || port > 65535) {
+                    reject(new Error(`Invalid loopback port reserved for DevTools: ${port}`));
+                } else {
+                    resolve(port);
+                }
+            });
+        });
     });
 }
 
-async function fetchJson(url, options) {
+function devToolsUrl(port, route) {
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new Error(`Invalid DevTools port: ${port}`);
+    }
+    if (!String(route).startsWith('/json/')) {
+        throw new Error(`Invalid DevTools route: ${route}`);
+    }
+    return `http://127.0.0.1:${port}${route}`;
+}
+
+async function fetchJsonFromDevTools(port, route, options) {
+    const url = devToolsUrl(port, route);
     const response = await fetch(url, options);
     if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}`);
     return response.json();
+}
+
+async function waitForDevTools(port, timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        try {
+            await fetchJsonFromDevTools(port, '/json/version');
+            return;
+        } catch (_) {
+            await sleep(100);
+        }
+    }
+    throw new Error(`Timed out waiting for Chromium DevTools on 127.0.0.1:${port}.`);
 }
 
 async function waitForBackgroundTarget(port, timeoutMs) {
     const deadline = Date.now() + timeoutMs;
     let lastTargets = [];
     while (Date.now() < deadline) {
-        lastTargets = await fetchJson(`http://127.0.0.1:${port}/json/list`);
+        lastTargets = await fetchJsonFromDevTools(port, '/json/list');
         const target = lastTargets.find((entry) =>
             entry.type === 'service_worker'
             && /^chrome-extension:\/\//.test(entry.url)
@@ -258,7 +282,7 @@ function extensionIdFromTarget(target) {
 
 async function openPopupTarget(port, extensionId) {
     const popupUrl = `chrome-extension://${extensionId}/popup.html`;
-    const target = await fetchJson(`http://127.0.0.1:${port}/json/new?${popupUrl}`, { method: 'PUT' });
+    const target = await fetchJsonFromDevTools(port, `/json/new?${popupUrl}`, { method: 'PUT' });
     const client = await connectCdp(target.webSocketDebuggerUrl);
     await client.send('Runtime.enable');
     await client.send('Page.enable');
@@ -386,7 +410,7 @@ function hasLoadExtensionPolicyBlock(stderr) {
 }
 
 function isGoogleChromeCandidate(candidate) {
-    return /google chrome|google-chrome|chrome\.exe$/i.test(`${candidate.label} ${candidate.path}`);
+    return /(?:google chrome|google-chrome|chrome\.exe)$/i.test(`${candidate.label} ${candidate.path}`);
 }
 
 function killProcessTree(proc) {
@@ -416,7 +440,8 @@ async function removeDirWithRetries(dir) {
 
 async function runWithBrowser(candidate, manifest, stageDir, opts) {
     const browserProfile = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-chromium-profile-'));
-    const args = chromiumArgs(browserProfile, stageDir, opts);
+    const devToolsPort = await reserveLoopbackPort();
+    const args = chromiumArgs(browserProfile, stageDir, opts, devToolsPort);
     const proc = spawn(candidate.path, args, {
         cwd: REPO_ROOT,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -430,10 +455,10 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
 
     let client = null;
     try {
-        const port = await readDevToolsPort(browserProfile, opts.timeoutMs);
-        const backgroundTarget = await waitForBackgroundTarget(port, opts.timeoutMs);
+        await waitForDevTools(devToolsPort, opts.timeoutMs);
+        const backgroundTarget = await waitForBackgroundTarget(devToolsPort, opts.timeoutMs);
         const extensionId = extensionIdFromTarget(backgroundTarget);
-        const popup = await openPopupTarget(port, extensionId);
+        const popup = await openPopupTarget(devToolsPort, extensionId);
         client = popup.client;
         await sleep(1000);
 
