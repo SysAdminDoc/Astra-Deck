@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Default-off store-safe enrichment hosts moved to runtime optional grants.**
+  Store-safe generated manifests now keep core YouTube and default-on
+  SponsorBlock hosts as required while declaring thumbnail, Return YouTube
+  Dislike, and Reddit hosts in `optional_host_permissions`. The popup requests
+  declared optional hosts before enabling matching settings, and hardening tests
+  pin the manifest split plus helper behavior. SponsorBlock/DeArrow runtime
+  grant UX remains a follow-up because SponsorBlock is default-on.
+
 - **CODEOWNERS source policy added.** `.github/CODEOWNERS` now maps
   security-sensitive repository policy, release/signing tooling, dependency
   manifests, hardening gates, extension core/manifest/background code, and the
