@@ -30,6 +30,13 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: README companion install docs now separate browser extension
+  install from Astra Downloader setup, state that latest release `v4.46.0`
+  lacks `AstraDownloader.exe` and `AstraDownloader.exe.sha256`, document the
+  current Windows source-checkout launch path, and frame PO-token/Deno setup as
+  companion prerequisites. Release-checklist docs now keep README/release notes
+  tied to the live EXE/sidecar assets, with a hardening regression guarding the
+  docs contract.
 - 2026-06-05: GitHub Actions workflow refs were pinned to full 40-character
   upstream action commits across validation, release, yt-dlp smoke, and CodeQL
   workflows, each with a same-line version comment for review/update context.

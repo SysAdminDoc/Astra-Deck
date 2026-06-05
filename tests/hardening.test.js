@@ -1897,6 +1897,30 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     );
 });
 
+test('README documents Astra Downloader companion setup and pending release assets', () => {
+    const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
+    const signingDocs = fs.readFileSync(
+        path.join(__dirname, '..', 'docs', 'signing-keys.md'), 'utf8'
+    );
+
+    assert.match(readme, /### Astra Downloader Companion Setup/,
+        'README must give the companion its own setup section');
+    assert.match(readme, /latest release `v4\.46\.0` does \*\*not\*\* include\s+`AstraDownloader\.exe` or `AstraDownloader\.exe\.sha256`/,
+        'README must not promise a companion EXE before the live release carries it');
+    assert.match(readme, /py -3\.12 -m pip install -r astra_downloader\/requirements\.txt/,
+        'README must document the current source-checkout companion path');
+    assert.match(readme, /py -3\.12 astra_downloader\/astra_downloader\.py/,
+        'README must document how to launch the source-checkout companion');
+    assert.match(readme, /PO-token provider and Deno sections below are companion prerequisites/,
+        'README must frame Deno and PO-token setup as companion prerequisites');
+    assert.match(readme, /AstraDownloader\.exe` and\s+`AstraDownloader\.exe\.sha256`/,
+        'README must name both companion release assets together');
+    assert.match(signingDocs, /If the latest public release lacks `AstraDownloader\.exe` or\s+`AstraDownloader\.exe\.sha256`/,
+        'release checklist must keep the README caveat tied to live assets');
+    assert.match(signingDocs, /signed installer\/MSI roadmap item remains separate/,
+        'release checklist must not collapse portable companion proof into signed installer work');
+});
+
 test('GitHub workflows pin external actions to full-length SHAs with version comments', () => {
     const workflowDir = path.join(__dirname, '..', '.github', 'workflows');
     const combined = ['build.yml', 'validate.yml', 'yt-dlp-smoke.yml', 'codeql.yml']
