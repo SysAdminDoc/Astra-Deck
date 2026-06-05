@@ -65,6 +65,12 @@ or maintainer action to confirm.
   frames Deno / PO-token setup as companion prerequisites. Release checklist
   docs now require README/release notes to keep that caveat until both live
   companion assets exist.
+- [Verified] Hosted CodeQL PR alerts on the changed branch surface were cleaned
+  up after the companion-docs push. CSP assertions now parse exact `connect-src`
+  directive tokens instead of URL substrings, and companion release staging
+  validates and reads `AstraDownloader.exe` from one opened descriptor before
+  writing the staged build asset. Hardening coverage pins the exact-token CSP
+  behavior and the no-race staging shape.
 
 ## 2026-06-04 Freshness Refresh
 

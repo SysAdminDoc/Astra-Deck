@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CodeQL PR alerts resolved.** CSP hardening tests now parse exact
+  `connect-src` directive tokens instead of checking URL substrings, and the
+  companion release staging script validates and reads the EXE from the same
+  opened descriptor before writing it into `build/`. The hardening suite now
+  pins both the exact-token CSP behavior and the no-race companion staging
+  shape.
+
 - **Astra Downloader companion setup docs clarified.** README now separates
   browser extension install from Astra Downloader companion setup, states that
   latest release `v4.46.0` does not include `AstraDownloader.exe` or its

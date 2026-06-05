@@ -36,8 +36,12 @@
   Python, PO-token and Deno setup are framed as companion prerequisites, and
   future release docs must mention the EXE only with its SHA-256 sidecar. The
   companion EXE upload/dry-run remains a release-maintainer boundary, while
-  repository-level selected-actions and required-SHA settings remain a hosted
-  follow-up after merge.
+  resolving the hosted CodeQL PR alerts that appeared after the companion-docs
+  push: CSP hardening assertions now parse exact `connect-src` tokens instead
+  of URL substrings, and companion release staging validates and reads the EXE
+  from one opened descriptor before writing the staged build asset. Repository
+  selected-actions and required-SHA settings remain a hosted follow-up
+  after merge.
 
 ## Verification
 
@@ -200,6 +204,22 @@
   - No runtime/source/build/manifest changes were made beyond documentation and
     the README hardening regression; no companion EXE was uploaded in this
     automation pass.
+- CodeQL PR-alert cleanup verification passed:
+  - `gh api repos/SysAdminDoc/Astra-Deck/commits/1907e09e3fd61bf47bb8f559237d0606f55af647/check-runs`
+    showed the separate CodeQL PR alert gate failing on six high-severity alerts
+    after both CodeQL workflow jobs passed.
+  - `gh api 'repos/SysAdminDoc/Astra-Deck/code-scanning/alerts?state=open&pr=26&tool_name=CodeQL&per_page=100'`
+    mapped the alerts to `js/incomplete-url-substring-sanitization` in
+    `tests/hardening.test.js` and `js/file-system-race` in
+    `scripts/stage-companion-release.js`.
+  - `node --check scripts/stage-companion-release.js`
+  - `node --test tests/hardening.test.js --test-name-pattern="release manifest generation|CSP scopes|build-extension emits|runtime optional host|Cobalt fallback origin"`
+  - `rg -n "\.includes\('https?://|\.includes\(\"https?://" tests/hardening.test.js`
+    returned no string-URL substring assertions.
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed

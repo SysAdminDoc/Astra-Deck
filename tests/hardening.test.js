@@ -1859,7 +1859,13 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     assert.match(stageScriptSource, /MZ/,
         'companion staging must reject files without a Windows EXE header');
     assert.match(stageScriptSource, /build\/AstraDownloader\.exe/,
-        'companion staging must copy the EXE into build/ for release manifest inclusion');
+        'companion staging must stage the EXE into build/ for release manifest inclusion');
+    assert.match(stageScriptSource, /fs\.fstatSync\(fd\)/,
+        'companion staging must validate metadata from the opened descriptor');
+    assert.doesNotMatch(stageScriptSource, /fs\.existsSync/,
+        'companion staging must avoid existence-check races');
+    assert.doesNotMatch(stageScriptSource, /fs\.copyFileSync/,
+        'companion staging must not copy a path after validating a different opened handle');
 
     const expected = expectedReleaseNames(pkg.version);
     assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 9,
@@ -2446,6 +2452,18 @@ test('DeArrow watch-page title replacement announces via aria-live', () => {
 
 // ── v3.23.0 N5: CSP connect-src allowlist on extension pages ──
 
+function cspDirectiveTokens(csp, directiveName) {
+    const directive = String(csp || '')
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(directiveName + ' '));
+    return directive ? directive.split(/\s+/).slice(1) : [];
+}
+
+function cspAllowsConnect(csp, origin) {
+    return cspDirectiveTokens(csp, 'connect-src').includes(origin);
+}
+
 test('extension manifest CSP scopes connect-src to documented host_permissions', () => {
     // Defense-in-depth: a compromised content-script (or a careless future
     // contributor wiring popup.js to off-self origins) should hit CSP
@@ -2464,6 +2482,8 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
         'CSP must keep object-src self-only');
     assert.match(csp, /connect-src\s+'self'/,
         'CSP must declare a connect-src directive starting with self');
+    assert.equal(cspAllowsConnect("connect-src 'self' https://api.openai.com.evil", 'https://api.openai.com'), false,
+        'CSP origin checks must be exact tokens, not URL substrings');
 
     // Required origins that popup.js or the legitimate AI/SponsorBlock /
     // localhost downloader flows may legitimately fetch.
@@ -2485,7 +2505,7 @@ test('extension manifest CSP scopes connect-src to documented host_permissions',
     ];
     for (const origin of requiredOrigins) {
         assert.ok(
-            csp.includes(origin),
+            cspAllowsConnect(csp, origin),
             `connect-src must include ${origin} so the corresponding host_permission stays usable from extension pages`,
         );
     }
@@ -2559,25 +2579,25 @@ test('build-extension emits distinct store-safe and github-full manifest profile
 
     const storeCsp = storeManifest.content_security_policy?.extension_pages || '';
     const fullCsp = fullManifest.content_security_policy?.extension_pages || '';
-    assert.ok(!storeCsp.includes('https://api.openai.com'),
+    assert.ok(!cspAllowsConnect(storeCsp, 'https://api.openai.com'),
         'store-safe CSP must exclude OpenAI');
-    assert.ok(!storeCsp.includes('https://api.cobalt.tools'),
+    assert.ok(!cspAllowsConnect(storeCsp, 'https://api.cobalt.tools'),
         'store-safe CSP must exclude Cobalt');
-    assert.ok(!storeCsp.includes('http://127.0.0.1:9751'),
+    assert.ok(!cspAllowsConnect(storeCsp, 'http://127.0.0.1:9751'),
         'store-safe CSP must exclude local downloader loopback');
-    assert.ok(storeCsp.includes('https://i.ytimg.com'),
+    assert.ok(cspAllowsConnect(storeCsp, 'https://i.ytimg.com'),
         'store-safe CSP must keep optional thumbnail host connect-src eligible');
-    assert.ok(storeCsp.includes('https://sponsor.ajay.app'),
+    assert.ok(cspAllowsConnect(storeCsp, 'https://sponsor.ajay.app'),
         'store-safe CSP must keep optional SponsorBlock/DeArrow host connect-src eligible');
-    assert.ok(storeCsp.includes('https://returnyoutubedislikeapi.com'),
+    assert.ok(cspAllowsConnect(storeCsp, 'https://returnyoutubedislikeapi.com'),
         'store-safe CSP must keep optional RYD host connect-src eligible');
-    assert.ok(storeCsp.includes('https://www.reddit.com'),
+    assert.ok(cspAllowsConnect(storeCsp, 'https://www.reddit.com'),
         'store-safe CSP must keep optional Reddit host connect-src eligible');
-    assert.ok(fullCsp.includes('https://api.openai.com'),
+    assert.ok(cspAllowsConnect(fullCsp, 'https://api.openai.com'),
         'github-full CSP must include OpenAI');
-    assert.ok(fullCsp.includes('https://api.cobalt.tools'),
+    assert.ok(cspAllowsConnect(fullCsp, 'https://api.cobalt.tools'),
         'github-full CSP must include Cobalt');
-    assert.ok(fullCsp.includes('http://127.0.0.1:9751'),
+    assert.ok(cspAllowsConnect(fullCsp, 'http://127.0.0.1:9751'),
         'github-full CSP must include local downloader loopback');
 });
 
@@ -3256,7 +3276,7 @@ test('store-safe manifest makes Return YouTube Dislike a runtime optional host',
     );
     const csp = manifest.content_security_policy?.extension_pages || '';
     assert.ok(
-        csp.includes('https://returnyoutubedislikeapi.com'),
+        cspAllowsConnect(csp, 'https://returnyoutubedislikeapi.com'),
         'CSP connect-src must include the RYD API'
     );
 });
@@ -3276,7 +3296,7 @@ test('store-safe manifest makes SponsorBlock and DeArrow a runtime optional host
     );
     const csp = manifest.content_security_policy?.extension_pages || '';
     assert.ok(
-        csp.includes('https://sponsor.ajay.app'),
+        cspAllowsConnect(csp, 'https://sponsor.ajay.app'),
         'CSP connect-src must include the SponsorBlock/DeArrow API'
     );
 });
@@ -5389,7 +5409,7 @@ test('v4.11.0 data-flow: Cobalt fallback origin is catalogued (was missing pre-v
     ));
     assert.ok((manifest.host_permissions || []).includes('https://api.cobalt.tools/*'),
         'github-full source manifest must grant Cobalt for the full-profile artifact');
-    assert.ok((manifest.content_security_policy?.extension_pages || '').includes('https://api.cobalt.tools'),
+    assert.ok(cspAllowsConnect(manifest.content_security_policy?.extension_pages || '', 'https://api.cobalt.tools'),
         'github-full source manifest CSP must allow Cobalt connect-src');
     assert.match(backgroundSource, /'https:\/\/api\.cobalt\.tools'/,
         'background EXT_FETCH allowlist must include Cobalt for the full-profile artifact');

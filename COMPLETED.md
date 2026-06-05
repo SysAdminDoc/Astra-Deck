@@ -30,6 +30,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Hosted CodeQL PR alerts on the changed branch surface were
+  resolved. CSP tests now parse exact `connect-src` directive tokens instead of
+  URL substrings, and the companion release staging script validates metadata
+  with `fs.fstatSync(fd)` and writes bytes read from the same opened descriptor.
+  Hardening coverage now rejects substring-only CSP checks, `fs.existsSync`
+  staging races, and post-validation `fs.copyFileSync` path copies.
 - 2026-06-05: README companion install docs now separate browser extension
   install from Astra Downloader setup, state that latest release `v4.46.0`
   lacks `AstraDownloader.exe` and `AstraDownloader.exe.sha256`, document the
