@@ -376,7 +376,7 @@ means implemented/closed by the build lane.
   files, and Chrome / Mozilla / accessibility guidance for extension UI and
   actionable error copy. Detailed notes live in
   `docs/research-cycle-24-retired-options-copy.md`.
-- [ ] P2 - 🔬🤖 Replace retired options-page runtime copy with current settings-panel guidance
+- [x] P2 - 🔬🤖 Replace retired options-page runtime copy with current settings-panel guidance
   - Why: the standalone options page was removed in v3.19.0 and the toolbar
     popup/full settings panel are now the supported settings paths, but the
     summary-provider key error still tells users to set `aiSummaryApiKey` via an
@@ -403,6 +403,11 @@ means implemented/closed by the build lane.
     `npm run check`; `npm test`; manual or screenshot QA on the summary feature
     missing-key path confirms the copy names an existing settings path.
   - Complexity: S
+  - Status 2026-06-05: delivered. The `aiVideoSummary` missing-key error now
+    points users to Astra Deck settings via the YouTube gear icon or toolbar
+    popup `Open Full Settings` action, `node sync-userscript.js` confirmed the
+    userscript bundle remained aligned, and `tests/hardening.test.js` now fails
+    if shipped runtime code reintroduces `via options page` guidance.
 
 ### Researcher Queue (Cycle 23 - 2026-06-04)
 

@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Retired options-page runtime copy removed.** The AI summary missing-key
+  error now points users to Astra Deck settings via the YouTube gear icon or the
+  toolbar popup's **Open Full Settings** action instead of referencing the
+  removed standalone options page. A hardening regression now fails if shipped
+  runtime code reintroduces the stale `via options page` guidance.
+
 - **Python companion dependency audit gate.** The `Validate` workflow now runs
   `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
   artifact for release review, and runs GitHub dependency review on pull
