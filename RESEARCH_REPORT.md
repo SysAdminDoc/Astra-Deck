@@ -22,13 +22,15 @@ or maintainer action to confirm.
   remediated beyond the earlier CSP/staging cleanup. Exact parsed YouTube host
   checks now replace substring URL handling in extension and userscript channel,
   share, video-id, and SPA navigation paths; Resume Playback Position normalizes
-  stored video IDs through a bounded `Map`; Quick Links builds SVG and label
-  nodes with DOM APIs; transcript XML parsing strips tags before entity decoding
-  and decodes `&amp;` last; build version-bump reads use one read helper instead
-  of `existsSync`/read races; popup/i18n audit helpers avoid flagged sanitizer
-  replacement shapes; and the Python folder picker logs detailed exceptions
-  locally while returning a generic UI error. `tests/hardening.test.js` now
-  pins these shapes, and the local verification floor passed.
+  stored video IDs through a bounded `Map`; Quick Links normalizes destinations
+  before anchor assignment and builds SVG/label nodes with DOM APIs; the
+  userscript TrustedHTML helper avoids raw `innerHTML`; transcript XML parsing
+  strips tags before entity decoding and decodes `&amp;` last; build
+  version-bump reads use one read helper instead of `existsSync`/read races;
+  popup/i18n audit helpers avoid flagged sanitizer replacement shapes; and the
+  Python folder picker writes only a generic local failure marker while
+  returning a generic UI error. `tests/hardening.test.js` now pins these shapes,
+  and the local verification floor passed.
 - [Verified] In-page overlay accessibility coverage now extends beyond the
   popup. `npm run check` runs `npm run audit:overlays`, which statically verifies
   generated overlay semantics for toast DOM/inline fallback, downloader install

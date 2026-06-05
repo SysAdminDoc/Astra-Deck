@@ -17827,11 +17827,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const sep = line.indexOf('|');
                     if (sep === -1) return null;
                     const text = line.substring(0, sep).trim();
-                    const url = line.substring(sep + 1).trim();
+                    const url = this._normalizeQuickLinkUrl(line.substring(sep + 1));
                     if (!text || !url) return null;
-                    // Block javascript:/data: URIs — only allow relative paths and http(s)
-                    const lowerUrl = url.toLowerCase().replace(/[\s\x00-\x1f]/g, '');
-                    if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('data:') || lowerUrl.startsWith('vbscript:')) return null;
                     const icon = this._iconMap[url] || this._iconMap['_default'];
                     return { text, url, icon };
                 }).filter(Boolean);
@@ -17844,6 +17841,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return items.slice(0, this._QL_MAX_ITEMS);
                 }
                 return items;
+            },
+            _normalizeQuickLinkUrl(value) {
+                const raw = String(value || '').trim();
+                if (!raw) return null;
+                const compact = raw.toLowerCase().replace(/[\s\x00-\x1f]/g, '');
+                if (compact.startsWith('javascript:') || compact.startsWith('data:') || compact.startsWith('vbscript:')) return null;
+                try {
+                    const parsed = new URL(raw, window.location.origin);
+                    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+                    const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw);
+                    if (!hasExplicitScheme && isYouTubeHostname(parsed.hostname)) {
+                        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+                    }
+                    return parsed.href;
+                } catch {
+                    return null;
+                }
             },
             _buildMenu(parentEl, dropId) {
                 const existing = parentEl.querySelector('#' + dropId);
@@ -17894,10 +17908,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }
 
                 parsedItems.forEach((item, idx) => {
+                    const itemUrl = this._normalizeQuickLinkUrl(item.url);
+                    if (!itemUrl) return;
                     const row = document.createElement('div');
                     row.className = 'ytkit-ql-row';
-                    const a = document.createElement('a'); a.href = item.url; a.className = 'ytkit-ql-item';
-                    if (/^https?:\/\//i.test(item.url)) {
+                    const a = document.createElement('a'); a.href = itemUrl; a.className = 'ytkit-ql-item';
+                    if (/^https?:\/\//i.test(itemUrl)) {
                         a.target = '_blank';
                         a.rel = 'noopener noreferrer';
                     }

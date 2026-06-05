@@ -28,20 +28,26 @@ trace exposure from the folder picker response path.
 - Parsed navigation hrefs through `new URL(href, window.location.href)`, kept
   only `http:` / `https:` destinations, and required the parsed hostname to be
   a YouTube host before taking over navigation.
+- Normalized Quick Links destinations through `URL`, allowed only http(s)
+  destinations or YouTube-local paths, and rechecked the normalized value at the
+  anchor sink.
 - Normalized Resume Playback Position storage through a `Map`, rejected unsafe
   object keys and invalid video IDs, and serialized the bounded map back to
   plain JSON.
 - Replaced Quick Links SVG/label HTML injection with DOM-created SVG and text
   nodes in both extension and userscript paths.
+- Ported the userscript TrustedHTML helper away from raw `innerHTML` and
+  template-string DOMParser interpolation to the parsed-fragment plus
+  `replaceChildren` shape.
 - Swapped transcript XML regex tag stripping for an explicit scanner and
   decodes `&amp;` after other entities to avoid double-unescaping.
 - Replaced chained fallback-string replacements in the i18n extractor with a
   single-pass decoder.
-- Removed fragile script/style tag stripping from the popup a11y text helper,
-  leaving one generic tag-strip pass for its static accessible-text audit.
+- Replaced regex tag stripping in the popup a11y text helper and matching
+  hardening test with explicit scanners for static accessible-text checks.
 - Replaced version-bump `existsSync` read races with `readUtf8IfPresent`.
-- Logged detailed folder-picker exceptions locally while returning a generic
-  UI error response.
+- Replaced raw folder-picker exception exposure with a generic local failure
+  marker plus a generic UI error response.
 - Added hardening guardrails that pin these CodeQL-remediated shapes across the
   extension, userscript, scripts, build helper, and Python companion.
 

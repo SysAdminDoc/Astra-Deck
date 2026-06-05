@@ -23,9 +23,25 @@ function attrValue(attrs, name) {
     return match ? match[1] : '';
 }
 
+function stripHtmlTags(value) {
+    let out = '';
+    let inTag = false;
+    for (const ch of String(value || '')) {
+        if (ch === '<') {
+            inTag = true;
+            continue;
+        }
+        if (inTag) {
+            if (ch === '>') inTag = false;
+            continue;
+        }
+        out += ch;
+    }
+    return out;
+}
+
 function strippedText(html) {
-    return html
-        .replace(/<[^>]+>/g, '')
+    return stripHtmlTags(html)
         .replace(/&times;/g, 'x')
         .replace(/\s+/g, ' ')
         .trim();

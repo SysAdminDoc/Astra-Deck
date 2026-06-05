@@ -2374,7 +2374,7 @@ class FolderPickerService(QObject):
             else:
                 response_q.put({'path': None, 'cancelled': True})
         except Exception as e:
-            write_persistent_log(f"FolderPickerService failed: {e}")
+            write_persistent_log("FolderPickerService failed")
             response_q.put({'error': 'Folder picker failed. Check Astra Downloader logs for details.'})
 
 
