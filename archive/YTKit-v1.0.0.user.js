@@ -1007,7 +1007,7 @@
 
         // Method 2: Innertube API (most reliable for SPA navigation)
         async _method2_InnertubeAPI(videoId) {
-            const apiKey = this._getInnertubeApiKey() || 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+            const apiKey = this._getInnertubeApiKey() || 'REDACTED_GOOGLE_API_KEY';
             const clientVersion = this._getClientVersion() || '2.20250120.00.00';
 
             const response = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {

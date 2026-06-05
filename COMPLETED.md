@@ -45,6 +45,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
   builds now require an external key path, CI validation artifacts opt into
   ephemeral CRX signing, the ignored root key was moved to the default AppData
   key store, and the public self-distributed CRX ID baseline is documented.
+- 2026-06-05: Secret-scanning alert 1 was triaged without printing the value
+  and resolved as a false positive for an intentional public YouTube/Innertube
+  bootstrap fallback. Active source and tracked archive snapshots were redacted,
+  and hardening tests now block Google API-key-shaped literals from returning.
 - Quick Links capped at 10 slots.
 - PyQt6 GUI smoke tests for downloader folder picker flows.
 - On-demand yt-dlp self-update endpoint and popup action.

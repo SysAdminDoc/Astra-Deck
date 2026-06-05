@@ -885,7 +885,7 @@ means implemented/closed by the build lane.
   value, current repository security-analysis settings, and GitHub secret
   scanning / alert remediation documentation. Detailed notes live in
   `docs/research-cycle-15-secret-scanning-alert.md`.
-- [ ] 🔬🤖🔧 P0 — Triage and resolve open Google API Key secret-scanning alert
+- [x] 🔬🤖🔧 P0 — Triage and resolve open Google API Key secret-scanning alert
   - Why: GitHub currently reports an open `google_api_key` secret-scanning
     alert on the public repository. The alert is marked `publicly_leaked: true`,
     `multi_repo: true`, and `validity: unknown`; leaving it open makes it
@@ -928,6 +928,16 @@ means implemented/closed by the build lane.
     repos/SysAdminDoc/Astra-Deck --jq ".security_and_analysis"` records the
     final secret-scanning setting statuses. Do not log, paste, or commit the
     secret value while verifying.
+  - Status 2026-06-05: Shipped. Alert 1 was resolved as `false_positive` with a
+    redacted rationale after triage confirmed the value was an intentional
+    public YouTube/Innertube bootstrap fallback rather than a private provider
+    credential. Active source and tracked userscript/archive snapshots no
+    longer contain Google API-key-shaped literals; transcript Innertube calls
+    now require a page-derived key and fall through to other transcript methods
+    when unavailable. `gh api .../alerts?state=open --paginate --jq 'length'`
+    returned `0`. Form-encoded and JSON attempts to enable validity checks and
+    non-provider patterns returned successfully but left both settings
+    `disabled`; `docs/repo-settings.md` records that repo-endpoint no-op.
   - Complexity: S
 
 ### Researcher Queue (Cycle 14 - 2026-06-04)

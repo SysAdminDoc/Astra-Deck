@@ -124,11 +124,14 @@ or maintainer action to confirm.
   `google_api_key`, created 2026-01-26, unresolved, `publicly_leaked: true`,
   `multi_repo: true`, and `validity: unknown`. Locations include current and
   historical generated userscript/extension files, but the secret value was not
-  printed or committed during research. ROADMAP now carries a P0 item to triage
-  whether this is a real credential or an intentional public YouTube/Innertube
-  bootstrap key, resolve the alert with an explicit rationale, and enable
-  additional secret-scanning settings where available. Detailed evidence lives
-  in `docs/research-cycle-15-secret-scanning-alert.md`.
+  printed or committed during research. Cycle 2026-06-05 resolved alert 1 as
+  `false_positive` after redacted triage confirmed it was an intentional public
+  YouTube/Innertube bootstrap fallback rather than a private provider
+  credential; active source and tracked archive snapshots were redacted, and
+  `docs/repo-settings.md` records the repository endpoint no-op when attempting
+  to enable validity checks and non-provider patterns. Detailed evidence lives
+  in `docs/research-cycle-15-secret-scanning-alert.md` and
+  `docs/audit/2026-06-05-secret-scanning-alert.md`.
 - [Verified] Cycle 14 release-doc contract reconciliation pass on 2026-06-04
   found that the release process is now split between CI-built/attested
   workflow artifacts and maintainer-local public release assets, but current
@@ -358,32 +361,30 @@ runtime migrations that make them durable.
 
 Top remaining opportunities (one-liners):
 
-1. Triage and resolve the open Google API Key secret-scanning alert without
-   exposing the secret value. [Verified]
-2. Publish `SECURITY.md` and enable private vulnerability reporting so
+1. Publish `SECURITY.md` and enable private vulnerability reporting so
    signing-key, extension, companion, dependency, and release-integrity reports
    do not go through public issues. [Verified]
-3. Enable CodeQL code scanning for JavaScript extension code and the Python
+2. Enable CodeQL code scanning for JavaScript extension code and the Python
    companion, then decide whether the CodeQL check becomes required after a
    clean baseline run. [Verified]
-4. Prove the Astra Downloader self-update release-channel contract before
+3. Prove the Astra Downloader self-update release-channel contract before
    bumping companion `APP_VERSION`: stage/publish `AstraDownloader.exe` and
    `AstraDownloader.exe.sha256`, include both in release manifests/checksums,
    and dry-run the live download/hash path. [Verified]
-5. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
+4. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
    extension permission/proxy, data-flow, and companion loopback paths, then
    enable code-owner review once owner references and syntax are proven.
    [Verified]
-6. Convert optional store-safe enrichment hosts to runtime-granted optional
+5. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]
-7. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+6. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-8. Enable dependency graph / Dependabot alert settings so the PR-only
+7. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-9. Reconcile repo-local working notes with the current protected-main,
+8. Reconcile repo-local working notes with the current protected-main,
    maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
    first-read operator docs no longer point to missing or stale guidance.
    [Verified]
@@ -525,12 +526,12 @@ Top remaining opportunities (one-liners):
   say full-length commit SHAs are the immutable action-reference option, and
   repository settings / REST APIs can require SHA pins and selected action
   sources. [Verified]
-- Secret scanning alert probe: GitHub reports one open `google_api_key` alert
-  with `publicly_leaked: true`, `multi_repo: true`, and `validity: unknown`;
-  locations include current/historical generated userscript and extension files.
-  Secret scanning and push protection are enabled, while non-provider pattern
-  scanning and validity checks are disabled in the current repository
-  security-analysis response. [Verified]
+- Secret scanning alert probe: alert 1 was resolved as `false_positive` on
+  2026-06-05 after redacted triage confirmed the value was a public
+  YouTube/Innertube bootstrap fallback. Open alert count is now `0`. Secret
+  scanning and push protection are enabled, while non-provider pattern scanning
+  and validity checks remain disabled after repository PATCH attempts returned
+  successfully but left both statuses unchanged. [Verified]
 - Open Dependabot PR #11 and run `26950993002`: Dependency review fails with
   GitHub's dependency-graph enablement message while the other `Validate` jobs
   pass. The repository security-analysis API response shows a public repository
@@ -819,9 +820,10 @@ Closed since the 2026-06-03 baseline:
   refs are tag-pinned; ROADMAP P2 now queues a post-Node-24 SHA-pinning and
   selected-actions policy pass.
 - **Secret scanning** [Verified]: baseline secret scanning and push protection
-  are enabled, but one open Google API Key alert remains unresolved with
-  validity unknown. Non-provider pattern scanning and validity checks are
-  disabled in the current repository security-analysis response.
+  are enabled, alert 1 is resolved as `false_positive`, open alert count is `0`,
+  and active source/archive snapshots no longer contain Google API-key-shaped
+  literals. Non-provider pattern scanning and validity checks remain disabled
+  after repository PATCH attempts left both statuses unchanged.
 - **Privacy disclosure / consent** [Verified]: `docs/privacy-policy.md` is the
   stable policy source linked from README/submission docs; it covers Chrome data
   categories, external destinations, local storage/export/delete, cookies, no
@@ -851,11 +853,6 @@ Closed since the 2026-06-03 baseline:
 - Whether `main` should use classic branch-protection required checks or a
   repository ruleset, and whether all `main` updates should go through PRs.
   [Needs validation]
-- Whether the open Google API Key secret-scanning alert is an intentional public
-  YouTube/Innertube bootstrap key or a private quota-bearing credential that
-  must be revoked. [Needs validation]
-- Whether CRX release builds should use `ASTRA_CRX_KEY_PATH`, a CLI flag, or
-  both for the external signing-key path. [Needs validation]
 - What first-response and triage SLA language should `SECURITY.md` commit to
   for private vulnerability reports. [Needs validation]
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
