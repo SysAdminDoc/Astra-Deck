@@ -70,7 +70,9 @@ trace exposure from the folder picker response path.
 - `npm run build`
 - `git diff --check`
 
-Hosted follow-up: after push, rerun branch-scoped CodeQL alert inspection for
-`refs/heads/codex/research-feature-plan-2026-06-05` and distinguish any
-remaining CodeQL alert from the known dependency-review repository-setting
-blocker.
+Hosted follow-up after `ff724d2`: branch-scoped CodeQL alert inspection for
+`refs/heads/codex/research-feature-plan-2026-06-05` returned `0` open alerts.
+PR checks passed for CodeQL, JS tests/check, Python dependency audit, and Python
+downloader tests. Dependency review still fails because the repository
+dependency graph is not enabled, which is a hosted repository-setting blocker
+outside this code change.
