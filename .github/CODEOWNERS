@@ -1,0 +1,32 @@
+# Security-sensitive ownership for repository policy, release, and runtime paths.
+# Owners listed here must keep write access to the repository.
+
+/.github/ @SysAdminDoc
+/SECURITY.md @SysAdminDoc
+/package.json @SysAdminDoc
+/package-lock.json @SysAdminDoc
+
+# Build, release, signing, and hardening gates.
+/build-extension.js @SysAdminDoc
+/scripts/generate-release-manifest.js @SysAdminDoc
+/scripts/stage-companion-release.js @SysAdminDoc
+/scripts/manifest-patch.js @SysAdminDoc
+/scripts/check-*.js @SysAdminDoc
+/scripts/eslint-rules/ @SysAdminDoc
+
+# Security, privacy, release, and repository-policy documentation.
+/docs/signing-keys.md @SysAdminDoc
+/docs/repo-settings.md @SysAdminDoc
+/docs/privacy-policy.md @SysAdminDoc
+
+# Extension permissions, background proxying, core data flow, and trusted DOM code.
+/extension/manifest.json @SysAdminDoc
+/extension/background.js @SysAdminDoc
+/extension/default-settings.json @SysAdminDoc
+/extension/settings-meta.json @SysAdminDoc
+/extension/core/ @SysAdminDoc
+/extension/ytkit.js @SysAdminDoc
+/extension/ytkit-main.js @SysAdminDoc
+
+# Companion loopback server, update, and packaging code.
+/astra_downloader/ @SysAdminDoc

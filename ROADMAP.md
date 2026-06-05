@@ -571,6 +571,15 @@ means implemented/closed by the build lane.
     `docs/signing-keys.md`, `SECURITY.md`, `extension/manifest.json`,
     `extension/background.js`, `extension/core/data-flow.js`,
     `extension/core/policy-profile.js`, and `astra_downloader/`.
+  - Status 2026-06-05: source-side CODEOWNERS coverage now exists on the
+    feature branch. `.github/CODEOWNERS` maps repository policy, dependency
+    manifests, release/signing tooling, hardening gates, security/privacy docs,
+    extension manifest/background/core code, and the companion downloader to
+    `@SysAdminDoc`; `tests/hardening.test.js` now asserts those high-risk paths
+    remain covered and avoids non-existent team references. The item stays open
+    until the CODEOWNERS file lands on `main`, the GitHub CODEOWNERS errors API
+    is clean for the default branch, and `main` branch protection enables
+    code-owner review.
   - Acceptance: `.github/CODEOWNERS` exists on `main`, maps security-sensitive
     files and directories to `@SysAdminDoc` or a real write-enabled team, and
     includes comments explaining why the paths are protected. The CODEOWNERS

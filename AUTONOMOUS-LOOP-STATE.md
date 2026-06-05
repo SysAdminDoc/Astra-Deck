@@ -16,8 +16,9 @@
   vulnerability reporting, then added and baseline-verified CodeQL
   JavaScript/TypeScript plus Python code scanning, then hardened the
   Astra Downloader self-update release-channel contract up to the public
-  release-upload boundary. Updated roadmap/completed/audit continuity notes
-  after each cycle.
+  release-upload boundary, then added CODEOWNERS source coverage for
+  security-sensitive repository, release, extension core, and companion paths.
+  Updated roadmap/completed/audit continuity notes after each cycle.
 
 ## Verification
 
@@ -92,6 +93,15 @@
     confirmed the live release still lacks `AstraDownloader.exe` and
     `AstraDownloader.exe.sha256`; public release upload/dry-run was not
     performed by this automation pass
+- Cycle 9 CODEOWNERS source-policy verification passed:
+  - `gh repo view SysAdminDoc/Astra-Deck --json nameWithOwner,isPrivate,owner,viewerPermission,defaultBranchRef`
+  - `gh api repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_pull_request_reviews --jq .`
+  - `node --test tests/hardening.test.js --test-name-pattern="CODEOWNERS protects"`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - hosted CODEOWNERS errors API validation remains pending until the file is
+    pushed and then merged to the default branch
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -101,7 +111,9 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 8, the remaining
+  implementable without exposing secrets. As of Cycle 9, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
-  EXE and sidecar. Continue with CODEOWNERS and optional-permissions hardening
-  when public release mutation is out of scope for the automation pass.
+  EXE and sidecar, and CODEOWNERS still needs default-branch validation plus
+  `main` branch-protection enforcement after merge. Continue with
+  optional-permissions hardening when those hosted/default-branch mutations are
+  not available to the automation pass.
