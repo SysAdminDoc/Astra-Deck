@@ -12,6 +12,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   removed standalone options page. A hardening regression now fails if shipped
   runtime code reintroduces the stale `via options page` guidance.
 
+- **Release-doc contract reconciled.** The architecture map now describes the
+  actual split between CI-built workflow artifacts with tag-only build/SBOM
+  attestations and maintainer-local public release publication for `ytkit.pem`
+  signed CRX assets.
+
 - **Python companion dependency audit gate.** The `Validate` workflow now runs
   `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
   artifact for release review, and runs GitHub dependency review on pull

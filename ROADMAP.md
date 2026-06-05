@@ -928,7 +928,7 @@ means implemented/closed by the build lane.
   attestation steps, signing-key policy docs, architecture CI docs, and stale
   research-report sections. Detailed notes live in
   `docs/research-cycle-14-release-doc-contract-reconciliation.md`.
-- [ ] 🔬🤖 P2 — Reconcile release automation docs with maintainer-local artifact contract
+- [x] 🔬🤖 P2 — Reconcile release automation docs with maintainer-local artifact contract
   - Why: the actual release contract is now split: CI builds validation
     artifacts, emits `release-manifest.json` / `SHA256SUMS`, and creates
     attestations for CI-built artifacts, while public CRX artifacts remain
@@ -971,6 +971,11 @@ means implemented/closed by the build lane.
     `docs/signing-keys.md`, `docs/architecture.md`, and release checklist text
     agree on CI-built vs maintainer-local artifacts.
   - Complexity: S
+  - Status 2026-06-05: delivered. `docs/architecture.md` now says CI validates,
+    builds, uploads `build/*` as workflow artifacts, and creates tag-only
+    build/SBOM attestations, while public GitHub Release publication remains
+    maintainer-local because `ytkit.pem` never enters CI. `RESEARCH_REPORT.md`
+    current status was updated to stop describing the architecture row as stale.
 
 ### Researcher Queue (Cycle 13 - 2026-06-04)
 

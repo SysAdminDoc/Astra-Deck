@@ -34,6 +34,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
   missing-key path. The error now names the current in-page settings panel and
   toolbar popup `Open Full Settings` action, with a hardening regression to keep
   stale options-page guidance out of shipped runtime code.
+- 2026-06-05: Release automation docs were reconciled with the current
+  maintainer-local artifact contract. The architecture map now says CI uploads
+  workflow artifacts and creates tag-only build/SBOM attestations, while public
+  GitHub Release publication remains local because `ytkit.pem` never enters CI.
 - Quick Links capped at 10 slots.
 - PyQt6 GUI smoke tests for downloader folder picker flows.
 - On-demand yt-dlp self-update endpoint and popup action.

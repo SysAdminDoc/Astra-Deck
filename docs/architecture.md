@@ -124,7 +124,7 @@ User opens the popup:
 | Build pipeline | `build-extension.js` + `sync-userscript.js` + `scripts/manifest-patch.js` | Emits Chrome ZIP + CRX3, Firefox ZIP + XPI, userscript copy. CRX3 signed via `ytkit.pem` (gitignored). Firefox manifest auto-patched. |
 | Astra Downloader companion | `astra_downloader/astra_downloader.py` (single file, ~4500 lines) | Flask API + PyQt6 GUI + yt-dlp + ffmpeg. Single-file PyInstaller .exe at `%LOCALAPPDATA%\AstraDownloader\`. |
 | Test suites | `tests/*.test.js` (528 JS tests, `node --test`) + `astra_downloader/test_astra_downloader.py` (88 Python tests, pytest) | Hardening regressions, parity gates, selector regression, settings migration round-trip. |
-| CI | `.github/workflows/build.yml` | `npm ci` → `npm test` + `npm run check` → tag check → `npm run build:userscript` → `gh release create`. |
+| CI | `.github/workflows/build.yml` | `npm ci` -> `npm test` + `npm run check` -> tag check -> `npm run build:userscript` -> SBOM + `release-manifest.json` / `SHA256SUMS` -> upload `build/*` as workflow artifacts -> tag-only build/SBOM attestations. CI does not receive `ytkit.pem` and does not create GitHub Releases; public release publication stays maintainer-local per [signing-keys.md](signing-keys.md). |
 
 ## Trust boundaries (and what each is allowed to touch)
 
