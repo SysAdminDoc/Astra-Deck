@@ -9,8 +9,9 @@
 - Result: Shipped the retired options-page runtime-copy fix for the AI summary
   missing-key path, then reconciled release automation docs with the
   maintainer-local public-release contract, then migrated GitHub-owned workflow
-  action pins to Node 24-ready majors. Updated roadmap/completed/audit
-  continuity notes after each cycle.
+  action pins to Node 24-ready majors, then moved CRX signing-key custody out
+  of the repo worktree with an external release-key contract. Updated
+  roadmap/completed/audit continuity notes after each cycle.
 
 ## Verification
 
@@ -28,6 +29,15 @@
   - `npm run build`
 - Cycle 3 Node 24 action-major verification passed:
   - `node --test tests/hardening.test.js --test-name-pattern="GitHub workflows use Node 24-ready"`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+- Cycle 4 CRX key-custody verification passed:
+  - `node --test tests/hardening.test.js --test-name-pattern="CRX signing key custody"`
+  - missing-key release build failure check with a temporary missing `ASTRA_CRX_KEY_PATH`
+  - `npm run build:userscript -- --profile store-safe`
+  - `Test-Path ytkit.pem` returned `False`
+  - `git status --ignored --short -- ytkit.pem` returned no root key entry
   - `npm test`
   - `npm run check`
   - `npm run build`

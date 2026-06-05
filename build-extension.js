@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 const crx3 = require('crx3');
 const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
@@ -23,7 +24,9 @@ const DEFAULT_SETTINGS_JSON = path.join(EXT_DIR, 'default-settings.json');
 const SETTINGS_META_JSON = path.join(EXT_DIR, 'settings-meta.json');
 const USERSCRIPT = resolveUserscriptPath(__dirname);
 const USERSCRIPT_BASENAME = getUserscriptBasename(__dirname);
-const CRX_KEY = path.join(__dirname, 'ytkit.pem');
+const CRX_KEY_PATH_ENV = 'ASTRA_CRX_KEY_PATH';
+const CRX_KEY_MODE_ENV = 'ASTRA_CRX_KEY_MODE';
+const CRX_KEY_MODES = Object.freeze(['external', 'ephemeral']);
 
 const BUILD_PROFILE_IDS = Object.freeze(['store-safe', 'github-full']);
 const BUILD_PROFILES = Object.freeze({
@@ -74,6 +77,65 @@ function expandBuildProfileSelection(profile) {
     return [normalizeBuildProfile(profile)];
 }
 
+function defaultCrxKeyPath(env = process.env, platform = process.platform, homeDir = os.homedir()) {
+    const baseDir = platform === 'win32'
+        ? (env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local'))
+        : (env.XDG_CONFIG_HOME || path.join(homeDir, '.config'));
+    return path.join(baseDir, 'Astra-Deck', 'keys', 'ytkit.pem');
+}
+
+function normalizeCrxKeyMode(mode) {
+    if (!CRX_KEY_MODES.includes(mode)) {
+        throw new Error('Invalid CRX key mode: ' + mode + ' (use external or ephemeral)');
+    }
+    return mode;
+}
+
+function isPathInside(parentDir, candidatePath) {
+    const relative = path.relative(path.resolve(parentDir), path.resolve(candidatePath));
+    return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function resolveCrxSigningConfig(options = {}) {
+    const env = options.env || process.env;
+    const releaseBuild = Boolean(options.releaseBuild);
+    const mode = normalizeCrxKeyMode(
+        options.mode || env[CRX_KEY_MODE_ENV] || (releaseBuild ? 'external' : 'ephemeral')
+    );
+
+    if (mode === 'ephemeral') {
+        return {
+            mode,
+            keyPath: null,
+            generatedKeyPath: options.generatedKeyPath || null
+        };
+    }
+
+    const rawKeyPath = options.keyPath || env[CRX_KEY_PATH_ENV] || defaultCrxKeyPath(env, options.platform || process.platform, options.homeDir || os.homedir());
+    const keyPath = path.resolve(rawKeyPath);
+
+    if (isPathInside(__dirname, keyPath)) {
+        throw new Error(
+            'CRX signing key must live outside the repository worktree. ' +
+            'Move ytkit.pem to ' + defaultCrxKeyPath(env, options.platform || process.platform, options.homeDir || os.homedir()) +
+            ' or set ' + CRX_KEY_PATH_ENV + ' to another external path.'
+        );
+    }
+    if (!fs.existsSync(keyPath)) {
+        throw new Error(
+            'CRX signing key not found at ' + keyPath + '. ' +
+            'Set ' + CRX_KEY_PATH_ENV + ' to the external ytkit.pem path before running a release build, ' +
+            'or set ' + CRX_KEY_MODE_ENV + '=ephemeral for CI validation artifacts only.'
+        );
+    }
+
+    return {
+        mode,
+        keyPath,
+        generatedKeyPath: null
+    };
+}
+
 // Parse args. Keep imports side-effect-free so tests can require the profile
 // helpers without inheriting the parent process' CLI flags.
 const IS_CLI = require.main === module;
@@ -81,6 +143,8 @@ const args = IS_CLI ? process.argv.slice(2) : [];
 const INCLUDE_USERSCRIPT = args.includes('--with-userscript');
 const bumpIndex = args.indexOf('--bump');
 const profileIndex = args.indexOf('--profile');
+const crxKeyIndex = args.indexOf('--crx-key');
+const crxKeyModeIndex = args.indexOf('--crx-key-mode');
 // Guard: `--bump` with no following arg previously silently no-op'd because
 // `bumpType` was undefined and fell through the `if (bumpType)` check. Fail
 // loudly instead so the user knows the bump didn't apply.
@@ -105,6 +169,26 @@ if (profileIndex !== -1) {
     }
     if (![...BUILD_PROFILE_IDS, 'both'].includes(profileType)) {
         console.error('Invalid profile type: ' + profileType + ' (use store-safe, github-full, or both)');
+        process.exit(1);
+    }
+}
+let crxKeyPath = null;
+if (crxKeyIndex !== -1) {
+    crxKeyPath = args[crxKeyIndex + 1];
+    if (!crxKeyPath || crxKeyPath.startsWith('--')) {
+        console.error('--crx-key requires a path outside the repository worktree');
+        process.exit(1);
+    }
+}
+let crxKeyMode = null;
+if (crxKeyModeIndex !== -1) {
+    crxKeyMode = args[crxKeyModeIndex + 1];
+    if (!crxKeyMode || crxKeyMode.startsWith('--')) {
+        console.error('--crx-key-mode requires a mode: external | ephemeral');
+        process.exit(1);
+    }
+    if (!CRX_KEY_MODES.includes(crxKeyMode)) {
+        console.error('Invalid CRX key mode: ' + crxKeyMode + ' (use external or ephemeral)');
         process.exit(1);
     }
 }
@@ -383,8 +467,26 @@ async function build() {
     if (fs.existsSync(BUILD_DIR)) fs.rmSync(BUILD_DIR, { recursive: true });
     fs.mkdirSync(BUILD_DIR, { recursive: true });
 
-    for (const profile of SELECTED_BUILD_PROFILES) {
-        await buildProfileArtifacts(profile);
+    const baseCrxSigningConfig = resolveCrxSigningConfig({
+        keyPath: crxKeyPath,
+        mode: crxKeyMode,
+        releaseBuild: INCLUDE_USERSCRIPT || Boolean(bumpType)
+    });
+    const crxSigningConfig = {
+        ...baseCrxSigningConfig,
+        generatedKeyPath: baseCrxSigningConfig.mode === 'ephemeral'
+            ? path.join(BUILD_DIR, '.validation-crx-key.pem')
+            : null
+    };
+
+    try {
+        for (const profile of SELECTED_BUILD_PROFILES) {
+            await buildProfileArtifacts(profile, crxSigningConfig);
+        }
+    } finally {
+        if (crxSigningConfig.generatedKeyPath && fs.existsSync(crxSigningConfig.generatedKeyPath)) {
+            fs.rmSync(crxSigningConfig.generatedKeyPath, { force: true });
+        }
     }
 
     // ── Optional Userscript Build Artifact ──
@@ -400,7 +502,7 @@ async function build() {
     console.log('\nAll artifacts built for v' + version + ' (' + SELECTED_BUILD_PROFILES.join(', ') + ')');
 }
 
-async function buildProfileArtifacts(profile) {
+async function buildProfileArtifacts(profile, crxSigningConfig = resolveCrxSigningConfig({ releaseBuild: false })) {
     // Wrap each profile build in try/finally so an exception mid-flight cannot
     // leave orphan staging directories behind in `build/` that confuse the next run.
     const chromeStageDir = path.join(BUILD_DIR, profile + '-chrome-stage');
@@ -424,7 +526,11 @@ async function buildProfileArtifacts(profile) {
 
         try {
             const crxFiles = listFiles(chromeStageDir);
-            const keyPath = fs.existsSync(CRX_KEY) ? CRX_KEY : undefined;
+            const keyPath = crxSigningConfig.mode === 'external'
+                ? crxSigningConfig.keyPath
+                : (crxSigningConfig.generatedKeyPath && fs.existsSync(crxSigningConfig.generatedKeyPath)
+                    ? crxSigningConfig.generatedKeyPath
+                    : undefined);
 
             await crx3(crxFiles, {
                 keyPath: keyPath,
@@ -432,13 +538,11 @@ async function buildProfileArtifacts(profile) {
                 zipPath: undefined // already have the ZIP
             });
 
-            // crx3 generates a key file if one didn't exist
-            if (!keyPath) {
-                // Move auto-generated key to project root for reuse
+            if (crxSigningConfig.mode === 'ephemeral' && !keyPath) {
                 const generatedKey = chromeCrxPath.replace('.crx', '.pem');
                 if (fs.existsSync(generatedKey)) {
-                    fs.renameSync(generatedKey, CRX_KEY);
-                    console.log('Generated signing key: ytkit.pem (keep this file for consistent extension ID)');
+                    fs.renameSync(generatedKey, crxSigningConfig.generatedKeyPath);
+                    console.log('Generated temporary CRX signing key for validation artifacts; it will be deleted before build exit');
                 }
             }
 
@@ -484,8 +588,10 @@ module.exports = {
     BUILD_PROFILE_IDS,
     BUILD_PROFILES,
     buildExtensionPagesCsp,
+    defaultCrxKeyPath,
     expandBuildProfileSelection,
     getArtifactBaseName,
     getManifestProfileHostPermissions,
-    patchManifestForBuildProfile
+    patchManifestForBuildProfile,
+    resolveCrxSigningConfig
 };

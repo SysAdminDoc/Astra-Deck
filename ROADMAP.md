@@ -771,7 +771,7 @@ means implemented/closed by the build lane.
   signing-key policy docs, release checklist references, and the CRX build
   path in `build-extension.js`. Detailed notes live in
   `docs/research-cycle-17-signing-key-custody.md`.
-- [ ] 🔬🤖🔧 P0 — Move CRX signing key custody out of the repo worktree
+- [x] 🔬🤖🔧 P0 — Move CRX signing key custody out of the repo worktree
   - Why: the CRX signing key is a long-lived private key that controls the
     self-distributed Chrome extension identity. Current docs say `ytkit.pem`
     lives outside the repo, but the build script hardcodes
@@ -810,6 +810,15 @@ means implemented/closed by the build lane.
     when no external path is supplied, then succeeds when the external key path
     is supplied. Generated CRX extension ID is compared against the previous
     self-distributed ID before publishing, and no command prints PEM contents.
+  - Status 2026-06-05: Shipped. `build-extension.js` now rejects repo-worktree
+    external key paths, defaults release builds to the external key contract
+    (`ASTRA_CRX_KEY_PATH`, `--crx-key`, or
+    `%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem`), and uses an explicit
+    `ASTRA_CRX_KEY_MODE=ephemeral` validation mode for CI artifacts. The local
+    ignored root key was moved to the default external AppData path without
+    printing key material; `Test-Path ytkit.pem` is false and the expected
+    public CRX ID is recorded in `docs/signing-keys.md`. Release-time offline
+    backup remains a maintainer checklist responsibility before publication.
   - Complexity: M
 
 ### Researcher Queue (Cycle 16 - 2026-06-04)

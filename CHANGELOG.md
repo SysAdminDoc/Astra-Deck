@@ -23,6 +23,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `upload-artifact@v7`. A hardening regression keeps the old Node 20-era
   action majors from returning before the later SHA-pinning pass.
 
+- **CRX signing-key custody moved out of the worktree.** Release CRX builds now
+  require an external maintainer key path (`ASTRA_CRX_KEY_PATH`, `--crx-key`,
+  or `%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem`) and reject repo-worktree key
+  paths. Validation builds use an explicit ephemeral CRX key mode that deletes
+  generated key material before build exit, and the current self-distributed
+  CRX ID is recorded in the signing policy.
+
 - **Python companion dependency audit gate.** The `Validate` workflow now runs
   `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
   artifact for release review, and runs GitHub dependency review on pull

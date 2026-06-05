@@ -170,7 +170,7 @@ function main() {
         commit,
         generatedAt,
         localSigningRequired: true,
-        signingKeyPolicy: 'CRX artifacts must be built locally with ytkit.pem; CI build artifacts are validation/provenance outputs only.',
+        signingKeyPolicy: 'Public CRX artifacts must be built locally with ASTRA_CRX_KEY_PATH or the default external key store; CI build artifacts use ephemeral CRX signing for validation/provenance only.',
         assets
     };
 
