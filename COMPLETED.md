@@ -30,18 +30,18 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
-- 2026-06-05: Store-safe default-off enrichment hosts for thumbnails, Return
-  YouTube Dislike, and Reddit now generate as `optional_host_permissions`
-  instead of install-time `host_permissions`; the popup requests declared
-  optional hosts before enabling matching settings, and the background
-  `EXT_FETCH` proxy rejects requests to those optional origins unless the
-  runtime grant is currently present. The popup now surfaces denied/revoked
-  grants as permission-needed chips in quick toggles, schema rows, and the
-  data-flow panel, and shows exact permission-denied status copy. Hardening and
-  background tests cover the manifest split, data-flow contract,
-  callback/promise permission helper, granted/denied proxy paths, and
-  revoked-state UI. SponsorBlock/DeArrow remains open because `sponsor.ajay.app`
-  backs the default-on SponsorBlock feature.
+- 2026-06-05: Store-safe enrichment hosts for SponsorBlock/DeArrow, thumbnails,
+  Return YouTube Dislike, and Reddit now generate as
+  `optional_host_permissions` instead of install-time `host_permissions`; the
+  popup requests declared optional hosts before enabling matching settings and
+  shows a top-level Grant access banner when already-enabled features need a
+  runtime grant. The background `EXT_FETCH` proxy rejects requests to those
+  optional origins unless the runtime grant is currently present. The popup now
+  surfaces denied/revoked grants as permission-needed chips in quick toggles,
+  schema rows, and the data-flow panel, and shows exact permission-denied status
+  copy. Hardening and background tests cover the manifest split, data-flow
+  contract, callback/promise permission helper, granted/denied proxy paths, and
+  revoked-state UI.
 - 2026-06-05: `.github/CODEOWNERS` source coverage was added for repository
   policy, dependency manifests, release/signing tooling, hardening gates,
   security/privacy docs, extension manifest/background/core code, and the

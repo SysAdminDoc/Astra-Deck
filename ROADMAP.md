@@ -660,10 +660,12 @@ means implemented/closed by the build lane.
     grant check before network fetch. A third same-day slice added popup
     grant-state refresh, `permissions.onAdded`/`onRemoved` listeners,
     permission-needed chips on quick toggles and schema rows, data-flow
-    granted/needed labels, and exact permission-denied status copy.
-    `sponsor.ajay.app` intentionally remains required because SponsorBlock is
-    default-on; the item stays open for SponsorBlock/DeArrow runtime-grant UX
-    and manual browser smoke coverage.
+    granted/needed labels, and exact permission-denied status copy. A fourth
+    same-day slice moved `sponsor.ajay.app` into store-safe
+    `optional_host_permissions` and added a popup Grant access banner so
+    default-on SponsorBlock can request the shared SponsorBlock/DeArrow origin
+    from an explicit user gesture. The code-side item is complete; manual
+    unpacked Chrome/Firefox smoke coverage remains open.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,

@@ -22,18 +22,20 @@ Return YouTube Dislike, and Reddit discussions. Chrome and Mozilla both support
 Manifest V3 `optional_host_permissions`, and runtime permission requests are a
 better fit for those default-off enrichment features.
 
-`sponsor.ajay.app` is different because SponsorBlock is default-on and shares
-the origin with DeArrow. Moving it to optional without a dedicated first-run or
-enable-time grant UX would silently break the default SponsorBlock path, so this
-cycle left that host required and documented it as remaining work.
+`sponsor.ajay.app` needed a dedicated gesture path because SponsorBlock is
+default-on and shares the origin with DeArrow. A later same-day slice added the
+popup Grant access banner, so the store-safe package can move that shared host
+to `optional_host_permissions` without silently prompting or silently breaking
+the default SponsorBlock path.
 
 ## Fix
 
-- Added `hostGrant: "runtime-optional"` metadata for `i.ytimg.com`,
-  `returnyoutubedislikeapi.com`, and Reddit entries in the data-flow catalogue.
-- Updated build-profile generation so store-safe artifacts keep core YouTube and
-  SponsorBlock hosts in `host_permissions`, move the default-off enrichment
-  hosts to `optional_host_permissions`, and keep all eligible optional hosts in
+- Added `hostGrant: "runtime-optional"` metadata for `sponsor.ajay.app`,
+  `i.ytimg.com`, `returnyoutubedislikeapi.com`, and Reddit entries in the
+  data-flow catalogue.
+- Updated build-profile generation so store-safe artifacts keep core YouTube
+  hosts in `host_permissions`, move enrichment hosts to
+  `optional_host_permissions`, and keep all eligible optional hosts in
   `content_security_policy.extension_pages` `connect-src`.
 - Added `extension/core/optional-host-permissions.js`, a small callback/promise
   compatible wrapper around the browser permissions API.
@@ -45,6 +47,9 @@ cycle left that host required and documented it as remaining work.
 - Added popup denied/revoked grant-state chips, `permissions.onAdded` /
   `permissions.onRemoved` refresh, data-flow grant labels, and exact
   permission-denied status copy.
+- Added a popup Grant access banner that requests all currently missing
+  optional host grants from an explicit user gesture, covering default-on
+  SponsorBlock after `sponsor.ajay.app` moved to runtime optional grants.
 - Regenerated `YTKit.user.js` so the bundled data-flow module stays in sync.
 - Updated hardening tests and store-review docs for the split.
 
@@ -54,10 +59,10 @@ cycle left that host required and documented it as remaining work.
 - `node --test tests/hardening.test.js --test-name-pattern="optional host|build-extension emits|data-flow|Return YouTube Dislike"`.
 - `node --test tests/background.test.js`.
 - `node --test tests/hardening.test.js --test-name-pattern="popup.js requests declared optional hosts|optional host"`.
+- `node --test tests/hardening.test.js --test-name-pattern="optional host|build-extension emits|data-flow generated|SponsorBlock and DeArrow"`.
 
 ## Remaining Work
 
-- Add a SponsorBlock/DeArrow runtime-grant UX before moving
-  `sponsor.ajay.app` out of install-time store-safe host permissions.
 - Run manual unpacked Chrome and Firefox store-safe smoke checks for permission
-  prompts, granted behavior, denial, and revocation.
+  prompts, granted behavior, denial, revocation, and the default-on
+  SponsorBlock Grant access banner.
