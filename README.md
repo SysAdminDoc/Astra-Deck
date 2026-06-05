@@ -19,6 +19,8 @@
   <a href="https://github.com/SysAdminDoc/Astra-Deck/releases/latest"><strong>Download Latest Release</strong></a>
   ·
   <a href="docs/privacy-policy.md"><strong>Privacy Policy</strong></a>
+  ·
+  <a href="SECURITY.md"><strong>Security Policy</strong></a>
 </p>
 
 ---
@@ -278,6 +280,7 @@ document_idle
 
 ## Security
 
+- Report sensitive security issues through [private vulnerability reporting](SECURITY.md), not public issues.
 - **EXT_FETCH proxy** uses domain allowlist — blocks SSRF to private networks
 - Request/response headers filtered (`Cookie`, `Set-Cookie`, etc. stripped globally; `Authorization` only forwarded to explicit BYO-key/local service origins such as OpenAI/Anthropic/Ollama/MediaDL)
 - Response body capped at 10 MB, fetch timeout capped at 60s
@@ -410,6 +413,7 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
 | [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |
+| [SECURITY.md](SECURITY.md) | Supported versions and private vulnerability reporting policy |
 | [docs/architecture.md](docs/architecture.md) | Trust boundaries, data flow, where things live, conventions a new contributor needs |
 | [docs/cws-submission-checklist.md](docs/cws-submission-checklist.md) | Chrome Web Store submission preflight (manifest, privacy policy, screenshots) |
 | [docs/store-permission-rationale.md](docs/store-permission-rationale.md) | Copy-paste store-review permission, host, and single-purpose rationale |

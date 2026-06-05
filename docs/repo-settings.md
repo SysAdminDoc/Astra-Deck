@@ -63,20 +63,22 @@ lands.
 
 ## Private Vulnerability Reporting
 
-Current snapshot from 2026-06-04:
+Current snapshot from 2026-06-05:
 
-- Private vulnerability reporting: disabled.
+- Private vulnerability reporting: enabled.
 - Repository security advisory count: 0.
 - Public issues: enabled.
-- Root `SECURITY.md`: absent.
+- Root `SECURITY.md`: present and linked from README / CONTRIBUTING.
 
-Target policy:
+Policy:
 
-- Add root `SECURITY.md` with supported versions and private reporting
-  instructions.
-- Enable private vulnerability reporting for the public repository.
+- Keep root `SECURITY.md` current with supported versions, response windows,
+  sensitive-report handling, and high-priority vulnerability classes.
+- Keep private vulnerability reporting enabled for the public repository.
 - Keep public bug-report templates for non-sensitive bugs only.
-- Ensure maintainers receive notifications for private vulnerability reports.
+- Maintainers responsible for security triage should watch the repository for
+  security alerts or all activity so private vulnerability reports are not
+  missed.
 
 ## Code Scanning
 

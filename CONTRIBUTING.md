@@ -140,9 +140,17 @@ demand, not on every commit:
 5. Commit with a clear message
 6. Push and open a Pull Request
 
+## Security Reports
+
+Do not use public issues for vulnerabilities, suspected signing-key exposure,
+private logs, exploit chains, or credential material. Use the private reporting
+path in [SECURITY.md](SECURITY.md) so the report can be triaged before public
+disclosure.
+
 ## Reporting Bugs
 
-Use the [Bug Report template](https://github.com/SysAdminDoc/Astra-Deck/issues/new?template=bug_report.md) and include:
+Use the [Bug Report template](https://github.com/SysAdminDoc/Astra-Deck/issues/new?template=bug_report.md)
+for non-sensitive bugs and include:
 - Browser + version
 - Userscript manager + version
 - Astra Deck version

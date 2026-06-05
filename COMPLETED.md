@@ -30,6 +30,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Root `SECURITY.md` was published with supported versions,
+  private vulnerability reporting instructions, response windows, and
+  high-priority vulnerability classes. README, CONTRIBUTING, signing-key
+  response docs, and repository-settings notes now direct sensitive reports
+  away from public issues, and GitHub private vulnerability reporting is
+  enabled.
 - 2026-06-05: Retired options-page runtime copy was removed from the AI summary
   missing-key path. The error now names the current in-page settings panel and
   toolbar popup `Open Full Settings` action, with a hardening regression to keep
