@@ -2073,6 +2073,12 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
             `${label} Quick Links must parse configured URLs before assigning anchor hrefs`);
         assert.match(source, /const itemUrl = this\._normalizeQuickLinkUrl\(item\.url\)/,
             `${label} Quick Links must re-check normalized URLs at the anchor sink`);
+        assert.match(source, /const parsedItemUrl = new URL\(itemUrl,\s*window\.location\.origin\)/,
+            `${label} Quick Links must parse the row URL next to the anchor sink`);
+        assert.match(source, /a\.href = itemHref/,
+            `${label} Quick Links must assign only the locally parsed href`);
+        assert.match(source, /_sanitizeQuickLinkIconPath\(pathData\)/,
+            `${label} Quick Links must sanitize SVG path data before setAttribute`);
         assert.match(source, /_positions\s*=\s*this\._toPositionMap\(/,
             `${label} resume storage must normalize persisted data into a Map`);
         assert.match(source, /Object\.fromEntries\(this\._positions\)/,
@@ -2084,6 +2090,18 @@ test('branch CodeQL URL, DOM, and storage guardrails stay hardened', () => {
         assert.doesNotMatch(source, /TrustedHTML\.setHTML\(\s*(?:a|del)\s*,/,
             `${label} quick-link labels and delete icons must be built with DOM APIs`);
     }
+
+    const userscriptTrustedStart = userscriptSource.indexOf('const TrustedHTML = (() => {');
+    const userscriptTrustedEnd = userscriptSource.indexOf('})();', userscriptTrustedStart);
+    assert.ok(userscriptTrustedStart > -1 && userscriptTrustedEnd > userscriptTrustedStart,
+        'YTKit.user.js TrustedHTML helper must be present');
+    const userscriptTrusted = userscriptSource.slice(userscriptTrustedStart, userscriptTrustedEnd);
+    assert.doesNotMatch(userscriptTrusted, /createPolicy/,
+        'userscript static HTML helper must not expose a pass-through Trusted Types policy');
+    assert.doesNotMatch(userscriptTrusted, /\.innerHTML/,
+        'userscript static HTML helper must not use raw innerHTML');
+    assert.match(userscriptTrusted, /stripDangerousStaticMarkup\(html\)/,
+        'userscript static HTML helper must reject active markup before parsing');
 });
 
 test('branch CodeQL sanitizer guardrails keep single-pass parsing and entity order', () => {
@@ -2159,6 +2177,12 @@ test('branch CodeQL file-race and Python error disclosure guardrails stay fixed'
         'FolderPickerService response must return a generic user-facing error');
     assert.doesNotMatch(downloaderSource, /response_q\.put\(\{'error': str\(e\)\}\)/,
         'FolderPickerService must not expose raw exception text to the UI response');
+    assert.doesNotMatch(downloaderSource, /'stderr': str\(e\)/,
+        'yt-dlp self-update must not expose launch exception text through stderr');
+    assert.doesNotMatch(downloaderSource, /'error': f'[^']+\{e\}'/,
+        'self-update endpoints must not expose raw exception text in JSON errors');
+    assert.doesNotMatch(downloaderSource, /dl\.error = str\(e\)/,
+        'download status payloads must not expose raw exception text');
 });
 
 test('CODEOWNERS protects security-sensitive repository paths', () => {

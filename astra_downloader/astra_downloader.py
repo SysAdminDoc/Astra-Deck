@@ -1057,8 +1057,8 @@ def _run_ytdlp_self_update(config, source_tag):
             'ok': False,
             'exit_code': -1,
             'stdout': '',
-            'stderr': str(e),
-            'error': f'yt-dlp -U could not be launched: {e}',
+            'stderr': '',
+            'error': 'yt-dlp -U could not be launched. Check Astra Downloader logs for details.',
             'version_before': version_before,
             'version_after': version_before,
             'source': source_tag,
@@ -1300,7 +1300,7 @@ def _run_companion_self_update(restart=True):
         write_persistent_log(f"Companion update version check failed: {e}")
         return {
             'ok': False,
-            'error': f'Could not check latest Astra Downloader version: {e}',
+            'error': 'Could not check latest Astra Downloader version. Check Astra Downloader logs for details.',
             'error_code': 'version-check-failed',
             'current_version': current_version,
             'latest_version': '',
@@ -1330,8 +1330,32 @@ def _run_companion_self_update(restart=True):
             timeout=15,
         )
         if not expected_hash:
-            raise RuntimeError('SHA-256 sidecar unavailable for companion update')
-        verify_file_sha256(update_path, expected_hash)
+            try:
+                update_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return {
+                'ok': False,
+                'error': 'Could not install Astra Downloader update: SHA-256 sidecar unavailable.',
+                'error_code': 'sha256-sidecar-missing',
+                'current_version': current_version,
+                'latest_version': latest_version,
+            }
+        try:
+            verify_file_sha256(update_path, expected_hash)
+        except Exception as e:  # noqa: BLE001
+            write_persistent_log(f"Companion update SHA-256 verification failed: {e}")
+            try:
+                update_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return {
+                'ok': False,
+                'error': 'Could not install Astra Downloader update: SHA-256 verification failed.',
+                'error_code': 'sha256-verification-failed',
+                'current_version': current_version,
+                'latest_version': latest_version,
+            }
         schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
         if restart:
             schedule_companion_process_exit()
@@ -1355,7 +1379,7 @@ def _run_companion_self_update(restart=True):
             pass
         return {
             'ok': False,
-            'error': f'Could not install Astra Downloader update: {e}',
+            'error': 'Could not install Astra Downloader update. Check Astra Downloader logs for details.',
             'error_code': 'install-failed',
             'current_version': current_version,
             'latest_version': latest_version,
@@ -2656,7 +2680,7 @@ class DownloadManager(QObject):
         except Exception as e:
             if dl.status != "cancelled":
                 dl.status = "failed"
-                dl.error = str(e)[:200]
+                dl.error = "Unexpected download error. Check Astra Downloader logs for details."
                 write_persistent_log(f"Download {dl.id} failed unexpectedly: {e}")
         finally:
             dl.process = None
