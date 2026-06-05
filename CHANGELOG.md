@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Astra Downloader self-update release contract hardened.** Release tooling
+  now has a `release:stage-companion` path for staging `AstraDownloader.exe`
+  into `build/`, `release:manifest -- --require-companion` requires the EXE and
+  generated `.sha256` sidecar, and the companion updater now fails clearly when
+  the sidecar is unavailable instead of scheduling a hash-unverified update.
+  The public release upload/dry-run remains a maintainer release step.
+
 - **CodeQL code scanning baseline enabled.** Added an advanced CodeQL workflow
   for JavaScript/TypeScript extension code and the Python companion using the
   `security-extended` suite, least-privilege code-scanning upload permission,

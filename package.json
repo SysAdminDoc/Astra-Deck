@@ -16,6 +16,7 @@
     "build": "node build-extension.js",
     "build:userscript": "node build-extension.js --with-userscript",
     "release:manifest": "node scripts/generate-release-manifest.js",
+    "release:stage-companion": "node scripts/stage-companion-release.js",
     "build:fixtures": "node scripts/build-selector-fixtures.js",
     "i18n:coverage": "node scripts/i18n-coverage.js",
     "audit:storage": "node scripts/audit-storage-size.js",

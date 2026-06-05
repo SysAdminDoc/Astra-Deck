@@ -499,6 +499,15 @@ means implemented/closed by the build lane.
     `.github/workflows/build.yml` if a Windows CI job is chosen,
     `astra_downloader/astra_downloader.py`, and
     `astra_downloader/test_astra_downloader.py`.
+  - Status 2026-06-05: code-side release-channel enforcement shipped locally.
+    `scripts/stage-companion-release.js` stages a validated EXE into `build/`,
+    `npm run release:manifest -- --require-companion` requires
+    `AstraDownloader.exe` plus `.sha256`, and `/update` now fails before
+    scheduling replacement when the sidecar is unavailable. Verified with a
+    real `py -3.12 astra_downloader/build.py` PyInstaller output and a local
+    companion-required manifest/hash check. The live GitHub Release upload and
+    `gh release download` dry-run remain open maintainer release actions; this
+    item stays open until the public release contains both companion assets.
   - Acceptance: a documented local or CI-safe path stages
     `AstraDownloader.exe` in `build/` before `npm run release:manifest`;
     `scripts/generate-release-manifest.js` emits `AstraDownloader.exe.sha256`

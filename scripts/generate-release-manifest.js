@@ -98,7 +98,7 @@ function parseAssetName(name, version) {
     };
 }
 
-function expectedReleaseNames(version) {
+function expectedReleaseNames(version, options = {}) {
     const names = [];
     for (const profile of ['store-safe', 'github-full']) {
         for (const browser of ['chrome', 'firefox']) {
@@ -109,6 +109,10 @@ function expectedReleaseNames(version) {
     }
     names.push(`ytkit-v${version}.user.js`);
     names.push(SBOM_NAME);
+    if (options.requireCompanion) {
+        names.push('AstraDownloader.exe');
+        names.push('AstraDownloader.exe.sha256');
+    }
     return names.sort();
 }
 
@@ -123,9 +127,9 @@ function listBuildAssets() {
         .sort();
 }
 
-function assertExpectedAssets(assetNames, version) {
+function assertExpectedAssets(assetNames, version, options = {}) {
     const present = new Set(assetNames);
-    const missing = expectedReleaseNames(version).filter((name) => !present.has(name));
+    const missing = expectedReleaseNames(version, options).filter((name) => !present.has(name));
     if (missing.length) {
         throw new Error('missing release asset(s): ' + missing.join(', '));
     }
@@ -139,13 +143,18 @@ function writeCompanionSidecarIfPresent(assetNames) {
     return Array.from(new Set([...assetNames, 'AstraDownloader.exe.sha256'])).sort();
 }
 
+function isCompanionReleaseRequired(argv = process.argv, env = process.env) {
+    return argv.includes('--require-companion') || env.ASTRA_REQUIRE_COMPANION_RELEASE === '1';
+}
+
 function main() {
     const version = readProductVersion();
     if (!version) throw new Error('package.json version is empty');
+    const requireCompanion = isCompanionReleaseRequired();
 
     let assetNames = listBuildAssets();
     assetNames = writeCompanionSidecarIfPresent(assetNames);
-    assertExpectedAssets(assetNames, version);
+    assertExpectedAssets(assetNames, version, { requireCompanion });
 
     const commit = process.env.GITHUB_SHA || git(['rev-parse', 'HEAD']);
     const tag = process.env.GITHUB_REF_NAME || `v${version}`;
@@ -171,6 +180,7 @@ function main() {
         generatedAt,
         localSigningRequired: true,
         signingKeyPolicy: 'Public CRX artifacts must be built locally with ASTRA_CRX_KEY_PATH or the default external key store; CI build artifacts use ephemeral CRX signing for validation/provenance only.',
+        companionUpdateRequired: requireCompanion,
         assets
     };
 
@@ -198,5 +208,6 @@ if (require.main === module) {
 
 module.exports = {
     expectedReleaseNames,
+    isCompanionReleaseRequired,
     parseAssetName
 };

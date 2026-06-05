@@ -30,6 +30,13 @@ or maintainer action to confirm.
   both succeeded for the language matrix, the workflow uses `security-extended`
   with generated-output path exclusions, and the code-scanning alerts API
   returns `0` open alerts.
+- [Verified] Companion self-update release-channel code-side enforcement is now
+  in place. Release tooling can stage a validated `AstraDownloader.exe`, require
+  the EXE plus `.sha256` in `release-manifest.json` / `SHA256SUMS`, and the
+  updater now fails when the sidecar is unavailable. A real PyInstaller build
+  and local companion-required manifest proof succeeded; the public latest
+  release still needs maintainer upload and live `gh release download`
+  verification before `APP_VERSION` advances.
 
 ## 2026-06-04 Freshness Refresh
 
@@ -67,9 +74,10 @@ or maintainer action to confirm.
   compares against raw `main`, the build script outputs the PyInstaller EXE to
   the repo root, the release manifest generator only writes a sidecar if
   `build/AstraDownloader.exe` already exists, and the local release checklist
-  has no companion EXE staging step. ROADMAP now carries a P1 item to prove the
-  self-update release-channel contract before any companion `APP_VERSION` bump.
-  Detailed evidence lives in
+  had no companion EXE staging step. Cycle 2026-06-05 added the local staging
+  path, companion-required manifest mode, strict updater sidecar behavior, and
+  local real-EXE proof; the live release upload/dry-run remains open. Detailed
+  evidence lives in
   `docs/research-cycle-22-companion-update-assets.md`.
 - [Verified] Cycle 21 CODEOWNERS pass on 2026-06-04 found no CODEOWNERS file
   in `.github/`, root, or `docs/`; `main` requires one approving review but
@@ -377,10 +385,11 @@ runtime migrations that make them durable.
 
 Top remaining opportunities (one-liners):
 
-1. Prove the Astra Downloader self-update release-channel contract before
-   bumping companion `APP_VERSION`: stage/publish `AstraDownloader.exe` and
-   `AstraDownloader.exe.sha256`, include both in release manifests/checksums,
-   and dry-run the live download/hash path. [Verified]
+1. Publish the Astra Downloader self-update release assets before bumping
+   companion `APP_VERSION`: upload `AstraDownloader.exe` and
+   `AstraDownloader.exe.sha256` to the target latest release, then dry-run the
+   live download/hash path. Code-side staging, manifest, and strict sidecar
+   enforcement are already in place. [Verified]
 2. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
    extension permission/proxy, data-flow, and companion loopback paths, then
    enable code-owner review once owner references and syntax are proven.
@@ -644,12 +653,13 @@ Current risk status:
   all eight profile-split extension artifacts, userscript, SBOM,
   `release-manifest.json`, and `SHA256SUMS`; release docs record the local
   `ytkit.pem` signing path. [Verified]
-- **[High] Companion self-update release-channel proof missing.** The `/update`
-  endpoint is shipped, but latest release `v4.46.0` has no
-  `AstraDownloader.exe` or `.sha256` sidecar, the build script outputs the EXE
-  to the repo root instead of `build/`, and the release checklist does not stage
-  the companion payload before manifest/checksum generation. → ROADMAP P1
-  companion update release-channel proof. [Verified]
+- **[High] Companion self-update release assets unpublished.** The code-side
+  release-channel contract now stages the EXE, requires the generated sidecar
+  in release manifests/checksums, and fails `/update` when the sidecar is
+  missing. The latest public release `v4.46.0` still has no
+  `AstraDownloader.exe` or `.sha256` asset, so the remaining P1 work is
+  maintainer release upload plus live download/hash proof before any
+  `APP_VERSION` bump. [Verified]
 - **[Med] Repo-local working notes drift.** `AGENTS.md` points future work to
   `CLAUDE.md`, but that delegated file references a missing handoff log, carries
   old Firefox 128+ support statements, and describes direct `main` push /

@@ -1,3 +1,4 @@
+import hashlib
 import socket
 import subprocess
 import tempfile
@@ -2240,15 +2241,17 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
 
     def test_successful_companion_update_schedules_replace_and_restart(self):
         client = self._client()
+        payload = b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES)
+        expected_hash = hashlib.sha256(payload).hexdigest()
 
         def fake_download(_url, path, **_kwargs):
-            Path(path).write_bytes(b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES))
+            Path(path).write_bytes(payload)
 
         with tempfile.TemporaryDirectory() as tmp, \
              mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
              mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
              mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
-             mock.patch.object(ad, 'fetch_expected_sha256', return_value=None), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected_hash), \
              mock.patch.object(ad, 'schedule_companion_update_restart',
                                return_value={'scheduled': True, 'target': str(Path(tmp) / "AstraDownloader.exe")}) as schedule, \
              mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
@@ -2263,6 +2266,28 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertEqual(body.get("latest_version"), "9.9.9")
         schedule.assert_called_once()
         exit_later.assert_called_once()
+
+    def test_companion_update_requires_sha256_sidecar(self):
+        client = self._client()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(b"MZ" + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES))
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=None), \
+             mock.patch.object(ad, 'schedule_companion_update_restart') as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 500)
+        body = resp.get_json()
+        self.assertFalse(body.get("ok"))
+        self.assertIn("SHA-256 sidecar", body.get("error", ""))
+        schedule.assert_not_called()
+        exit_later.assert_not_called()
 
     def test_companion_update_rejects_sha256_mismatch(self):
         """When the SHA-256 sidecar is reachable but doesn't match, the
