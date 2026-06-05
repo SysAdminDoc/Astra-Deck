@@ -175,12 +175,13 @@ CRX/XPI **will not** auto-update to the new build.
 ### Leaked
 
 1. **Immediately** generate a new key per §4 — even before announcing.
-2. Push a release on the new key the same day. Include a SECURITY.md
-   section explaining the leak's blast radius (whoever has the key
-   can publish a build with the existing extension ID that
-   self-installs as a legitimate update).
-3. Open a GitHub Security Advisory on the repo with the affected
-   release IDs and the migration instructions.
+2. Push a release on the new key the same day. Follow `SECURITY.md` and use a
+   private vulnerability report or GitHub Security Advisory for the embargoed
+   response. The advisory should explain the leak's blast radius: whoever has
+   the key can publish a build with the existing extension ID that self-installs
+   as a legitimate update.
+3. Publish the GitHub Security Advisory with the affected release IDs and the
+   migration instructions when disclosure is coordinated.
 4. Tell users to **uninstall** the old CRX/XPI, not just update.
 5. If the leak vector is known (committed by mistake, exposed in a
    backup, etc.), document it in the HARDENING.md log so the failure
