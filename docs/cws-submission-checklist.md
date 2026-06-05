@@ -78,9 +78,12 @@ must use Google's standardized vocabulary to declare data categories.
 
 - [ ] Build clean via `node build-extension.js --bump patch` —
       version bumped, all four artifacts present in `build/`.
-- [ ] Release package built locally with `ytkit.pem` via
-      `npm run build:userscript`; CI build artifacts are provenance evidence,
-      not the public CRX signing source.
+- [ ] Release package built locally with the external CRX key path
+      (`ASTRA_CRX_KEY_PATH` or the default
+      `%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem`) via
+      `npm run build:userscript`; CI build artifacts use
+      `ASTRA_CRX_KEY_MODE=ephemeral` for provenance evidence, not the public
+      CRX signing source.
 - [ ] Release SBOM and checksums generated with
       `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`
       and `npm run release:manifest`.

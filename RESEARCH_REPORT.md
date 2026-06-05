@@ -100,11 +100,14 @@ or maintainer action to confirm.
   local checkout contains an ignored private-key-shaped file in the repo root.
   Current key-management docs say the key lives outside the repo, while
   `build-extension.js` hardcodes `path.join(__dirname, 'ytkit.pem')` and
-  auto-moves generated key material back into that root path. ROADMAP now
-  carries a P0 item to move the CRX signing key to an explicit external path,
-  fail closed when the key path is missing, and verify the self-distributed
-  extension ID without printing key material. Detailed evidence lives in
-  `docs/research-cycle-17-signing-key-custody.md`.
+  auto-moves generated key material back into that root path. Cycle
+  2026-06-05 closed the P0 implementation gap: release builds now require an
+  external key path, validation/CI artifacts use explicit ephemeral signing,
+  the ignored root key was moved to the default AppData key store, and
+  `docs/signing-keys.md` records the expected public CRX ID without printing
+  key material. Detailed evidence lives in
+  `docs/research-cycle-17-signing-key-custody.md` and
+  `docs/audit/2026-06-05-crx-key-custody.md`.
 - [Verified] Cycle 16 GitHub Actions supply-chain policy pass on 2026-06-04
   found that repository Actions permissions are enabled but broad
   (`allowed_actions: all`) and do not require full-length SHA pins
@@ -357,39 +360,30 @@ Top remaining opportunities (one-liners):
 
 1. Triage and resolve the open Google API Key secret-scanning alert without
    exposing the secret value. [Verified]
-2. Move CRX signing key custody out of the repo worktree and require an
-   explicit external key path for maintainer-local CRX release builds.
-   [Verified]
-3. Publish `SECURITY.md` and enable private vulnerability reporting so
+2. Publish `SECURITY.md` and enable private vulnerability reporting so
    signing-key, extension, companion, dependency, and release-integrity reports
    do not go through public issues. [Verified]
-4. Enable CodeQL code scanning for JavaScript extension code and the Python
+3. Enable CodeQL code scanning for JavaScript extension code and the Python
    companion, then decide whether the CodeQL check becomes required after a
    clean baseline run. [Verified]
-5. Prove the Astra Downloader self-update release-channel contract before
+4. Prove the Astra Downloader self-update release-channel contract before
    bumping companion `APP_VERSION`: stage/publish `AstraDownloader.exe` and
    `AstraDownloader.exe.sha256`, include both in release manifests/checksums,
    and dry-run the live download/hash path. [Verified]
-6. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
+5. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
    extension permission/proxy, data-flow, and companion loopback paths, then
    enable code-owner review once owner references and syntax are proven.
    [Verified]
-7. Convert optional store-safe enrichment hosts to runtime-granted optional
+6. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]
-8. Migrate GitHub Actions workflows to Node 24-ready action majors before
-   GitHub-hosted runners default JavaScript actions to Node 24 on 2026-06-16.
-   [Verified]
-9. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+7. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-10. Enable dependency graph / Dependabot alert settings so the PR-only
+8. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-11. Reconcile release automation docs with the current maintainer-local artifact
-   contract so architecture/release docs do not imply CI publishes public CRX
-   releases. [Verified]
-12. Reconcile repo-local working notes with the current protected-main,
+9. Reconcile repo-local working notes with the current protected-main,
    maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
    first-read operator docs no longer point to missing or stale guidance.
    [Verified]
@@ -520,7 +514,9 @@ Top remaining opportunities (one-liners):
   private-key-shaped root file. `docs/signing-keys.md` says the key lives
   outside the repo, while `build-extension.js` hardcodes the repo-root
   `ytkit.pem` path and moves generated key material there if no key exists.
-  The key body was not printed. [Verified]
+  The key body was not printed. Cycle 2026-06-05 moved the local ignored root
+  key to the external AppData key store and removed the build-script root-key
+  fallback. [Verified]
 - GitHub Actions policy probe: repository Actions permissions are currently
   `allowed_actions: all` and `sha_pinning_required: false`; workflow defaults
   keep `GITHUB_TOKEN` read-only and prevent workflow-created PR approvals. The
@@ -799,10 +795,11 @@ Closed since the 2026-06-03 baseline:
   maintainer-local because `ytkit.pem` does not enter CI. The latest release
   does not attach the companion EXE or `.sha256` sidecar, so companion
   self-update integrity remains a separate P1 release-channel item.
-- **Signing-key custody** [Verified]: `ytkit.pem` is ignored and untracked, but
-  the local checkout contains a private-key-shaped root file and the build
-  script hardcodes / auto-generates that root path. ROADMAP P0 now queues an
-  external key-path contract before the next maintainer-local CRX release.
+- **Signing-key custody** [Verified]: the P0 repo-worktree custody gap is now
+  closed. Release builds require an external `ASTRA_CRX_KEY_PATH` / default
+  local key store or `--crx-key`, validation builds use ephemeral CRX signing,
+  the root `ytkit.pem` file is absent from the checkout, and the public CRX ID
+  baseline is documented for pre-publication comparison.
 - **Security disclosure** [Verified]: no `SECURITY.md` is present and private
   vulnerability reporting is disabled, so sensitive reports currently lack a
   clear private path. ROADMAP P1 now queues a security policy plus private

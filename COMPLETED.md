@@ -41,6 +41,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
 - 2026-06-05: GitHub Actions workflow pins were migrated to Node 24-ready
   GitHub-owned action majors across validation, release, and yt-dlp smoke
   workflows, with a hardening test guarding against the old Node 20-era pins.
+- 2026-06-05: CRX signing-key custody moved out of the repo worktree. Release
+  builds now require an external key path, CI validation artifacts opt into
+  ephemeral CRX signing, the ignored root key was moved to the default AppData
+  key store, and the public self-distributed CRX ID baseline is documented.
 - Quick Links capped at 10 slots.
 - PyQt6 GUI smoke tests for downloader folder picker flows.
 - On-demand yt-dlp self-update endpoint and popup action.

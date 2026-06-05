@@ -7,6 +7,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const ytkitSource = fs.readFileSync(
@@ -1629,6 +1630,85 @@ test('build-extension.js updates package-lock version during --bump', () => {
         'build-extension.js must update package-lock.json during version bumps');
     assert.match(buildSource, /lock\.packages\[''\]\.version\s*=\s*version/,
         'build-extension.js must update packages[""].version so lockfile drift cannot ship');
+});
+
+test('CRX signing key custody stays outside the repository worktree', () => {
+    const buildSource = fs.readFileSync(
+        path.join(__dirname, '..', 'build-extension.js'),
+        'utf8'
+    );
+    const workflow = fs.readFileSync(
+        path.join(__dirname, '..', '.github', 'workflows', 'build.yml'),
+        'utf8'
+    );
+    const signingPolicy = fs.readFileSync(
+        path.join(__dirname, '..', 'docs', 'signing-keys.md'),
+        'utf8'
+    );
+    const builder = require('../build-extension.js');
+
+    assert.doesNotMatch(buildSource, /path\.join\(__dirname,\s*['"]ytkit\.pem['"]\)/,
+        'build-extension.js must not default to ytkit.pem inside the repo root');
+    assert.doesNotMatch(buildSource, /fs\.renameSync\(generatedKey,\s*CRX_KEY\)/,
+        'generated CRX keys must never be moved into the repo worktree');
+    assert.match(buildSource, /ASTRA_CRX_KEY_PATH/,
+        'release builds must support an explicit external key path');
+    assert.match(buildSource, /ASTRA_CRX_KEY_MODE/,
+        'CI validation builds must opt into ephemeral CRX keys explicitly');
+    assert.match(buildSource, /--crx-key/,
+        'maintainers must have a CLI override for the external key path');
+    assert.match(workflow, /ASTRA_CRX_KEY_MODE:\s*ephemeral/,
+        'CI build artifacts must declare validation-only ephemeral signing');
+    assert.match(signingPolicy, /ASTRA_CRX_KEY_PATH/,
+        'signing docs must document the external key path contract');
+    assert.match(signingPolicy, /AppData\\Local\\Astra-Deck\\keys\\ytkit\.pem/,
+        'signing docs must name the default Windows key location outside the repo');
+    assert.match(signingPolicy, /Expected extension ID:\s*`lgbiefafhjdbplelniclnflbbilennlg`/,
+        'signing docs must record the current self-distributed CRX identity baseline');
+
+    assert.throws(
+        () => builder.resolveCrxSigningConfig({
+            mode: 'external',
+            keyPath: path.join(__dirname, '..', 'ytkit.pem')
+        }),
+        /outside the repository worktree/,
+        'external signing must reject repo-root ytkit.pem even when the file exists'
+    );
+
+    const missingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-crx-missing-'));
+    try {
+        assert.throws(
+            () => builder.resolveCrxSigningConfig({
+                mode: 'external',
+                keyPath: path.join(missingDir, 'ytkit.pem')
+            }),
+            /CRX signing key not found/,
+            'external signing must fail closed when the key path is missing'
+        );
+    } finally {
+        fs.rmSync(missingDir, { recursive: true, force: true });
+    }
+
+    const keyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astra-crx-key-'));
+    try {
+        const externalKeyPath = path.join(keyDir, 'ytkit.pem');
+        fs.writeFileSync(externalKeyPath, 'placeholder private key fixture', 'utf8');
+        const externalConfig = builder.resolveCrxSigningConfig({
+            mode: 'external',
+            keyPath: externalKeyPath
+        });
+        assert.equal(externalConfig.mode, 'external');
+        assert.equal(externalConfig.keyPath, path.resolve(externalKeyPath));
+    } finally {
+        fs.rmSync(keyDir, { recursive: true, force: true });
+    }
+
+    const validationConfig = builder.resolveCrxSigningConfig({
+        mode: 'ephemeral',
+        releaseBuild: true
+    });
+    assert.equal(validationConfig.mode, 'ephemeral');
+    assert.equal(validationConfig.keyPath, null);
 });
 
 test('release manifest generation pins checksums, SBOM, attestations, and local signing policy', () => {

@@ -36,6 +36,8 @@ jobs:
           node scripts/check-versions.js --tag "$TAG_VERSION"
 
       - name: Build Release Artifacts
+        env:
+          ASTRA_CRX_KEY_MODE: ephemeral
         run: npm run build:userscript
 
       - name: Emit release SBOM

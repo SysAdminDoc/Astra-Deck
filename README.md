@@ -364,6 +364,13 @@ node build-extension.js --bump patch      # Bump and build
 node build-extension.js --bump minor --with-userscript
 ```
 
+`npm run build` is safe for validation builds: if no maintainer key is
+configured, CRX files are signed with ephemeral key material that is not
+retained. Public release builds that include the userscript or bump a version
+must use the external maintainer key via `ASTRA_CRX_KEY_PATH`, the default
+`%LOCALAPPDATA%\Astra-Deck\keys\ytkit.pem` location, or
+`node build-extension.js --crx-key <path>`.
+
 Outputs in `build/`:
 - `astra-deck-store-safe-chrome-v*.zip` + `.crx` (Chrome Web Store posture)
 - `astra-deck-store-safe-firefox-v*.zip` + `.xpi`
