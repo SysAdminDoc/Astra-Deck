@@ -17859,6 +17859,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return null;
                 }
             },
+            _sanitizeQuickLinkIconPath(pathData) {
+                const raw = String(pathData || '');
+                return /^[MmZzLlHhVvCcSsQqTtAa0-9,.\-\s]+$/.test(raw)
+                    ? raw
+                    : this._iconMap['_default'];
+            },
             _buildMenu(parentEl, dropId) {
                 const existing = parentEl.querySelector('#' + dropId);
                 if (existing) existing.remove();
@@ -17910,10 +17916,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 parsedItems.forEach((item, idx) => {
                     const itemUrl = this._normalizeQuickLinkUrl(item.url);
                     if (!itemUrl) return;
+                    let itemHref;
+                    try {
+                        const parsedItemUrl = new URL(itemUrl, window.location.origin);
+                        if (parsedItemUrl.protocol !== 'http:' && parsedItemUrl.protocol !== 'https:') return;
+                        const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(itemUrl);
+                        itemHref = hasExplicitScheme
+                            ? parsedItemUrl.href
+                            : `${parsedItemUrl.pathname}${parsedItemUrl.search}${parsedItemUrl.hash}`;
+                    } catch {
+                        return;
+                    }
                     const row = document.createElement('div');
                     row.className = 'ytkit-ql-row';
-                    const a = document.createElement('a'); a.href = itemUrl; a.className = 'ytkit-ql-item';
-                    if (/^https?:\/\//i.test(itemUrl)) {
+                    const a = document.createElement('a'); a.href = itemHref; a.className = 'ytkit-ql-item';
+                    if (/^https?:\/\//i.test(itemHref)) {
                         a.target = '_blank';
                         a.rel = 'noopener noreferrer';
                     }
@@ -17921,7 +17938,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     svg.setAttribute('viewBox', '0 0 24 24');
                     svg.classList.add('ytkit-ql-icon');
                     const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    svgPath.setAttribute('d', item.icon);
+                    svgPath.setAttribute('d', this._sanitizeQuickLinkIconPath(item.icon));
                     svg.appendChild(svgPath);
                     const span = document.createElement('span');
                     span.textContent = item.text;

@@ -2237,7 +2237,7 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         body = resp.get_json()
         self.assertFalse(body.get("ok"))
         self.assertEqual(body.get("error_code"), "version-check-failed")
-        self.assertIn("offline", body.get("error"))
+        self.assertIn("Check Astra Downloader logs", body.get("error"))
 
     def test_successful_companion_update_schedules_replace_and_restart(self):
         client = self._client()

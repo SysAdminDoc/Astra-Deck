@@ -12175,28 +12175,24 @@
         }
     }
 
-    //  Trusted Types Safe HTML Helper
-    // YouTube enforces Trusted Types which blocks direct innerHTML assignments.
-    // Policy is pass-through by design: all TrustedHTML input comes from YTKit's
-    // own code (SVG icons, badges), not untrusted user input. The policy exists
-    // only to satisfy YouTube's CSP requirement — sanitization is unnecessary
-    // and actively harmful (breaks SVG data URIs, attribute patterns, etc.).
+    //  Static HTML Helper
+    // Userscript-only fallback for owned static fragments. The extension build
+    // delegates to core/trusted-html.js; this path avoids raw innerHTML and a
+    // pass-through Trusted Types policy so CodeQL does not treat arbitrary text
+    // as an HTML sink.
     const TrustedHTML = (() => {
-        let policy = null;
-        if (typeof window.trustedTypes !== 'undefined' && window.trustedTypes.createPolicy) {
-            try {
-                policy = window.trustedTypes.createPolicy('ytkit-policy', {
-                    createHTML: (string) => string
-                });
-            } catch (e) {
-                // Policy already exists or can't be created
-            }
+        function stripDangerousStaticMarkup(value) {
+            const raw = String(value ?? '');
+            if (/<(?:script|iframe|object|embed|link|meta|base)\b/i.test(raw)) return '';
+            if (/\son[a-z]+\s*=/i.test(raw)) return '';
+            if (/javascript:/i.test(raw)) return '';
+            return raw;
         }
 
         return {
             setHTML(element, html) {
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(policy ? policy.createHTML(html) : String(html ?? ''), 'text/html');
+                const doc = parser.parseFromString(stripDangerousStaticMarkup(html), 'text/html');
                 const fragment = document.createDocumentFragment();
                 fragment.append(...Array.from(doc.body?.childNodes || []));
                 element.replaceChildren();
@@ -12205,7 +12201,7 @@
                 }
             },
             create(html) {
-                return policy ? policy.createHTML(html) : html;
+                return stripDangerousStaticMarkup(html);
             }
         };
     })();
@@ -18370,12 +18366,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     return null;
                 }
             },
+            _sanitizeQuickLinkIconPath(pathData) {
+                const raw = String(pathData || '');
+                return /^[MmZzLlHhVvCcSsQqTtAa0-9,.\-\s]+$/.test(raw)
+                    ? raw
+                    : this._iconMap['_default'];
+            },
             _createQuickLinkIcon(pathData) {
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.setAttribute('viewBox', '0 0 24 24');
                 svg.classList.add('ytkit-ql-icon');
                 const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                svgPath.setAttribute('d', pathData);
+                svgPath.setAttribute('d', this._sanitizeQuickLinkIconPath(pathData));
                 svg.appendChild(svgPath);
                 return svg;
             },
@@ -18389,10 +18391,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._parseItems().forEach((item, idx) => {
                     const itemUrl = this._normalizeQuickLinkUrl(item.url);
                     if (!itemUrl) return;
+                    let itemHref;
+                    try {
+                        const parsedItemUrl = new URL(itemUrl, window.location.origin);
+                        if (parsedItemUrl.protocol !== 'http:' && parsedItemUrl.protocol !== 'https:') return;
+                        const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(itemUrl);
+                        itemHref = hasExplicitScheme
+                            ? parsedItemUrl.href
+                            : `${parsedItemUrl.pathname}${parsedItemUrl.search}${parsedItemUrl.hash}`;
+                    } catch {
+                        return;
+                    }
                     const row = document.createElement('div');
                     row.className = 'ytkit-ql-row';
-                    const a = document.createElement('a'); a.href = itemUrl; a.className = 'ytkit-ql-item';
-                    if (/^https?:\/\//i.test(itemUrl)) {
+                    const a = document.createElement('a'); a.href = itemHref; a.className = 'ytkit-ql-item';
+                    if (/^https?:\/\//i.test(itemHref)) {
                         a.target = '_blank';
                         a.rel = 'noopener noreferrer';
                     }
