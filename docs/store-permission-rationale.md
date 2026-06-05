@@ -27,11 +27,12 @@ Use the `github-full` package only for GitHub/self-hosted installs. It keeps
 optional BYO-key AI, Cobalt, local Ollama, and Astra Downloader loopback hosts
 that the public-store package strips from `host_permissions` and CSP.
 
-The `store-safe` package keeps core YouTube and SponsorBlock access as
-install-time host permissions. Default-off enrichment hosts for YouTube
-thumbnails, Return YouTube Dislike, and Reddit are declared as
-`optional_host_permissions` and are requested from the popup only when the user
-explicitly enables the matching feature.
+The `store-safe` package keeps only core YouTube access as install-time host
+permissions. Enrichment hosts for SponsorBlock/DeArrow, YouTube thumbnails,
+Return YouTube Dislike, and Reddit are declared as `optional_host_permissions`
+and are requested from the popup only when the user explicitly enables the
+matching feature or clicks the Grant access banner for an already-enabled
+feature such as default-on SponsorBlock.
 
 ## Single-Purpose Statement
 
@@ -107,18 +108,19 @@ support bundle.
 | `https://*.youtube.com/*` | Runs the content script on YouTube pages and reads YouTube page data needed for playback, layout, transcript, comment, and feed features. |
 | `https://*.youtube-nocookie.com/*` | Supports YouTube's privacy-enhanced embed origin with the same bounded playback/layout controls as standard YouTube pages. |
 | `https://youtu.be/*` | Recognizes and normalizes YouTube short links so features and exports attach to the correct video. |
-| `https://sponsor.ajay.app/*` | Fetches SponsorBlock segments for the default-on sponsor-skip feature. DeArrow metadata currently shares this host and remains covered by the same grant until the SponsorBlock/DeArrow runtime-grant UX is completed. |
 
 ## Store-Safe Runtime Optional Host Permissions
 
 These hosts are declared in `optional_host_permissions`, not install-time
 `host_permissions`, for the public `store-safe` artifacts. Astra Deck requests
-them from the popup when the user explicitly enables the matching default-off
-feature. The background fetch proxy also verifies the current runtime host grant
+them from the popup when the user explicitly enables the matching feature, or
+from the Grant access banner when an already-enabled feature needs the runtime
+grant. The background fetch proxy also verifies the current runtime host grant
 before proxying requests to these optional origins.
 
 | Optional host permission | Store justification |
 | --- | --- |
+| `https://sponsor.ajay.app/*` | Fetches SponsorBlock segments and DeArrow metadata only for enabled SponsorBlock/DeArrow features. No cookies are sent. |
 | `https://i.ytimg.com/*` | Loads and saves YouTube thumbnail images for thumbnail upgrade and explicit thumbnail-download features. |
 | `https://returnyoutubedislikeapi.com/*` | Fetches estimated Return YouTube Dislike counts for the optional dislike-count restoration feature. |
 | `https://www.reddit.com/*` | Fetches Reddit search results for the optional Reddit discussion panel under a YouTube video. |
@@ -147,14 +149,15 @@ GitHub/self-hosted builds for users who explicitly choose the full profile.
 
 - Store-safe excludes AI provider, Cobalt, Ollama, and Astra Downloader loopback
   host grants from the packaged manifest and CSP.
-- Store-safe declares default-off thumbnail, Return YouTube Dislike, and Reddit
-  hosts as runtime optional grants instead of install-time host permissions, and
-  the background fetch proxy checks the current grant before proxying them.
+- Store-safe declares SponsorBlock/DeArrow, thumbnail, Return YouTube Dislike,
+  and Reddit hosts as runtime optional grants instead of install-time host
+  permissions, and the background fetch proxy checks the current grant before
+  proxying them.
 - If a user denies or later revokes an optional host grant, the popup marks the
   affected setting and data-flow row with a permission-needed state instead of
   retrying silently.
-- SponsorBlock remains an install-time store-safe host because it is default-on;
-  moving `sponsor.ajay.app` waits for a dedicated default-on runtime grant UX.
+- The Grant access banner lets default-on SponsorBlock request its shared
+  SponsorBlock/DeArrow host from an explicit user gesture.
 - GitHub-full is intentionally broader and should not be submitted as the public
   Chrome Web Store package.
 - No `<all_urls>` host permission is requested.

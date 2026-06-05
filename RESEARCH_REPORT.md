@@ -45,18 +45,18 @@ or maintainer action to confirm.
   GitHub CODEOWNERS errors API is clean for the pushed feature-branch ref. The
   remaining hosted step is to validate CODEOWNERS on the default branch and
   enable `require_code_owner_reviews` after merge.
-- [Verified] Runtime-optional host permissions are now generated for the
-  default-off store-safe enrichment origins. Store-safe artifacts keep YouTube
-  and default-on SponsorBlock hosts required, move thumbnail, Return YouTube
-  Dislike, and Reddit hosts to `optional_host_permissions`, retain explicit CSP
-  connect-src coverage for those hosts, and request declared optional origins
-  from popup setting writes before persisting enabled state. The background
-  `EXT_FETCH` proxy now also checks the current runtime grant before proxying
-  those optional origins, so denied or revoked grants stop before network fetch.
-  The popup surfaces missing grants as permission-needed chips in quick toggles,
-  schema rows, and data-flow grant labels, and shows exact denied-request copy.
-  SponsorBlock and DeArrow remain open because `sponsor.ajay.app` backs the
-  default-on SponsorBlock path.
+- [Verified] Runtime-optional host permissions are now generated for store-safe
+  enrichment origins. Store-safe artifacts keep YouTube hosts required, move
+  SponsorBlock/DeArrow, thumbnail, Return YouTube Dislike, and Reddit hosts to
+  `optional_host_permissions`, retain explicit CSP connect-src coverage for
+  those hosts, and request declared optional origins from popup setting writes
+  before persisting enabled state. The popup also shows a top-level Grant access
+  banner when already-enabled features, including default-on SponsorBlock, need
+  a runtime grant. The background `EXT_FETCH` proxy checks the current runtime
+  grant before proxying optional origins, so denied or revoked grants stop
+  before network fetch. The popup surfaces missing grants as permission-needed
+  chips in quick toggles, schema rows, and data-flow grant labels, and shows
+  exact denied-request copy.
 
 ## 2026-06-04 Freshness Refresh
 
@@ -114,10 +114,10 @@ or maintainer action to confirm.
   builder has no `optional_host_permissions` path, there is no runtime
   `permissions.request` / `permissions.contains` helper, and tests currently
   require `i.ytimg.com`, SponsorBlock, Return YouTube Dislike, and Reddit hosts
-  in store-safe `host_permissions`. Cycle 2026-06-05 closed the default-off
+  in store-safe `host_permissions`. Cycle 2026-06-05 closed the
   manifest/helper/background-fetch/permission-state UI slice for thumbnails,
-  Return YouTube Dislike, and Reddit; SponsorBlock/DeArrow runtime-grant UX and
-  manual browser smoke remain in the open P2 item. Detailed evidence lives in
+  Return YouTube Dislike, Reddit, and SponsorBlock/DeArrow; manual browser
+  smoke remains in the open P2 item. Detailed evidence lives in
   `docs/research-cycle-20-optional-permissions.md`.
 - [Verified] Cycle 19 code-scanning pass on 2026-06-04 found that GitHub
   code scanning is not configured: default setup reports `state:
@@ -413,9 +413,9 @@ Top remaining opportunities (one-liners):
 2. Enable CODEOWNERS enforcement after merge: validate `.github/CODEOWNERS` on
    the default branch, then enable code-owner review in `main` branch
    protection. Source-side ownership coverage is already in place. [Verified]
-3. Finish runtime-optional host permissions for the remaining default-on shared
-   SponsorBlock/DeArrow origin and denied/revoked state handling. Default-off
-   thumbnail, RYD, and Reddit hosts now generate as optional grants. [Verified]
+3. Run manual unpacked Chrome/Firefox store-safe smoke for runtime optional host
+   grants: prompt, grant, denial, revocation, and default-on SponsorBlock's
+   Grant access banner. Code-side optional-host handling is in place. [Verified]
 4. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]

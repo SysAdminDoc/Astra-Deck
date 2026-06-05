@@ -22,7 +22,9 @@
   with a popup request guard, then enforced current runtime optional-host grants
   in the background fetch proxy before network requests to those optional
   origins, then surfaced denied/revoked runtime optional-host state in popup
-  quick toggles, schema rows, and data-flow labels. Updated
+  quick toggles, schema rows, and data-flow labels, then moved the shared
+  SponsorBlock/DeArrow host to store-safe runtime optional grants with a popup
+  Grant access banner for already-enabled features. Updated
   roadmap/completed/audit continuity notes after each cycle.
 
 ## Verification
@@ -145,6 +147,19 @@
   - `git diff --check`
   - Manual unpacked Chrome/Firefox permission-prompt and revoke smoke was not
     run in this automation pass.
+- Cycle 13 SponsorBlock/DeArrow optional-host verification passed:
+  - `node sync-userscript.js`
+  - `node --check extension/popup.js`
+  - `node --test tests/background.test.js`
+  - `node --test tests/hardening.test.js --test-name-pattern="optional host|build-extension emits|data-flow generated|SponsorBlock and DeArrow"`
+  - `npm run lint -- extension/popup.js extension/core/data-flow.js extension/core/optional-host-permissions.js`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+  - Manual unpacked Chrome/Firefox permission-prompt, grant, denial, revocation,
+    and default-on SponsorBlock Grant access banner smoke was not run in this
+    automation pass.
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -154,9 +169,9 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 12, the remaining
+  implementable without exposing secrets. As of Cycle 13, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, and CODEOWNERS still needs default-branch validation plus
-  `main` branch-protection enforcement after merge. Optional-permissions
-  hardening still needs SponsorBlock/DeArrow runtime-grant UX and manual
-  browser smoke once the generated store-safe artifacts are ready.
+  `main` branch-protection enforcement after merge. Optional-permissions code
+  is in place; manual unpacked Chrome/Firefox prompt/grant/deny/revoke smoke
+  remains before treating the store-safe permission UX as release-smoked.

@@ -541,6 +541,14 @@ test('popup.js requests declared optional hosts before enabling optional feature
         'schema overview rows must show a permission-needed chip for missing optional grants');
     assert.match(popupSource, /dataFlowOptionalGrantLabel/,
         'data-flow panel must distinguish granted vs missing runtime optional hosts');
+    assert.match(popupHtmlSource, /id="optional-host-banner"[\s\S]*id="optional-host-grant-btn"/,
+        'popup.html must expose a top-level Grant access action for already-enabled optional-host features');
+    assert.match(popupSource, /async function grantMissingOptionalHostPermissions/,
+        'popup.js must let users request missing optional-host grants from a direct button gesture');
+    assert.match(popupSource, /getDeclaredOptionalHostsForSetting\(key,\s*\{\s*directOnly:\s*true\s*\}\)/,
+        'popup grant-state chips must track direct feature owners instead of noisy sub-feature inheritance');
+    assert.match(popupCssSource, /\.optional-host-banner/,
+        'popup.css must style the optional-host grant banner');
     assert.match(popupCssSource, /\.toggle-risk-badge\.toggle-risk-permission/,
         'popup.css must style the quick-toggle permission-needed chip');
     assert.match(popupCssSource, /\.so-key-profile-badge\.so-key-permission-missing/,
@@ -2480,14 +2488,14 @@ test('build-extension emits distinct store-safe and github-full manifest profile
     for (const required of [
         'https://*.youtube.com/*',
         'https://*.youtube-nocookie.com/*',
-        'https://youtu.be/*',
-        'https://sponsor.ajay.app/*'
+        'https://youtu.be/*'
     ]) {
         assert.ok(storeHosts.includes(required), 'store-safe manifest must include ' + required);
         assert.ok(fullHosts.includes(required), 'github-full manifest must include ' + required);
     }
 
     for (const optional of [
+        'https://sponsor.ajay.app/*',
         'https://i.ytimg.com/*',
         'https://returnyoutubedislikeapi.com/*',
         'https://www.reddit.com/*',
@@ -2527,6 +2535,8 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         'store-safe CSP must exclude local downloader loopback');
     assert.ok(storeCsp.includes('https://i.ytimg.com'),
         'store-safe CSP must keep optional thumbnail host connect-src eligible');
+    assert.ok(storeCsp.includes('https://sponsor.ajay.app'),
+        'store-safe CSP must keep optional SponsorBlock/DeArrow host connect-src eligible');
     assert.ok(storeCsp.includes('https://returnyoutubedislikeapi.com'),
         'store-safe CSP must keep optional RYD host connect-src eligible');
     assert.ok(storeCsp.includes('https://www.reddit.com'),
@@ -3216,6 +3226,26 @@ test('store-safe manifest makes Return YouTube Dislike a runtime optional host',
     assert.ok(
         csp.includes('https://returnyoutubedislikeapi.com'),
         'CSP connect-src must include the RYD API'
+    );
+});
+
+test('store-safe manifest makes SponsorBlock and DeArrow a runtime optional host', () => {
+    const builder = require('../build-extension.js');
+    const manifest = builder.patchManifestForBuildProfile(JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    )), 'store-safe');
+    assert.ok(
+        !(manifest.host_permissions || []).includes('https://sponsor.ajay.app/*'),
+        'store-safe manifest must not install-time grant the SponsorBlock/DeArrow API'
+    );
+    assert.ok(
+        (manifest.optional_host_permissions || []).includes('https://sponsor.ajay.app/*'),
+        'store-safe manifest must declare the SponsorBlock/DeArrow API as runtime optional'
+    );
+    const csp = manifest.content_security_policy?.extension_pages || '';
+    assert.ok(
+        csp.includes('https://sponsor.ajay.app'),
+        'CSP connect-src must include the SponsorBlock/DeArrow API'
     );
 });
 

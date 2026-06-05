@@ -444,6 +444,9 @@ const whatsNewBanner = $('#whats-new');
 const whatsNewDetail = $('#whats-new-detail');
 const whatsNewOpenBtn = $('#whats-new-open');
 const whatsNewDismissBtn = $('#whats-new-dismiss');
+const optionalHostBanner = $('#optional-host-banner');
+const optionalHostBannerDetail = $('#optional-host-banner-detail');
+const optionalHostGrantBtn = $('#optional-host-grant-btn');
 
 // v4.47.0 NF21: dedicated storage keys outside SETTINGS_STORAGE_KEY so
 // settings export/import + Reset don't clobber them. _firstRunSeen is
@@ -775,24 +778,51 @@ async function loadSettings() {
 
 // Serialize writes so rapid toggle clicks can't race the merge cycle.
 let _pendingWriteChain = Promise.resolve();
-function getDeclaredOptionalHostsForSetting(key) {
+function getManifestOptionalHostPermissions() {
+    try {
+        const declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
+        return Array.isArray(declared) ? declared : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function uniqueOptionalOrigins(origins) {
+    if (!Array.isArray(origins)) return [];
+    return Array.from(new Set(origins.filter((origin) =>
+        typeof origin === 'string' && origin.trim()).map((origin) => origin.trim())));
+}
+
+function getDirectOptionalHostsForSetting(key, declaredSet) {
+    const core = window.YTKitCore || {};
+    const catalogue = Array.isArray(core.ORIGIN_CATALOGUE) ? core.ORIGIN_CATALOGUE : [];
+    const hostFactory = core.hostPermissionsForDataFlowOrigin;
+    if (!catalogue.length || typeof hostFactory !== 'function') return [];
+    const hosts = [];
+    for (const entry of catalogue) {
+        if (entry?.profile !== 'store-safe') continue;
+        if (entry.hostGrant !== 'runtime-optional') continue;
+        if (!Array.isArray(entry.requiredByFeatures) || !entry.requiredByFeatures.includes(key)) continue;
+        hosts.push(...hostFactory(entry.origin));
+    }
+    return uniqueOptionalOrigins(hosts).filter((origin) => declaredSet.has(origin));
+}
+
+function getDeclaredOptionalHostsForSetting(key, options = {}) {
     const core = window.YTKitCore || {};
     if (typeof core.getOptionalHostPermissionsForFeature !== 'function') return [];
-    let declared = [];
-    try {
-        declared = chrome?.runtime?.getManifest?.().optional_host_permissions || [];
-    } catch (_) {
-        declared = [];
-    }
+    const declared = getManifestOptionalHostPermissions();
     if (!Array.isArray(declared) || !declared.length) return [];
     const declaredSet = new Set(declared);
-    return core.getOptionalHostPermissionsForFeature(key)
+    if (options.directOnly) {
+        return getDirectOptionalHostsForSetting(key, declaredSet);
+    }
+    return uniqueOptionalOrigins(core.getOptionalHostPermissionsForFeature(key))
         .filter((origin) => declaredSet.has(origin));
 }
 
-async function requestOptionalHostsForSetting(key, value) {
-    if (value !== true) return true;
-    const origins = getDeclaredOptionalHostsForSetting(key);
+async function requestOptionalHostOrigins(origins) {
+    origins = uniqueOptionalOrigins(origins);
     if (!origins.length) return true;
     const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
     const helper = (typeof factory === 'function') ? factory() : null;
@@ -808,6 +838,11 @@ async function requestOptionalHostsForSetting(key, value) {
         throw error;
     }
     return true;
+}
+
+async function requestOptionalHostsForSetting(key, value) {
+    if (value !== true) return true;
+    return requestOptionalHostOrigins(getDeclaredOptionalHostsForSetting(key));
 }
 
 function isOptionalHostPermissionError(error) {
@@ -869,6 +904,51 @@ function dataFlowOptionalGrantLabel(entry) {
         : t('dataFlowGrantActive', 'granted');
 }
 
+function renderOptionalHostBanner() {
+    if (!optionalHostBanner || !optionalHostBannerDetail || !optionalHostGrantBtn) return;
+    const state = popupState._optionalHostGrantState;
+    const missingOrigins = Array.from(state.missingOrigins);
+    if (!missingOrigins.length) {
+        optionalHostBanner.hidden = true;
+        optionalHostGrantBtn.disabled = false;
+        return;
+    }
+    const missingKeys = Array.from(state.missingKeys);
+    const featureCount = missingKeys.length;
+    const originText = missingOrigins.join(', ');
+    optionalHostBannerDetail.textContent = featureCount === 1
+        ? t('optionalHostBannerDetailOne',
+            '1 enabled enrichment feature needs host access: {origins}.').replace('{origins}', originText)
+        : t('optionalHostBannerDetailMany',
+            '{count} enabled enrichment features need host access: {origins}.')
+            .replace('{count}', String(featureCount)).replace('{origins}', originText);
+    optionalHostGrantBtn.disabled = false;
+    optionalHostBanner.hidden = false;
+}
+
+async function grantMissingOptionalHostPermissions() {
+    if (!optionalHostGrantBtn) return;
+    const origins = Array.from(popupState._optionalHostGrantState.missingOrigins);
+    if (!origins.length) {
+        renderOptionalHostBanner();
+        return;
+    }
+    optionalHostGrantBtn.disabled = true;
+    optionalHostGrantBtn.setAttribute('aria-busy', 'true');
+    try {
+        await requestOptionalHostOrigins(origins);
+        await refreshOptionalHostGrantState();
+        showStatus(t('optionalHostPermissionGranted', 'Optional host access granted.'), 'success', 3200);
+    } catch (error) {
+        console.warn('[Astra Deck popup] Optional host grant request failed:', error);
+        showStatus(formatSettingWriteError(t('optionalHostGrantName', 'optional host access'), error), 'error', 5200);
+    } finally {
+        optionalHostGrantBtn.removeAttribute('aria-busy');
+        optionalHostGrantBtn.disabled = false;
+        renderOptionalHostBanner();
+    }
+}
+
 async function refreshOptionalHostGrantState(options = {}) {
     const settings = popupState.settings || {};
     const factory = window.YTKitCore && window.YTKitCore.createOptionalHostPermissions;
@@ -878,7 +958,7 @@ async function refreshOptionalHostGrantState(options = {}) {
 
     for (const [key, value] of Object.entries(settings)) {
         if (value !== true) continue;
-        const origins = getDeclaredOptionalHostsForSetting(key);
+        const origins = getDeclaredOptionalHostsForSetting(key, { directOnly: true });
         if (!origins.length) continue;
         let granted = false;
         if (helper && helper.isSupported()) {
@@ -901,6 +981,7 @@ async function refreshOptionalHostGrantState(options = {}) {
         missingKeys: nextMissingKeys,
         missingOrigins: nextMissingOrigins
     };
+    renderOptionalHostBanner();
     if (!changed) return popupState._optionalHostGrantState;
 
     if (options.notify && nextMissingKeys.size > 0) {
@@ -912,6 +993,7 @@ async function refreshOptionalHostGrantState(options = {}) {
         render(popupState.settings, q.value);
         renderDataFlowPanel();
         renderSchemaOverview();
+        renderOptionalHostBanner();
     }
     return popupState._optionalHostGrantState;
 }
@@ -3718,6 +3800,9 @@ function installWheelScrolling() {
     }
     if (updateYtdlpButton) {
         updateYtdlpButton.addEventListener('click', () => { void updateYtdlpNow(); });
+    }
+    if (optionalHostGrantBtn) {
+        optionalHostGrantBtn.addEventListener('click', () => { void grantMissingOptionalHostPermissions(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
     // iter-6 N2: storage-banner Reset shares the same destructive-confirm

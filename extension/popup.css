@@ -717,6 +717,88 @@ body {
   outline-offset: 1px;
 }
 
+/* v4.47.0: runtime optional-host grant banner. Same compact warning
+   geometry as the existing popup banners, but focused on explicit host
+   grants for enabled enrichment features. */
+.optional-host-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid rgba(255, 184, 77, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 184, 77, 0.06), rgba(255, 184, 77, 0.02)),
+    rgba(18, 14, 8, 0.82);
+  color: #ffd9a8;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.optional-host-banner[hidden] { display: none; }
+
+.optional-host-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: rgba(255, 184, 77, 0.16);
+  color: #ffb84d;
+  font-weight: 900;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.optional-host-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.optional-host-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffb84d;
+}
+
+.optional-host-detail {
+  font-size: 12px;
+  color: #ffd9a8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optional-host-btn {
+  appearance: none;
+  padding: 4px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid rgba(255, 184, 77, 0.45);
+  background: rgba(255, 184, 77, 0.1);
+  color: #ffd9a8;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.optional-host-btn:hover {
+  background: rgba(255, 184, 77, 0.18);
+  border-color: rgba(255, 184, 77, 0.62);
+}
+.optional-host-btn:focus-visible {
+  outline: 2px solid rgba(255, 184, 77, 0.75);
+  outline-offset: 1px;
+}
+
 .storage-banner[hidden] { display: none; }
 
 .storage-banner-icon {
