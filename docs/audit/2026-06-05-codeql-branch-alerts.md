@@ -28,17 +28,17 @@ trace exposure from the folder picker response path.
 - Parsed navigation hrefs through `new URL(href, window.location.href)`, kept
   only `http:` / `https:` destinations, and required the parsed hostname to be
   a YouTube host before taking over navigation.
-- Normalized Quick Links destinations through `URL`, allowed only http(s)
-  destinations or YouTube-local paths, and rechecked the normalized value at the
-  anchor sink.
+- Normalized Quick Links destinations through `URL`, allowed only YouTube-owned
+  http(s) destinations, stored/rendered them as path/search/hash, and rebuilt
+  anchors from a fixed `https://www.youtube.com` origin at the sink.
 - Normalized Resume Playback Position storage through a `Map`, rejected unsafe
   object keys and invalid video IDs, and serialized the bounded map back to
   plain JSON.
 - Replaced Quick Links SVG/label HTML injection with DOM-created SVG and text
   nodes in both extension and userscript paths.
-- Ported the userscript TrustedHTML helper away from raw `innerHTML` and
-  template-string DOMParser interpolation to the parsed-fragment plus
-  `replaceChildren` shape.
+- Removed the userscript-local TrustedHTML parser helper and replaced its
+  static SVG, label, and progress-panel callsites with DOM construction and
+  `textContent`.
 - Swapped transcript XML regex tag stripping for an explicit scanner and
   decodes `&amp;` after other entities to avoid double-unescaping.
 - Replaced chained fallback-string replacements in the i18n extractor with a

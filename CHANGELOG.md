@@ -9,14 +9,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Branch-scoped CodeQL alert remediation expanded.** Exact YouTube hostname
   parsing now replaces URL substring checks in channel/share/navigation paths,
   Disable SPA Navigation rejects non-http(s) schemes, Resume Playback Position
-  stores sanitized video IDs in a `Map`, Quick Links URLs are normalized before
-  anchor assignment, Quick Links SVG/label rendering uses DOM-created nodes,
-  the userscript TrustedHTML helper avoids raw `innerHTML`, transcript XML
-  parsing avoids double-unescaping, build version bumps avoid read races,
-  popup/i18n audit helpers avoid flagged sanitizer patterns, and the folder
-  picker returns a generic UI error while writing only a generic local failure
-  marker. Hardening tests now pin the remediated shapes across extension,
-  userscript, scripts, build, and companion code.
+  stores sanitized video IDs in a `Map`, Quick Links accepts only YouTube-owned
+  destinations and rebuilds anchors from a fixed YouTube origin, Quick Links
+  SVG/label rendering uses DOM-created nodes, the userscript no longer ships a
+  local TrustedHTML parser helper, transcript XML parsing avoids
+  double-unescaping, build version bumps avoid read races, popup/i18n audit
+  helpers avoid flagged sanitizer patterns, and the folder picker returns a
+  generic UI error while writing only a generic local failure marker. Hardening
+  tests now pin the remediated shapes across extension, userscript, scripts,
+  build, and companion code.
 
 - **Selector fixture match matrix expanded.** `npm run build:fixtures` now emits
   DOM-subset match evidence for 15 capture-backed surfaces across the existing

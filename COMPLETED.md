@@ -34,9 +34,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
   userscript, build scripts, popup/i18n audit helpers, transcript parser, and
   Python companion. URL handling now uses exact parsed YouTube hosts and
   http(s)-only navigation, Resume Playback Position normalizes persisted video
-  IDs into a `Map`, Quick Links URLs are normalized before anchor assignment,
-  Quick Links rendering avoids TrustedHTML for labels/icons, the userscript
-  TrustedHTML helper avoids raw `innerHTML`, transcript XML parsing strips tags
+  IDs into a `Map`, Quick Links accepts only YouTube-owned destinations and
+  rebuilds anchors from path/search/hash plus a fixed YouTube origin, Quick
+  Links rendering avoids TrustedHTML for labels/icons, the userscript no longer
+  ships a local TrustedHTML parser helper, transcript XML parsing strips tags
   before entity decoding and decodes `&amp;` last, version-bump reads avoid
   `existsSync` races, and folder-picker failures write only a generic local
   marker while the UI receives a generic error. New hardening guardrails pin

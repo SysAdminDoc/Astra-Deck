@@ -12175,36 +12175,39 @@
         }
     }
 
-    //  Static HTML Helper
-    // Userscript-only fallback for owned static fragments. The extension build
-    // delegates to core/trusted-html.js; this path avoids raw innerHTML and a
-    // pass-through Trusted Types policy so CodeQL does not treat arbitrary text
-    // as an HTML sink.
-    const TrustedHTML = (() => {
-        function stripDangerousStaticMarkup(value) {
-            const raw = String(value ?? '');
-            if (/<(?:script|iframe|object|embed|link|meta|base)\b/i.test(raw)) return '';
-            if (/\son[a-z]+\s*=/i.test(raw)) return '';
-            if (/javascript:/i.test(raw)) return '';
-            return raw;
+    //  DOM fragment helpers
+    function applyElementAttributes(element, attributes = {}) {
+        for (const [name, value] of Object.entries(attributes)) {
+            if (value === null || value === undefined) continue;
+            element.setAttribute(name, String(value));
         }
+        return element;
+    }
 
-        return {
-            setHTML(element, html) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(stripDangerousStaticMarkup(html), 'text/html');
-                const fragment = document.createDocumentFragment();
-                fragment.append(...Array.from(doc.body?.childNodes || []));
-                element.replaceChildren();
-                if (fragment.childNodes.length) {
-                    element.appendChild(fragment);
-                }
-            },
-            create(html) {
-                return stripDangerousStaticMarkup(html);
-            }
-        };
-    })();
+    function appendTextSpan(parent, text) {
+        const span = document.createElement('span');
+        span.textContent = text;
+        parent.appendChild(span);
+        return span;
+    }
+
+    function createFilledPathIcon(viewBox, d, attributes = {}) {
+        const svg = createSVG(viewBox, [{ type: 'path', d }], { fill: 'currentColor', stroke: false });
+        return applyElementAttributes(svg, attributes);
+    }
+
+    function createStrokeIcon(viewBox, paths, attributes = {}) {
+        const svg = createSVG(viewBox, paths, { strokeWidth: '1.5', strokeLinecap: 'round', strokeLinejoin: 'round' });
+        return applyElementAttributes(svg, attributes);
+    }
+
+    function createYouTubeLogoSvg(attributes = {}) {
+        const svg = createSVG('0 0 248 174', [
+            { type: 'path', fill: '#ff0000', d: 'M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z' },
+            { type: 'path', fill: '#ffffff', d: 'M 99.22,124.03 163.67,86.82 99.22,49.61 Z' }
+        ], { stroke: false });
+        return applyElementAttributes(svg, attributes);
+    }
 
     // Unified Storage Manager
     const StorageManager = {
@@ -13064,21 +13067,51 @@
             document.head.appendChild(s);
         }
 
-        TrustedHTML.setHTML(panel, `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-size:12px;font-weight:600;color:#8b949e;letter-spacing:.05em;">${audioOnly ? 'AUDIO' : 'VIDEO'} DOWNLOAD</span>
-                <button id="ytkit-dl-close-${id}" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:16px;line-height:1;padding:0;">&#x2715;</button>
-            </div>
-            <div id="ytkit-dl-title-${id}" style="font-size:13px;font-weight:500;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e6edf3;">Starting...</div>
-            <div style="background:#30363d;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;">
-                <div id="ytkit-dl-bar-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:#8b949e;">
-                <span id="ytkit-dl-pct-${id}">0%</span>
-                <span id="ytkit-dl-speed-${id}"></span>
-                <span id="ytkit-dl-eta-${id}"></span>
-            </div>
-        `);
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
+
+        const modeLabel = document.createElement('span');
+        modeLabel.style.cssText = 'font-size:12px;font-weight:600;color:#8b949e;letter-spacing:.05em;';
+        modeLabel.textContent = `${audioOnly ? 'AUDIO' : 'VIDEO'} DOWNLOAD`;
+        header.appendChild(modeLabel);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'ytkit-dl-close-' + id;
+        closeBtn.type = 'button';
+        closeBtn.style.cssText = 'background:none;border:none;color:#8b949e;cursor:pointer;font-size:16px;line-height:1;padding:0;';
+        closeBtn.setAttribute('aria-label', 'Close download progress');
+        closeBtn.textContent = 'x';
+        header.appendChild(closeBtn);
+
+        const title = document.createElement('div');
+        title.id = 'ytkit-dl-title-' + id;
+        title.style.cssText = 'font-size:13px;font-weight:500;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e6edf3;';
+        title.textContent = 'Starting...';
+
+        const barTrack = document.createElement('div');
+        barTrack.style.cssText = 'background:#30363d;border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;';
+        const barFill = document.createElement('div');
+        barFill.id = 'ytkit-dl-bar-fill';
+        barFill.style.cssText = 'height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;';
+        barTrack.appendChild(barFill);
+
+        const stats = document.createElement('div');
+        stats.style.cssText = 'display:flex;justify-content:space-between;font-size:11px;color:#8b949e;';
+        const pct = document.createElement('span');
+        pct.id = 'ytkit-dl-pct-' + id;
+        pct.textContent = '0%';
+        const speed = document.createElement('span');
+        speed.id = 'ytkit-dl-speed-' + id;
+        const eta = document.createElement('span');
+        eta.id = 'ytkit-dl-eta-' + id;
+        stats.appendChild(pct);
+        stats.appendChild(speed);
+        stats.appendChild(eta);
+
+        panel.appendChild(header);
+        panel.appendChild(title);
+        panel.appendChild(barTrack);
+        panel.appendChild(stats);
         document.body.appendChild(panel);
 
         document.getElementById('ytkit-dl-close-' + id)?.addEventListener('click', () => panel.remove());
@@ -15209,7 +15242,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const css = `ytd-comments#comments{background:rgba(var(--ytkit-accent-rgb),0.03) !important;background-image:linear-gradient(180deg,rgba(var(--ytkit-accent-rgb),0.05) 0%,rgba(var(--ytkit-accent-rgb),0.01) 100%) !important;border-radius:12px !important;padding:4px 8px !important}ytd-comment-thread-renderer{margin:0 !important;padding:0 !important;border:none !important;background:none !important}ytd-comment-thread-renderer[is-pinned]{background:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}#contents.ytd-item-section-renderer{margin:0 !important;padding:0 !important}ytd-comment-view-model,ytd-comment-renderer{position:relative !important;padding:8px 4px 6px !important;margin:0 !important;display:block !important;border-bottom:1px solid rgba(255,255,255,0.035) !important;transition:background 0.15s ease !important}ytd-comment-view-model:last-child,ytd-comment-renderer:last-child{border-bottom:none !important}ytd-comment-view-model:hover,ytd-comment-renderer:hover{background:rgba(var(--ytkit-accent-rgb),0.03) !important}ytd-comment-view-model>#body,ytd-comment-renderer>#body{display:flex !important;flex-direction:row !important;gap:10px !important;align-items:flex-start !important}ytd-comment-view-model #author-thumbnail,ytd-comment-renderer #author-thumbnail{display:block !important;flex-shrink:0 !important;width:28px !important;height:28px !important;margin-top:2px !important}ytd-comment-view-model #author-thumbnail img,ytd-comment-renderer #author-thumbnail img,ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-renderer #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}ytd-comment-view-model>#body>#main,ytd-comment-renderer>#body>#main{flex:1 !important;min-width:0 !important;display:block !important}ytd-comment-view-model>#body>#main>#header,ytd-comment-renderer>#body>#main>#header{display:block !important;margin-bottom:3px !important}ytd-comment-view-model>#body>#main>#header>#header-author,ytd-comment-renderer>#body>#main>#header>#header-author{display:flex !important;flex-wrap:wrap !important;align-items:baseline !important;gap:0 6px !important}ytd-comment-view-model>#body>#main>#header>#header-author>h3,ytd-comment-renderer>#body>#main>#header>#header-author>h3{display:contents !important}ytd-comment-view-model #author-text,ytd-comment-renderer #author-text{display:inline !important;font-size:12.5px !important;font-weight:600 !important;color:var(--ytkit-accent) !important;line-height:1.4 !important;text-decoration:none !important;transition:color 0.15s !important}ytd-comment-view-model #author-text:hover,ytd-comment-renderer #author-text:hover{color:var(--ytkit-accent-light) !important}ytd-comment-view-model #author-text span,ytd-comment-renderer #author-text span{font-size:12.5px !important}ytd-comment-view-model ytd-author-comment-badge-renderer,ytd-comment-renderer ytd-author-comment-badge-renderer{display:inline-flex !important;vertical-align:baseline !important;margin-left:2px !important}.ytkit-vote-badge{display:inline-flex !important;align-items:center !important;font-size:10.5px !important;color:rgba(255,255,255,0.3) !important;cursor:pointer !important;vertical-align:baseline !important;gap:2px !important;padding:1px 4px !important;border-radius:3px !important;transition:all 0.15s ease !important}.ytkit-vote-badge:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.08) !important}.ytkit-vote-badge svg{width:11px !important;height:11px !important;fill:currentColor !important;vertical-align:-1px !important}.ytkit-vote-badge.ytkit-liked{color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-view-model #published-time-text,ytd-comment-renderer #published-time-text,ytd-comment-view-model .published-time-text,ytd-comment-renderer .published-time-text{display:inline !important;font-size:11px !important;color:rgba(255,255,255,0.25) !important;line-height:1.4 !important}ytd-comment-view-model #published-time-text a,ytd-comment-renderer #published-time-text a,ytd-comment-view-model .published-time-text a,ytd-comment-renderer .published-time-text a{color:rgba(255,255,255,0.25) !important;text-decoration:none !important}ytd-comment-view-model #pinned-comment-badge,ytd-comment-renderer #pinned-comment-badge,ytd-comment-view-model #linked-comment-badge,ytd-comment-view-model #paid-comment-background,ytd-comment-view-model #creator-heart-button,ytd-comment-renderer #creator-heart-button,ytd-comment-view-model #inline-action-menu,ytd-comment-renderer #inline-action-menu,ytd-comment-view-model #action-menu,ytd-comment-renderer #action-menu,ytd-comment-view-model #more,ytd-comment-view-model [slot="more"],ytd-comment-view-model #less,ytd-comment-view-model [slot="less"],ytd-comment-renderer tp-yt-paper-button.ytd-expander,ytd-comment-view-model #sponsor-comment-badge,ytd-comment-renderer #sponsor-comment-badge,ytd-comment-engagement-bar #dislike-button{display:none !important}ytd-comment-view-model #content-text,ytd-comment-renderer #content-text{display:block !important;font-size:13px !important;line-height:1.55 !important;color:rgba(255,255,255,0.78) !important;margin:0 !important;padding:0 !important;word-break:break-word !important}ytd-comment-view-model #content-text *,ytd-comment-renderer #content-text *{font-size:13px !important;line-height:1.55 !important}ytd-comment-view-model #content-text a,ytd-comment-renderer #content-text a{color:rgba(var(--ytkit-accent-rgb),0.75) !important;text-decoration:none !important}ytd-comment-view-model #content-text a:hover,ytd-comment-renderer #content-text a:hover{color:var(--ytkit-accent-light) !important;text-decoration:underline !important}ytd-comment-view-model #error-text{display:none !important}ytd-comment-view-model ytd-comment-engagement-bar,ytd-comment-renderer ytd-comment-engagement-bar{position:absolute !important;top:6px !important;right:4px !important;margin:0 !important;padding:0 !important;z-index:2 !important;pointer-events:none !important}ytd-comment-view-model:hover ytd-comment-engagement-bar,ytd-comment-renderer:hover ytd-comment-engagement-bar{pointer-events:auto !important}ytd-comment-engagement-bar #toolbar{display:none !important;position:static !important;align-items:center !important;gap:4px !important;margin:0 !important}ytd-comment-view-model:hover>* ytd-comment-engagement-bar #toolbar,ytd-comment-view-model:hover ytd-comment-engagement-bar #toolbar,ytd-comment-renderer:hover ytd-comment-engagement-bar #toolbar{display:inline-flex !important}ytd-comment-engagement-bar #like-button,ytd-comment-engagement-bar #dislike-button,ytd-comment-engagement-bar #vote-count-middle,ytd-comment-engagement-bar #vote-count-left,ytd-comment-engagement-bar #vote-count-right,ytd-comment-engagement-bar #creator-heart-button{display:none !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next{height:24px !important;min-height:unset !important;padding:0 10px !important;font-size:11px !important;min-width:unset !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-engagement-bar #reply-button-end .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.9) !important;background:rgba(var(--ytkit-accent-rgb),0.12) !important}ytd-comment-engagement-bar #reply-button-end yt-icon{display:none !important}ytd-comment-engagement-bar #reply-dialog{padding:10px 0 4px !important;margin:0 !important;position:relative !important;width:100% !important;box-sizing:border-box !important;overflow:visible !important;border:none !important;outline:none !important;background:transparent !important}ytd-comment-engagement-bar #reply-dialog #unopened-dialog{display:none !important}ytd-comment-engagement-bar #reply-dialog:not(:has(ytd-commentbox:not([hidden]))){display:none !important}ytd-comment-engagement-bar #reply-dialog:empty{display:none !important;padding:0 !important}.ytkit-replying ytd-comment-engagement-bar{position:relative !important;top:auto !important;right:auto !important;pointer-events:auto !important;margin:4px 0 0 !important;width:100% !important;display:block !important}.ytkit-replying ytd-comment-engagement-bar #toolbar{display:none !important}.ytkit-replying:hover ytd-comment-engagement-bar #toolbar{display:none !important}ytd-comment-replies-renderer{margin:0 !important;padding:4px 0 4px 20px !important;border:none !important;display:block !important}.ytSubThreadThreadline,.ytSubThreadConnection,.ytSubThreadContinuation,.ytSubThreadShadow{display:none !important}yt-sub-thread{padding:0 !important;margin:0 !important}.ytSubThreadSubThreadContent{padding:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer{padding:8px 4px 8px 12px !important;border-bottom:none !important;border-left:2px solid rgba(var(--ytkit-accent-rgb),0.12) !important;border-radius:0 !important;margin:0 !important}ytd-comment-replies-renderer #expanded-threads ytd-comment-view-model:hover,ytd-comment-replies-renderer #expanded-threads ytd-comment-renderer:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-view-model:hover,ytd-comment-replies-renderer #expander-contents ytd-comment-renderer:hover{border-left-color:rgba(var(--ytkit-accent-rgb),0.3) !important;background:rgba(var(--ytkit-accent-rgb),0.025) !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail{width:22px !important;height:22px !important}ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail img,ytd-comment-replies-renderer ytd-comment-view-model #author-thumbnail yt-img-shadow,ytd-comment-replies-renderer ytd-comment-renderer #author-thumbnail yt-img-shadow{width:22px !important;height:22px !important}.show-replies-button,ytd-comment-replies-renderer #more-replies,ytd-comment-replies-renderer #more-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.6) !important;min-height:unset !important;min-width:unset !important;background:rgba(var(--ytkit-accent-rgb),0.06) !important;border-radius:4px !important;transition:all 0.15s !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next:hover,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next:hover{background:rgba(var(--ytkit-accent-rgb),0.12) !important;color:rgba(var(--ytkit-accent-rgb),0.9) !important}ytd-comment-replies-renderer #more-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #more-replies svg,ytd-comment-replies-renderer #more-replies-sub-thread svg,ytd-comment-replies-renderer #more-replies yt-icon,ytd-comment-replies-renderer #more-replies-sub-thread yt-icon,ytd-comment-replies-renderer .show-replies-button yt-icon,ytd-comment-replies-renderer .show-replies-button svg{display:none !important}ytd-comment-replies-renderer #expanded-threads,ytd-comment-replies-renderer #expander-contents,#collapsed-threads.ytd-comment-replies-renderer{padding:0 !important;margin:0 !important}ytd-comment-replies-renderer #less-replies,ytd-comment-replies-renderer #less-replies-sub-thread{margin:2px 0 !important;padding:0 !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next{font-size:11px !important;height:24px !important;padding:0 10px !important;color:rgba(var(--ytkit-accent-rgb),0.35) !important;min-height:unset !important;background:rgba(var(--ytkit-accent-rgb),0.04) !important;border-radius:4px !important}ytd-comment-replies-renderer #less-replies .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread .yt-spec-button-shape-next yt-icon,ytd-comment-replies-renderer #less-replies svg,ytd-comment-replies-renderer #less-replies-sub-thread svg,ytd-comment-replies-renderer #less-replies yt-icon,ytd-comment-replies-renderer #less-replies-sub-thread yt-icon{display:none !important}ytd-comments-header-renderer{margin:0 0 4px 0 !important;padding:0 !important}ytd-comments-entry-point-header-renderer,ytd-comments-entry-point-teaser-renderer{display:none !important}ytd-continuation-item-renderer{padding:4px 0 !important}ytd-commentbox #divider-line{display:none !important}ytd-commentbox #thumbnail-input-row{display:flex !important;align-items:flex-start !important;gap:10px !important;background:transparent !important;border:none !important;padding:0 !important;margin:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox #creation-box,ytd-commentbox #main{background:transparent !important;border:none !important;padding:0 !important;margin:0 !important;flex:1 !important;min-width:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox .underline,ytd-commentbox .unfocused-line,ytd-commentbox .focused-line{display:none !important}ytd-commentbox #contenteditable-textarea{display:block !important;font-size:13px !important;padding:10px 12px !important;background:rgba(255,255,255,0.04) !important;border:1px solid rgba(var(--ytkit-accent-rgb),0.15) !important;border-radius:8px !important;min-height:44px !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;width:100% !important;box-sizing:border-box !important;transition:border-color 0.2s,background 0.2s,box-shadow 0.2s !important}ytd-commentbox #creation-box:not(.not-focused) #contenteditable-textarea,ytd-commentbox #contenteditable-textarea:focus-within{border-color:rgba(var(--ytkit-accent-rgb),0.4) !important;background:rgba(255,255,255,0.06) !important;box-shadow:0 0 0 2px rgba(var(--ytkit-accent-rgb),0.08) !important}ytd-commentbox #contenteditable-root{font-size:13px !important;color:rgba(255,255,255,0.85) !important;line-height:1.5 !important;outline:none !important;border:none !important;background:transparent !important;padding:0 !important}ytd-commentbox #input-container,ytd-commentbox tp-yt-paper-input-container{background:transparent !important;border:none !important;padding:0 !important;width:100% !important;box-sizing:border-box !important}ytd-commentbox .input-wrapper{width:100% !important;box-sizing:border-box !important}ytd-commentbox #labelAndInputContainer{width:100% !important;box-sizing:border-box !important}ytd-commentbox .paper-input-input{width:100% !important;box-sizing:border-box !important}ytd-commentbox .floated-label-placeholder{display:none !important}ytd-commentbox #footer{margin-top:8px !important;gap:6px !important;display:flex !important;align-items:center !important}ytd-commentbox #footer #buttons{display:flex !important;align-items:center !important;gap:6px !important}ytd-commentbox #footer #buttons .yt-spec-button-shape-next{height:30px !important;font-size:12px !important;padding:0 16px !important;min-height:unset !important;border-radius:6px !important;transition:all 0.15s !important}ytd-commentbox #submit-button .yt-spec-button-shape-next--filled:not([disabled]){background:var(--ytkit-accent) !important;color:#000 !important}ytd-commentbox #submit-button .yt-spec-button-shape-next--filled:not([disabled]):hover{filter:brightness(1.15) !important}ytd-commentbox #cancel-button .yt-spec-button-shape-next{color:rgba(255,255,255,0.5) !important}ytd-commentbox #cancel-button .yt-spec-button-shape-next:hover{color:rgba(255,255,255,0.75) !important}ytd-commentbox #emoji-button .yt-spec-button-shape-next{color:rgba(255,255,255,0.3) !important;transition:color 0.15s !important}ytd-commentbox #emoji-button .yt-spec-button-shape-next:hover{color:rgba(var(--ytkit-accent-rgb),0.7) !important}ytd-commentbox #author-thumbnail{flex-shrink:0 !important;width:28px !important;height:28px !important;margin:0 !important;padding:0 !important}ytd-commentbox #author-thumbnail img,ytd-commentbox #author-thumbnail yt-img-shadow{width:28px !important;height:28px !important;border-radius:50% !important}`;
                 this._styleElement = injectStyle(css, this.id, true);
 
-                const thumbSVG = '<svg viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z"/></svg>';
+                const thumbIconPath = 'M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7.87 10H4v10h2.5S11 21 13.21 21h3.04c1.37 0 2.57-.93 2.88-2.27l1.23-5.35c.4-1.73-.7-3.38-2.59-3.38z';
 
                 const processComment = (comment) => {
                     if (comment.dataset.ytkitChat) return;
@@ -15223,8 +15256,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                     const badge = document.createElement('span');
                     badge.className = 'ytkit-vote-badge';
-                    const html = thumbSVG + '<span>' + (voteText && voteText !== '0' ? voteText : '') + '</span>';
-                    TrustedHTML.setHTML(badge, html);
+                    badge.appendChild(createFilledPathIcon('0 0 24 24', thumbIconPath));
+                    appendTextSpan(badge, voteText && voteText !== '0' ? voteText : '');
                     badge.title = 'Like';
                     badge.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -15739,10 +15772,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 logoLink.href = this._getLogoHref();
                 logoLink.title = 'YouTube — hover for quick links';
                 logoLink.className = 'ytkit-po-logo';
-                TrustedHTML.setHTML(logoLink, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 174" width="28" height="20" aria-label="YouTube" style="opacity:0.9">
-  <path fill="#ff0000" d="M 242.88,27.11 A 31.07,31.07 0 0 0 220.95,5.18 C 201.6,0 124,0 124,0 124,0 46.46,0 27.11,5.18 A 31.07,31.07 0 0 0 5.18,27.11 C 0,46.46 0,86.82 0,86.82 c 0,0 0,40.36 5.18,59.71 a 31.07,31.07 0 0 0 21.93,21.93 c 19.35,5.18 96.92,5.18 96.92,5.18 0,0 77.57,0 96.92,-5.18 a 31.07,31.07 0 0 0 21.93,-21.93 c 5.18,-19.35 5.18,-59.71 5.18,-59.71 0,0 0,-40.36 -5.18,-59.71 z"/>
-  <path fill="#ffffff" d="M 99.22,124.03 163.67,86.82 99.22,49.61 Z"/>
-</svg>`);
+                logoLink.appendChild(createYouTubeLogoSvg({
+                    width: '28',
+                    height: '20',
+                    'aria-label': 'YouTube',
+                    style: 'opacity:0.9'
+                }));
                 logoWrap.appendChild(logoLink);
 
                 // Build quick links dropdown
@@ -15757,7 +15792,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const dlBtn = document.createElement('button');
                     dlBtn.className = 'ytp-button ytkit-player-btn ytkit-po-dl';
                     dlBtn.title = 'Download Video';
-                    TrustedHTML.setHTML(dlBtn, '<svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>');
+                    dlBtn.appendChild(createFilledPathIcon('0 0 24 24', 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z'));
                     dlBtn.addEventListener('click', (e) => { e.stopPropagation(); ytKitDownload(window.location.href, false); });
                     wrap.appendChild(dlBtn);
                 }
@@ -15765,7 +15800,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const mp3Btn = document.createElement('button');
                     mp3Btn.className = 'ytp-button ytkit-player-btn ytkit-po-mp3';
                     mp3Btn.title = 'Download MP3';
-                    TrustedHTML.setHTML(mp3Btn, '<svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>');
+                    mp3Btn.appendChild(createFilledPathIcon('0 0 24 24', 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'));
                     mp3Btn.addEventListener('click', (e) => { e.stopPropagation(); ytKitDownload(window.location.href, true); });
                     wrap.appendChild(mp3Btn);
                 }
@@ -15773,7 +15808,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const vlcBtn = document.createElement('button');
                     vlcBtn.className = 'ytp-button ytkit-player-btn ytkit-po-vlc';
                     vlcBtn.title = 'Stream in VLC';
-                    TrustedHTML.setHTML(vlcBtn, '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>');
+                    vlcBtn.appendChild(createFilledPathIcon('0 0 24 24', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z'));
                     vlcBtn.addEventListener('click', (e) => { e.stopPropagation(); openProtocol('ytvlc://' + encodeURIComponent(window.location.href), 'VLC protocol handler not found.'); });
                     wrap.appendChild(vlcBtn);
                 }
@@ -15782,7 +15817,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const gearBtn = document.createElement('button');
                 gearBtn.className = 'ytp-button ytkit-player-btn ytkit-po-gear';
                 gearBtn.title = 'YTKit Settings';
-                TrustedHTML.setHTML(gearBtn, '<svg viewBox="0 0 24 24" data-stroke><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>');
+                gearBtn.appendChild(createStrokeIcon('0 0 24 24', [
+                    { type: 'path', d: 'M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z' },
+                    { type: 'circle', cx: 12, cy: 12, r: 3 }
+                ], { 'data-stroke': '' }));
                 gearBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.body.classList.toggle('ytkit-panel-open');
@@ -18357,11 +18395,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 try {
                     const parsed = new URL(raw, window.location.origin);
                     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-                    const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw);
-                    if (!hasExplicitScheme && isYouTubeHostname(parsed.hostname)) {
-                        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+                    if (!isYouTubeHostname(parsed.hostname)) return null;
+                    const host = parsed.hostname.toLowerCase();
+                    const segments = parsed.pathname.replace(/^\/+/, '').split('/');
+                    if ((host === 'youtu.be' || host === 'www.youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) {
+                        const shortUrl = new URL('/watch', window.location.origin);
+                        shortUrl.searchParams.set('v', segments[0]);
+                        parsed.searchParams.forEach((paramValue, paramName) => {
+                            if (paramName !== 'v') shortUrl.searchParams.append(paramName, paramValue);
+                        });
+                        shortUrl.hash = parsed.hash;
+                        return `${shortUrl.pathname}${shortUrl.search}${shortUrl.hash}`;
                     }
-                    return parsed.href;
+                    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
                 } catch {
                     return null;
                 }
@@ -18391,24 +18437,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._parseItems().forEach((item, idx) => {
                     const itemUrl = this._normalizeQuickLinkUrl(item.url);
                     if (!itemUrl) return;
-                    let itemHref;
+                    let parsedItemUrl;
                     try {
-                        const parsedItemUrl = new URL(itemUrl, window.location.origin);
+                        parsedItemUrl = new URL(itemUrl, window.location.origin);
                         if (parsedItemUrl.protocol !== 'http:' && parsedItemUrl.protocol !== 'https:') return;
-                        const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(itemUrl);
-                        itemHref = hasExplicitScheme
-                            ? parsedItemUrl.href
-                            : `${parsedItemUrl.pathname}${parsedItemUrl.search}${parsedItemUrl.hash}`;
+                        if (!isYouTubeHostname(parsedItemUrl.hostname)) return;
                     } catch {
                         return;
                     }
                     const row = document.createElement('div');
                     row.className = 'ytkit-ql-row';
-                    const a = document.createElement('a'); a.href = itemHref; a.className = 'ytkit-ql-item';
-                    if (/^https?:\/\//i.test(itemHref)) {
-                        a.target = '_blank';
-                        a.rel = 'noopener noreferrer';
-                    }
+                    const a = document.createElement('a');
+                    a.href = 'https://www.youtube.com';
+                    a.pathname = parsedItemUrl.pathname;
+                    a.search = parsedItemUrl.search;
+                    a.hash = parsedItemUrl.hash;
+                    a.className = 'ytkit-ql-item';
                     const icon = this._createQuickLinkIcon(item.icon);
                     const label = document.createElement('span');
                     label.textContent = item.text;
@@ -18496,7 +18540,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (addForm) addForm.style.display = 'none';
                     }
                 };
-                TrustedHTML.setHTML(editBtn, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="M16.474 5.408l2.118 2.117m-.756-3.982L12.109 9.27a2.118 2.118 0 00-.58 1.082L11 13l2.648-.53c.41-.082.786-.283 1.082-.579l5.727-5.727a1.853 1.853 0 10-2.621-2.621z"/><path d="M19 15v3a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>Edit</span>`);
+                editBtn.appendChild(this._createQuickLinkIcon('M16.474 5.408l2.118 2.117m-.756-3.982L12.109 9.27a2.118 2.118 0 00-.58 1.082L11 13l2.648-.53c.41-.082.786-.283 1.082-.579l5.727-5.727a1.853 1.853 0 10-2.621-2.621zM19 15v3a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h3'));
+                appendTextSpan(editBtn, 'Edit');
                 bottomRow.appendChild(editBtn);
 
                 // Settings
@@ -18505,7 +18550,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 gear.className = 'ytkit-ql-item ytkit-ql-bottom-btn';
                 gear.title = 'YTKit Settings';
                 gear.onclick = (e) => { e.preventDefault(); document.body.classList.toggle('ytkit-panel-open'); };
-                TrustedHTML.setHTML(gear, `<svg viewBox="0 0 24 24" class="ytkit-ql-icon"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span>`);
+                gear.appendChild(this._createQuickLinkIcon('M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z'));
+                appendTextSpan(gear, 'Settings');
                 bottomRow.appendChild(gear);
 
                 menu.appendChild(bottomRow);
@@ -19210,7 +19256,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const btn = document.createElement('button');
                 btn.className = 'ytp-button ytkit-player-btn ytkit-screenshot-btn';
                 btn.title = 'Screenshot (YTKit)';
-                TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z"/></svg>');
+                btn.appendChild(createFilledPathIcon('0 0 24 24', 'M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z'));
                 btn.onclick = (e) => { e.stopPropagation(); this._capture(); };
                 controls.insertBefore(btn, controls.firstChild);
                 this._btn = btn;
@@ -20371,7 +20417,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const btn = document.createElement('button');
                 btn.className = 'ytp-button ytkit-player-btn ytkit-popout-btn';
                 btn.title = 'Pop-out Player (YTKit)';
-                TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>');
+                btn.appendChild(createFilledPathIcon('0 0 24 24', 'M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z'));
                 btn.onclick = (e) => { e.stopPropagation(); this._activate(); };
                 controls.insertBefore(btn, controls.firstChild);
                 this._btn = btn;
@@ -20669,7 +20715,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const btn = document.createElement('button');
                 btn.className = 'ytp-button ytkit-player-btn ytkit-loop-btn';
                 btn.title = 'Toggle Loop';
-                TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>');
+                btn.appendChild(createFilledPathIcon('0 0 24 24', 'M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z'));
                 btn.onclick = (e) => {
                     e.stopPropagation();
                     const video = document.querySelector('video.html5-main-video');
