@@ -30,6 +30,15 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Selector fixture surface-match coverage was expanded over the
+  existing local MHTML corpus. `SURFACE_MATCH_SOURCES` now covers 15
+  capture-backed home, watch, and live-chat surfaces, including feed,
+  notifications, search, thumbnail, main-video, player, player-chrome, and
+  player-settings packs. The regression test derives its expected surface list
+  from the builder, verifies stable/fallback array sync, and fails when any
+  registered surface lacks a matched stable selector. Dedicated Shorts, channel,
+  search-results, history, watch-later, embed-player, and notifications-menu
+  captures remain open in `ROADMAP.md`.
 - 2026-06-05: Chromium optional-host prompt-readiness smoke was added.
   `npm run smoke:optional-hosts` exact-pins `ws@8.21.0`, stages the
   store-safe Chromium manifest, launches a fresh Chromium-family profile, opens
@@ -152,8 +161,8 @@ package versions; the live product-version sources currently agree at v4.46.0.
   from store-safe packages.
 - Monthly yt-dlp smoke CI now gates extractor bumps with exact pins and a
   bounded real YouTube media download.
-- Selector fixture regeneration now emits a DOM-match report for live-chat and
-  liquid-glass player-chrome selector chains.
+- Selector fixture regeneration now emits a DOM-match report for capture-backed
+  selector chains and fails when a registered surface loses every stable match.
 - Liquid-glass watch-page capture now has a reusable stopped-loading Chrome
   Stable CDP helper (`npm run capture:watch`), and the refreshed watch fixture
   proves the Delhi player shell, overflow panel, and time-wrapper selectors.

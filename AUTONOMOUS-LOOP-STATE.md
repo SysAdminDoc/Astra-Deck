@@ -62,7 +62,13 @@
   verifies the Grant access banner lists all five missing runtime optional
   origins before any grant is accepted. Managed Google Chrome on this PC blocks
   `--load-extension`, so the smoke falls back to Edge; headed prompt
-  accept/deny/revoke remains a manual release check.
+  accept/deny/revoke remains a manual release check. The MHTML selector fixture
+  matrix was then expanded over the existing home/watch/live-chat local capture
+  corpus: `SURFACE_MATCH_SOURCES` now covers 15 proven surfaces, the regression
+  derives its expected surface list from the builder, and every registered
+  surface must keep at least one matched stable selector. Dedicated Shorts,
+  channel, search-results, history, watch-later, embed-player, and
+  notifications-menu captures remain open in the capture-week backlog.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -83,6 +89,13 @@
     `--load-extension`; Microsoft Edge loaded the staged store-safe popup and
     reported five missing runtime optional origins before grant)
   - `node --test tests/optional-host-smoke.test.js`
+- Cycle 29 selector fixture matrix verification passed:
+  - `npm run build:fixtures`
+  - `node --test tests/selector-regression.test.js`
+  - Generated `tests/fixtures/selector-surface-matches.json` now records stable
+    matches for `appShell`, `feed`, `feedCard`, `leftNav`, `media`, `nav`,
+    `notifications`, `search`, `shortsShelf`, `thumbnail`, `mainVideo`,
+    `player`, `playerChrome`, `playerSettings`, and `liveChat`.
 - Focused verification passed:
   `node --test tests/hardening.test.js --test-name-pattern="runtime settings guidance|standalone options page"`.
 - Cycle 2 release-doc verification passed:

@@ -297,6 +297,14 @@ or maintainer action to confirm.
   and `liveChat`. ROADMAP P2 now lists the exact missing capture files, mapped
   selector packs, builder/test hooks, and verification path for the capture-week
   expansion.
+- [Verified] Cycle 29 capture-matrix implementation on 2026-06-05 expanded the
+  existing home/watch/live-chat corpus to 15 proven `SURFACE_MATCH_SOURCES`:
+  `appShell`, `feed`, `feedCard`, `leftNav`, `media`, `nav`, `notifications`,
+  `search`, `shortsShelf`, `thumbnail`, `mainVideo`, `player`,
+  `playerChrome`, `playerSettings`, and `liveChat`. The selector regression now
+  derives its expected surface list from the builder, keeps stable/fallback
+  arrays synced to live packs, and fails when any registered surface loses all
+  stable matches.
 - [Verified] Cycle 5 Firefox-gate pass on 2026-06-04 confirmed the repo already
   has static Firefox manifest-patch coverage, but release artifacts are not run
   through `web-ext lint` or a clean Firefox profile. ROADMAP P1 now calls for a
@@ -329,8 +337,8 @@ or maintainer action to confirm.
   English; the store-safe package now strips AI, Cobalt, and loopback host
   grants while GitHub-full keeps the complete data-flow catalogue; yt-dlp
   bumps now run through exact Python package pins plus a bounded real-download
-  smoke workflow; selector fixture regeneration now proves `playerChrome` and
-  `liveChat` selector-pack chains against decoded MHTML markup; Firefox
+  smoke workflow; selector fixture regeneration now proves 15 home/watch/
+  live-chat selector-pack chains against decoded MHTML markup; Firefox
   pre-flight now blocks future programmatic injection APIs until their
   `moz-extension://` targets are reviewed; and the Flask `/download` boundary
   now rejects client-supplied yt-dlp argv/flag fields before queueing; storage
@@ -736,11 +744,14 @@ Current risk status:
   `web-ext lint` errors/warnings/notices, and the tag release workflow installs
   Firefox via a pinned setup action before running a clean-profile store-safe
   smoke on a stable YouTube watch URL. [Verified]
-- **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed,
-  but Shorts, channel, search, history, watch-later, embedded player, and
-  notifications surfaces still lack capture-backed selector fixtures; the
-  fixture builder currently registers only home, watch, and live-chat captures.
-  → ROADMAP P2 capture-week expansion. [Verified]
+- **[High] Capture coverage gaps.** The liquid-glass watch fixture is refreshed
+  and the existing home/watch/live-chat corpus now proves 15 selector-pack
+  surfaces, but dedicated Shorts, channel, search-results, history,
+  watch-later, embedded-player, and notifications-menu captures are still
+  missing. The current watch capture does not prove stable matches for
+  `profile` / `channelProfile`, `sidebar`, `relatedSidebar`, or `watch`, so
+  those remain in the capture-week backlog instead of being promoted from weak
+  evidence. → ROADMAP P2 capture-week expansion. [Verified]
 - **[Closed] In-page overlay accessibility.** `npm run check` now includes
   `audit:overlays`, covering generated overlay names, dialog/region semantics,
   live-region behavior, focus-visible rules, and WCAG 2.2 target-size floors

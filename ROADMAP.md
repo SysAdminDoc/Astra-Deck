@@ -70,13 +70,17 @@ means implemented/closed by the build lane.
   - Why: Shorts, channel, search, history, watch-later, embedded player, and
     notifications surfaces have no capture-backed fixtures, leaving their
     selector packs unverified against real DOM.
-  - Evidence: `scripts/build-selector-fixtures.js` currently registers only
-    `YouTube.mhtml`, `WatchPage.mhtml`, and `LiveChat.mhtml`, and
-    `selector-surface-matches.json` only exercises `playerChrome` and
-    `liveChat`. High-churn packs such as `notifications`, `search`,
-    `shortsShelf`, `feedCard`, `thumbnail`, and `profile` still carry
-    2026-05-19 verification stamps or cite captures not represented in the
-    committed fixture builder. [Verified]
+  - Evidence: `scripts/build-selector-fixtures.js` now registers the existing
+    `YouTube.mhtml`, `WatchPage.mhtml`, and `LiveChat.mhtml` captures across
+    `appShell`, `feed`, `feedCard`, `leftNav`, `media`, `nav`,
+    `notifications`, `search`, `shortsShelf`, `thumbnail`, `mainVideo`,
+    `player`, `playerChrome`, `playerSettings`, and `liveChat`, and the
+    selector regression fails if a registered surface has no matched stable
+    selector. Dedicated captures are still missing for Shorts, channel, search
+    results, history, watch later, embedded player, and the open notifications
+    menu; `profile` / `channelProfile`, `sidebar`, `relatedSidebar`, and
+    `watch` are intentionally not promoted from the current watch capture
+    because its decoded DOM subset does not prove a stable match. [Verified]
   - Capture matrix:
     - `mhtml/Shorts.mhtml` -> `shortsShelf`, `media`, `thumbnail`.
     - `mhtml/SearchResults.mhtml` -> `search`, `feedCard`, `thumbnail`, `nav`.
@@ -93,14 +97,18 @@ means implemented/closed by the build lane.
     `docs/selector-fixture-workflow.md`, affected selector-pack metadata.
   - Acceptance: the fixture builder registers every matrix capture, emits a
     committed token file per capture, extends `SURFACE_MATCH_SOURCES` to the
-    high-churn packs above, and fails the selector test when a stable selector
-    from any registered surface is unmatched. Raw `.mhtml` files remain
-    gitignored; only derived fixtures and metadata are committed.
+    high-churn packs above, and fails the selector test when a registered
+    surface has no matched stable selector or a release-blocking required
+    selector is unmatched. Raw `.mhtml` files remain gitignored; only derived
+    fixtures and metadata are committed. _(Progress 2026-06-05: the existing
+    home/watch/live-chat captures now cover 15 proven surfaces; the new raw
+    capture files in the matrix above remain open.)_
   - Verify: `npm run build:fixtures`,
     `node --test tests/selector-regression.test.js`, then inspect
-    `tests/fixtures/selector-surface-matches.json` for zero unmatched stable
-    selectors. If a capture is blocked by auth or YouTube rollout state, record
-    the surface-specific blocker in `docs/selector-fixture-workflow.md`.
+    `tests/fixtures/selector-surface-matches.json` for registered surfaces with
+    no matched stable selector. If a capture is blocked by auth or YouTube
+    rollout state, record the surface-specific blocker in
+    `docs/selector-fixture-workflow.md`.
   - Source: ROADMAP.md Active Backlog (Browser-Bounded Captures)
 
 ### Companion, Subscriptions, And Research

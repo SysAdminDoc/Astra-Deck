@@ -10,8 +10,8 @@
 // identifiers our code could plausibly target (ytd-*, ytp-*, yt-*,
 // html5-*, the `movie_player` element id, and a few common YT layout
 // ids). It also writes selector-surface-matches.json by parsing decoded
-// MHTML markup through a small DOM subset matcher for the live-chat and
-// liquid-glass player-chrome selector packs. The full MHTML text is
+// MHTML markup through a small DOM subset matcher for capture-backed
+// selector packs. The full MHTML text is
 // decoded rather than only the first HTML part because YouTube keeps some
 // custom-element selector tokens in CSS parts, especially in the live-chat
 // popout capture.
@@ -37,7 +37,20 @@ const SOURCES = [
 ];
 
 const SURFACE_MATCH_SOURCES = [
+    { surface: 'appShell', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'feed', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'feedCard', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'leftNav', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'media', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'nav', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'notifications', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'search', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'shortsShelf', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'thumbnail', mhtml: 'YouTube.mhtml', fixture: 'yt-home.tokens.txt' },
+    { surface: 'mainVideo', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { surface: 'player', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'playerChrome', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
+    { surface: 'playerSettings', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'liveChat', mhtml: 'LiveChat.mhtml', fixture: 'yt-live-chat.tokens.txt' },
 ];
 
@@ -238,13 +251,21 @@ function selectorCompoundMatches(element, compound) {
     for (const match of clean.matchAll(/\.([\w-]+)/g)) {
         if (!element.classes.has(match[1])) return false;
     }
-    for (const match of clean.matchAll(/\[([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\]]+)))?\]/g)) {
+    for (const match of clean.matchAll(/\[\s*([A-Za-z_:][\w:.-]*)(?:\s*([~|^$*]?=)\s*(?:"([^"]*)"|'([^']*)'|([^\]]+)))?\s*\]/g)) {
         const name = match[1].toLowerCase();
         if (!element.attrs.has(name)) return false;
-        const expected = match[2] ?? match[3] ?? match[4];
+        const operator = match[2] || null;
+        const expected = match[3] ?? match[4] ?? match[5];
         if (expected !== undefined) {
             const normalized = String(expected).replace(/^['"]|['"]$/g, '').trim();
-            if (element.attrs.get(name) !== normalized) return false;
+            const actual = element.attrs.get(name);
+            if (operator === '=' && actual !== normalized) return false;
+            if (operator === '^=' && !actual.startsWith(normalized)) return false;
+            if (operator === '$=' && !actual.endsWith(normalized)) return false;
+            if (operator === '*=' && !actual.includes(normalized)) return false;
+            if (operator === '~=' && !actual.split(/\s+/).includes(normalized)) return false;
+            if (operator === '|=' && actual !== normalized && !actual.startsWith(`${normalized}-`)) return false;
+            if (!operator && actual !== normalized) return false;
         }
     }
 
@@ -419,4 +440,5 @@ module.exports = {
     extractTokens,
     parseDomElements,
     selectorMatchCount,
+    SURFACE_MATCH_SOURCES,
 };
