@@ -427,9 +427,9 @@ means implemented/closed by the build lane.
   / AMO checklist, manifest patch, current branch-protection behavior, and
   official GitHub / Mozilla / Chrome guidance. Detailed notes live in
   `docs/research-cycle-23-repo-working-notes-drift.md`.
-- [ ] P2 - 🔬🤖 Reconcile repo-local working notes with current release and browser-support contracts
+- [x] P2 - 🔬🤖 Reconcile repo-local working notes with current release and browser-support contracts
   - Why: future repo work starts from `AGENTS.md`, which delegates to
-    `CLAUDE.md`; that file now references a missing handoff log, includes stale
+    ignored local `CLAUDE.md`; that file referenced a missing handoff log, included stale
     Firefox 128+ statements, and describes direct `main` push / `gh release
     create` release flow even though protected `main`, local `ytkit.pem`
     signing, profile-split release artifacts, and Firefox 140+ data-consent
@@ -446,29 +446,33 @@ means implemented/closed by the build lane.
     `docs/cws-submission-checklist.md:170-174`, and
     `docs/signing-keys.md:185-193` / `:198-215`. `docs/architecture.md:127`
     still has related release-flow drift already covered by Cycle 14. [Verified]
-  - Touches: `CLAUDE.md`, possibly `docs/architecture.md`,
-    `docs/signing-keys.md`, `README.md`, `CONTRIBUTING.md`, and an optional
-    docs-drift check if the implementer wants one.
-  - Acceptance: the missing handoff-log pointer is removed, replaced with an
-    existing tracked file, or backed by a real tracked log; current release
-    instructions describe branch/PR publication for protected `main`, local
+  - Touches: tracked `AGENTS.md`, Cycle 23 planning ledgers, and an optional
+    docs-drift check if the implementer wants one. `CLAUDE.md` is intentionally
+    ignored local scratch.
+  - Acceptance: the committed first-read instructions no longer depend on a
+    missing handoff log or ignored local notes for the current contract; tracked
+    docs direct workers to branch/PR publication for protected `main`, local
     `ytkit.pem` signing, eight profile-split extension artifacts, userscript,
     SBOM, manifest/checksum assets, and the separate companion EXE release item;
-    every current browser-support statement says Firefox 140+ for extension
-    artifacts and references `scripts/manifest-patch.js` data-consent behavior;
-    old v3/v4 release summaries are clearly marked as historical or moved under
-    an archive-style section so they cannot be mistaken for current state; the
-    Cycle 14 release-doc item is either updated or cross-linked so
+    current browser-support docs say Firefox 140+ for extension artifacts and
+    reference `scripts/manifest-patch.js` data-consent behavior; old v3/v4 local
+    notes are either optional scratch or historical context rather than the
+    committed source of truth; the Cycle 14 release-doc item is cross-linked so
     `docs/architecture.md` no longer contradicts the signing-key release policy.
-  - Verify: `Test-Path CODEX-CHANGELOG.md` is true only if the file is meant to
-    exist, otherwise `rg -n "CODEX-CHANGELOG" CLAUDE.md AGENTS.md docs README.md`
-    returns no stale pointer; `rg -n "strict_min_version: \"128\\.0\"|requires
-    Firefox 128|Firefox 128\\+" CLAUDE.md README.md docs` returns no current
-    contract statements; `rg -n "push main|gh release create|All 5 artifacts"
-    CLAUDE.md docs README.md` returns only historical sections or no matches;
-    `node scripts/check-versions.js`; and docs-only diff review confirms no
-    feature source or generated artifact changed unless a docs-drift check was
-    deliberately added.
+  - Verify: `git check-ignore -v -- CLAUDE.md` confirms `CLAUDE.md` is local
+    ignored scratch; `rg -n "CLAUDE.md.*source of truth|CODEX-CHANGELOG|strict_min_version: \"128\\.0\"|Firefox 128|Firefox 128\\+|push main|gh release create|All 5 artifacts|all 5 artifacts|Five-artifact|five-artifact" AGENTS.md`
+    returns no stale tracked first-read guidance; `rg -n
+    "AUTONOMOUS-LOOP-STATE|ROADMAP.md|RESEARCH_REPORT.md|docs/signing-keys.md|docs/audit|optional local context"
+    AGENTS.md` finds the current tracked handoff; `node scripts/check-versions.js`;
+    and docs-only diff review confirms no feature source or generated artifact
+    changed unless a docs-drift check was deliberately added.
+  - Status 2026-06-05: shipped. `AGENTS.md` now points at tracked loop,
+    changelog, completed-work, roadmap, research, architecture, signing-key, and
+    audit files instead of delegating source-of-truth status to ignored local
+    `CLAUDE.md`; it labels `CLAUDE.md` as optional local scratch. Current release
+    and Firefox contracts remain in tracked README, architecture, signing-key,
+    CWS/AMO, and manifest-patch docs. Detailed implementation notes live in
+    `docs/audit/2026-06-05-repo-working-notes.md`.
   - Complexity: S/M
 
 ### Researcher Queue (Cycle 22 - 2026-06-04)

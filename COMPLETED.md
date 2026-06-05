@@ -30,6 +30,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Repo-local first-read instructions were reconciled with the
+  current protected-main, maintainer-local release, eight-artifact, and Firefox
+  140+ contracts. `AGENTS.md` now points at tracked loop/planning/audit files,
+  names `docs/signing-keys.md` for release upload/digest verification, and
+  labels ignored `CLAUDE.md` as optional local scratch instead of committed
+  source of truth.
 - 2026-06-05: Hosted CodeQL PR alerts on the changed branch surface were
   resolved. CSP tests now parse exact `connect-src` directive tokens instead of
   URL substrings, and the companion release staging script validates metadata
