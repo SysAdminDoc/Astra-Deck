@@ -37,6 +37,7 @@ longer reach its runtime-optional origin.
 
 ## Remaining Work
 
-- Run manual unpacked Chrome and Firefox store-safe smoke checks for prompt,
-  grant, denial, revocation behavior, and the default-on SponsorBlock Grant
-  access banner.
+- `npm run smoke:optional-hosts` now covers Chromium pre-grant banner state in
+  a fresh store-safe profile. Run headed Chrome/Edge and Firefox store-safe
+  smoke checks for native prompt grant, denial, revocation behavior, and the
+  default-on SponsorBlock Grant access banner.

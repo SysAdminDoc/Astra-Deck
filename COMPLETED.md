@@ -30,6 +30,14 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Chromium optional-host prompt-readiness smoke was added.
+  `npm run smoke:optional-hosts` exact-pins `ws@8.21.0`, stages the
+  store-safe Chromium manifest, launches a fresh Chromium-family profile, opens
+  the real popup, seeds enabled optional enrichment features, and verifies the
+  Grant access banner lists all five missing runtime optional origins before any
+  grant is accepted. Managed Google Chrome on this PC blocks
+  `--load-extension`, so the smoke falls back to Edge and leaves headed
+  grant/deny/revoke prompt acceptance as a release manual check.
 - 2026-06-05: Firefox MV3 release gating was added. `web-ext@10.3.0` is
   exact-pinned, `npm run check` now runs `check:firefox` to stage and lint both
   store-safe and GitHub-full Firefox manifests, and the tag release workflow

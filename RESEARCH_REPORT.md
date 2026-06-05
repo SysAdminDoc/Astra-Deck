@@ -66,7 +66,12 @@ or maintainer action to confirm.
   grant before proxying optional origins, so denied or revoked grants stop
   before network fetch. The popup surfaces missing grants as permission-needed
   chips in quick toggles, schema rows, and data-flow grant labels, and shows
-  exact denied-request copy.
+  exact denied-request copy. `npm run smoke:optional-hosts` now stages the
+  store-safe Chromium manifest, opens the real popup in a fresh
+  Chromium-family profile, and verifies the pre-grant Grant access banner lists
+  all five missing runtime optional origins. Managed Google Chrome on this PC
+  blocks `--load-extension`, so the smoke falls back to Edge; headed native
+  prompt accept/deny/revoke remains a manual release check.
 - [Verified] Companion setup documentation now separates browser install from
   the Astra Downloader local companion. README states that latest release
   `v4.46.0` lacks `AstraDownloader.exe` and
@@ -445,9 +450,11 @@ Top remaining opportunities (one-liners):
 2. Enable CODEOWNERS enforcement after merge: validate `.github/CODEOWNERS` on
    the default branch, then enable code-owner review in `main` branch
    protection. Source-side ownership coverage is already in place. [Verified]
-3. Run manual unpacked Chrome/Firefox store-safe smoke for runtime optional host
-   grants: prompt, grant, denial, revocation, and default-on SponsorBlock's
-   Grant access banner. Code-side optional-host handling is in place. [Verified]
+3. Run headed unpacked Chrome/Edge plus Firefox store-safe smoke for runtime
+   optional host prompt acceptance, denial, revocation, and default-on
+   SponsorBlock's Grant access banner. Chromium pre-grant prompt readiness is
+   now scripted with Edge fallback; code-side optional-host handling is in
+   place. [Verified]
 4. Enable selected GitHub Actions sources / repository SHA-pinning policy after
    the source-side full-SHA workflow refs land and hosted workflows pass.
    Workflow refs are already pinned on the feature branch. [Verified]

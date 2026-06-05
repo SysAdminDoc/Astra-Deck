@@ -55,7 +55,14 @@
   through pinned `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
   before running a clean-profile store-safe smoke after artifact generation, and
   the first gate run fixed non-square PNG icons, the Firefox 142+
-  data-consent floor, and remaining raw TrustedHTML `innerHTML` sinks.
+  data-consent floor, and remaining raw TrustedHTML `innerHTML` sinks. Chromium
+  optional-host prompt readiness was then scripted: `npm run
+  smoke:optional-hosts` stages the store-safe Chromium manifest, opens the real
+  popup in a fresh profile, seeds enabled optional enrichment features, and
+  verifies the Grant access banner lists all five missing runtime optional
+  origins before any grant is accepted. Managed Google Chrome on this PC blocks
+  `--load-extension`, so the smoke falls back to Edge; headed prompt
+  accept/deny/revoke remains a manual release check.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -71,6 +78,11 @@
     Gecko ID `ytkit@sysadmindoc.github.io`; clean 25-second startup window)
   - `node --test tests/firefox-injection-audit.test.js`
   - `node --test tests/hardening.test.js --test-name-pattern="Firefox|manifest PNG|TrustedTypes|workflow actions"`
+- Cycle 28 Chromium optional-host prompt-readiness verification passed:
+  - `npm run smoke:optional-hosts` (Google Chrome policy blocked
+    `--load-extension`; Microsoft Edge loaded the staged store-safe popup and
+    reported five missing runtime optional origins before grant)
+  - `node --test tests/optional-host-smoke.test.js`
 - Focused verification passed:
   `node --test tests/hardening.test.js --test-name-pattern="runtime settings guidance|standalone options page"`.
 - Cycle 2 release-doc verification passed:
@@ -279,8 +291,10 @@
   branch-protection enforcement after merge, repository selected-actions /
   required-SHA enforcement remains hosted settings work after merge, and the
   dependency-review workflow remains blocked until the repository dependency
-  graph is enabled. Optional-permissions code is in place; manual unpacked
-  Chrome/Firefox prompt/grant/deny/revoke smoke remains before treating the
-  store-safe permission UX as release-smoked. After the overlay a11y cycle is
-  pushed, continue with the next open high-priority item that is locally
-  implementable without hosted settings or release-maintainer credentials.
+  graph is enabled. Optional-permissions code is in place and Chromium
+  pre-grant prompt readiness is scripted with Edge fallback; headed
+  Chrome/Edge and Firefox prompt accept/deny/revoke smoke remains before
+  treating the store-safe permission UX as release-smoked. After the latest
+  cycle is pushed, continue with the next open high-priority item that is
+  locally implementable without hosted settings or release-maintainer
+  credentials.
