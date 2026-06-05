@@ -10,8 +10,9 @@
   missing-key path, then reconciled release automation docs with the
   maintainer-local public-release contract, then migrated GitHub-owned workflow
   action pins to Node 24-ready majors, then moved CRX signing-key custody out
-  of the repo worktree with an external release-key contract. Updated
-  roadmap/completed/audit continuity notes after each cycle.
+  of the repo worktree with an external release-key contract, then triaged and
+  resolved the Google API-key secret-scanning alert without exposing the value.
+  Updated roadmap/completed/audit continuity notes after each cycle.
 
 ## Verification
 
@@ -38,6 +39,16 @@
   - `npm run build:userscript -- --profile store-safe`
   - `Test-Path ytkit.pem` returned `False`
   - `git status --ignored --short -- ytkit.pem` returned no root key entry
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+- Cycle 5 secret-scanning verification passed:
+  - redacted current-tree scan for `AIza[0-9A-Za-z_-]{35}`
+  - `gh api repos/SysAdminDoc/Astra-Deck/secret-scanning/alerts/1 --jq ...`
+  - `gh api repos/SysAdminDoc/Astra-Deck/secret-scanning/alerts?state=open --paginate --jq 'length'`
+  - `gh api repos/SysAdminDoc/Astra-Deck --jq ".security_and_analysis"`
+  - `node --test tests/core-transcript-service.test.js --test-name-pattern="Innertube API method requires"`
+  - `node --test tests/hardening.test.js --test-name-pattern="Google API key literals"`
   - `npm test`
   - `npm run check`
   - `npm run build`

@@ -1,6 +1,6 @@
 # Astra Deck Repository Settings
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
 This file records repository settings that are intentionally managed outside the
 source tree.
@@ -100,6 +100,42 @@ Target policy:
   required `main` check.
 - After a clean or fully triaged baseline, add the exact CodeQL check context to
   branch protection or record why the gate remains advisory-only.
+
+## Secret Scanning
+
+Current snapshot from 2026-06-05:
+
+- Secret scanning: enabled.
+- Secret scanning push protection: enabled.
+- Open secret-scanning alerts: 0.
+- Alert 1 (`google_api_key`): resolved as `false_positive` on 2026-06-05 after
+  triage confirmed the matched value was a public YouTube/Innertube bootstrap
+  fallback, not a private provider credential. The value was not printed in
+  chat, docs, or commits.
+- Active source and tracked archive snapshots no longer contain Google
+  API-key-shaped literals; `extension/core/transcript-service.js` now requires
+  a page-derived Innertube API key and falls through to the existing HTML /
+  caption / DOM transcript methods when one is unavailable.
+- Secret scanning validity checks: disabled.
+- Secret scanning non-provider patterns: disabled.
+
+Attempted setting changes:
+
+- 2026-06-05: form-encoded and JSON `PATCH /repos/SysAdminDoc/Astra-Deck`
+  requests attempted to set `secret_scanning_validity_checks` and
+  `secret_scanning_non_provider_patterns` to `enabled`. The endpoint returned
+  successfully, but the repository `security_and_analysis` response still
+  reported both settings as `disabled`. Treat these as unavailable/no-op through
+  the repository endpoint until a GitHub UI or account-level code-security
+  configuration exposes them.
+
+Target policy:
+
+- Keep secret scanning and push protection enabled.
+- Do not commit provider-key-shaped literals. Parse public YouTube/Innertube
+  client keys from page scripts at runtime instead.
+- Re-check validity checks and non-provider patterns when repository security
+  settings are revisited.
 
 ## Code Owners
 

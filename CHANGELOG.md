@@ -30,6 +30,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   generated key material before build exit, and the current self-distributed
   CRX ID is recorded in the signing policy.
 
+- **Secret-scanning alert triaged and resolved.** The open Google API-key alert
+  was resolved as a false positive after redacted triage confirmed the value was
+  a public YouTube/Innertube bootstrap fallback, not a private provider
+  credential. Active source and tracked archive snapshots no longer ship Google
+  API-key-shaped literals; transcript Innertube requests now require a
+  page-derived key and fall through to other transcript methods when unavailable.
+
 - **Python companion dependency audit gate.** The `Validate` workflow now runs
   `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
   artifact for release review, and runs GitHub dependency review on pull
