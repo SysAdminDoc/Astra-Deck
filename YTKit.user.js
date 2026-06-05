@@ -1871,7 +1871,7 @@
                 requiredByFeatures: ['sponsorBlock', 'deArrow'],
                 credentialsPolicy: 'no-cookies',
                 profile: 'store-safe',
-                hostGrant: 'required',
+                hostGrant: 'runtime-optional',
                 riskBand: 'api'
             }),
             Object.freeze({
