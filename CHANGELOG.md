@@ -12,9 +12,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Dislike, and Reddit hosts in `optional_host_permissions`. The popup requests
   declared optional hosts before enabling matching settings, and the background
   `EXT_FETCH` proxy now checks the current runtime host grant before fetching
-  those optional origins. Hardening and background tests pin the manifest split,
-  helper behavior, and granted/denied proxy paths. SponsorBlock/DeArrow runtime
-  grant UX remains a follow-up because SponsorBlock is default-on.
+  those optional origins. Denied or revoked grants now surface as permission
+  chips in quick toggles, schema rows, and the data-flow panel, with exact
+  permission-denied status copy instead of a generic write failure. Hardening
+  and background tests pin the manifest split, helper behavior,
+  granted/denied proxy paths, and revoked-state UI. SponsorBlock/DeArrow
+  runtime grant UX remains a follow-up because SponsorBlock is default-on.
 
 - **CODEOWNERS source policy added.** `.github/CODEOWNERS` now maps
   security-sensitive repository policy, release/signing tooling, dependency

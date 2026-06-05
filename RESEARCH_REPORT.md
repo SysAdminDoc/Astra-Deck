@@ -53,6 +53,8 @@ or maintainer action to confirm.
   from popup setting writes before persisting enabled state. The background
   `EXT_FETCH` proxy now also checks the current runtime grant before proxying
   those optional origins, so denied or revoked grants stop before network fetch.
+  The popup surfaces missing grants as permission-needed chips in quick toggles,
+  schema rows, and data-flow grant labels, and shows exact denied-request copy.
   SponsorBlock and DeArrow remain open because `sponsor.ajay.app` backs the
   default-on SponsorBlock path.
 
@@ -113,9 +115,9 @@ or maintainer action to confirm.
   `permissions.request` / `permissions.contains` helper, and tests currently
   require `i.ytimg.com`, SponsorBlock, Return YouTube Dislike, and Reddit hosts
   in store-safe `host_permissions`. Cycle 2026-06-05 closed the default-off
-  manifest/helper/background-fetch slice for thumbnails, Return YouTube Dislike,
-  and Reddit; SponsorBlock/DeArrow plus richer denied/revoked UI remain in the
-  open P2 item. Detailed evidence lives in
+  manifest/helper/background-fetch/permission-state UI slice for thumbnails,
+  Return YouTube Dislike, and Reddit; SponsorBlock/DeArrow runtime-grant UX and
+  manual browser smoke remain in the open P2 item. Detailed evidence lives in
   `docs/research-cycle-20-optional-permissions.md`.
 - [Verified] Cycle 19 code-scanning pass on 2026-06-04 found that GitHub
   code scanning is not configured: default setup reports `state:
