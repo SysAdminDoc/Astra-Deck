@@ -19,8 +19,9 @@
   release-upload boundary, then added CODEOWNERS source coverage for
   security-sensitive repository, release, extension core, and companion paths,
   then moved default-off store-safe enrichment hosts to runtime optional grants
-  with a popup request guard. Updated roadmap/completed/audit continuity notes
-  after each cycle.
+  with a popup request guard, then enforced current runtime optional-host grants
+  in the background fetch proxy before network requests to those optional
+  origins. Updated roadmap/completed/audit continuity notes after each cycle.
 
 ## Verification
 
@@ -121,6 +122,17 @@
   - Manual unpacked Chrome/Firefox permission-prompt and revoke smoke was not
     run in this automation pass; denied/revoked UX remains in the follow-up
     roadmap scope.
+- Cycle 11 background optional-host fetch enforcement verification passed:
+  - `node --test tests/background.test.js`
+  - `node --test tests/hardening.test.js --test-name-pattern="EXT_FETCH|optional host|build-extension emits|data-flow|Return YouTube Dislike"`
+  - `npm run lint -- extension/background.js`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+  - Manual unpacked Chrome/Firefox permission-prompt and revoke smoke was not
+    run in this automation pass; settings/data-flow denied/revoked state
+    surfaces remain in the follow-up roadmap scope.
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -130,10 +142,10 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 10, the remaining
+  implementable without exposing secrets. As of Cycle 11, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, and CODEOWNERS still needs default-branch validation plus
   `main` branch-protection enforcement after merge. Optional-permissions
   hardening still needs SponsorBlock/DeArrow runtime-grant UX, denied/revoked
-  state surfaces, background-fetch grant checks, and manual browser smoke once
-  the generated store-safe artifacts are ready.
+  state surfaces, and manual browser smoke once the generated store-safe
+  artifacts are ready.
