@@ -28,11 +28,6 @@
         debug: false
     };
 
-    // Fallback API key for the Innertube `player` endpoint. Public, ships
-    // in YouTube's own page HTML — not a secret. Kept as a last resort if
-    // page-script parsing fails. YouTube rotates the key every several
-    // months; the script-tag scrape is the authoritative source.
-    const INNERTUBE_PUBLIC_FALLBACK_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
     const INNERTUBE_CLIENT_VERSION_FALLBACK = '2.20260401.00.00';
 
     function createTranscriptService(options = {}) {
@@ -144,7 +139,10 @@
 
             // Method 2: Innertube API (most reliable for SPA navigation)
             async _method2_InnertubeAPI(videoId) {
-                const apiKey = this._getInnertubeApiKey() || INNERTUBE_PUBLIC_FALLBACK_KEY;
+                const apiKey = this._getInnertubeApiKey();
+                if (!apiKey) {
+                    throw new Error('Innertube API key unavailable');
+                }
                 // Fallback version is only used if script-tag parsing fails.
                 // YouTube rotates client versions roughly weekly.
                 const clientVersion = this._getClientVersion() || INNERTUBE_CLIENT_VERSION_FALLBACK;

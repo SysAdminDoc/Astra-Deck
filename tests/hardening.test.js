@@ -1711,6 +1711,50 @@ test('CRX signing key custody stays outside the repository worktree', () => {
     assert.equal(validationConfig.keyPath, null);
 });
 
+test('repository files do not ship Google API key literals', () => {
+    const repoRoot = path.join(__dirname, '..');
+    const secretPattern = /AIza[0-9A-Za-z_-]{35}/;
+    const scannedExtensions = new Set([
+        '.css',
+        '.html',
+        '.js',
+        '.json',
+        '.md',
+        '.mjs',
+        '.yml',
+        '.yaml'
+    ]);
+    const skipDirs = new Set([
+        '.git',
+        'build',
+        'node_modules'
+    ]);
+    const matches = [];
+
+    function walk(dir) {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (entry.isDirectory()) {
+                if (!skipDirs.has(entry.name)) {
+                    walk(path.join(dir, entry.name));
+                }
+                continue;
+            }
+            if (!entry.isFile()) continue;
+            const ext = path.extname(entry.name);
+            if (!scannedExtensions.has(ext)) continue;
+            const filePath = path.join(dir, entry.name);
+            const text = fs.readFileSync(filePath, 'utf8');
+            if (secretPattern.test(text)) {
+                matches.push(path.relative(repoRoot, filePath));
+            }
+        }
+    }
+
+    walk(repoRoot);
+    assert.deepEqual(matches, [],
+        'Google API key literals should not be committed; parse Innertube keys from YouTube page scripts instead');
+});
+
 test('release manifest generation pins checksums, SBOM, attestations, and local signing policy', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     const workflow = fs.readFileSync(

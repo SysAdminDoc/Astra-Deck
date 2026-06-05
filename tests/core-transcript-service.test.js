@@ -88,6 +88,23 @@ test('_formatTimestamp formats hours when ms >= 1h, MM:SS otherwise', () => {
     assert.equal(svc._formatTimestamp(3_725_000), '01:02:05');
 });
 
+test('Innertube API method requires a page-derived API key', async () => {
+    const createTranscriptService = loadFactoryIntoFreshGlobal();
+    let fetchCalled = false;
+    const svc = createTranscriptService({
+        extensionFetchJson: async () => {
+            fetchCalled = true;
+            return { response: { status: 200 }, data: {} };
+        }
+    });
+
+    await assert.rejects(
+        () => svc._method2_InnertubeAPI('abc123'),
+        /Innertube API key unavailable/
+    );
+    assert.equal(fetchCalled, false);
+});
+
 test('_sanitizeFilename strips fs-unsafe chars and clamps length', () => {
     const createTranscriptService = loadFactoryIntoFreshGlobal();
     const svc = createTranscriptService({});

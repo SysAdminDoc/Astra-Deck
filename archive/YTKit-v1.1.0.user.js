@@ -1020,7 +1020,7 @@
 
         // Method 2: Innertube API (most reliable for SPA navigation)
         async _method2_InnertubeAPI(videoId) {
-            const apiKey = this._getInnertubeApiKey() || 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+            const apiKey = this._getInnertubeApiKey() || 'REDACTED_GOOGLE_API_KEY';
             const clientVersion = this._getClientVersion() || '2.20250120.00.00';
 
             const response = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {
@@ -8126,7 +8126,7 @@
                     this._log('Method 5: Innertube player API');
                     const pw = _rw;
                     let apiKey; try { apiKey = pw.ytcfg?.get?.('INNERTUBE_API_KEY'); } catch(e) {}
-                    if (!apiKey) apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+                    if (!apiKey) apiKey = 'REDACTED_GOOGLE_API_KEY';
                     let clientVersion; try { clientVersion = pw.ytcfg?.get?.('INNERTUBE_CLIENT_VERSION'); } catch(e) {}
                     if (!clientVersion) clientVersion = '2.20250210.01.00';
 
@@ -8254,7 +8254,7 @@
                 const f1 = lenField(1, vidBytes); const f2 = lenField(2, [...lenField(1, langBytes), ...lenField(3, [])]);
                 const params = btoa(String.fromCharCode(...f1, ...f2));
                 let apiKey; try { apiKey = pw.ytcfg?.get?.('INNERTUBE_API_KEY'); } catch(e) {}
-                if (!apiKey) apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+                if (!apiKey) apiKey = 'REDACTED_GOOGLE_API_KEY';
                 let clientVersion; try { clientVersion = pw.ytcfg?.get?.('INNERTUBE_CLIENT_VERSION'); } catch(e) {}
                 if (!clientVersion) clientVersion = '2.20250210.01.00';
                 const body = { context: { client: { clientName: 'WEB', clientVersion, hl: lang || 'en', gl: 'US' } }, params };
@@ -8644,7 +8644,7 @@
                     let visitorData; try { visitorData = pw.ytcfg?.get?.('VISITOR_DATA'); } catch(e) {}
                     let clientVersion; try { clientVersion = pw.ytcfg?.get?.('INNERTUBE_CLIENT_VERSION') || '2.20250210.01.00'; } catch(e) { clientVersion = '2.20250210.01.00'; }
                     let apiKey; try { apiKey = pw.ytcfg?.get?.('INNERTUBE_API_KEY'); } catch(e) {}
-                    if (!apiKey) apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+                    if (!apiKey) apiKey = 'REDACTED_GOOGLE_API_KEY';
 
                     const clients = [
                         { name: 'WEB_CREATOR', body: { context: { client: { clientName: 'WEB_CREATOR', clientVersion: '1.20250210.01.00', hl: 'en', gl: 'US', ...(visitorData ? { visitorData } : {}) } }, videoId, contentCheckOk: true, racyCheckOk: true }, ua: null },
