@@ -63,6 +63,7 @@ the default SponsorBlock path.
 
 ## Remaining Work
 
-- Run manual unpacked Chrome and Firefox store-safe smoke checks for permission
-  prompts, granted behavior, denial, revocation, and the default-on
-  SponsorBlock Grant access banner.
+- `npm run smoke:optional-hosts` now covers Chromium pre-grant prompt readiness
+  in a fresh store-safe profile. Run headed Chrome/Edge and Firefox store-safe
+  smoke checks for native prompt acceptance, granted behavior, denial,
+  revocation, and the default-on SponsorBlock Grant access banner.

@@ -28,6 +28,7 @@
     "lint": "eslint extension/background.js extension/popup.js extension/core/*.js extension/ytkit.js",
     "check:firefox": "node scripts/check-firefox-webext.js",
     "smoke:firefox": "node scripts/smoke-firefox-webext.js",
+    "smoke:optional-hosts": "node scripts/smoke-chromium-optional-hosts.js",
     "audit:a11y": "node scripts/audit-popup-a11y.js",
     "audit:overlays": "node scripts/audit-overlays-a11y.js",
     "audit:contrast": "node scripts/check-contrast.js",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "eslint": "^10.2.1",
-    "web-ext": "10.3.0"
+    "web-ext": "10.3.0",
+    "ws": "8.21.0"
   }
 }

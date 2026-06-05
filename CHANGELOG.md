@@ -6,6 +6,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chromium optional-host prompt-readiness smoke added.** `npm run
+  smoke:optional-hosts` stages the store-safe Chromium manifest, opens the real
+  extension popup in a fresh Chromium-family profile, seeds enabled optional
+  enrichment features, and verifies that the Grant access banner lists all five
+  missing runtime optional origins before any grant is accepted. The smoke falls
+  back to Edge when managed Google Chrome blocks `--load-extension`, and keeps
+  native grant/deny/revoke prompt acceptance as an explicit headed manual
+  release check.
+
 - **Firefox MV3 release gate added.** `web-ext@10.3.0` is exact-pinned and
   `npm run check` now stages both store-safe and GitHub-full Firefox manifests
   for `web-ext lint --source-dir`, which passes with zero errors, warnings, or
