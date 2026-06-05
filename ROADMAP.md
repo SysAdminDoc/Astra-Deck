@@ -432,7 +432,7 @@ means implemented/closed by the build lane.
     ignored local `CLAUDE.md`; that file referenced a missing handoff log, included stale
     Firefox 128+ statements, and describes direct `main` push / `gh release
     create` release flow even though protected `main`, local `ytkit.pem`
-    signing, profile-split release artifacts, and Firefox 140+ data-consent
+    signing, profile-split release artifacts, and Firefox 142+ data-consent
     requirements are the current contract.
   - Evidence: `AGENTS.md:1-7` delegates repo working notes to `CLAUDE.md`;
     `CLAUDE.md:3-4` points at `CODEX-CHANGELOG.md`, while `Test-Path
@@ -440,7 +440,7 @@ means implemented/closed by the build lane.
     run `gh release create`, and require Firefox 128+; `CLAUDE.md:382-385`,
     `:706-708`, and `:884-889` present old five-artifact / v3.20.x state in
     historical sections; and `CLAUDE.md:432-435` repeats
-    `strict_min_version: 128.0`. Current sources instead say Firefox 140+ and
+    `strict_min_version: 128.0`. Current sources instead say Firefox 142+ and
     maintainer-local release publication: `scripts/manifest-patch.js:7` and
     `:18-24`, `README.md:49` and `:342-344`, `docs/architecture.md:7`,
     `docs/cws-submission-checklist.md:170-174`, and
@@ -454,7 +454,7 @@ means implemented/closed by the build lane.
     docs direct workers to branch/PR publication for protected `main`, local
     `ytkit.pem` signing, eight profile-split extension artifacts, userscript,
     SBOM, manifest/checksum assets, and the separate companion EXE release item;
-    current browser-support docs say Firefox 140+ for extension artifacts and
+    current browser-support docs say Firefox 142+ for extension artifacts and
     reference `scripts/manifest-patch.js` data-consent behavior; old v3/v4 local
     notes are either optional scratch or historical context rather than the
     committed source of truth; the Cycle 14 release-doc item is cross-linked so
@@ -1361,9 +1361,9 @@ means implemented/closed by the build lane.
     privacy-policy source linked from README and submission docs; it covers
     local storage, third-party transmissions, local companion/cookie handoff,
     BYO-key behavior, retention/export/delete, no telemetry/ads/sale, and the
-    Chrome Limited Use statement. The Firefox path is Firefox 140+ built-in
+    Chrome Limited Use statement. The Firefox path is Firefox 142+ built-in
     data consent: `scripts/manifest-patch.js` raises `strict_min_version` to
-    `140.0` and injects required `data_collection_permissions` for
+    `142.0` and injects required `data_collection_permissions` for
     `browsingActivity`, `websiteContent`, `websiteActivity`, and
     `authenticationInfo`, with tests pinning the manifest and policy packet.
 
@@ -1738,7 +1738,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     settings before writing storage. `policy-profile.js` now owns the shared
     validator and schema-only export mode; userscript output is synced; hardening
     tests prove credential fields are absent and schema-only exports validate.
-- [ ] P1 — Cross-browser parity gate: Firefox MV3 smoke before each AMO submission
+- [x] P1 — Cross-browser parity gate: Firefox MV3 smoke before each AMO submission
   - Why: Enhancer for YouTube's Firefox build has suffered extended non-functional
     periods — the clearest competitive opening is reliable Firefox parity. The
     repo patches the manifest for Gecko (`scripts/manifest-patch.js`) but nothing
@@ -1754,10 +1754,11 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     (https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/),
     and signed release/beta distribution requirements
     (https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/).
-    Local gap: `tests/hardening.test.js` only asserts the patcher transforms the
-    manifest, `.github/workflows/build.yml` runs `npm test`, `npm run check`, and
-    `npm run build:userscript`, and `docs/firefox-executescript-preflight.md`
-    records no local Firefox runtime for a browser-console run. [Verified]
+    Pre-delivery gap: `tests/hardening.test.js` only asserted the patcher
+    transforms the manifest, `.github/workflows/build.yml` ran `npm test`,
+    `npm run check`, and `npm run build:userscript`, and
+    `docs/firefox-executescript-preflight.md` recorded no local Firefox runtime
+    for a browser-console run. [Verified]
   - Touches: `.github/workflows/`, `package.json`, `scripts/`, release checklist.
   - Acceptance: CI or a release-blocking workflow builds the store-safe and
     GitHub-full Firefox artifacts, extracts or stages the patched manifests,
@@ -1773,6 +1774,19 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     `browser_specific_settings.gecko.id` must turn the Firefox gate red before
     release upload.
   - Complexity: M
+  - Status 2026-06-05: delivered. `web-ext@10.3.0` is exact-pinned and
+    `npm run check` now runs `npm run check:firefox`, which stages both
+    store-safe and GitHub-full Firefox manifests and runs
+    `web-ext lint --source-dir` with zero errors, warnings, or notices. The tag
+    release workflow installs Firefox with pinned
+    `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
+    (`v1.7.2`) after artifact generation, then runs `npm run smoke:firefox`
+    against the store-safe staged manifest in a clean headless Firefox profile
+    on `https://www.youtube.com/watch?v=jNQXAC9IVRw`. The smoke reports profile,
+    MV3 manifest version, Gecko ID, Firefox path, start URL, and captured
+    `web-ext run` startup/install output. The first gate run exposed and fixed
+    AMO blockers: non-square PNG icon dimensions, the Firefox data-consent floor
+    now set to `142.0`, and raw `innerHTML` sinks in TrustedHTML paths.
 - [x] P2 — First-run onboarding + empty/permission states for the companion path
   - Why: the popup is the only settings surface and the downloader is a separate
     PyInstaller companion on `127.0.0.1`. A new user has no guided path to install

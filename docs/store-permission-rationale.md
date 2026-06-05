@@ -56,15 +56,15 @@ Stable privacy policy source: [privacy-policy.md](privacy-policy.md).
 
 ## Firefox Data Consent
 
-Firefox builds require Firefox 140+ so Astra Deck can use Firefox's built-in
+Firefox builds require Firefox 142+ so Astra Deck can use Firefox's built-in
 data collection and transmission consent flow instead of a custom consent screen
-for Firefox 128-139. The generated Firefox manifest declares:
+for Firefox 128-141. The generated Firefox manifest declares:
 
 ```json
 {
   "browser_specific_settings": {
     "gecko": {
-      "strict_min_version": "140.0",
+      "strict_min_version": "142.0",
       "data_collection_permissions": {
         "required": [
           "browsingActivity",

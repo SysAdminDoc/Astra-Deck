@@ -44,9 +44,9 @@
             return fragment;
         }
 
-        const template = document.createElement('template');
-        template.innerHTML = trusted;
-        return template.content;
+        const fragment = document.createDocumentFragment();
+        fragment.appendChild(document.createTextNode(String(trusted ?? '')));
+        return fragment;
     }
 
     function setTrustedHTML(element, value) {

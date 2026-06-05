@@ -56,6 +56,15 @@ function runNodeCommand(args) {
     });
 }
 
+function readPngSize(filePath) {
+    const buf = fs.readFileSync(filePath);
+    assert.equal(buf.toString('ascii', 1, 4), 'PNG', `${filePath} must be a PNG`);
+    return {
+        width: buf.readUInt32BE(16),
+        height: buf.readUInt32BE(20)
+    };
+}
+
 function literalString(node) {
     return node && node.type === 'Literal' && typeof node.value === 'string'
         ? node.value
@@ -1197,6 +1206,24 @@ test('v4.5.3: manifest declares no keyboard shortcuts (Chrome + Firefox patched)
     assert.equal(ffManifest.commands, undefined, 'Patch must remain idempotent across re-runs');
 });
 
+test('manifest PNG icons are square at declared sizes for AMO lint', () => {
+    const manifest = JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'),
+        'utf8'
+    ));
+    const declaredIcons = {
+        ...(manifest.icons || {}),
+        ...(manifest.action?.default_icon || {})
+    };
+
+    for (const [declaredSize, rel] of Object.entries(declaredIcons)) {
+        const expected = Number(declaredSize);
+        const { width, height } = readPngSize(path.join(__dirname, '..', 'extension', rel));
+        assert.equal(width, expected, `${rel} width must match manifest size ${expected}`);
+        assert.equal(height, expected, `${rel} height must match manifest size ${expected}`);
+    }
+});
+
 test('SponsorBlock never auto-skips poi_highlight (API contract: marker, not skip)', () => {
     // Pass 8 closes the Pass 7 POI correctness finding. The SponsorBlock
     // API defines poi_highlight as a jump-to marker. Previously we skipped
@@ -1332,6 +1359,8 @@ test('TrustedTypes fallback uses DOMParser + replaceChildren (no raw innerHTML c
         'Fallback must clear via replaceChildren, not innerHTML = ""');
     assert.doesNotMatch(iifeBody, /element\.innerHTML\s*=\s*['"]{2}/,
         'Fallback must NOT use innerHTML = "" to clear — trips strict-CSP TrustedHTML sinks');
+    assert.doesNotMatch(iifeBody, /element\.innerHTML\s*=/,
+        'setHTML must avoid raw innerHTML sinks even when a TrustedTypes policy exists');
 });
 
 // ── v3.20.2 H4: popup surfaces TrustedTypes diagnostic signal ──
@@ -1955,6 +1984,7 @@ test('GitHub workflows pin external actions to full-length SHAs with version com
         'actions/dependency-review-action': 'a1d282b36b6f3519aa1f3fc636f609c47dddb294',
         'actions/attest-build-provenance': 'a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32',
         'actions/attest-sbom': 'c604332985a26aa8cf1bdc465b92731239ec6b9e',
+        'browser-actions/setup-firefox': '0bc507ddf224827e3b1af68e014d5e42ab93e795',
         'github/codeql-action/init': '8aad20d150bbac5944a9f9d289da16a4b0d87c1e',
         'github/codeql-action/analyze': '8aad20d150bbac5944a9f9d289da16a4b0d87c1e'
     })) {
@@ -2720,9 +2750,9 @@ test('privacy policy covers store data categories and Firefox consent packet', (
         'README must link the stable privacy policy source');
     assert.ok(checklist.includes('docs/privacy-policy.md') || checklist.includes('privacy-policy.md'),
         'store checklist must point at the privacy policy source');
-    assert.match(readme, /Firefox 140\+/,
+    assert.match(readme, /Firefox 142\+/,
         'README Firefox install/compatibility copy must match the manifest floor');
-    assert.match(architecture, /Firefox 140\+/,
+    assert.match(architecture, /Firefox 142\+/,
         'architecture map must match the manifest Firefox floor');
 
     for (const phrase of [
@@ -3871,7 +3901,7 @@ test('popup ships a selector-health dashboard wired to the content script (iter-
         'popup.js must hide the dashboard when no response is available');
 });
 
-test('ytkit.js TrustedHTML.setHTML delegates the no-policy fallback to core/trusted-html.js (iter-6 N10)', () => {
+test('ytkit.js TrustedHTML.setHTML delegates HTML writes to core/trusted-html.js (iter-6 N10)', () => {
     // N10 deduplicates the parallel DOMParser fallback logic. ytkit.js
     // still owns the policy-attempt + diagnostic-recording surface (it
     // captures the TT_POLICY_FAIL reason and writes to DiagnosticLog),
@@ -3886,10 +3916,12 @@ test('ytkit.js TrustedHTML.setHTML delegates the no-policy fallback to core/trus
     const block = ytkitSource.slice(idx, end + 5);
     assert.match(block, /globalThis\.YTKitCore/,
         'TrustedHTML wrapper must reach for the core module by name');
-    assert.match(block, /core\.setTrustedHTML\(element, html\)/,
-        'setHTML must call core.setTrustedHTML on the no-policy path');
+    assert.match(block, /core\.setTrustedHTML\(element,\s*policy \? policy\.createHTML\(html\) : html\)/,
+        'setHTML must call core.setTrustedHTML for policy and no-policy paths');
     assert.match(block, /core\.toTrustedHTML\(html\)/,
         'create() must call core.toTrustedHTML on the no-policy path');
+    assert.doesNotMatch(block, /element\.innerHTML\s*=/,
+        'TrustedHTML wrapper must not use raw innerHTML sinks');
     // Legacy inline DOMParser fallback must still exist as the last-resort
     // safety net for unit-test contexts that load ytkit.js in isolation.
     assert.match(block, /Inline fallback \(legacy code path\)/,

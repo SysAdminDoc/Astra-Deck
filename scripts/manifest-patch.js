@@ -4,7 +4,7 @@
 // exact Firefox-side manifest delta without spawning a real build.
 // Side-effect-free module — safe to `require()` from tests.
 
-const FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION = '140.0';
+const FIREFOX_BUILTIN_DATA_CONSENT_MIN_VERSION = '142.0';
 const FIREFOX_DATA_COLLECTION_REQUIRED = Object.freeze([
     'browsingActivity',
     'websiteContent',

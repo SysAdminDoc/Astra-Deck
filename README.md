@@ -48,7 +48,7 @@ The CRX is still attached for enterprise or tooling flows, but modern Chromium b
 2. Open `about:addons`, click the gear icon, select **Install Add-on From File**
 3. Select the `.xpi` file
 
-Requires Firefox 140+.
+Requires Firefox 142+.
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
@@ -374,7 +374,7 @@ community translations welcome via PR against `extension/_locales/<lang>/message
 | Browser | Method | Status |
 |---------|--------|--------|
 | Chrome / Edge / Brave | Extension (MV3) | Fully supported |
-| Firefox 140+ | Extension (MV3) | Fully supported |
+| Firefox 142+ | Extension (MV3) | Fully supported |
 | Chrome / Firefox | Tampermonkey / Violentmonkey | Supported (userscript) |
 | Safari | Userscripts app | Limited |
 
