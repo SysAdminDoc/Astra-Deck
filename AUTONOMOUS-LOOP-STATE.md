@@ -11,8 +11,10 @@
   maintainer-local public-release contract, then migrated GitHub-owned workflow
   action pins to Node 24-ready majors, then moved CRX signing-key custody out
   of the repo worktree with an external release-key contract, then triaged and
-  resolved the Google API-key secret-scanning alert without exposing the value.
-  Updated roadmap/completed/audit continuity notes after each cycle.
+  resolved the Google API-key secret-scanning alert without exposing the value,
+  then published the security disclosure policy and enabled private
+  vulnerability reporting. Updated roadmap/completed/audit continuity notes
+  after each cycle.
 
 ## Verification
 
@@ -52,6 +54,14 @@
   - `npm test`
   - `npm run check`
   - `npm run build`
+- Cycle 6 security-disclosure verification passed:
+  - `Test-Path SECURITY.md`
+  - `rg -n "Report a vulnerability|private vulnerability|security advisory|supported versions|public issues" SECURITY.md README.md CONTRIBUTING.md docs/signing-keys.md docs/repo-settings.md`
+  - `gh api repos/SysAdminDoc/Astra-Deck/private-vulnerability-reporting --jq .enabled`
+  - `gh api repos/SysAdminDoc/Astra-Deck/security-advisories --jq length`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -61,5 +71,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets: P0/P1 security and release-channel
-  items first, then P2 documentation and UI/accessibility work.
+  implementable without exposing secrets. As of Cycle 6, the next top
+  research-backed P1 item is the CodeQL code-scanning baseline for JavaScript
+  extension code and the Python companion, followed by the Astra Downloader
+  self-update release-channel proof.

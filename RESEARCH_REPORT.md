@@ -16,6 +16,16 @@ Claim labels: [Verified] = read in-tree or confirmed against a cited source;
 default not directly confirmed; [Needs validation] = requires a device, browser,
 or maintainer action to confirm.
 
+## 2026-06-05 Implementation Refresh
+
+- [Verified] Security disclosure is now published. Root `SECURITY.md` defines
+  supported versions, private vulnerability reporting, public-issue boundaries,
+  5-business-day acknowledgement and 10-business-day triage windows, and
+  high-priority classes covering signing-key, extension, companion, dependency,
+  release-integrity, and sensitive-export failures. README, CONTRIBUTING, the
+  signing-key leak runbook, and repository-settings docs now link or reference
+  that policy; private vulnerability reporting is enabled on GitHub.
+
 ## 2026-06-04 Freshness Refresh
 
 - [Verified] Cycle 25 companion-install-docs pass on 2026-06-04 found that
@@ -91,10 +101,10 @@ or maintainer action to confirm.
   reporting disabled, and zero repository security advisories. Current
   contributor docs route bug reports through public issues, while the
   signing-key leak runbook already assumes a `SECURITY.md` section will exist.
-  ROADMAP now carries a P1 item to publish a security policy, enable private
-  vulnerability reporting, link the policy from contributor docs, and route
-  sensitive reports through repository security advisories. Detailed evidence
-  lives in `docs/research-cycle-18-security-disclosure.md`.
+  Cycle 2026-06-05 closed the implementation gap with a root policy, linked
+  contributor docs, updated signing-key response wording, and enabled private
+  vulnerability reporting. Detailed evidence lives in
+  `docs/research-cycle-18-security-disclosure.md`.
 - [Verified] Cycle 17 signing-key custody pass on 2026-06-04 found that
   `ytkit.pem` is not tracked by git and has no history for that path, but this
   local checkout contains an ignored private-key-shaped file in the repo root.
@@ -361,52 +371,49 @@ runtime migrations that make them durable.
 
 Top remaining opportunities (one-liners):
 
-1. Publish `SECURITY.md` and enable private vulnerability reporting so
-   signing-key, extension, companion, dependency, and release-integrity reports
-   do not go through public issues. [Verified]
-2. Enable CodeQL code scanning for JavaScript extension code and the Python
+1. Enable CodeQL code scanning for JavaScript extension code and the Python
    companion, then decide whether the CodeQL check becomes required after a
    clean baseline run. [Verified]
-3. Prove the Astra Downloader self-update release-channel contract before
+2. Prove the Astra Downloader self-update release-channel contract before
    bumping companion `APP_VERSION`: stage/publish `AstraDownloader.exe` and
    `AstraDownloader.exe.sha256`, include both in release manifests/checksums,
    and dry-run the live download/hash path. [Verified]
-4. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
+3. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
    extension permission/proxy, data-flow, and companion loopback paths, then
    enable code-owner review once owner references and syntax are proven.
    [Verified]
-5. Convert optional store-safe enrichment hosts to runtime-granted optional
+4. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]
-6. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+5. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-7. Enable dependency graph / Dependabot alert settings so the PR-only
+6. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-8. Reconcile repo-local working notes with the current protected-main,
+7. Reconcile repo-local working notes with the current protected-main,
    maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
    first-read operator docs no longer point to missing or stale guidance.
    [Verified]
-13. Document the Astra Downloader companion setup and release-asset path in
+8. Document the Astra Downloader companion setup and release-asset path in
    README/release docs without promising an EXE before the release-channel proof
    ships. [Verified]
-14. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+9. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-15. MHTML capture-week expansion across Shorts, channel, search, history,
+10. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-16. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+11. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-17. Replace the retired options-page runtime error copy with current
+12. Replace the retired options-page runtime error copy with current
    settings-panel / toolbar-popup guidance and add a copy regression.
    [Verified]
-18. Locale proofing queue for identical-to-English feature names/descriptions in
+13. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-19. Signed Astra Downloader installer/MSI once the signing budget and submission
+14. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -801,10 +808,11 @@ Closed since the 2026-06-03 baseline:
   local key store or `--crx-key`, validation builds use ephemeral CRX signing,
   the root `ytkit.pem` file is absent from the checkout, and the public CRX ID
   baseline is documented for pre-publication comparison.
-- **Security disclosure** [Verified]: no `SECURITY.md` is present and private
-  vulnerability reporting is disabled, so sensitive reports currently lack a
-  clear private path. ROADMAP P1 now queues a security policy plus private
-  vulnerability reporting enablement.
+- **Security disclosure** [Verified]: root `SECURITY.md` is present, private
+  vulnerability reporting is enabled, and README/CONTRIBUTING route sensitive
+  reports away from public issues. The policy names supported versions,
+  response windows, high-priority classes, and data that reporters should not
+  paste into public issues.
 - **Code scanning** [Verified]: GitHub code scanning default setup is
   `not-configured`, no `.github/workflows/codeql*.yml` exists, and the code
   scanning alerts API reports no analysis. ROADMAP P1 now queues a CodeQL
@@ -853,8 +861,6 @@ Closed since the 2026-06-03 baseline:
 - Whether `main` should use classic branch-protection required checks or a
   repository ruleset, and whether all `main` updates should go through PRs.
   [Needs validation]
-- What first-response and triage SLA language should `SECURITY.md` commit to
-  for private vulnerability reports. [Needs validation]
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]

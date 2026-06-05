@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Security disclosure policy published.** Root `SECURITY.md` now defines
+  supported versions, private vulnerability reporting, response windows,
+  sensitive-data boundaries, and high-priority vulnerability classes. README,
+  CONTRIBUTING, the signing-key leak runbook, and repository-settings docs now
+  route sensitive reports through private reporting/advisory flow instead of
+  public issues.
+
 - **Retired options-page runtime copy removed.** The AI summary missing-key
   error now points users to Astra Deck settings via the YouTube gear icon or the
   toolbar popup's **Open Full Settings** action instead of referencing the
