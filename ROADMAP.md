@@ -656,7 +656,7 @@ means implemented/closed by the build lane.
   workflows, code-scanning default setup, extension trust boundaries, Python
   companion subprocess/Flask paths, and current static-analysis docs. Detailed
   notes live in `docs/research-cycle-19-code-scanning.md`.
-- [ ] P1 - 🔬🤖 Enable CodeQL code scanning for JavaScript extension code and the Python companion
+- [x] P1 - 🔬🤖 Enable CodeQL code scanning for JavaScript extension code and the Python companion
   - Why: Astra Deck now has dependency audit, secret scanning, release
     provenance, no-eval checks, and security-disclosure planning, but it still
     has no semantic code-scanning gate for the actual extension/companion code.
@@ -691,6 +691,13 @@ means implemented/closed by the build lane.
     `.github/codeql.yml`, `docs/repo-settings.md`, branch-protection required
     checks / ruleset settings if the CodeQL job is made required, and
     `RESEARCH_REPORT.md` / release checklist notes after the gate is proven.
+  - Status 2026-06-05: shipped `.github/workflows/codeql.yml`,
+    `.github/codeql.yml`, and a hardening regression pinning the workflow
+    contract. Hosted CodeQL push run `27002182993` and pull-request run
+    `27002184466` both succeeded for `javascript-typescript` and `python`;
+    `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/alerts?state=open --jq
+    length` returned `0`. CodeQL remains advisory-only until the exact
+    protected-branch check contexts are confirmed on `main` or the next PR.
   - Acceptance: a CodeQL workflow scans `javascript` and `python` on PRs,
     pushes to `main`, and a weekly schedule; uses
     `github/codeql-action/init` / `analyze` with least-privilege permissions

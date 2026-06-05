@@ -25,6 +25,11 @@ or maintainer action to confirm.
   release-integrity, and sensitive-export failures. README, CONTRIBUTING, the
   signing-key leak runbook, and repository-settings docs now link or reference
   that policy; private vulnerability reporting is enabled on GitHub.
+- [Verified] CodeQL advanced setup is now enabled for JavaScript/TypeScript and
+  Python. Hosted push run `27002182993` and pull-request run `27002184466`
+  both succeeded for the language matrix, the workflow uses `security-extended`
+  with generated-output path exclusions, and the code-scanning alerts API
+  returns `0` open alerts.
 
 ## 2026-06-04 Freshness Refresh
 
@@ -92,9 +97,10 @@ or maintainer action to confirm.
   workflow or `security-events: write` job. The repo already has dependency
   audit, secret scanning, no-eval checks, and release attestations, but no
   semantic SAST layer over privileged JavaScript extension code or the Python
-  companion. ROADMAP now carries a P1 item to add CodeQL for JavaScript and
-  Python, record baseline findings, and decide whether the CodeQL check becomes
-  required after a clean run. Detailed evidence lives in
+  companion. Cycle 2026-06-05 closed the implementation gap with advanced
+  CodeQL setup for `javascript-typescript` and `python`, a clean hosted
+  baseline, and advisory-only branch-protection policy until exact `main` check
+  names are confirmed. Detailed evidence lives in
   `docs/research-cycle-19-code-scanning.md`.
 - [Verified] Cycle 18 security-disclosure pass on 2026-06-04 found no root
   `SECURITY.md`, no `.github` security policy file, private vulnerability
@@ -371,49 +377,43 @@ runtime migrations that make them durable.
 
 Top remaining opportunities (one-liners):
 
-1. Enable CodeQL code scanning for JavaScript extension code and the Python
-   companion, then decide whether the CodeQL check becomes required after a
-   clean baseline run. [Verified]
-2. Prove the Astra Downloader self-update release-channel contract before
+1. Prove the Astra Downloader self-update release-channel contract before
    bumping companion `APP_VERSION`: stage/publish `AstraDownloader.exe` and
    `AstraDownloader.exe.sha256`, include both in release manifests/checksums,
    and dry-run the live download/hash path. [Verified]
-3. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
+2. Add CODEOWNERS coverage for security-sensitive workflow, release, signing,
    extension permission/proxy, data-flow, and companion loopback paths, then
    enable code-owner review once owner references and syntax are proven.
    [Verified]
-4. Convert optional store-safe enrichment hosts to runtime-granted optional
+3. Convert optional store-safe enrichment hosts to runtime-granted optional
    host permissions, preserving required YouTube hosts and denied/revoked
    feature states. [Verified]
-5. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
+4. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]
-6. Enable dependency graph / Dependabot alert settings so the PR-only
+5. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
-7. Reconcile repo-local working notes with the current protected-main,
+6. Reconcile repo-local working notes with the current protected-main,
    maintainer-local release, eight-artifact, and Firefox 140+ contracts so the
    first-read operator docs no longer point to missing or stale guidance.
    [Verified]
-8. Document the Astra Downloader companion setup and release-asset path in
+7. Document the Astra Downloader companion setup and release-asset path in
    README/release docs without promising an EXE before the release-channel proof
    ships. [Verified]
-9. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
+8. Firefox MV3 parity smoke gate before AMO or self-distributed Firefox updates:
    lint both Firefox profiles with `web-ext` and load at least store-safe in a
    clean Firefox profile. [Verified]
-10. MHTML capture-week expansion across Shorts, channel, search, history,
+9. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-11. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
+10. WCAG 2.2 AA audit for in-page overlays, starting with toast DOM, download
    dialogs, transcript panels, video notes, subscription group surfaces, and
    downloader health/history panels. [Verified]
-12. Replace the retired options-page runtime error copy with current
-   settings-panel / toolbar-popup guidance and add a copy regression.
-   [Verified]
-13. Locale proofing queue for identical-to-English feature names/descriptions in
+11. Locale proofing queue for identical-to-English feature names/descriptions in
    non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
    feature keys landed. [Verified]
-14. Signed Astra Downloader installer/MSI once the signing budget and submission
+12. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
 ## Evidence Reviewed
@@ -813,10 +813,11 @@ Closed since the 2026-06-03 baseline:
   reports away from public issues. The policy names supported versions,
   response windows, high-priority classes, and data that reporters should not
   paste into public issues.
-- **Code scanning** [Verified]: GitHub code scanning default setup is
-  `not-configured`, no `.github/workflows/codeql*.yml` exists, and the code
-  scanning alerts API reports no analysis. ROADMAP P1 now queues a CodeQL
-  baseline for JavaScript and Python before adding more third-party SARIF tools.
+- **Code scanning** [Verified]: advanced CodeQL setup exists in
+  `.github/workflows/codeql.yml` and `.github/codeql.yml`; hosted push and PR
+  baselines succeeded for `javascript-typescript` and `python`; and open
+  code-scanning alerts are `0`. CodeQL remains advisory-only until exact
+  protected-branch check contexts are confirmed on `main` or the next PR.
 - **Code-owner review** [Verified]: branch protection already requires one
   approving review, conversation resolution, admin enforcement, and green
   required checks, but no CODEOWNERS file exists and branch protection does not
@@ -864,6 +865,9 @@ Closed since the 2026-06-03 baseline:
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
+- Whether CodeQL should become a required `main` status immediately after it
+  succeeds on `main`, or remain advisory for one week to capture false
+  positives. [Needs validation]
 - Whether the SHA-pinning follow-up should pin the newly migrated
   `checkout@v6`, `setup-node@v6`, `setup-python@v6`, and
   `upload-artifact@v7` majors immediately after a green hosted run, or wait for

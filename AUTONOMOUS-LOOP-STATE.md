@@ -13,8 +13,9 @@
   of the repo worktree with an external release-key contract, then triaged and
   resolved the Google API-key secret-scanning alert without exposing the value,
   then published the security disclosure policy and enabled private
-  vulnerability reporting. Updated roadmap/completed/audit continuity notes
-  after each cycle.
+  vulnerability reporting, then added and baseline-verified CodeQL
+  JavaScript/TypeScript plus Python code scanning. Updated
+  roadmap/completed/audit continuity notes after each cycle.
 
 ## Verification
 
@@ -62,6 +63,17 @@
   - `npm test`
   - `npm run check`
   - `npm run build`
+- Cycle 7 CodeQL baseline verification passed:
+  - YAML parse for `.github/workflows/codeql.yml` and `.github/codeql.yml`
+  - `node --test tests/hardening.test.js --test-name-pattern="CodeQL scans"`
+  - Hosted CodeQL push run `27002182993`: `CodeQL (javascript-typescript)` and
+    `CodeQL (python)` both succeeded.
+  - Hosted CodeQL pull-request run `27002184466`: both language jobs succeeded.
+  - `gh api repos/SysAdminDoc/Astra-Deck/code-scanning/alerts?state=open --jq length`
+    returned `0`.
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -71,7 +83,6 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 6, the next top
-  research-backed P1 item is the CodeQL code-scanning baseline for JavaScript
-  extension code and the Python companion, followed by the Astra Downloader
-  self-update release-channel proof.
+  implementable without exposing secrets. As of Cycle 7, the next top
+  research-backed P1 item is the Astra Downloader self-update release-channel
+  proof, followed by CODEOWNERS and optional-permissions hardening.

@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CodeQL code scanning baseline enabled.** Added an advanced CodeQL workflow
+  for JavaScript/TypeScript extension code and the Python companion using the
+  `security-extended` suite, least-privilege code-scanning upload permission,
+  generated-output path exclusions, and a hardening regression that keeps the
+  language matrix and query suite from drifting. The first hosted push and PR
+  baselines both completed with zero open code-scanning alerts.
+
 - **Security disclosure policy published.** Root `SECURITY.md` now defines
   supported versions, private vulnerability reporting, response windows,
   sensitive-data boundaries, and high-priority vulnerability classes. README,

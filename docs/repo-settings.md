@@ -82,26 +82,37 @@ Policy:
 
 ## Code Scanning
 
-Current snapshot from 2026-06-04:
+Current snapshot from 2026-06-05:
 
 - GitHub code-scanning default setup: `not-configured`.
 - Detected languages from the default-setup API: `actions`, `javascript`,
   `javascript-typescript`, `python`, `typescript`.
-- Code-scanning alerts API: `404 no analysis found`.
-- CodeQL workflow file: absent.
-- `security-events: write` workflow permission: absent.
+- Advanced setup workflow: `.github/workflows/codeql.yml`.
+- CodeQL config: `.github/codeql.yml`.
+- Scanned languages: `javascript-typescript` and `python`.
+- Query suite: `security-extended`.
+- Code-scanning alerts API: `0` open alerts after the first hosted baseline.
+- Hosted baseline:
+  - Push run `27002182993`: `CodeQL (javascript-typescript)` and
+    `CodeQL (python)` both succeeded on branch
+    `codex/research-feature-plan-2026-06-05`.
+  - Pull-request run `27002184466`: both language jobs also succeeded on the
+    same head SHA.
+- Default setup remains `not-configured` because this repository now uses
+  advanced setup.
 
-Target policy:
+Policy:
 
-- Add an advanced CodeQL workflow for `javascript` and `python`.
-- Prefer `security-extended` for the first baseline; document any move to
+- Keep advanced CodeQL setup enabled for `javascript-typescript` and `python`.
+- Keep `security-extended` for the first baseline; document any move to
   `security-and-quality` after runtime and false-positive volume are known.
 - Keep generated outputs, `node_modules`, `build`, `mhtml`, and archived
   research/release artifacts out of the scan target.
-- Record first-run findings and triage decisions before making CodeQL a
-  required `main` check.
-- After a clean or fully triaged baseline, add the exact CodeQL check context to
-  branch protection or record why the gate remains advisory-only.
+- Leave CodeQL advisory-only for now. Add exact CodeQL check contexts to branch
+  protection only after the workflow has also succeeded on `main` or after the
+  next PR confirms the required-check names in the protected-branch UI.
+- Treat future CodeQL findings like security bugs: fix true positives, document
+  dismissals with a reason, and avoid blanket suppressions.
 
 ## Secret Scanning
 
