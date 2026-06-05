@@ -678,8 +678,14 @@ means implemented/closed by the build lane.
     same-day slice moved `sponsor.ajay.app` into store-safe
     `optional_host_permissions` and added a popup Grant access banner so
     default-on SponsorBlock can request the shared SponsorBlock/DeArrow origin
-    from an explicit user gesture. The code-side item is complete; manual
-    unpacked Chrome/Firefox smoke coverage remains open.
+    from an explicit user gesture. A fifth same-day slice added
+    `npm run smoke:optional-hosts`, which stages the store-safe Chromium
+    manifest, loads the real popup in a fresh Chromium-family profile, seeds
+    enabled optional enrichment features, and verifies the pre-grant Grant
+    access banner lists all five missing optional origins. Managed Google
+    Chrome on this PC blocks `--load-extension`, so the smoke falls back to
+    Edge. The code-side item is complete; headed native prompt acceptance,
+    denial, and revocation smoke coverage remains open.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,
@@ -700,8 +706,9 @@ means implemented/closed by the build lane.
     targeted permission-helper test for granted/denied/revoked states, and
     `rg -n "optional_host_permissions|permissions.request|permissions.contains|onRemoved|host_permissions" extension build-extension.js scripts tests docs`
     showing the new contract across source, tests, and docs. Manual unpacked
-    Chrome and Firefox store-safe smoke checks should prove each optional
-    feature prompts once, works after grant, and degrades after revoke.
+    `npm run smoke:optional-hosts` proves Chromium pre-grant prompt readiness.
+    Headed Chrome/Edge and Firefox store-safe smoke checks should prove each
+    optional feature prompts once, works after grant, and degrades after revoke.
   - Complexity: M
 
 ### Researcher Queue (Cycle 19 - 2026-06-04)
