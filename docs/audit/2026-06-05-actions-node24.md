@@ -25,9 +25,15 @@ All workflow uses now target the current Node 24-ready major lines observed on
 - `actions/setup-python@v6`
 - `actions/upload-artifact@v7`
 
-The dependency-review and attestation actions were left unchanged because this
-cycle targeted the Node 20-era action majors identified in the roadmap item.
-Full-length SHA pinning remains a separate open hardening item.
+The dependency-review and attestation actions were left unchanged in this cycle
+because it targeted the Node 20-era action majors identified in the roadmap
+item.
+
+Later on 2026-06-05, the follow-up SHA-pinning pass pinned these migrated refs,
+the dependency-review action, release attestation actions, and CodeQL actions to
+full 40-character commits. See
+`docs/audit/2026-06-05-actions-sha-pinning.md` for the final source-side
+workflow-ref contract and remaining hosted repository settings work.
 
 ## External References
 

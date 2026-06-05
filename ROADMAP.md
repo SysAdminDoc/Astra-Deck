@@ -882,12 +882,13 @@ means implemented/closed by the build lane.
   permissions, workflow token defaults, and GitHub Actions supply-chain
   hardening / Dependabot documentation. Detailed notes live in
   `docs/research-cycle-16-actions-sha-pinning.md`.
-- [ ] 🔬🤖🔧 P2 — Pin GitHub Actions to full-length SHAs and restrict allowed action sources
+- [ ] 🔬🤖🔧 P2 — Restrict GitHub Actions sources and require repository SHA-pinning policy
   - Why: Astra Deck has release and validation workflows that rely on
-    GitHub-hosted actions by mutable major tags. The repository currently
+    GitHub-hosted actions. The repository currently
     allows all actions and does not require full-length SHA pins, so future
-    workflow edits can introduce unreviewed action sources and current trusted
-    action tags can still move. This matters most for `Build & Release`, which
+    workflow edits can introduce unreviewed action sources if repository policy
+    is not tightened after the source-side pins land. This matters most for
+    `Build & Release`, which
     grants `contents: write`, `id-token: write`, and `attestations: write` while
     producing release artifacts and attestations.
   - Evidence: `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
@@ -896,34 +897,47 @@ means implemented/closed by the build lane.
     `sha_pinning_required: false`, and no selected-actions URL. `gh api
     repos/SysAdminDoc/Astra-Deck/actions/permissions/workflow --jq .` shows the
     default `GITHUB_TOKEN` permission is already `read` and workflows cannot
-    create or approve PR reviews by default. `rg -n "uses:\s*[^#]+@"
-    .github/workflows` finds 17 external action refs across `validate.yml`,
-    `build.yml`, and `yt-dlp-smoke.yml`, all currently tag-pinned. GitHub's
-    secure-use reference says a full-length commit SHA is the only immutable
-    action reference, and repository settings can require full-length SHA pins.
-    GitHub Actions settings and REST docs also support `allowed_actions:
-    selected` plus `github_owned_allowed`, `verified_allowed`, and
-    `patterns_allowed`; Dependabot supports `github-actions` version updates and
-    same-line version comments for SHA-pinned action refs. [Verified]
+    create or approve PR reviews by default. The original research cycle found
+    17 tag-pinned external action refs across `validate.yml`, `build.yml`, and
+    `yt-dlp-smoke.yml`; after the Node 24, CodeQL, and 2026-06-05 SHA-pinning
+    passes, the feature branch has 20 external `uses:` refs across
+    `validate.yml`, `build.yml`, `yt-dlp-smoke.yml`, and `codeql.yml`, all
+    pinned to full 40-character SHAs with same-line version comments. `rg -n
+    "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)" .github/workflows` now returns
+    no matches. GitHub's secure-use reference says a full-length commit SHA is
+    the only immutable action reference, and repository settings can require
+    full-length SHA pins. GitHub Actions settings and REST docs also support
+    `allowed_actions: selected` plus `github_owned_allowed`,
+    `verified_allowed`, and `patterns_allowed`; Dependabot supports
+    `github-actions` version updates and same-line version comments for
+    SHA-pinned action refs. [Verified]
   - Touches: `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
-    `.github/workflows/yt-dlp-smoke.yml`, `.github/dependabot.yml` if the
-    Actions cadence/comment strategy changes, repository Actions permissions,
-    and `docs/repo-settings.md`.
-  - Acceptance: after the Node 24 action-major migration is complete, every
-    external `uses:` entry is pinned to the full 40-character commit SHA from
-    the action owner's repository, with a same-line version comment that
-    preserves Dependabot update context. Each pin records the upstream tag or
-    release it came from, and the update PR proves `Validate`, `Build & Release`
-    on a tag or dry-run tag, and `yt-dlp Smoke` still pass. Repository Actions
-    permissions are then changed from `allowed_actions: all` to `selected` with
+    `.github/workflows/yt-dlp-smoke.yml`, `.github/workflows/codeql.yml`,
+    `.github/dependabot.yml` if the Actions cadence/comment strategy changes,
+    repository Actions permissions, and `docs/repo-settings.md`.
+  - Acceptance: every external `uses:` entry is pinned to the full
+    40-character commit SHA from the action owner's repository, with a same-line
+    version comment that preserves Dependabot update context. Repository
+    Actions permissions are then changed from `allowed_actions: all` to
+    `selected` with
     GitHub-owned actions allowed and broad verified-creator allowance disabled,
     followed by `sha_pinning_required: true`. Any non-GitHub-owned action added
     later must be explicitly named in `patterns_allowed` by repository, tag, or
     SHA.
+  - Status 2026-06-05: Source-side SHA pinning shipped for `Validate`, `Build &
+    Release`, `yt-dlp Smoke`, and `CodeQL`. Hardening tests now reject mutable
+    tag/branch action refs and pin the resolved upstream commits, including
+    `actions/dependency-review-action` at its real `v5.0.0` release commit.
+    Remaining scope is the repository settings change to `selected` actions and
+    `sha_pinning_required: true`, plus hosted workflow proof after those
+    settings are applied.
   - Verify: `rg -n "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)"
     .github/workflows` returns no mutable major-branch action refs, while
-    `rg -n "uses:\s*[^#]+@[0-9a-f]{40}(\s|$)" .github/workflows` lists every
-    external action. `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
+    `rg -n "uses:\s*[^#]+@[0-9a-f]{40}\s+#\s+v" .github/workflows` lists every
+    external action. `node --test tests/hardening.test.js
+    --test-name-pattern="GitHub workflows pin|CodeQL scans|release manifest
+    generation|validate workflow audits"` passes. `gh api
+    repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
     "{allowed_actions,sha_pinning_required}"` returns `selected` and `true`.
     `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions/selected-actions
     --jq .` shows GitHub-owned actions allowed, verified creators disabled, and
@@ -1102,8 +1116,10 @@ means implemented/closed by the build lane.
     `actions/checkout@v6`, `actions/setup-node@v6`,
     `actions/setup-python@v6`, and `actions/upload-artifact@v7` across
     `validate.yml`, `build.yml`, and `yt-dlp-smoke.yml`. A hardening regression
-    keeps the Node 20-era action majors from returning while the separate
-    full-SHA-pinning item remains open.
+    keeps the Node 20-era action majors from returning. The later 2026-06-05
+    source-side SHA-pinning pass pinned these refs to full commits; repository
+    selected-actions / required-SHA enforcement remains open in the Cycle 16
+    hosted policy item.
 
 ### Researcher Queue (Cycle 12 - 2026-06-04)
 
@@ -1260,9 +1276,9 @@ means implemented/closed by the build lane.
     `astra_downloader/requirements.txt` as JSON, uploads
     `astra-downloader-pip-audit`, and fails the push/PR gate on any known
     vulnerability finding that has not been explicitly ignored. Pull requests
-    also run `actions/dependency-review-action@v5` with moderate-or-higher
-    vulnerability failure and license policy disabled until a maintainer sets
-    one.
+    also run `actions/dependency-review-action` from the pinned `v5.0.0` commit
+    with moderate-or-higher vulnerability failure and license policy disabled
+    until a maintainer sets one.
 
 ### Researcher Queue (Cycle 9 - 2026-06-04)
 

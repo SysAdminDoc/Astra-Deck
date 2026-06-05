@@ -1838,10 +1838,10 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'build.yml must emit a release SBOM into build/');
     assert.match(workflow, /npm run release:manifest/,
         'build.yml must generate SHA256SUMS and release-manifest.json');
-    assert.match(workflow, /actions\/attest-build-provenance@v4/,
-        'tag builds must create build-provenance attestations for CI-built artifacts');
-    assert.match(workflow, /actions\/attest-sbom@v4/,
-        'tag builds must create SBOM attestations for CI-built artifacts');
+    assert.match(workflow, /actions\/attest-build-provenance@[0-9a-f]{40}\s+#\s+v4/,
+        'tag builds must create build-provenance attestations from a pinned v4 commit');
+    assert.match(workflow, /actions\/attest-sbom@[0-9a-f]{40}\s+#\s+v4/,
+        'tag builds must create SBOM attestations from a pinned v4 commit');
     assert.doesNotMatch(workflow, /gh release create/,
         'CI must not publish GitHub Releases because ytkit.pem stays local');
     assert.match(scriptSource, /SHA256SUMS_NAME = 'SHA256SUMS'/,
@@ -1897,35 +1897,41 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     );
 });
 
-test('GitHub workflows use Node 24-ready GitHub-owned action majors', () => {
+test('GitHub workflows pin external actions to full-length SHAs with version comments', () => {
     const workflowDir = path.join(__dirname, '..', '.github', 'workflows');
-    const combined = ['build.yml', 'validate.yml', 'yt-dlp-smoke.yml']
+    const combined = ['build.yml', 'validate.yml', 'yt-dlp-smoke.yml', 'codeql.yml']
         .map((file) => `# ${file}\n${fs.readFileSync(path.join(workflowDir, file), 'utf8')}`)
         .join('\n');
 
-    for (const stale of [
-        'actions/checkout@v4',
-        'actions/setup-node@v4',
-        'actions/setup-python@v5',
-        'actions/upload-artifact@v4'
-    ]) {
-        assert.doesNotMatch(
-            combined,
-            new RegExp(stale.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-            `${stale} is a Node 20-era action major and must stay migrated`
+    assert.doesNotMatch(combined, /uses:\s*[^#\s]+@(v[0-9]+(?:\.[0-9]+)*|main|master)(?:\s|$)/,
+        'workflow actions must not use mutable tag or branch refs after the SHA-pinning pass');
+
+    const useLines = combined.split(/\r?\n/)
+        .filter((line) => /^\s*(?:-\s*)?uses:\s*/.test(line));
+    assert.ok(useLines.length >= 18, 'expected to audit every workflow uses: line');
+    for (const line of useLines) {
+        assert.match(
+            line,
+            /uses:\s*[^#\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+(?:\.[0-9]+)*/,
+            `workflow action line must carry a full SHA plus version comment: ${line.trim()}`
         );
     }
 
-    for (const current of [
-        'actions/checkout@v6',
-        'actions/setup-node@v6',
-        'actions/setup-python@v6',
-        'actions/upload-artifact@v7'
-    ]) {
+    for (const [action, sha] of Object.entries({
+        'actions/checkout': 'df4cb1c069e1874edd31b4311f1884172cec0e10',
+        'actions/setup-node': '48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e',
+        'actions/setup-python': 'a309ff8b426b58ec0e2a45f0f869d46889d02405',
+        'actions/upload-artifact': '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
+        'actions/dependency-review-action': 'a1d282b36b6f3519aa1f3fc636f609c47dddb294',
+        'actions/attest-build-provenance': 'a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32',
+        'actions/attest-sbom': 'c604332985a26aa8cf1bdc465b92731239ec6b9e',
+        'github/codeql-action/init': '8aad20d150bbac5944a9f9d289da16a4b0d87c1e',
+        'github/codeql-action/analyze': '8aad20d150bbac5944a9f9d289da16a4b0d87c1e'
+    })) {
         assert.match(
             combined,
-            new RegExp(current.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-            `${current} should remain present until the SHA-pinning follow-up replaces tag pins`
+            new RegExp(action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '@' + sha),
+            `${action} must stay pinned to its resolved upstream tag commit`
         );
     }
 });
@@ -1940,8 +1946,10 @@ test('CodeQL scans JavaScript and Python with security-extended queries', () => 
 
     assert.match(workflow, /name:\s*CodeQL/, 'workflow must keep the expected name');
     assert.match(workflow, /security-events:\s*write/, 'CodeQL upload needs security-events: write');
-    assert.match(workflow, /github\/codeql-action\/init@v4/, 'CodeQL init should use the supported v4 major');
-    assert.match(workflow, /github\/codeql-action\/analyze@v4/, 'CodeQL analyze should use the supported v4 major');
+    assert.match(workflow, /github\/codeql-action\/init@[0-9a-f]{40}\s+#\s+v4/,
+        'CodeQL init should use the supported v4 commit pin');
+    assert.match(workflow, /github\/codeql-action\/analyze@[0-9a-f]{40}\s+#\s+v4/,
+        'CodeQL analyze should use the supported v4 commit pin');
     assert.match(workflow, /language:\s*javascript-typescript/, 'JavaScript/TypeScript must be scanned');
     assert.match(workflow, /language:\s*python/, 'Python companion code must be scanned');
     assert.match(workflow, /build-mode:\s*none/, 'interpreted languages should use build-mode none');
@@ -8031,8 +8039,8 @@ test('v4.46.0 validate workflow audits Python dependencies and PR dependency cha
     );
     assert.match(workflow, /name:\s*Dependency review[\s\S]*github\.event_name == 'pull_request'/,
         'validate.yml must run dependency review only for pull requests');
-    assert.match(workflow, /actions\/dependency-review-action@v5/,
-        'validate.yml must use the current dependency-review action major');
+    assert.match(workflow, /actions\/dependency-review-action@[0-9a-f]{40}\s+#\s+v5\.0\.0/,
+        'validate.yml must use the current dependency-review action from a pinned v5.0.0 commit');
     assert.match(workflow, /fail-on-severity:\s*moderate/,
         'dependency review must fail moderate-or-higher vulnerable dependency changes');
     assert.match(workflow, /vulnerability-check:\s*true/,

@@ -155,14 +155,17 @@ or maintainer action to confirm.
 - [Verified] Cycle 16 GitHub Actions supply-chain policy pass on 2026-06-04
   found that repository Actions permissions are enabled but broad
   (`allowed_actions: all`) and do not require full-length SHA pins
-  (`sha_pinning_required: false`). Workflows currently use tag-pinned
-  GitHub-owned actions across `validate.yml`, `build.yml`, and
-  `yt-dlp-smoke.yml`; default `GITHUB_TOKEN` permissions are already read-only.
-  ROADMAP now carries a P2 item to complete the Node 24 action-major migration,
-  pin external action refs to full SHAs with Dependabot-friendly version
-  comments, then switch repository Actions permissions to selected sources with
-  SHA pinning required. Detailed evidence lives in
-  `docs/research-cycle-16-actions-sha-pinning.md`.
+  (`sha_pinning_required: false`). Workflows then used tag-pinned GitHub-owned
+  actions across `validate.yml`, `build.yml`, and `yt-dlp-smoke.yml`; default
+  `GITHUB_TOKEN` permissions were already read-only. Cycle 2026-06-05 closed
+  the source-side gap by pinning every external `uses:` ref in `validate.yml`,
+  `build.yml`, `yt-dlp-smoke.yml`, and `codeql.yml` to full 40-character SHAs
+  with same-line version comments, including the real
+  `actions/dependency-review-action` `v5.0.0` release commit. The remaining P2
+  scope is to switch repository Actions permissions to selected sources with
+  SHA pinning required after the branch lands and hosted workflows pass.
+  Detailed evidence lives in `docs/research-cycle-16-actions-sha-pinning.md`
+  and `docs/audit/2026-06-05-actions-sha-pinning.md`.
 - [Verified] Cycle 15 secret-scanning pass on 2026-06-04 found one open GitHub
   secret-scanning alert in the public repository: alert 1, type
   `google_api_key`, created 2026-01-26, unresolved, `publicly_leaked: true`,
@@ -416,9 +419,9 @@ Top remaining opportunities (one-liners):
 3. Run manual unpacked Chrome/Firefox store-safe smoke for runtime optional host
    grants: prompt, grant, denial, revocation, and default-on SponsorBlock's
    Grant access banner. Code-side optional-host handling is in place. [Verified]
-4. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
-   action sources / SHA-pinning policy after the Node 24 action-major migration.
-   [Verified]
+4. Enable selected GitHub Actions sources / repository SHA-pinning policy after
+   the source-side full-SHA workflow refs land and hosted workflows pass.
+   Workflow refs are already pinned on the feature branch. [Verified]
 5. Enable dependency graph / Dependabot alert settings so the PR-only
    Dependency review job can evaluate dependency changes instead of failing on
    repository setup. [Verified]
@@ -555,9 +558,10 @@ Top remaining opportunities (one-liners):
   fallback. [Verified]
 - GitHub Actions policy probe: repository Actions permissions are currently
   `allowed_actions: all` and `sha_pinning_required: false`; workflow defaults
-  keep `GITHUB_TOKEN` read-only and prevent workflow-created PR approvals. The
-  current workflows contain tag-pinned GitHub-owned action refs across
-  `Validate`, `Build & Release`, and `yt-dlp Smoke`. GitHub's secure-use docs
+  keep `GITHUB_TOKEN` read-only and prevent workflow-created PR approvals.
+  Earlier workflows contained tag-pinned GitHub-owned action refs across
+  `Validate`, `Build & Release`, and `yt-dlp Smoke`; Cycle 2026-06-05 pinned
+  those refs plus CodeQL to full 40-character SHAs. GitHub's secure-use docs
   say full-length commit SHAs are the immutable action-reference option, and
   repository settings / REST APIs can require SHA pins and selected action
   sources. [Verified]
@@ -853,10 +857,11 @@ Closed since the 2026-06-03 baseline:
   require code-owner review. ROADMAP P2 now queues `.github/CODEOWNERS` plus a
   clean CODEOWNERS errors API result before enforcement.
 - **GitHub Actions supply chain** [Verified]: default workflow token
-  permissions are read-only, but repository Actions policy still allows all
-  action sources and does not require full-length SHA pins. Current workflow
-  refs are tag-pinned; ROADMAP P2 now queues a post-Node-24 SHA-pinning and
-  selected-actions policy pass.
+  permissions are read-only, and current workflow refs are pinned to full
+  40-character SHAs with same-line version comments. Repository Actions policy
+  still allows all action sources and does not require full-length SHA pins, so
+  ROADMAP P2 now queues the hosted selected-actions and required-SHA policy
+  pass after merge.
 - **Secret scanning** [Verified]: baseline secret scanning and push protection
   are enabled, alert 1 is resolved as `false_positive`, open alert count is `0`,
   and active source/archive snapshots no longer contain Google API-key-shaped
@@ -897,13 +902,9 @@ Closed since the 2026-06-03 baseline:
 - Whether CodeQL should become a required `main` status immediately after it
   succeeds on `main`, or remain advisory for one week to capture false
   positives. [Needs validation]
-- Whether the SHA-pinning follow-up should pin the newly migrated
-  `checkout@v6`, `setup-node@v6`, `setup-python@v6`, and
-  `upload-artifact@v7` majors immediately after a green hosted run, or wait for
-  a Dependabot cadence decision. [Needs validation]
-- Whether GitHub Actions SHA pinning should remain coupled to the Node 24 major
-  migration or land as a separate hardening PR after the action-major update.
-  [Needs validation]
+- Whether GitHub Actions selected-actions / required-SHA enforcement should be
+  flipped through the repository UI or REST API immediately after this branch
+  lands and hosted workflows pass. [Needs validation]
 - Whether Firefox support should move from 128 to 140 to use built-in data
   collection consent cleanly, or keep 128-139 support with a custom
   consent/control page. [Needs validation]

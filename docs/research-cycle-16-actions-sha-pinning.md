@@ -18,6 +18,21 @@ Recommended next item:
 1. P2 - Pin GitHub Actions to full-length SHAs and restrict allowed action
    sources.
 
+Implementation update 2026-06-05:
+
+- Source-side workflow SHA pinning is now complete on the feature branch.
+- `validate.yml`, `build.yml`, `yt-dlp-smoke.yml`, and `codeql.yml` now pin all
+  20 external workflow `uses:` refs to full 40-character commits with same-line
+  version comments.
+- `actions/dependency-review-action` is pinned to `v5.0.0` because no upstream
+  `v5` tag exists.
+- The remaining work is hosted repository policy: change Actions permissions to
+  `allowed_actions: selected`, keep broad verified creators disabled, allow
+  GitHub-owned actions, and enable `sha_pinning_required` after the branch lands
+  and hosted workflow runs pass.
+- Detailed implementation notes live in
+  `docs/audit/2026-06-05-actions-sha-pinning.md`.
+
 ## Evidence Reviewed
 
 Local/current commands inspected:
@@ -108,13 +123,18 @@ The good current state:
   release workflow's required `contents`, `id-token`, and `attestations`
   grants.
 
-The remaining gap:
+The remaining gap at the time of the 2026-06-04 research pass:
 
 - The repository policy still allows every action source.
 - `sha_pinning_required` is disabled.
 - Workflow `uses:` entries are tag-pinned rather than full-SHA pinned.
 - The release workflow is the highest-value place to close this because it has
   write and attestation permissions on tag builds.
+
+After the 2026-06-05 implementation pass, only the hosted repository policy
+portion remains: workflow `uses:` entries are full-SHA pinned, while
+`allowed_actions: selected` and `sha_pinning_required: true` still need to be
+applied after the branch lands and hosted workflows pass.
 
 ## Recommended Roadmap Item
 

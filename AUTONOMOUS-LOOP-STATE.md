@@ -24,8 +24,13 @@
   origins, then surfaced denied/revoked runtime optional-host state in popup
   quick toggles, schema rows, and data-flow labels, then moved the shared
   SponsorBlock/DeArrow host to store-safe runtime optional grants with a popup
-  Grant access banner for already-enabled features. Updated
-  roadmap/completed/audit continuity notes after each cycle.
+  Grant access banner for already-enabled features, then pinned all external
+  GitHub Actions workflow refs in validation, release, yt-dlp smoke, and CodeQL
+  workflows to full-length SHAs with same-line version comments. The
+  dependency-review job now points at the real upstream `v5.0.0` release commit
+  instead of the nonexistent `v5` tag. Updated roadmap/completed/audit
+  continuity notes after each cycle, while leaving repository-level
+  selected-actions and required-SHA settings as a hosted follow-up after merge.
 
 ## Verification
 
@@ -160,6 +165,21 @@
   - Manual unpacked Chrome/Firefox permission-prompt, grant, denial, revocation,
     and default-on SponsorBlock Grant access banner smoke was not run in this
     automation pass.
+- Cycle 14 GitHub Actions SHA-pinning verification passed:
+  - `rg -n "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)" .github/workflows`
+    returned no mutable tag or branch action refs.
+  - `rg -n "uses:\s*[^#]+@[0-9a-f]{40}\s+#\s+v" .github/workflows`
+    listed all 20 workflow action refs.
+  - `node --test tests/hardening.test.js --test-name-pattern="GitHub workflows pin|CodeQL scans|release manifest generation|validate workflow audits"`
+  - `npm test` from the mapped `W:\repos\Astra-Deck` path; a prior UNC-path
+    invocation ran zero tests because `cmd.exe` does not support UNC working
+    directories and was not counted as verification.
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+  - Repository Actions permissions were not changed in this source-side cycle;
+    `allowed_actions: selected` and `sha_pinning_required: true` remain pending
+    until the SHA-clean branch lands and hosted workflows pass.
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -175,3 +195,7 @@
   `main` branch-protection enforcement after merge. Optional-permissions code
   is in place; manual unpacked Chrome/Firefox prompt/grant/deny/revoke smoke
   remains before treating the store-safe permission UX as release-smoked.
+  GitHub Actions workflow refs are now source-side SHA-pinned; repository
+  selected-actions / required-SHA enforcement remains hosted settings work after
+  merge. Locally implementable candidates include repo working-note
+  reconciliation and companion setup/release-asset documentation.

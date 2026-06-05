@@ -39,7 +39,7 @@ Current policy:
 
 ## GitHub Actions Permissions
 
-Current snapshot from 2026-06-04:
+Current repository snapshot from 2026-06-04:
 
 - Actions enabled: yes.
 - Allowed actions policy: `all`.
@@ -47,7 +47,19 @@ Current snapshot from 2026-06-04:
 - Default `GITHUB_TOKEN` workflow permissions: read.
 - Workflow-created PR approvals: disabled.
 
-Target policy after workflow refs are SHA-clean:
+Source-tree status from 2026-06-05:
+
+- `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
+  `.github/workflows/yt-dlp-smoke.yml`, and `.github/workflows/codeql.yml`
+  reference external actions by full 40-character commit SHA with same-line
+  version comments.
+- `actions/dependency-review-action` is pinned to the upstream `v5.0.0` release
+  commit because no upstream `v5` tag exists.
+- `tests/hardening.test.js` rejects mutable tag/branch action refs and pins the
+  resolved action commits.
+
+Target hosted policy after the SHA-clean workflow branch lands and hosted
+workflow runs pass:
 
 - Change allowed actions to `selected`.
 - Allow GitHub-owned actions.
@@ -56,10 +68,10 @@ Target policy after workflow refs are SHA-clean:
   actions or reusable workflows.
 - Require full-length SHA pinning for actions.
 
-Do not enable the SHA-pinning policy before all external `uses:` entries are
-pinned to full 40-character commit SHAs; otherwise existing validation and
-release workflows can be blocked by repository policy before the workflow patch
-lands.
+Do not enable the hosted SHA-pinning policy until this branch has landed on the
+default branch and a fresh hosted `Validate`, `Build & Release` dry-run or tag
+run, `yt-dlp Smoke`, and `CodeQL` run have proved the pinned refs execute under
+the repository's selected-actions policy.
 
 ## Private Vulnerability Reporting
 
