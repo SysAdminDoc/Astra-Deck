@@ -30,6 +30,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: CodeQL advanced setup was added for JavaScript/TypeScript and
+  Python with the `security-extended` suite, generated-output path exclusions,
+  and a hardening regression for the workflow contract. First hosted push and
+  PR baselines succeeded with zero open code-scanning alerts; CodeQL remains
+  advisory-only until protected-branch check names are confirmed on `main` or a
+  follow-up PR.
 - 2026-06-05: Root `SECURITY.md` was published with supported versions,
   private vulnerability reporting instructions, response windows, and
   high-priority vulnerability classes. README, CONTRIBUTING, signing-key
