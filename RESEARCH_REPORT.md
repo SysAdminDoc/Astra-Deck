@@ -45,6 +45,14 @@ or maintainer action to confirm.
   GitHub CODEOWNERS errors API is clean for the pushed feature-branch ref. The
   remaining hosted step is to validate CODEOWNERS on the default branch and
   enable `require_code_owner_reviews` after merge.
+- [Verified] Runtime-optional host permissions are now generated for the
+  default-off store-safe enrichment origins. Store-safe artifacts keep YouTube
+  and default-on SponsorBlock hosts required, move thumbnail, Return YouTube
+  Dislike, and Reddit hosts to `optional_host_permissions`, retain explicit CSP
+  connect-src coverage for those hosts, and request declared optional origins
+  from popup setting writes before persisting enabled state. SponsorBlock and
+  DeArrow remain open because `sponsor.ajay.app` backs the default-on
+  SponsorBlock path.
 
 ## 2026-06-04 Freshness Refresh
 
@@ -102,10 +110,10 @@ or maintainer action to confirm.
   builder has no `optional_host_permissions` path, there is no runtime
   `permissions.request` / `permissions.contains` helper, and tests currently
   require `i.ytimg.com`, SponsorBlock, Return YouTube Dislike, and Reddit hosts
-  in store-safe `host_permissions`. ROADMAP now carries a P2 item to convert
-  eligible enrichment hosts to runtime-granted optional host permissions with
-  denied/revoked UI, diagnostics, CSP, Chrome/Firefox manifest, and regression
-  coverage. Detailed evidence lives in
+  in store-safe `host_permissions`. Cycle 2026-06-05 closed the default-off
+  manifest/helper slice for thumbnails, Return YouTube Dislike, and Reddit;
+  SponsorBlock/DeArrow plus denied/revoked UI and background grant checks remain
+  in the open P2 item. Detailed evidence lives in
   `docs/research-cycle-20-optional-permissions.md`.
 - [Verified] Cycle 19 code-scanning pass on 2026-06-04 found that GitHub
   code scanning is not configured: default setup reports `state:
@@ -401,9 +409,9 @@ Top remaining opportunities (one-liners):
 2. Enable CODEOWNERS enforcement after merge: validate `.github/CODEOWNERS` on
    the default branch, then enable code-owner review in `main` branch
    protection. Source-side ownership coverage is already in place. [Verified]
-3. Convert optional store-safe enrichment hosts to runtime-granted optional
-   host permissions, preserving required YouTube hosts and denied/revoked
-   feature states. [Verified]
+3. Finish runtime-optional host permissions for the remaining default-on shared
+   SponsorBlock/DeArrow origin and denied/revoked state handling. Default-off
+   thumbnail, RYD, and Reddit hosts now generate as optional grants. [Verified]
 4. Pin GitHub Actions workflow refs to full-length SHAs and enable selected
    action sources / SHA-pinning policy after the Node 24 action-major migration.
    [Verified]

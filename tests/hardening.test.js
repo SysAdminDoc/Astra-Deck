@@ -509,6 +509,27 @@ test('popup.js serializes toggle writes to avoid read-merge-write race', () => {
     assert.doesNotMatch(fnBody, /await\s+storageGet\s*\(/, 'writeSetting must not re-read storage per call');
 });
 
+test('popup.js requests declared optional hosts before enabling optional features', () => {
+    assert.match(popupHtmlSource, /core\/data-flow\.js[\s\S]*core\/optional-host-permissions\.js[\s\S]*popup\.js/,
+        'popup must load data-flow and optional-host permissions before popup.js');
+    assert.match(popupSource, /function getDeclaredOptionalHostsForSetting/,
+        'popup.js must map settings to declared optional hosts');
+    assert.match(popupSource, /chrome\?\.runtime\?\.getManifest\?\.\(\)\.optional_host_permissions/,
+        'popup.js must only request hosts declared by the built manifest');
+    assert.match(popupSource, /createOptionalHostPermissions/,
+        'popup.js must use the shared optional host permission helper');
+
+    const fnStart = popupSource.indexOf('async function writeSetting');
+    assert.ok(fnStart > -1, 'writeSetting must exist');
+    const fnBody = popupSource.slice(fnStart, fnStart + 900);
+    assert.match(fnBody, /await requestOptionalHostsForSetting\(key, value\)/,
+        'writeSetting must request optional hosts before persisting enabled state');
+    assert.ok(
+        fnBody.indexOf('requestOptionalHostsForSetting') < fnBody.indexOf('storageSet'),
+        'optional host request must happen before storageSet persists the feature as enabled'
+    );
+});
+
 test('popup.js exposes live result counts and the new data-management controls', () => {
     assert.ok(
         popupSource.includes('function updateResultsState(totalCount, visibleCount, filter)'),
@@ -2424,20 +2445,34 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         JSON.parse(JSON.stringify(baseManifest)), 'github-full');
 
     const storeHosts = storeManifest.host_permissions || [];
+    const storeOptionalHosts = storeManifest.optional_host_permissions || [];
     const fullHosts = fullManifest.host_permissions || [];
+    const fullOptionalHosts = fullManifest.optional_host_permissions || [];
     for (const required of [
         'https://*.youtube.com/*',
         'https://*.youtube-nocookie.com/*',
         'https://youtu.be/*',
-        'https://i.ytimg.com/*',
-        'https://sponsor.ajay.app/*',
-        'https://returnyoutubedislikeapi.com/*',
-        'https://www.reddit.com/*',
-        'https://old.reddit.com/*'
+        'https://sponsor.ajay.app/*'
     ]) {
         assert.ok(storeHosts.includes(required), 'store-safe manifest must include ' + required);
         assert.ok(fullHosts.includes(required), 'github-full manifest must include ' + required);
     }
+
+    for (const optional of [
+        'https://i.ytimg.com/*',
+        'https://returnyoutubedislikeapi.com/*',
+        'https://www.reddit.com/*',
+        'https://old.reddit.com/*'
+    ]) {
+        assert.ok(!storeHosts.includes(optional),
+            'store-safe manifest must not install-time grant optional enrichment host ' + optional);
+        assert.ok(storeOptionalHosts.includes(optional),
+            'store-safe manifest must declare runtime optional host ' + optional);
+        assert.ok(fullHosts.includes(optional),
+            'github-full manifest keeps optional store-safe enrichment host as required: ' + optional);
+    }
+    assert.equal(fullOptionalHosts.length, 0,
+        'github-full optional host decisions are deferred; generated full manifests should not declare optional hosts yet');
 
     for (const fullOnly of [
         'https://api.openai.com/*',
@@ -2461,6 +2496,12 @@ test('build-extension emits distinct store-safe and github-full manifest profile
         'store-safe CSP must exclude Cobalt');
     assert.ok(!storeCsp.includes('http://127.0.0.1:9751'),
         'store-safe CSP must exclude local downloader loopback');
+    assert.ok(storeCsp.includes('https://i.ytimg.com'),
+        'store-safe CSP must keep optional thumbnail host connect-src eligible');
+    assert.ok(storeCsp.includes('https://returnyoutubedislikeapi.com'),
+        'store-safe CSP must keep optional RYD host connect-src eligible');
+    assert.ok(storeCsp.includes('https://www.reddit.com'),
+        'store-safe CSP must keep optional Reddit host connect-src eligible');
     assert.ok(fullCsp.includes('https://api.openai.com'),
         'github-full CSP must include OpenAI');
     assert.ok(fullCsp.includes('https://api.cobalt.tools'),
@@ -2499,12 +2540,51 @@ test('store permission rationale covers live manifest permissions and profile ho
     }
 
     for (const profile of ['store-safe', 'github-full']) {
-        const hosts = builder.getManifestProfileHostPermissions(profile);
+        const hosts = [
+            ...builder.getManifestProfileHostPermissions(profile),
+            ...builder.getManifestProfileOptionalHostPermissions(profile)
+        ];
         for (const host of hosts) {
             assert.ok(rationale.includes('`' + host + '`'),
                 'rationale doc must mention ' + profile + ' host permission ' + host);
         }
     }
+});
+
+test('optional host permission helper supports callback and promise APIs', async () => {
+    delete require.cache[require.resolve('../extension/core/optional-host-permissions.js')];
+    const { createOptionalHostPermissions } = require('../extension/core/optional-host-permissions.js');
+    const callbackApi = {
+        request(payload, cb) {
+            assert.deepEqual(payload, { origins: ['https://i.ytimg.com/*'] });
+            cb(true);
+        },
+        contains(payload, cb) {
+            assert.deepEqual(payload, { origins: ['https://i.ytimg.com/*'] });
+            cb(false);
+        },
+        onAdded: { addListener(listener) { this.listener = listener; } },
+        onRemoved: { addListener(listener) { this.listener = listener; } }
+    };
+    const callbackHelper = createOptionalHostPermissions({
+        permissionsApi: callbackApi,
+        runtimeApi: {}
+    });
+    assert.equal(callbackHelper.isSupported(), true);
+    assert.equal(await callbackHelper.contains(['https://i.ytimg.com/*']), false);
+    assert.equal(await callbackHelper.request(['https://i.ytimg.com/*']), true);
+    assert.equal(callbackHelper.onAdded(() => {}), true);
+    assert.equal(callbackHelper.onRemoved(() => {}), true);
+
+    const promiseHelper = createOptionalHostPermissions({
+        permissionsApi: {
+            request: async () => false,
+            contains: async () => true
+        },
+        runtimeApi: {}
+    });
+    assert.equal(await promiseHelper.contains(['https://returnyoutubedislikeapi.com/*']), true);
+    assert.equal(await promiseHelper.request(['https://returnyoutubedislikeapi.com/*']), false);
 });
 
 test('privacy policy covers store data categories and Firefox consent packet', () => {
@@ -3090,14 +3170,18 @@ test('returnDislike discloses estimated accuracy in the rendered count UI', () =
     }
 });
 
-test('extension manifest now whitelists returnyoutubedislikeapi.com (host_permissions + CSP)', () => {
-    const manifest = JSON.parse(fs.readFileSync(
-        path.join(__dirname, '..', 'extension', 'manifest.json'),
-        'utf8'
-    ));
+test('store-safe manifest makes Return YouTube Dislike a runtime optional host', () => {
+    const builder = require('../build-extension.js');
+    const manifest = builder.patchManifestForBuildProfile(JSON.parse(fs.readFileSync(
+        path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
+    )), 'store-safe');
     assert.ok(
-        (manifest.host_permissions || []).includes('https://returnyoutubedislikeapi.com/*'),
-        'manifest host_permissions must include the RYD API'
+        !(manifest.host_permissions || []).includes('https://returnyoutubedislikeapi.com/*'),
+        'store-safe manifest must not install-time grant the RYD API'
+    );
+    assert.ok(
+        (manifest.optional_host_permissions || []).includes('https://returnyoutubedislikeapi.com/*'),
+        'store-safe manifest must declare the RYD API as runtime optional'
     );
     const csp = manifest.content_security_policy?.extension_pages || '';
     assert.ok(
@@ -5080,6 +5164,7 @@ test('v4.10.0 data-flow catalogue enumerates every external origin', () => {
         assert.ok(Array.isArray(e.requiredByFeatures));
         assert.ok(['no-cookies', 'byo-key', 'local-loopback', 'none'].includes(e.credentialsPolicy));
         assert.ok(['store-safe', 'github-full'].includes(e.profile));
+        assert.ok(['required', 'runtime-optional'].includes(e.hostGrant));
         assert.ok(['safe', 'api', 'local-companion', 'experimental', 'store-risk'].includes(e.riskBand));
     }
     // Sanity: at least the canonical origins are present.
@@ -5114,7 +5199,9 @@ test('v4.10.0 data-flow manifestPermission resolves against the live host_permis
     const core = loadDataFlowModule();
     const df = core.createDataFlow({
         hostPermissions: [
-            'https://*.youtube.com/*',
+            'https://*.youtube.com/*'
+        ],
+        optionalHostPermissions: [
             'https://sponsor.ajay.app/*'
         ]
     });
@@ -5122,10 +5209,12 @@ test('v4.10.0 data-flow manifestPermission resolves against the live host_permis
     const youtube = origins.find((e) => e.origin === 'https://*.youtube.com');
     assert.equal(youtube.manifestPermission, 'https://*.youtube.com/*');
     const sb = origins.find((e) => e.origin === 'https://sponsor.ajay.app');
-    assert.equal(sb.manifestPermission, 'https://sponsor.ajay.app/*');
+    assert.equal(sb.manifestPermission, null);
+    assert.equal(sb.optionalManifestPermission, 'https://sponsor.ajay.app/*');
     // The Reddit origin is not in our injected list — must report null.
     const reddit = origins.find((e) => e.origin === 'https://www.reddit.com');
     assert.equal(reddit.manifestPermission, null);
+    assert.equal(reddit.optionalManifestPermission, null);
 });
 
 test('v4.10.0 data-flow.summarise counts by credentialsPolicy / profile / riskBand', () => {
@@ -5139,11 +5228,12 @@ test('v4.10.0 data-flow.summarise counts by credentialsPolicy / profile / riskBa
     assert.equal((byProfile['store-safe'] || 0) + (byProfile['github-full'] || 0), s.totalCatalogued);
 });
 
-test('v4.10.0 data-flow live manifest host_permissions cover every store-safe catalogued origin', () => {
+test('v4.10.0 data-flow generated store-safe manifest covers required and optional origins', () => {
     const core = loadDataFlowModule();
-    const manifest = JSON.parse(fs.readFileSync(
+    const builder = require('../build-extension.js');
+    const manifest = builder.patchManifestForBuildProfile(JSON.parse(fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'
-    ));
+    )), 'store-safe');
     const df = core.createDataFlow({ manifest });
     const origins = df.getOrigins({});
     for (const e of origins) {
@@ -5152,8 +5242,15 @@ test('v4.10.0 data-flow live manifest host_permissions cover every store-safe ca
         // skip it from this gate (it's covered by host_permissions audits
         // elsewhere) — only validate fixed-host store-safe origins.
         if (e.origin.startsWith('http://127.0.0.1')) continue;
-        assert.notEqual(e.manifestPermission, null,
-            'store-safe origin ' + e.origin + ' must have a matching host_permission in manifest.json');
+        if (e.hostGrant === 'runtime-optional') {
+            assert.equal(e.manifestPermission, null,
+                'runtime-optional store-safe origin ' + e.origin + ' must not have install-time host_permission');
+            assert.notEqual(e.optionalManifestPermission, null,
+                'runtime-optional store-safe origin ' + e.origin + ' must have optional_host_permissions coverage');
+        } else {
+            assert.notEqual(e.manifestPermission, null,
+                'required store-safe origin ' + e.origin + ' must have matching host_permission');
+        }
     }
 });
 
@@ -5235,16 +5332,24 @@ test('v4.12.0 popup.html bundles the v5.0.0 core modules so the panel can render
     const html = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
     );
-    for (const mod of ['core/settings-schema.js', 'core/policy-profile.js', 'core/data-flow.js']) {
+    for (const mod of [
+        'core/settings-schema.js',
+        'core/policy-profile.js',
+        'core/data-flow.js',
+        'core/optional-host-permissions.js'
+    ]) {
         assert.match(html, new RegExp('<script src="' + mod.replace(/\//g, '\\/') + '">'),
             'popup.html must load ' + mod);
     }
     // popup.js must come AFTER the core modules so its renderDataFlowPanel
     // function can rely on window.YTKitCore.createDataFlow.
     const coreIdx = html.lastIndexOf('core/data-flow.js');
+    const optionalHostIdx = html.lastIndexOf('core/optional-host-permissions.js');
     const popupIdx = html.lastIndexOf('popup.js');
     assert.ok(coreIdx < popupIdx,
         'core/data-flow.js must load before popup.js so the factory is available');
+    assert.ok(coreIdx < optionalHostIdx && optionalHostIdx < popupIdx,
+        'optional-host permissions helper must load after data-flow and before popup.js');
 });
 
 test('v4.12.0 popup.js registers data-flow panel refs and uses the live schema setting as the gate', () => {
