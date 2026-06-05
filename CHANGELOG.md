@@ -17,6 +17,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   attestations and maintainer-local public release publication for `ytkit.pem`
   signed CRX assets.
 
+- **GitHub Actions Node 24 migration.** Validation, release, and yt-dlp smoke
+  workflows now use Node 24-ready GitHub-owned action majors:
+  `checkout@v6`, `setup-node@v6`, `setup-python@v6`, and
+  `upload-artifact@v7`. A hardening regression keeps the old Node 20-era
+  action majors from returning before the later SHA-pinning pass.
+
 - **Python companion dependency audit gate.** The `Validate` workflow now runs
   `pip-audit` against `astra_downloader/requirements.txt`, uploads a JSON audit
   artifact for release review, and runs GitHub dependency review on pull

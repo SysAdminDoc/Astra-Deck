@@ -1688,6 +1688,39 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     );
 });
 
+test('GitHub workflows use Node 24-ready GitHub-owned action majors', () => {
+    const workflowDir = path.join(__dirname, '..', '.github', 'workflows');
+    const combined = ['build.yml', 'validate.yml', 'yt-dlp-smoke.yml']
+        .map((file) => `# ${file}\n${fs.readFileSync(path.join(workflowDir, file), 'utf8')}`)
+        .join('\n');
+
+    for (const stale of [
+        'actions/checkout@v4',
+        'actions/setup-node@v4',
+        'actions/setup-python@v5',
+        'actions/upload-artifact@v4'
+    ]) {
+        assert.doesNotMatch(
+            combined,
+            new RegExp(stale.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+            `${stale} is a Node 20-era action major and must stay migrated`
+        );
+    }
+
+    for (const current of [
+        'actions/checkout@v6',
+        'actions/setup-node@v6',
+        'actions/setup-python@v6',
+        'actions/upload-artifact@v7'
+    ]) {
+        assert.match(
+            combined,
+            new RegExp(current.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+            `${current} should remain present until the SHA-pinning follow-up replaces tag pins`
+        );
+    }
+});
+
 test('check-syntax dynamically covers every extension and script JS file', () => {
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'check-syntax.js'),

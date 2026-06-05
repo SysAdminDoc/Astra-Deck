@@ -542,9 +542,11 @@ Top remaining opportunities (one-liners):
   returned block. [Verified]
 - Current workflow action-runtime probe: `gh run view 26953094214 --log` and
   `gh run view 26951406026 --log` both emit GitHub's Node 20 JavaScript action
-  deprecation warning. `.github/workflows/validate.yml`, `build.yml`, and
-  `yt-dlp-smoke.yml` still pin Node 20-era `checkout`, `setup-node`,
-  `setup-python`, and `upload-artifact` action majors. [Verified]
+  deprecation warning on the earlier workflow runs. Cycle 2026-06-05 migrated
+  `.github/workflows/validate.yml`, `build.yml`, and `yt-dlp-smoke.yml` to
+  `actions/checkout@v6`, `actions/setup-node@v6`,
+  `actions/setup-python@v6`, and `actions/upload-artifact@v7`; a hardening
+  regression now blocks the old Node 20-era pins from returning. [Verified]
 - Release contract reconciliation probe: `.github/workflows/build.yml` uploads
   `build/*` as a workflow artifact and creates CI build/SBOM attestations on tag
   refs, while `docs/signing-keys.md` says public GitHub Releases remain a
@@ -862,9 +864,10 @@ Closed since the 2026-06-03 baseline:
 - Whether dependency graph / Dependabot alerts should be enabled alone first, or
   Dependabot security updates should also be enabled in the same settings pass.
   [Needs validation]
-- Whether GitHub Actions migrations should jump to the latest observed majors
-  (`checkout@v6`, `setup-node@v6`, `setup-python@v6`, `upload-artifact@v7`) or
-  the lowest Node 24-ready majors to reduce behavior drift. [Needs validation]
+- Whether the SHA-pinning follow-up should pin the newly migrated
+  `checkout@v6`, `setup-node@v6`, `setup-python@v6`, and
+  `upload-artifact@v7` majors immediately after a green hosted run, or wait for
+  a Dependabot cadence decision. [Needs validation]
 - Whether GitHub Actions SHA pinning should remain coupled to the Node 24 major
   migration or land as a separate hardening PR after the action-major update.
   [Needs validation]

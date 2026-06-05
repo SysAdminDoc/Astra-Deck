@@ -8,7 +8,8 @@
 - Last cycle: 2026-06-05
 - Result: Shipped the retired options-page runtime-copy fix for the AI summary
   missing-key path, then reconciled release automation docs with the
-  maintainer-local public-release contract. Updated roadmap/completed/audit
+  maintainer-local public-release contract, then migrated GitHub-owned workflow
+  action pins to Node 24-ready majors. Updated roadmap/completed/audit
   continuity notes after each cycle.
 
 ## Verification
@@ -22,6 +23,11 @@
 - Cycle 2 release-doc verification passed:
   - `gh release view v4.46.0 --json tagName,targetCommitish,publishedAt,assets,url`
   - `gh run view 26951406026 --json databaseId,event,headBranch,headSha,conclusion,status,url,jobs`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+- Cycle 3 Node 24 action-major verification passed:
+  - `node --test tests/hardening.test.js --test-name-pattern="GitHub workflows use Node 24-ready"`
   - `npm test`
   - `npm run check`
   - `npm run build`

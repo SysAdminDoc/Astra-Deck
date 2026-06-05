@@ -984,7 +984,7 @@ means implemented/closed by the build lane.
   open Dependabot PRs, GitHub's Node 20 runner deprecation notice, and current
   GitHub-owned action release majors. Detailed notes live in
   `docs/research-cycle-13-actions-node24-readiness.md`.
-- [ ] 🔬🤖 P1 — Migrate GitHub Actions workflows to Node 24 action majors
+- [x] 🔬🤖 P1 — Migrate GitHub Actions workflows to Node 24 action majors
   - Why: GitHub-hosted runners start defaulting JavaScript actions to Node 24
     on 2026-06-16 and remove Node 20 later in 2026. Astra Deck's current
     validation and release jobs are green, but they already emit Node 20
@@ -1025,6 +1025,12 @@ means implemented/closed by the build lane.
     `Build & Release`, or `yt-dlp Smoke`, and confirm the artifact/SBOM upload
     paths still publish expected artifacts after the upload-artifact migration.
   - Complexity: S
+  - Status 2026-06-05: delivered. Workflow pins now use
+    `actions/checkout@v6`, `actions/setup-node@v6`,
+    `actions/setup-python@v6`, and `actions/upload-artifact@v7` across
+    `validate.yml`, `build.yml`, and `yt-dlp-smoke.yml`. A hardening regression
+    keeps the Node 20-era action majors from returning while the separate
+    full-SHA-pinning item remains open.
 
 ### Researcher Queue (Cycle 12 - 2026-06-04)
 
