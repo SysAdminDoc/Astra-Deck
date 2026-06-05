@@ -30,6 +30,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-05: Astra Downloader self-update release tooling now has a
+  `release:stage-companion` path, companion-required manifest mode, generated
+  EXE sidecar coverage, and strict updater failure when the sidecar is missing.
+  A real PyInstaller EXE was staged into `build/` and verified locally; public
+  release upload and live `gh release download` proof remain open release
+  actions.
 - 2026-06-05: CodeQL advanced setup was added for JavaScript/TypeScript and
   Python with the `security-extended` suite, generated-output path exclusions,
   and a hardening regression for the workflow contract. First hosted push and

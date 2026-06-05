@@ -14,8 +14,10 @@
   resolved the Google API-key secret-scanning alert without exposing the value,
   then published the security disclosure policy and enabled private
   vulnerability reporting, then added and baseline-verified CodeQL
-  JavaScript/TypeScript plus Python code scanning. Updated
-  roadmap/completed/audit continuity notes after each cycle.
+  JavaScript/TypeScript plus Python code scanning, then hardened the
+  Astra Downloader self-update release-channel contract up to the public
+  release-upload boundary. Updated roadmap/completed/audit continuity notes
+  after each cycle.
 
 ## Verification
 
@@ -74,6 +76,22 @@
   - `npm test`
   - `npm run check`
   - `npm run build`
+- Cycle 8 companion release-channel verification passed for the code-side
+  contract:
+  - `python -m pytest astra_downloader/test_astra_downloader.py -q -k "CompanionUpdateEndpointTests or sha256"`
+  - `node --test tests/hardening.test.js --test-name-pattern="release manifest generation"`
+  - missing-EXE `node scripts/generate-release-manifest.js --require-companion`
+    failed as expected
+  - temporary MZ-header EXE staging plus `npm run release:manifest --
+    --require-companion` generated matching companion sidecar/manifest/checksum
+    entries
+  - `python astra_downloader/build.py` produced a real 44.7 MB
+    `AstraDownloader.exe`; staging it and rerunning the companion-required
+    manifest check produced matching entries
+  - `gh release view v4.46.0 --json tagName,targetCommitish,publishedAt,assets,url`
+    confirmed the live release still lacks `AstraDownloader.exe` and
+    `AstraDownloader.exe.sha256`; public release upload/dry-run was not
+    performed by this automation pass
 - Rendered popup audit note: the in-app Browser refused direct `file://` access
   to `extension/popup.html` under its URL policy, so no browser screenshot QA
   was claimed for this cycle. The popup accessibility and contrast gates passed
@@ -83,6 +101,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 7, the next top
-  research-backed P1 item is the Astra Downloader self-update release-channel
-  proof, followed by CODEOWNERS and optional-permissions hardening.
+  implementable without exposing secrets. As of Cycle 8, the remaining
+  companion release-channel step is maintainer upload/live dry-run of the public
+  EXE and sidecar. Continue with CODEOWNERS and optional-permissions hardening
+  when public release mutation is out of scope for the automation pass.

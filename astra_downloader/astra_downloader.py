@@ -1329,14 +1329,9 @@ def _run_companion_self_update(restart=True):
             target_asset='AstraDownloader.exe',
             timeout=15,
         )
-        hash_verified = verify_file_sha256(update_path, expected_hash)
-        if expected_hash and not hash_verified:
-            raise RuntimeError('SHA-256 verification failed for companion update')
         if not expected_hash:
-            write_persistent_log(
-                'Companion update SHA-256 sidecar unavailable; '
-                'proceeding with MZ + size validation only.'
-            )
+            raise RuntimeError('SHA-256 sidecar unavailable for companion update')
+        verify_file_sha256(update_path, expected_hash)
         schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
         if restart:
             schedule_companion_process_exit()

@@ -247,12 +247,28 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
    (or rely on the default local-key path above).
 5. Emit the release SBOM:
    `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`.
-6. Generate checksums and manifest: `npm run release:manifest`.
-7. Verify `build/SHA256SUMS` names every uploaded artifact and that
+6. If this release is intended to carry an Astra Downloader self-update payload
+   or bumps `astra_downloader.APP_VERSION`, build and stage the companion EXE
+   after the extension build has populated `build/`:
+   - `py -3.12 astra_downloader/build.py`
+   - `npm run release:stage-companion -- .\AstraDownloader.exe`
+   - `npm run release:manifest -- --require-companion`
+   The companion updater currently downloads
+   `/releases/latest/download/AstraDownloader.exe`, so the EXE and sidecar
+   must attach to the same latest product release unless the update URLs change.
+7. Otherwise, generate checksums and manifest: `npm run release:manifest`.
+8. Verify `build/SHA256SUMS` names every uploaded artifact and that
    `build/release-manifest.json` marks `localSigningRequired: true`.
-8. Create or update the GitHub Release from local `build/*` assets.
-9. After upload, compare `gh release view <tag> --json assets` digest values
+   For companion releases, also verify `AstraDownloader.exe`,
+   `AstraDownloader.exe.sha256`, and `companionUpdateRequired: true`.
+9. Create or update the GitHub Release from local `build/*` assets.
+10. After upload, compare `gh release view <tag> --json assets` digest values
    against `build/SHA256SUMS`.
+11. Before merging or tagging a companion `APP_VERSION` bump, download
+    `AstraDownloader.exe` and `AstraDownloader.exe.sha256` from the target
+    release and compare the local hash to the sidecar. Do not advance
+    `APP_VERSION` above the deployed companion release until that dry-run
+    succeeds.
 
 ## 9. CWS / AMO publication paths
 
