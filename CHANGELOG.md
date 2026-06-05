@@ -6,6 +6,16 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **In-page overlay accessibility gate added.** `npm run check` now runs a new
+  `npm run audit:overlays` static gate for runtime-generated overlays beyond
+  the popup. The gate covers toast live-region semantics, downloader install /
+  options / health / history surfaces, transcript viewer/search, video notes,
+  and subscription group toolbar/digest/modal controls, with mutation canaries
+  for unlabeled close buttons, missing `:focus-visible`, and sub-24px targets.
+  Generated overlay controls gained missing region/dialog names, polite status
+  labels, accessible action names, focus-visible rules, and explicit target
+  size floors where needed.
+
 - **Repo working notes reconciled.** `AGENTS.md` now points first-read workers at
   tracked loop/planning/audit files, describes where to find protected-main and
   maintainer-local release policy, states that ignored `CLAUDE.md` is optional

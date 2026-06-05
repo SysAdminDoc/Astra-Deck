@@ -98,7 +98,24 @@ Open Astra Deck's in-page settings panel (gear icon).
 
 ---
 
-## 6. Known limitations to document, not regress
+## 6. Automated overlay gate
+
+Run `npm run audit:overlays` before manual smoke when changing in-page
+surfaces. The static gate verifies generated-overlay contracts for:
+
+- Toast DOM and inline fallback live-region semantics.
+- Download options dialog, Astra Downloader install prompt, downloader
+  health pills, and recent-downloads history panel.
+- Transcript viewer, Transcript search dialog, and per-video notes panel.
+- Subscription group toolbar, Subscription group digest, and new-group
+  modal controls.
+
+Manual smoke still checks announcement quality and browser/screen-reader
+differences that static source checks cannot prove.
+
+---
+
+## 7. Known limitations to document, not regress
 
 - **YouTube's own controls are not in scope.** Astra Deck modifies the
   YouTube DOM; YT's own player chrome a11y is upstream's problem.
@@ -110,7 +127,7 @@ Open Astra Deck's in-page settings panel (gear icon).
 
 ---
 
-## 7. Filing a bug report
+## 8. Filing a bug report
 
 Failures from this checklist file as `area: a11y` GitHub issues with:
 

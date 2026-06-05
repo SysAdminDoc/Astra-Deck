@@ -20567,12 +20567,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-video-notes-name{font:700 14px/1.2 system-ui;color:#fff;}
                     .ytkit-video-notes-status{margin:0;color:rgba(255,255,255,0.58);font:12px/1.35 system-ui;}
                     .ytkit-video-notes-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
-                    .ytkit-video-notes-actions button{padding:6px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:700 12px/1 system-ui;cursor:pointer;}
+                    .ytkit-video-notes-actions button{min-height:30px;padding:6px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:700 12px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-video-notes-actions button:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-video-notes-actions button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(59,130,246,0.28);}
                     .ytkit-video-notes-actions button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.34);color:#bbf7d0;}
                     .ytkit-video-notes-actions button[data-action="delete"]{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.32);color:#fecaca;}
                     .ytkit-video-notes-input{display:block;width:100%;min-height:140px;resize:vertical;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.22);color:#f8fafc;font:13px/1.5 system-ui;outline:none;}
-                    .ytkit-video-notes-input:focus{border-color:rgba(59,130,246,0.55);box-shadow:0 0 0 2px rgba(59,130,246,0.16);}
+                    .ytkit-video-notes-input:focus,.ytkit-video-notes-input:focus-visible{border-color:rgba(59,130,246,0.55);box-shadow:0 0 0 2px rgba(59,130,246,0.16);}
                     .ytkit-video-notes-footer{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:rgba(255,255,255,0.48);font:11px/1.3 system-ui;}
                     .ytkit-video-notes-count{font-variant-numeric:tabular-nums;}
                 `, 'video-notes');
@@ -20736,6 +20737,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const status = document.createElement('p');
                 status.className = 'ytkit-video-notes-status';
                 status.textContent = current ? 'Saved locally.' : 'No note saved for this video.';
+                status.setAttribute('role', 'status');
+                status.setAttribute('aria-live', 'polite');
                 this._statusEl = status;
                 titleWrap.append(eyebrow, title, status);
 
@@ -20745,11 +20748,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
                 exportBtn.textContent = 'Export Notes';
+                exportBtn.setAttribute('aria-label', 'Export all video notes');
                 exportBtn.addEventListener('click', () => this._exportNotes());
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
                 deleteBtn.dataset.action = 'delete';
                 deleteBtn.textContent = 'Delete';
+                deleteBtn.setAttribute('aria-label', 'Delete the note for this video');
                 deleteBtn.addEventListener('click', () => this._deleteCurrentNote());
                 actions.append(exportBtn, deleteBtn);
                 header.append(titleWrap, actions);
@@ -20791,6 +20796,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 document.querySelectorAll('.ytkit-video-notes-container').forEach(el => el.remove());
                 this._container = document.createElement('section');
                 this._container.className = 'ytkit-video-notes-container';
+                this._container.setAttribute('role', 'region');
                 this._container.setAttribute('aria-label', 'Per-video notes');
                 const bookmarkPanel = target.querySelector('.ytkit-bookmarks-container');
                 if (bookmarkPanel?.nextSibling) target.insertBefore(this._container, bookmarkPanel.nextSibling);
@@ -22025,6 +22031,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('div');
                 panel.id = 'ytkit-transcript-panel';
                 panel.className = 'ytkit-transcript-panel';
+                panel.setAttribute('role', 'region');
+                panel.setAttribute('aria-labelledby', 'ytkit-transcript-title');
 
                 const header = document.createElement('div');
                 header.className = 'ytkit-transcript-header';
@@ -22034,6 +22042,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 eyebrow.className = 'ytkit-transcript-eyebrow';
                 eyebrow.textContent = 'Captions & Exports';
                 const title = document.createElement('span');
+                title.id = 'ytkit-transcript-title';
                 title.className = 'ytkit-transcript-title';
                 title.textContent = 'Transcript';
                 heading.appendChild(eyebrow);
@@ -22070,6 +22079,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     b.className = 'ytkit-transcript-export__btn';
                     b.textContent = label;
                     b.title = title;
+                    b.setAttribute('aria-label', title);
                     b.addEventListener('click', handler);
                     return b;
                 };
@@ -30824,7 +30834,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
                     .ytkit-download-health{display:inline-flex;gap:6px;align-items:center;margin-left:8px;font:600 11px/1 system-ui;}
-                    .ytkit-download-health__pill{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);border:1px solid rgba(255,255,255,0.08);font-variant-numeric:tabular-nums;}
+                    .ytkit-download-health__pill{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.78);border:1px solid rgba(255,255,255,0.08);font-variant-numeric:tabular-nums;}
                     .ytkit-download-health__pill[data-tone="ok"]{background:rgba(34,197,94,0.12);color:#bbf7d0;border-color:rgba(34,197,94,0.32);}
                     .ytkit-download-health__pill[data-tone="warn"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
                     .ytkit-download-health__pill[data-tone="err"]{background:rgba(239,68,68,0.14);color:#fecaca;border-color:rgba(239,68,68,0.36);}
@@ -30852,6 +30862,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 pill.className = 'ytkit-download-health__pill';
                 pill.dataset.tone = tone;
                 pill.textContent = `${label}: ${value}`;
+                pill.setAttribute('aria-label', `${label} ${value}`);
                 return pill;
             },
 
@@ -30914,6 +30925,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._container = document.createElement('span');
                 this._container.className = 'ytkit-download-health';
                 this._container.setAttribute('role', 'status');
+                this._container.setAttribute('aria-live', 'polite');
+                this._container.setAttribute('aria-label', 'Downloader health');
                 anchor.insertAdjacentElement('afterend', this._container);
             },
 
@@ -31229,8 +31242,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-dl-history-panel li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;}
                     .ytkit-dl-history-panel .meta{color:rgba(255,255,255,0.55);font-size:11px;font-variant-numeric:tabular-nums;}
                     .ytkit-dl-history-panel__empty{color:rgba(255,255,255,0.6);font-style:italic;}
-                    .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
-                    .ytkit-dl-history-btn:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-dl-history-panel__close{position:absolute;top:8px;right:8px;min-height:28px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;}
+                    .ytkit-dl-history-btn{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 12px;margin-left:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-dl-history-btn:hover,.ytkit-dl-history-panel__close:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-dl-history-btn:focus-visible,.ytkit-dl-history-panel__close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
                 `, 'dl-history-panel');
             },
 
@@ -31255,6 +31270,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-dl-history-panel';
                 panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', 'Recent downloads');
                 const h = document.createElement('h4');
                 h.textContent = 'Recent Downloads';
                 panel.appendChild(h);
@@ -31308,8 +31324,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const close = document.createElement('button');
                 close.type = 'button';
-                close.style.cssText = 'position:absolute;top:8px;right:8px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;';
+                close.className = 'ytkit-dl-history-panel__close';
                 close.textContent = 'Close';
+                close.setAttribute('aria-label', 'Close recent downloads');
                 close.addEventListener('click', () => { panel.remove(); this._panel = null; });
                 panel.appendChild(close);
             },
@@ -31323,6 +31340,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn.className = 'ytkit-dl-history-btn';
                 this._btn.textContent = 'History';
                 this._btn.title = 'View recent downloads';
+                this._btn.setAttribute('aria-label', 'View recent downloads');
                 this._btn.addEventListener('click', () => this._open());
                 anchor.insertAdjacentElement('afterend', this._btn);
             },
@@ -31963,15 +31981,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement = injectStyle(`
                     .ytkit-sub-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
                     .ytkit-sub-toolbar__label{font:600 11px/1 system-ui;color:rgba(255,255,255,0.55);letter-spacing:.04em;text-transform:uppercase;}
-                    .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-toolbar select,.ytkit-sub-toolbar button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#e5e7eb;font:600 12px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-toolbar button:hover{background:rgba(255,255,255,0.1);}
+                    .ytkit-sub-toolbar select:focus-visible,.ytkit-sub-toolbar button:focus-visible,.ytkit-sub-group-chip:focus-visible,.ytkit-sub-digest-close:focus-visible,.ytkit-sub-digest-row button:focus-visible,.ytkit-sub-group-dialog button:focus-visible,.ytkit-sub-group-dialog input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-sub-toolbar button[data-action="export"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);}
                     .ytkit-sub-toolbar button[data-action="scan-stale"]{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.32);color:#bfdbfe;}
                     .ytkit-sub-toolbar button[data-action="digest"]{background:rgba(14,165,233,0.12);border-color:rgba(14,165,233,0.32);color:#bae6fd;}
                     .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.34);color:#fde68a;}
                     .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#bbf7d0;}
                     .ytkit-sub-toolbar button[disabled]{opacity:.45;cursor:not-allowed;}
-                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-group-chip{display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:4px 10px;border-radius:6px;background:rgba(124,58,237,0.16);border:1px solid rgba(124,58,237,0.32);color:#e9d5ff;font:600 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
                     .ytkit-sub-group-chip[data-depth="1"]{margin-left:10px;background:rgba(59,130,246,0.13);border-color:rgba(59,130,246,0.28);color:#bfdbfe;}
                     .ytkit-sub-new-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;background:#22c55e;color:#022c14;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
@@ -31979,8 +31998,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-digest-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
                     .ytkit-sub-digest-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
                     .ytkit-sub-digest-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
-                    .ytkit-sub-digest-close,.ytkit-sub-digest-row button{padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;}
+                    .ytkit-sub-digest-close,.ytkit-sub-digest-row button{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-sub-digest-close:hover,.ytkit-sub-digest-row button:hover{background:rgba(255,255,255,0.08);}
+                    .ytkit-sub-group-dialog input{min-height:34px;outline:none;}
+                    .ytkit-sub-group-dialog button{min-height:30px;outline:none;touch-action:manipulation;}
                     .ytkit-sub-digest-list{display:flex;flex-direction:column;gap:6px;}
                     .ytkit-sub-digest-row{display:grid;grid-template-columns:minmax(160px,1fr) auto auto auto;align-items:center;gap:8px;padding:8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);}
                     .ytkit-sub-digest-row[data-depth="1"]{margin-left:16px;}
@@ -32401,6 +32422,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 close.type = 'button';
                 close.className = 'ytkit-sub-digest-close';
                 close.textContent = 'Close';
+                close.setAttribute('aria-label', 'Close group notifications digest');
                 close.addEventListener('click', () => this._closeDigestPanel());
                 head.append(titleWrap, close);
 
@@ -32425,10 +32447,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     mark.type = 'button';
                     mark.textContent = 'Mark read';
                     mark.disabled = entry.newVideos === 0;
+                    mark.setAttribute('aria-label', `Mark ${entry.name} digest as read`);
                     mark.addEventListener('click', () => this._markGroupDigestRead(entry.groupId || ''));
                     const view = document.createElement('button');
                     view.type = 'button';
                     view.textContent = 'View';
+                    view.setAttribute('aria-label', `View ${entry.name} subscriptions`);
                     view.addEventListener('click', () => {
                         this._activeGroupId = entry.groupId || '';
                         this._renderToolbar();
@@ -32792,6 +32816,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._toolbar?.remove();
                 const bar = document.createElement('div');
                 bar.className = 'ytkit-sub-toolbar';
+                bar.setAttribute('role', 'toolbar');
+                bar.setAttribute('aria-label', 'Subscription group controls');
 
                 const groupLabel = document.createElement('span');
                 groupLabel.className = 'ytkit-sub-toolbar__label';
@@ -32805,6 +32831,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 allChip.className = 'ytkit-sub-group-chip';
                 allChip.dataset.active = this._activeGroupId ? '0' : '1';
                 allChip.textContent = 'All';
+                allChip.setAttribute('aria-pressed', String(!this._activeGroupId));
+                allChip.setAttribute('aria-label', 'Show all subscriptions');
                 allChip.addEventListener('click', () => {
                     this._activeGroupId = '';
                     this._renderToolbar();
@@ -32823,11 +32851,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     chip.type = 'button';
                     chip.className = 'ytkit-sub-group-chip';
                     chip.dataset.active = this._activeGroupId === id ? '1' : '0';
+                    chip.setAttribute('aria-pressed', String(this._activeGroupId === id));
                     chip.dataset.depth = String(depth);
                     chip.style.borderColor = group.color || '#7c3aed';
+                    const groupName = group.name || id;
                     const tagSuffix = aiTagData[id]?.tags?.length ? ` · ${aiTagData[id].tags.slice(0, 3).join(' ')}` : '';
                     const prefix = depth ? '- ' : '';
-                    chip.textContent = `${prefix}${group.name || id} (${group.channelIds?.length || 0})${tagSuffix}`;
+                    chip.textContent = `${prefix}${groupName} (${group.channelIds?.length || 0})${tagSuffix}`;
+                    chip.setAttribute('aria-label', `${groupName}. ${group.channelIds?.length || 0} channel${group.channelIds?.length === 1 ? '' : 's'}${depth ? '. Subgroup' : ''}`);
                     if (aiTagData[id]?.tags?.length) {
                         chip.title = `AI tags: ${aiTagData[id].tags.join(', ')} · Shift+click to regenerate`;
                     } else if (appState?.settings?.subscriptionAiTags) {
@@ -32856,6 +32887,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const newBtn = document.createElement('button');
                 newBtn.type = 'button';
                 newBtn.textContent = '+ Group';
+                newBtn.setAttribute('aria-label', 'Create subscription group');
                 newBtn.addEventListener('click', () => this._showNewGroupDialog(newBtn));
                 bar.appendChild(newBtn);
 
@@ -32863,6 +32895,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const subBtn = document.createElement('button');
                     subBtn.type = 'button';
                     subBtn.textContent = '+ Subgroup';
+                    subBtn.setAttribute('aria-label', 'Create subscription subgroup');
                     subBtn.addEventListener('click', () => this._showNewGroupDialog(subBtn, this._activeGroupId));
                     bar.appendChild(subBtn);
                 }
@@ -32873,6 +32906,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 bar.appendChild(sortLabel);
 
                 const sortSelect = document.createElement('select');
+                sortSelect.setAttribute('aria-label', 'Sort subscriptions');
                 const activeSortMode = this._getActiveSortMode(groups);
                 for (const [v, label] of [
                     ['default', 'YouTube default'],
@@ -32898,6 +32932,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 digestBtn.type = 'button';
                 digestBtn.dataset.action = 'digest';
                 digestBtn.textContent = 'Digest';
+                digestBtn.setAttribute('aria-label', 'Open group notifications digest');
                 digestBtn.addEventListener('click', () => this._toggleDigestPanel());
                 bar.appendChild(digestBtn);
 
@@ -32905,12 +32940,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
                 exportBtn.textContent = 'Export';
+                exportBtn.setAttribute('aria-label', 'Export subscription groups');
                 exportBtn.addEventListener('click', () => this._exportGroups());
                 bar.appendChild(exportBtn);
 
                 const importBtn = document.createElement('button');
                 importBtn.type = 'button';
                 importBtn.textContent = 'Import';
+                importBtn.setAttribute('aria-label', 'Import subscription groups');
                 importBtn.addEventListener('click', () => {
                     const inp = document.createElement('input');
                     inp.type = 'file';
@@ -32933,6 +32970,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 scanBtn.type = 'button';
                 scanBtn.dataset.action = 'scan-stale';
                 scanBtn.textContent = 'Scan Stale';
+                scanBtn.setAttribute('aria-label', 'Scan rendered subscriptions for stale channels');
                 scanBtn.addEventListener('click', () => {
                     const candidates = this._renderDeadChannelMarkers();
                     if (typeof showToast === 'function') {
@@ -32949,6 +32987,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 stageBtn.dataset.action = 'stage-unsubscribe';
                 stageBtn.textContent = 'Stage Stale';
                 stageBtn.title = 'Stage rendered stale channels for review. No YouTube unsubscribe buttons are clicked.';
+                stageBtn.setAttribute('aria-label', 'Stage rendered stale channels for unsubscribe review');
                 stageBtn.addEventListener('click', () => this._stageDeadChannelUnsubscribes());
                 bar.appendChild(stageBtn);
 
@@ -32958,6 +32997,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     undoStageBtn.type = 'button';
                     undoStageBtn.dataset.action = 'undo-staged-unsubscribe';
                     undoStageBtn.textContent = `Undo Staged (${stagedCount})`;
+                    undoStageBtn.setAttribute('aria-label', `Undo ${stagedCount} staged unsubscribe ${stagedCount === 1 ? 'item' : 'items'}`);
                     undoStageBtn.addEventListener('click', () => this._undoStagedUnsubscribes(Object.keys(this._readUnsubscribeStaging())));
                     bar.appendChild(undoStageBtn);
                 }
@@ -33510,18 +33550,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _ensureStyles() {
                 if (this._styleElement) return;
                 this._styleElement = injectStyle(`
-                    .ytkit-transcript-search-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(124,58,237,0.32);background:rgba(124,58,237,0.12);color:#e9d5ff;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-transcript-search-btn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(124,58,237,0.32);background:rgba(124,58,237,0.12);color:#e9d5ff;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-transcript-search-btn:hover{background:rgba(124,58,237,0.22);}
+                    .ytkit-transcript-search-btn:focus-visible,.ytkit-transcript-search-panel input:focus-visible,.ytkit-transcript-search-panel__footer button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-transcript-search-panel{position:fixed;right:24px;top:80px;z-index:9000;width:520px;max-height:65vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
                     .ytkit-transcript-search-panel h4{margin:0 0 8px;font-size:14px;font-weight:700;color:#fafafa;}
-                    .ytkit-transcript-search-panel input{width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;}
+                    .ytkit-transcript-search-panel input{width:100%;min-height:34px;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;font:13px system-ui;outline:none;}
                     .ytkit-transcript-search-panel ul{list-style:none;margin:10px 0 0;padding:0;}
                     .ytkit-transcript-search-panel li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
                     .ytkit-transcript-search-panel li a{color:#a78bfa;text-decoration:none;font-weight:600;}
                     .ytkit-transcript-search-panel li a:hover{text-decoration:underline;}
                     .ytkit-transcript-search-panel .meta{display:block;margin-top:3px;font-size:11px;color:rgba(255,255,255,0.55);}
                     .ytkit-transcript-search-panel__footer{margin-top:12px;display:flex;justify-content:space-between;gap:8px;}
-                    .ytkit-transcript-search-panel__footer button{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px system-ui;cursor:pointer;}
+                    .ytkit-transcript-search-panel__footer button{min-height:30px;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#e5e7eb;font:600 12px system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-transcript-search-panel__footer button:hover{background:rgba(255,255,255,0.1);}
                     .ytkit-transcript-search-panel__footer button[data-danger="1"]{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.36);color:#fecaca;}
                 `, 'transcript-search-panel');
@@ -33585,6 +33626,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const panel = document.createElement('div');
                 panel.className = 'ytkit-transcript-search-panel';
                 panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', 'Search local transcript index');
                 const h = document.createElement('h4');
                 h.textContent = 'Search local transcript index';
                 panel.appendChild(h);
@@ -33605,11 +33647,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const closeBtn = document.createElement('button');
                 closeBtn.type = 'button';
                 closeBtn.textContent = 'Close';
+                closeBtn.setAttribute('aria-label', 'Close transcript search');
                 closeBtn.addEventListener('click', () => { panel.remove(); this._panel = null; });
                 const clearBtn = document.createElement('button');
                 clearBtn.type = 'button';
                 clearBtn.dataset.danger = '1';
                 clearBtn.textContent = 'Clear local index';
+                clearBtn.setAttribute('aria-label', 'Clear local transcript index');
                 clearBtn.addEventListener('click', async () => {
                     if (typeof window.__ytkitClearTranscriptIndex === 'function') {
                         await window.__ytkitClearTranscriptIndex();
@@ -33620,6 +33664,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
                 footer.append(closeBtn, clearBtn);
                 panel.appendChild(footer);
+                panel.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        panel.remove();
+                        this._panel = null;
+                    }
+                });
                 document.body.appendChild(panel);
                 this._panel = panel;
                 setTimeout(() => input.focus(), 50);
@@ -33634,6 +33685,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn.type = 'button';
                 this._btn.className = 'ytkit-transcript-search-btn';
                 this._btn.textContent = 'Search transcripts';
+                this._btn.setAttribute('aria-label', 'Search local transcript index');
                 this._btn.addEventListener('click', () => this._renderPanel());
                 anchor.insertAdjacentElement('afterend', this._btn);
             },
@@ -42927,6 +42979,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-dl-popup__dir-btn {
             appearance: none;
             -webkit-appearance: none;
+            min-height: 28px;
             padding: 4px 11px;
             border-radius: 7px;
             border: 1px solid rgba(255,255,255,0.1);
@@ -42960,6 +43013,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             -webkit-appearance: none;
             position: relative;
             width: 100%;
+            min-height: 36px;
             padding: 11px 0;
             border-radius: 11px;
             border: 1px solid rgba(255,130,100,0.5);
@@ -44424,6 +44478,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             display: flex;
             gap: 10px;
             width: 100%;
+            min-height: 32px;
             padding: 7px 8px;
             border-radius: 10px;
             border: none;

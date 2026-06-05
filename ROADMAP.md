@@ -1798,7 +1798,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     companion `/update` bridge, and the download history/health panels show
     explicit unreachable states. Hardening coverage pins the welcome card,
     prompt recovery, update action, health, and history-offline paths.
-- [ ] P2 — WCAG 2.2 AA audit pass for in-page overlays (beyond the popup)
+- [x] P2 — WCAG 2.2 AA audit pass for in-page overlays (beyond the popup)
   - Why: `audit:a11y` and `audit:contrast` gate the popup, but the in-page
     overlays (theater split, transcript, notes, subscription manager, toasts) are
     not under an automated a11y gate. WCAG 2.2 AA adds focus-appearance and
@@ -1828,7 +1828,9 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     - Toasts keep `role="status"` / `aria-live="polite"` for informational
       messages, `role="alert"` / assertive live regions for errors, focusable
       actions, and no dialog-style announcement on auto-dismiss.
-  - Touches: `scripts/`, `tests/`, overlay render paths in `features/*`.
+  - Touches: `scripts/`, `tests/`, `docs/`, `package.json`,
+    `extension/core/toast-dom.js`, and generated overlay render paths in
+    `extension/ytkit.js` / `features/*`.
   - Acceptance: `npm run audit:a11y` is generalized or paired with
     `npm run audit:overlays` so the popup audit and overlay audit run in
     `npm run check`. The overlay audit covers the targets above, emits a concise
@@ -1839,6 +1841,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
   - Verify: run the new audit with one intentionally unlabeled close button, one
     missing `:focus-visible` rule, and one sub-24px action target; each mutation
     must turn the gate red.
+  - Status 2026-06-05: shipped. Added `scripts/audit-overlays-a11y.js`, wired
+    `npm run audit:overlays` into `npm run check`, and added hardening coverage
+    that runs the audit's mutation canaries. Runtime-generated overlay controls
+    now carry the missing region/dialog names, live status labels, accessible
+    action names, focus-visible CSS, and explicit WCAG 2.2 24px target-size
+    floors needed by the static gate. The manual screen-reader smoke checklist
+    now documents the automated coverage boundary for announcement quality.
   - Complexity: L
 - [x] P3 — Diagnostics export bundle for bug reports
   - Why: `core/diagnostic-log.js` and `selector-health.js` already collect
