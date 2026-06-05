@@ -1763,10 +1763,19 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
     const scriptSource = fs.readFileSync(
         path.join(__dirname, '..', 'scripts', 'generate-release-manifest.js'), 'utf8'
     );
-    const { expectedReleaseNames, parseAssetName } = require('../scripts/generate-release-manifest');
+    const stageScriptSource = fs.readFileSync(
+        path.join(__dirname, '..', 'scripts', 'stage-companion-release.js'), 'utf8'
+    );
+    const {
+        expectedReleaseNames,
+        isCompanionReleaseRequired,
+        parseAssetName
+    } = require('../scripts/generate-release-manifest');
 
     assert.match(pkg.scripts['release:manifest'] || '', /scripts\/generate-release-manifest\.js/,
         'package.json must expose release:manifest for the local release recipe');
+    assert.match(pkg.scripts['release:stage-companion'] || '', /scripts\/stage-companion-release\.js/,
+        'package.json must expose a companion staging script for local release packaging');
     assert.match(workflow, /npm sbom --omit=dev --sbom-format cyclonedx > build\/astra-deck-npm-sbom\.cdx\.json/,
         'build.yml must emit a release SBOM into build/');
     assert.match(workflow, /npm run release:manifest/,
@@ -1785,12 +1794,30 @@ test('release manifest generation pins checksums, SBOM, attestations, and local 
         'release manifest must disclose the local signing requirement');
     assert.match(scriptSource, /AstraDownloader\.exe\.sha256/,
         'release manifest script must create the companion hash sidecar when the exe is present');
+    assert.match(scriptSource, /--require-companion/,
+        'release manifest script must have an explicit companion-release activation flag');
+    assert.match(scriptSource, /companionUpdateRequired:\s*requireCompanion/,
+        'release manifest must disclose whether companion update assets were required');
+    assert.match(stageScriptSource, /MZ/,
+        'companion staging must reject files without a Windows EXE header');
+    assert.match(stageScriptSource, /build\/AstraDownloader\.exe/,
+        'companion staging must copy the EXE into build/ for release manifest inclusion');
 
     const expected = expectedReleaseNames(pkg.version);
     assert.equal(expected.filter((name) => name.includes(`-v${pkg.version}.`)).length, 9,
         'expected release set must include eight extension artifacts plus userscript');
     assert.ok(expected.includes('astra-deck-npm-sbom.cdx.json'),
         'expected release set must include the npm SBOM asset');
+    const companionExpected = expectedReleaseNames(pkg.version, { requireCompanion: true });
+    assert.ok(companionExpected.includes('AstraDownloader.exe'),
+        'companion-required release set must include the Windows EXE');
+    assert.ok(companionExpected.includes('AstraDownloader.exe.sha256'),
+        'companion-required release set must include the EXE hash sidecar');
+    assert.equal(
+        isCompanionReleaseRequired(['node', 'generate-release-manifest.js', '--require-companion'], {}),
+        true,
+        '--require-companion must activate companion asset enforcement'
+    );
 
     const parsed = parseAssetName(`astra-deck-store-safe-firefox-v${pkg.version}.xpi`, pkg.version);
     assert.deepEqual(
