@@ -18,6 +18,13 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 42 added a release digest verifier for the maintainer-local
+  upload path. `npm run release:verify-digests` reads local `build/SHA256SUMS`,
+  computes the checksum file's own digest, and compares those hashes to GitHub
+  Release asset `sha256:` digests from live `gh release view` output or offline
+  fixture JSON. Live `v4.46.0` release asset JSON exposes the digest field;
+  actual public-release comparison still must run from the maintainer-local
+  signed artifact directory.
 - [Verified] Cycle 41 added a generated release-readiness report for local and
   CI release-smoke hardening. `npm run release:readiness` writes JSON and
   Markdown under `build/release-readiness/`, verifies version surfaces,

@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Release digest verifier added.** `npm run release:verify-digests` compares
+  uploaded GitHub Release asset `sha256:` digests against local
+  `build/SHA256SUMS`, including the checksum file's own digest, and fails on
+  missing, extra, duplicate, or mismatched assets. The command supports live
+  `gh release view` data and offline fixture JSON for tests.
+
 - **Release readiness report added.** `npm run release:readiness` now generates
   machine-readable JSON and Markdown under `build/release-readiness/`, checking
   version sync, release-manifest and SHA256SUMS coverage, SBOM presence, root

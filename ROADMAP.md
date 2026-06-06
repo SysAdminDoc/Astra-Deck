@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 41 - 2026-06-06.
+> Last researched: Cycle 42 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -2168,7 +2168,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 41 - Release readiness report, 2026-06-06.
+Cycle 42 - Release digest verifier, 2026-06-06.
 
 ### Current Focus
 
@@ -2218,6 +2218,11 @@ allows it.
   expected artifact inventory, root signing-key absence, local signing policy,
   and companion EXE/sidecar truth. The release workflow now requires the report
   to pass before artifact upload.
+- Cycle 42 added `npm run release:verify-digests`, a read-only release upload
+  verifier that compares GitHub Release asset `sha256:` digests against local
+  `build/SHA256SUMS`, including the checksum file itself. It supports live
+  `gh release view` output and offline fixture JSON for tests; the real public
+  pass must run from the maintainer-local signed artifact directory.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2230,7 +2235,9 @@ allows it.
   review enforcement can now be toggled with `DEPENDENCY_REVIEW_REQUIRED=true`
   after dependency graph proof. Release artifact proof can now be regenerated
   with `npm run release:readiness -- --require-pass` after the local release
-  build, SBOM, and manifest steps.
+  build, SBOM, and manifest steps. After upload, `npm run
+  release:verify-digests -- --tag vX.Y.Z` now performs the digest comparison
+  from the same maintainer-local artifact directory.
 
 ### Next Best Actions
 
@@ -2250,7 +2257,8 @@ allows it.
    the target browsers installed.
 5. After a maintainer-local release build, run `npm run release:readiness --
    --require-pass`, then upload assets and compare GitHub Release digests
-   against `build/SHA256SUMS`.
+   against `build/SHA256SUMS` with `npm run release:verify-digests --
+   --tag vX.Y.Z`.
 
 ### Unprocessed Leads
 
