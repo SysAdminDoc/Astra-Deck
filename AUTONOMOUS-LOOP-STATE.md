@@ -6,7 +6,8 @@
 - Path: `\\vmware-host\Shared Folders\repos\Astra-Deck`
 - Branch: `codex/research-feature-plan-2026-06-05`
 - Last cycle: 2026-06-06
-- Result: Shipped the retired options-page runtime-copy fix for the AI summary
+- Result: Shipped the locale proofing queue for identical-to-English feature
+  copy, then shipped the retired options-page runtime-copy fix for the AI summary
   missing-key path, then reconciled release automation docs with the
   maintainer-local public-release contract, then migrated GitHub-owned workflow
   action pins to Node 24-ready majors, then moved CRX signing-key custody out
@@ -148,7 +149,13 @@
   GitHub Release asset `sha256:` digests against local `build/SHA256SUMS` plus
   the checksum file's own digest. Tests use offline asset JSON; the live public
   pass remains maintainer-local because validation CRX builds use ephemeral
-  keys and will not match uploaded signed CRX assets.
+  keys and will not match uploaded signed CRX assets. Cycle 43 then added the
+  locale proofing queue: `npm run i18n:coverage` classifies exact reviewed
+  brand/technical matches separately from unresolved placeholders, emits
+  per-locale `feature_*_(name|desc)` proofing counts plus sample keys, and
+  `npm run i18n:coverage:warn` warns above the 582-message unresolved baseline.
+  The locale generator now shares the reviewed do-not-translate policy and
+  preserves proofed feature overrides when regenerating locale bundles.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -232,6 +239,17 @@
   - `npm run check`
   - `npm run build`
   - `git diff --check`
+- Cycle 43 i18n proofing-queue focused verification:
+  - `node --check scripts/i18n-policy.js`
+  - `node --check scripts/i18n-coverage.js`
+  - `node --check scripts/generate-locales.js`
+  - `node scripts/generate-locales.js`
+  - `node --test tests/i18n-coverage.test.js`
+  - `npm run i18n:coverage:warn`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `rtk git diff --check`
 - Cycle 29 selector fixture matrix verification passed:
   - `npm run build:fixtures`
   - `node --test tests/selector-regression.test.js`
@@ -548,7 +566,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 42, the remaining
+  implementable without exposing secrets. As of Cycle 43, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -573,11 +591,13 @@
   prompt harness, Cycle 39 delivered the Actions policy payload generator, and
   Cycle 40 delivered the Dependency review advisory gate, and Cycle 41 delivered
   the release-readiness report gate, and Cycle 42 delivered the release digest
-  verifier. Start Cycle 43 with positive
+  verifier, and Cycle 43 delivered the locale proofing queue. Start Cycle 44
+  with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  roadmap cleanup for already-delivered source-side policy items or other
-  source-side proof that does not claim hosted/operator evidence.
+  native-speaker-proofing preparation from `docs/i18n-coverage.md`, roadmap
+  cleanup for already-delivered source-side policy items, or other source-side
+  proof that does not claim hosted/operator evidence.
   Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external

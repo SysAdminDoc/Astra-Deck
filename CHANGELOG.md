@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Locale proofing queue added.** `npm run i18n:coverage` now separates exact
+  reviewed brand/technical matches from unresolved identical-to-EN
+  placeholders, emits a per-locale feature name/description proofing queue with
+  sample keys, and `npm run i18n:coverage:warn` warns if unresolved feature copy
+  rises above the current 582-message baseline. `scripts/generate-locales.js`
+  now shares the reviewed do-not-translate policy and preserves proofed feature
+  overrides when rewriting locale files.
+
 - **Release digest verifier added.** `npm run release:verify-digests` compares
   uploaded GitHub Release asset `sha256:` digests against local
   `build/SHA256SUMS`, including the checksum file's own digest, and fails on
