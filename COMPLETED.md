@@ -30,6 +30,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-06: Locale proofing CSV output was hardened. `npm run
+  i18n:proofing-export` now prefixes formula-like cells before CSV escaping so
+  generated translator handoff files do not execute spreadsheet formulas when
+  opened for review.
 - 2026-06-06: Locale proofing export was added. `npm run
   i18n:proofing-export` writes translator-ready per-locale CSV files plus
   `index.json` under ignored `build/i18n-proofing/`, with one unresolved

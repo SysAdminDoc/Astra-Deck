@@ -126,8 +126,13 @@ function buildProofingQueue({ localesDir = LOCALES_DIR, locales = [] } = {}) {
     };
 }
 
-function csvEscape(value) {
+function csvSafeValue(value) {
     const text = String(value ?? '');
+    return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+}
+
+function csvEscape(value) {
+    const text = csvSafeValue(value);
     if (!/[",\r\n]/.test(text)) return text;
     return `"${text.replace(/"/g, '""')}"`;
 }
@@ -246,6 +251,7 @@ if (require.main === module) {
 
 module.exports = {
     buildProofingQueue,
+    csvSafeValue,
     parseArgs,
     renderCsv,
     renderReadme,

@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Locale proofing CSV hardening.** `npm run i18n:proofing-export` now
+  neutralizes formula-like CSV cells before escaping, so generated translator
+  handoff files can be opened in spreadsheet tools without treating source text,
+  current locale text, proposed translations, or notes as formulas.
+
 - **Locale proofing export added.** `npm run i18n:proofing-export` now writes
   translator-ready per-locale CSV files plus `index.json` under ignored
   `build/i18n-proofing/`, carrying unresolved feature name/description
