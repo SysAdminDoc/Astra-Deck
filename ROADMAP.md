@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 37 - 2026-06-06.
+> Last researched: Cycle 38 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -936,8 +936,13 @@ means implemented/closed by the build lane.
     optional origins through `chrome.permissions.remove()`, and verifies the
     popup returns to the permission-needed state. Chromium grant/deny/revoke
     smoke is now scriptable, but the native headed browser prompts still need a
-    release operator run before tagging. Firefox headed prompt smoke remains
-    open separately.
+    release operator run before tagging. Cycle 38 added a Firefox headed
+    operator harness: `npm run smoke:firefox -- --headed
+    --manual-optional-hosts` maps the staged Gecko id to a stable
+    `moz-extension://` popup URL, opens the popup and YouTube smoke page, prints
+    expected optional origins, and keeps Firefox headed for accept/deny/revoke
+    checks. A native Firefox prompt result is still not claimed until a machine
+    with Firefox installed runs that command.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,
@@ -2149,7 +2154,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 37 - Chromium optional-host prompt-state smoke, 2026-06-06.
+Cycle 38 - Firefox optional-host prompt harness, 2026-06-06.
 
 ### Current Focus
 
@@ -2183,6 +2188,9 @@ allows it.
   --expect-deny` validates denial and `--headed --attempt-grant
   --revoke-after-grant` validates accepted-then-revoked grants through
   `chrome.permissions.remove()`.
+- Cycle 38 added a headed Firefox optional-host prompt harness. The local
+  machine does not have Firefox installed, so the cycle verified the script and
+  argument shape but did not claim a native Firefox prompt pass.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2207,8 +2215,9 @@ allows it.
 2. If the branch has landed on `main` and the maintainer explicitly wants hosted
    settings changed, follow `docs/hosted-policy-closure.md`; otherwise keep the
    hosted mutations open.
-3. Run the new headed Chromium optional-host accept/deny/revoke modes with a
-   release operator, then add or run equivalent Firefox headed prompt smoke.
+3. Run the headed Chromium optional-host accept/deny/revoke modes and the new
+   Firefox `--headed --manual-optional-hosts` harness on a release machine with
+   the target browsers installed.
 
 ### Unprocessed Leads
 
@@ -2222,7 +2231,7 @@ allows it.
 
 ### Files Still To Inspect
 
-- `scripts/smoke-firefox-webext.js`
+- None for the current optional-host prompt smoke thread.
 
 ### Searches Completed In Cycle 37
 
