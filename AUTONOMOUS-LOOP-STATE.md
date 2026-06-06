@@ -144,7 +144,11 @@
   `build/release-readiness/` and checks version surfaces, release-manifest /
   SHA256SUMS / SBOM proof, expected artifact inventory, root signing-key
   absence, local signing policy, and companion EXE/sidecar truth before release
-  upload.
+  upload. Cycle 42 then added `npm run release:verify-digests`, which compares
+  GitHub Release asset `sha256:` digests against local `build/SHA256SUMS` plus
+  the checksum file's own digest. Tests use offline asset JSON; the live public
+  pass remains maintainer-local because validation CRX builds use ephemeral
+  keys and will not match uploaded signed CRX assets.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -215,6 +219,15 @@
   - `npm run release:manifest`
   - `npm run release:readiness -- --require-pass` produced a PASS report with
     12 passing checks.
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+- Cycle 42 Release digest verifier focused verification:
+  - `node --check scripts/compare-release-digests.js`
+  - `node --test tests/release-digests.test.js`
+  - `gh release view v4.46.0 --repo SysAdminDoc/Astra-Deck --json tagName,assets`
+    confirmed live release asset JSON exposes `sha256:` digests.
   - `npm test`
   - `npm run check`
   - `npm run build`
@@ -535,7 +548,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 41, the remaining
+  implementable without exposing secrets. As of Cycle 42, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -559,12 +572,12 @@
   optional-host prompt-state smoke slice, Cycle 38 delivered the Firefox headed
   prompt harness, Cycle 39 delivered the Actions policy payload generator, and
   Cycle 40 delivered the Dependency review advisory gate, and Cycle 41 delivered
-  the release-readiness report gate. Start Cycle 42 with positive
+  the release-readiness report gate, and Cycle 42 delivered the release digest
+  verifier. Start Cycle 43 with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  roadmap cleanup for already-delivered source-side policy items, release
-  digest comparison helpers, or other source-side proof that does not claim
-  hosted/operator evidence.
+  roadmap cleanup for already-delivered source-side policy items or other
+  source-side proof that does not claim hosted/operator evidence.
   Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external

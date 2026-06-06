@@ -394,6 +394,7 @@ npm run build:userscript                  # Include userscript artifact too
 npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json
 npm run release:manifest                  # Generate release-manifest.json + SHA256SUMS
 npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
+npm run release:verify-digests -- --tag vX.Y.Z # Compare uploaded asset digests after release upload
 node build-extension.js --profile store-safe
 node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
