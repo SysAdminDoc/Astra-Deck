@@ -8,6 +8,7 @@ const path = require('path');
 
 const {
     buildProofingQueue,
+    csvSafeValue,
     parseArgs,
     renderCsv,
     writeProofingExport
@@ -77,6 +78,25 @@ test('i18n proofing export renders CSV and writes per-locale files', () => {
     assert.ok(fs.existsSync(path.join(outputDir, 'README.md')));
     assert.ok(fs.existsSync(path.join(outputDir, 'de.csv')));
     assert.equal(written.length, 3);
+});
+
+test('i18n proofing export neutralizes spreadsheet formulas in CSV cells', () => {
+    const csv = renderCsv([{
+        locale: 'de',
+        key: 'feature_formula_name',
+        kind: 'name',
+        status: 'placeholder',
+        english: '=IMPORTXML("https://example.test")',
+        current: '+cmd',
+        proposedTranslation: '-todo',
+        notes: '@review'
+    }]);
+
+    assert.equal(csvSafeValue('=SUM(1,1)'), "'=SUM(1,1)");
+    assert.match(csv, /"'=IMPORTXML\(""https:\/\/example\.test""\)"/);
+    assert.match(csv, /'\+cmd/);
+    assert.match(csv, /'-todo/);
+    assert.match(csv, /'@review/);
 });
 
 test('i18n proofing export parses strict CLI options and package script', () => {

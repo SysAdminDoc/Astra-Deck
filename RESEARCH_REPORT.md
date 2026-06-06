@@ -18,6 +18,11 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 45 hardened the locale proofing CSV export against
+  spreadsheet formula execution. `scripts/export-i18n-proofing.js` now prefixes
+  cells beginning with `=`, `+`, `-`, `@`, tab, or carriage return before CSV
+  escaping, and tests cover English source text, current locale text, proposed
+  translations, and notes.
 - [Verified] Cycle 44 added a translator-ready proofing export for the feature
   localization queue. `npm run i18n:proofing-export` writes per-locale CSV
   files, `README.md`, and `index.json` under ignored `build/i18n-proofing/`,

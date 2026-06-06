@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 44 - 2026-06-06.
+> Last researched: Cycle 45 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -2175,7 +2175,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 44 - Locale proofing export, 2026-06-06.
+Cycle 45 - Locale proofing CSV hardening, 2026-06-06.
 
 ### Current Focus
 
@@ -2240,6 +2240,10 @@ allows it.
   per-locale CSV files plus `index.json` under ignored `build/i18n-proofing/`.
   Each unresolved feature name/description placeholder gets a row with blank
   `proposed_translation` and `notes` fields for native-speaker review.
+- Cycle 45 hardened the proofing CSV writer so formula-like cells are prefixed
+  before escaping. The generated translator files can now be opened in
+  spreadsheet tools without treating source text, current locale text, proposed
+  translations, or notes as formulas.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.

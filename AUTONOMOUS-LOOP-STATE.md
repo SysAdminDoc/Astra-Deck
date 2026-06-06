@@ -6,9 +6,10 @@
 - Path: `\\vmware-host\Shared Folders\repos\Astra-Deck`
 - Branch: `codex/research-feature-plan-2026-06-05`
 - Last cycle: 2026-06-06
-- Result: Shipped the locale proofing export pack, then shipped the locale
-  proofing queue for identical-to-English feature copy, then shipped the
-  retired options-page runtime-copy fix for the AI summary
+- Result: Hardened the locale proofing CSV export against spreadsheet formulas,
+  then shipped the locale proofing export pack, then shipped the locale
+  proofing queue for identical-to-English feature copy, then shipped the retired
+  options-page runtime-copy fix for the AI summary
   missing-key path, then reconciled release automation docs with the
   maintainer-local public-release contract, then migrated GitHub-owned workflow
   action pins to Node 24-ready majors, then moved CRX signing-key custody out
@@ -160,7 +161,9 @@
   44 then added `npm run i18n:proofing-export`, which writes translator-ready
   per-locale CSV files, `README.md`, and `index.json` under ignored
   `build/i18n-proofing/` with blank `proposed_translation` and `notes` fields
-  for native-speaker review.
+  for native-speaker review. Cycle 45 then hardened that CSV writer so
+  formula-like cells are prefixed before escaping, covering source text, current
+  locale text, proposed translations, and notes.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -263,6 +266,14 @@
   - `npm run check`
   - `npm run build`
   - `rtk git diff --check`
+  - `rtk git diff --check`
+- Cycle 45 i18n proofing CSV hardening focused verification:
+  - `node --check scripts/export-i18n-proofing.js`
+  - `node --test tests/i18n-proofing-export.test.js`
+  - `npm run i18n:proofing-export`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
 - Cycle 29 selector fixture matrix verification passed:
   - `npm run build:fixtures`
   - `node --test tests/selector-regression.test.js`
@@ -579,7 +590,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 44, the remaining
+  implementable without exposing secrets. As of Cycle 45, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -605,7 +616,8 @@
   Cycle 40 delivered the Dependency review advisory gate, and Cycle 41 delivered
   the release-readiness report gate, and Cycle 42 delivered the release digest
   verifier, Cycle 43 delivered the locale proofing queue, and Cycle 44 delivered
-  the translator-ready locale proofing export. Start Cycle 45
+  the translator-ready locale proofing export, and Cycle 45 hardened the
+  proofing CSV writer against spreadsheet formulas. Start Cycle 46
   with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
