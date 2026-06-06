@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 43 - 2026-06-06.
+> Last researched: Cycle 44 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -2175,7 +2175,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 43 - Locale proofing queue, 2026-06-06.
+Cycle 44 - Locale proofing export, 2026-06-06.
 
 ### Current Focus
 
@@ -2236,6 +2236,10 @@ allows it.
   sample keys, and `npm run i18n:coverage:warn` warns above the 582-message
   unresolved feature-copy baseline. The locale generator now preserves proofed
   feature overrides while sharing the reviewed do-not-translate policy.
+- Cycle 44 added `npm run i18n:proofing-export`, which writes translator-ready
+  per-locale CSV files plus `index.json` under ignored `build/i18n-proofing/`.
+  Each unresolved feature name/description placeholder gets a row with blank
+  `proposed_translation` and `notes` fields for native-speaker review.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2272,8 +2276,9 @@ allows it.
    --require-pass`, then upload assets and compare GitHub Release digests
    against `build/SHA256SUMS` with `npm run release:verify-digests --
    --tag vX.Y.Z`.
-6. Use `docs/i18n-coverage.md` as the native-speaker feature-copy proofing
-   queue when locale work resumes; the queue infrastructure itself is shipped.
+6. Use `npm run i18n:proofing-export` to regenerate the native-speaker
+   proofing pack when locale work resumes; the queue/export infrastructure
+   itself is shipped.
 
 ### Unprocessed Leads
 
