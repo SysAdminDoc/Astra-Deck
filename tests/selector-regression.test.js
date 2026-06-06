@@ -28,6 +28,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const vm = require('node:vm');
+const { spawnSync } = require('node:child_process');
 
 const REPO_ROOT = path.join(__dirname, '..');
 const {
@@ -109,6 +110,22 @@ function loadSelectorSurfaceMatches() {
 function selectorMatchRow(surface, selector) {
     return [...surface.stable, ...surface.fallback]
         .find((row) => row.selector === selector);
+}
+
+function runCaptureHelper(args, env = {}) {
+    return spawnSync(
+        process.execPath,
+        [path.join(REPO_ROOT, 'scripts', 'capture-watch-mhtml.js'), ...args],
+        {
+            cwd: REPO_ROOT,
+            encoding: 'utf8',
+            env: {
+                ...process.env,
+                ASTRA_CAPTURE_PROFILE_DIR: '',
+                ...env,
+            },
+        }
+    );
 }
 
 const FIXTURES = {
@@ -255,6 +272,7 @@ test('live-chat placeholder selectors remain promoted after the fresh fixture re
 test('fresh-capture fixture workflow is documented', () => {
     const docPath = path.join(REPO_ROOT, 'docs', 'selector-fixture-workflow.md');
     const doc = fs.readFileSync(docPath, 'utf8');
+    const gitignore = fs.readFileSync(path.join(REPO_ROOT, '.gitignore'), 'utf8');
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
     const captureScript = fs.readFileSync(
         path.join(REPO_ROOT, 'scripts', 'capture-watch-mhtml.js'),
@@ -264,12 +282,79 @@ test('fresh-capture fixture workflow is documented', () => {
     assert.match(doc, /File > Save Page As > Webpage, Single File/);
     assert.match(doc, /npm run capture:watch/);
     assert.match(doc, /Page\.stopLoading/);
+    assert.match(doc, /--user-data-dir/);
+    assert.match(doc, /ASTRA_CAPTURE_PROFILE_DIR/);
     assert.match(doc, /npm run build:fixtures/);
     assert.match(doc, /ytkit\.exportSelectorHealth\(\)/);
     assert.equal(pkg.scripts['capture:watch'], 'node scripts/capture-watch-mhtml.js');
+    assert.equal(pkg.scripts['capture:surface'], 'node scripts/capture-watch-mhtml.js');
+    assert.match(captureScript, /SURFACE_PROFILES/);
+    assert.match(captureScript, /shorts:/);
+    assert.match(captureScript, /SearchResults\.mhtml/);
+    assert.match(captureScript, /Channel\.mhtml/);
+    assert.match(captureScript, /EmbedPlayer\.mhtml/);
+    assert.match(captureScript, /History\.mhtml/);
+    assert.match(captureScript, /WatchLater\.mhtml/);
+    assert.match(captureScript, /NotificationsMenu\.mhtml/);
+    assert.match(captureScript, /ASTRA_CAPTURE_PROFILE_DIR/);
+    assert.match(captureScript, /open-notifications-menu/);
+    assert.match(captureScript, /outside the repository worktree/);
     assert.match(captureScript, /Page\.captureSnapshot/);
     assert.match(captureScript, /dom-mhtml-fallback/);
     assert.match(captureScript, /ytp-delhi-modern/);
+    assert.match(gitignore, /^\.auth\/$/m);
+    assert.match(gitignore, /^playwright\/\.auth\/$/m);
+    assert.match(gitignore, /^capture-profiles\/$/m);
+    assert.match(gitignore, /^\*\.storageState\.json$/m);
+});
+
+test('authenticated capture surfaces require an external profile before launching Chrome', () => {
+    for (const surface of ['history', 'watch-later', 'notifications']) {
+        const result = runCaptureHelper(['--surface', surface]);
+        assert.notEqual(result.status, 0, `${surface} without auth profile should fail`);
+        assert.match(
+            result.stderr,
+            new RegExp(`--surface ${surface} requires --user-data-dir <absolute external profile path> or ASTRA_CAPTURE_PROFILE_DIR`)
+        );
+    }
+});
+
+test('authenticated capture surfaces reject repo-local or relative auth paths before launching Chrome', () => {
+    const repoAuthPath = path.join(REPO_ROOT, '.auth');
+    const repoPlaywrightAuthPath = path.join(REPO_ROOT, 'playwright', '.auth');
+
+    const absoluteResult = runCaptureHelper([
+        '--surface',
+        'history',
+        '--user-data-dir',
+        repoAuthPath,
+    ]);
+    assert.notEqual(absoluteResult.status, 0);
+    assert.match(absoluteResult.stderr, /outside the repository worktree/);
+
+    const relativeResult = runCaptureHelper([
+        '--surface',
+        'watch-later',
+        '--user-data-dir',
+        '.auth',
+    ]);
+    assert.notEqual(relativeResult.status, 0);
+    assert.match(relativeResult.stderr, /must be an absolute external path outside the repository/);
+
+    const envResult = runCaptureHelper(['--surface', 'notifications'], {
+        ASTRA_CAPTURE_PROFILE_DIR: repoPlaywrightAuthPath,
+    });
+    assert.notEqual(envResult.status, 0);
+    assert.match(envResult.stderr, /outside the repository worktree/);
+});
+
+test('capture helper help lists authenticated surfaces and external profile flag', () => {
+    const result = runCaptureHelper(['--help']);
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /history/);
+    assert.match(result.stdout, /watch-later/);
+    assert.match(result.stdout, /notifications/);
+    assert.match(result.stdout, /--user-data-dir <path>/);
 });
 
 test('selector fixtures exist and contain a non-trivial token set', () => {
@@ -315,7 +400,7 @@ test('live-chat fixture contains iframe-document selector tokens', () => {
 test('selector surface match fixture stays synced to capture-backed packs', () => {
     const fixture = loadSelectorSurfaceMatches();
     const core = loadSelectorPackContext();
-    const expectedSurfaces = SURFACE_MATCH_SOURCES.map(({ surface }) => surface).sort();
+    const expectedSurfaces = SURFACE_MATCH_SOURCES.map((target) => target.id || target.surface).sort();
 
     assert.equal(fixture.schemaVersion, 1);
     assert.equal(fixture.generatedBy, 'scripts/build-selector-fixtures.js');
@@ -323,14 +408,16 @@ test('selector surface match fixture stays synced to capture-backed packs', () =
     assert.deepEqual(Object.keys(fixture.surfaces).sort(), expectedSurfaces);
 
     for (const target of SURFACE_MATCH_SOURCES) {
-        const surfaceName = target.surface;
+        const surfaceName = target.id || target.surface;
         const snapshot = fixture.surfaces[surfaceName];
-        const live = core.SurfaceSelectorMap[surfaceName];
         assert.ok(snapshot, `${surfaceName} must exist in selector-surface-matches.json`);
-        assert.ok(live, `${surfaceName} must exist in SurfaceSelectorMap`);
+        const liveSurface = core.SurfaceSelectorMap[target.surface];
+        assert.ok(liveSurface, `${target.surface} must exist in SurfaceSelectorMap`);
+        assert.equal(snapshot.surface, target.surface);
         assert.equal(snapshot.source, `mhtml/${target.mhtml}`);
         assert.equal(snapshot.fixture, target.fixture);
-        assert.ok(snapshot.elementCount > 100,
+        const minElements = target.minElements || 100;
+        assert.ok(snapshot.elementCount >= minElements,
             `${surfaceName} fixture parsed only ${snapshot.elementCount} elements`);
         assert.ok(snapshot.stable.some((row) => row.matched),
             `${surfaceName} must match at least one stable selector in ${snapshot.source}`);
@@ -338,12 +425,12 @@ test('selector surface match fixture stays synced to capture-backed packs', () =
             `${surfaceName} must record at least one matched selector in ${snapshot.source}`);
         assert.deepEqual(
             snapshot.stable.map((row) => row.selector),
-            [...live.stable],
+            [...liveSurface.stable],
             `${surfaceName} stable selectors changed; regenerate with npm run build:fixtures`
         );
         assert.deepEqual(
             snapshot.fallback.map((row) => row.selector),
-            [...live.fallback],
+            [...liveSurface.fallback],
             `${surfaceName} fallback selectors changed; regenerate with npm run build:fixtures`
         );
     }
@@ -411,6 +498,32 @@ test('selector surface match fixture proves expanded capture-backed selectors re
             'yt-live-chat-renderer',
             'yt-live-chat-item-list-renderer',
             'yt-live-chat-text-message-renderer',
+        ],
+        'shorts.shortsShelf': [
+            'a[href^="/shorts"]',
+        ],
+        'searchResults.search': [
+            'yt-searchbox',
+        ],
+        'searchResults.feedCard': [
+            'ytd-video-renderer',
+            'yt-lockup-view-model',
+        ],
+        'channel.profile': [
+            'ytd-channel-name',
+            '#channel-name',
+        ],
+        'channel.channelProfile': [
+            'ytd-channel-name',
+            '#channel-name',
+        ],
+        'embed.player': [
+            '#movie_player',
+            '.html5-video-player',
+        ],
+        'embed.mainVideo': [
+            'video.html5-main-video',
+            '#movie_player video',
         ],
     };
 

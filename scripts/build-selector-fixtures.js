@@ -34,6 +34,10 @@ const SOURCES = [
     { mhtml: 'YouTube.mhtml', out: 'yt-home.tokens.txt' },
     { mhtml: 'WatchPage.mhtml', out: 'yt-watch.tokens.txt' },
     { mhtml: 'LiveChat.mhtml', out: 'yt-live-chat.tokens.txt' },
+    { mhtml: 'Shorts.mhtml', out: 'yt-shorts.tokens.txt' },
+    { mhtml: 'SearchResults.mhtml', out: 'yt-search-results.tokens.txt' },
+    { mhtml: 'Channel.mhtml', out: 'yt-channel.tokens.txt' },
+    { mhtml: 'EmbedPlayer.mhtml', out: 'yt-embed-player.tokens.txt' },
 ];
 
 const SURFACE_MATCH_SOURCES = [
@@ -52,6 +56,19 @@ const SURFACE_MATCH_SOURCES = [
     { surface: 'playerChrome', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'playerSettings', mhtml: 'WatchPage.mhtml', fixture: 'yt-watch.tokens.txt' },
     { surface: 'liveChat', mhtml: 'LiveChat.mhtml', fixture: 'yt-live-chat.tokens.txt' },
+    { id: 'shorts.shortsShelf', surface: 'shortsShelf', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
+    { id: 'shorts.media', surface: 'media', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
+    { id: 'shorts.thumbnail', surface: 'thumbnail', mhtml: 'Shorts.mhtml', fixture: 'yt-shorts.tokens.txt' },
+    { id: 'searchResults.search', surface: 'search', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
+    { id: 'searchResults.feedCard', surface: 'feedCard', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
+    { id: 'searchResults.thumbnail', surface: 'thumbnail', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
+    { id: 'searchResults.nav', surface: 'nav', mhtml: 'SearchResults.mhtml', fixture: 'yt-search-results.tokens.txt' },
+    { id: 'channel.profile', surface: 'profile', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
+    { id: 'channel.channelProfile', surface: 'channelProfile', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
+    { id: 'channel.feedCard', surface: 'feedCard', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
+    { id: 'channel.thumbnail', surface: 'thumbnail', mhtml: 'Channel.mhtml', fixture: 'yt-channel.tokens.txt' },
+    { id: 'embed.player', surface: 'player', mhtml: 'EmbedPlayer.mhtml', fixture: 'yt-embed-player.tokens.txt', minElements: 40 },
+    { id: 'embed.mainVideo', surface: 'mainVideo', mhtml: 'EmbedPlayer.mhtml', fixture: 'yt-embed-player.tokens.txt', minElements: 40 },
 ];
 
 const VOID_TAGS = new Set([
@@ -370,7 +387,9 @@ function buildSurfaceMatchFixture() {
         const fallback = evaluateSelectorGroup(elements, [...entry.fallback]);
         const all = [...stable, ...fallback];
 
-        surfaces[target.surface] = {
+        const surfaceId = target.id || target.surface;
+        surfaces[surfaceId] = {
+            surface: target.surface,
             source: `mhtml/${target.mhtml}`,
             fixture: target.fixture,
             elementCount: elements.length,

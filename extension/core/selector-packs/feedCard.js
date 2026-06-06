@@ -20,9 +20,11 @@
         captureEvidence: Object.freeze([
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',
-            'Worldwide Societal Collapse... - YouTube.mhtml'
+            'Worldwide Societal Collapse... - YouTube.mhtml',
+            'mhtml/SearchResults.mhtml',
+            'mhtml/Channel.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'New lockup view-model appears in current captures.'

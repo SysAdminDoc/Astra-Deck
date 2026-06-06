@@ -18,9 +18,10 @@
         fallback: Object.freeze(['video.video-stream', '.html5-video-container video']),
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
-            'Worldwide Societal Collapse... - YouTube.mhtml'
+            'Worldwide Societal Collapse... - YouTube.mhtml',
+            'mhtml/EmbedPlayer.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Main media element; should stay scoped to the current player.'

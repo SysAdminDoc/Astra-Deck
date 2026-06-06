@@ -6,6 +6,13 @@ build/
 comments.png
 YTKit-v1.2.0.user.js
 
+# Authenticated selector-capture state is local, sensitive, and must never be
+# staged. Use an external Chrome profile for account-gated MHTML captures.
+.auth/
+playwright/.auth/
+capture-profiles/
+*.storageState.json
+
 # v3.23.0 NX15: AstraDownloader.exe is a release artifact built by
 # astra_downloader/build.py — it does not belong in the source tree.
 # Build locally then attach it to the GitHub Release.
