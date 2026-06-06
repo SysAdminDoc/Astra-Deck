@@ -30,6 +30,14 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-06: Locale proofing queue reporting was added. `npm run
+  i18n:coverage` now separates exact reviewed brand/technical matches from
+  unresolved identical-to-EN placeholders, lists per-locale
+  `feature_*_(name|desc)` proofing counts plus sample keys, and `npm run
+  i18n:coverage:warn` warns if unresolved feature copy rises above the current
+  582-message baseline. The locale generator now shares the reviewed
+  do-not-translate policy and preserves proofed feature overrides during
+  regeneration.
 - 2026-06-06: Release digest verification was added. `npm run
   release:verify-digests` compares GitHub Release asset `sha256:` digests
   against local `build/SHA256SUMS`, includes the checksum file's own digest,

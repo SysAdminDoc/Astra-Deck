@@ -16,17 +16,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const {
+    DO_NOT_TRANSLATE_TERMS,
+    missingProtectedTerms
+} = require('./i18n-policy');
 
 const ROOT = path.join(__dirname, '..');
 const EN_PATH = path.join(ROOT, 'extension', '_locales', 'en', 'messages.json');
 const en = JSON.parse(fs.readFileSync(EN_PATH, 'utf8'));
 
-// Tokens that should NEVER be translated — preserved verbatim if they
-// appear in a message. We don't post-process here; translators just keep
-// these in their target strings.
+// Tokens that should NEVER be translated are kept in scripts/i18n-policy.js.
+// The generator checks translated strings preserve them verbatim.
 //
-//   Brand: Astra Deck, Astra Downloader, DeArrow, SponsorBlock, YouTube
-//   Tech:  MP4, M4A, VP9, AV1, H.264, TrustedTypes, ETA
+//   Reviewed terms: Astra Deck, Astra Downloader, DeArrow, SponsorBlock,
+//   YouTube, MP4, M4A, VP9, AV1, H.264, TrustedTypes, ETA
 
 // LOCALES: locale-code → { language label in own script, translations map }
 // Each translations map is keyed by English message → translated message.
@@ -1198,16 +1201,232 @@ T.ko = {
   'Playback': '재생', 'Focus': '집중', 'Utilities': '유틸리티',
 };
 
+// Proofed feature-copy overrides preserve the checked-in locale strings for
+// feature labels whose canonical EN wording changed after the initial locale
+// tables were authored. Keep these explicit until each locale table is fully
+// refreshed by a native-speaker proofing pass.
+const PROOFED_FEATURE_TRANSLATION_OVERRIDES = {
+  "de": {
+    "Remove Shorts": "Shorts ausblenden",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "Saubere URLs",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "Verwandte ausblenden",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "Blaulichtfilter",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "Scrollen begrenzen",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "Dauerhafte Geschwindigkeit",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "Auto-Kino",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "Keine automatische Wiedergabe",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "es": {
+    "Remove Shorts": "Ocultar Shorts",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "URLs limpias",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "Ocultar relacionados",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "Filtro de luz azul",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "Limitar desplazamiento",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "Velocidad persistente",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "Auto cine",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "Sin reproducción automática",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "fr": {
+    "Remove Shorts": "Masquer Shorts",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "URL propres",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "Masquer suggestions",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "Filtre lumière bleue",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "Limiter défilement",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "Vitesse persistante",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "Cinéma auto",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "Pas de lecture auto",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "it": {
+    "Remove Shorts": "Nascondi Shorts",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "URL puliti",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "Nascondi correlati",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "Filtro luce blu",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "Limita scorrimento",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "Velocità persistente",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "Auto teatro",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "No riproduzione automatica",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "ja": {
+    "Remove Shorts": "Shorts を非表示",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "クリーンな URL",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "関連を非表示",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "ブルーライトフィルター",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "スクロール制限",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "持続的な速度",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "自動シアター",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "自動再生なし",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "ko": {
+    "Remove Shorts": "Shorts 숨기기",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "깨끗한 URL",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "관련 동영상 숨기기",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "블루라이트 필터",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "스크롤 제한",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "지속적인 속도",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "자동 시어터",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "자동재생 없음",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "pt_BR": {
+    "Remove Shorts": "Ocultar Shorts",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "URLs limpas",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "Ocultar relacionados",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "Filtro de luz azul",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "Limitar rolagem",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "Velocidade persistente",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "Modo cinema auto",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "Sem reprodução automática",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  },
+  "ru": {
+    "Remove Shorts": "Скрыть Shorts",
+    "Hide all Shorts videos from feeds and recommendations": "Remove Shorts shelves and links",
+    "Clean Share URLs": "Чистые URL",
+    "Strip tracking params (si, pp, feature) from copied/shared YouTube links": "Remove tracking from share links",
+    "Hide Related Videos": "Скрыть похожие",
+    "Remove the related videos panel on watch pages": "Clear the watch-page side rail",
+    "Blue Light Filter": "Фильтр синего света",
+    "Apply a warm tint to reduce blue light emission. Configurable intensity.": "Warm the player for late viewing",
+    "Disable Infinite Scroll": "Ограничить прокрутку",
+    "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages": "Stop endless feed loading",
+    "Persistent Playback Speed": "Постоянная скорость",
+    "Remember your preferred playback speed globally and auto-apply it to every video": "Keep playback speed consistent",
+    "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)": "Read, jump, and export captions",
+    "Auto Theater Mode": "Авто-театр",
+    "Automatically enter theater (wide) mode when opening a video": "Open videos in theater view",
+    "Shows a floating mini-player bar at the bottom when you scroll past the video": "Keep controls visible while scrolling",
+    "Adds a search bar above comments to filter and find specific comments": "Filter watch-page comments inline",
+    "Disable Autoplay Next Video": "Без автовоспроизведения",
+    "Prevents the next video from automatically playing when the current one finishes": "Stop the next video from starting",
+    "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data": "Skip crowd-marked sponsor segments",
+    "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database": "Replace clickbait titles and thumbnails",
+    "Enable verbose diagnostic logging to the console": "Record detailed local diagnostics",
+    "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation.": "Track breaks and daily viewing"
+  }
+};
+
 // Generate locale files. For every key in en/messages.json, look up the
 // English message in the locale's translation table; fall back to the
 // English value if no translation exists (chrome.i18n then falls back
 // to default_locale at runtime, so this is just clearer for translators).
 for (const locale of Object.keys(T)) {
     const out = {};
+    const translationMap = {
+        ...T[locale],
+        ...(PROOFED_FEATURE_TRANSLATION_OVERRIDES[locale] || {})
+    };
     for (const [key, entry] of Object.entries(en)) {
         const enMsg = entry.message;
-        const translated = T[locale][enMsg];
-        const obj = { message: translated || enMsg };
+        const translated = translationMap[enMsg];
+        const outMsg = translated || enMsg;
+        const missingTerms = missingProtectedTerms(enMsg, outMsg);
+        if (missingTerms.length) {
+            throw new Error(`${locale}:${key} translation must preserve do-not-translate term(s): ${missingTerms.join(', ')}`);
+        }
+        const obj = { message: outMsg };
         if (entry.description) obj.description = entry.description;
         out[key] = obj;
     }
@@ -1215,6 +1434,6 @@ for (const locale of Object.keys(T)) {
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, 'messages.json');
     fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n');
-    const translatedCount = Object.entries(en).filter(([, v]) => T[locale][v.message]).length;
-    console.log(`${locale}: wrote ${Object.keys(out).length} keys (${translatedCount} translated, ${Object.keys(out).length - translatedCount} fall through to English)`);
+    const translatedCount = Object.entries(en).filter(([, v]) => translationMap[v.message]).length;
+    console.log(`${locale}: wrote ${Object.keys(out).length} keys (${translatedCount} translated, ${Object.keys(out).length - translatedCount} fall through to English; ${DO_NOT_TRANSLATE_TERMS.length} protected terms checked)`);
 }
