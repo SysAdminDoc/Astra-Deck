@@ -101,6 +101,9 @@ Maintainer action:
 4. Confirm `Validate / Dependency review` no longer fails with repository setup
    text. It should either pass or fail only on concrete vulnerable dependency
    findings.
+5. Set repository variable `DEPENDENCY_REVIEW_REQUIRED=true` only after that
+   proof so `.github/workflows/validate.yml` changes the advisory
+   `Dependency review` job into an enforcing check.
 
 Read-only verification:
 
@@ -108,6 +111,7 @@ Read-only verification:
 $env:GH_PROMPT_DISABLED = '1'
 gh api repos/SysAdminDoc/Astra-Deck --jq '{private,security_and_analysis:.security_and_analysis}'
 gh run list --workflow Validate --limit 10
+gh variable list --repo SysAdminDoc/Astra-Deck
 ```
 
 Keep `Dependency review` out of required direct-push checks. Add it as required

@@ -32,6 +32,17 @@ Current non-required context:
 requests. Add it to required checks after a throwaway PR confirms the exact
 required-check behavior for PR-only dependency-review runs.
 
+Source-tree guard from 2026-06-06:
+
+- `.github/workflows/validate.yml` keeps `Dependency review` PR-only and
+  advisory until repository variable `DEPENDENCY_REVIEW_REQUIRED` is exactly
+  `true`.
+- This avoids failing dependency-maintenance PRs on repository setup text while
+  dependency graph / Dependabot hosted settings remain open.
+- After dependency graph is enabled and a PR run proves the check context, set
+  `DEPENDENCY_REVIEW_REQUIRED=true` and then decide whether the PR-only
+  `Dependency review` context should become a required check.
+
 Current policy:
 
 - Keep admin enforcement enabled.
