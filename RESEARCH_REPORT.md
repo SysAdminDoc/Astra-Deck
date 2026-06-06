@@ -154,8 +154,11 @@ or maintainer action to confirm.
   store-safe Chromium manifest, opens the real popup in a fresh
   Chromium-family profile, and verifies the pre-grant Grant access banner lists
   all five missing runtime optional origins. Managed Google Chrome on this PC
-  blocks `--load-extension`, so the smoke falls back to Edge; headed native
-  prompt accept/deny/revoke remains a manual release check.
+  blocks `--load-extension`, so the smoke falls back to Edge. Cycle 37 added
+  headed Chromium prompt-state modes for denied prompts and accepted-then-
+  revoked grants, with helper-level tests pinning grant, denial, and revocation
+  state validation. The native headed Chromium prompt modes and equivalent
+  Firefox prompt smoke still need release-operator execution before tagging.
 - [Verified] Companion setup documentation now separates browser install from
   the Astra Downloader local companion. README states that latest release
   `v4.46.0` lacks `AstraDownloader.exe` and

@@ -55,6 +55,31 @@ test('optional-host Chromium smoke seeds enabled optional features and verifies 
         'headless default must not claim native prompt acceptance');
 });
 
+test('optional-host Chromium smoke exposes headed denial and revoke modes', () => {
+    assert.equal(smoke.parseArgs(['--headed', '--expect-deny']).expectDeny, true);
+    assert.deepEqual(smoke.parseArgs(['--headed', '--attempt-grant', '--revoke-after-grant']), {
+        attemptGrant: true,
+        browser: '',
+        expectDeny: false,
+        grantTimeoutMs: 5000,
+        headed: true,
+        keepStage: false,
+        revokeAfterGrant: true,
+        stageRoot: '',
+        timeoutMs: 12000,
+    });
+    assert.throws(() => smoke.parseArgs(['--expect-deny', '--attempt-grant']),
+        /cannot be combined/);
+    assert.throws(() => smoke.parseArgs(['--revoke-after-grant']),
+        /requires --attempt-grant/);
+    assert.match(smokeSource, /chrome\.permissions\.remove/,
+        'smoke must be able to revoke accepted optional-host grants');
+    assert.match(smokeSource, /optional host denial confirmed/,
+        'smoke must report the denied prompt state explicitly');
+    assert.match(smokeSource, /optional host revoke completed/,
+        'smoke must report the post-revoke prompt state explicitly');
+});
+
 test('optional-host smoke helper validates missing values and prompt readiness', () => {
     assert.deepEqual(smoke.missingValues(['a', 'b'], ['b']), ['a']);
     assert.doesNotThrow(() => smoke.validatePromptReady({
@@ -79,4 +104,51 @@ test('optional-host smoke helper validates missing values and prompt readiness',
         bannerText: 'https://one.example/*',
         missingBadges: 1,
     }, ['https://one.example/*'], 'chrome-extension://abc/popup.html'), /Fresh profile already granted/);
+});
+
+test('optional-host smoke helper validates grant, denial, and revocation states', () => {
+    const expected = ['https://one.example/*', 'https://two.example/*'];
+
+    assert.doesNotThrow(() => smoke.validateGrantCompleted({
+        currentOrigins: expected,
+        bannerHidden: true,
+        buttonBusy: '',
+        buttonDisabled: false,
+    }, expected));
+    assert.throws(() => smoke.validateGrantCompleted({
+        currentOrigins: ['https://one.example/*'],
+        bannerHidden: true,
+        buttonBusy: '',
+        buttonDisabled: false,
+    }, expected), /Still missing/);
+
+    assert.doesNotThrow(() => smoke.validateGrantDenied({
+        currentOrigins: [],
+        bannerHidden: false,
+        buttonBusy: '',
+        buttonDisabled: false,
+        status: 'Astra Deck needs host access for this optional feature before it can be enabled.',
+    }, expected));
+    assert.throws(() => smoke.validateGrantDenied({
+        currentOrigins: expected,
+        bannerHidden: false,
+        buttonBusy: '',
+        buttonDisabled: false,
+        status: 'Astra Deck needs host access for this optional feature before it can be enabled.',
+    }, expected), /denial was expected/);
+
+    assert.doesNotThrow(() => smoke.validateRevokedState({
+        currentOrigins: [],
+        bannerHidden: false,
+        buttonBusy: '',
+        buttonDisabled: false,
+        missingBadges: 2,
+    }, expected));
+    assert.throws(() => smoke.validateRevokedState({
+        currentOrigins: ['https://one.example/*'],
+        bannerHidden: false,
+        buttonBusy: '',
+        buttonDisabled: false,
+        missingBadges: 1,
+    }, expected), /left origins granted/);
 });

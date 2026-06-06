@@ -2886,6 +2886,10 @@ test('optional host permission helper supports callback and promise APIs', async
             assert.deepEqual(payload, { origins: ['https://i.ytimg.com/*'] });
             cb(false);
         },
+        remove(payload, cb) {
+            assert.deepEqual(payload, { origins: ['https://i.ytimg.com/*'] });
+            cb(true);
+        },
         onAdded: { addListener(listener) { this.listener = listener; } },
         onRemoved: { addListener(listener) { this.listener = listener; } }
     };
@@ -2896,18 +2900,21 @@ test('optional host permission helper supports callback and promise APIs', async
     assert.equal(callbackHelper.isSupported(), true);
     assert.equal(await callbackHelper.contains(['https://i.ytimg.com/*']), false);
     assert.equal(await callbackHelper.request(['https://i.ytimg.com/*']), true);
+    assert.equal(await callbackHelper.remove(['https://i.ytimg.com/*']), true);
     assert.equal(callbackHelper.onAdded(() => {}), true);
     assert.equal(callbackHelper.onRemoved(() => {}), true);
 
     const promiseHelper = createOptionalHostPermissions({
         permissionsApi: {
             request: async () => false,
-            contains: async () => true
+            contains: async () => true,
+            remove: async () => true
         },
         runtimeApi: {}
     });
     assert.equal(await promiseHelper.contains(['https://returnyoutubedislikeapi.com/*']), true);
     assert.equal(await promiseHelper.request(['https://returnyoutubedislikeapi.com/*']), false);
+    assert.equal(await promiseHelper.remove(['https://returnyoutubedislikeapi.com/*']), true);
 });
 
 test('privacy policy covers store data categories and Firefox consent packet', () => {

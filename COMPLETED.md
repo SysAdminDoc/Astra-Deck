@@ -58,8 +58,10 @@ package versions; the live product-version sources currently agree at v4.46.0.
   the real popup, seeds enabled optional enrichment features, and verifies the
   Grant access banner lists all five missing runtime optional origins before any
   grant is accepted. Managed Google Chrome on this PC blocks
-  `--load-extension`, so the smoke falls back to Edge and leaves headed
-  grant/deny/revoke prompt acceptance as a release manual check.
+  `--load-extension`, so the smoke falls back to Edge. A 2026-06-06 follow-up
+  added headed Chromium prompt-state modes for denied prompts and
+  accepted-then-revoked grants while keeping the default smoke readiness-only.
+  Native headed Chromium and Firefox prompt runs remain release-operator checks.
 - 2026-06-05: Firefox MV3 release gating was added. `web-ext@10.3.0` is
   exact-pinned, `npm run check` now runs `check:firefox` to stage and lint both
   store-safe and GitHub-full Firefox manifests, and the tag release workflow
