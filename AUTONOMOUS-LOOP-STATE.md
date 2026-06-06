@@ -123,7 +123,13 @@
   removes the accepted origins through `chrome.permissions.remove()`, and
   verifies the popup returns to the permission-needed state. The default
   headless smoke remains readiness-only with managed Chrome policy fallback to
-  Edge.
+  Edge. Cycle 38 then added a headed Firefox optional-host prompt harness:
+  `npm run smoke:firefox -- --headed --manual-optional-hosts` maps the staged
+  Gecko id to a stable internal UUID, opens the popup directly at a
+  `moz-extension://` URL, keeps Firefox headed, prints expected optional
+  origins, and records the accept/deny/revoke operator checklist. The local
+  machine has no Firefox executable on the searched paths, so no native Firefox
+  prompt pass is claimed for this cycle.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -153,6 +159,16 @@
   - `npm run smoke:optional-hosts` (Google Chrome policy blocked
     `--load-extension`; Microsoft Edge loaded the staged store-safe popup and
     reported five missing runtime optional origins before grant)
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+- Cycle 38 Firefox optional-host prompt-harness verification:
+  - `node --check scripts/smoke-firefox-webext.js`
+  - `node --test tests/firefox-injection-audit.test.js`
+  - `npm run smoke:firefox` was attempted and failed before launch with
+    `Firefox executable not found. Install Firefox or pass --firefox <path>.`
+    No native Firefox prompt result is claimed.
   - `npm test`
   - `npm run check`
   - `npm run build`
@@ -473,7 +489,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 37, the remaining
+  implementable without exposing secrets. As of Cycle 38, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -481,19 +497,22 @@
   dependency-review workflow remains blocked until the repository dependency
   graph is enabled. Optional-permissions code is in place; Chromium pre-grant
   prompt readiness plus headed accept/deny/revoke state modes are scripted with
-  Edge fallback, but those headed modes still need a release-operator run and
-  Firefox prompt smoke remains open before treating the store-safe permission UX
-  as release-smoked. Capture-week
+  Edge fallback, and Firefox now has a headed manual optional-host prompt
+  harness. Those headed Chromium/Firefox modes still need a release-operator
+  run before treating the store-safe permission UX as release-smoked.
+  Capture-week
   remainder is now history, Watch Later, and open notifications; those require
   authenticated or clicked menu-state browser evidence before selector packs can
   be promoted. Cycle 34 delivered the hosted policy closure runbook, Cycle 35
   refined the authenticated selector lane into
   `docs/research-cycle-35-authenticated-capture-implementation-plan.md`, Cycle
-  36 delivered the helper CLI/safety slice, and Cycle 37 delivered the Chromium
-  optional-host prompt-state smoke slice. Start Cycle 38 with positive
+  36 delivered the helper CLI/safety slice, Cycle 37 delivered the Chromium
+  optional-host prompt-state smoke slice, and Cycle 38 delivered the Firefox
+  headed prompt harness. Start Cycle 39 with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  Firefox optional-host prompt smoke planning. Do not add fixture-builder
+  repository policy closure documentation or release-smoke checklist hardening.
+  Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external
   evidence. Commit and push completed repository work when the branch remote
