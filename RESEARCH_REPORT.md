@@ -18,6 +18,15 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 39 added a deterministic Actions policy payload generator.
+  `npm run policy:actions` scans tracked workflow YAML files, rejects external
+  `uses:` refs that are not pinned to full SHAs or lack same-line version
+  comments, and emits the hosted settings payload for selected actions:
+  Actions enabled, `allowed_actions: selected`, `sha_pinning_required: true`,
+  GitHub-owned actions allowed, verified creators disabled, and the pinned
+  `browser-actions/setup-firefox` ref as the only `patterns_allowed` entry.
+  The hosted repository setting remains manual-gated until the branch lands on
+  `main` and hosted workflow proof can be recorded.
 - [Verified] Cycle 36 delivered the helper-only authenticated capture safety
   slice without adding fixture-builder registrations or selector-pack
   promotion. `scripts/capture-watch-mhtml.js` now exposes `history`,

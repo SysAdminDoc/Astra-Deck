@@ -50,6 +50,7 @@ git log -1 --oneline origin/main
 gh api repos/SysAdminDoc/Astra-Deck/contents/.github/CODEOWNERS --jq .path
 rg -n "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)" .github/workflows
 rg -n "uses:\s*[^#]+@[0-9a-f]{40}\s+#\s+v" .github/workflows
+npm run policy:actions
 ```
 
 Expected:
@@ -59,6 +60,8 @@ Expected:
 - `.github/CODEOWNERS` exists on `main`.
 - The mutable-ref grep returns no matches.
 - The SHA-ref grep lists every external action.
+- `npm run policy:actions` emits the selected-actions payload and fails if a
+  workflow action is not SHA-pinned or lacks its same-line version comment.
 
 ## Step 1: Refresh Hosted State
 
@@ -171,6 +174,7 @@ Read-only proof before mutation:
 $env:GH_PROMPT_DISABLED = '1'
 rg -n "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)" .github/workflows
 rg -n "uses:\s*[^#]+@[0-9a-f]{40}\s+#\s+v" .github/workflows
+npm run policy:actions
 gh run list --workflow Validate --limit 5
 gh run list --workflow "Build & Release" --limit 5
 gh run list --workflow CodeQL --limit 5
@@ -185,7 +189,8 @@ Maintainer action:
 3. Keep verified creators disabled unless a future workflow deliberately needs
    that broader trust boundary.
 4. Add `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
-   to the selected-action allowlist.
+   to the selected-action allowlist, matching the `patterns_allowed` value from
+   `npm run policy:actions`.
 5. Enable full-length SHA-pinning requirement.
 
 Post-change verification:

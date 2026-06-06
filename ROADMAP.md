@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 38 - 2026-06-06.
+> Last researched: Cycle 39 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -1206,13 +1206,19 @@ means implemented/closed by the build lane.
     Release`, `yt-dlp Smoke`, and `CodeQL`. Hardening tests now reject mutable
     tag/branch action refs and pin the resolved upstream commits, including
     `actions/dependency-review-action` at its real `v5.0.0` release commit.
-    Remaining scope is the repository settings change to `selected` actions and
-    `sha_pinning_required: true`, plus hosted workflow proof after those
-    settings are applied.
+    Cycle 39 added `npm run policy:actions`, which scans all workflow `uses:`
+    lines, fails if an external action is not pinned to a full SHA or lacks the
+    same-line version comment, and emits the exact hosted payload for
+    `allowed_actions: selected`, `sha_pinning_required: true`,
+    GitHub-owned actions allowed, verified creators disabled, and the pinned
+    `browser-actions/setup-firefox` ref as the only `patterns_allowed` entry.
+    Remaining scope is the repository settings change itself, plus hosted
+    workflow proof after those settings are applied.
   - Verify: `rg -n "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)"
     .github/workflows` returns no mutable major-branch action refs, while
     `rg -n "uses:\s*[^#]+@[0-9a-f]{40}\s+#\s+v" .github/workflows` lists every
-    external action. `node --test tests/hardening.test.js
+    external action. `npm run policy:actions` emits the selected-actions
+    payload and inventory. `node --test tests/hardening.test.js
     --test-name-pattern="GitHub workflows pin|CodeQL scans|release manifest
     generation|validate workflow audits"` passes. `gh api
     repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
@@ -2154,7 +2160,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 38 - Firefox optional-host prompt harness, 2026-06-06.
+Cycle 39 - Actions selected-policy payload generator, 2026-06-06.
 
 ### Current Focus
 
@@ -2191,6 +2197,10 @@ allows it.
 - Cycle 38 added a headed Firefox optional-host prompt harness. The local
   machine does not have Firefox installed, so the cycle verified the script and
   argument shape but did not claim a native Firefox prompt pass.
+- Cycle 39 added `npm run policy:actions`, a deterministic workflow inventory
+  and selected-actions payload generator. It proves the current source-side
+  allowlist has only the pinned `browser-actions/setup-firefox` ref outside
+  GitHub-owned actions.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2198,12 +2208,8 @@ allows it.
   `sha_pinning_required` is `false`, Dependabot security updates are disabled,
   `main` does not require code-owner reviews, default-branch CODEOWNERS errors
   still return `404`, and release `v4.46.0` still lacks companion EXE/sidecar
-  assets.
-- `rtk git log -10` was attempted at session start, but `rtk` was not on this
-  PowerShell PATH; plain `git log -10 --oneline --decorate` was used instead.
-- The worktree already contained uncommitted Cycle 31 selector-fixture changes
-  before this chat touched files. This chat added roadmap/research/continuation
-  notes only and did not commit.
+  assets. The selected-actions payload can now be regenerated with
+  `npm run policy:actions` before any hosted settings change.
 
 ### Next Best Actions
 
@@ -2226,12 +2232,12 @@ allows it.
   tracked files.
 - Whether a later Playwright migration is still worth the added dependency now
   that the lower-risk external Chrome profile lane exists.
-- How to prove the selected-actions policy without breaking the pinned
-  `browser-actions/setup-firefox` release smoke dependency.
+- Whether dependency graph / Dependabot alerts should be enabled alone first or
+  together with Dependabot security updates in the hosted settings pass.
 
 ### Files Still To Inspect
 
-- None for the current optional-host prompt smoke thread.
+- None for the current hosted-policy source-hardening thread.
 
 ### Searches Completed In Cycle 37
 
