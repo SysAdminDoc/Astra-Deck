@@ -135,7 +135,11 @@
   emits the hosted permissions payload plus selected-actions allowlist. The
   current source inventory has GitHub-owned actions allowed, verified creators
   disabled, and only the pinned `browser-actions/setup-firefox` ref in
-  `patterns_allowed`.
+  `patterns_allowed`. Cycle 40 then guarded the PR-only Dependency review job
+  while dependency graph remains hosted-gated: `Validate / Dependency review`
+  is advisory unless repository variable `DEPENDENCY_REVIEW_REQUIRED` is
+  exactly `true`, then it enforces the existing `fail-on-severity: moderate`
+  policy.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -181,6 +185,14 @@
   - `git diff --check`
 - Cycle 39 Actions selected-policy payload verification:
   - `node --check scripts/generate-actions-policy.js`
+  - `node --test tests/actions-policy.test.js`
+  - `npm run policy:actions`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+- Cycle 40 Dependency review advisory-gate verification:
+  - `node --test tests/dependency-review-policy.test.js`
   - `node --test tests/actions-policy.test.js`
   - `npm run policy:actions`
   - `npm test`
@@ -503,7 +515,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 39, the remaining
+  implementable without exposing secrets. As of Cycle 40, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -515,7 +527,9 @@
   harness. Those headed Chromium/Firefox modes still need a release-operator
   run before treating the store-safe permission UX as release-smoked.
   `npm run policy:actions` now generates the selected-actions policy payload
-  before hosted mutation. Capture-week
+  before hosted mutation, and `DEPENDENCY_REVIEW_REQUIRED=true` is now the
+  explicit switch for enforcing Dependency review after dependency graph proof.
+  Capture-week
   remainder is now history, Watch Later, and open notifications; those require
   authenticated or clicked menu-state browser evidence before selector packs can
   be promoted. Cycle 34 delivered the hosted policy closure runbook, Cycle 35
@@ -523,12 +537,13 @@
   `docs/research-cycle-35-authenticated-capture-implementation-plan.md`, Cycle
   36 delivered the helper CLI/safety slice, Cycle 37 delivered the Chromium
   optional-host prompt-state smoke slice, Cycle 38 delivered the Firefox headed
-  prompt harness, and Cycle 39 delivered the Actions policy payload generator.
-  Start Cycle 40 with positive
+  prompt harness, Cycle 39 delivered the Actions policy payload generator, and
+  Cycle 40 delivered the Dependency review advisory gate. Start Cycle 41 with
+  positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  dependency-review enablement documentation or release-smoke checklist
-  hardening.
+  release-smoke checklist hardening or roadmap cleanup for already-delivered
+  source-side policy items.
   Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external

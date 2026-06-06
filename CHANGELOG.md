@@ -98,6 +98,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `patterns_allowed`. The repository-level selected-actions and required-SHA
   policy switch remains a post-merge maintainer settings step.
 
+- **Dependency review made advisory until hosted graph setup is proven.** The
+  PR-only `Validate / Dependency review` job now uses repository variable
+  `DEPENDENCY_REVIEW_REQUIRED` as its enforcement switch. With the variable
+  unset, dependency PRs do not fail solely because dependency graph is not yet
+  enabled; setting it to `true` after hosted proof restores the existing
+  `fail-on-severity: moderate` gate.
+
 - **Store-safe enrichment hosts moved to runtime optional grants.** Store-safe
   generated manifests now keep only core YouTube hosts required while declaring
   SponsorBlock/DeArrow, thumbnail, Return YouTube Dislike, and Reddit hosts in

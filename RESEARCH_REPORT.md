@@ -18,6 +18,14 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 40 guarded the PR-only Dependency review check while the
+  hosted dependency graph setting remains unresolved. `.github/workflows/validate.yml`
+  keeps `Dependency review` on pull requests, but it is advisory until
+  repository variable `DEPENDENCY_REVIEW_REQUIRED` is exactly `true`; once
+  dependency graph is enabled and a PR run proves the check context, the
+  maintainer can set that variable to enforce the existing
+  `fail-on-severity: moderate` policy. Regression coverage pins the PR-only
+  condition, advisory switch, pinned action ref, and vulnerability floor.
 - [Verified] Cycle 39 added a deterministic Actions policy payload generator.
   `npm run policy:actions` scans tracked workflow YAML files, rejects external
   `uses:` refs that are not pinned to full SHAs or lack same-line version
