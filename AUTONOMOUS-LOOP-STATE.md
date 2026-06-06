@@ -116,7 +116,14 @@
   parse-time safety errors; `.gitignore` blocks common auth/profile artifacts;
   `docs/selector-fixture-workflow.md` documents the authenticated CDP path; and
   `tests/selector-regression.test.js` covers the deterministic negative paths
-  without launching Chrome.
+  without launching Chrome. Cycle 37 then extended the Chromium optional-host
+  smoke beyond pre-grant readiness: `--headed --expect-deny` now asserts that a
+  denied prompt leaves missing grants visible with explicit host-access copy,
+  and `--headed --attempt-grant --revoke-after-grant` accepts the prompt,
+  removes the accepted origins through `chrome.permissions.remove()`, and
+  verifies the popup returns to the permission-needed state. The default
+  headless smoke remains readiness-only with managed Chrome policy fallback to
+  Edge.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -137,6 +144,19 @@
     `--load-extension`; Microsoft Edge loaded the staged store-safe popup and
     reported five missing runtime optional origins before grant)
   - `node --test tests/optional-host-smoke.test.js`
+- Cycle 37 Chromium optional-host prompt-state verification passed:
+  - `node --check scripts/smoke-chromium-optional-hosts.js`
+  - `node --check extension/core/optional-host-permissions.js`
+  - `node --test tests/optional-host-smoke.test.js`
+  - `node --test tests/hardening.test.js --test-name-pattern "optional host permission helper"`
+  - `node sync-userscript.js`
+  - `npm run smoke:optional-hosts` (Google Chrome policy blocked
+    `--load-extension`; Microsoft Edge loaded the staged store-safe popup and
+    reported five missing runtime optional origins before grant)
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
 - Cycle 29 selector fixture matrix verification passed:
   - `npm run build:fixtures`
   - `node --test tests/selector-regression.test.js`
@@ -453,24 +473,28 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 36, the remaining
+  implementable without exposing secrets. As of Cycle 37, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
   required-SHA enforcement remains hosted settings work after merge, and the
   dependency-review workflow remains blocked until the repository dependency
-  graph is enabled. Optional-permissions code is in place and Chromium
-  pre-grant prompt readiness is scripted with Edge fallback; headed
-  Chrome/Edge and Firefox prompt accept/deny/revoke smoke remains before
-  treating the store-safe permission UX as release-smoked. Capture-week
+  graph is enabled. Optional-permissions code is in place; Chromium pre-grant
+  prompt readiness plus headed accept/deny/revoke state modes are scripted with
+  Edge fallback, but those headed modes still need a release-operator run and
+  Firefox prompt smoke remains open before treating the store-safe permission UX
+  as release-smoked. Capture-week
   remainder is now history, Watch Later, and open notifications; those require
   authenticated or clicked menu-state browser evidence before selector packs can
   be promoted. Cycle 34 delivered the hosted policy closure runbook, Cycle 35
   refined the authenticated selector lane into
-  `docs/research-cycle-35-authenticated-capture-implementation-plan.md`, and
-  Cycle 36 delivered the helper CLI/safety slice. Start Cycle 37 with positive
+  `docs/research-cycle-35-authenticated-capture-implementation-plan.md`, Cycle
+  36 delivered the helper CLI/safety slice, and Cycle 37 delivered the Chromium
+  optional-host prompt-state smoke slice. Start Cycle 38 with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  headed optional-host prompt smoke planning. Do not add fixture-builder
+  Firefox optional-host prompt smoke planning. Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
-  release uploads, commits, or pushes unless explicitly asked in this thread.
+  release uploads, or release-operator claims without the required external
+  evidence. Commit and push completed repository work when the branch remote
+  allows it.

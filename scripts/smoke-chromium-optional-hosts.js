@@ -107,9 +107,11 @@ function parseArgs(argv) {
     const opts = {
         attemptGrant: false,
         browser: '',
+        expectDeny: false,
         grantTimeoutMs: 5000,
         headed: false,
         keepStage: false,
+        revokeAfterGrant: false,
         stageRoot: '',
         timeoutMs: 12000,
     };
@@ -125,12 +127,24 @@ function parseArgs(argv) {
 
         if (arg === '--attempt-grant') opts.attemptGrant = true;
         else if (arg === '--browser') opts.browser = path.resolve(next());
+        else if (arg === '--expect-deny') opts.expectDeny = true;
         else if (arg === '--grant-timeout-ms') opts.grantTimeoutMs = Number(next()) || opts.grantTimeoutMs;
         else if (arg === '--headed') opts.headed = true;
         else if (arg === '--keep-stage') opts.keepStage = true;
+        else if (arg === '--revoke-after-grant') opts.revokeAfterGrant = true;
         else if (arg === '--stage-root') opts.stageRoot = path.resolve(next());
         else if (arg === '--timeout-ms') opts.timeoutMs = Number(next()) || opts.timeoutMs;
         else throw new Error(`Unknown argument: ${arg}`);
+    }
+
+    if (opts.expectDeny && opts.attemptGrant) {
+        throw new Error('--expect-deny cannot be combined with --attempt-grant');
+    }
+    if (opts.expectDeny && opts.revokeAfterGrant) {
+        throw new Error('--expect-deny cannot be combined with --revoke-after-grant');
+    }
+    if (opts.revokeAfterGrant && !opts.attemptGrant) {
+        throw new Error('--revoke-after-grant requires --attempt-grant');
     }
 
     return opts;
@@ -405,6 +419,108 @@ async function waitForGrantCompletion(client, expectedOptionalOrigins, timeoutMs
     return state || await readPopupState(client);
 }
 
+function validateGrantCompleted(state, expectedOptionalOrigins) {
+    const stillMissing = missingValues(expectedOptionalOrigins, state.currentOrigins || []);
+    if (stillMissing.length) {
+        throw new Error(
+            'Optional-host grant prompt did not complete. '
+            + 'Run with --headed --attempt-grant and accept the browser prompt. '
+            + `Still missing: ${stillMissing.join(', ')}`
+        );
+    }
+    if (state.buttonBusy === 'true' || state.buttonDisabled) {
+        throw new Error('Optional-host grant button did not settle after accepted prompt.');
+    }
+    if (state.bannerHidden !== true) {
+        throw new Error('Optional-host Grant access banner stayed visible after all origins were granted.');
+    }
+}
+
+async function waitForGrantDenial(client, expectedOptionalOrigins, timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    let state = null;
+    while (Date.now() < deadline) {
+        state = await readPopupState(client);
+        const stillMissing = missingValues(expectedOptionalOrigins, state.currentOrigins || []);
+        if (stillMissing.length
+            && state.buttonBusy !== 'true'
+            && !state.buttonDisabled
+            && /needs host access|host access/i.test(state.status || '')) {
+            return state;
+        }
+        await sleep(250);
+    }
+    return state || await readPopupState(client);
+}
+
+function validateGrantDenied(state, expectedOptionalOrigins) {
+    const stillMissing = missingValues(expectedOptionalOrigins, state.currentOrigins || []);
+    if (!stillMissing.length) {
+        throw new Error('Optional-host denial was expected, but all optional hosts were granted.');
+    }
+    if (state.buttonBusy === 'true' || state.buttonDisabled) {
+        throw new Error('Optional-host grant button did not settle after denied prompt.');
+    }
+    if (state.bannerHidden !== false) {
+        throw new Error('Optional-host Grant access banner is not visible after denied prompt.');
+    }
+    if (!/needs host access|host access/i.test(state.status || '')) {
+        throw new Error('Popup did not expose denied optional-host status copy.');
+    }
+}
+
+async function removeOptionalHostOrigins(client, expectedOptionalOrigins) {
+    const originsJson = JSON.stringify(expectedOptionalOrigins);
+    return evaluate(client, `new Promise((resolve) => {
+        if (!chrome.permissions || typeof chrome.permissions.remove !== 'function') {
+            resolve({ removed: false, lastError: 'chrome.permissions.remove unavailable', currentOrigins: [] });
+            return;
+        }
+        chrome.permissions.remove({ origins: ${originsJson} }, (removed) => {
+            const lastError = chrome.runtime.lastError?.message || '';
+            chrome.permissions.getAll((permissions) => resolve({
+                removed: Boolean(removed),
+                lastError,
+                currentOrigins: permissions.origins || []
+            }));
+        });
+    })`);
+}
+
+async function waitForRevokedState(client, expectedOptionalOrigins, timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    let state = null;
+    while (Date.now() < deadline) {
+        state = await readPopupState(client);
+        const stillMissing = missingValues(expectedOptionalOrigins, state.currentOrigins || []);
+        if (stillMissing.length === expectedOptionalOrigins.length
+            && state.bannerHidden === false
+            && state.buttonBusy !== 'true'
+            && !state.buttonDisabled
+            && /revoked|host access/i.test(state.status || state.bannerText || '')) {
+            return state;
+        }
+        await sleep(250);
+    }
+    return state || await readPopupState(client);
+}
+
+function validateRevokedState(state, expectedOptionalOrigins) {
+    const stillMissing = missingValues(expectedOptionalOrigins, state.currentOrigins || []);
+    if (stillMissing.length !== expectedOptionalOrigins.length) {
+        throw new Error(`Optional-host revoke left origins granted: ${missingValues(expectedOptionalOrigins, stillMissing).join(', ')}`);
+    }
+    if (state.buttonBusy === 'true' || state.buttonDisabled) {
+        throw new Error('Optional-host grant button did not settle after revocation.');
+    }
+    if (state.bannerHidden !== false) {
+        throw new Error('Optional-host Grant access banner is not visible after revocation.');
+    }
+    if (!state.missingBadges) {
+        throw new Error('Popup did not render permission-needed badges after optional-host revocation.');
+    }
+}
+
 function hasLoadExtensionPolicyBlock(stderr) {
     return /--load-extension is not allowed in Google Chrome, ignoring/i.test(stderr || '');
 }
@@ -470,27 +586,42 @@ async function runWithBrowser(candidate, manifest, stageDir, opts) {
         const expectedOptionalOrigins = sorted(manifest.optional_host_permissions || []);
         validatePromptReady(promptState, expectedOptionalOrigins, popup.popupUrl);
 
+        let denialState = null;
         let grantState = null;
-        if (opts.attemptGrant) {
+        let revokeResult = null;
+        let revokeState = null;
+        if (opts.expectDeny) {
+            await clickGrantButton(client);
+            denialState = await waitForGrantDenial(client, expectedOptionalOrigins, opts.grantTimeoutMs);
+            validateGrantDenied(denialState, expectedOptionalOrigins);
+        } else if (opts.attemptGrant) {
             await clickGrantButton(client);
             grantState = await waitForGrantCompletion(client, expectedOptionalOrigins, opts.grantTimeoutMs);
-            const stillMissing = missingValues(expectedOptionalOrigins, grantState.currentOrigins || []);
-            if (stillMissing.length) {
-                throw new Error(
-                    'Optional-host grant prompt did not complete. '
-                    + 'Run with --headed --attempt-grant and accept the browser prompt. '
-                    + `Still missing: ${stillMissing.join(', ')}`
-                );
+            validateGrantCompleted(grantState, expectedOptionalOrigins);
+
+            if (opts.revokeAfterGrant) {
+                revokeResult = await removeOptionalHostOrigins(client, expectedOptionalOrigins);
+                if (revokeResult.lastError) {
+                    throw new Error(`Optional-host revoke failed: ${revokeResult.lastError}`);
+                }
+                if (!revokeResult.removed) {
+                    throw new Error('Optional-host revoke failed: chrome.permissions.remove returned false.');
+                }
+                revokeState = await waitForRevokedState(client, expectedOptionalOrigins, opts.grantTimeoutMs);
+                validateRevokedState(revokeState, expectedOptionalOrigins);
             }
         }
 
         return {
             browser: candidate.label,
             browserPath: candidate.path,
+            denialState,
             extensionId,
             expectedOptionalOrigins,
             grantState,
             promptState,
+            revokeResult,
+            revokeState,
             stageDir,
             stderr,
         };
@@ -556,10 +687,15 @@ async function main(argv = process.argv.slice(2)) {
     console.log(`[smoke-chromium-optional-hosts] ${result.browser}: loaded store-safe MV3 ${result.extensionId}`);
     console.log(`[smoke-chromium-optional-hosts] optional hosts before grant: ${result.expectedOptionalOrigins.length} missing`);
     console.log(`[smoke-chromium-optional-hosts] banner: ${result.promptState.bannerText}`);
-    if (opts.attemptGrant) {
+    if (opts.expectDeny) {
+        console.log('[smoke-chromium-optional-hosts] optional host denial confirmed; missing origins stayed visible');
+    } else if (opts.attemptGrant) {
         console.log('[smoke-chromium-optional-hosts] optional host grant completed');
+        if (opts.revokeAfterGrant) {
+            console.log('[smoke-chromium-optional-hosts] optional host revoke completed; Grant access banner returned');
+        }
     } else {
-        console.log('[smoke-chromium-optional-hosts] grant not attempted; use --headed --attempt-grant for manual prompt acceptance');
+        console.log('[smoke-chromium-optional-hosts] grant not attempted; use --headed --attempt-grant for acceptance, --headed --expect-deny for denial, or --headed --attempt-grant --revoke-after-grant for revocation');
     }
 }
 
@@ -579,5 +715,8 @@ module.exports = {
     missingValues,
     parseArgs,
     shouldStageEntry,
+    validateGrantCompleted,
+    validateGrantDenied,
     validatePromptReady,
+    validateRevokedState,
 };

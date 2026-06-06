@@ -65,6 +65,12 @@
             return invokePermissionsMethod(permissionsApi, runtimeApi, 'request', { origins: normalized });
         }
 
+        function remove(origins) {
+            const normalized = normalizeOrigins(origins);
+            if (!normalized.length) return Promise.resolve(true);
+            return invokePermissionsMethod(permissionsApi, runtimeApi, 'remove', { origins: normalized });
+        }
+
         function onAdded(listener) {
             if (!permissionsApi?.onAdded || typeof permissionsApi.onAdded.addListener !== 'function') return false;
             permissionsApi.onAdded.addListener(listener);
@@ -82,6 +88,7 @@
             isSupported,
             onAdded,
             onRemoved,
+            remove,
             request
         };
     }
