@@ -15,7 +15,13 @@ const {
     summarizeLintOutput
 } = require('../scripts/check-firefox-webext.js');
 const {
+    buildWebExtRunArgs,
     DEFAULT_START_URL,
+    FIREFOX_OPTIONAL_HOST_UUID,
+    MANUAL_OPTIONAL_HOST_TIMEOUT_MS,
+    firefoxExtensionUrl,
+    firefoxStartUrls,
+    firefoxUuidPreference,
     hasStartupFailure,
     parseArgs: parseFirefoxSmokeArgs
 } = require('../scripts/smoke-firefox-webext.js');
@@ -110,8 +116,11 @@ test('Firefox clean-profile smoke command is exposed for AMO pre-submission runs
     assert.deepEqual(
         parseFirefoxSmokeArgs(['--firefox', 'C:/Firefox/firefox.exe', '--timeout-ms', '1234']),
         {
+            extensionUuid: FIREFOX_OPTIONAL_HOST_UUID,
             firefox: 'C:/Firefox/firefox.exe',
+            headed: false,
             keepStage: false,
+            manualOptionalHosts: false,
             stageRoot: '',
             startUrl: DEFAULT_START_URL,
             timeoutMs: 1234
@@ -127,10 +136,34 @@ test('Firefox clean-profile smoke command is exposed for AMO pre-submission runs
         'smoke must use web-ext run against a clean staged source dir and stable start URL');
     assert.match(smokeScript, /'--arg=-headless'/,
         'smoke must run Firefox headless for CI/operator reproducibility');
+    assert.match(smokeScript, /--manual-optional-hosts/,
+        'smoke must expose a headed manual optional-host prompt harness');
     assert.match(buildWorkflow, /browser-actions\/setup-firefox@[0-9a-f]{40}\s+#\s+v1\.7\.2/,
         'release workflow must install Firefox through a pinned setup-firefox action');
     assert.match(buildWorkflow, /npm run smoke:firefox -- --firefox "\$\{\{ steps\.setup-firefox\.outputs\.firefox-path \}\}"/,
         'release workflow must run the clean-profile store-safe Firefox smoke');
     assert.equal(hasStartupFailure('WebExtError: boom'), true);
     assert.equal(hasStartupFailure('Use --verbose or open about:debugging for details'), false);
+});
+
+test('Firefox optional-host prompt harness opens a stable headed popup URL', () => {
+    const opts = parseFirefoxSmokeArgs(['--headed', '--manual-optional-hosts']);
+    const popupUrl = firefoxExtensionUrl(FIREFOX_OPTIONAL_HOST_UUID, 'popup.html');
+    assert.equal(opts.headed, true);
+    assert.equal(opts.manualOptionalHosts, true);
+    assert.equal(opts.timeoutMs, MANUAL_OPTIONAL_HOST_TIMEOUT_MS);
+    assert.deepEqual(firefoxStartUrls(opts), [popupUrl, DEFAULT_START_URL]);
+
+    const args = buildWebExtRunArgs('stage-dir', 'C:/Firefox/firefox.exe', opts);
+    assert.ok(args.includes('--pref'), 'manual harness must pin Firefox extension UUID through a pref');
+    assert.ok(args.includes(firefoxUuidPreference(FIREFOX_OPTIONAL_HOST_UUID)),
+        'manual harness must map the Gecko id to the stable moz-extension UUID');
+    assert.ok(args.includes(popupUrl), 'manual harness must open the extension popup URL');
+    assert.equal(args.includes('--arg=-headless'), false,
+        'manual prompt checks must run in headed Firefox');
+
+    assert.throws(() => parseFirefoxSmokeArgs(['--manual-optional-hosts']),
+        /requires --headed/);
+    assert.throws(() => parseFirefoxSmokeArgs(['--extension-uuid', 'not-a-uuid']),
+        /must be a UUID/);
 });

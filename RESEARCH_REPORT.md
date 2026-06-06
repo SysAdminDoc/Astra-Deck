@@ -157,8 +157,10 @@ or maintainer action to confirm.
   blocks `--load-extension`, so the smoke falls back to Edge. Cycle 37 added
   headed Chromium prompt-state modes for denied prompts and accepted-then-
   revoked grants, with helper-level tests pinning grant, denial, and revocation
-  state validation. The native headed Chromium prompt modes and equivalent
-  Firefox prompt smoke still need release-operator execution before tagging.
+  state validation. Cycle 38 added a headed Firefox manual prompt harness with
+  a stable `moz-extension://` popup URL and expected optional-origin output.
+  Native headed Chromium and Firefox prompt runs still need release-operator
+  execution before tagging.
 - [Verified] Companion setup documentation now separates browser install from
   the Astra Downloader local companion. README states that latest release
   `v4.46.0` lacks `AstraDownloader.exe` and

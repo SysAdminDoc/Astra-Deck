@@ -40,7 +40,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `--headed --expect-deny` requires the missing-grant banner and denial copy to
   remain visible, while `--headed --attempt-grant --revoke-after-grant` removes
   accepted origins through `chrome.permissions.remove()` and requires the popup
-  to return to the permission-needed state.
+  to return to the permission-needed state. Firefox now has a headed manual
+  prompt harness through `npm run smoke:firefox -- --headed
+  --manual-optional-hosts`, which opens the staged popup at a stable
+  `moz-extension://` URL and prints the optional-origin checklist for release
+  operators.
 
 - **Firefox MV3 release gate added.** `web-ext@10.3.0` is exact-pinned and
   `npm run check` now stages both store-safe and GitHub-full Firefox manifests
