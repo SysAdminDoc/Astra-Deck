@@ -6,8 +6,9 @@
 - Path: `\\vmware-host\Shared Folders\repos\Astra-Deck`
 - Branch: `codex/research-feature-plan-2026-06-05`
 - Last cycle: 2026-06-06
-- Result: Shipped the locale proofing queue for identical-to-English feature
-  copy, then shipped the retired options-page runtime-copy fix for the AI summary
+- Result: Shipped the locale proofing export pack, then shipped the locale
+  proofing queue for identical-to-English feature copy, then shipped the
+  retired options-page runtime-copy fix for the AI summary
   missing-key path, then reconciled release automation docs with the
   maintainer-local public-release contract, then migrated GitHub-owned workflow
   action pins to Node 24-ready majors, then moved CRX signing-key custody out
@@ -155,7 +156,11 @@
   per-locale `feature_*_(name|desc)` proofing counts plus sample keys, and
   `npm run i18n:coverage:warn` warns above the 582-message unresolved baseline.
   The locale generator now shares the reviewed do-not-translate policy and
-  preserves proofed feature overrides when regenerating locale bundles.
+  preserves proofed feature overrides when regenerating locale bundles. Cycle
+  44 then added `npm run i18n:proofing-export`, which writes translator-ready
+  per-locale CSV files, `README.md`, and `index.json` under ignored
+  `build/i18n-proofing/` with blank `proposed_translation` and `notes` fields
+  for native-speaker review.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -246,6 +251,14 @@
   - `node scripts/generate-locales.js`
   - `node --test tests/i18n-coverage.test.js`
   - `npm run i18n:coverage:warn`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `rtk git diff --check`
+- Cycle 44 i18n proofing-export focused verification:
+  - `node --check scripts/export-i18n-proofing.js`
+  - `node --test tests/i18n-proofing-export.test.js`
+  - `npm run i18n:proofing-export`
   - `npm test`
   - `npm run check`
   - `npm run build`
@@ -566,7 +579,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 43, the remaining
+  implementable without exposing secrets. As of Cycle 44, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -591,13 +604,14 @@
   prompt harness, Cycle 39 delivered the Actions policy payload generator, and
   Cycle 40 delivered the Dependency review advisory gate, and Cycle 41 delivered
   the release-readiness report gate, and Cycle 42 delivered the release digest
-  verifier, and Cycle 43 delivered the locale proofing queue. Start Cycle 44
+  verifier, Cycle 43 delivered the locale proofing queue, and Cycle 44 delivered
+  the translator-ready locale proofing export. Start Cycle 45
   with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  native-speaker-proofing preparation from `docs/i18n-coverage.md`, roadmap
-  cleanup for already-delivered source-side policy items, or other source-side
-  proof that does not claim hosted/operator evidence.
+  native-speaker-proofing workflow hardening from `build/i18n-proofing/`,
+  roadmap cleanup for already-delivered source-side policy items, or other
+  source-side proof that does not claim hosted/operator evidence.
   Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external

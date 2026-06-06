@@ -23,6 +23,7 @@
     "build:fixtures": "node scripts/build-selector-fixtures.js",
     "i18n:coverage": "node scripts/i18n-coverage.js",
     "i18n:coverage:warn": "node scripts/i18n-coverage.js --warn-feature-identical-above 582",
+    "i18n:proofing-export": "node scripts/export-i18n-proofing.js",
     "audit:storage": "node scripts/audit-storage-size.js",
     "capture:watch": "node scripts/capture-watch-mhtml.js",
     "capture:surface": "node scripts/capture-watch-mhtml.js",
