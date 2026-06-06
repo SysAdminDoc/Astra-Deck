@@ -30,6 +30,11 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-06: Release digest verification was added. `npm run
+  release:verify-digests` compares GitHub Release asset `sha256:` digests
+  against local `build/SHA256SUMS`, includes the checksum file's own digest,
+  and fails on missing, extra, duplicate, or mismatched assets. Tests use
+  offline fixture JSON so live public-release proof remains maintainer-local.
 - 2026-06-06: Release readiness reporting was added. `npm run
   release:readiness` writes JSON and Markdown proof under
   `build/release-readiness/`, checking version sync, release-manifest and

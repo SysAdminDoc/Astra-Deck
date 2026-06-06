@@ -264,8 +264,11 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
    For companion releases, also verify `AstraDownloader.exe`,
    `AstraDownloader.exe.sha256`, and `companionUpdateRequired: true`.
 10. Create or update the GitHub Release from local `build/*` assets.
-11. After upload, compare `gh release view <tag> --json assets` digest values
-   against `build/SHA256SUMS`.
+11. After upload, compare GitHub Release asset digests against the local
+   checksum file: `npm run release:verify-digests -- --tag vX.Y.Z`.
+   Run this from the same maintainer-local build directory whose signed CRX/XPI
+   files were uploaded; validation builds that use ephemeral CRX keys are not
+   expected to match public CRX digests.
 12. Before merging or tagging a companion `APP_VERSION` bump, download
     `AstraDownloader.exe` and `AstraDownloader.exe.sha256` from the target
     release and compare the local hash to the sidecar. Do not advance
