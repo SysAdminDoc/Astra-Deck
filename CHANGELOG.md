@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Release readiness report added.** `npm run release:readiness` now generates
+  machine-readable JSON and Markdown under `build/release-readiness/`, checking
+  version sync, release-manifest and SHA256SUMS coverage, SBOM presence, root
+  signing-key absence, expected artifact inventory, and companion EXE/sidecar
+  truth. The Build & Release workflow runs it with `--require-pass` after
+  `npm run release:manifest` and before artifact upload.
+
 - **Branch-scoped CodeQL alert remediation expanded.** Exact YouTube hostname
   parsing now replaces URL substring checks in channel/share/navigation paths,
   Disable SPA Navigation rejects non-http(s) schemes, Resume Playback Position

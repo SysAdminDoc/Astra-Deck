@@ -18,6 +18,13 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 41 added a generated release-readiness report for local and
+  CI release-smoke hardening. `npm run release:readiness` writes JSON and
+  Markdown under `build/release-readiness/`, verifies version surfaces,
+  release-manifest/SHA256SUMS/SBOM presence, expected artifact inventory,
+  local-signing disclosure, root key absence, and companion EXE/sidecar truth.
+  `.github/workflows/build.yml` now runs the report with `--require-pass`
+  after manifest generation and before artifact upload.
 - [Verified] Cycle 40 guarded the PR-only Dependency review check while the
   hosted dependency graph setting remains unresolved. `.github/workflows/validate.yml`
   keeps `Dependency review` on pull requests, but it is advisory until

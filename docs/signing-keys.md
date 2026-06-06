@@ -257,14 +257,16 @@ Use this path for public GitHub Releases while `ytkit.pem` remains local-only:
    `/releases/latest/download/AstraDownloader.exe`, so the EXE and sidecar
    must attach to the same latest product release unless the update URLs change.
 7. Otherwise, generate checksums and manifest: `npm run release:manifest`.
-8. Verify `build/SHA256SUMS` names every uploaded artifact and that
+8. Generate the release-readiness report and require a pass:
+   `npm run release:readiness -- --require-pass`.
+9. Verify `build/SHA256SUMS` names every uploaded artifact and that
    `build/release-manifest.json` marks `localSigningRequired: true`.
    For companion releases, also verify `AstraDownloader.exe`,
    `AstraDownloader.exe.sha256`, and `companionUpdateRequired: true`.
-9. Create or update the GitHub Release from local `build/*` assets.
-10. After upload, compare `gh release view <tag> --json assets` digest values
+10. Create or update the GitHub Release from local `build/*` assets.
+11. After upload, compare `gh release view <tag> --json assets` digest values
    against `build/SHA256SUMS`.
-11. Before merging or tagging a companion `APP_VERSION` bump, download
+12. Before merging or tagging a companion `APP_VERSION` bump, download
     `AstraDownloader.exe` and `AstraDownloader.exe.sha256` from the target
     release and compare the local hash to the sidecar. Do not advance
     `APP_VERSION` above the deployed companion release until that dry-run
@@ -278,7 +280,7 @@ User-facing companion setup docs must stay in sync with the live release:
   setup** prompt can complete from GitHub Releases.
 - If the release carries a companion self-update payload, README and release
   notes may list the EXE only together with the `.sha256` sidecar and the dry-run
-  hash comparison from step 11.
+  hash comparison from step 12.
 - The signed installer/MSI roadmap item remains separate. A portable EXE plus
   sidecar can prove the updater path, but it does not satisfy the signed
   Windows installer trust milestone.
