@@ -91,9 +91,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   yt-dlp smoke, and CodeQL workflows now reference external actions by
   full-length commit SHA with same-line version comments. The dependency-review
   job now pins the existing upstream `v5.0.0` release instead of the nonexistent
-  `v5` tag, and hardening tests reject mutable tag/branch action refs. The
-  repository-level selected-actions and required-SHA policy switch remains a
-  post-merge maintainer settings step.
+  `v5` tag, and hardening tests reject mutable tag/branch action refs.
+  `npm run policy:actions` now emits the selected-actions hosted policy payload
+  from the workflow inventory, with GitHub-owned actions allowed, verified
+  creators disabled, and only the pinned `browser-actions/setup-firefox` ref in
+  `patterns_allowed`. The repository-level selected-actions and required-SHA
+  policy switch remains a post-merge maintainer settings step.
 
 - **Store-safe enrichment hosts moved to runtime optional grants.** Store-safe
   generated manifests now keep only core YouTube hosts required while declaring

@@ -70,6 +70,10 @@ Source-tree status from 2026-06-05:
   commit because no upstream `v5` tag exists.
 - `tests/hardening.test.js` rejects mutable tag/branch action refs and pins the
   resolved action commits.
+- `npm run policy:actions` emits the hosted selected-actions payload from the
+  current workflow inventory and currently allows only
+  `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
+  outside GitHub-owned actions.
 
 Target hosted policy after the SHA-clean workflow branch lands and hosted
 workflow runs pass:
@@ -80,7 +84,8 @@ workflow runs pass:
 - Add explicit `patterns_allowed` entries only for deliberate non-GitHub-owned
   actions or reusable workflows. Current deliberate non-GitHub-owned action:
   `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
-  (`# v1.7.2`).
+  (`# v1.7.2`). Generate this list with `npm run policy:actions`; do not copy it
+  by hand from workflow files.
 - Require full-length SHA pinning for actions.
 
 Do not enable the hosted SHA-pinning policy until this branch has landed on the

@@ -129,7 +129,13 @@
   `moz-extension://` URL, keeps Firefox headed, prints expected optional
   origins, and records the accept/deny/revoke operator checklist. The local
   machine has no Firefox executable on the searched paths, so no native Firefox
-  prompt pass is claimed for this cycle.
+  prompt pass is claimed for this cycle. Cycle 39 then added a deterministic
+  Actions selected-policy payload generator: `npm run policy:actions` scans the
+  workflow inventory, rejects non-SHA or no-version-comment action refs, and
+  emits the hosted permissions payload plus selected-actions allowlist. The
+  current source inventory has GitHub-owned actions allowed, verified creators
+  disabled, and only the pinned `browser-actions/setup-firefox` ref in
+  `patterns_allowed`.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -169,6 +175,14 @@
   - `npm run smoke:firefox` was attempted and failed before launch with
     `Firefox executable not found. Install Firefox or pass --firefox <path>.`
     No native Firefox prompt result is claimed.
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+- Cycle 39 Actions selected-policy payload verification:
+  - `node --check scripts/generate-actions-policy.js`
+  - `node --test tests/actions-policy.test.js`
+  - `npm run policy:actions`
   - `npm test`
   - `npm run check`
   - `npm run build`
@@ -489,7 +503,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 38, the remaining
+  implementable without exposing secrets. As of Cycle 39, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -500,18 +514,21 @@
   Edge fallback, and Firefox now has a headed manual optional-host prompt
   harness. Those headed Chromium/Firefox modes still need a release-operator
   run before treating the store-safe permission UX as release-smoked.
-  Capture-week
+  `npm run policy:actions` now generates the selected-actions policy payload
+  before hosted mutation. Capture-week
   remainder is now history, Watch Later, and open notifications; those require
   authenticated or clicked menu-state browser evidence before selector packs can
   be promoted. Cycle 34 delivered the hosted policy closure runbook, Cycle 35
   refined the authenticated selector lane into
   `docs/research-cycle-35-authenticated-capture-implementation-plan.md`, Cycle
   36 delivered the helper CLI/safety slice, Cycle 37 delivered the Chromium
-  optional-host prompt-state smoke slice, and Cycle 38 delivered the Firefox
-  headed prompt harness. Start Cycle 39 with positive
+  optional-host prompt-state smoke slice, Cycle 38 delivered the Firefox headed
+  prompt harness, and Cycle 39 delivered the Actions policy payload generator.
+  Start Cycle 40 with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  repository policy closure documentation or release-smoke checklist hardening.
+  dependency-review enablement documentation or release-smoke checklist
+  hardening.
   Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external
