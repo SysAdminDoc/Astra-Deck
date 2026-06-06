@@ -393,6 +393,7 @@ npm run build                             # Build store-safe + GitHub-full artif
 npm run build:userscript                  # Include userscript artifact too
 npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json
 npm run release:manifest                  # Generate release-manifest.json + SHA256SUMS
+npm run release:readiness -- --require-pass # Generate release readiness JSON/Markdown
 node build-extension.js --profile store-safe
 node build-extension.js --profile github-full
 node build-extension.js --bump patch      # Bump and build
@@ -413,6 +414,8 @@ Outputs in `build/`:
 - `astra-deck-github-full-firefox-v*.zip` + `.xpi`
 - `ytkit-v*.user.js` (with `--with-userscript`)
 - `astra-deck-npm-sbom.cdx.json`, `release-manifest.json`, and `SHA256SUMS`
+- `release-readiness/release-readiness.json` and
+  `release-readiness/release-readiness.md` after `npm run release:readiness`
 
 Companion release assets are intentionally separate from the default extension
 build output. Only a companion release/staging pass should add
