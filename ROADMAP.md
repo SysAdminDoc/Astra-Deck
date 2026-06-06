@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 40 - 2026-06-06.
+> Last researched: Cycle 41 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -2168,7 +2168,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 40 - Dependency review advisory gate, 2026-06-06.
+Cycle 41 - Release readiness report, 2026-06-06.
 
 ### Current Focus
 
@@ -2213,6 +2213,11 @@ allows it.
   variable `DEPENDENCY_REVIEW_REQUIRED`, so dependency PRs stay advisory until
   hosted dependency graph setup is proven and the maintainer opts into
   enforcement.
+- Cycle 41 added `npm run release:readiness`, a generated JSON/Markdown release
+  report that checks version surfaces, release-manifest/SHA256SUMS/SBOM proof,
+  expected artifact inventory, root signing-key absence, local signing policy,
+  and companion EXE/sidecar truth. The release workflow now requires the report
+  to pass before artifact upload.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2223,7 +2228,9 @@ allows it.
   assets. The selected-actions payload can now be regenerated with
   `npm run policy:actions` before any hosted settings change. Dependency
   review enforcement can now be toggled with `DEPENDENCY_REVIEW_REQUIRED=true`
-  after dependency graph proof.
+  after dependency graph proof. Release artifact proof can now be regenerated
+  with `npm run release:readiness -- --require-pass` after the local release
+  build, SBOM, and manifest steps.
 
 ### Next Best Actions
 
@@ -2241,6 +2248,9 @@ allows it.
 4. Run the headed Chromium optional-host accept/deny/revoke modes and the new
    Firefox `--headed --manual-optional-hosts` harness on a release machine with
    the target browsers installed.
+5. After a maintainer-local release build, run `npm run release:readiness --
+   --require-pass`, then upload assets and compare GitHub Release digests
+   against `build/SHA256SUMS`.
 
 ### Unprocessed Leads
 

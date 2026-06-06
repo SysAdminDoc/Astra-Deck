@@ -139,7 +139,12 @@
   while dependency graph remains hosted-gated: `Validate / Dependency review`
   is advisory unless repository variable `DEPENDENCY_REVIEW_REQUIRED` is
   exactly `true`, then it enforces the existing `fail-on-severity: moderate`
-  policy.
+  policy. Cycle 41 then added a generated release-readiness report:
+  `npm run release:readiness` writes JSON/Markdown under
+  `build/release-readiness/` and checks version surfaces, release-manifest /
+  SHA256SUMS / SBOM proof, expected artifact inventory, root signing-key
+  absence, local signing policy, and companion EXE/sidecar truth before release
+  upload.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -195,6 +200,21 @@
   - `node --test tests/dependency-review-policy.test.js`
   - `node --test tests/actions-policy.test.js`
   - `npm run policy:actions`
+  - `npm test`
+  - `npm run check`
+  - `npm run build`
+  - `git diff --check`
+- Cycle 41 Release readiness report verification:
+  - `node --check scripts/generate-release-readiness.js`
+  - `node --test tests/release-readiness.test.js`
+  - `node --test tests/hardening.test.js --test-name-pattern="release manifest generation"`
+  - `npm run release:readiness` produced the expected validation-build FAIL
+    report before release manifest / SBOM / SHA256SUMS proof existed.
+  - `ASTRA_CRX_KEY_MODE=ephemeral npm run build:userscript`
+  - `npm sbom --omit=dev --sbom-format cyclonedx > build/astra-deck-npm-sbom.cdx.json`
+  - `npm run release:manifest`
+  - `npm run release:readiness -- --require-pass` produced a PASS report with
+    12 passing checks.
   - `npm test`
   - `npm run check`
   - `npm run build`
@@ -515,7 +535,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 40, the remaining
+  implementable without exposing secrets. As of Cycle 41, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -538,12 +558,13 @@
   36 delivered the helper CLI/safety slice, Cycle 37 delivered the Chromium
   optional-host prompt-state smoke slice, Cycle 38 delivered the Firefox headed
   prompt harness, Cycle 39 delivered the Actions policy payload generator, and
-  Cycle 40 delivered the Dependency review advisory gate. Start Cycle 41 with
-  positive
+  Cycle 40 delivered the Dependency review advisory gate, and Cycle 41 delivered
+  the release-readiness report gate. Start Cycle 42 with positive
   authenticated captures only if a maintainer-local external Chrome profile is
   available and populated; otherwise continue local-first roadmap work such as
-  release-smoke checklist hardening or roadmap cleanup for already-delivered
-  source-side policy items.
+  roadmap cleanup for already-delivered source-side policy items, release
+  digest comparison helpers, or other source-side proof that does not claim
+  hosted/operator evidence.
   Do not add fixture-builder
   registrations, selector-pack provenance, hosted setting changes, companion
   release uploads, or release-operator claims without the required external

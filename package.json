@@ -16,6 +16,7 @@
     "build": "node build-extension.js",
     "build:userscript": "node build-extension.js --with-userscript",
     "release:manifest": "node scripts/generate-release-manifest.js",
+    "release:readiness": "node scripts/generate-release-readiness.js",
     "release:stage-companion": "node scripts/stage-companion-release.js",
     "policy:actions": "node scripts/generate-actions-policy.js",
     "build:fixtures": "node scripts/build-selector-fixtures.js",

@@ -30,6 +30,12 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-06: Release readiness reporting was added. `npm run
+  release:readiness` writes JSON and Markdown proof under
+  `build/release-readiness/`, checking version sync, release-manifest and
+  SHA256SUMS coverage, SBOM presence, local signing-key custody, expected
+  artifact inventory, and companion asset truth. The Build & Release workflow
+  now runs it with `--require-pass` before artifact upload.
 - 2026-06-05: Branch-scoped CodeQL alerts were remediated across the extension,
   userscript, build scripts, popup/i18n audit helpers, transcript parser, and
   Python companion. URL handling now uses exact parsed YouTube hosts and
