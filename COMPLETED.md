@@ -30,6 +30,11 @@ package versions; the live product-version sources currently agree at v4.46.0.
 
 ## Recent Hardening And Polish
 
+- 2026-06-06: Locale proofing export was added. `npm run
+  i18n:proofing-export` writes translator-ready per-locale CSV files plus
+  `index.json` under ignored `build/i18n-proofing/`, with one unresolved
+  feature name/description placeholder per row and blank `proposed_translation`
+  / `notes` fields for native-speaker review.
 - 2026-06-06: Locale proofing queue reporting was added. `npm run
   i18n:coverage` now separates exact reviewed brand/technical matches from
   unresolved identical-to-EN placeholders, lists per-locale

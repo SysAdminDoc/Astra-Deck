@@ -18,6 +18,11 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 44 added a translator-ready proofing export for the feature
+  localization queue. `npm run i18n:proofing-export` writes per-locale CSV
+  files, `README.md`, and `index.json` under ignored `build/i18n-proofing/`,
+  with one unresolved `feature_*_(name|desc)` placeholder per row and blank
+  `proposed_translation` / `notes` fields for native-speaker review.
 - [Verified] Cycle 43 added a locale proofing queue for feature-copy
   localization. `npm run i18n:coverage` now separates exact reviewed
   brand/technical matches from unresolved identical-to-EN placeholders, emits
@@ -607,9 +612,9 @@ Top remaining opportunities (one-liners):
 8. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-9. Native-speaker proofing for the feature-copy queue now emitted by
-   `docs/i18n-coverage.md`; the queue/report infrastructure itself shipped in
-   Cycle 43. [Verified]
+9. Native-speaker proofing using the generated `build/i18n-proofing/` CSV pack;
+   the queue/report/export infrastructure itself shipped in Cycles 43-44.
+   [Verified]
 12. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
@@ -888,7 +893,9 @@ Current risk status:
   shipped earlier, and Cycle 43 now makes the remaining native-speaker work
   concrete: `docs/i18n-coverage.md` separates exact reviewed brand/technical
   matches from unresolved placeholders and lists 582 feature name/description
-  messages per non-EN locale for proofing. [Verified]
+  messages per non-EN locale for proofing. Cycle 44 adds
+  `npm run i18n:proofing-export` to generate the complete per-locale CSV handoff
+  under ignored `build/i18n-proofing/`. [Verified]
 - **[Closed] Python dependency audit gap.** `Validate / Python dependency
   audit` now runs `pip-audit` against `astra_downloader/requirements.txt` and
   uploads `astra-downloader-pip-audit` JSON. The remaining dependency-security

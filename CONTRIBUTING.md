@@ -135,6 +135,15 @@ demand, not on every commit:
     reviewed brand/technical terms, run the generator, then refresh the
     coverage report.
 
+- **`npm run i18n:proofing-export`** — Translator handoff export. Writes
+  per-locale CSV files plus `index.json` under ignored `build/i18n-proofing/`
+  with one row for each unresolved feature name/description placeholder.
+  Translators fill `proposed_translation` and `notes`; accepted entries are
+  then ported back into `scripts/generate-locales.js` or
+  `extension/_locales/zh_CN/messages.json`.
+  - Run: `npm run i18n:proofing-export`
+  - Optional: `node scripts/export-i18n-proofing.js --locale de --output-dir <path>`
+
 ## Code Style
 
 - Avoid new dependencies unless they solve a clear, high-value problem

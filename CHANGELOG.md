@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Locale proofing export added.** `npm run i18n:proofing-export` now writes
+  translator-ready per-locale CSV files plus `index.json` under ignored
+  `build/i18n-proofing/`, carrying unresolved feature name/description
+  placeholders with blank `proposed_translation` and `notes` columns for
+  native-speaker review.
+
 - **Locale proofing queue added.** `npm run i18n:coverage` now separates exact
   reviewed brand/technical matches from unresolved identical-to-EN
   placeholders, emits a per-locale feature name/description proofing queue with
