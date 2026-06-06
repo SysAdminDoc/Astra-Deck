@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 36 - 2026-06-06.
+> Last researched: Cycle 37 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -929,8 +929,15 @@ means implemented/closed by the build lane.
     enabled optional enrichment features, and verifies the pre-grant Grant
     access banner lists all five missing optional origins. Managed Google
     Chrome on this PC blocks `--load-extension`, so the smoke falls back to
-    Edge. The code-side item is complete; headed native prompt acceptance,
-    denial, and revocation smoke coverage remains open.
+    Edge. A sixth same-day slice added headed Chromium prompt-state modes:
+    `--headed --expect-deny` asserts the denied-prompt state leaves missing
+    grants visible with explicit host-access copy, and `--headed
+    --attempt-grant --revoke-after-grant` accepts the prompt, removes the
+    optional origins through `chrome.permissions.remove()`, and verifies the
+    popup returns to the permission-needed state. Chromium grant/deny/revoke
+    smoke is now scriptable, but the native headed browser prompts still need a
+    release operator run before tagging. Firefox headed prompt smoke remains
+    open separately.
   - Acceptance: core YouTube hosts stay required in `host_permissions`; eligible
     enrichment hosts move into generated `optional_host_permissions` for
     store-safe Chrome and Firefox artifacts; a shared permission helper checks,
@@ -2142,12 +2149,13 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 36 - Authenticated capture helper safety, 2026-06-06.
+Cycle 37 - Chromium optional-host prompt-state smoke, 2026-06-06.
 
 ### Current Focus
 
-Continue autonomous roadmap expansion from the latest open high-value items
-without committing or pushing unless explicitly asked in this thread.
+Continue autonomous roadmap expansion from the latest open high-value items in
+this repository, committing and pushing completed work when the branch remote
+allows it.
 
 ### Important Findings So Far
 
@@ -2169,6 +2177,12 @@ without committing or pushing unless explicitly asked in this thread.
   before MHTML write; notifications opens the topbar menu before capture; and
   tests cover the deterministic negative paths without requiring a signed-in
   profile.
+- Cycle 37 extended the Chromium optional-host smoke from readiness-only into
+  explicit headed prompt-state modes. The default smoke still verifies
+  pre-grant readiness headlessly with Edge fallback, while `--headed
+  --expect-deny` validates denial and `--headed --attempt-grant
+  --revoke-after-grant` validates accepted-then-revoked grants through
+  `chrome.permissions.remove()`.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2193,8 +2207,8 @@ without committing or pushing unless explicitly asked in this thread.
 2. If the branch has landed on `main` and the maintainer explicitly wants hosted
    settings changed, follow `docs/hosted-policy-closure.md`; otherwise keep the
    hosted mutations open.
-3. Continue the UX/product roadmap cycle by auditing the remaining manual
-   optional-host permission prompt checks across headed Chrome/Edge and Firefox.
+3. Run the new headed Chromium optional-host accept/deny/revoke modes with a
+   release operator, then add or run equivalent Firefox headed prompt smoke.
 
 ### Unprocessed Leads
 
@@ -2208,10 +2222,9 @@ without committing or pushing unless explicitly asked in this thread.
 
 ### Files Still To Inspect
 
-- `scripts/smoke-chromium-optional-hosts.js`
 - `scripts/smoke-firefox-webext.js`
 
-### Searches Still To Run
+### Searches Completed In Cycle 37
 
 - `site:developer.chrome.com extensions permissions.request user gesture optional_host_permissions`
 - `site:developer.mozilla.org WebExtensions optional_host_permissions permissions.request Firefox`
