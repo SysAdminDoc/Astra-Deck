@@ -18,9 +18,10 @@
         fallback: Object.freeze(['ytd-player #movie_player', '#player-container #movie_player']),
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
-            'Worldwide Societal Collapse... - YouTube.mhtml'
+            'Worldwide Societal Collapse... - YouTube.mhtml',
+            'mhtml/EmbedPlayer.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Use window.movie_player only from the MAIN-world bridge.'

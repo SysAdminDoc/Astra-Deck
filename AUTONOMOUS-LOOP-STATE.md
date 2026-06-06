@@ -5,7 +5,7 @@
 - Project: Astra Deck
 - Path: `\\vmware-host\Shared Folders\repos\Astra-Deck`
 - Branch: `codex/research-feature-plan-2026-06-05`
-- Last cycle: 2026-06-05
+- Last cycle: 2026-06-06
 - Result: Shipped the retired options-page runtime-copy fix for the AI summary
   missing-key path, then reconciled release automation docs with the
   maintainer-local public-release contract, then migrated GitHub-owned workflow
@@ -66,16 +66,57 @@
   matrix was then expanded over the existing home/watch/live-chat local capture
   corpus: `SURFACE_MATCH_SOURCES` now covers 15 proven surfaces, the regression
   derives its expected surface list from the builder, and every registered
-  surface must keep at least one matched stable selector. Dedicated Shorts,
-  channel, search-results, history, watch-later, embed-player, and
-  notifications-menu captures remain open in the capture-week backlog. The
+  surface must keep at least one matched stable selector. That first matrix pass
+  left dedicated Shorts, channel, search-results, history, watch-later,
+  embed-player, and notifications-menu captures open in the capture-week
+  backlog. The
   branch-scoped CodeQL alerts exposed after that push were then remediated
   across exact URL host/scheme parsing, Resume Playback Position storage,
   YouTube-local Quick Links URL normalization and DOM construction, userscript
   parser-helper removal, transcript entity/tag parsing, version-bump file
   reads, audit-helper sanitizer shapes, and generic folder-picker UI
   errors/local failure markers, with hardening tests added for each alert
-  class.
+  class. The capture-week backlog was then advanced again: `npm run
+  capture:surface` now provides public `shorts`, `search`, `channel`, and
+  `embed` Chrome DevTools profiles, derived token fixtures were committed for
+  `Shorts`, `SearchResults`, `Channel`, and `EmbedPlayer`, and
+  `selector-surface-matches.json` now proves required selectors for those
+  capture IDs. History and Watch Later remained account-gated in the current
+  unauthenticated profile, and open notifications still need a clicked
+  menu-state capture. The next roadmap-only pass then added Cycle 32 and Cycle
+  33 research: Cycle 32 reframed the remaining selector fixture work as a safe
+  authenticated/menu-state capture lane with auth/profile state outside the
+  repo, and Cycle 33 reframed the hosted/manual security residue as a
+  post-merge closure runbook before dependency graph, CODEOWNERS enforcement,
+  selected Actions, SHA-pinning, or release-asset settings are mutated. A live
+  `gh api` refresh for hosted settings and release assets timed out after 34
+  seconds in this environment, so those hosted claims must be refreshed before
+  acting. Cycle 34 then delivered `docs/hosted-policy-closure.md` and refreshed
+  hosted read-only state successfully: Actions remain `allowed_actions: all`
+  with `sha_pinning_required: false`, workflow token defaults remain read-only,
+  Dependabot security updates remain disabled, `main` still does not require
+  code-owner reviews, default-branch CODEOWNERS validation still returns `404`,
+  and release `v4.46.0` still lacks `AstraDownloader.exe` plus
+  `AstraDownloader.exe.sha256`. The runbook also records that
+  `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795` is
+  the only non-GitHub-owned workflow action and must be explicitly allowlisted
+  before selected-actions enforcement. Cycle 35 then converted the remaining
+  authenticated/menu-state selector work into an implementation contract in
+  `docs/research-cycle-35-authenticated-capture-implementation-plan.md`: add
+  `history`, `watch-later`, and `notifications` capture profiles to the
+  current CDP helper; use an absolute external Chrome profile path through
+  `--user-data-dir` or `ASTRA_CAPTURE_PROFILE_DIR`; reject any profile/auth
+  path under the repo; fail before writing MHTML when auth is missing, Watch
+  Later is empty, or the notifications menu cannot expose
+  `ytd-notification-renderer`; and add fixture-builder/test registrations only
+  atomically with derived token fixtures that prove stable matches. Cycle 36
+  then delivered that helper-only safety slice: `scripts/capture-watch-mhtml.js`
+  now has the authenticated profiles, external profile path support, repo-path
+  refusal, auth/content checks, notification menu opener, and one-line
+  parse-time safety errors; `.gitignore` blocks common auth/profile artifacts;
+  `docs/selector-fixture-workflow.md` documents the authenticated CDP path; and
+  `tests/selector-regression.test.js` covers the deterministic negative paths
+  without launching Chrome.
   Repository selected-actions and required-SHA settings remain a hosted
   follow-up after merge.
 
@@ -125,6 +166,91 @@
     checks passed for CodeQL, JS tests/check, Python dependency audit, and
     Python downloader tests. Dependency review remains failed because the
     repository dependency graph is not enabled.
+- Cycle 31 public selector capture-week verification passed:
+  - `node --check scripts/capture-watch-mhtml.js`
+  - `node --check scripts/build-selector-fixtures.js`
+  - `npm run capture:surface -- --surface search --timeout-ms 30000`
+  - `npm run capture:surface -- --surface channel --timeout-ms 30000`
+  - `npm run capture:surface -- --surface embed --timeout-ms 30000`
+  - Shorts captured with the same helper against `https://www.youtube.com/shorts`
+    and required `ytd-reel-video-renderer`.
+  - History and Watch Later probes were attempted without auth and did not
+    expose feed/playlist card selectors.
+  - `npm run build:fixtures`
+  - `node --test tests/selector-regression.test.js`
+- Cycle 32/33 roadmap research verification:
+  - Read `scripts/capture-watch-mhtml.js`,
+    `scripts/build-selector-fixtures.js`, `docs/selector-fixture-workflow.md`,
+    `docs/repo-settings.md`, `ROADMAP.md`, and this loop state.
+  - External docs reviewed: Chrome DevTools Protocol `Page.captureSnapshot`,
+    Playwright authentication storage-state guidance, GitHub dependency review,
+    GitHub CODEOWNERS, GitHub Actions permissions REST API, and GitHub Actions
+    secure-use guidance.
+  - `gh api` read-only refresh attempts for Actions permissions, security
+    analysis, branch review policy, and `v4.46.0` release assets timed out after
+    34 seconds; no hosted settings were changed.
+  - `ROADMAP.md` now has a `Continuation State` section naming Cycle 34 next
+    actions.
+- Cycle 34 hosted-policy runbook verification:
+  - Read `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
+    `.github/workflows/codeql.yml`, `.github/workflows/yt-dlp-smoke.yml`,
+    `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/codeql.yml`, and
+    `docs/repo-settings.md`.
+  - `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions --jq
+    '{enabled,allowed_actions,sha_pinning_required,selected_actions_url}'`
+    returned `allowed_actions: all` and `sha_pinning_required: false`.
+  - `gh api repos/SysAdminDoc/Astra-Deck/actions/permissions/workflow --jq .`
+    returned read-only workflow token defaults and disabled workflow-created PR
+    approvals.
+  - `gh api repos/SysAdminDoc/Astra-Deck --jq
+    '{private,security_and_analysis:.security_and_analysis}'` returned a public
+    repository with Dependabot security updates disabled and no dependency graph
+    field in the returned block.
+  - `gh api
+    repos/SysAdminDoc/Astra-Deck/branches/main/protection/required_pull_request_reviews
+    --jq '{required_approving_review_count,require_code_owner_reviews}'`
+    returned one required approving review and code-owner reviews disabled.
+  - `gh api repos/SysAdminDoc/Astra-Deck/codeowners/errors --jq .` returned
+    `404 Not Found` on the default branch.
+  - `gh release view v4.46.0 --repo SysAdminDoc/Astra-Deck --json
+    tagName,publishedAt,assets,url` returned 12 assets and no companion EXE or
+    sidecar.
+  - `rg -n
+    "uses:\s*[^#]+@(v[0-9]+|main|master)(\s|$)|uses:\s*[^#]+@[0-9a-f]{40}\s+#\s+v"
+    .github\workflows` confirmed SHA-pinned workflow refs and exposed
+    `browser-actions/setup-firefox` as the only non-GitHub-owned action.
+  - Added `docs/hosted-policy-closure.md` and
+    `docs/research-cycle-34-hosted-policy-runbook.md`; updated
+    `docs/repo-settings.md`, `ROADMAP.md`, and `RESEARCH_REPORT.md`.
+- Cycle 35 authenticated-capture implementation-plan verification:
+  - Read `scripts/capture-watch-mhtml.js`, `scripts/build-selector-fixtures.js`,
+    `tests/selector-regression.test.js`, `docs/selector-fixture-workflow.md`,
+    `.gitignore`, `package.json`, `extension/core/selector-packs/notifications.js`,
+    `extension/core/selector-packs/feed.js`,
+    `extension/core/selector-packs/feedCard.js`, and
+    `extension/core/selector-packs/leftNav.js`.
+  - External docs reviewed: Chrome DevTools Protocol `Page.captureSnapshot` and
+    Playwright authenticated state guidance.
+  - Added `docs/research-cycle-35-authenticated-capture-implementation-plan.md`;
+    updated `ROADMAP.md`, `RESEARCH_REPORT.md`, and this loop state.
+- Cycle 36 authenticated-capture helper-safety verification:
+  - `node --check scripts/capture-watch-mhtml.js`
+  - `node --check scripts/build-selector-fixtures.js`
+  - `node --test tests/selector-regression.test.js`
+  - `cmd.exe /v:on /d /c 'pushd "\\vmware-host\Shared Folders\repos\Astra-Deck" && (npm run capture:surface -- --surface history & set "code=!errorlevel!" & popd & exit /b !code!)'`
+    returned non-zero with the expected one-line auth-required message. A direct
+    UNC `npm run` remains invalid because Windows `cmd.exe` defaults UNC working
+    directories to `C:\Windows`, so the verification used transient `pushd`.
+  - `cmd.exe /v:on /d /c 'pushd "\\vmware-host\Shared Folders\repos\Astra-Deck" && (npm run capture:surface -- --surface history --user-data-dir "\\vmware-host\Shared Folders\repos\Astra-Deck\.auth" & set "code=!errorlevel!" & popd & exit /b !code!)'`
+    returned non-zero with the expected repo-worktree refusal, proving the
+    helper rejects a UNC repo-local profile path even when `cmd pushd` maps the
+    repo to a temporary drive letter.
+  - `git status --ignored --short -- mhtml playwright .auth capture-profiles`
+    reported `!! mhtml/`; raw MHTML remains ignored.
+  - Added `docs/research-cycle-36-authenticated-capture-helper-safety.md`;
+    updated `.gitignore`, `docs/selector-fixture-workflow.md`,
+    `scripts/capture-watch-mhtml.js`, `tests/selector-regression.test.js`,
+    `ROADMAP.md`, `RESEARCH_REPORT.md`, and this loop state.
 - Focused verification passed:
   `node --test tests/hardening.test.js --test-name-pattern="runtime settings guidance|standalone options page"`.
 - Cycle 2 release-doc verification passed:
@@ -327,7 +453,7 @@
 
 - Continue this same assigned project in the next autonomous-loop cycle.
 - Start with the next open high-priority roadmap item that is locally
-  implementable without exposing secrets. As of Cycle 25, the remaining
+  implementable without exposing secrets. As of Cycle 36, the remaining
   companion release-channel step is maintainer upload/live dry-run of the public
   EXE and sidecar, CODEOWNERS still needs default-branch validation plus `main`
   branch-protection enforcement after merge, repository selected-actions /
@@ -336,7 +462,15 @@
   graph is enabled. Optional-permissions code is in place and Chromium
   pre-grant prompt readiness is scripted with Edge fallback; headed
   Chrome/Edge and Firefox prompt accept/deny/revoke smoke remains before
-  treating the store-safe permission UX as release-smoked. After the latest
-  cycle is pushed, continue with the next open high-priority item that is
-  locally implementable without hosted settings or release-maintainer
-  credentials.
+  treating the store-safe permission UX as release-smoked. Capture-week
+  remainder is now history, Watch Later, and open notifications; those require
+  authenticated or clicked menu-state browser evidence before selector packs can
+  be promoted. Cycle 34 delivered the hosted policy closure runbook, Cycle 35
+  refined the authenticated selector lane into
+  `docs/research-cycle-35-authenticated-capture-implementation-plan.md`, and
+  Cycle 36 delivered the helper CLI/safety slice. Start Cycle 37 with positive
+  authenticated captures only if a maintainer-local external Chrome profile is
+  available and populated; otherwise continue local-first roadmap work such as
+  headed optional-host prompt smoke planning. Do not add fixture-builder
+  registrations, selector-pack provenance, hosted setting changes, companion
+  release uploads, commits, or pushes unless explicitly asked in this thread.

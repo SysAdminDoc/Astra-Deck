@@ -18,7 +18,8 @@
         'mhtml/WatchPage.mhtml',
         'mhtml/YouTube.mhtml',
         'Subscriptions - YouTube.mhtml',
-        'Worldwide Societal Collapse... - YouTube.mhtml'
+        'Worldwide Societal Collapse... - YouTube.mhtml',
+        'mhtml/SearchResults.mhtml'
     ]);
 
     registry.set('nav', Object.freeze({
@@ -26,7 +27,7 @@
         stable: stable,
         fallback: fallback,
         captureEvidence: captureEvidence,
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: false,
         needsFreshCapture: false,
         notes: 'Top navigation and masthead actions.'
@@ -37,7 +38,7 @@
         stable: stable,
         fallback: fallback,
         captureEvidence: captureEvidence,
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: false,
         needsFreshCapture: false,
         notes: 'Alias for nav so feature code can use either term.'

@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 25 - 2026-06-04.
+> Last researched: Cycle 36 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -74,22 +74,28 @@ means implemented/closed by the build lane.
     `YouTube.mhtml`, `WatchPage.mhtml`, and `LiveChat.mhtml` captures across
     `appShell`, `feed`, `feedCard`, `leftNav`, `media`, `nav`,
     `notifications`, `search`, `shortsShelf`, `thumbnail`, `mainVideo`,
-    `player`, `playerChrome`, `playerSettings`, and `liveChat`, and the
-    selector regression fails if a registered surface has no matched stable
-    selector. Dedicated captures are still missing for Shorts, channel, search
-    results, history, watch later, embedded player, and the open notifications
-    menu; `profile` / `channelProfile`, `sidebar`, `relatedSidebar`, and
-    `watch` are intentionally not promoted from the current watch capture
-    because its decoded DOM subset does not prove a stable match. [Verified]
+    `player`, `playerChrome`, `playerSettings`, and `liveChat`, then adds
+    capture IDs for public Shorts, search-results, channel, and embed-player
+    raw captures. The selector regression fails if a registered capture ID has
+    no matched stable selector. History, watch later, and the open
+    notifications menu remain missing because this automation profile did not
+    expose authenticated feed/menu state. `channel.feed`,
+    `embed.playerChrome`, `embed.playerSettings`, `sidebar`,
+    `relatedSidebar`, and `watch` are intentionally not promoted until a
+    capture proves their stable selector chains. [Verified]
   - Capture matrix:
     - `mhtml/Shorts.mhtml` -> `shortsShelf`, `media`, `thumbnail`.
+      _(Captured/proven 2026-06-05.)_
     - `mhtml/SearchResults.mhtml` -> `search`, `feedCard`, `thumbnail`, `nav`.
-    - `mhtml/Channel.mhtml` -> `profile` / `channelProfile`, `feed`,
-      `feedCard`, `thumbnail`.
+      _(Captured/proven 2026-06-05.)_
+    - `mhtml/Channel.mhtml` -> `profile` / `channelProfile`, `feedCard`,
+      `thumbnail`. `feed` remains unpromoted until a channel capture proves a
+      stable feed selector match. _(Captured/partially proven 2026-06-05.)_
     - `mhtml/History.mhtml` -> `feed`, `feedCard`, `thumbnail`, `appShell`.
     - `mhtml/WatchLater.mhtml` -> `feed`, `feedCard`, `thumbnail`, `leftNav`.
-    - `mhtml/EmbedPlayer.mhtml` -> `player`, `mainVideo`, `playerChrome`,
-      `playerSettings`.
+    - `mhtml/EmbedPlayer.mhtml` -> `player`, `mainVideo`. `playerChrome` and
+      `playerSettings` remain unpromoted until the capture proves opened chrome
+      / settings controls. _(Captured/partially proven 2026-06-05.)_
     - `mhtml/NotificationsMenu.mhtml` -> `notifications`, `nav`, `appShell`.
   - Touches: `mhtml/`, `tests/fixtures/*.tokens.txt`,
     `tests/fixtures/selector-surface-matches.json`,
@@ -101,8 +107,11 @@ means implemented/closed by the build lane.
     surface has no matched stable selector or a release-blocking required
     selector is unmatched. Raw `.mhtml` files remain gitignored; only derived
     fixtures and metadata are committed. _(Progress 2026-06-05: the existing
-    home/watch/live-chat captures now cover 15 proven surfaces; the new raw
-    capture files in the matrix above remain open.)_
+    home/watch/live-chat captures cover 15 proven surfaces; new public
+    `Shorts`, `SearchResults`, `Channel`, and `EmbedPlayer` captures now emit
+    committed token fixtures and multi-capture selector-match proofs. History
+    and Watch Later probes were account-gated in this profile, and the open
+    notifications menu still needs a clicked/menu-state capture.)_
   - Verify: `npm run build:fixtures`,
     `node --test tests/selector-regression.test.js`, then inspect
     `tests/fixtures/selector-surface-matches.json` for registered surfaces with
@@ -385,6 +394,234 @@ means implemented/closed by the build lane.
     regression pins the docs contract. The Cycle 22 release-channel proof and
     signed installer/MSI item remain open.
   - Complexity: S
+
+### Researcher Queue (Cycle 36 - 2026-06-06)
+
+- [x] `authenticated-capture-helper-safety-2026-06-06` - implemented the
+  helper-only first slice from Cycle 35 and documented it in
+  `docs/research-cycle-36-authenticated-capture-helper-safety.md`.
+  - Source changes: `scripts/capture-watch-mhtml.js` now has `history`,
+    `watch-later`, and `notifications` profiles; `--user-data-dir` and
+    `ASTRA_CAPTURE_PROFILE_DIR`; absolute external profile requirements for
+    authenticated surfaces; repo-path refusal before Chrome launch; signed-in /
+    populated-content probes; notification-menu opening before snapshot; and
+    one-line parse-time safety errors. [Verified]
+  - Safety/test changes: `.gitignore` now blocks `.auth/`,
+    `playwright/.auth/`, `capture-profiles/`, and `*.storageState.json`.
+    `tests/selector-regression.test.js` now asserts the helper docs, help text,
+    ignore guards, missing-auth failure, relative-path refusal, repo-local path
+    refusal, and env-var path refusal without launching Chrome. [Verified]
+  - Documentation: `docs/selector-fixture-workflow.md` now describes the
+    authenticated CDP capture path and states that fixture-builder
+    registrations must wait until a maintainer-local populated capture proves
+    stable selector matches. [Verified]
+  - Verification: `node --check scripts/capture-watch-mhtml.js`,
+    `node --check scripts/build-selector-fixtures.js`,
+    `node --test tests/selector-regression.test.js`, and a real
+    `npm run capture:surface -- --surface history` negative check via
+    `cmd pushd` over the UNC path. The npm check returned non-zero with the
+    expected one-line auth-required message. [Verified]
+  - Non-goals: no raw authenticated MHTML was captured, no fixture-builder
+    registrations or `selector-surface-matches.json` rows were added, no
+    selector-pack provenance was promoted, no hosted settings changed, and no
+    commit/push happened.
+
+### Researcher Queue (Cycle 35 - 2026-06-06)
+
+- [x] `authenticated-capture-implementation-plan-2026-06-06` - turned the
+  Cycle 32 authenticated/menu-state capture lane into a code-level
+  implementation contract in
+  `docs/research-cycle-35-authenticated-capture-implementation-plan.md`.
+  This pass inspected the current CDP helper, fixture builder, selector
+  regression, workflow docs, `.gitignore`, package scripts, and the
+  `notifications`, `feed`, `feedCard`, and `leftNav` selector packs. No raw
+  MHTML, auth state, hosted settings, release assets, commits, or source
+  implementation changes were made.
+  - Implementation finding: the current helper only has public profiles
+    (`watch`, `search`, `shorts`, `channel`, `embed`) and always launches a
+    temporary Chrome profile. Because it is a raw CDP helper, the first
+    authenticated slice should prefer `--user-data-dir <absolute external
+    profile>` / `ASTRA_CAPTURE_PROFILE_DIR` over Playwright storage-state,
+    while leaving storage-state as a later option if the helper migrates to
+    Playwright contexts. [Verified]
+  - Safety contract: authenticated profiles must be absolute, external to the
+    worktree, rejected when under `.git`, `mhtml`, `tests/fixtures`,
+    `playwright/.auth`, `.auth`, or any repo path, and omitted from success
+    JSON output. Missing auth, empty Watch Later, generic signed-out History,
+    or unopened/empty notifications menu must fail before writing a fixture.
+    [Verified]
+  - Fixture/test contract: add `History.mhtml`, `WatchLater.mhtml`, and
+    `NotificationsMenu.mhtml` registrations only atomically with derived
+    `yt-history.tokens.txt`, `yt-watch-later.tokens.txt`,
+    `yt-notifications-menu.tokens.txt`, and `selector-surface-matches.json`
+    rows proving stable matches for `history.*`, `watchLater.*`, and
+    `notifications.menu` capture IDs. [Verified]
+  - Roadmap impact: the existing P2 implementation item remains open, but its
+    next implementation order is now explicit: helper CLI/safety guards first,
+    negative auth/safety checks second, maintainer-local positive captures
+    third, then fixture-builder/test/selector-pack promotion.
+
+### Researcher Queue (Cycle 34 - 2026-06-06)
+
+- [x] 🔬 `hosted-policy-runbook-2026-06-06` - converted the Cycle 33 hosted
+  policy closure plan into `docs/hosted-policy-closure.md`, refreshed read-only
+  hosted state with `GH_PROMPT_DISABLED=1`, inspected the workflow action
+  inventory, and updated `docs/repo-settings.md` with the 2026-06-06 snapshot.
+  The runbook deliberately does not mutate repository settings or upload
+  release assets.
+  - Current hosted evidence: Actions remain enabled with `allowed_actions: all`
+    and `sha_pinning_required: false`; workflow token defaults remain read-only
+    with PR approval disabled; the repository is public; Dependabot security
+    updates remain disabled; dependency graph status is not exposed in the
+    returned `security_and_analysis` block; `main` still requires one approving
+    review but not code-owner reviews; the default-branch CODEOWNERS errors API
+    still returns `404` until `.github/CODEOWNERS` lands on `main`; release
+    `v4.46.0` has 12 assets and still lacks `AstraDownloader.exe` plus
+    `AstraDownloader.exe.sha256`. [Verified]
+  - Workflow policy finding: all workflow `uses:` refs are full 40-character
+    SHAs with same-line version comments. The only non-GitHub-owned action is
+    `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`,
+    so the selected-actions allowlist must include that exact pinned ref before
+    `allowed_actions: selected` is enforced. [Verified]
+  - Roadmap impact: the documentation/runbook item is closed, but the hosted
+    mutations themselves remain manual-gated: dependency graph / Dependabot
+    enablement, Dependency review rerun, CODEOWNERS enforcement, selected
+    Actions, SHA-pinning, companion EXE release upload, and headed optional-host
+    prompt smoke.
+
+### Researcher Queue (Cycle 33 - 2026-06-06)
+
+- [x] 🔬 `hosted-policy-closure-order-2026-06-06` - inspected the
+  repository-settings ledger, open manual-gated roadmap items for dependency
+  graph / Dependency review, CODEOWNERS enforcement, and Actions selected /
+  SHA-pinning policy, current workflow pinning notes, and GitHub documentation
+  for dependency review, CODEOWNERS, Actions permissions, and Actions secure-use
+  guidance. Detailed notes live in
+  `docs/research-cycle-33-hosted-policy-closure.md`.
+- [ ] P1 - 🔬🤖🔧 Add a post-merge hosted policy closure runbook
+  - Why: several high-value security controls are intentionally hosted/manual
+    after the SHA-clean branch lands on `main`, but they are split across Cycle
+    12, Cycle 16, Cycle 21, `docs/repo-settings.md`, and
+    `AUTONOMOUS-LOOP-STATE.md`. A future automation pass should not guess the
+    order or mutate hosted settings before source-side workflows have proved
+    clean under the new branch state.
+  - Evidence: `docs/repo-settings.md` records `allowed_actions: all`,
+    `sha_pinning_required: no`, dependency graph / Dependabot alert uncertainty,
+    CODEOWNERS pending merge to `main`, and a target hosted policy that should
+    wait for fresh hosted workflow proof. `ROADMAP.md` keeps open manual-gated
+    items for dependency graph before Dependency review, CODEOWNERS branch
+    protection, Actions selected-actions / SHA-pinning, companion EXE live
+    upload, and manual optional-host prompt smoke. A live `gh api` refresh was
+    attempted on 2026-06-06 for Actions permissions, security analysis, branch
+    review policy, and the `v4.46.0` release assets, but each command timed out
+    after 34 seconds in this environment, so the latest hosted state remains
+    unverified in this cycle. GitHub docs state that dependency review becomes
+    available when dependency graph is enabled
+    (https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review),
+    CODEOWNERS enforcement requires enabling "Require review from Code Owners"
+    in branch protection after a valid CODEOWNERS file exists
+    (https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners),
+    Actions permissions can set `allowed_actions: selected` and
+    `sha_pinning_required: true`
+    (https://docs.github.com/en/rest/actions/permissions), and GitHub's secure
+    use guidance says full-length commit SHA pinning is the immutable-action
+    option while same-line comments preserve Dependabot context
+    (https://docs.github.com/en/actions/reference/security/secure-use).
+    [Verified]
+  - Touches: `docs/repo-settings.md`, `ROADMAP.md`,
+    `AUTONOMOUS-LOOP-STATE.md`, and possibly a new `docs/hosted-policy-closure.md`
+    or equivalent runbook. Hosted GitHub settings must remain maintainer-gated.
+  - Acceptance: one tracked runbook names the exact safe order:
+    1) refresh hosted state with read-only `gh api` / `gh release view` checks;
+    2) enable dependency graph / Dependabot alerts where available and rerun the
+    Dependency review PR check; 3) after CODEOWNERS exists on `main`, validate
+    the default-branch CODEOWNERS API and enable code-owner review; 4) after
+    hosted Validate, Build & Release dry-run or tag run, yt-dlp Smoke, and
+    CodeQL pass on pinned workflow refs, change Actions to selected sources and
+    require full-length SHA pins; 5) rerun the hosted checks and record exact
+    check names / API outputs in `docs/repo-settings.md`. The runbook must also
+    state that no companion release upload or repository setting mutation should
+    occur without maintainer intent in that run.
+  - Verify: read-only `gh api` checks return non-timeout JSON; the runbook's
+    command list contains no token values or destructive branch operations;
+    `rg -n "dependency graph|require_code_owner_reviews|sha_pinning_required|selected-actions|AstraDownloader.exe"`
+    finds the closure order in one tracked place; roadmap continuation state
+    points future autonomous runs to the runbook before any hosted mutation.
+  - Status 2026-06-06: delivered as `docs/hosted-policy-closure.md`. The
+    runbook records the current read-only hosted snapshot, source-state
+    preconditions, dependency graph / Dependency review order, CODEOWNERS
+    enforcement order, selected Actions / SHA-pinning order, the required
+    `browser-actions/setup-firefox` allowlist exception, and the explicit
+    boundary that companion EXE release assets stay in the separate release
+    channel item.
+  - Complexity: S/M
+
+### Researcher Queue (Cycle 32 - 2026-06-06)
+
+- [x] 🔬 `authenticated-selector-capture-lane-2026-06-06` - inspected the
+  current CDP capture helper, selector fixture builder, selector workflow docs,
+  capture-week roadmap row, loop state, architecture residue note, and external
+  documentation for CDP MHTML snapshots and authenticated browser-state reuse.
+  Detailed notes live in
+  `docs/research-cycle-32-authenticated-selector-captures.md`.
+- [ ] P2 - 🔬🤖 Add authenticated/menu-state selector capture lane for History,
+  Watch Later, and notifications
+  - Why: the public capture matrix now covers home, watch, live chat, Shorts,
+    search results, channel, and embed player, but the remaining high-churn
+    surfaces are account or menu-state dependent. Re-running public CDP captures
+    cannot prove History, Watch Later, or an opened notifications menu, so the
+    next fixture-quality jump needs an explicitly safe authenticated capture lane
+    rather than more unauthenticated retries.
+  - Evidence: `scripts/capture-watch-mhtml.js` currently defines capture
+    profiles for `watch`, `search`, `shorts`, `channel`, and `embed`, with no
+    `history`, `watch-later`, or `notifications` profile. `docs/selector-fixture-workflow.md`
+    says `mhtml/History.mhtml`, `mhtml/WatchLater.mhtml`, and
+    `mhtml/NotificationsMenu.mhtml` still need manual or authenticated capture;
+    the same doc records that unauthenticated CDP probes settled on `ytd-app`
+    without exposing feed-card / playlist-card selectors and that notifications
+    requires opening the menu before capture. `AUTONOMOUS-LOOP-STATE.md` records
+    the same Cycle 31 blocker. Chrome DevTools Protocol documents
+    `Page.captureSnapshot` as MHTML serialization that includes iframes, shadow
+    DOM, external resources, and inline styles
+    (https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureSnapshot).
+    Playwright's authentication docs recommend storing authenticated browser
+    state in a gitignored directory and warn that browser state can contain
+    sensitive cookies / headers that could impersonate the user
+    (https://playwright.dev/docs/auth). [Verified]
+  - Touches: `scripts/capture-watch-mhtml.js`,
+    `scripts/build-selector-fixtures.js`, `tests/selector-regression.test.js`,
+    `tests/fixtures/*.tokens.txt`, `tests/fixtures/selector-surface-matches.json`,
+    `docs/selector-fixture-workflow.md`, `docs/architecture.md`, and selector
+    packs for `feed`, `feedCard`, `thumbnail`, `leftNav`, `notifications`,
+    `nav`, and `appShell`.
+  - Acceptance: the capture helper supports explicit profiles for
+    `history`, `watch-later`, and `notifications`; authenticated capture uses a
+    caller-provided profile or auth-state path that is outside the repo and
+    refuses paths under the worktree; docs require the auth/profile directory to
+    be gitignored and never committed; notification capture opens the
+    topbar/menu state before snapshot; unauthenticated or expired-auth runs fail
+    with a clear "auth required" result instead of generating false fixtures;
+    fixture builder registration remains opt-in until each raw capture proves at
+    least one stable selector; raw `.mhtml` and auth state remain untracked; and
+    roadmap/audit notes record which capture mode produced each surface.
+  - Verify: `node --check scripts/capture-watch-mhtml.js`; a dry run without
+    auth fails clearly for `history` / `watch-later`; a maintainer-run
+    authenticated capture emits the three raw MHTML files; `npm run
+    build:fixtures`; `node --test tests/selector-regression.test.js`;
+    `git status --ignored -- mhtml playwright .auth` confirms no auth state or
+    raw MHTML is staged; `selector-surface-matches.json` shows stable matches
+    for the new capture IDs before selector packs are promoted.
+  - Status 2026-06-06: Cycle 35 refined this into an implementation contract in
+    `docs/research-cycle-35-authenticated-capture-implementation-plan.md`.
+    Work the helper CLI/safety slice before adding builder registrations, then
+    add derived fixtures and selector-pack provenance only after a
+    maintainer-local populated capture proves stable matches.
+  - Status 2026-06-06: Cycle 36 delivered the helper CLI/safety slice. The
+    remaining scope is positive maintainer-local captures, derived token
+    fixtures, `SURFACE_MATCH_SOURCES` registrations for authenticated capture
+    IDs, selector-regression required matches, and selector-pack provenance
+    updates after stable matches are proven.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 24 - 2026-06-04)
 
@@ -1900,3 +2137,81 @@ because the v4.47.0 polish batch promoted them as active comparison references.
     credential-like settings are redacted before export, the bug report template
     asks users to attach the generated bundle, and hardening coverage pins the
     payload, redaction, and template wiring.
+
+## Continuation State
+
+### Last Completed Cycle
+
+Cycle 36 - Authenticated capture helper safety, 2026-06-06.
+
+### Current Focus
+
+Continue autonomous roadmap expansion from the latest open high-value items
+without committing or pushing unless explicitly asked in this thread.
+
+### Important Findings So Far
+
+- Cycle 32 found that the remaining capture-week surfaces require
+  authenticated or menu-state browser evidence. The public CDP helper now covers
+  public surfaces, but History, Watch Later, and notifications need a safe
+  profile/auth-state path outside the repo plus an opened-notification-menu
+  capture flow.
+- Cycle 35 narrowed that work into an implementation contract: prefer an
+  absolute external Chrome `--user-data-dir` / `ASTRA_CAPTURE_PROFILE_DIR` for
+  the current CDP helper; reject any auth/profile path under the repo; fail
+  before writing MHTML when auth is missing, Watch Later is empty, or the
+  notifications menu cannot expose `ytd-notification-renderer`; add builder and
+  regression registrations only atomically with derived fixtures that prove
+  stable matches.
+- Cycle 36 delivered the helper-only safety slice: authenticated profiles now
+  exist for `history`, `watch-later`, and `notifications`; repo-local profile
+  paths are rejected before Chrome launch; missing auth / empty content fails
+  before MHTML write; notifications opens the topbar menu before capture; and
+  tests cover the deterministic negative paths without requiring a signed-in
+  profile.
+- Cycle 33 found that hosted/manual security work needs one closure runbook
+  before settings mutation. Cycle 34 delivered that runbook and refreshed
+  hosted read-only evidence successfully.
+- Current hosted state remains manual-gated: Actions `allowed_actions` is `all`,
+  `sha_pinning_required` is `false`, Dependabot security updates are disabled,
+  `main` does not require code-owner reviews, default-branch CODEOWNERS errors
+  still return `404`, and release `v4.46.0` still lacks companion EXE/sidecar
+  assets.
+- `rtk git log -10` was attempted at session start, but `rtk` was not on this
+  PowerShell PATH; plain `git log -10 --oneline --decorate` was used instead.
+- The worktree already contained uncommitted Cycle 31 selector-fixture changes
+  before this chat touched files. This chat added roadmap/research/continuation
+  notes only and did not commit.
+
+### Next Best Actions
+
+1. Run positive authenticated/menu-state captures only when a maintainer-local
+   external Chrome profile is available and populated for History, Watch Later,
+   and notifications; then add fixture-builder registrations, derived token
+   fixtures, selector-regression required matches, and selector-pack provenance
+   in one atomic follow-up.
+2. If the branch has landed on `main` and the maintainer explicitly wants hosted
+   settings changed, follow `docs/hosted-policy-closure.md`; otherwise keep the
+   hosted mutations open.
+3. Continue the UX/product roadmap cycle by auditing the remaining manual
+   optional-host permission prompt checks across headed Chrome/Edge and Firefox.
+
+### Unprocessed Leads
+
+- Which maintainer-local account/profile can provide populated History, Watch
+  Later, and at least one notification without leaking account content into raw
+  tracked files.
+- Whether a later Playwright migration is still worth the added dependency now
+  that the lower-risk external Chrome profile lane exists.
+- How to prove the selected-actions policy without breaking the pinned
+  `browser-actions/setup-firefox` release smoke dependency.
+
+### Files Still To Inspect
+
+- `scripts/smoke-chromium-optional-hosts.js`
+- `scripts/smoke-firefox-webext.js`
+
+### Searches Still To Run
+
+- `site:developer.chrome.com extensions permissions.request user gesture optional_host_permissions`
+- `site:developer.mozilla.org WebExtensions optional_host_permissions permissions.request Firefox`

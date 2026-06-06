@@ -1,9 +1,13 @@
 # Astra Deck Repository Settings
 
-Last updated: 2026-06-05
+Last updated: 2026-06-06
 
 This file records repository settings that are intentionally managed outside the
 source tree.
+
+See [hosted-policy-closure.md](hosted-policy-closure.md) for the post-merge
+closure order before changing dependency graph, CODEOWNERS, selected Actions,
+SHA-pinning, or companion release-asset state.
 
 ## `main` Branch Protection
 
@@ -47,6 +51,15 @@ Current repository snapshot from 2026-06-04:
 - Default `GITHUB_TOKEN` workflow permissions: read.
 - Workflow-created PR approvals: disabled.
 
+Read-only refresh from 2026-06-06:
+
+- Actions enabled: yes.
+- Allowed actions policy: `all`.
+- Full-length SHA pinning required: no.
+- Selected-actions URL: none.
+- Default `GITHUB_TOKEN` workflow permissions: read.
+- Workflow-created PR approvals: disabled.
+
 Source-tree status from 2026-06-05:
 
 - `.github/workflows/validate.yml`, `.github/workflows/build.yml`,
@@ -65,7 +78,9 @@ workflow runs pass:
 - Allow GitHub-owned actions.
 - Keep broad verified-creator allowance disabled.
 - Add explicit `patterns_allowed` entries only for deliberate non-GitHub-owned
-  actions or reusable workflows.
+  actions or reusable workflows. Current deliberate non-GitHub-owned action:
+  `browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795`
+  (`# v1.7.2`).
 - Require full-length SHA pinning for actions.
 
 Do not enable the hosted SHA-pinning policy until this branch has landed on the
@@ -144,6 +159,17 @@ Current snapshot from 2026-06-05:
 - Secret scanning validity checks: disabled.
 - Secret scanning non-provider patterns: disabled.
 
+Read-only refresh from 2026-06-06:
+
+- Repository is public.
+- Secret scanning: enabled.
+- Secret scanning push protection: enabled.
+- Dependabot security updates: disabled.
+- Secret scanning validity checks: disabled.
+- Secret scanning non-provider patterns: disabled.
+- Dependency graph status is not exposed in the returned
+  `security_and_analysis` block.
+
 Attempted setting changes:
 
 - 2026-06-05: form-encoded and JSON `PATCH /repos/SysAdminDoc/Astra-Deck`
@@ -177,6 +203,12 @@ Current snapshot from 2026-06-05:
   `codex/research-feature-plan-2026-06-05`: `errors: []`.
 - CODEOWNERS errors endpoint on default branch: `404 Not Found` until the file
   lands on `main`.
+
+Read-only refresh from 2026-06-06:
+
+- Required approving reviews on `main`: 1.
+- Require code-owner reviews on `main`: disabled.
+- Default-branch CODEOWNERS errors endpoint still returns `404 Not Found`.
 
 Target policy:
 

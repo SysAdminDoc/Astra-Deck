@@ -19,9 +19,10 @@
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
             'mhtml/YouTube.mhtml',
-            'Subscriptions - YouTube.mhtml'
+            'Subscriptions - YouTube.mhtml',
+            'mhtml/Shorts.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: false,
         needsFreshCapture: false,
         notes: 'Generic media resolver; prefer feature-specific roots.'

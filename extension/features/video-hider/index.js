@@ -599,7 +599,8 @@
                     const queryId = url.searchParams.get('v');
                     if (queryId && VIDEO_ID_PATTERN.test(queryId)) return queryId;
                     const segments = url.pathname.split('/').filter(Boolean);
-                    if (url.hostname.includes('youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) return segments[0];
+                    const hostname = String(url.hostname || '').toLowerCase();
+                    if ((hostname === 'youtu.be' || hostname === 'www.youtu.be') && VIDEO_ID_PATTERN.test(segments[0] || '')) return segments[0];
                     for (let i = 0; i < segments.length - 1; i++) {
                         if (['shorts', 'embed', 'live'].includes(segments[i]) && VIDEO_ID_PATTERN.test(segments[i + 1])) {
                             return segments[i + 1];

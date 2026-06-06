@@ -193,4 +193,4 @@ Same as the CSS-only path through step 2, then:
 
 ## Where to push next
 
-See [ROADMAP.md](../ROADMAP.md) for the active backlog. The current residue is mostly browser-bounded capture expansion (shorts/search/channel/history/watch-later/embed/notifications), per-category lifecycle adoption, and the Subscription Manager v2 / Astra Downloader signing larger bets.
+See [ROADMAP.md](../ROADMAP.md) for the active backlog. The current residue is mostly browser-bounded capture expansion for authenticated history, Watch Later, and open-notifications menu state, hosted security-policy mutations that must follow [docs/hosted-policy-closure.md](hosted-policy-closure.md), per-category lifecycle adoption, and the Subscription Manager v2 / Astra Downloader signing larger bets.

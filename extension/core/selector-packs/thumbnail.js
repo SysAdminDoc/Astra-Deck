@@ -19,9 +19,12 @@
         captureEvidence: Object.freeze([
             'mhtml/YouTube.mhtml',
             'Subscriptions - YouTube.mhtml',
-            'Worldwide Societal Collapse... - YouTube.mhtml'
+            'Worldwide Societal Collapse... - YouTube.mhtml',
+            'mhtml/Shorts.mhtml',
+            'mhtml/SearchResults.mhtml',
+            'mhtml/Channel.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Resolve from nearest card root before querying document-wide.'

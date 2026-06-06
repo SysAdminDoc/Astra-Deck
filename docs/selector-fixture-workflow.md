@@ -13,6 +13,13 @@ Astra Deck treats saved YouTube MHTML captures as selector ground truth. Use thi
    - `mhtml/YouTube.mhtml` for the home feed.
    - `mhtml/WatchPage.mhtml` for the watch page and player.
    - `mhtml/LiveChat.mhtml` for the live-chat popout iframe document.
+   - `mhtml/Shorts.mhtml` for the Shorts feed.
+   - `mhtml/SearchResults.mhtml` for search results.
+   - `mhtml/Channel.mhtml` for channel pages.
+   - `mhtml/EmbedPlayer.mhtml` for embedded players.
+   - `mhtml/History.mhtml`, `mhtml/WatchLater.mhtml`, and
+     `mhtml/NotificationsMenu.mhtml` for account/menu-state captures when an
+     authenticated profile can expose those surfaces.
 7. For live chat, use a non-headless Chrome user-agent when capturing through
    DevTools automation. YouTube rejects `HeadlessChrome` on the popout chat URL
    as an old browser.
@@ -51,6 +58,68 @@ fixtures can still be regenerated from browser evidence. The raw
 `mhtml/WatchPage.mhtml` file remains gitignored; commit only the regenerated
 `tests/fixtures/yt-watch.tokens.txt` and
 `tests/fixtures/selector-surface-matches.json` deltas.
+
+### Surface CDP captures
+
+The same helper can capture public non-watch surfaces with named profiles:
+
+```powershell
+npm run capture:surface -- --surface shorts
+npm run capture:surface -- --surface search
+npm run capture:surface -- --surface channel
+npm run capture:surface -- --surface embed
+npm run build:fixtures
+```
+
+The `shorts`, `search`, `channel`, and `embed` profiles write
+`mhtml/Shorts.mhtml`, `mhtml/SearchResults.mhtml`, `mhtml/Channel.mhtml`, and
+`mhtml/EmbedPlayer.mhtml`. The helper records whether `Page.captureSnapshot`
+or the rendered-DOM fallback produced the MHTML so the audit note can describe
+the evidence source.
+
+### Authenticated CDP captures
+
+History, Watch Later, and the opened notifications menu require account or menu
+state. Use a dedicated Chrome profile outside this repository; do not point the
+helper at `.auth/`, `playwright/.auth/`, `mhtml/`, `tests/fixtures/`, `.git/`,
+or any other path under the worktree. The helper refuses repo-local profile
+paths and fails before writing MHTML when auth is missing, Watch Later is empty,
+or the notifications menu does not expose a notification row.
+
+```powershell
+$env:ASTRA_CAPTURE_PROFILE_DIR = '<absolute external Chrome profile path>'
+npm run capture:surface -- --surface history
+npm run capture:surface -- --surface watch-later
+npm run capture:surface -- --surface notifications
+npm run build:fixtures
+```
+
+Equivalent per-command form:
+
+```powershell
+npm run capture:surface -- --surface history --user-data-dir '<absolute external Chrome profile path>'
+```
+
+The `history`, `watch-later`, and `notifications` profiles write
+`mhtml/History.mhtml`, `mhtml/WatchLater.mhtml`, and
+`mhtml/NotificationsMenu.mhtml`. The notifications profile clicks the topbar
+notification button and waits for `ytd-multi-page-menu-renderer` plus
+`ytd-notification-renderer` before snapshot. Add fixture-builder registrations
+and selector-regression required matches only after the local raw captures are
+populated and regenerated derived fixtures prove stable selector matches.
+
+Current blockers for positive authenticated capture:
+
+- `mhtml/History.mhtml`: unauthenticated CDP probes settled on `ytd-app` but did
+  not expose feed-card selectors.
+- `mhtml/WatchLater.mhtml`: unauthenticated CDP probes settled on `ytd-app` but
+  did not expose playlist/video-card selectors.
+- `mhtml/NotificationsMenu.mhtml`: requires opening the notifications menu
+  before capture and at least one notification row in the local profile.
+
+Do not commit raw `.mhtml` files. Commit only regenerated token fixtures,
+`selector-surface-matches.json`, selector-pack provenance metadata, and the
+audit/roadmap notes that identify any blocked surfaces.
 
 ## Regenerate
 

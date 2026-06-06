@@ -19,9 +19,10 @@
         captureEvidence: Object.freeze([
             'mhtml/WatchPage.mhtml',
             'mhtml/YouTube.mhtml',
-            'Subscriptions - YouTube.mhtml'
+            'Subscriptions - YouTube.mhtml',
+            'mhtml/SearchResults.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Prefer roles and labels where present; avoid raw wrapper classes.'

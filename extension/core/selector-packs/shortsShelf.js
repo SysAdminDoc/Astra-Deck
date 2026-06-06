@@ -18,9 +18,10 @@
         fallback: Object.freeze(['yt-thumbnail-overlay-badge-view-model', 'ytd-reel-shelf-renderer']),
         captureEvidence: Object.freeze([
             'mhtml/YouTube.mhtml',
-            'Subscriptions - YouTube.mhtml'
+            'Subscriptions - YouTube.mhtml',
+            'mhtml/Shorts.mhtml'
         ]),
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'URL path is more stable than shelf wrapper names.'

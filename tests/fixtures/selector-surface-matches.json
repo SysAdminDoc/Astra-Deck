@@ -4,6 +4,7 @@
   "matcher": "decoded-mhtml-dom-subset",
   "surfaces": {
     "appShell": {
+      "surface": "appShell",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -39,6 +40,7 @@
       ]
     },
     "feed": {
+      "surface": "feed",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -74,6 +76,7 @@
       ]
     },
     "feedCard": {
+      "surface": "feedCard",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -114,6 +117,7 @@
       ]
     },
     "leftNav": {
+      "surface": "leftNav",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -152,6 +156,7 @@
       ]
     },
     "media": {
+      "surface": "media",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -201,6 +206,7 @@
       ]
     },
     "nav": {
+      "surface": "nav",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -236,6 +242,7 @@
       ]
     },
     "notifications": {
+      "surface": "notifications",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -274,6 +281,7 @@
       ]
     },
     "search": {
+      "surface": "search",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -311,6 +319,7 @@
       ]
     },
     "shortsShelf": {
+      "surface": "shortsShelf",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -344,6 +353,7 @@
       ]
     },
     "thumbnail": {
+      "surface": "thumbnail",
       "source": "mhtml/YouTube.mhtml",
       "fixture": "yt-home.tokens.txt",
       "elementCount": 3277,
@@ -381,6 +391,7 @@
       ]
     },
     "mainVideo": {
+      "surface": "mainVideo",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
       "elementCount": 1623,
@@ -416,6 +427,7 @@
       ]
     },
     "player": {
+      "surface": "player",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
       "elementCount": 1623,
@@ -449,6 +461,7 @@
       ]
     },
     "playerChrome": {
+      "surface": "playerChrome",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
       "elementCount": 1623,
@@ -512,6 +525,7 @@
       ]
     },
     "playerSettings": {
+      "surface": "playerSettings",
       "source": "mhtml/WatchPage.mhtml",
       "fixture": "yt-watch.tokens.txt",
       "elementCount": 1623,
@@ -564,6 +578,7 @@
       ]
     },
     "liveChat": {
+      "surface": "liveChat",
       "source": "mhtml/LiveChat.mhtml",
       "fixture": "yt-live-chat.tokens.txt",
       "elementCount": 6776,
@@ -601,6 +616,549 @@
         "yt-live-chat-renderer",
         "yt-live-chat-item-list-renderer",
         "yt-live-chat-text-message-renderer"
+      ]
+    },
+    "shorts.shortsShelf": {
+      "surface": "shortsShelf",
+      "source": "mhtml/Shorts.mhtml",
+      "fixture": "yt-shorts.tokens.txt",
+      "elementCount": 2847,
+      "stable": [
+        {
+          "selector": "a[href^=\"/shorts\"]",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "ytd-rich-shelf-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-thumbnail-overlay-badge-view-model",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-reel-shelf-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "a[href^=\"/shorts\"]"
+      ]
+    },
+    "shorts.media": {
+      "surface": "media",
+      "source": "mhtml/Shorts.mhtml",
+      "fixture": "yt-shorts.tokens.txt",
+      "elementCount": 2847,
+      "stable": [
+        {
+          "selector": "video",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "img",
+          "matched": true,
+          "matchCount": 13
+        },
+        {
+          "selector": "ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "#content video",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "#content img",
+          "matched": true,
+          "matchCount": 13
+        },
+        {
+          "selector": "#content ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "video",
+        "img",
+        "ytd-thumbnail",
+        "#content video",
+        "#content img",
+        "#content ytd-thumbnail"
+      ]
+    },
+    "shorts.thumbnail": {
+      "surface": "thumbnail",
+      "source": "mhtml/Shorts.mhtml",
+      "fixture": "yt-shorts.tokens.txt",
+      "elementCount": 2847,
+      "stable": [
+        {
+          "selector": "ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "a#thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytThumbnailViewModelHost",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-thumbnail a#thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-thumbnail",
+        "a#thumbnail",
+        "ytd-thumbnail a#thumbnail"
+      ]
+    },
+    "searchResults.search": {
+      "surface": "search",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "yt-searchbox",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "input#search",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "form[role=\"search\"] input",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-searchbox-input",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-searchbox #container.ytd-searchbox",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-searchbox"
+      ]
+    },
+    "searchResults.feedCard": {
+      "surface": "feedCard",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-rich-item-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "yt-lockup-view-model",
+          "matched": true,
+          "matchCount": 5
+        },
+        {
+          "selector": "ytd-video-renderer",
+          "matched": true,
+          "matchCount": 19
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-lockup-view-model.ytd-rich-item-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-item-renderer.style-scope",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-lockup-view-model",
+        "ytd-video-renderer"
+      ]
+    },
+    "searchResults.thumbnail": {
+      "surface": "thumbnail",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-thumbnail",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": true,
+          "matchCount": 20
+        },
+        {
+          "selector": "a#thumbnail",
+          "matched": true,
+          "matchCount": 20
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytThumbnailViewModelHost",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-thumbnail a#thumbnail",
+          "matched": true,
+          "matchCount": 20
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-thumbnail",
+        "yt-thumbnail-view-model",
+        "a#thumbnail",
+        "ytd-thumbnail a#thumbnail"
+      ]
+    },
+    "searchResults.nav": {
+      "surface": "nav",
+      "source": "mhtml/SearchResults.mhtml",
+      "fixture": "yt-search-results.tokens.txt",
+      "elementCount": 3969,
+      "stable": [
+        {
+          "selector": "ytd-masthead",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#masthead-container",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-masthead div.style-scope",
+          "matched": true,
+          "matchCount": 21
+        },
+        {
+          "selector": "#masthead-container div.style-scope",
+          "matched": true,
+          "matchCount": 21
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-masthead",
+        "#masthead-container",
+        "ytd-masthead div.style-scope",
+        "#masthead-container div.style-scope"
+      ]
+    },
+    "channel.profile": {
+      "surface": "profile",
+      "source": "mhtml/Channel.mhtml",
+      "fixture": "yt-channel.tokens.txt",
+      "elementCount": 6028,
+      "stable": [
+        {
+          "selector": "ytd-video-owner-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-channel-name",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "#channel-name",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "ytd-c4-tabbed-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-page-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-avatar-shape",
+          "matched": true,
+          "matchCount": 63
+        },
+        {
+          "selector": "yt-decorated-avatar-view-model",
+          "matched": true,
+          "matchCount": 8
+        },
+        {
+          "selector": "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-video-owner-renderer",
+        "ytd-channel-name",
+        "#channel-name",
+        "yt-avatar-shape",
+        "yt-decorated-avatar-view-model"
+      ]
+    },
+    "channel.channelProfile": {
+      "surface": "channelProfile",
+      "source": "mhtml/Channel.mhtml",
+      "fixture": "yt-channel.tokens.txt",
+      "elementCount": 6028,
+      "stable": [
+        {
+          "selector": "ytd-video-owner-renderer",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "ytd-channel-name",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "#channel-name",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "ytd-c4-tabbed-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-page-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-avatar-shape",
+          "matched": true,
+          "matchCount": 63
+        },
+        {
+          "selector": "yt-decorated-avatar-view-model",
+          "matched": true,
+          "matchCount": 8
+        },
+        {
+          "selector": "ytd-browse[page-subtype=\"channels\"] ytd-c4-tabbed-header-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-video-owner-renderer",
+        "ytd-channel-name",
+        "#channel-name",
+        "yt-avatar-shape",
+        "yt-decorated-avatar-view-model"
+      ]
+    },
+    "channel.feedCard": {
+      "surface": "feedCard",
+      "source": "mhtml/Channel.mhtml",
+      "fixture": "yt-channel.tokens.txt",
+      "elementCount": 6028,
+      "stable": [
+        {
+          "selector": "ytd-rich-item-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "yt-lockup-view-model",
+          "matched": true,
+          "matchCount": 29
+        },
+        {
+          "selector": "ytd-video-renderer",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "yt-lockup-view-model.ytd-rich-item-renderer",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-rich-item-renderer.style-scope",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "yt-lockup-view-model"
+      ]
+    },
+    "channel.thumbnail": {
+      "surface": "thumbnail",
+      "source": "mhtml/Channel.mhtml",
+      "fixture": "yt-channel.tokens.txt",
+      "elementCount": 6028,
+      "stable": [
+        {
+          "selector": "ytd-thumbnail",
+          "matched": true,
+          "matchCount": 2
+        },
+        {
+          "selector": "yt-thumbnail-view-model",
+          "matched": true,
+          "matchCount": 35
+        },
+        {
+          "selector": "a#thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytThumbnailViewModelHost",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "ytd-thumbnail a#thumbnail",
+          "matched": true,
+          "matchCount": 2
+        }
+      ],
+      "matchedSelectors": [
+        "ytd-thumbnail",
+        "yt-thumbnail-view-model",
+        "a#thumbnail",
+        "ytd-thumbnail a#thumbnail"
+      ]
+    },
+    "embed.player": {
+      "surface": "player",
+      "source": "mhtml/EmbedPlayer.mhtml",
+      "fixture": "yt-embed-player.tokens.txt",
+      "elementCount": 50,
+      "stable": [
+        {
+          "selector": "#movie_player",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".html5-video-player",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "ytd-player #movie_player",
+          "matched": false,
+          "matchCount": 0
+        },
+        {
+          "selector": "#player-container #movie_player",
+          "matched": false,
+          "matchCount": 0
+        }
+      ],
+      "matchedSelectors": [
+        "#movie_player",
+        ".html5-video-player"
+      ]
+    },
+    "embed.mainVideo": {
+      "surface": "mainVideo",
+      "source": "mhtml/EmbedPlayer.mhtml",
+      "fixture": "yt-embed-player.tokens.txt",
+      "elementCount": 50,
+      "stable": [
+        {
+          "selector": "video.html5-main-video",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": "#movie_player video",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "fallback": [
+        {
+          "selector": "video.video-stream",
+          "matched": true,
+          "matchCount": 1
+        },
+        {
+          "selector": ".html5-video-container video",
+          "matched": true,
+          "matchCount": 1
+        }
+      ],
+      "matchedSelectors": [
+        "video.html5-main-video",
+        "#movie_player video",
+        "video.video-stream",
+        ".html5-video-container video"
       ]
     }
   }

@@ -43,14 +43,15 @@ package versions; the live product-version sources currently agree at v4.46.0.
   marker while the UI receives a generic error. New hardening guardrails pin
   each remediated alert class.
 - 2026-06-05: Selector fixture surface-match coverage was expanded over the
-  existing local MHTML corpus. `SURFACE_MATCH_SOURCES` now covers 15
-  capture-backed home, watch, and live-chat surfaces, including feed,
-  notifications, search, thumbnail, main-video, player, player-chrome, and
-  player-settings packs. The regression test derives its expected surface list
+  local MHTML corpus. `SURFACE_MATCH_SOURCES` now covers 15 capture-backed home,
+  watch, and live-chat surfaces, including feed, notifications, search,
+  thumbnail, main-video, player, player-chrome, and player-settings packs. A
+  follow-up public capture pass added `npm run capture:surface` profiles and
+  committed derived token/match fixtures for Shorts, search results, channel,
+  and embed-player pages. The regression test derives its expected capture list
   from the builder, verifies stable/fallback array sync, and fails when any
-  registered surface lacks a matched stable selector. Dedicated Shorts, channel,
-  search-results, history, watch-later, embed-player, and notifications-menu
-  captures remain open in `ROADMAP.md`.
+  registered capture lacks a matched stable selector. History, Watch Later, and
+  open-notifications menu captures remain open in `ROADMAP.md`.
 - 2026-06-05: Chromium optional-host prompt-readiness smoke was added.
   `npm run smoke:optional-hosts` exact-pins `ws@8.21.0`, stages the
   store-safe Chromium manifest, launches a fresh Chromium-family profile, opens

@@ -21,11 +21,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 - **Selector fixture match matrix expanded.** `npm run build:fixtures` now emits
   DOM-subset match evidence for 15 capture-backed surfaces across the existing
-  home, watch, and live-chat MHTML corpus. The selector regression derives the
-  expected surface list from the fixture builder, keeps stable/fallback arrays
-  synced with live selector packs, and fails if any registered surface loses all
+  home, watch, and live-chat MHTML corpus, plus public Shorts, search-results,
+  channel, and embed-player capture fixtures generated through the new
+  `npm run capture:surface` profiles. The selector regression derives the
+  expected capture list from the fixture builder, keeps stable/fallback arrays
+  synced with live selector packs, and fails if any registered capture loses all
   stable selector matches or if a release-blocking required selector stops
-  resolving.
+  resolving. History, Watch Later, and the open notifications menu remain
+  account/menu-state capture work.
 
 - **Chromium optional-host prompt-readiness smoke added.** `npm run
   smoke:optional-hosts` stages the store-safe Chromium manifest, opens the real
