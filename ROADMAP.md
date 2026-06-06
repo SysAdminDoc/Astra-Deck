@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 42 - 2026-06-06.
+> Last researched: Cycle 43 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -1797,7 +1797,7 @@ means implemented/closed by the build lane.
   build-lane work. This pass reconciled already-shipped Return YouTube Dislike
   disclosure, companion onboarding, diagnostics export, and i18n coverage work
   instead of adding duplicate rows.
-- [ ] 🔬🤖 P3 — Locale proofing queue for identical-to-English feature copy
+- [x] 🔬🤖 P3 — Locale proofing queue for identical-to-English feature copy
   - Why: the feature-definition i18n extraction is shipped, but the generated
     coverage report now shows only 23.5%-27.7% translated coverage across
     non-EN locales after feature keys were added. Chrome and MDN extension i18n
@@ -1805,12 +1805,12 @@ means implemented/closed by the build lane.
     `messages.json` as the user-visible string source of truth, so seeded
     English placeholders should be tracked separately from intentional brand or
     technical terms.
-  - Evidence: refreshed `docs/i18n-coverage.md` profiles 860 EN keys and reports
-    622-658 identical-to-EN strings per non-EN locale; a feature-key spot check
-    found 584 of 612 `feature_*_(name|desc)` keys still identical-to-EN in every
-    non-EN locale. `scripts/i18n-coverage.js` is informational only and does not
-    separate intentional brand/technical matches from untranslated feature copy;
-    Chrome i18n docs require user-visible strings in locale `messages.json`
+  - Evidence: refreshed `docs/i18n-coverage.md` profiles 860 EN keys and now
+    separates exact reviewed brand/technical matches from unresolved
+    placeholders. The feature-copy queue shows 582 of 612
+    `feature_*_(name|desc)` keys still unresolved per non-EN locale after the
+    exact reviewed matches are excluded. Chrome i18n docs require user-visible
+    strings in locale `messages.json`
     (https://developer.chrome.com/docs/extensions/reference/api/i18n);
     MDN documents the same WebExtensions i18n model
     (https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Internationalization).
@@ -1825,6 +1825,13 @@ means implemented/closed by the build lane.
     English in non-EN locale bundles. The generator keeps a reviewed
     do-not-translate list for brands/technical tokens and the contributor guide
     explains how to submit native-speaker proofing patches.
+  - Status 2026-06-06: shipped in Cycle 43. `npm run i18n:coverage` writes the
+    classified coverage report and feature-copy queue; `npm run
+    i18n:coverage:warn` warns above the 582-message unresolved feature-copy
+    baseline; `scripts/generate-locales.js` now shares the reviewed exact
+    do-not-translate policy and preserves proofed feature overrides when
+    regenerating locale bundles. Remaining translation work is native-speaker
+    proofing, not queue infrastructure.
   - Verify: `node scripts/i18n-coverage.js`, `npm run check`, and review one
     generated locale diff to confirm brand/technical terms were not
     over-translated.
@@ -2168,7 +2175,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 42 - Release digest verifier, 2026-06-06.
+Cycle 43 - Locale proofing queue, 2026-06-06.
 
 ### Current Focus
 
@@ -2223,6 +2230,12 @@ allows it.
   `build/SHA256SUMS`, including the checksum file itself. It supports live
   `gh release view` output and offline fixture JSON for tests; the real public
   pass must run from the maintainer-local signed artifact directory.
+- Cycle 43 added the locale proofing queue: `npm run i18n:coverage` now
+  classifies exact reviewed brand/technical matches separately from unresolved
+  placeholders, emits per-locale feature name/description proofing counts plus
+  sample keys, and `npm run i18n:coverage:warn` warns above the 582-message
+  unresolved feature-copy baseline. The locale generator now preserves proofed
+  feature overrides while sharing the reviewed do-not-translate policy.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2259,6 +2272,8 @@ allows it.
    --require-pass`, then upload assets and compare GitHub Release digests
    against `build/SHA256SUMS` with `npm run release:verify-digests --
    --tag vX.Y.Z`.
+6. Use `docs/i18n-coverage.md` as the native-speaker feature-copy proofing
+   queue when locale work resumes; the queue infrastructure itself is shipped.
 
 ### Unprocessed Leads
 

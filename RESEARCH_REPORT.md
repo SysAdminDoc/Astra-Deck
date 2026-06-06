@@ -18,6 +18,14 @@ or maintainer action to confirm.
 
 ## 2026-06-06 Autonomous Roadmap Refresh
 
+- [Verified] Cycle 43 added a locale proofing queue for feature-copy
+  localization. `npm run i18n:coverage` now separates exact reviewed
+  brand/technical matches from unresolved identical-to-EN placeholders, emits
+  per-locale `feature_*_(name|desc)` name/description counts plus sample keys,
+  and refreshes `docs/i18n-coverage.md`. `npm run i18n:coverage:warn` warns
+  above the current 582-message unresolved feature-copy baseline, and
+  `scripts/generate-locales.js` now preserves proofed feature overrides while
+  sharing the reviewed do-not-translate policy.
 - [Verified] Cycle 42 added a release digest verifier for the maintainer-local
   upload path. `npm run release:verify-digests` reads local `build/SHA256SUMS`,
   computes the checksum file's own digest, and compares those hashes to GitHub
@@ -599,9 +607,9 @@ Top remaining opportunities (one-liners):
 8. MHTML capture-week expansion across Shorts, channel, search, history,
    watch-later, embedded player, and notifications surfaces, including fixture
    builder and selector-match coverage for each registered pack. [Verified]
-9. Locale proofing queue for identical-to-English feature names/descriptions in
-   non-EN bundles; current coverage is 23.5%-27.7% translated after the generated
-   feature keys landed. [Verified]
+9. Native-speaker proofing for the feature-copy queue now emitted by
+   `docs/i18n-coverage.md`; the queue/report infrastructure itself shipped in
+   Cycle 43. [Verified]
 12. Signed Astra Downloader installer/MSI once the signing budget and submission
    intent are decided. [Needs validation]
 
@@ -876,10 +884,11 @@ Current risk status:
   `audit:overlays`, covering generated overlay names, dialog/region semantics,
   live-region behavior, focus-visible rules, and WCAG 2.2 target-size floors
   beyond the popup. [Verified]
-- **[Med] Locale proofing debt.** The feature-definition i18n extraction shipped,
-  but the refreshed `docs/i18n-coverage.md` reports 622-658 identical-to-English
-  strings per non-EN locale, with 584 of 612 feature name/description keys still
-  identical to EN. → ROADMAP P3 locale proofing queue. [Verified]
+- **[Closed] Locale proofing queue.** The feature-definition i18n extraction
+  shipped earlier, and Cycle 43 now makes the remaining native-speaker work
+  concrete: `docs/i18n-coverage.md` separates exact reviewed brand/technical
+  matches from unresolved placeholders and lists 582 feature name/description
+  messages per non-EN locale for proofing. [Verified]
 - **[Closed] Python dependency audit gap.** `Validate / Python dependency
   audit` now runs `pip-audit` against `astra_downloader/requirements.txt` and
   uploads `astra-downloader-pip-audit` JSON. The remaining dependency-security

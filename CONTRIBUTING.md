@@ -123,6 +123,18 @@ demand, not on every commit:
     then re-run); reviewers should treat the generated locales as
     machine-authored and queue native-speaker proofing.
 
+- **`npm run i18n:coverage` / `npm run i18n:coverage:warn`** — Locale
+  proofing report. Refreshes `docs/i18n-coverage.md`, separates exact
+  do-not-translate brand/technical matches from unresolved
+  identical-to-EN placeholders, and lists the per-locale
+  `feature_*_(name|desc)` proofing queue with sample keys.
+  - Run: `npm run i18n:coverage`
+  - Warning run: `npm run i18n:coverage:warn`
+  - When to run: after any locale or feature-copy change. Native-speaker
+    patches should update the locale's translation table, preserve exact
+    reviewed brand/technical terms, run the generator, then refresh the
+    coverage report.
+
 ## Code Style
 
 - Avoid new dependencies unless they solve a clear, high-value problem
