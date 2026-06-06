@@ -109,6 +109,11 @@ package versions; the live product-version sources currently agree at v4.46.0.
   and keeps the pinned `browser-actions/setup-firefox` ref as the only
   non-GitHub-owned allowlist entry. Repository-level selected-actions and
   required-SHA enforcement remains a hosted settings follow-up after merge.
+- 2026-06-06: The PR-only Dependency review job is advisory until hosted
+  dependency graph setup is proven. `DEPENDENCY_REVIEW_REQUIRED=true` is now
+  the repository-variable switch that turns the pinned dependency-review action
+  back into an enforcing `fail-on-severity: moderate` gate after a successful PR
+  proof run.
 - 2026-06-05: Store-safe enrichment hosts for SponsorBlock/DeArrow, thumbnails,
   Return YouTube Dislike, and Reddit now generate as
   `optional_host_permissions` instead of install-time `host_permissions`; the

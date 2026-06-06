@@ -13,7 +13,7 @@ technical reconnaissance, phased feature plan) is preserved at
 Current shipped product-version sources remain on the v4.x line; at this
 cleanup they agree at v4.46.0.
 
-> Last researched: Cycle 39 - 2026-06-06.
+> Last researched: Cycle 40 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -1445,6 +1445,14 @@ means implemented/closed by the build lane.
     Branch protection keeps PR-only `Dependency review` separate from direct
     push checks until a PR run proves the exact required-check behavior, and
     `docs/repo-settings.md` records the chosen required contexts.
+  - Status 2026-06-06: source-side guard shipped. The `Dependency review` job
+    remains PR-only, but `continue-on-error` is now controlled by repository
+    variable `DEPENDENCY_REVIEW_REQUIRED`: unset or non-`true` keeps the job
+    advisory while dependency graph setup is unresolved; setting it to `true`
+    after hosted proof makes the job enforce the existing
+    `fail-on-severity: moderate` policy. Remaining scope is hosted dependency
+    graph / Dependabot enablement, rerunning a dependency PR, and setting the
+    variable only after the check no longer fails with repository setup text.
   - Verify: `gh api repos/SysAdminDoc/Astra-Deck --jq
     ".security_and_analysis"` shows dependency graph / Dependabot alert
     enablement where GitHub exposes it; rerun PR #11's `Validate` workflow and
@@ -2160,7 +2168,7 @@ because the v4.47.0 polish batch promoted them as active comparison references.
 
 ### Last Completed Cycle
 
-Cycle 39 - Actions selected-policy payload generator, 2026-06-06.
+Cycle 40 - Dependency review advisory gate, 2026-06-06.
 
 ### Current Focus
 
@@ -2201,6 +2209,10 @@ allows it.
   and selected-actions payload generator. It proves the current source-side
   allowlist has only the pinned `browser-actions/setup-firefox` ref outside
   GitHub-owned actions.
+- Cycle 40 guarded the PR-only `Dependency review` job behind repository
+  variable `DEPENDENCY_REVIEW_REQUIRED`, so dependency PRs stay advisory until
+  hosted dependency graph setup is proven and the maintainer opts into
+  enforcement.
 - Cycle 33 found that hosted/manual security work needs one closure runbook
   before settings mutation. Cycle 34 delivered that runbook and refreshed
   hosted read-only evidence successfully.
@@ -2209,7 +2221,9 @@ allows it.
   `main` does not require code-owner reviews, default-branch CODEOWNERS errors
   still return `404`, and release `v4.46.0` still lacks companion EXE/sidecar
   assets. The selected-actions payload can now be regenerated with
-  `npm run policy:actions` before any hosted settings change.
+  `npm run policy:actions` before any hosted settings change. Dependency
+  review enforcement can now be toggled with `DEPENDENCY_REVIEW_REQUIRED=true`
+  after dependency graph proof.
 
 ### Next Best Actions
 
@@ -2221,7 +2235,10 @@ allows it.
 2. If the branch has landed on `main` and the maintainer explicitly wants hosted
    settings changed, follow `docs/hosted-policy-closure.md`; otherwise keep the
    hosted mutations open.
-3. Run the headed Chromium optional-host accept/deny/revoke modes and the new
+3. After dependency graph is enabled, rerun a dependency PR and set
+   `DEPENDENCY_REVIEW_REQUIRED=true` only if the check no longer fails with
+   repository setup text.
+4. Run the headed Chromium optional-host accept/deny/revoke modes and the new
    Firefox `--headed --manual-optional-hosts` harness on a release machine with
    the target browsers installed.
 

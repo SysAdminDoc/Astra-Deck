@@ -23,6 +23,10 @@ jobs:
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'
+    # Keep dependency review advisory until the repository dependency graph is
+    # enabled and a PR run proves the exact check context. Set the repository
+    # variable DEPENDENCY_REVIEW_REQUIRED=true to make this job fail the run.
+    continue-on-error: ${{ vars.DEPENDENCY_REVIEW_REQUIRED != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
