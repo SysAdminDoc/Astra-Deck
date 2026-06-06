@@ -7303,7 +7303,7 @@ test('v4.31.0 getSurfaceSelectorEntry exposes captureEvidence and lastVerified',
     const entry = core.getSurfaceSelectorEntry('search');
     assert.ok(Array.isArray(entry.captureEvidence) && entry.captureEvidence.length >= 1,
         'getSurfaceSelectorEntry must expose captureEvidence on packed surfaces');
-    assert.equal(entry.lastVerified, '2026-05-19');
+    assert.equal(entry.lastVerified, '2026-06-05');
     const liveChat = core.getSurfaceSelectorEntry('liveChat');
     assert.ok(Array.isArray(liveChat.captureEvidence), 'liveChat captureEvidence must be an array');
     assert.ok(liveChat.captureEvidence.includes('mhtml/LiveChat.mhtml'),
@@ -7339,13 +7339,19 @@ test('v4.32.0 feed-shell pack files exist with the v4.31.0 schema fields', () =>
 
 test('v4.32.0 feed-shell surfaces now come from the pack registry, not INLINE_SURFACES', () => {
     const core = loadSelectorPackContextV432();
+    const expectedLastVerified = {
+        feed: '2026-05-19',
+        feedCard: '2026-06-05',
+        thumbnail: '2026-06-05',
+        shortsShelf: '2026-06-05'
+    };
     for (const surface of V432_FEED_SHELL_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         // captureEvidence is the marker — only packed surfaces carry it.
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence (i.e. live in a pack file, not INLINE_SURFACES)`);
-        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.equal(entry.lastVerified, expectedLastVerified[surface]);
         assert.equal(entry.highChurn, true, `${surface} must keep highChurn=true after the peel`);
     }
 });
@@ -7409,12 +7415,18 @@ test('v4.33.0 watch-shell pack files exist with the v4.31.0 schema fields', () =
 
 test('v4.33.0 watch-shell surfaces now come from the pack registry with capture evidence', () => {
     const core = loadSelectorPackContext();
+    const expectedLastVerified = {
+        watch: '2026-05-19',
+        relatedSidebar: '2026-05-19',
+        player: '2026-06-05',
+        mainVideo: '2026-06-05'
+    };
     for (const surface of V433_WATCH_SHELL_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence after the v4.33.0 peel`);
-        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.equal(entry.lastVerified, expectedLastVerified[surface]);
         assert.equal(entry.highChurn, true, `${surface} must keep highChurn=true after the peel`);
     }
 });
@@ -7604,12 +7616,19 @@ test('v4.36.0 misc batch pack files exist with the v4.31.0 schema fields', () =>
 
 test('v4.36.0 misc batch surfaces now come from the pack registry', () => {
     const core = loadSelectorPackContext();
+    const expectedLastVerified = {
+        settingsOverlay: '2026-05-19',
+        profile: '2026-06-05',
+        channelProfile: '2026-06-05',
+        notifications: '2026-05-19',
+        media: '2026-06-05'
+    };
     for (const surface of V436_BATCH_SURFACES) {
         const entry = core.SurfaceSelectorMap[surface];
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence after the v4.36.0 peel`);
-        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.equal(entry.lastVerified, expectedLastVerified[surface]);
     }
 });
 

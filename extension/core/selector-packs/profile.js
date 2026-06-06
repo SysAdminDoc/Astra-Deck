@@ -29,7 +29,8 @@
         'mhtml/WatchPage.mhtml',
         'mhtml/YouTube.mhtml',
         'Subscriptions - YouTube.mhtml',
-        'Worldwide Societal Collapse... - YouTube.mhtml'
+        'Worldwide Societal Collapse... - YouTube.mhtml',
+        'mhtml/Channel.mhtml'
     ]);
 
     registry.set('profile', Object.freeze({
@@ -37,7 +38,7 @@
         stable: stable,
         fallback: fallback,
         captureEvidence: captureEvidence,
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Resolve channel ID or handle from links, not visible text.'
@@ -48,7 +49,7 @@
         stable: stable,
         fallback: fallback,
         captureEvidence: captureEvidence,
-        lastVerified: '2026-05-19',
+        lastVerified: '2026-06-05',
         highChurn: true,
         needsFreshCapture: false,
         notes: 'Alias for profile.'
