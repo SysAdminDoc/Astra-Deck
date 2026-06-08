@@ -169,6 +169,25 @@
             }
         }
 
+        // Narrow an already-type-valid value to its schema constraints. We
+        // CLAMP numbers into [min, max] and COERCE an unrecognized enum value
+        // back to the schema default rather than rejecting — a corrupted or
+        // hostile import (e.g. videosPerRow: 9999, videoRotationAngle: 47)
+        // is sanitized into a safe value instead of breaking the whole import
+        // (validateSettingsSnapshot rejects the entire snapshot on any error).
+        function clampSettingValue(value, entry) {
+            if (Array.isArray(entry.enum) && entry.enum.length) {
+                return entry.enum.includes(value) ? value : entry.defaultValue;
+            }
+            if (entry.type === 'number' && typeof value === 'number' && Number.isFinite(value)) {
+                let v = value;
+                if (typeof entry.min === 'number' && v < entry.min) v = entry.min;
+                if (typeof entry.max === 'number' && v > entry.max) v = entry.max;
+                return v;
+            }
+            return value;
+        }
+
         function validateSettingsSnapshot(settings = {}, options = {}) {
             const allowUnknown = options.allowUnknown === true;
             const errors = [];
@@ -203,7 +222,7 @@
                     continue;
                 }
 
-                out[key] = value;
+                out[key] = clampSettingValue(value, entry);
             }
 
             return {
@@ -266,6 +285,7 @@
             filterSettingsForProfile,
             shouldScrubKey,
             isSettingValueValid,
+            clampSettingValue,
             validateSettingsSnapshot,
             buildExportSnapshot,
             countByProfile
