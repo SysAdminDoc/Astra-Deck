@@ -728,6 +728,26 @@ test('createPredicateSandbox parses and evaluates ctx-bound expressions (iter-7 
     assert.equal(reDoS.ok, false);
     assert.match(reDoS.error, /nested quantifiers/);
 
+    // Deeply-nested catastrophic forms that the flat [^()] heuristics miss must
+    // also be rejected by the nesting-aware scan.
+    for (const evil of ['((ab)*)*', '((a|b)+)+', '((x+))+', '(([0-9]+)*)+']) {
+        const r = sandbox.compile(`ctx.title.test("${evil}")`);
+        assert.equal(r.ok, false, `pattern ${evil} must be rejected as ReDoS-risky`);
+        assert.match(r.error, /nested quantifiers/);
+    }
+
+    // Over-long regex sources are rejected outright.
+    const longPattern = 'a'.repeat(201);
+    const tooLong = sandbox.compile(`ctx.title.test("${longPattern}")`);
+    assert.equal(tooLong.ok, false);
+
+    // Benign patterns (grouping without nested repetition) still compile.
+    const ok1 = sandbox.compile('ctx.title.test("(cat|dog) video")');
+    assert.equal(ok1.ok, true);
+    assert.equal(ok1.evaluator({ title: 'cute dog video' }), true);
+    const ok2 = sandbox.compile('ctx.title.test("https?://example")');
+    assert.equal(ok2.ok, true);
+
     // Identifiers other than `ctx` are rejected (no globals reachable).
     const escape = sandbox.compile('window.location.href.includes("evil")');
     assert.equal(escape.ok, false);
