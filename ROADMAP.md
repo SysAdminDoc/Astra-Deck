@@ -3,15 +3,8 @@
 > Single source of truth for all planned work. Items above the `---` are existing
 > plans; items below are research conducted 2026-06-03.
 
-Shipped work is summarized in [COMPLETED.md](COMPLETED.md) and detailed in
-[CHANGELOG.md](CHANGELOG.md). Research is summarized in
-[RESEARCH_REPORT.md](RESEARCH_REPORT.md). The pre-consolidation research plans
-are archived under `docs/archive/research/`, and the legacy
-internal-planning-track dossier labelled v5.2.0 -> v6.0.0 (competitive matrix, feature catalog,
-technical reconnaissance, phased feature plan) is preserved at
-[docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md).
-Current shipped product-version sources remain on the v4.x line; at this
-cleanup they agree at v4.46.0.
+Shipped work is detailed in [CHANGELOG.md](CHANGELOG.md).
+Current shipped product-version sources remain on the v4.x line.
 
 > Last researched: Cycle 45 - 2026-06-06.
 
