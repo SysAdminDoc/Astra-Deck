@@ -3524,11 +3524,19 @@ async function resetAllData() {
         });
         const snapped = await writeResetSnapshot(snapshot);
         if (!snapped && sessionStorageAvailable()) {
+            // Session API exists but the snapshot write failed (e.g. data too
+            // large) — abort so we never clear without a recoverable snapshot.
             showStatus(t('statusResetSnapshotFail',
                 'Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first.'),
                 'error', 6000);
             return;
         }
+        // When chrome.storage.session is entirely unavailable (older Firefox),
+        // writeResetSnapshot returns false up front and there is no Undo path.
+        // Proceed with the reset (the user asked for it, and policy bans
+        // confirmation dialogs) but report honestly rather than promising an
+        // Undo button that will never appear.
+        const undoAvailable = snapped && sessionStorageAvailable();
         await storageClear();
         // Re-stamp the first-run / what's-new sentinels that storageClear()
         // just wiped, so a reset doesn't re-trigger the welcome/onboarding
@@ -3542,8 +3550,11 @@ async function resetAllData() {
         await loadSettings();
         render(popupState.settings, q.value);
         await refreshUndoResetVisibility();
-        showStatus(t('statusAllDataClearedUndo',
-            'All data cleared. Click Undo Reset to restore (until you close the browser).'),
+        showStatus(undoAvailable
+            ? t('statusAllDataClearedUndo',
+                'All data cleared. Click Undo Reset to restore (until you close the browser).')
+            : t('statusAllDataClearedNoUndo',
+                'All data cleared. Undo is unavailable on this browser, so this reset cannot be undone.'),
             'success', 6000);
     } catch (error) {
         showStatus(t('statusResetFail', 'Reset failed') + ': ' + error.message, 'error', 4200);

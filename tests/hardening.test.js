@@ -5072,6 +5072,28 @@ test('v5.0.0 policy-profile: scrubber removes apiKey-shaped values from exports'
     assert.equal(out.sponsorBlock, true);
 });
 
+test('policy-profile: nullable-complex settings accept populated runtime shapes (sidebarOrder/lowPowerProfileBackup)', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    // Regression: these keys are schema type "null" (default null) but hold an
+    // array/object at runtime. The validator must accept the populated shape,
+    // otherwise export/import hard-fails for anyone who reordered their sidebar.
+    const populated = pp.validateSettingsSnapshot({
+        sidebarOrder: ['history', 'wl', 'subs'],
+        lowPowerProfileBackup: { enableCPU_Tamer: false }
+    }, { allowUnknown: true });
+    assert.equal(populated.ok, true, populated.errors && populated.errors.join('; '));
+    assert.deepEqual(populated.settings.sidebarOrder, ['history', 'wl', 'subs']);
+
+    // null is still valid (the unset default).
+    const nulled = pp.validateSettingsSnapshot({ sidebarOrder: null }, { allowUnknown: true });
+    assert.equal(nulled.ok, true);
+
+    // A type-incorrect value (number) is still rejected.
+    const bad = pp.validateSettingsSnapshot({ sidebarOrder: 42 }, { allowUnknown: true });
+    assert.equal(bad.ok, false);
+});
+
 test('v5.0.0 policy-profile: store-safe export reverts github-full keys to schema defaults', () => {
     const core = loadPolicyProfileModule();
     const pp = core.createPolicyProfile();
