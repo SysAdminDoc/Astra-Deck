@@ -179,7 +179,7 @@ function audit(sources = readSources(), { quiet = false } = {}) {
         'Transcript viewer must expose polite state updates and named export actions');
     add('Transcript lines and toggle are labelled',
         ytkit.includes("closeBtn.setAttribute('aria-label', 'Collapse transcript')") &&
-        ytkit.includes("line.setAttribute('aria-label', `Jump to ${mins}:${secs.toString().padStart(2, '0')} in the transcript`)"),
+        ytkit.includes("line.setAttribute('aria-label', `Jump to ${stamp} in the transcript`)"),
         'Transcript toggle and lines must have accessible names');
     add('Transcript viewer controls have focus-visible and target size',
         ytkit.includes('.ytkit-transcript-toggle:focus-visible') &&
