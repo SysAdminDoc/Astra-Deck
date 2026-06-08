@@ -641,10 +641,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 sendResponse({ timeout: true });
             }, clampedTimeout);
 
+            const sendsCredentials = shouldSendCredentials(url);
             const fetchOpts = {
                 method: safeMethod,
                 signal: controller.signal,
-                credentials: shouldSendCredentials(url) ? 'include' : 'omit'
+                credentials: sendsCredentials ? 'include' : 'omit'
             };
 
             const filteredHeaders = filterRequestHeaders(headers, url);
@@ -653,6 +654,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             }
             if (Object.keys(filteredHeaders).length > 0) {
                 fetchOpts.headers = filteredHeaders;
+            }
+
+            // Credential-leak hardening: when this request carries cookies
+            // (credentials: 'include') or an Authorization header, do NOT let the
+            // browser silently auto-follow cross-origin redirects. With the
+            // default `redirect: 'follow'`, a 3xx from an allowlisted origin
+            // would resend those secrets to every redirect hop *before* the
+            // post-redirect allowlist check below ever runs. `redirect: 'manual'`
+            // surfaces a 3xx as an opaqueredirect we reject outright, so secrets
+            // never reach an unvalidated host. Non-credentialed requests keep
+            // following redirects (no secret to leak).
+            if (sendsCredentials || hasHeader(filteredHeaders, 'authorization')) {
+                fetchOpts.redirect = 'manual';
             }
             if (data !== null && data !== undefined && safeMethod !== 'GET' && safeMethod !== 'HEAD') {
                 fetchOpts.body = normalizeRequestBody(data, filteredHeaders);
@@ -668,6 +682,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             // cleared only on terminal paths below (success / early returns /
             // catch).
             if (responded) return;
+
+            // A credentialed/auth request hit a redirect (see redirect:'manual'
+            // above). The browser stopped without following it, so no secret
+            // leaked — reject so the content script never receives a body from
+            // an unvalidated hop.
+            if (resp.type === 'opaqueredirect') {
+                responded = true;
+                if (timer) { clearTimeout(timer); timer = null; }
+                sendResponse({ error: 'Blocked redirect on a credentialed request (possible cross-origin credential leak)' });
+                try { controller.abort(); } catch (_) {
+                    // reason: controller may already be aborted
+                }
+                return;
+            }
 
             // SSRF hardening: if redirects followed us to an origin that is NOT
             // in the allowlist, reject the response before the body leaks back
