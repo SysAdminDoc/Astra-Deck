@@ -1,7 +1,7 @@
 (() => {
     'use strict';
 
-    // iter-7 N11 (M-phase extraction #2): PredicateSandbox moved out of
+    // PredicateSandbox moved out of
     // the 44k-line ytkit.js monolith into a focused core module.
     //
     // Option C from docs/predicate-sandbox-investigation.md — an

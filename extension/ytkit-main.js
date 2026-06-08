@@ -3,7 +3,7 @@
 // Runs in world: "MAIN" at document_start
 // Communicates with ISOLATED world via data attributes on <html>
 
-// iter-6 N9: shared <html> attribute observer.
+// shared <html> attribute observer.
 // Previously three separate MutationObservers all watched
 // `document.documentElement` for `data-ytkit-codec`,
 // `data-ytkit-quality`, and `data-ytkit-quality-target` /

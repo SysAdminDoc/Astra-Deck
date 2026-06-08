@@ -95,7 +95,7 @@ APP_VERSION = "1.5.1"
 SERVICE_ID = "astra-downloader"
 # SERVICE_API_VERSION is the wire-schema version. 1.2.0 adds /health fields
 # (ytDlpVersion, ffmpegVersion, rateLimit); 1.4.0 adds /health.poTokenProvider
-# for bgutil-ytdlp-pot-provider availability; 1.5.0 (iter-8 N20) adds
+# for bgutil-ytdlp-pot-provider availability; 1.5.0 adds
 # /health.denoRuntime for the external JS runtime that yt-dlp >= 2026.04
 # requires on YouTube extractions. Older clients ignore unknown keys, so
 # the major version stays at 2 (additive, backward-compatible).
@@ -226,7 +226,7 @@ INTEGRATIONS_STAMP_VALUE = 'IntegrationsVersion'
 PO_TOKEN_PROVIDER_PORT = 4416
 PO_TOKEN_PROVIDER_PROBE_TIMEOUT = 1.0
 _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
-# v1.5.0 (iter-6 N14): minimum bgutil-ytdlp-pot-provider version that is
+# v1.5.0: minimum bgutil-ytdlp-pot-provider version that is
 # known to work cleanly with current yt-dlp. Bumped when upstream fixes
 # something that materially changes our success rate (PO token format
 # change, attestation extractor change, etc.). Older providers may still
@@ -235,7 +235,7 @@ _PO_TOKEN_PROVIDER_CACHE_TTL_SECONDS = 30
 # pre-release suffixes by truncating at the first non-numeric segment.
 BGUTIL_POT_MIN_VERSION = "1.3.0"
 
-# iter-8 N20: yt-dlp >= 2026.04 ships an `external n/sig solver` for YouTube
+# yt-dlp >= 2026.04 ships an `external n/sig solver` for YouTube
 # (upstream PR #14157). Without an installed JavaScript runtime — Deno is
 # the documented option — the `web` and `web_safari` clients return empty
 # format lists on a growing share of videos. The /health endpoint surfaces
@@ -676,7 +676,7 @@ def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT
     ``127.0.0.1:4416``, ``None`` otherwise. Cached for 30 s. The probe uses
     a tight timeout so a stale firewall hold can't gum up health polling.
 
-    The ``stale`` field (iter-6 N14) is true when the detected version
+    The ``stale`` field is true when the detected version
     string compares less than ``BGUTIL_POT_MIN_VERSION``. The extension
     popup health surface renders an amber "update bgutil-pot" notice on
     stale, distinct from the absence notice when the provider isn't running
@@ -712,7 +712,7 @@ def probe_po_token_provider(force=False, timeout=PO_TOKEN_PROVIDER_PROBE_TIMEOUT
                 raw = payload.get('version') or payload.get('plugin_version')
                 if raw is not None:
                     version = str(raw)[:32]
-            # iter-6 N14: stale-version comparison. Stale is only set true
+            # stale-version comparison. Stale is only set true
             # when the detected version parses cleanly AND compares less
             # than BGUTIL_POT_MIN_VERSION. Unknown version -> stale=False
             # (don't false-positive on older provider builds that don't
@@ -744,7 +744,7 @@ def reset_po_token_provider_cache():
         _po_token_provider_cache['checked_at'] = 0.0
 
 
-# iter-8 N20: Deno (or other external JS runtime) presence probe + cutoff
+# Deno (or other external JS runtime) presence probe + cutoff
 # evaluation for the bundled yt-dlp.exe.
 _deno_runtime_cache = {'value': None, 'checked_at': 0.0}
 _DENO_RUNTIME_CACHE_LOCK = threading.Lock()
@@ -3004,7 +3004,7 @@ def create_api(config, dl_manager, history):
             # the Repair panel" pill when current=false. null = first-run
             # bootstrap before ffmpeg is on disk.
             "ffmpegCapabilities": check_ffmpeg_capabilities(),
-            # v1.5.0 (iter-8 N20): external JavaScript runtime presence.
+            # v1.5.0: external JavaScript runtime presence.
             # yt-dlp >= 2026.04 invokes an external Deno runtime to solve
             # YouTube's n/sig challenges. Without Deno on PATH, recent
             # yt-dlp builds return empty format lists on a growing share

@@ -1,8 +1,8 @@
 'use strict';
 
-// Regression coverage for the iter-8 N23-extended extraction of the
+// Regression coverage for the extended extraction of the
 // SVG icon library + createSVG helper out of ytkit.js into
-// extension/core/icons.js (N11 M-phase #6, -326 LOC from ytkit.js).
+// extension/core/icons.js.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');

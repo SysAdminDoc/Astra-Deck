@@ -199,7 +199,7 @@
         recordSelectorAttempt(surface, selector, 'hit');
     }
 
-    // v4.5+ (iter-5 N5): DOM-shape drift recorder.
+    // v4.5+: DOM-shape drift recorder.
     //
     // Callers compute a short opaque "shape signature" for the matched node —
     // e.g. `attr-len:11` for an 11-char [video-id], `children-count:5` for a
@@ -331,7 +331,7 @@
         return (hash >>> 0).toString(36);
     }
 
-    // v4.5+ (iter-5 N5 L3 follow-up): derive a default shape signature for
+    // v4.5+: derive a default shape signature for
     // an Element so live resolver hits actually feed `recordSelectorShape`.
     // The L3 audit flagged that the recorder API existed but no live call
     // site invoked it. Default signature samples cheap, stable identifier
@@ -582,7 +582,7 @@
                     lastHitAt: stat.lastHitAt,
                     lastError: stat.lastError,
                     lastOutcome: stat.lastOutcome,
-                    // v4.5+ shape-drift fields (iter-5 N5).
+                    // v4.5+ shape-drift fields.
                     // hasShapeSample disambiguates "shapeDrifts:0 because the
                     // shape has been stable since first observation" from
                     // "shapeDrifts:0 because no live caller has invoked

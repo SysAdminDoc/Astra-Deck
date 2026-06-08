@@ -1,20 +1,20 @@
 (() => {
     'use strict';
 
-    // iter-6 N11 (partial M-phase extraction): DiagnosticLog moved out of the
+    // DiagnosticLog moved out of the
     // 44k-line ytkit.js monolith into a focused core module.
     //
     // The log is a ring buffer that records context-tagged diagnostic
     // events (ctx: trusted-types / selector-health / storage-corruption /
-    // settings-migration / console / window). iter-6 N6 added per-ctx
+    // settings-migration / console / window). added per-ctx
     // counters with O(1) record() bookkeeping + ring-trim decrement +
     // lazy resync from the persisted ring on first read.
     //
     // The log couples to two ytkit.js internals:
-    //   - `appState.settings` (the persisted ring lives at
-    //     `appState.settings._errors` and is debounce-saved through
-    //     `settingsManager`)
-    //   - `settingsManager.save` for the Clear path
+    // - `appState.settings` (the persisted ring lives at
+    // `appState.settings._errors` and is debounce-saved through
+    // `settingsManager`)
+    // - `settingsManager.save` for the Clear path
     //
     // We pass both through as accessor callbacks at instantiation time —
     // the module itself stays free of any feature-monolith coupling and
@@ -74,7 +74,7 @@
                 const ctxKey = String(ctx).slice(0, CTX_MAX_LEN);
                 // Resync BEFORE push so cross-session entries already in
                 // the persisted ring are counted exactly once. The
-                // iter-6 N6 inline implementation had this in the wrong
+                // inline implementation had this in the wrong
                 // order (push then resync then increment), which made
                 // the first record on a fresh session double-count.
                 // Confirmed by the new N11 unit tests.

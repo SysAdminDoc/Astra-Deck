@@ -1,6 +1,6 @@
 'use strict';
 
-// Regression coverage for the iter-8 N18 extraction of TranscriptService
+// Regression coverage for the extraction of TranscriptService
 // out of the ytkit.js monolith and into extension/core/transcript-service.js.
 //
 // The factory module is loaded by faking the document_idle content_script
