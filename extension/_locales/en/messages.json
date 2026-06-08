@@ -1226,6 +1226,12 @@
   "feature_sleepTimer_desc": {
     "message": "Pause playback after a configurable number of minutes. NewPipe-style. The chip in the player chrome counts down + offers a Cancel + a +5 min top-up."
   },
+  "feature_restoreNativeYouTubeUi_name": {
+    "message": "Restore Native YouTube UI"
+  },
+  "feature_restoreNativeYouTubeUi_desc": {
+    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+  },
   "feature_abLoop_name": {
     "message": "A-B Loop"
   },
