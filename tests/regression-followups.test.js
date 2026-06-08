@@ -36,3 +36,14 @@ test('popup formatBytes scales beyond MB and counts are locale-aware', () => {
     assert.ok(/statKeys\.textContent = formatCount\(summary\.keys\)/.test(popup),
         'storage stat counts must use the locale-aware formatter');
 });
+
+test('subscriptionGroups duration-asc sort normalizes HH:MM:SS to seconds', () => {
+    const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const i = ytkit.indexOf("mode === 'duration-asc'");
+    assert.ok(i > -1, 'duration-asc branch must exist');
+    const block = ytkit.slice(i, i + 1400);
+    assert.ok(/\*\s*3600/.test(block),
+        'HH:MM:SS must be scored in seconds (hours*3600), not minutes');
+    assert.ok(!/\(Number\(m\[3\]\) \|\| 0\) \/ 60/.test(block),
+        'must not use the old minutes-mixing formula (m[3]/60)');
+});
