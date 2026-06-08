@@ -32769,9 +32769,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const score = (card) => {
                     const text = card.textContent || '';
                     if (mode === 'duration-asc') {
-                        const m = text.match(/(\d+):(\d+)(?::(\d+))?/);
+                        // Prefer the thumbnail duration badge so a timestamp in
+                        // the title (e.g. "10:30") can't be mistaken for runtime.
+                        const badge = card.querySelector('ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer');
+                        const m = (badge?.textContent || text).match(/(\d+):(\d+)(?::(\d+))?/);
                         if (!m) return Number.POSITIVE_INFINITY;
-                        return (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0) + (Number(m[3]) || 0) / 60;
+                        // Normalize to SECONDS regardless of MM:SS vs HH:MM:SS —
+                        // the old formula scored MM:SS in seconds but HH:MM:SS in
+                        // minutes, so mixing short and long videos sorted wrong.
+                        return m[3] !== undefined
+                            ? (Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 + (Number(m[3]) || 0)
+                            : (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0);
                     }
                     if (mode === 'unwatched') {
                         return card.querySelector('ytd-thumbnail-overlay-resume-playback-renderer') ? 1 : 0;
