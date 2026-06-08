@@ -23408,22 +23408,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'cpu',
             _originals: null,
             _pumpInterval: null,
+            _patched: false,
             init() {
-                this._originals = {
-                    setTimeout: window.setTimeout,
-                    setInterval: window.setInterval,
-                    clearTimeout: window.clearTimeout,
-                    clearInterval: window.clearInterval
-                };
-                const originals = this._originals;
                 const win = window;
                 if (win.__ytkit_cpu_tamer) return;
-                win.__ytkit_cpu_tamer = true;
-                const { setTimeout: origSetTimeout, setInterval: origSetInterval, clearTimeout: origClearTimeout, clearInterval: origClearInterval } = originals;
                 const PromiseCtor = (async () => {})().constructor;
                 let canvas;
                 try { canvas = document.createElement('canvas'); } catch(e) { return; }
                 if (!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))) return;
+                // Snapshot native timers only AFTER the re-entry + WebGL guards
+                // pass, so a bail-out can't capture already-patched wrappers
+                // (which destroy() would then "restore" permanently, hanging all
+                // page timers). Mirrors the extension's _patched guard.
+                this._originals = {
+                    setTimeout: win.setTimeout,
+                    setInterval: win.setInterval,
+                    clearTimeout: win.clearTimeout,
+                    clearInterval: win.clearInterval
+                };
+                win.__ytkit_cpu_tamer = true;
+                const { setTimeout: origSetTimeout, setInterval: origSetInterval } = this._originals;
                 let afHandler = null;
                 const rafPromise = (resolve) => requestAnimationFrame(afHandler = resolve);
                 let p1 = { resolved: true }, p2 = { resolved: true };
@@ -23460,19 +23464,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._pumpInterval = origSetInterval(() => {
                     if (afHandler) { afHandler(); afHandler = null; }
                 }, 125);
+                this._patched = true;
             },
             destroy() {
                 if (this._pumpInterval && this._originals?.clearInterval) {
                     this._originals.clearInterval.call(window, this._pumpInterval);
                 }
                 this._pumpInterval = null;
-                if (this._originals) {
+                if (this._patched && this._originals) {
                     window.setTimeout = this._originals.setTimeout;
                     window.setInterval = this._originals.setInterval;
                     window.clearTimeout = this._originals.clearTimeout;
                     window.clearInterval = this._originals.clearInterval;
                 }
                 this._originals = null;
+                this._patched = false;
                 window.__ytkit_cpu_tamer = false;
             }
         },
