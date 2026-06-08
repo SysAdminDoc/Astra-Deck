@@ -10349,11 +10349,21 @@
                 _parseCompactCount(text) {
                     const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
                     if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
-                    const match = raw.match(/(\d+(?:[,.]\d+)?)\s*([kmb])?\s*(?:views?|watching)/i);
+                    const match = raw.match(/(\d[\d,.]*)\s*([kmb])?\s*(?:views?|watching)/i);
                     if (!match) return null;
-                    const number = parseFloat(match[1].replace(',', '.'));
+                    const suffix = match[2]?.toLowerCase();
+                    let numeric = match[1];
+                    if (suffix) {
+                        if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
+                        else numeric = numeric.replace(/,/g, '');
+                    } else {
+                        numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
+                        if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
+                        else numeric = numeric.replace(/,/g, '');
+                    }
+                    const number = parseFloat(numeric);
                     if (!Number.isFinite(number)) return null;
-                    const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[match[2]?.toLowerCase()] || 1;
+                    const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[suffix] || 1;
                     return Math.round(number * scale);
                 },
 
@@ -21953,7 +21963,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'volume-1',
 
             _apply() {
-                const level = appState.settings.rememberVolumeLevel || 100;
+                const level = appState.settings.rememberVolumeLevel ?? 100;
                 const video = document.querySelector('video');
                 if (!video) return;
                 video.volume = level / 100;

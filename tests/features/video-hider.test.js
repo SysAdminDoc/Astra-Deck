@@ -84,6 +84,27 @@ test('hideVideosFromHome monolith prefers the module runtime factory before inli
         'factory dependency bag must avoid the later-declared local createSVG binding');
 });
 
+test('_parseCompactCount preserves comma-grouped view counts (no decimal corruption)', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+
+    // Regression: "1,234 views" must not be read as 1 (the old replace(',', '.') bug).
+    assert.equal(feature._parseCompactCount('1,234 views'), 1234);
+    assert.equal(feature._parseCompactCount('12,345 views'), 12345);
+    assert.equal(feature._parseCompactCount('1,234,567 views'), 1234567);
+    assert.equal(feature._parseCompactCount('987 views'), 987);
+    assert.equal(feature._parseCompactCount('42 watching'), 42);
+
+    // Suffixed counts keep their decimal semantics.
+    assert.equal(feature._parseCompactCount('1.2M views'), 1200000);
+    assert.equal(feature._parseCompactCount('12.5K views'), 12500);
+    assert.equal(feature._parseCompactCount('3B views'), 3000000000);
+
+    // Sentinels.
+    assert.equal(feature._parseCompactCount('No views'), 0);
+    assert.equal(feature._parseCompactCount('Streamed 3 years ago'), null);
+});
+
 test('hideVideosFromHome module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];
