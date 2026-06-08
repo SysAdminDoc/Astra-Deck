@@ -156,7 +156,14 @@
             case 'object':
                 return isPlainObject(value);
             case 'null':
-                return value === null;
+                // Nullable-complex settings (e.g. `sidebarOrder` holds an array,
+                // `lowPowerProfileBackup` holds an object) default to null but are
+                // populated with an array/object at runtime once the user customizes
+                // them. The schema models them as `type: "null"` because the default
+                // IS null (check-settings enforces type==defaultValue runtime type),
+                // so the validator must accept the populated runtime shapes — otherwise
+                // export/import hard-fails for anyone who reordered their sidebar.
+                return value === null || Array.isArray(value) || isPlainObject(value);
             default:
                 return false;
             }

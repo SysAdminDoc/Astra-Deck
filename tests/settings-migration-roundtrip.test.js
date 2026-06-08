@@ -235,3 +235,15 @@ test('pinned v1 full-profile fixture migrates without dropping catalogued settin
     const secondImport = manager._prepareImportedSettings(result);
     assert.deepEqual(secondImport, result, 'v1 full-profile migrated settings should be idempotent on re-import');
 });
+
+test('_migrate preserves a future schema stamp instead of lowering it (no migration re-arm on downgrade)', () => {
+    const { manager } = createSettingsManagerFromSource(ytkitSource);
+    const future = manager.SETTINGS_VERSION + 5;
+    const migrated = manager._migrate({ _settingsVersion: future, someFutureKey: 'x' }, 'downgrade-test');
+    assert.equal(
+        migrated._settingsVersion,
+        future,
+        'opening older code against newer data must keep the higher stamp so forward migrations are not re-run'
+    );
+    assert.equal(migrated.someFutureKey, 'x', 'future values must be preserved untouched');
+});

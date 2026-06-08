@@ -4223,7 +4223,12 @@ return response;
                     savedSettings,
                     `${source}: preserved future settings schema v${version}; stored by v${this.SETTINGS_VERSION}`
                 );
-                savedSettings._settingsVersion = this.SETTINGS_VERSION;
+                // Do NOT lower the stamp. Previously this rewrote the stamp down
+                // to the running version, so when the newer build ran again it
+                // saw an older version and re-ran migrations it had already
+                // applied — corrupting data the moment any migration is not
+                // idempotent. Leave the future stamp intact (load() preserves it
+                // too) so forward migrations run exactly once.
                 return savedSettings;
             }
             if (version >= this.SETTINGS_VERSION) return savedSettings;
@@ -4373,10 +4378,17 @@ return response;
                 };
             }
             const storedVersion = savedSettings._settingsVersion;
+            // Preserve a stamp written by a NEWER build instead of forcing it
+            // down to the running version — otherwise opening older code against
+            // newer data would lower the stamp and re-arm forward migrations.
+            const normalizedStored = this._normalizeVersion(storedVersion);
+            const targetVersion = normalizedStored > this.SETTINGS_VERSION
+                ? normalizedStored
+                : this.SETTINGS_VERSION;
             const rawSettingsSnapshot = this._sanitize(savedSettings);
             savedSettings = this._sanitize(this._migrate(savedSettings));
-            const merged = this._normalizeProfileModel(this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: this.SETTINGS_VERSION }));
-            let shouldPersistMerged = storedVersion !== this.SETTINGS_VERSION
+            const merged = this._normalizeProfileModel(this._sanitize({ ...this.defaults, ...savedSettings, _settingsVersion: targetVersion }));
+            let shouldPersistMerged = normalizedStored !== targetVersion
                 || JSON.stringify(rawSettingsSnapshot) !== JSON.stringify(savedSettings);
             if (
                 merged.reactionSpammer &&
@@ -16508,11 +16520,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _parseCompactCount(text) {
                 const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
                 if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
-                const match = raw.match(/(\d+(?:[,.]\d+)?)\s*([kmb])?\s*(?:views?|watching)/i);
+                const match = raw.match(/(\d[\d,.]*)\s*([kmb])?\s*(?:views?|watching)/i);
                 if (!match) return null;
-                const number = parseFloat(match[1].replace(',', '.'));
+                const suffix = match[2]?.toLowerCase();
+                let numeric = match[1];
+                if (suffix) {
+                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
+                    else numeric = numeric.replace(/,/g, '');
+                } else {
+                    numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
+                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
+                    else numeric = numeric.replace(/,/g, '');
+                }
+                const number = parseFloat(numeric);
                 if (!Number.isFinite(number)) return null;
-                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[match[2]?.toLowerCase()] || 1;
+                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[suffix] || 1;
                 return Math.round(number * scale);
             },
 
@@ -23349,7 +23371,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _apply() {
-                const level = appState.settings.rememberVolumeLevel || 100;
+                const level = appState.settings.rememberVolumeLevel ?? 100;
                 const video = document.querySelector('video');
                 if (!video) return;
                 video.volume = level / 100;
@@ -25502,16 +25524,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const container = document.querySelector('ytd-notification-renderer');
                     if (!container) return;
                     const parent = container.parentElement;
-                    if (!parent || parent.dataset.sorted) return;
+                    if (!parent) return;
                     const items = Array.from(parent.querySelectorAll('ytd-notification-renderer'));
                     if (items.length < 2) return;
-                    items.sort((a, b) => {
+                    const sorted = items.slice().sort((a, b) => {
                         const timeA = a.querySelector('#message')?.textContent || '';
                         const timeB = b.querySelector('#message')?.textContent || '';
                         return this._parseRelativeAge(timeA) - this._parseRelativeAge(timeB);
                     });
-                    items.forEach(item => parent.appendChild(item));
-                    parent.dataset.sorted = 'true';
+                    // Idempotent reorder: only mutate the DOM when the order
+                    // actually changes, so the MutationObserver that re-triggers
+                    // this sort settles after one pass instead of looping. The
+                    // previous permanent `dataset.sorted` latch stopped the loop
+                    // but also blocked late-arriving notifications from ever being
+                    // re-sorted — this preserves loop-safety while still resorting
+                    // when new notifications stream in.
+                    if (sorted.every((item, i) => item === items[i])) return;
+                    sorted.forEach(item => parent.appendChild(item));
                 };
                 this._sortTimer = null;
                 this._observer = new MutationObserver(() => {
@@ -31837,6 +31866,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return 'normal';
             },
 
+            // Allowlist of values the MAIN-world bridge forwards to
+            // movie_player.setPlaybackQualityRange(). The schema doesn't enforce
+            // an enum on these keys, so a corrupted/imported settings blob could
+            // otherwise push an arbitrary string into the player API — clamp any
+            // unrecognized value back to 'inherit' (no override).
+            _QUALITY_VALUES: new Set(['inherit', 'auto', 'highres', 'hd2880', 'hd2160', 'hd1440', 'hd1080', 'hd720', 'large', 'medium', 'small', 'tiny']),
             _resolvedQuality(context) {
                 const map = {
                     normal: appState?.settings?.qualityDefaultNormal,
@@ -31845,7 +31880,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     background: appState?.settings?.qualityDefaultBackground,
                     embed: appState?.settings?.qualityDefaultEmbed
                 };
-                return String(map[context] || 'inherit');
+                const value = String(map[context] || 'inherit');
+                return this._QUALITY_VALUES.has(value) ? value : 'inherit';
             },
 
             _publishContext() {
@@ -31868,27 +31904,51 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }));
             },
 
+            _navTimer: null,
+            _observedHost: null,
+
+            // Theater toggles flip an attribute on ytd-watch-flexy. The watch
+            // host doesn't exist on a cold load of a non-watch page, and it's
+            // replaced across SPA navigations, so we must (re)attach the
+            // observer to the *current* host on every navigation — not just once
+            // at init (which previously left theater transitions unobserved for
+            // the rest of the session when the feature booted off-watch).
+            _attachTheaterObserver() {
+                const host = document.querySelector('ytd-watch-flexy');
+                if (!host || host === this._observedHost || !this._observer) return;
+                this._observer.disconnect();
+                this._observer.observe(host, { attributes: true, attributeFilter: ['theater'] });
+                this._observedHost = host;
+            },
+
             init() {
                 this._fsHandler = () => this._publishContext();
                 this._visHandler = () => this._publishContext();
                 document.addEventListener('fullscreenchange', this._fsHandler);
                 document.addEventListener('visibilitychange', this._visHandler);
-                this._navRule = () => { setTimeout(() => this._publishContext(), 600); };
-                addNavigateRule(this.id, this._navRule);
-                // Theater toggles flip an attribute on ytd-watch-flexy; poll the
-                // attribute via MutationObserver scoped to the watch host.
                 this._observer = new MutationObserver(() => this._publishContext());
-                const host = document.querySelector('ytd-watch-flexy');
-                if (host) this._observer.observe(host, { attributes: true, attributeFilter: ['theater'] });
+                this._observedHost = null;
+                this._navRule = () => {
+                    if (this._navTimer) clearTimeout(this._navTimer);
+                    this._navTimer = setTimeout(() => {
+                        this._navTimer = null;
+                        this._attachTheaterObserver();
+                        this._publishContext();
+                    }, 600);
+                };
+                addNavigateRule(this.id, this._navRule);
+                this._attachTheaterObserver();
                 this._publishContext();
             },
 
             destroy() {
+                if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null; }
                 if (this._fsHandler) document.removeEventListener('fullscreenchange', this._fsHandler);
                 if (this._visHandler) document.removeEventListener('visibilitychange', this._visHandler);
                 removeNavigateRule(this.id);
                 this._observer?.disconnect();
                 this._observer = null;
+                this._observedHost = null;
                 this._fsHandler = null;
                 this._visHandler = null;
                 this._navRule = null;
@@ -32682,11 +32742,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _parseCompactViewCount(text) {
                 const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
                 if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
-                const match = raw.match(/(\d+(?:[,.]\d+)?)\s*([kmb])?\s*(?:views?|watching)/i);
+                const match = raw.match(/(\d[\d,.]*)\s*([kmb])?\s*(?:views?|watching)/i);
                 if (!match) return 0;
-                const number = parseFloat(match[1].replace(',', '.'));
+                const suffix = match[2]?.toLowerCase();
+                let numeric = match[1];
+                if (suffix) {
+                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
+                    else numeric = numeric.replace(/,/g, '');
+                } else {
+                    numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
+                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
+                    else numeric = numeric.replace(/,/g, '');
+                }
+                const number = parseFloat(numeric);
                 if (!Number.isFinite(number)) return 0;
-                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[match[2]?.toLowerCase()] || 1;
+                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[suffix] || 1;
                 return Math.round(number * scale);
             },
 
@@ -33503,6 +33573,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _DB_VERSION: 1,
             _navRule: null,
             _ingested: null,
+            // Each record holds up to ~200 KB of transcript text, one per
+            // distinct video ever opened. Without a cap the store grows without
+            // bound and eventually trips the origin quota (silently disabling
+            // indexing). Bound it with LRU eviction keyed on `indexedAt`.
+            _MAX_RECORDS: 1000,
 
             _openDb() {
                 return new Promise((resolve, reject) => {
@@ -33518,13 +33593,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 });
             },
 
+            _evictOldest(store, count) {
+                // Collect (key, indexedAt) for every record, then delete the
+                // `count` oldest. Runs inside the caller's readwrite transaction.
+                const entries = [];
+                const cursorReq = store.openCursor();
+                cursorReq.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        entries.push({ key: cursor.primaryKey, ts: Number(cursor.value?.indexedAt) || 0 });
+                        cursor.continue();
+                        return;
+                    }
+                    entries.sort((a, b) => a.ts - b.ts);
+                    for (let i = 0; i < count && i < entries.length; i++) {
+                        try { store.delete(entries[i].key); } catch (_) {
+                            // reason: best-effort eviction; a failed delete must not abort the put
+                        }
+                    }
+                };
+            },
+
             async _put(record) {
                 const db = await this._openDb();
                 return new Promise((resolve, reject) => {
                     const tx = db.transaction(this._DB_STORE, 'readwrite');
-                    tx.objectStore(this._DB_STORE).put(record);
+                    const store = tx.objectStore(this._DB_STORE);
+                    store.put(record);
+                    // Proactively bound the store so it can't grow past the cap.
+                    const countReq = store.count();
+                    countReq.onsuccess = () => {
+                        const overflow = countReq.result - this._MAX_RECORDS;
+                        if (overflow > 0) this._evictOldest(store, overflow);
+                    };
                     tx.oncomplete = () => { db.close(); resolve(); };
                     tx.onerror = () => { db.close(); reject(tx.error); };
+                    tx.onabort = () => { db.close(); reject(tx.error || new Error('transcript index write aborted (quota?)')); };
                 });
             },
 
