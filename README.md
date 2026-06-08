@@ -448,10 +448,9 @@ Most controls live in the settings panel; a few advanced flows are exposed only 
 
 | Doc | Audience |
 |-----|----------|
-| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. Current product-version sources are on v4.x and agree at v4.46.0; the legacy internal planning-track dossier labelled v5.0.0 -> v6.0.0 is archived at [docs/archive/roadmap-dossier-2026-05-21.md](docs/archive/roadmap-dossier-2026-05-21.md) |
-| [COMPLETED.md](COMPLETED.md) | Shipped roadmap arcs and recent hardening/polish summaries |
-| [RESEARCH_REPORT.md](RESEARCH_REPORT.md) | Research summary and archive index for prior feature-plan files |
+| [ROADMAP.md](ROADMAP.md) | Single source of truth for planned work — existing plans plus research-driven additions. |
 | [CHANGELOG.md](CHANGELOG.md) | Per-version release notes |
+| [INSTALL.md](INSTALL.md) | How to install on Chrome, Edge, Firefox, or as a userscript |
 | [HARDENING.md](HARDENING.md) | Cumulative hardening / audit log (H1 → H25) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo layout, build / test commands, "Adding a Feature" guide |
 | [SECURITY.md](SECURITY.md) | Supported versions and private vulnerability reporting policy |
