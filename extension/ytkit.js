@@ -3348,7 +3348,7 @@ return response;
                         'X-Auth-Token': mdl.token,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ initial: customDir || serverDefaultPath || '' }),
+                    data: JSON.stringify({ initial: customDir || serverDefaultPath || '' }),
                     timeout: 130000
                 });
                 if (data?.path) {
@@ -21880,6 +21880,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return `${pad(h,2)}:${pad(m,2)}:${pad(s,2)},${pad(u,3)}`;
             },
 
+            // Compact transcript timestamp: M:SS, or H:MM:SS once past an hour
+            // (a 1h02m cue must read 1:02:40, not 62:40).
+            _fmtTimestamp(sec) {
+                const total = Math.max(0, Math.floor(sec));
+                const h = Math.floor(total / 3600);
+                const m = Math.floor((total % 3600) / 60);
+                const s = total % 60;
+                const pad = (n) => String(n).padStart(2, '0');
+                return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+            },
+
             _buildPlainText() {
                 return this._cues.map(c => c.text).join('\n');
             },
@@ -21902,11 +21913,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent?.trim()
                     || document.title.replace(/ - YouTube$/, '');
                 const url = location.href;
-                const transcript = this._cues.map(c => {
-                    const m = Math.floor(c.start / 60);
-                    const s = Math.floor(c.start % 60).toString().padStart(2, '0');
-                    return `[${m}:${s}] ${c.text}`;
-                }).join('\n');
+                const transcript = this._cues.map(c => `[${this._fmtTimestamp(c.start)}] ${c.text}`).join('\n');
                 return `Summarize this YouTube video transcript. Provide: (1) a 2-3 sentence TL;DR, (2) 5-8 key points with timestamps, (3) any actionable takeaways.\n\nTitle: ${title}\nURL: ${url}\n\nTranscript:\n${transcript}`;
             },
 
@@ -22040,18 +22047,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         const durSec = (ev.dDurationMs != null) ? ev.dDurationMs / 1000 : null;
                         const endSec = durSec != null ? startSec + durSec : null;
                         this._cues.push({ start: startSec, end: endSec, text });
-                        const mins = Math.floor(startSec / 60);
-                        const secs = Math.floor(startSec % 60);
+                        const stamp = this._fmtTimestamp(startSec);
 
                         const line = document.createElement('button');
                         line.type = 'button';
                         line.className = 'ytkit-transcript-line';
-                        line.title = `Jump to ${mins}:${secs.toString().padStart(2, '0')}`;
-                        line.setAttribute('aria-label', `Jump to ${mins}:${secs.toString().padStart(2, '0')} in the transcript`);
+                        line.title = `Jump to ${stamp}`;
+                        line.setAttribute('aria-label', `Jump to ${stamp} in the transcript`);
 
                         const ts = document.createElement('span');
                         ts.className = 'ytkit-transcript-line__ts';
-                        ts.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                        ts.textContent = stamp;
 
                         const txt = document.createElement('span');
                         txt.className = 'ytkit-transcript-line__text';
@@ -26831,9 +26837,11 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._clearBarSegments();
                 const gen = this._generation;
                 const fetched = await this._fetchSegments(videoId);
-                // Guard: if destroy() fired while we were awaiting, the
-                // generation counter was bumped and we must not touch state.
-                if (gen !== this._generation) return;
+                // Guard: bail if destroy() fired while awaiting (generation
+                // bumped) OR the user navigated to a different video — otherwise
+                // we paint this video's segment bars onto the new one and
+                // _scheduleNextSkip auto-skips it using the wrong timestamps.
+                if (gen !== this._generation || getVideoId() !== videoId) return;
                 this._segments = fetched;
                 if (this._segments.length) {
                     DebugManager.log('SponsorBlock', `Loaded ${this._segments.length} segments for ${videoId}`);
@@ -31273,7 +31281,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         method: 'POST',
                         url: instance,
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({ url })
+                        data: JSON.stringify({ url }),
+                        timeout: 10000
                     });
                     if (data?.status === 'redirect' || data?.status === 'stream' || data?.status === 'tunnel') {
                         const mediaUrl = data.url || data.tunnel || data.stream;
@@ -33138,14 +33147,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._ensureStyles();
                 this._navRule = () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
-                    setTimeout(() => {
+                    // Track + clear these so a navigation away within the delay
+                    // can't fire them on the wrong page. The 8s _stampLastVisit
+                    // in particular would otherwise stamp lastVisit for whatever
+                    // cards are showing (e.g. Home), corrupting NEW-badge state.
+                    if (this._renderTimer) clearTimeout(this._renderTimer);
+                    if (this._stampTimer) clearTimeout(this._stampTimer);
+                    this._renderTimer = setTimeout(() => {
+                        this._renderTimer = null;
+                        if (window.location.pathname !== '/feed/subscriptions') return;
                         this._renderToolbar();
                         this._applyGroupFilter();
                         this._applyNewSinceMarkers();
                         this._renderDeadChannelMarkers();
                         this._applySort();
                     }, 1200);
-                    setTimeout(() => this._stampLastVisit(), 8000);
+                    this._stampTimer = setTimeout(() => {
+                        this._stampTimer = null;
+                        if (window.location.pathname !== '/feed/subscriptions') return;
+                        this._stampLastVisit();
+                    }, 8000);
                 };
                 addNavigateRule(this.id, this._navRule);
                 addScopedMutationRule(this.id, 'ytd-rich-item-renderer, ytd-video-renderer', () => {
@@ -33161,6 +33182,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 removeNavigateRule(this.id);
                 removeScopedMutationRule(this.id);
+                if (this._renderTimer) { clearTimeout(this._renderTimer); this._renderTimer = null; }
+                if (this._stampTimer) { clearTimeout(this._stampTimer); this._stampTimer = null; }
                 this._navRule = null;
                 this._closeDigestPanel();
                 this._toolbar?.remove();
