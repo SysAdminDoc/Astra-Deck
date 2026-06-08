@@ -1099,6 +1099,15 @@ function showStatus(message = '', type = 'info', durationMs = 2800) {
     }
     statusBanner.textContent = message;
     statusBanner.className = `status ${normalizedType}`;
+    // Errors must interrupt the screen reader; routine successes/info stay
+    // polite. (The #status region is aria-live="polite" by default.)
+    if (normalizedType === 'error') {
+        statusBanner.setAttribute('role', 'alert');
+        statusBanner.setAttribute('aria-live', 'assertive');
+    } else {
+        statusBanner.removeAttribute('role');
+        statusBanner.setAttribute('aria-live', 'polite');
+    }
     if (durationMs > 0) {
         popupState.statusTimer = setTimeout(() => {
             statusBanner.textContent = '';
@@ -1344,6 +1353,14 @@ function createSchemaRiskBadge(key) {
 }
 
 function render(settings, filter) {
+    // The Astra Downloader companion is a github-full-only feature. Hide the
+    // "Update Companion" / "Update yt-dlp" actions for store-safe users instead
+    // of surfacing buttons that only error ("open a YouTube tab first") against
+    // a companion they never installed. Mirrors the reenable-mediadl gating.
+    const githubFull = !!(settings && settings.githubFullProfile);
+    if (updateCompanionButton) updateCompanionButton.hidden = !githubFull;
+    if (updateYtdlpButton) updateYtdlpButton.hidden = !githubFull;
+
     const rawTerm = (filter || '').toLowerCase().trim();
     const parsed = parseSearchQuery(rawTerm);
     const hasFilters = Object.keys(parsed.filters).length > 0;
@@ -1469,6 +1486,11 @@ function render(settings, filter) {
                     const next = !Boolean(popupState.settings[item.key]);
                     await writeSetting(item.key, next);
                     render(popupState.settings, q.value);
+                    // render() rebuilds the list, destroying the button the user
+                    // just activated — restore focus to the freshly-rendered row
+                    // so keyboard users don't get bounced to <body> on every toggle.
+                    const refocus = document.querySelector(`.toggle[data-key="${CSS.escape(item.key)}"]`);
+                    if (refocus) refocus.focus();
                     void broadcast(item.key, next);
                     showStatus(`${tName} ${next ? t('toggleStateOnLower', 'enabled') : t('toggleStateOffLower', 'disabled')}.`, 'success');
                 } catch (error) {
@@ -3737,35 +3759,47 @@ function installWheelScrolling() {
         q.focus();
     });
 
-    if (chrome.storage?.onChanged) {
-        chrome.storage.onChanged.addListener((changes, areaName) => {
-            if (areaName !== 'local') return;
-            const relevant = changes[SETTINGS_STORAGE_KEY]
-                || QUICK_TOGGLE_KEYS.some((key) => changes[key])
-                || changes[STORAGE_KEYS.hiddenVideos]
-                || changes[STORAGE_KEYS.allowedVideos]
-                || changes[STORAGE_KEYS.blockedChannels]
-                || changes[STORAGE_KEYS.bookmarks];
-            if (!relevant) return;
-            void loadSettings().then((settings) => {
-                render(settings, q.value);
-                void refreshOptionalHostGrantState();
-                // v4.12.0: keep the data-flow panel reactive — flipping
-                // privacyDataFlowPanel from the in-page workspace must
-                // surface in the popup on next render.
-                renderDataFlowPanel();
-                // v4.23.0: keep the schema overview's counts in sync
-                // when settings change from any source — but never blow away
-                // a focused inline editor (number/text/JSON), which would
-                // discard the user's uncommitted input mid-edit.
-                if (!schemaOverviewList || !schemaOverviewList.contains(document.activeElement)) {
-                    renderSchemaOverview();
-                }
-            }).catch((error) => {
-                console.warn('[Astra Deck popup] Failed to refresh settings:', error);
-            });
-            void renderStorageInfo();
+    const onStorageChanged = (changes, areaName) => {
+        if (areaName !== 'local') return;
+        const relevant = changes[SETTINGS_STORAGE_KEY]
+            || QUICK_TOGGLE_KEYS.some((key) => changes[key])
+            || changes[STORAGE_KEYS.hiddenVideos]
+            || changes[STORAGE_KEYS.allowedVideos]
+            || changes[STORAGE_KEYS.blockedChannels]
+            || changes[STORAGE_KEYS.bookmarks];
+        if (!relevant) return;
+        void loadSettings().then((settings) => {
+            render(settings, q.value);
+            // refreshOptionalHostGrantState is its own promise — give it a
+            // catch so a throw can't become an unhandled rejection during a
+            // routine background update.
+            void refreshOptionalHostGrantState().catch(() => {});
+            // v4.12.0: keep the data-flow panel reactive — flipping
+            // privacyDataFlowPanel from the in-page workspace must
+            // surface in the popup on next render.
+            renderDataFlowPanel();
+            // v4.23.0: keep the schema overview's counts in sync
+            // when settings change from any source — but never blow away
+            // a focused inline editor (number/text/JSON), which would
+            // discard the user's uncommitted input mid-edit.
+            if (!schemaOverviewList || !schemaOverviewList.contains(document.activeElement)) {
+                renderSchemaOverview();
+            }
+        }).catch((error) => {
+            console.warn('[Astra Deck popup] Failed to refresh settings:', error);
         });
+        void renderStorageInfo();
+    };
+    if (chrome.storage?.onChanged) {
+        chrome.storage.onChanged.addListener(onStorageChanged);
+        // The popup can be torn down mid-flight (it closes on blur). Remove the
+        // listener and cancel the status timer on pagehide so a late storage
+        // change can't run render paths against a dying DOM / invalidated
+        // extension context.
+        window.addEventListener('pagehide', () => {
+            try { chrome.storage.onChanged.removeListener(onStorageChanged); } catch (_) { /* context may already be gone */ }
+            if (popupState.statusTimer) { clearTimeout(popupState.statusTimer); popupState.statusTimer = null; }
+        }, { once: true });
     }
 
     openPanelButton.addEventListener('click', async () => {
