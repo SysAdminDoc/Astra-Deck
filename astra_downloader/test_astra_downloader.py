@@ -1,5 +1,7 @@
 import hashlib
+import io
 import socket
+import struct
 import subprocess
 import tempfile
 import threading
@@ -2362,6 +2364,69 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertIn("SHA-256", body.get("error", ""))
         schedule.assert_not_called()
         exit_later.assert_not_called()
+
+
+class NativeMessagingBootstrapTests(unittest.TestCase):
+    """Token bootstrap over the browser-pinned native-messaging stdio channel."""
+
+    def test_message_framing_round_trips(self):
+        buf = io.BytesIO()
+        ad.write_native_message(buf, {"type": "get-token", "n": 1})
+        buf.seek(0)
+        self.assertEqual(ad.read_native_message(buf), {"type": "get-token", "n": 1})
+        # A second read at EOF returns None (clean pipe close), not an error.
+        self.assertIsNone(ad.read_native_message(buf))
+
+    def test_read_rejects_oversized_length_prefix(self):
+        buf = io.BytesIO(struct.pack('<I', ad.NATIVE_MESSAGE_MAX_BYTES + 1) + b'{}')
+        with self.assertRaises(ValueError):
+            ad.read_native_message(buf)
+
+    def test_handler_returns_token_only_for_get_token(self):
+        ok = ad.handle_native_bootstrap_request({"type": "get-token"}, "tok-123")
+        self.assertTrue(ok["ok"])
+        self.assertEqual(ok["token"], "tok-123")
+        self.assertEqual(ok["service"], ad.SERVICE_ID)
+
+        ping = ad.handle_native_bootstrap_request({"type": "ping"}, "tok-123")
+        self.assertTrue(ping["ok"])
+        self.assertNotIn("token", ping)
+
+    def test_handler_rejects_unknown_and_malformed_requests(self):
+        for bad in ({"type": "evil"}, {}, "not-a-dict", 42, None):
+            resp = ad.handle_native_bootstrap_request(bad, "tok")
+            self.assertFalse(resp["ok"])
+            self.assertNotIn("token", resp)
+
+    def test_handler_withholds_token_when_unconfigured(self):
+        resp = ad.handle_native_bootstrap_request({"type": "get-token"}, "")
+        self.assertFalse(resp["ok"])
+        self.assertNotIn("token", resp)
+
+    def test_run_host_serves_then_exits_on_eof(self):
+        request = io.BytesIO()
+        ad.write_native_message(request, {"type": "get-token"})
+        request.seek(0)
+        out = io.BytesIO()
+        ad.run_native_messaging_host("tok-xyz", stdin=request, stdout=out)
+        out.seek(0)
+        reply = ad.read_native_message(out)
+        self.assertEqual(reply["token"], "tok-xyz")
+
+    def test_argv_gate_matches_only_extension_origins(self):
+        self.assertTrue(ad.argv_requests_native_host(["chrome-extension://abc/", "--parent-window=9"]))
+        self.assertTrue(ad.argv_requests_native_host(["moz-extension://uuid/"]))
+        for normal in (["-Background"], ["--uninstall"], [], ["start"]):
+            self.assertFalse(ad.argv_requests_native_host(normal))
+
+    def test_host_manifest_pins_allowed_extension_origins(self):
+        m = ad.build_native_host_manifest("C:/x/AstraDownloader.exe", ["aaa", "bbb"])
+        self.assertEqual(m["name"], ad.NATIVE_HOST_NAME)
+        self.assertEqual(m["type"], "stdio")
+        self.assertEqual(
+            m["allowed_origins"],
+            ["chrome-extension://aaa/", "chrome-extension://bbb/"],
+        )
 
 
 if __name__ == "__main__":
