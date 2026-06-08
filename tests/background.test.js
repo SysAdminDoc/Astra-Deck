@@ -122,6 +122,62 @@ test('background EXT_FETCH preserves empty-string request bodies', async () => {
     assert.equal(response.responseText, '');
 });
 
+test('background EXT_FETCH uses manual redirect for credentialed (cookie-bearing) requests', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://www.youtube.com/api/test' }
+    });
+
+    // youtube.com is a credentialed origin — redirects must not auto-follow.
+    assert.equal(capturedOptions?.credentials, 'include');
+    assert.equal(capturedOptions?.redirect, 'manual');
+});
+
+test('background EXT_FETCH blocks an opaqueredirect on a credentialed request', async () => {
+    const { messageListener } = loadBackground({
+        fetchImpl: async () => ({
+            type: 'opaqueredirect',
+            url: 'https://attacker.example/',
+            status: 0,
+            headers: new Headers()
+        })
+    });
+
+    const response = await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://www.youtube.com/api/test' }
+    });
+
+    assert.match(response.error, /Blocked redirect/);
+});
+
+test('background EXT_FETCH still follows redirects for non-credentialed requests', async () => {
+    let capturedOptions = null;
+    const { messageListener } = loadBackground({
+        fetchImpl: async (_url, options) => {
+            capturedOptions = options;
+            return new Response('{}', { status: 200, headers: { 'content-length': '2' } });
+        }
+    });
+
+    await dispatchMessage(messageListener, {
+        type: 'EXT_FETCH',
+        details: { method: 'GET', url: 'https://sponsor.ajay.app/api/skipSegments' }
+    });
+
+    assert.equal(capturedOptions?.credentials, 'omit');
+    // No manual redirect forced — nothing sensitive to leak.
+    assert.notEqual(capturedOptions?.redirect, 'manual');
+});
+
 test('background EXT_FETCH rejects runtime optional hosts before fetch when grant is missing', async () => {
     let capturedPermissionsPayload = null;
     let fetchCalled = false;
