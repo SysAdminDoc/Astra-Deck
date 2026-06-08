@@ -37,7 +37,7 @@ test('DeArrow watch-page title replacement announces via aria-live (NX5)', () =>
         'DeArrow announcement must be gated on isWatchPagePath() — grid spam would be unacceptable');
 });
 
-test('DeArrow selectors are resilient to YouTube class-name churn (iter-8 N22)', () => {
+test('DeArrow selectors are resilient to YouTube class-name churn', () => {
     // Upstream DeArrow shipped v2.3.4 (2026-04-08), v2.3.5 (2026-04-11), and
     // v2.3.6 (2026-04-23) — three rapid patches for YouTube swapping one
     // CSS class at a time on the title/thumb nodes. Our DeArrow integration
@@ -89,7 +89,7 @@ test('DeArrow selectors are resilient to YouTube class-name churn (iter-8 N22)',
         'YouTube rolls these every few weeks. Use custom-element tags or stable IDs instead.');
 });
 
-test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision) (iter-8 N22)', () => {
+test('DeArrow marker classes are unique to YTKit (no YouTube namespace collision)', () => {
     // The .daCustomTitle / .da-replaced-thumb / [data-da-processed]
     // markers are how we know we've already touched a node. They MUST
     // stay unique to us (the "da" prefix is short for "DeArrow"). If

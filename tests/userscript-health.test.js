@@ -21,7 +21,7 @@ const path = require('node:path');
 
 const REPO_ROOT = path.join(__dirname, '..');
 
-// Per the CLAUDE.md Continuation Brief 2026-04-24 the @name header
+// Per the the project notes Continuation Brief 2026-04-24 the @name header
 // drifted vs the @version header on theater-split.user.js (1.0.5 vs
 // 1.0.6) and Tampermonkey can use either as the "is this the same
 // script?" key — keep them in sync.
@@ -117,7 +117,7 @@ for (const desc of STANDALONE_USERSCRIPTS) {
     });
 
     test(`userscript-health: ${desc.file} header @version matches @name version suffix when present`, () => {
-        // The CLAUDE.md Continuation Brief 2026-04-24 documents that
+        // The the project notes Continuation Brief 2026-04-24 documents that
         // theater-split.user.js drifted v1.0.5 (@name) vs v1.0.6
         // (@version) — a userscript manager keyed on @name treats the
         // script as unchanged and the version bump never lands. Pin

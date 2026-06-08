@@ -1343,7 +1343,7 @@ class PoTokenProviderTests(unittest.TestCase):
         self.assertEqual(result['version'], '2.0.0')
         self.assertTrue(seen_paths[0].endswith('/ping'))
 
-    # iter-6 N14: stale-version notice.
+    # stale-version notice.
     def test_probe_flags_stale_when_provider_below_min_version(self):
         """If the running provider reports a version < BGUTIL_POT_MIN_VERSION,
         the probe result must set stale=True so the extension popup can
@@ -1504,7 +1504,7 @@ class HealthPoTokenSurfaceTests(unittest.TestCase):
 
 
 class DenoRuntimeProbeTests(unittest.TestCase):
-    """iter-8 N20: probe_deno_runtime, version-date cutoff parsing, and
+    """probe_deno_runtime, version-date cutoff parsing, and
     /health.denoRuntime field shape. The extension's downloadHealthPanel
     keys the 'Deno: missing' warn pill off exactly this wire contract."""
 
@@ -1631,7 +1631,7 @@ class DenoRuntimeProbeTests(unittest.TestCase):
 
 
 class HealthDenoRuntimeSurfaceTests(unittest.TestCase):
-    """iter-8 N20: /health.denoRuntime field on the wire."""
+    """/health.denoRuntime field on the wire."""
 
     def setUp(self):
         ad.reset_deno_runtime_cache()

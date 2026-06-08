@@ -231,7 +231,7 @@ if (bumpType) {
     console.log('Updated YTKIT_VERSION in ytkit.js');
 
     // Always keep the repo-tracked userscript header in sync with the extension
-    // version — `Version everything` (CLAUDE.md) requires all version strings
+    // version — `Version everything` (the project notes) requires all version strings
     // to match across files. The `--with-userscript` flag still controls
     // whether a *build artifact* copy is emitted into `build/` later.
     const originalUserscript = readUtf8IfPresent(USERSCRIPT);

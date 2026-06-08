@@ -292,14 +292,14 @@ test('selector health snapshot tracks hits, misses, errors, and exports JSON', (
     assert.equal(customHealth, undefined, 'custom one-off selectors should not pollute surface-map reports');
     assert.equal(events.length, 1);
     assert.equal(events[0].detail.selector, 'bad[');
-    // v4.5+ (iter-5 N5): schemaVersion bumped to 2 — snapshot rows now
+    // v4.5+: schemaVersion bumped to 2 — snapshot rows now
     // carry shape-drift fields. Consumers parsing v1 must ignore the new
     // keys safely; v2 callers can read them.
     assert.equal(JSON.parse(core.exportSelectorHealth()).schemaVersion, 2);
 });
 
 test('recordSelectorShape silently captures the first shape, emits on drift, no-ops on repeats', () => {
-    // v4.5+ (iter-5 N5): drift signal mirrors the iSponsorBlockTV story —
+    // v4.5+: drift signal mirrors the iSponsorBlockTV story —
     // YouTube changed a paired-device screen-id from 26 chars to 64 hex
     // digits without changing the selector that targets it. The selector
     // keeps hitting but the matched node's identifier shape silently
@@ -373,7 +373,7 @@ test('recordSelectorShape silently captures the first shape, emits on drift, no-
     assert.equal(row2.lastShape.length, 120);
 });
 
-test('recordSelectorShape suppresses event storms via per-(surface,selector) cooldown (iter-5 Q1 S3)', () => {
+test('recordSelectorShape suppresses event storms via per-(surface,selector) cooldown', () => {
     const events = [];
     const core = loadFoundation({
         dispatchEvent(event) { events.push(event); }
@@ -400,7 +400,7 @@ test('recordSelectorShape suppresses event storms via per-(surface,selector) coo
     assert.equal(row.shapeDrifts, 2, 'cooldown does not hide saturation');
 });
 
-test('recordSelectorShape does not recurse when a listener calls back synchronously (iter-5 Q1 S5)', () => {
+test('recordSelectorShape does not recurse when a listener calls back synchronously', () => {
     // A listener for ytkit-selector-shape-drift that synchronously invokes
     // recordSelectorShape() must not cause stack-exhaustion recursion.
     let inListener = false;
@@ -433,7 +433,7 @@ test('recordSelectorShape does not recurse when a listener calls back synchronou
     assert.ok(maxDepth <= 1, `re-entry guard failed; depth went to ${maxDepth}`);
 });
 
-test('findSurfaceElement wires hits into recordSelectorShape with a default signature (iter-5 N5 L3 follow-up)', () => {
+test('findSurfaceElement wires hits into recordSelectorShape with a default signature', () => {
     // L3 audit's F-FAIL: the recordSelectorShape API existed but no live
     // resolver path invoked it. Verify the wiring is now real — a hit on
     // a real surface selector produces a shape sample without the caller
@@ -627,9 +627,9 @@ test('api limiter clear() rejects pending tasks instead of dropping them silentl
     assert.equal(await headPromise, 'head');
 });
 
-// ── iter-6 N11 (M-phase partial): DiagnosticLog factory ──
+// ── DiagnosticLog factory ──
 
-test('createDiagnosticLog records, counts per-ctx, and respects the diagnosticLog gate (iter-6 N11)', () => {
+test('createDiagnosticLog records, counts per-ctx, and respects the diagnosticLog gate', () => {
     const core = loadFoundation();
     const settings = { diagnosticLog: true, _errors: [] };
     const saved = [];
@@ -680,7 +680,7 @@ test('createDiagnosticLog records, counts per-ctx, and respects the diagnosticLo
     assert.equal(settings._errors.length, 1);
 });
 
-test('createDiagnosticLog resyncs counters from a pre-populated ring (iter-6 N11)', () => {
+test('createDiagnosticLog resyncs counters from a pre-populated ring', () => {
     // Cross-session entries loaded from chrome.storage at startup must
     // be reflected in countsByCtx() without requiring a record() call.
     const core = loadFoundation();
@@ -699,9 +699,9 @@ test('createDiagnosticLog resyncs counters from a pre-populated ring (iter-6 N11
     );
 });
 
-// ── iter-7 N11 (M-phase extraction #2): PredicateSandbox factory ──
+// ── PredicateSandbox factory ──
 
-test('createPredicateSandbox parses and evaluates ctx-bound expressions (iter-7 N11)', () => {
+test('createPredicateSandbox parses and evaluates ctx-bound expressions', () => {
     const core = loadFoundation();
     const debugCalls = [];
     const sandbox = core.createPredicateSandbox({
@@ -753,9 +753,9 @@ test('createPredicateSandbox parses and evaluates ctx-bound expressions (iter-7 
     assert.equal(escape.ok, false);
 });
 
-// ── iter-7 N11 (M-phase extraction #3): VideoTypeDetector factory ──
+// ── VideoTypeDetector factory ──
 
-test('createVideoTypeDetector classifies from player response and caches by video id (iter-7 N11)', () => {
+test('createVideoTypeDetector classifies from player response and caches by video id', () => {
     const core = loadFoundation();
 
     // Stub the document so _fromDOM finds no live signals — exercise
@@ -803,7 +803,7 @@ test('createVideoTypeDetector classifies from player response and caches by vide
     assert.equal(detector.refresh(), 'standard');
 });
 
-test('createPredicateSandbox opens the circuit after consecutive evaluator errors (iter-7 N11)', () => {
+test('createPredicateSandbox opens the circuit after consecutive evaluator errors', () => {
     const core = loadFoundation();
     const debugCalls = [];
     const sandbox = core.createPredicateSandbox({

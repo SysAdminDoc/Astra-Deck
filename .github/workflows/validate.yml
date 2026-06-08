@@ -1,10 +1,8 @@
 name: Validate
 
-# PR-time validation for the v4.46.0+ autonomous-loop sprint. The
-# release path (.github/workflows/build.yml) runs on tag pushes only —
-# regressions used to land before tag-build CI caught them. This
-# workflow closes that gap by running the same checks on every PR and
-# every push to main.
+# PR-time validation. The release path (.github/workflows/build.yml) runs on
+# tag pushes only, so this workflow runs the same checks on every PR and every
+# push to main to catch regressions before they land.
 #
 # Tag pushes (v*) deliberately skip this workflow because build.yml
 # already runs npm test + npm run check on the tagged commit, and

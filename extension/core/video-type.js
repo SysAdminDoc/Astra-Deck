@@ -1,7 +1,7 @@
 (() => {
     'use strict';
 
-    // iter-7 N11 (M-phase extraction #3): VideoTypeDetector moved out
+    // VideoTypeDetector moved out
     // of the ytkit.js monolith into a focused core module.
     //
     // Classifies the current page as standard / live / vod / premiere

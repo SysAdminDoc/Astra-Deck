@@ -418,8 +418,8 @@
     }
 
     // v3.9.0: diagnostic error ring buffer.
-    // iter-6 N6: per-ctx counters + countsByCtx() accessor.
-    // iter-6 N11 (M-phase partial extraction): the implementation lives in
+    // per-ctx counters + countsByCtx() accessor.
+    // the implementation lives in
     // extension/core/diagnostic-log.js — see that file for the full
     // record/get/clear/download/countsByCtx contract. Instantiate it here
     // with ytkit.js-specific accessors (appState.settings + settingsManager
@@ -1124,7 +1124,7 @@ return response;
         return {
             setHTML(element, html) {
                 logFallbackOnce();
-                // iter-6 N10: delegate HTML writes to the shared
+                // delegate HTML writes to the shared
                 // setTrustedHTML helper in extension/core/trusted-html.js
                 // when present (loaded by manifest before ytkit.js).
                 // That helper already implements the parsed-fragment
@@ -1151,7 +1151,7 @@ return response;
             create(html) {
                 logFallbackOnce();
                 if (policy) return policy.createHTML(html);
-                // iter-6 N10: when TT is unavailable, prefer the core
+                // when TT is unavailable, prefer the core
                 // helper's toTrustedHTML so the two wrappers return the
                 // same shape (passthrough string). Falls through to raw
                 // string when the core module isn't loaded.
@@ -1165,7 +1165,7 @@ return response;
     })();
 
     // Unified Storage Manager (high-level cache + debounce layer)
-    // iter-8 N19 (N11 M-phase #5): body extracted to
+    // body extracted to
     // extension/core/storage-manager.js. The new factory is exported as
     // `createStorageCache` to disambiguate from the low-level
     // `core/storage.js` functions (storageRead / storageWrite / etc.).
@@ -1204,7 +1204,7 @@ return response;
 
 
     //  TRANSCRIPT SERVICE - Multi-Method Extraction with Failover
-    // iter-8 N18 (N11 M-phase #4): implementation extracted into
+    // implementation extracted into
     // extension/core/transcript-service.js. Accessors are lazy so the
     // instantiation works regardless of declaration order within this
     // monolith; production deps (getVideoId / showToast / extensionFetch*)
@@ -1251,7 +1251,7 @@ return response;
     //  ctx is frozen at the call site. Evaluator returns boolean or
     //  throws PredicateError (caught by the caller, never propagated).
     //
-    //  iter-7 N11 (M-phase extraction #2): full implementation lives in
+    //  full implementation lives in
     //  `core/predicate-sandbox.js` exposing `createPredicateSandbox`. The
     //  legacy fallback below is retained only as a defensive
     //  initialization guard — it returns a permanently-failing compile()
@@ -5241,7 +5241,7 @@ return response;
                     return false;
                 }
 
-                // iter-6 N7: selector-health snapshot for popup dashboard.
+                // selector-health snapshot for popup dashboard.
                 // Returns a compact summary (top-K problematic surfaces +
                 // per-ctx diagnostic counts) so the popup can render
                 // without round-tripping the whole snapshot. Read-only —
@@ -5360,7 +5360,7 @@ return response;
     // Used by Theater Split to decide what goes in the right panel,
     // and by other features to skip irrelevant operations.
     //
-    // iter-7 N11 (M-phase extraction #3): full implementation lives in
+    // full implementation lives in
     // `core/video-type.js` exposing `createVideoTypeDetector`. The fallback
     // below is only reached when the core module failed to load — it returns
     // a no-op detector that classifies everything as 'standard' and reports
@@ -30998,7 +30998,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else {
                     this._container.appendChild(this._renderPill('PO Token', 'unreachable', 'err'));
                 }
-                // iter-8 N20: Deno runtime pill — only renders when the
+                // Deno runtime pill — only renders when the
                 // bundled yt-dlp.exe is recent enough to need an external
                 // JS runtime (>= 2026.04). Stays quiet on older yt-dlp
                 // builds so the panel doesn't gain a dead pill in the
@@ -34991,8 +34991,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     //  SECTION 4: PREMIUM UI (Trusted Types Safe)
 
     // SVG Icon Factory - Creates icons using DOM methods (Trusted Types safe)
-    // SVG icon library: extracted to extension/core/icons.js (iter-8 N23-extended,
-    // N11 M-phase #6). The 404-line block (createSVG + _S const + ICONS object)
+    // SVG icon library: extracted to extension/core/icons.js. The 404-line block (createSVG + _S const + ICONS object)
     // lives in the core module; the 29 call sites in this file consume the
     // same shape via the local rebinding below. Defensive fallback keeps the
     // page rendering (icons just appear as empty SVGs) if the core module
