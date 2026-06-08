@@ -87,6 +87,32 @@ for (let i = 0; i < SETTINGS_SCHEMA.length; i++) {
     // Internal keys must be prefixed _; non-internal must not be.
     if (e.internal !== e.key.startsWith('_')) issues.push(ctx + ' internal flag does not match `_` prefix');
 
+    // Optional value constraints (range/enum enforcement). `min`/`max` clamp
+    // numeric settings; `enum` coerces unrecognized values to the default.
+    // Validate their shapes here so the constraints stay consistent with the
+    // entry's type and defaultValue.
+    if (e.min !== undefined || e.max !== undefined) {
+        if (e.type !== 'number') issues.push(ctx + ' min/max only valid on a number-typed entry');
+        if (e.min !== undefined && typeof e.min !== 'number') issues.push(ctx + ' min must be a number');
+        if (e.max !== undefined && typeof e.max !== 'number') issues.push(ctx + ' max must be a number');
+        if (typeof e.min === 'number' && typeof e.max === 'number' && e.min > e.max) issues.push(ctx + ' min must be <= max');
+        if (typeof e.defaultValue === 'number') {
+            if (typeof e.min === 'number' && e.defaultValue < e.min) issues.push(ctx + ' defaultValue is below min');
+            if (typeof e.max === 'number' && e.defaultValue > e.max) issues.push(ctx + ' defaultValue is above max');
+        }
+    }
+    if (e.enum !== undefined) {
+        if (!Array.isArray(e.enum) || e.enum.length === 0) {
+            issues.push(ctx + ' enum must be a non-empty array');
+        } else {
+            for (const ev of e.enum) {
+                const evType = ev === null ? 'null' : (Array.isArray(ev) ? 'array' : typeof ev);
+                if (evType !== e.type) issues.push(ctx + ` enum value ${JSON.stringify(ev)} does not match entry type "${e.type}"`);
+            }
+            if (!e.enum.includes(e.defaultValue)) issues.push(ctx + ' enum must include the defaultValue');
+        }
+    }
+
     // v4.47.0 NF17: optional `requires:` field declares the runtime
     // capabilities the feature strictly needs. Validate shape +
     // membership in CAPABILITIES.

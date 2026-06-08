@@ -91,6 +91,25 @@ npm run build
 For YouTube DOM drift or refreshed MHTML captures, follow
 `docs/selector-fixture-workflow.md` before changing selector canaries.
 
+### Windows / UNC checkouts
+
+`npm run <script>` fails on a checkout served from a UNC path
+(`\\host\share\...`, e.g. a mapped VMware/SMB share) with
+*"CMD.EXE ... UNC paths are not supported. Defaulting to Windows directory."*
+This is a `cmd.exe` limitation — it refuses any working directory on a UNC
+path — and it affects every npm script, not just one. Two workarounds:
+
+- **Map the share to a drive letter** and work from there
+  (`net use Z: \\host\share`), or
+- **Run the tools directly with Node/bash**, which handle UNC paths:
+  ```bash
+  node --test tests/*.test.js tests/features/*.test.js
+  node ./node_modules/eslint/bin/eslint.js extension/background.js extension/popup.js extension/core/*.js extension/ytkit.js
+  ```
+
+Do not commit an `.npmrc` `script-shell` override to "fix" this — it would
+force a shell that does not exist on other contributors' machines.
+
 ## Dev Scripts (Manual, Not in `npm run check`)
 
 The `scripts/` directory holds two manual generators that are
