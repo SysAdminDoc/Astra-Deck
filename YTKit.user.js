@@ -13131,7 +13131,7 @@
         function poll() {
             GM_xmlhttpRequest({
                 method: 'GET',
-                url: 'http://127.0.0.1:9751/status/' + id,
+                url: MediaDLManager.baseUrl() + '/status/' + id,
                 headers: { 'X-Auth-Token': token },
                 timeout: 3000,
                 onload: function(r) {
@@ -13197,52 +13197,73 @@
         _serverVersion: null,
         _autoStartAttempted: false,
         _CHECK_INTERVAL: 30000, // Re-check every 30s
+        // Ports the companion may bind — must match AstraDownloader.PORT_FALLBACKS.
+        // It prefers 9751 but falls back when Windows (e.g. Hyper-V) blocks it.
+        // The single-port probe here previously meant downloads silently failed
+        // whenever the server used a fallback port.
+        _PORT_CANDIDATES: Object.freeze([9751, 9761, 9771, 9781, 9791, 9851]),
+        _port: 9751,
+        _SERVICE_ID: 'astra-downloader',
 
-        // GitHub raw URL for the PowerShell installer
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1',
-        INSTALLER_COMMAND: "powershell -ExecutionPolicy Bypass -Command \"irm 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1' | iex\"",
+        // Base URL for server calls — always reflects the discovered port.
+        baseUrl() { return 'http://127.0.0.1:' + this._port; },
 
-        // Quick health check — returns { ok, token, version } or { ok: false }
-        async check(force) {
-            const now = Date.now();
-            if (!force && this._status === 'running' && this._token && (now - this._lastCheck < this._CHECK_INTERVAL)) {
-                return { ok: true, token: this._token, version: this._serverVersion };
-            }
+        // Identity gate: only trust a localhost response that proves it is the
+        // Astra Downloader, not any random local service answering with a token.
+        _isAstraDownloaderHealth(data) {
+            if (!data || !data.token) return false;
+            if (data.service === this._SERVICE_ID) return true;
+            // Backward-compatible acceptance for hardened pre-service-id builds.
+            return data.token_required === true && Number.isInteger(data.port);
+        },
+
+        _probePort(port) {
             return new Promise((resolve) => {
                 GM_xmlhttpRequest({
                     method: 'GET',
-                    url: 'http://127.0.0.1:9751/health',
+                    url: 'http://127.0.0.1:' + port + '/health',
                     headers: { 'X-MDL-Client': 'MediaDL' },
                     timeout: 2000,
                     onload: (res) => {
                         try {
                             const data = JSON.parse(res.responseText);
-                            if (data.token) {
-                                this._status = 'running';
-                                this._token = data.token;
-                                this._serverVersion = data.version || null;
-                                this._lastCheck = now;
-                                DebugManager.log('MediaDL', `Server running (v${this._serverVersion || '?'}, ${data.downloads || 0} active)`);
-                                resolve({ ok: true, token: data.token, version: this._serverVersion });
-                                return;
-                            }
+                            if (this._isAstraDownloaderHealth(data)) { resolve(data); return; }
                         } catch (_) {}
-                        this._status = 'not-installed';
-                        this._token = null;
-                        resolve({ ok: false });
+                        resolve(null);
                     },
-                    onerror: () => {
-                        this._status = 'not-installed';
-                        this._token = null;
-                        resolve({ ok: false });
-                    },
-                    ontimeout: () => {
-                        this._status = 'not-installed';
-                        this._token = null;
-                        resolve({ ok: false });
-                    }
+                    onerror: () => resolve(null),
+                    ontimeout: () => resolve(null)
                 });
             });
+        },
+
+        // GitHub raw URL for the PowerShell installer
+        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1',
+        INSTALLER_COMMAND: "powershell -ExecutionPolicy Bypass -Command \"irm 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1' | iex\"",
+
+        // Quick health check — returns { ok, token, version, port } or { ok: false }.
+        // Tries the cached port first, then probes the fallback list.
+        async check(force) {
+            const now = Date.now();
+            if (!force && this._status === 'running' && this._token && (now - this._lastCheck < this._CHECK_INTERVAL)) {
+                return { ok: true, token: this._token, version: this._serverVersion, port: this._port };
+            }
+            const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
+            for (const port of order) {
+                const data = await this._probePort(port);
+                if (data) {
+                    this._port = port;
+                    this._status = 'running';
+                    this._token = data.token;
+                    this._serverVersion = data.version || null;
+                    this._lastCheck = now;
+                    DebugManager.log('MediaDL', `Server running on port ${port} (v${this._serverVersion || '?'}, ${data.downloads || 0} active)`);
+                    return { ok: true, token: data.token, version: this._serverVersion, port };
+                }
+            }
+            this._status = 'not-installed';
+            this._token = null;
+            return { ok: false };
         },
 
         // Try to auto-start the server via mediadl:// protocol and wait for it.
@@ -13812,7 +13833,7 @@
         const sendDownload = () => {
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: 'http://127.0.0.1:9751/download',
+                url: MediaDLManager.baseUrl() + '/download',
                 headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
                 data: JSON.stringify(payload),
                 timeout: 5000,
