@@ -105,6 +105,32 @@ test('_parseCompactCount preserves comma-grouped view counts (no decimal corrupt
     assert.equal(feature._parseCompactCount('Streamed 3 years ago'), null);
 });
 
+test('_extractViewCount reads grouped counts from a card element (popular video not misread)', () => {
+    const { mod } = loadModule();
+    const feature = mod.createHideVideosFromHomeFeature();
+
+    // Minimal fake card: a metadata line carrying the grouped view count, like
+    // YouTube renders. The headline bug made this read as 1, so a low-view
+    // filter wrongly hid popular videos.
+    function fakeCard(metaText) {
+        const meta = {
+            textContent: metaText,
+            getAttribute: () => null
+        };
+        return {
+            querySelectorAll: () => [meta],
+            textContent: metaText
+        };
+    }
+
+    assert.equal(feature._extractViewCount(fakeCard('1,234,567 views')), 1234567);
+    assert.equal(feature._extractViewCount(fakeCard('1.2M views')), 1200000);
+    assert.equal(feature._extractViewCount(fakeCard('No views')), 0);
+    // Cards with no parseable count return null so a low-view filter can tell
+    // "no data" apart from "zero views" and leave them alone.
+    assert.equal(feature._extractViewCount(fakeCard('Recommended for you')), null);
+});
+
 test('hideVideosFromHome module loads before ytkit.js in content scripts', () => {
     for (const scriptGroup of config.manifest.content_scripts) {
         const scripts = scriptGroup.js || [];
