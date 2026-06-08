@@ -4784,8 +4784,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Per-video notes added videoNotes + videoNotesData, lifting the pin from
     // 360 to 362. Keep the literal so a future schema
     // addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 362,
-        'SETTINGS_SCHEMA must cover all 362 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 363,
+        'SETTINGS_SCHEMA must cover all 363 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

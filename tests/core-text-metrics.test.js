@@ -86,6 +86,29 @@ test('no view-count parser uses the broken decimal-coercion pattern', () => {
     }
 });
 
+test('early.css baked-in avatar/shelf hides are opt-out via html:not(.ytkit-restore-native-ui)', () => {
+    const earlyCss = fs.readFileSync(path.join(repoRoot, 'extension', 'early.css'), 'utf8');
+    // The avatar + rich-section-shelf hides must be gated so a user can restore
+    // the native UI; ungated `display:none` on avatars would hide them for
+    // everyone with no way back.
+    assert.ok(
+        /html:not\(\.ytkit-restore-native-ui\)\s+img\.style-scope\.yt-img-shadow/.test(earlyCss),
+        'avatar hide must be gated behind the opt-out class'
+    );
+    assert.ok(
+        /html:not\(\.ytkit-restore-native-ui\)\s+div\.style-scope\.ytd-rich-section-renderer/.test(earlyCss),
+        'rich-section-shelf hide must be gated behind the opt-out class'
+    );
+
+    // The feature that flips the gate must exist and toggle the class on <html>.
+    const ytkit = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    const featureIdx = ytkit.indexOf("id: 'restoreNativeYouTubeUi'");
+    assert.ok(featureIdx > -1, 'restoreNativeYouTubeUi feature must exist');
+    const block = ytkit.slice(featureIdx, featureIdx + 900);
+    assert.ok(/classList\.add\('ytkit-restore-native-ui'\)/.test(block), 'init() must add the class');
+    assert.ok(/classList\.remove\('ytkit-restore-native-ui'\)/.test(block), 'destroy() must remove the class');
+});
+
 test('ytkit.js delegates compact-count parsing to the shared core helper', () => {
     const src = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
     const matches = src.match(/globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/g) || [];
