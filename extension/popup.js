@@ -430,7 +430,7 @@ const healthClearBtn = $('#health-clear-btn');
 // clipboard without rebuilding it from DOM text.
 let healthCopyPayload = '';
 
-// iter-6 N2: storage-quota proactive warning banner.
+// storage-quota proactive warning banner.
 const storageBanner = $('#storage-banner');
 const storageBannerDetail = $('#storage-banner-detail');
 const storageBannerResetBtn = $('#storage-banner-reset-btn');
@@ -459,7 +459,7 @@ const LAST_SEEN_VERSION_KEY = 'ytkit_last_seen_version';
 // version inside ## brackets as #<lowercase-major-minor-patch>.
 const CHANGELOG_BASE_URL = 'https://github.com/SysAdminDoc/Astra-Deck/blob/main/CHANGELOG.md';
 
-// iter-6 N7: selector-health dashboard refs.
+// selector-health dashboard refs.
 const selectorHealthSection = $('#selector-health');
 const selectorHealthTotal = $('#selector-health-total');
 const selectorHealthList = $('#selector-health-list');
@@ -1533,7 +1533,7 @@ function summarizeStorage(allStorage) {
     // multi-MB local storage payload.
     const sizeBytes = estimateSerializedBytes(allStorage);
     const diagnostics = summarizeDiagnostics(allStorage[SETTINGS_STORAGE_KEY]);
-    // iter-6 N4: surface malformed storage payloads so users aren't left
+    // surface malformed storage payloads so users aren't left
     // staring at silently-broken state (e.g. ytSuiteSettings deserialized
     // as a string, hiddenVideos as an object). Detector returns the list
     // of issues; banner offers the same guarded Reset as the quota tier.
@@ -1546,7 +1546,7 @@ function summarizeStorage(allStorage) {
     };
 }
 
-// iter-6 N4: storage corruption detector. chrome.storage.local is robust
+// storage corruption detector. chrome.storage.local is robust
 // in practice but the underlying browser profile is not — disk full
 // during a write, browser crash mid-flush, profile sync conflicts, or a
 // user manually editing the profile JSON can leave keys in shapes that
@@ -1619,7 +1619,7 @@ async function renderStorageInfo() {
         statBlocked.textContent = formatCount(summary.blockedChannels);
         statBookmarks.textContent = formatCount(summary.bookmarks);
         renderHealthBanner(summary.diagnostics);
-        // iter-6 N4: corruption wins over quota — if we detect a malformed
+        // corruption wins over quota — if we detect a malformed
         // payload, that's a more urgent signal than "storage is large."
         if (summary.corruption && summary.corruption.length > 0) {
             renderStorageWarningBanner(0, 0, 0, 0, summary.corruption);
@@ -1633,7 +1633,7 @@ async function renderStorageInfo() {
         statBlocked.textContent = '0';
         statBookmarks.textContent = '0';
         renderHealthBanner(null);
-        // iter-6 N4: a thrown error from chrome.storage.local.get(null) is
+        // a thrown error from chrome.storage.local.get(null) is
         // itself a corruption signal (profile-level read failure). Surface
         // it through the same banner so the user has a single recovery
         // surface regardless of the failure mode.
@@ -1645,7 +1645,7 @@ async function renderStorageInfo() {
     }
 }
 
-// iter-6 N2: storage-size warning banner. Surfaces a polite nudge when
+// storage-size warning banner. Surfaces a polite nudge when
 // total chrome.storage.local payload crosses the soft threshold, and a
 // firmer wording at the hard threshold. The Reset button shares the
 // existing destructive-confirm dialog so accidental clicks are still
@@ -1653,7 +1653,7 @@ async function renderStorageInfo() {
 function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bookmarks, corruption) {
     if (!storageBanner || !storageBannerDetail) return;
 
-    // iter-6 N4: corruption tier supersedes quota tier. Show first to
+    // corruption tier supersedes quota tier. Show first to
     // signal that the recovery action (Reset) is more urgent than a
     // size nudge.
     if (Array.isArray(corruption) && corruption.length > 0) {
@@ -1667,7 +1667,7 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
             t('storageBannerCorruptionTpl', 'Storage data malformed — Reset to recover.')
             + ' ' + summary + extra;
         storageBanner.hidden = false;
-        // Record to DiagnosticLog ring (per iter-5 ROADMAP plan: storage-
+        // Record to DiagnosticLog ring (per ROADMAP plan: storage-
         // corruption ctx triggers promote-to-Now signals in future runs).
         recordCorruptionDiagnostic(corruption);
         return;
@@ -1696,11 +1696,11 @@ function renderStorageWarningBanner(sizeBytes, hiddenVideos, blockedChannels, bo
     storageBanner.hidden = false;
 }
 
-// iter-6 N4: best-effort persistence into the existing _errors ring so
-// future factory runs (per iter-5 ROADMAP) can promote N4 follow-ups when
+// best-effort persistence into the existing _errors ring so
+// future factory runs (per ROADMAP) can promote N4 follow-ups when
 // the field detects corruption events. We do NOT show or save corruption
 // findings during the storage-read-failed path (no settings to write to).
-// iter-6 N7: selector-health dashboard. Queries the active YouTube tab
+// selector-health dashboard. Queries the active YouTube tab
 // for the per-surface health snapshot + DiagnosticLog ctx counts, then
 // renders a compact list of top-K problematic surfaces. Bounded payload
 // (top 12 surfaces per the message handler in ytkit.js); we render up to
@@ -3177,10 +3177,10 @@ function buildExportData(allStorage) {
 // dialogs in favor of immediate-apply + undo-toast / soft-delete
 // patterns. The two former callers (clearDiagnosticLog, resetAllData)
 // now apply immediately:
-//   - clearDiagnosticLog: the diagnostic log is a ring buffer of
-//     runtime errors, not user-authored data
-//   - resetAllData: the EI2 session-scoped snapshot + Undo Reset
-//     button provides the recovery surface
+// - clearDiagnosticLog: the diagnostic log is a ring buffer of
+// runtime errors, not user-authored data
+// - resetAllData: the EI2 session-scoped snapshot + Undo Reset
+// button provides the recovery surface
 //
 // See ROADMAP.md house style and docs/architecture.md §Conventions.
 
@@ -3372,11 +3372,11 @@ async function reenableMediadlPrompts() {
 // MediaDLManager.check() warm + the per-install token cached) so
 // the popup never has to do its own discovery or token handling.
 // User-visible status string maps the structured server response:
-//   - 200 ok:true                 -> "yt-dlp updated to vX (was vY)"
-//   - 409 ok:false (in-flight)   -> "N download(s) in flight — try again"
-//   - 503 ok:false (no yt-dlp)   -> "Astra Downloader has no yt-dlp yet"
-//   - 500 ok:false (exit code)   -> "yt-dlp -U failed: <stderr>"
-//   - status=0  (no MediaDL/SW)  -> "Start Astra Downloader and try again"
+// - 200 ok:true                 -> "yt-dlp updated to vX (was vY)"
+// - 409 ok:false (in-flight)   -> "N download(s) in flight — try again"
+// - 503 ok:false (no yt-dlp)   -> "Astra Downloader has no yt-dlp yet"
+// - 500 ok:false (exit code)   -> "yt-dlp -U failed: <stderr>"
+// - status=0  (no MediaDL/SW)  -> "Start Astra Downloader and try again"
 async function updateYtdlpNow() {
     if (!updateYtdlpButton) return;
     updateYtdlpButton.setAttribute('aria-busy', 'true');
@@ -3695,7 +3695,7 @@ function installWheelScrolling() {
     }
 
     void renderStorageInfo();
-    // iter-6 N7: best-effort selector-health snapshot from the active tab.
+    // best-effort selector-health snapshot from the active tab.
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
     void renderSelectorHealthDashboard();
@@ -3864,7 +3864,7 @@ function installWheelScrolling() {
         optionalHostGrantBtn.addEventListener('click', () => { void grantMissingOptionalHostPermissions(); });
     }
     if (healthClearBtn) healthClearBtn.addEventListener('click', () => { void clearDiagnosticLog(); });
-    // iter-6 N2: storage-banner Reset shares the same destructive-confirm
+    // storage-banner Reset shares the same destructive-confirm
     // dialog as the primary Reset button so accidental clicks stay guarded.
     if (storageBannerResetBtn) storageBannerResetBtn.addEventListener('click', () => { void resetAllData(); });
 })();

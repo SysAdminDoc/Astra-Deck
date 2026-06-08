@@ -35,7 +35,7 @@ const colors = {
     healthCopyBtn: '#ffd9a8',
     textPrimary: '#f4f6fb',
     textMuted: '#8f9bb0',
-    // iter-6 N2: storage banner — red/orange lane distinct from amber TT lane.
+    // storage banner — red/orange lane distinct from amber TT lane.
     storageBannerBg: '#180c0c',     // rgba(24, 12, 12, 0.82) on page-bg
     storageBannerTitle: '#ff8585',
     storageBannerDetail: '#ffd0d0',
@@ -48,7 +48,7 @@ const checks = [
     { name: 'Health Detail (#ffd9a8) on Health Banner', fg: colors.healthDetail, bg: colors.healthBannerBg, minRatio: 4.5 },
     { name: 'Health Copy Btn Text (#ffd9a8) on Btn Bg', fg: colors.healthCopyBtn, bg: 'rgba(255, 169, 58, 0.08)', minRatio: 4.5 },
     { name: 'Primary Text (#f4f6fb) on Dark Bg', fg: colors.textPrimary, bg: colors.darkBg, minRatio: 7 },
-    // iter-6 N2: new storage-banner color lane must also pass AA.
+    // new storage-banner color lane must also pass AA.
     { name: 'Storage Banner Title (#ff8585) on Storage Banner Bg', fg: colors.storageBannerTitle, bg: colors.storageBannerBg, minRatio: 4.5 },
     { name: 'Storage Banner Detail (#ffd0d0) on Storage Banner Bg', fg: colors.storageBannerDetail, bg: colors.storageBannerBg, minRatio: 4.5 },
 ];
