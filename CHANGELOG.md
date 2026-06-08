@@ -6,6 +6,34 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.46.2] - 2026-06-08
+
+### Fixed
+- **Downloads:** the Cobalt fallback and the folder picker sent empty request
+  bodies (wrong payload field), so both silently failed; corrected.
+- **SponsorBlock:** a fetch that resolved after navigating to a different video
+  could paint the previous video's segment bars and auto-skip with the wrong
+  timestamps; the result is now discarded on navigation.
+- **Subscription Groups:** deferred refresh timers were not cleared on
+  navigation, which could stamp "last visited" for unrelated channels on another
+  page; timers are now tracked and cleared. "Shortest first" sort now compares
+  `MM:SS` and `HH:MM:SS` runtimes on the same scale.
+- **Transcript:** timestamps past one hour now render `1:02:40` instead of
+  `62:40` (viewer and export).
+- **Userscript:** the download companion is now discovered across its fallback
+  ports (not just 9751) and validated by service identity; the CPU-saver
+  teardown no longer risks leaving page timers throttled.
+
+### Changed
+- Popup error messages announce more assertively for screen readers, toggling a
+  setting keeps keyboard focus on the row, the companion update buttons only show
+  on the full profile, and storage sizes/counts use locale-aware formatting
+  (GB/TB and grouping separators).
+
+### Docs
+- Added [INSTALL.md](INSTALL.md) with step-by-step install instructions for
+  Chrome/Edge, Firefox, and the userscript.
+
 ## [4.46.1] - 2026-06-08
 
 ### Security & reliability

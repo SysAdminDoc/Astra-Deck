@@ -28,6 +28,17 @@ CONTINUATION_PROMPT.md
 .factory/
 docs/research/
 
+# Internal process / working notes — kept local, not part of the published repo.
+AGENTS.md
+AUTONOMOUS-LOOP-STATE.md
+COMPLETED.md
+RESEARCH_REPORT.md
+docs/audit/
+docs/research-cycle-*.md
+docs/research-feature-plan-*.md
+docs/archive/research/
+docs/archive/roadmap-dossier-*.md
+
 # Python build artifacts
 astra_downloader/build/
 astra_downloader/dist/
