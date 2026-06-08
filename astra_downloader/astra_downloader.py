@@ -108,6 +108,15 @@ INSTANCE_LOCK_PORT = 9753
 # The browser extension probes the same list to discover the running port.
 PORT_FALLBACKS = [9751, 9761, 9771, 9781, 9791, 9851]
 MAX_CONCURRENT = 3
+# Stall watchdog for the download subprocess. `for line in proc.stdout` blocks
+# forever if yt-dlp wedges on a dead socket — there is no other timeout on the
+# download path, so a hung process permanently consumes one of MAX_CONCURRENT
+# slots and leaks an OS process. A download making any progress streams output
+# constantly (resetting the timer), so only a genuinely wedged process — zero
+# output for this long — is killed. Deliberately generous so a slow ffmpeg merge
+# of a large file (which can be silent for minutes) is never false-killed.
+DOWNLOAD_STALL_TIMEOUT_SECONDS = 1800  # 30 minutes of zero output
+DOWNLOAD_WATCHDOG_POLL_SECONDS = 15
 INSTALL_DIR = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local')) / 'AstraDownloader'
 CONFIG_PATH = INSTALL_DIR / 'config.json'
 HISTORY_PATH = INSTALL_DIR / 'history.json'
@@ -2568,6 +2577,11 @@ class DownloadManager(QObject):
 
         args.append(dl.url)
 
+        # Watchdog sentinels declared before the try so the finally can stop the
+        # thread even if Popen() raises before the watchdog is created.
+        stop_watchdog = None
+        watchdog_thread = None
+        watchdog_killed = {'value': None}
         try:
             proc = subprocess.Popen(
                 args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -2578,7 +2592,32 @@ class DownloadManager(QObject):
             last_lines = []
             last_error = None
 
+            # Stall watchdog (see DOWNLOAD_STALL_TIMEOUT_SECONDS): kill a wedged
+            # yt-dlp/ffmpeg tree that produces no output for too long so it can't
+            # block a worker thread / hold a concurrency slot forever.
+            activity = {'at': time.monotonic()}
+            stop_watchdog = threading.Event()
+
+            def _stall_watchdog():
+                while not stop_watchdog.wait(DOWNLOAD_WATCHDOG_POLL_SECONDS):
+                    if dl.status == 'cancelled':
+                        return
+                    if (time.monotonic() - activity['at']) > DOWNLOAD_STALL_TIMEOUT_SECONDS:
+                        watchdog_killed['value'] = 'stall'
+                        try:
+                            terminate_process_tree(proc)
+                        except Exception:
+                            # reason: best-effort kill; process may already be gone
+                            pass
+                        return
+
+            watchdog_thread = threading.Thread(
+                target=_stall_watchdog, name='download-stall-watchdog', daemon=True
+            )
+            watchdog_thread.start()
+
             for line in proc.stdout:
+                activity['at'] = time.monotonic()
                 line = line.strip()
                 if not line:
                     continue
@@ -2656,6 +2695,12 @@ class DownloadManager(QObject):
             if dl.status != "complete":
                 if dl.status == "cancelled":
                     dl.error = dl.error or "Cancelled by user."
+                elif watchdog_killed['value'] == 'stall':
+                    dl.status = "failed"
+                    dl.error = (
+                        "Download stalled (no progress for "
+                        f"{DOWNLOAD_STALL_TIMEOUT_SECONDS // 60} minutes) and was stopped."
+                    )
                 elif proc.returncode == 0 or dl.progress >= 99:
                     dl.status = "complete"
                     dl.progress = 100
@@ -2683,6 +2728,10 @@ class DownloadManager(QObject):
                 dl.error = "Unexpected download error. Check Astra Downloader logs for details."
                 write_persistent_log(f"Download {dl.id} failed unexpectedly: {e}")
         finally:
+            if stop_watchdog is not None:
+                stop_watchdog.set()
+            if watchdog_thread is not None:
+                watchdog_thread.join(timeout=5)
             dl.process = None
             # Cookie jar holds session credentials — purge it as soon as the
             # download process exits so it never outlives the one request that
@@ -2999,6 +3048,22 @@ def create_api(config, dl_manager, history):
         url, url_err = normalize_url(body['url'])
         if url_err:
             return cors_response({"error": url_err}, 400)
+
+        # SSRF / cookie-scope hardening: the companion is a YouTube downloader,
+        # and the documented threat model promises a YouTube-only domain
+        # allowlist. Enforce that allowlist here at the HTTP trust boundary —
+        # `normalize_url` only checks scheme+netloc, so without this a caller
+        # holding the token could point yt-dlp (and the attached session cookie
+        # jar) at arbitrary internal/LAN/cloud-metadata hosts. The allowlist
+        # lived only in the extension (an untrusted boundary) until now.
+        if not is_youtube_url(url):
+            return cors_response(
+                {
+                    "error": "Astra Downloader only downloads from YouTube.",
+                    "code": "non-youtube-url",
+                },
+                400,
+            )
 
         # v4.47.0 NF27: Deno runtime hard-gate.
         #
