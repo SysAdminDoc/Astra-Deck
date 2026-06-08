@@ -730,11 +730,25 @@ function buildSchemaValidatedExportSettings(settings) {
     };
 }
 
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
 function formatBytes(bytes) {
     if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    if (bytes < 1024) return `${formatCount(bytes)} B`;
+    let value = bytes;
+    let unit = 0;
+    // Scale through KB/MB/GB/TB instead of capping at MB (a multi-GB payload
+    // previously read "2048.00 MB"). Locale-aware decimals so German users see
+    // "1,5 KB", consistent with the tabular-numerals styling.
+    while (value >= 1024 && unit < BYTE_UNITS.length - 1) { value /= 1024; unit += 1; }
+    const decimals = value < 10 ? 2 : 1;
+    const num = value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+    return `${num} ${BYTE_UNITS[unit]}`;
+}
+
+// Locale-aware integer formatting for storage counts (grouping separators).
+function formatCount(n) {
+    const v = Number(n);
+    return Number.isFinite(v) ? v.toLocaleString() : '0';
 }
 
 function countObjectEntries(value) {
@@ -1599,11 +1613,11 @@ async function renderStorageInfo() {
     try {
         const allStorage = await chrome.storage.local.get(null);
         const summary = summarizeStorage(allStorage);
-        statKeys.textContent = String(summary.keys);
+        statKeys.textContent = formatCount(summary.keys);
         statSize.textContent = summary.sizeText;
-        statHidden.textContent = String(summary.hiddenVideos);
-        statBlocked.textContent = String(summary.blockedChannels);
-        statBookmarks.textContent = String(summary.bookmarks);
+        statHidden.textContent = formatCount(summary.hiddenVideos);
+        statBlocked.textContent = formatCount(summary.blockedChannels);
+        statBookmarks.textContent = formatCount(summary.bookmarks);
         renderHealthBanner(summary.diagnostics);
         // iter-6 N4: corruption wins over quota — if we detect a malformed
         // payload, that's a more urgent signal than "storage is large."
