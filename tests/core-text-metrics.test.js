@@ -109,6 +109,18 @@ test('early.css baked-in avatar/shelf hides are opt-out via html:not(.ytkit-rest
     assert.ok(/classList\.remove\('ytkit-restore-native-ui'\)/.test(block), 'destroy() must remove the class');
 });
 
+test('extension fetch payloads use data: not body: (extensionRequest drops body)', () => {
+    // extensionRequest forwards ONLY details.data as the request body; a
+    // details.body is silently dropped. The Cobalt fallback and folder picker
+    // shipped with `body: JSON.stringify(...)` and therefore POSTed empty
+    // bodies (silent feature breakage). Guard against the pattern recurring.
+    const src = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
+    assert.ok(
+        !/\bbody:\s*JSON\.stringify/.test(src),
+        'extension fetch payloads must use `data:`, not `body:` (extensionRequest ignores body)'
+    );
+});
+
 test('ytkit.js delegates compact-count parsing to the shared core helper', () => {
     const src = fs.readFileSync(path.join(repoRoot, 'extension', 'ytkit.js'), 'utf8');
     const matches = src.match(/globalThis\.YTKitCore && globalThis\.YTKitCore\.parseCompactCount/g) || [];
