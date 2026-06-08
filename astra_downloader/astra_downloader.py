@@ -6,7 +6,7 @@ Manages yt-dlp downloads with a PyQt6 GUI, system tray, and REST API on port 975
 First run auto-downloads yt-dlp + ffmpeg. No separate installer needed.
 """
 
-import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil, traceback, hmac
+import sys, os, json, time, re, uuid, subprocess, threading, socket, shutil, traceback, hmac, struct
 import queue
 from pathlib import Path
 from datetime import datetime
@@ -5168,7 +5168,122 @@ def check_single_instance(startup_command=''):
 # ══════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════
+# ──────────────────────────────────────────────────────────────────────────
+# Native-messaging token bootstrap (browser-pinned channel)
+#
+# The HTTP /health endpoint discloses the auth token to any local process that
+# sends `X-MDL-Client: MediaDL` with no Origin (the background service worker's
+# bootstrap path) — so the token provides little protection against other local
+# code. Chrome native messaging fixes this: the host manifest's allowed_origins
+# pins exactly which extension IDs may launch this process, and the browser
+# delivers the message over a private stdio pipe no other process can read.
+#
+# These functions are the testable core of that design. The full cutover
+# (registering the host manifest in the registry, adding "nativeMessaging" to
+# the extension manifest, and switching the extension's bootstrap from
+# fetch('/health') to chrome.runtime.connectNative) is tracked in
+# docs/native-messaging-token-bootstrap.md and requires on-device validation.
+# ──────────────────────────────────────────────────────────────────────────
+
+NATIVE_HOST_NAME = "com.astra.deck.downloader"
+NATIVE_MESSAGE_MAX_BYTES = 1024 * 1024  # Chrome caps host->browser at 1 MB
+
+
+def read_native_message(stream):
+    """Read one Chrome native message: 4-byte little-endian length + UTF-8 JSON.
+
+    Returns the decoded object, or None at clean EOF (browser closed the pipe).
+    """
+    raw_len = stream.read(4)
+    if not raw_len or len(raw_len) < 4:
+        return None
+    msg_len = struct.unpack('<I', raw_len)[0]
+    if msg_len <= 0 or msg_len > NATIVE_MESSAGE_MAX_BYTES:
+        raise ValueError("native message length out of range: %d" % msg_len)
+    body = stream.read(msg_len)
+    if len(body) < msg_len:
+        raise ValueError("truncated native message")
+    return json.loads(body.decode('utf-8'))
+
+
+def write_native_message(stream, obj):
+    """Write one Chrome native message (4-byte LE length prefix + UTF-8 JSON)."""
+    body = json.dumps(obj, separators=(',', ':')).encode('utf-8')
+    stream.write(struct.pack('<I', len(body)))
+    stream.write(body)
+    stream.flush()
+
+
+def handle_native_bootstrap_request(request, token):
+    """Pure handler for a parsed bootstrap request. No I/O — easy to unit test."""
+    if not isinstance(request, dict):
+        return {"ok": False, "error": "invalid request"}
+    req_type = request.get("type")
+    if req_type == "ping":
+        return {"ok": True, "service": SERVICE_ID, "api": SERVICE_API_VERSION}
+    if req_type == "get-token":
+        if not token:
+            return {"ok": False, "error": "no token configured"}
+        return {
+            "ok": True,
+            "service": SERVICE_ID,
+            "api": SERVICE_API_VERSION,
+            "token": token,
+        }
+    return {"ok": False, "error": "unsupported request type"}
+
+
+def run_native_messaging_host(token, stdin=None, stdout=None):
+    """Serve bootstrap requests over stdio until the browser closes the pipe."""
+    stdin = stdin if stdin is not None else getattr(sys.stdin, 'buffer', sys.stdin)
+    stdout = stdout if stdout is not None else getattr(sys.stdout, 'buffer', sys.stdout)
+    while True:
+        request = read_native_message(stdin)
+        if request is None:
+            return
+        write_native_message(stdout, handle_native_bootstrap_request(request, token))
+
+
+def argv_requests_native_host(argv):
+    """True when the browser launched us as a native-messaging host.
+
+    Chrome/Firefox pass the calling extension's origin as a positional argv
+    (chrome-extension://<id>/ or moz-extension://<uuid>/). Normal launches and
+    the test suite never carry such an argument, so this gate cannot misfire.
+    """
+    return any(
+        isinstance(a, str) and (a.startswith("chrome-extension://") or a.startswith("moz-extension://"))
+        for a in (argv or [])
+    )
+
+
+def build_native_host_manifest(exe_path, extension_ids):
+    """Build the Chrome native-messaging host manifest.
+
+    `allowed_origins` is the security boundary HTTP /health lacks: only the
+    listed extension IDs may launch and talk to this host.
+    """
+    ids = [e for e in (extension_ids or []) if isinstance(e, str) and e]
+    return {
+        "name": NATIVE_HOST_NAME,
+        "description": "Astra Downloader token bootstrap",
+        "path": str(exe_path),
+        "type": "stdio",
+        "allowed_origins": ["chrome-extension://%s/" % eid for eid in ids],
+    }
+
+
 def main():
+    # Native-messaging host mode: the browser launches us with the extension
+    # origin as an argv. Serve the token bootstrap over the private stdio pipe
+    # and exit — before any GUI / single-instance / Flask logic.
+    if argv_requests_native_host(sys.argv[1:]):
+        try:
+            run_native_messaging_host(Config().get("ServerToken"))
+        except Exception as exc:  # noqa: BLE001 - host must never crash loudly
+            write_persistent_log("native messaging host error: %s" % exc)
+        return
+
     # Handle --uninstall flag
     if '--uninstall' in sys.argv:
         run_uninstall()
