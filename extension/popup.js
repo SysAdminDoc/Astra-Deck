@@ -3797,7 +3797,7 @@ function installWheelScrolling() {
         // change can't run render paths against a dying DOM / invalidated
         // extension context.
         window.addEventListener('pagehide', () => {
-            try { chrome.storage.onChanged.removeListener(onStorageChanged); } catch (_) { /* context may already be gone */ }
+            try { chrome.storage.onChanged.removeListener(onStorageChanged); } catch (_) { /* reason: extension context may already be invalidated during teardown */ }
             if (popupState.statusTimer) { clearTimeout(popupState.statusTimer); popupState.statusTimer = null; }
         }, { once: true });
     }
