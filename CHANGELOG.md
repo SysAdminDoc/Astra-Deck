@@ -6,6 +6,48 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.46.1] - 2026-06-08
+
+### Security & reliability
+- **EXT_FETCH credential-redirect leak closed.** Requests carrying cookies or an
+  `Authorization` header now use `redirect: 'manual'` and reject the
+  opaqueredirect, so secrets can't be resent to a redirect hop before the
+  allowlist check.
+- **Predicate-sandbox ReDoS guard hardened** with nested-group detection and a
+  200-char source cap (the flat heuristics missed `((ab)*)*`-style patterns).
+- **Downloader: server-side YouTube-only allowlist on `/download`** (closes the
+  SSRF + cookie-scope exposure that previously lived only in the extension),
+  plus a stall watchdog that kills a wedged yt-dlp instead of leaking a worker.
+- **Native-messaging token-bootstrap scaffolding** (framing + handler + manifest
+  builder + argv gate, all unit-tested and gated) plus
+  `docs/native-messaging-token-bootstrap.md`, toward replacing the HTTP
+  `/health` token disclosure.
+
+### Settings & correctness
+- **Settings export/import no longer hard-fails** for users who customized
+  `sidebarOrder`; nullable-complex settings accept their populated runtime shape.
+- **Downgrade safety:** opening older code against newer data preserves the
+  future schema stamp instead of re-arming forward migrations.
+- **Schema range/enum constraints** (`min`/`max`/`enum`) with clamp/coerce on
+  import, sanitizing corrupted/hostile values instead of rejecting the snapshot.
+- **Compact view-count parsing corruption fixed** ("1,234 views" no longer reads
+  as 1) and centralized in `core/text-metrics.js` with a regression guard.
+- `rememberVolume` persists a muted/0 level; `chronologicalNotifications`
+  re-sorts late-arriving items; `qualityProfileMatrix` timer/observer leaks
+  fixed; the IndexedDB transcript index is now LRU-bounded.
+
+### UX
+- **Baked-in avatar / home-shelf hides are now opt-out** via the new "Restore
+  Native YouTube UI" toggle (default off; zero FOUC by default).
+- The popup Reset reports honestly when Undo is unavailable (older Firefox)
+  instead of promising a non-existent Undo button.
+
+### Tooling / CI
+- Enabled the repository Dependency-graph prerequisite so the Dependency review
+  check actually runs instead of erroring "not supported".
+- CONTRIBUTING documents the Windows/UNC `npm run` (cmd.exe) limitation and
+  workarounds.
+
 - **Locale proofing CSV hardening.** `npm run i18n:proofing-export` now
   neutralizes formula-like CSV cells before escaping, so generated translator
   handoff files can be opened in spreadsheet tools without treating source text,
