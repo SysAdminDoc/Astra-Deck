@@ -6,7 +6,7 @@
     // Astra-owned in-page settings overlay. All selectors here MUST
     // be removable by the overlay's `destroy()` — `data-ytkit-*`
     // attributes and `.ytkit-*` classes are the only scoping
-    // primitives allowed (per CLAUDE.md house style).
+    // primitives allowed.
 
     const core = globalThis.YTKitCore || (globalThis.YTKitCore = {});
     const registry = core.SurfacePackRegistry || (core.SurfacePackRegistry = new Map());

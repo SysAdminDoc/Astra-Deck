@@ -91,4 +91,4 @@ manifest is registered (below), and the HTTP `/health` bootstrap is untouched.
    release IDs) — coordinate with the signing/release flow.
 
 Until 1–5 are done on-device, the native host is dormant and the documented
-HTTP residual risk stands (see `CLAUDE.md` and the cookie/SSRF threat model).
+HTTP residual risk stands (see `the project notes` and the cookie/SSRF threat model).

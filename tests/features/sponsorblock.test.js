@@ -46,7 +46,7 @@ test('poi_highlight stays a marker, never a skip target (v3.20.1 Pass 8)', () =>
         '_checkSkip must short-circuit on poi_highlight (continue, not skip)');
 });
 
-test('SponsorBlock uses event-driven setTimeout scheduling, not requestAnimationFrame (iter-8 N21)', () => {
+test('SponsorBlock uses event-driven setTimeout scheduling, not requestAnimationFrame', () => {
     // Upstream SponsorBlock v6.1.5 (2026-04-21) fixed "segments not skipping
     // when video is scrolled away" — their old code path was gated on a
     // requestAnimationFrame loop that stops firing when YouTube hides the
@@ -70,7 +70,7 @@ test('SponsorBlock uses event-driven setTimeout scheduling, not requestAnimation
         'SponsorBlock must NEVER schedule the boundary planner via requestAnimationFrame');
 });
 
-test('SponsorBlock pauses scheduling when video is paused (iter-8 N21)', () => {
+test('SponsorBlock pauses scheduling when video is paused', () => {
     // The schedule chain self-terminates on a paused video so a long-paused
     // background tab doesn't accumulate dangling timers. Pin the early-return.
     const [block] = extractFeatureBlock(sources.ytkit, 'sponsorBlock');
@@ -78,7 +78,7 @@ test('SponsorBlock pauses scheduling when video is paused (iter-8 N21)', () => {
         '_scheduleNextSkip must early-return on a missing / paused video element');
 });
 
-test('SponsorBlock skip detection ignores element visibility (iter-8 N21)', () => {
+test('SponsorBlock skip detection ignores element visibility', () => {
     // The match condition for "should skip now" reads video.currentTime
     // against segment bounds — it does NOT consult IntersectionObserver,
     // getBoundingClientRect, offsetParent, or any other visibility primitive.

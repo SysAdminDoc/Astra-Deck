@@ -40,7 +40,7 @@ const backgroundSource = fs.readFileSync(
     'utf8'
 );
 
-// iter-7 N11 (M-phase #2): PredicateSandbox moved out of ytkit.js into
+// PredicateSandbox moved out of ytkit.js into
 // core/predicate-sandbox.js. The safety-invariant hardening tests read
 // this source instead so the tests follow the implementation.
 const predicateSandboxSource = fs.readFileSync(
@@ -1527,9 +1527,9 @@ test('storageQuotaLRU sweeps real note/bookmark/watch stores, not the timestampB
 // ── v3.20.3 H6: explicit cookie-jar wire contract via normalizeCookieExpiry ──
 //
 // Three sites previously inlined `expirationDate: c.expirationDate || 0`:
-//   - extension/ytkit.js (MediaDL cookie mapper, ~line 2633)
-//   - extension/background.js (EXT_COOKIE_LIST handler, ~line 620)
-//   - YTKit.user.js (GM_cookie fallback, ~line 1851)
+// - extension/ytkit.js (MediaDL cookie mapper, ~line 2633)
+// - extension/background.js (EXT_COOKIE_LIST handler, ~line 620)
+// - YTKit.user.js (GM_cookie fallback, ~line 1851)
 //
 // The contract was implicit — null/undefined/negative/NaN/strings all
 // happened to coerce to 0 because of JavaScript's truthiness rules. A
@@ -1673,12 +1673,12 @@ test('theater-split teardown calls abortDividerDrag to handle SPA-nav mid-drag',
 // ── v3.20.4 H9: EXT_FETCH controller.abort() consistency on size limits ──
 //
 // Five "responded = true" early-return paths in EXT_FETCH:
-//   1. timeout → already aborted
-//   2. redirect to non-allowlisted origin → already aborted
-//   3. content-length declared > MAX_RESPONSE_BYTES → already aborted
-//   4. streamed body exceeds limit while reading → reader.cancel() only,
-//      no controller.abort() — fetch could keep reading until natural EOF
-//   5. non-streaming body exceeds limit after measuring → no abort either
+// 1. timeout → already aborted
+// 2. redirect to non-allowlisted origin → already aborted
+// 3. content-length declared > MAX_RESPONSE_BYTES → already aborted
+// 4. streamed body exceeds limit while reading → reader.cancel() only,
+// no controller.abort() — fetch could keep reading until natural EOF
+// 5. non-streaming body exceeds limit after measuring → no abort either
 //
 // (4) and (5) leak: we've already responded to the content script, but the
 // SW continues to consume bandwidth and a socket for a response we will
@@ -2304,9 +2304,9 @@ test('normalizeCookieExpiry produces wire-compatible output with the Python down
     // parses raw_expiry as `int(float(x)) if x not in (None, "") else 0`,
     // clamping negatives to 0. The JS helper must produce values that
     // survive that round-trip identically. Test the boundary cases:
-    //   - JS sends 0 → Python gets 0 → wire emits "0" (session marker)
-    //   - JS sends positive double → Python truncates to int, same int
-    //   - JS sends 0 for any non-positive-finite-number → Python sees 0
+    // - JS sends 0 → Python gets 0 → wire emits "0" (session marker)
+    // - JS sends positive double → Python truncates to int, same int
+    // - JS sends 0 for any non-positive-finite-number → Python sees 0
     const fn = extractNormalizeFn(ytkitSource, 'extension/ytkit.js');
     // Mimic Python's `int(float(x))` truncation:
     const pythonRoundTrip = (jsOutput) => Math.trunc(Number(jsOutput));
@@ -3052,7 +3052,7 @@ test('PredicateSandbox uses no eval / Function / with anywhere on its path', () 
     // The sandbox is Option C from docs/predicate-sandbox-investigation.md —
     // expression-only AST walker. If `eval(`, `new Function(`, or `with (`
     // appear inside the implementation the safety promise is broken.
-    // iter-7 N11: the canonical source is now extension/core/predicate-sandbox.js.
+    // the canonical source is now extension/core/predicate-sandbox.js.
     const block = predicateSandboxSource;
     assert.ok(!/\beval\s*\(/.test(block),
         'PredicateSandbox must not call eval()');
@@ -3088,8 +3088,8 @@ test('PredicateSandbox runtime budget + circuit breaker auto-disable', () => {
         'circuitOpen flag must be flipped when the budget or error gate trips');
 });
 
-test('ytkit.js consumes the PredicateSandbox factory and wires DebugManager telemetry (iter-7 N11)', () => {
-    // After the iter-7 M-phase #2 extraction, ytkit.js no longer holds
+test('ytkit.js consumes the PredicateSandbox factory and wires DebugManager telemetry', () => {
+    // After the extraction, ytkit.js no longer holds
     // the PredicateSandbox implementation — it constructs a sandbox via
     // the core factory and forwards budget/circuit telemetry through
     // DebugManager.log. A legacy fallback shape is retained so a missing
@@ -3974,7 +3974,7 @@ test('rectangularizeYouTube clamps backdrops to 6-8 px and keeps avatars circula
 });
 
 test('rectangularizeYouTube never sets a border-radius > 12px on backdrops', () => {
-    // Hard rule from the user's CLAUDE.md: allowed backdrop radii are
+    // Hard rule from the user's the project notes: allowed backdrop radii are
     // 0/4/6/8/10/12. Forbidden are 999px / 50% on non-icon-only elements.
     // The 50% rule above scopes to avatar / progress-ring carve-outs only;
     // grep that no other "border-radius: 999px" / "border-radius: 100" /
@@ -3988,7 +3988,7 @@ test('rectangularizeYouTube never sets a border-radius > 12px on backdrops', () 
 });
 
 test('no Astra-injected CSS uses pill (999px) backdrops anywhere in ytkit.js', () => {
-    // Hard rule from the user's CLAUDE.md applies to OUR injected UI, not
+    // Hard rule from the user's the project notes applies to OUR injected UI, not
     // just the rectangularizeYouTube feature. Audit pass found three
     // violations (volume HUD bar, sub-group chip, sub-new badge); guard
     // against the next one before it ships.
@@ -4019,8 +4019,8 @@ test('ytkit.js does not inject SVG via direct innerHTML (TrustedTypes bypass)', 
         `Direct innerHTML SVG injection bypasses TrustedTypes:\n${offenders?.join('\n')}`);
 });
 
-test('ytkit.js DiagnosticLog instantiates from core/diagnostic-log.js factory when present (iter-6 N11)', () => {
-    // First M-phase extraction toward N11 (the ytkit.js monolith). The
+test('ytkit.js DiagnosticLog instantiates from core/diagnostic-log.js factory when present', () => {
+    // First extraction (the ytkit.js monolith). The
     // DiagnosticLog implementation now lives in core/diagnostic-log.js;
     // ytkit.js consumes it via the factory, falling back to the legacy
     // inline IIFE only when the core module isn't loaded (userscript
@@ -4054,7 +4054,7 @@ test('ytkit.js DiagnosticLog instantiates from core/diagnostic-log.js factory wh
     }
 });
 
-test('popup ships a selector-health dashboard wired to the content script (iter-6 N7)', () => {
+test('popup ships a selector-health dashboard wired to the content script', () => {
     // The popup now surfaces a top-K selector trouble list + per-ctx
     // diagnostic counts. Both flow through one round-trip message
     // (YTKIT_GET_SELECTOR_HEALTH) to the active YouTube tab. Hidden
@@ -4080,7 +4080,7 @@ test('popup ships a selector-health dashboard wired to the content script (iter-
         'popup.js must hide the dashboard when no response is available');
 });
 
-test('ytkit.js TrustedHTML.setHTML delegates HTML writes to core/trusted-html.js (iter-6 N10)', () => {
+test('ytkit.js TrustedHTML.setHTML delegates HTML writes to core/trusted-html.js', () => {
     // N10 deduplicates the parallel DOMParser fallback logic. ytkit.js
     // still owns the policy-attempt + diagnostic-recording surface (it
     // captures the TT_POLICY_FAIL reason and writes to DiagnosticLog),
@@ -4107,7 +4107,7 @@ test('ytkit.js TrustedHTML.setHTML delegates HTML writes to core/trusted-html.js
         'inline DOMParser fallback must remain as last-resort safety net');
 });
 
-test('DiagnosticLog exposes per-ctx counters via countsByCtx() (iter-6 N6)', () => {
+test('DiagnosticLog exposes per-ctx counters via countsByCtx()', () => {
     // Popup health surface used to surface only TT events. With multiple
     // ctx classes flowing through the ring (trusted-types, selector-health,
     // storage-corruption, settings-migration, console, window) the popup
@@ -4115,7 +4115,7 @@ test('DiagnosticLog exposes per-ctx counters via countsByCtx() (iter-6 N6)', () 
     // accessor; the per-ctx counter is maintained inline by record() so
     // there's no whole-ring scan on every read.
     //
-    // iter-6 N11 (partial M-phase) moved the implementation to
+    // moved the implementation to
     // core/diagnostic-log.js — but the inline fallback in ytkit.js
     // must mirror the same machinery so the userscript / unit-test
     // build paths still work. Patterns updated to match either the
@@ -4140,7 +4140,7 @@ test('DiagnosticLog exposes per-ctx counters via countsByCtx() (iter-6 N6)', () 
         'clear() must reset the counter map');
 });
 
-test('popup detects malformed chrome.storage payloads and offers Reset (iter-6 N4)', () => {
+test('popup detects malformed chrome.storage payloads and offers Reset', () => {
     // Storage corruption is rare but real — disk-full mid-write, browser
     // crash mid-flush, profile sync conflict, manual edit of the profile
     // JSON. The detector flags wrong-type values for the four canonical
@@ -4163,7 +4163,7 @@ test('popup detects malformed chrome.storage payloads and offers Reset (iter-6 N
         'renderStorageInfo must check corruption before quota');
 });
 
-test('popup ships a storage-quota warning banner with two-tier thresholds (iter-6 N2)', () => {
+test('popup ships a storage-quota warning banner with two-tier thresholds', () => {
     // The popup now surfaces a proactive nudge when chrome.storage.local
     // approaches problematic size. Astra Deck declares unlimitedStorage
     // so there's no hard ceiling, but a runaway-growth banner is still
@@ -4188,7 +4188,7 @@ test('popup ships a storage-quota warning banner with two-tier thresholds (iter-
         'storage-banner Reset must call resetAllData() for guarded confirmation');
 });
 
-test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered handlers (iter-6 N9)', () => {
+test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered handlers', () => {
     // Audit pass: three separate MutationObservers all watched the same
     // documentElement for different attributes. Every documentElement
     // attribute mutation ran three observer engines in parallel. The
@@ -4220,7 +4220,7 @@ test('ytkit-main.js uses a single MutationObserver on <html> with 3 registered h
         'consolidated dispatcher must wrap each handler in try/catch');
 });
 
-test('popup.html ships inline CSP meta with the audited tightenings (iter-6 N3)', () => {
+test('popup.html ships inline CSP meta with the audited tightenings', () => {
     // Belt-and-suspenders CSP independent of manifest. The manifest CSP can
     // be loosened in a future refactor; the inline meta is a second wall.
     // Stricter than manifest: no remote connect-src, no remote img-src.
@@ -4463,7 +4463,7 @@ test('MAIN-world bridge applies per-context quality when data-ytkit-quality-targ
         'ytkit-main.js must declare an applyContextQuality function');
     assert.match(mainSource, /data-ytkit-quality-target/,
         'ytkit-main.js must read the per-context quality target attribute');
-    // iter-6 N9: after observer consolidation both attributes are
+    // after observer consolidation both attributes are
     // registered together via the shared _obsRegister helper (not via a
     // dedicated attributeFilter array on a per-handler observer). The
     // semantic is preserved: both attributes are observed.
@@ -9889,13 +9889,13 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
     const slice = ytkitSrc.slice(dwIdx, dwIdx + 22000);
 
     // 1. _lastTodayKey field is declared on the feature object so the
-    //    boundary check has somewhere to remember the last seen key.
+    // boundary check has somewhere to remember the last seen key.
     assert.match(slice, /_lastTodayKey:\s*null/,
         'digitalWellbeing must declare _lastTodayKey: null on the feature object');
 
     // 2. _tick captures the current day key + compares to _lastTodayKey
-    //    before doing anything else; on flip, resets _sessionStart + clears
-    //    _todayCache.
+    // before doing anything else; on flip, resets _sessionStart + clears
+    // _todayCache.
     assert.match(slice, /const currentTodayKey = this\._todayKey\(\);/,
         '_tick must capture the day key from _todayKey() at the top');
     assert.match(slice, /this\._lastTodayKey && this\._lastTodayKey !== currentTodayKey/,
@@ -9910,12 +9910,12 @@ test('v4.47.0 NF34 — digitalWellbeing detects day-key flips and resets session
         '_tick must update _lastTodayKey on every tick');
 
     // 3. _sessionStart initialization uses ?? (nullish-coalesce) so
-    //    today.seconds === 0 still initializes correctly.
+    // today.seconds === 0 still initializes correctly.
     assert.match(slice, /if \(!this\._sessionStart\) this\._sessionStart = today\.seconds \?\? 0;/,
         '_tick must initialize _sessionStart with nullish-coalesce against today.seconds');
 
     // 4. destroy() resets _lastTodayKey alongside _sessionStart so the
-    //    next init() starts fresh.
+    // next init() starts fresh.
     assert.match(slice, /this\._sessionStart = 0;\s*\n\s*this\._lastTodayKey = null;/,
         'destroy() must reset both _sessionStart and _lastTodayKey for symmetry');
 });
@@ -9963,10 +9963,10 @@ test('v4.47.0 NF30 — RYD render surfaces rate-limited vs offline + cache-age t
 
 test('v4.47.0 NF29 — pickTranscriptTrack honors transcriptPreferredLanguage with documented precedence', () => {
     // Precedence chain (per the helper's JSDoc + the schema entry):
-    //   1. exact languageCode match for transcriptPreferredLanguage
-    //   2. exact languageCode match for navigator.language base
-    //   3. 'en' (legacy fallback so the change is opt-in for non-EN users)
-    //   4. first available track
+    // 1. exact languageCode match for transcriptPreferredLanguage
+    // 2. exact languageCode match for navigator.language base
+    // 3. 'en' (legacy fallback so the change is opt-in for non-EN users)
+    // 4. first available track
     //
     // 'auto' / '' / undefined setting values skip step 1.
     const ytkitSrc = fs.readFileSync(
@@ -9992,8 +9992,8 @@ test('v4.47.0 NF29 — pickTranscriptTrack honors transcriptPreferredLanguage wi
         'transcriptPreferredLanguage default must be "auto"');
 
     // 3. Every transcript-track selection call site uses the helper —
-    //    no remaining `tracks.find(t => t.languageCode === 'en')`
-    //    hardcodes from the v4.46.0 era.
+    // no remaining `tracks.find(t => t.languageCode === 'en')`
+    // hardcodes from the v4.46.0 era.
     assert.doesNotMatch(ytkitSrc, /tracks\.find\(t => t\.languageCode === 'en'\) \|\| tracks\[0\]/,
         'ytkit.js must not have any remaining hardcoded English-first track selection');
 
@@ -10163,7 +10163,7 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
     // (NEW-1) can surface SW restart frequency without telemetry.
 
     // 1. background.js declares the ring + cap constants and the
-    //    record helper.
+    // record helper.
     assert.match(backgroundSource, /const\s+SW_LIFECYCLE_KEY\s*=\s*['"]_swLifecycle['"]/,
         'background.js must declare SW_LIFECYCLE_KEY = _swLifecycle');
     assert.match(backgroundSource, /const\s+SW_LIFECYCLE_CAP\s*=\s*50/,
@@ -10192,12 +10192,12 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         '_recordSwLifecycle must trim the ring from the head once it exceeds SW_LIFECYCLE_CAP');
 
     // 2. The module body fires _recordSwLifecycle('sw-start') at SW
-    //    boot. Every fresh SW process invocation hits this line.
+    // boot. Every fresh SW process invocation hits this line.
     assert.match(backgroundSource, /void\s+_recordSwLifecycle\(['"]sw-start['"]\)/,
         'background.js must call _recordSwLifecycle("sw-start") at module load (SW boot signal)');
 
     // 3. GET_SW_LIFECYCLE message handler returns the ring to the
-    //    popup so it can be folded into the bug-report bundle.
+    // popup so it can be folded into the bug-report bundle.
     assert.match(backgroundSource, /msg\.type === ['"]GET_SW_LIFECYCLE['"]/,
         'onMessage listener must handle the GET_SW_LIFECYCLE message type');
     const getStart = backgroundSource.indexOf("msg.type === 'GET_SW_LIFECYCLE'");
@@ -10210,8 +10210,8 @@ test('v4.47.0 NEW-7 — SW lifecycle ring records sw-start into chrome.storage.s
         'GET_SW_LIFECYCLE handler must return true to keep the response channel open for the async path');
 
     // 4. The popup's bug-report bundle now pulls the ring and includes
-    //    it as swLifecycle alongside the capability map. Tolerant of
-    //    older SWs that lack the message handler (resp may be null).
+    // it as swLifecycle alongside the capability map. Tolerant of
+    // older SWs that lack the message handler (resp may be null).
     assert.match(popupSource, /type:\s*['"]GET_SW_LIFECYCLE['"]/,
         'popup.js must request the SW lifecycle ring via GET_SW_LIFECYCLE');
     const bundleStart = popupSource.indexOf('healthSaveBtn.addEventListener');
@@ -10237,17 +10237,17 @@ test('v4.47.0 — Quick Links menu caps at 10 slots (YouTube Alchemy parity)', (
         'quickLinkMenu must declare _QL_MAX_ITEMS: 10');
 
     // 2. _parseItems truncates excess entries at the cap. Stored
-    //    excess is intentionally left intact in `quickLinkItems` so a
-    //    future cap-bump can re-expose entries.
+    // excess is intentionally left intact in `quickLinkItems` so a
+    // future cap-bump can re-expose entries.
     assert.match(block, /if \(items\.length > this\._QL_MAX_ITEMS\)/,
         '_parseItems must check the cap before slicing');
     assert.match(block, /items\.slice\(0,\s*this\._QL_MAX_ITEMS\)/,
         '_parseItems must slice at _QL_MAX_ITEMS to enforce the cap on the rendered list');
 
     // 3. The add-form's validateForm helper disables the Add button
-    //    when the list is at capacity and surfaces a "Limit reached"
-    //    message. Re-evaluated on every input event so a delete-then-
-    //    add flow re-enables cleanly.
+    // when the list is at capacity and surfaces a "Limit reached"
+    // message. Re-evaluated on every input event so a delete-then-
+    // add flow re-enables cleanly.
     assert.match(block, /const atCap = currentCount >= self\._QL_MAX_ITEMS/,
         'validateForm must compute atCap from the current parsed-items count');
     assert.match(block, /addBtn\.disabled = !name \|\| !url \|\| !isValidUrl \|\| atCap/,
@@ -10256,9 +10256,9 @@ test('v4.47.0 — Quick Links menu caps at 10 slots (YouTube Alchemy parity)', (
         'validateForm must surface a "Limit reached (N/MAX)" message when atCap');
 
     // 4. addBtn.onclick has a defensive re-check at click time —
-    //    handles the race between two rapid clicks that both passed
-    //    validateForm before either persisted. Toast guidance points
-    //    the user at the remove-to-add path.
+    // handles the race between two rapid clicks that both passed
+    // validateForm before either persisted. Toast guidance points
+    // the user at the remove-to-add path.
     assert.match(block, /if \(self\._parseItems\(\)\.length >= self\._QL_MAX_ITEMS\)/,
         'addBtn.onclick must re-check the cap at click time (defensive against rapid double-click)');
     assert.match(block, /Quick Links limit reached \(\$\{self\._QL_MAX_ITEMS\}\)/,
@@ -10275,8 +10275,8 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
     // token handling.
 
     // 1. ytkit.js: MediaDLManager.updateYtdlp() exists and calls
-    //    /update-ytdlp with the token from a freshly-probed health
-    //    response.
+    // /update-ytdlp with the token from a freshly-probed health
+    // response.
     const updateMethodStart = ytkitSource.indexOf('async updateYtdlp()');
     assert.ok(updateMethodStart > -1,
         'MediaDLManager must define an async updateYtdlp() method');
@@ -10291,8 +10291,8 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
         'updateYtdlp must use a 130 s timeout (130 s server cap + small buffer for the round-trip)');
 
     // 2. ytkit.js: content-script message handler dispatches
-    //    YTKIT_UPDATE_YTDLP to MediaDLManager.updateYtdlp() and
-    //    returns the structured result async.
+    // YTKIT_UPDATE_YTDLP to MediaDLManager.updateYtdlp() and
+    // returns the structured result async.
     const handlerStart = ytkitSource.indexOf("'YTKIT_UPDATE_YTDLP'");
     assert.ok(handlerStart > -1,
         'ytkit.js must handle the YTKIT_UPDATE_YTDLP message type');
@@ -10317,9 +10317,9 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
         'update-ytdlp button must NOT carry the hidden attribute — always visible (yt-dlp breakage is unannounced)');
 
     // 4. popup.js: handler routes through chrome.tabs.sendMessage to
-    //    a YouTube tab; surfaces a friendly status on no-tab; maps the
-    //    structured result into a status string (version_before ->
-    //    version_after on success).
+    // a YouTube tab; surfaces a friendly status on no-tab; maps the
+    // structured result into a status string (version_before ->
+    // version_after on success).
     assert.match(popupSource, /async function updateYtdlpNow\(\)/,
         'popup.js must define updateYtdlpNow handler');
     const popupHandlerStart = popupSource.indexOf('async function updateYtdlpNow');
@@ -10338,7 +10338,7 @@ test('v4.47.0 NF18 — on-demand yt-dlp self-update via /update-ytdlp + popup bu
         'updateYtdlpNow must disable the button while the update is in flight');
 
     // 5. Python: /update-ytdlp endpoint exists in astra_downloader.py
-    //    and gates on active_count > 0 with a 409 + actionable error.
+    // and gates on active_count > 0 with a 409 + actionable error.
     const downloaderSource = fs.readFileSync(
         path.join(__dirname, '..', 'astra_downloader', 'astra_downloader.py'), 'utf8'
     );
@@ -10371,30 +10371,30 @@ test('v4.47.0 NF9 — wheelSeek hooks the progress bar (not the player root) so 
     const block = ytkitSource.slice(start, start + 8000);
 
     // 1. The wheel listener attaches to the progress bar, not the
-    //    player root. Selector list covers both the container and
-    //    the bar itself (YouTube renames these periodically; either
-    //    matches the "scroll over the bar" affordance).
+    // player root. Selector list covers both the container and
+    // the bar itself (YouTube renames these periodically; either
+    // matches the "scroll over the bar" affordance).
     assert.match(block, /querySelector\(['"]\.ytp-progress-bar-container,\s*\.ytp-progress-bar['"]/,
         'wheelSeek must locate the progress bar via .ytp-progress-bar-container or .ytp-progress-bar');
     assert.match(block, /addEventListener\(['"]wheel['"][^)]*passive:\s*false[^)]*capture:\s*true/,
         'wheelSeek must register the wheel listener with passive:false + capture:true');
 
     // 2. Conflict avoidance with volumeWheelMode: must
-    //    stopImmediatePropagation so the player-root listener
-    //    never sees the event.
+    // stopImmediatePropagation so the player-root listener
+    // never sees the event.
     assert.match(block, /e\.stopImmediatePropagation\(\)/,
         'wheelSeek wheel handler must stopImmediatePropagation so volumeWheelMode does not co-fire');
     assert.match(block, /e\.preventDefault\(\)/,
         'wheelSeek wheel handler must preventDefault to suppress page scroll');
 
     // 3. Step is clamped to (0, 300] so a corrupted import can't
-    //    seek by 1e9 seconds per tick.
+    // seek by 1e9 seconds per tick.
     assert.match(block, /stepRaw\s*>\s*0\s*&&\s*stepRaw\s*<=\s*300/,
         'wheelSeek must clamp wheelSeekStepSec to a sane range (0 < x ≤ 300)');
 
     // 4. Live-stream defense: video.duration is Infinity on live;
-    //    upper-bound the seek so currentTime never becomes NaN /
-    //    Infinity.
+    // upper-bound the seek so currentTime never becomes NaN /
+    // Infinity.
     assert.match(block, /Number\.isFinite\(video\.duration\)\s*\?\s*video\.duration\s*:\s*Number\.MAX_SAFE_INTEGER/,
         'wheelSeek must guard live-stream Infinity duration with a finite upper bound');
 
@@ -10479,11 +10479,11 @@ test('v4.47.0 — schema-overview rows for credential-bearing keys carry an inli
     // at the pasting moment. Implementation invariants pinned here:
     //
     // 1. TRUST_SIGNAL_LOCAL_ONLY_KEYS is a strict subset of
-    //    BUG_REPORT_REDACTED_KEYS — every key with a trust chip
-    //    must also be redacted from the bug-report bundle, otherwise
-    //    the chip's "redacted from bundle" claim is a lie.
+    // BUG_REPORT_REDACTED_KEYS — every key with a trust chip
+    // must also be redacted from the bug-report bundle, otherwise
+    // the chip's "redacted from bundle" claim is a lie.
     // 2. The chip uses the existing profile-badge geometry +
-    //    so-key-trust-local class variant.
+    // so-key-trust-local class variant.
     // 3. CSS declares the variant.
 
     assert.match(popupSource, /const\s+TRUST_SIGNAL_LOCAL_ONLY_KEYS\s*=\s*new Set\(/,
@@ -10533,17 +10533,17 @@ test('v4.47.0 NEW-6 — per-key Reset button on schema-overview rows whose value
     //
     // Implementation invariants pinned here:
     // - The reset button is only rendered when the schema entry
-    //   declares a defaultValue AND the current value differs from it.
+    // declares a defaultValue AND the current value differs from it.
     // - The click handler calls writeSetting with entry.defaultValue
-    //   (the same choke point every other inline editor uses), then
-    //   re-renders the overview to refresh the count + clear the
-    //   now-default row's reset button.
+    // (the same choke point every other inline editor uses), then
+    // re-renders the overview to refresh the count + clear the
+    // now-default row's reset button.
     // - The equality check is a deep-equality helper (isDefaultValue)
-    //   so arrays + objects with identical content don't surface a
-    //   spurious reset button.
+    // so arrays + objects with identical content don't surface a
+    // spurious reset button.
 
     // 1. Row builder appends the reset button at the end after the
-    //    type-specific editor.
+    // type-specific editor.
     const rowStart = popupSource.indexOf('function buildSchemaOverviewKeyRow');
     assert.ok(rowStart > -1, 'popup.js must define buildSchemaOverviewKeyRow');
     // Cap the slice generously — the row builder is ~400 lines + the
@@ -10563,8 +10563,8 @@ test('v4.47.0 NEW-6 — per-key Reset button on schema-overview rows whose value
         'reset click must re-render the schema overview after persistence');
 
     // 2. isDefaultValue is a deep-equality helper that handles arrays
-    //    and objects via JSON.stringify (cheap + correct for the
-    //    small payloads schema-overview deals with).
+    // and objects via JSON.stringify (cheap + correct for the
+    // small payloads schema-overview deals with).
     assert.match(popupSource, /function\s+isDefaultValue\(currentValue,\s*defaultValue\)/,
         'popup.js must define isDefaultValue helper');
     const isDefStart = popupSource.indexOf('function isDefaultValue(');
@@ -10575,8 +10575,8 @@ test('v4.47.0 NEW-6 — per-key Reset button on schema-overview rows whose value
         'isDefaultValue must deep-compare objects via JSON.stringify');
 
     // 3. describeDefaultForTooltip pretty-prints the default value
-    //    for the tooltip and truncates anything over 48 chars so
-    //    the tooltip stays readable.
+    // for the tooltip and truncates anything over 48 chars so
+    // the tooltip stays readable.
     assert.match(popupSource, /function\s+describeDefaultForTooltip\(value\)/,
         'popup.js must define describeDefaultForTooltip helper');
     const descStart = popupSource.indexOf('function describeDefaultForTooltip(');
@@ -10640,15 +10640,15 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
         'popup.js must declare CHANGELOG_BASE_URL pointing at the project changelog');
 
     // 3. renderFirstRunSurfaces is the boot entry point and is fired
-    //    from the bootstrap IIFE in parallel with the rest of init.
+    // from the bootstrap IIFE in parallel with the rest of init.
     assert.match(popupSource, /async function renderFirstRunSurfaces\(\)/,
         'popup.js must define renderFirstRunSurfaces');
     assert.match(popupSource, /void renderFirstRunSurfaces\(\)/,
         'bootstrap must call renderFirstRunSurfaces');
 
     // 4. The two surfaces are mutually exclusive: welcome-card fires
-    //    when !firstRunSeen; whats-new fires when firstRunSeen AND
-    //    lastSeen !== manifestVersion.
+    // when !firstRunSeen; whats-new fires when firstRunSeen AND
+    // lastSeen !== manifestVersion.
     const renderStart = popupSource.indexOf('async function renderFirstRunSurfaces');
     // Slice wide enough to cover the upgrade guard + the welcome show
     // gate + the What's New show gate. The function grew during audit
@@ -10660,8 +10660,8 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
         'renderFirstRunSurfaces must gate whats-new on firstRunSeen && version mismatch');
 
     // 5. pickWelcomeProfile writes githubFullProfile (true or false)
-    //    via the existing writeSetting choke point so the schema
-    //    overview re-renders with refreshed profile-gating badges.
+    // via the existing writeSetting choke point so the schema
+    // overview re-renders with refreshed profile-gating badges.
     assert.match(popupSource, /async function pickWelcomeProfile\(profile\)/,
         'popup.js must define pickWelcomeProfile');
     const pickStart = popupSource.indexOf('async function pickWelcomeProfile');
@@ -10674,9 +10674,9 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
         'pickWelcomeProfile must re-render the schema overview to refresh profile-gating badges');
 
     // 6. dismissWelcomeCard persists FIRST_RUN_SEEN_KEY and stamps
-    //    LAST_SEEN_VERSION_KEY so the very next popup open doesn't
-    //    fire a What's New banner against a user who just walked
-    //    through the welcome flow.
+    // LAST_SEEN_VERSION_KEY so the very next popup open doesn't
+    // fire a What's New banner against a user who just walked
+    // through the welcome flow.
     assert.match(popupSource, /async function dismissWelcomeCard\(reason\)/,
         'popup.js must define dismissWelcomeCard');
     const dismissStart = popupSource.indexOf('async function dismissWelcomeCard');
@@ -10687,13 +10687,13 @@ test('v4.47.0 NF21 — first-run welcome card + What\'s New banner wired through
         'dismissWelcomeCard must stamp LAST_SEEN_VERSION_KEY with the current manifestVersion');
 
     // 6b. Audit-pass upgrade guard: a user who installed Astra Deck
-    //     before NF21 shipped has a populated SETTINGS_STORAGE_KEY
-    //     but no FIRST_RUN_SEEN_KEY. Without an upgrade guard every
-    //     such user would see the welcome card on their first popup
-    //     open after upgrading — a regression. The guard must read
-    //     SETTINGS_STORAGE_KEY alongside the sentinels, detect at
-    //     least one non-internal key (anything not starting with `_`),
-    //     and silently stamp both sentinels so neither surface fires.
+    // before NF21 shipped has a populated SETTINGS_STORAGE_KEY
+    // but no FIRST_RUN_SEEN_KEY. Without an upgrade guard every
+    // such user would see the welcome card on their first popup
+    // open after upgrading — a regression. The guard must read
+    // SETTINGS_STORAGE_KEY alongside the sentinels, detect at
+    // least one non-internal key (anything not starting with `_`),
+    // and silently stamp both sentinels so neither surface fires.
     assert.match(renderBlock, /SETTINGS_STORAGE_KEY/,
         'renderFirstRunSurfaces must read SETTINGS_STORAGE_KEY to detect upgraded users');
     assert.match(renderBlock, /looksLikeExistingInstall/,
@@ -10739,8 +10739,8 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
     }
 
     // 2. redactBugReportSettings function is declared and replaces the
-    //    value with a "[redacted — N chars]" sentinel that preserves the
-    //    fact that the field was set without leaking the content.
+    // value with a "[redacted — N chars]" sentinel that preserves the
+    // fact that the field was set without leaking the content.
     assert.match(popupSource, /function\s+redactBugReportSettings\(/,
         'popup.js must define redactBugReportSettings()');
     const redactStart = popupSource.indexOf('function redactBugReportSettings');
@@ -10751,9 +10751,9 @@ test('v4.47.0 NEW-1 — bug-report bundle redacts BYO keys/endpoints/CSS and inc
         'redactBugReportSettings must skip empty strings (no need to mark an unset field)');
 
     // 3. healthSave payload now carries the bug-report marker, schema
-    //    version, capability map, sanitized settings, AND the errors
-    //    ring. The marker is a stable identifier the issue triager
-    //    can grep for.
+    // version, capability map, sanitized settings, AND the errors
+    // ring. The marker is a stable identifier the issue triager
+    // can grep for.
     const saveStart = popupSource.indexOf('healthSaveBtn.addEventListener');
     assert.ok(saveStart > -1, 'popup.js must wire healthSaveBtn');
     const saveBlock = popupSource.slice(saveStart, saveStart + 2500);
@@ -10802,7 +10802,7 @@ test('v4.47.0 NF10 follow-up — popup renders capability-probe Unavailable chip
     // unsatisfied capability.
 
     // 1. popup.html script load order: capability-probe.js must
-    //    appear before popup.js.
+    // appear before popup.js.
     const popupHtml = fs.readFileSync(
         path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8'
     );
@@ -10816,7 +10816,7 @@ test('v4.47.0 NF10 follow-up — popup renders capability-probe Unavailable chip
         'capability-probe.js must load BEFORE popup.js so window.YTKitCore.capabilityProbe is defined at boot');
 
     // 2. popupState carries a _capabilities slot + ensureCapabilityMap
-    //    helper that calls probe.runAll() once and caches the result.
+    // helper that calls probe.runAll() once and caches the result.
     assert.match(popupSource, /_capabilities:\s*null/,
         'popupState must declare _capabilities slot (null until probe resolves)');
     assert.match(popupSource, /async function ensureCapabilityMap\(\)/,
