@@ -2728,10 +2728,14 @@ class DownloadManager(QObject):
                 dl.error = "Unexpected download error. Check Astra Downloader logs for details."
                 write_persistent_log(f"Download {dl.id} failed unexpectedly: {e}")
         finally:
+            # Signal the watchdog to stop; it's a daemon thread that wakes from
+            # its wait() the moment the event is set and exits on its own. We do
+            # NOT join() it here — joining adds latency between status becoming
+            # terminal (which unblocks observers/tests) and the post-finally
+            # history write, which can let an observer see "complete" before the
+            # history entry exists.
             if stop_watchdog is not None:
                 stop_watchdog.set()
-            if watchdog_thread is not None:
-                watchdog_thread.join(timeout=5)
             dl.process = None
             # Cookie jar holds session credentials — purge it as soon as the
             # download process exits so it never outlives the one request that
