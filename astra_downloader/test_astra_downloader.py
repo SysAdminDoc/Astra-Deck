@@ -289,6 +289,55 @@ class ApiSecurityTests(unittest.TestCase):
         self.assertEqual(resp.get_json()["code"], "unsupported-ytdlp-flags")
         self.assertEqual(manager.downloads, {})
 
+    def test_download_endpoint_rejects_non_youtube_url_before_queueing(self):
+        # SSRF hardening: the server must enforce the YouTube-only allowlist at
+        # the trust boundary, not rely on the extension. A token-holder pointing
+        # at an internal/LAN/metadata host must be rejected before yt-dlp (and
+        # the cookie jar) is ever invoked.
+        token = "n" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        for hostile in (
+            "http://169.254.169.254/latest/meta-data/",
+            "http://192.168.1.1/admin",
+            "http://127.0.0.1:9999/",
+            "https://example.com/watch?v=abc",
+        ):
+            resp = client.post(
+                "/download",
+                json={"url": hostile, "cookies": [{"name": "SID", "value": "secret"}]},
+                headers={"X-Auth-Token": token},
+            )
+            self.assertEqual(resp.status_code, 400, hostile)
+            self.assertEqual(resp.get_json()["code"], "non-youtube-url", hostile)
+        self.assertEqual(manager.downloads, {})
+
+    def test_download_endpoint_accepts_youtube_hosts(self):
+        # The allowlist must still pass canonical YouTube hosts through to the
+        # queue (guards against an over-tight regex regression).
+        token = "y" * 32
+        config = FakeConfig({"ServerToken": token})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        client = api.test_client()
+        for ok_url in (
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+        ):
+            resp = client.post(
+                "/download",
+                json={"url": ok_url},
+                headers={"X-Auth-Token": token},
+            )
+            # Must get PAST the YouTube allowlist (i.e. not the non-youtube-url
+            # rejection). Downstream gates (Deno/queue) may still 200/422/429,
+            # but the URL must never be rejected as non-YouTube.
+            body = resp.get_json() or {}
+            self.assertNotEqual(body.get("code"), "non-youtube-url", ok_url)
+
     def test_history_limit_is_clamped(self):
         token = "d" * 32
         history = FakeHistory()
