@@ -135,7 +135,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "cleanShareUrls", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── feed ───
-    Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "videosPerRow", category: "feed", type: "number", defaultValue: 0, min: 0, max: 8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── nav ───
     Object.freeze({ key: "quickLinkMenu", category: "nav", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -170,7 +170,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // floor to 1000+ ms to stay further from YouTube's automated-
     // behavior heuristics. Cannot be lowered below 500 — that would
     // defeat the safety guarantee documented in v3.23.0 N3.
-    Object.freeze({ key: "reactionSpammerMinIntervalMs", category: "live-chat", type: "number", defaultValue: 500, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+    Object.freeze({ key: "reactionSpammerMinIntervalMs", category: "live-chat", type: "number", defaultValue: 500, min: 500, risk: "store-risk", profile: "github-full", scope: "live-chat", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "_reactionSpammerAck", category: "live-chat", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "live-chat", vehicle: 'both', immediateApply: false, destroyRequired: false, internal: true, since: "0.1.0" }),
 
     // ─── watch-player ───
@@ -216,7 +216,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // continue to paginate normally instead of locking after one
     // unlucky batch streak. Invalid values fall back to 0.8 at the
     // call site; range is documented as (0, 1].
-    Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+    Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, min: 0, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "hideVideosRemoveHiddenCards", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosShowQuickHideButton", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosAllowChannelBlock", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -235,7 +235,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "hideVideosHidePlaylists", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosHideMovies", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosHideAutoDubbed", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "hideVideosWatchedRatio", category: "content-filter", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "hideVideosWatchedRatio", category: "content-filter", type: "number", defaultValue: 0, min: 0, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── feed ───
     Object.freeze({ key: "hideInfoPanels", category: "feed", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -297,7 +297,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "videoNotes", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "videoNotesData", category: "watch-player", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "blueLightFilter", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "blueLightIntensity", category: "playback-audio", type: "number", defaultValue: 30, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "blueLightIntensity", category: "playback-audio", type: "number", defaultValue: 30, min: 10, max: 80, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
 
     // ─── feed ───
     Object.freeze({ key: "disableInfiniteScroll", category: "feed", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -539,7 +539,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── playback-audio ───
     Object.freeze({ key: "videoRotation", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "videoRotationAngle", category: "playback-audio", type: "number", defaultValue: 0, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "videoRotationAngle", category: "playback-audio", type: "number", defaultValue: 0, enum: [0, 90, 180, 270], risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "frameByFrameButtons", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── research-ai ───
@@ -593,7 +593,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     // ─── enrichment ───
     Object.freeze({ key: "returnDislike", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "returnDislikeOnCards", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
-    Object.freeze({ key: "returnDislikeCacheHours", category: "enrichment", type: "number", defaultValue: 24, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "returnDislikeCacheHours", category: "enrichment", type: "number", defaultValue: 24, min: 1, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "returnDislikeShowRatio", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "deArrowChannelOverrides", category: "enrichment", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "deArrowChannelOverridesPanel", category: "enrichment", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
