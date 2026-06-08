@@ -169,7 +169,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   labels, accessible action names, focus-visible rules, and explicit target
   size floors where needed.
 
-- **Repo working notes reconciled.** `AGENTS.md` now points first-read workers at
+- **Repo working notes reconciled.** `the project notes` now points first-read workers at
   tracked loop/planning/audit files, describes where to find protected-main and
   maintainer-local release policy, states that ignored `CLAUDE.md` is optional
   local scratch, and removes the committed dependency on stale local-only notes.
@@ -822,7 +822,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   slice window. 570/570 JS tests pass (+1 new).
 
 - **Audit pass: three real bugs fixed in the just-shipped Pass-3 batch.**
-  Deep audit of the autonomous-loop's recent ships caught two real
+  Deep audit of recent changes caught two real
   defects + one polish gap before they reached users:
   - **NF21 upgrade regression — existing users were going to see
     the welcome card on every popup open after upgrading.** The
@@ -1199,7 +1199,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
       difference at a glance from real DeArrow submissions.
     - **Phase V — Iridium + Control Panel promoted into ROADMAP
       §Phase 1 matrix.** Both CWS competitors were noted in
-      `docs/research/iter-8-sources.md` (2026-05-20) but never
+      noted earlier but never
       formally scored. Added rows 21 + 22 with the standard
       columns; broader-scoring follow-up is open work.
   Pinned by a new `v4.47.0 polish batch` hardening test that asserts
@@ -1635,8 +1635,7 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   five trust boundaries with what each is allowed to touch, ten
   conventions a contributor needs (no keyboard shortcuts, no confirm
   dialogs, dark only, init/destroy contract, TrustedTypes safety,
-  stable-selector-first, `// reason:` invariant, no
-  Co-Authored-By, schema parity, version-drift gate), worked
+  stable-selector-first, `// reason:` invariant, schema parity, version-drift gate), worked
   examples for adding a CSS-only feature and a DOM-observation
   feature, and a debugging primer. Linked from README's
   Documentation index and CONTRIBUTING's preface. Closes the
@@ -1988,7 +1987,7 @@ acceptance-criterion item in the v5.0.0-foundation carry-forward
 list (ROADMAP.md L40-49) is now either checked `[x]` or marked
 `[~]` with a v5.2.0+ scope explicitly named in plain English.
 
-### Cumulative scoreboard (single autonomous v5.1.0 session)
+### Cumulative scoreboard (v5.1.0)
 
 | | |
 |---|---:|
@@ -2654,7 +2653,7 @@ acceptance-criterion item in `ROADMAP.md` under v5.0.0 is now
 either checked or marked partial with the specific remaining work
 explicitly named so v5.1+ can start cleanly.
 
-### Cumulative scoreboard (single autonomous session)
+### Cumulative scoreboard
 
 | | |
 |---|---:|
@@ -3863,15 +3862,14 @@ ergonomics.
   `python -m pytest astra_downloader`, `npm audit --omit=dev`, and the
   release build path.
 
-## [4.5.1] - 2026-05-20 — N11 M-phase #6 + N21/N22 architectural regression pins
+## [4.5.1] - 2026-05-20 — architectural regression pins
 
 Test-and-extraction patch on top of v4.5.0. No user-visible behavior
 change. Three additions:
 
-### Modularization (iter-8 extended N11 M-phase #6)
+### Modularization
 
-- **ICONS + createSVG extracted to `extension/core/icons.js`**
-  (iter-8 N23-extended). The 404-line inline block (createSVG SVG
+- **ICONS + createSVG extracted to `extension/core/icons.js`**. The 404-line inline block (createSVG SVG
   builder + `_S` default-stroke const + ICONS object with ~80 named
   factories) moves out of ytkit.js into a focused core module.
   Library has zero ytkit.js-internal deps — only
@@ -3883,12 +3881,12 @@ change. Three additions:
   for any key — page stays renderable with blank icon slots instead
   of NPE-ing.
 - `extension/ytkit.js` LOC: **43,407 → 43,081 (-326)**. Cumulative
-  N11 M-phase since iter-7 start: **44,264 → 43,081 = -1,183 LOC
+  since start: **44,264 → 43,081 = -1,183 LOC
   (-2.67%)**. Six core modules extracted to date.
 
 ### Architectural regression pins
 
-- **SponsorBlock event-driven scheduling pinned** (iter-8 N21). Upstream
+- **SponsorBlock event-driven scheduling pinned**. Upstream
   SponsorBlock v6.1.5 (2026-04-21) fixed "segments not skipping when
   video is scrolled away" — their old path was gated on a `requestAnimationFrame`
   loop that stops firing when YouTube hides the off-screen video via
@@ -3898,7 +3896,7 @@ change. Three additions:
   re-introduces rAF-gating on `_checkSkip` / `_scheduleNextSkip`, OR
   drops the paused-video early-return, OR consults IntersectionObserver /
   getBoundingClientRect / offsetParent.
-- **DeArrow selector chain resilience pinned** (iter-8 N22). Upstream
+- **DeArrow selector chain resilience pinned**. Upstream
   DeArrow shipped v2.3.4 / v2.3.5 / v2.3.6 in April 2026 — three rapid
   patches for YouTube swapping one CSS class at a time on title /
   thumbnail nodes. Our DeArrow uses durable primitives: custom-element
@@ -3916,20 +3914,19 @@ change. Three additions:
   options handling + manifest load order + inline-removal guard).
 - All existing tests stay green. Python 80/80 unchanged.
 
-## [4.5.0] - 2026-05-20 — N11 M-phase #4-#5 + yt-dlp 2026 external runtime surface
+## [4.5.0] - 2026-05-20 — -#5 + yt-dlp 2026 external runtime surface
 
-Rolling-release cut bundling iter-5 / iter-6 / iter-7 / iter-8 hardening
-plus three iter-8 deliveries: TranscriptService + StorageManager
-extractions out of the 44k-line ytkit.js monolith (M-phase #4 and #5),
+Rolling-release cut bundling / / / hardening
+plus three deliveries: TranscriptService + StorageManager
+extractions out of the 44k-line ytkit.js monolith,
 and the AstraDownloader v1.5.0 Deno-runtime presence probe that surfaces
 yt-dlp's 2026 external-JS-runtime dependency on the wire so field
 installs see a "Deno: missing" pill instead of silent YouTube
 download failures.
 
-### Modularization (iter-8 — N11 M-phase continues)
+### Modularization
 
-- **TranscriptService extracted to `extension/core/transcript-service.js`**
-  (iter-8 N18, M-phase #4). The 446-line inline `const TranscriptService = {…}`
+- **TranscriptService extracted to `extension/core/transcript-service.js`**. The 446-line inline `const TranscriptService = {…}`
   block moved into a focused factory module exposing
   `globalThis.YTKitCore.createTranscriptService`. The 5-method failover
   pipeline (window-variable → Innertube → HTML fetch → captionTracks
@@ -3941,7 +3938,7 @@ download failures.
   module ever fails to load: a stub that logs a clear error and
   returns failure results for all 4 call sites.
 - **StorageManager cache+debounce extracted to
-  `extension/core/storage-manager.js`** (iter-8 N19, M-phase #5). The
+  `extension/core/storage-manager.js`**. The
   99-line inline `const StorageManager = {…}` block moved into a
   focused factory module exposing
   `globalThis.YTKitCore.createStorageCache` (renamed to disambiguate
@@ -3956,12 +3953,10 @@ download failures.
 - **`extension/ytkit.js` LOC** dropped 43,924 → 43,407 across N18 +
   N19 (-517 lines net; the inline implementations were 446 + 99 = 545
   lines, replaced by 27 + 27 = 54 lines of factory + defensive
-  fallback wrappers). Cumulative N11 M-phase reduction since iter-7
-  start: 44,264 → 43,407 = -857 lines (-1.93%). Five extractions
-  shipped to date: DiagnosticLog, PredicateSandbox, VideoTypeDetector
-  (iter-7), TranscriptService, StorageManager (iter-8).
+  fallback wrappers). Cumulative reduction: 44,264 → 43,407 = -857 lines (-1.93%). Five extractions
+  shipped to date: DiagnosticLog, PredicateSandbox, VideoTypeDetector, TranscriptService, StorageManager.
 
-### Downloads / observability (iter-8 N20)
+### Downloads / observability
 
 - **AstraDownloader v1.4.0 → v1.5.0** ships an external JavaScript
   runtime probe. yt-dlp `>= 2026.04` ships an external n/sig solver
@@ -3988,60 +3983,53 @@ download failures.
   Older yt-dlp builds (the in-field-stable pre-Deno line) don't
   false-positive on a misconfigured PATH.
 
-### UI surfaces shipped earlier in iter-6 (now part of this release window)
+### UI surfaces shipped earlier in (now part of this release window)
 
-- **Storage-quota proactive warning banner** in the toolbar popup
-  (iter-6 N2). Renders when usage > 80% of the 10 MB
+- **Storage-quota proactive warning banner** in the toolbar popup. Renders when usage > 80% of the 10 MB
   `chrome.storage.local` ceiling. Uses the same accent-tinted warn
   styling as the existing diagnostic banners.
-- **Storage corruption detector + recovery banner** (iter-6 N4). If
+- **Storage corruption detector + recovery banner**. If
   `chrome.storage.local.get(null)` returns a malformed payload, the
   popup surfaces an amber banner with a clear-storage CTA. No silent
   data loss.
-- **Per-context DiagnosticLog counters via `countsByCtx()`**
-  (iter-6 N6). The ring buffer maintains O(1) bookkeeping per
+- **Per-context DiagnosticLog counters via `countsByCtx()`**. The ring buffer maintains O(1) bookkeeping per
   context tag (`trusted-types` / `selector-health` /
   `storage-corruption` / `settings-migration` / `console` / `window`),
   with ring-trim decrement and lazy resync from the persisted ring on
   first read. Wrong-order bug from the in-line implementation (push
   → resync → increment) fixed during extraction.
-- **Popup selector-health dashboard** (iter-6 N7). Surfaces the
-  iter-5 N5 DOM-shape drift detection in the popup — pills per
+- **Popup selector-health dashboard**. Surfaces the
+  DOM-shape drift detection in the popup — pills per
   surface showing live drift status. `schemaVersion 2` for the
   export.
-- **`extension/popup.html` inline CSP meta tag** (iter-6 N3).
+- **`extension/popup.html` inline CSP meta tag**.
   Defense-in-depth: complements the existing manifest CSP with a
   page-level `<meta http-equiv="Content-Security-Policy">` so the
   popup is constrained even if the manifest CSP is somehow stripped.
-- **MainWorld MutationObserver consolidation** (iter-6 N9). Three
+- **MainWorld MutationObserver consolidation**. Three
   separate `MutationObserver` instances on `<html>` in
   `ytkit-main.js` consolidated into one. Reduces per-frame DOM
   observation cost.
-- **TrustedHTML fallback delegation to `core/trusted-html.js`**
-  (iter-6 N10). The inline DOMParser fallback in `ytkit.js`
+- **TrustedHTML fallback delegation to `core/trusted-html.js`**. The inline DOMParser fallback in `ytkit.js`
   `TrustedHTML` now delegates to the shared `core.setTrustedHTML` /
   `core.toTrustedHTML` helpers when the core module is present,
   keeping ytkit.js's inline fallback only for the unit-test path.
-- **bgutil-ytdlp-pot-provider stale-version notice in `/health`**
-  (iter-6 N14). The `poTokenProvider` field gains a `stale: bool`
+- **bgutil-ytdlp-pot-provider stale-version notice in `/health`**. The `poTokenProvider` field gains a `stale: bool`
   + `minVersion: str` pair. Set true when the detected provider
   version compares less than `BGUTIL_POT_MIN_VERSION = "1.3.0"`.
   Extension popup health surface renders an amber "update bgutil-pot"
   pill distinct from the absence notice.
 
-### Modularization shipped earlier in iter-7 (now part of this release window)
+### Modularization shipped earlier in (now part of this release window)
 
-- **DiagnosticLog extracted to `extension/core/diagnostic-log.js`**
-  (iter-7, M-phase #1). Ring buffer + per-ctx counters now live in a
+- **DiagnosticLog extracted to `extension/core/diagnostic-log.js`**. Ring buffer + per-ctx counters now live in a
   ~170-line core module. Coupling to `appState.settings` /
   `settingsManager.save` flows through accessor callbacks.
-- **PredicateSandbox extracted to `extension/core/predicate-sandbox.js`**
-  (iter-7, M-phase #2). The custom-JS predicate evaluator and its
+- **PredicateSandbox extracted to `extension/core/predicate-sandbox.js`**. The custom-JS predicate evaluator and its
   PredicateError class moved into a 343-line core module. The
   sandbox uses `new Function('ctx', userCode)` against a frozen
   context — no eval, no Function constructor with arbitrary deps.
-- **VideoTypeDetector extracted to `extension/core/video-type.js`**
-  (iter-7, M-phase #3). The "is this video a Short / livestream /
+- **VideoTypeDetector extracted to `extension/core/video-type.js`**. The "is this video a Short / livestream /
   premiere / normal" heuristic moved to a 128-line core module.
 
 ### Hardening (post-v4.4.0)
@@ -4119,8 +4107,7 @@ download failures.
 
 ### Tests + CI
 
-- 258 → 299 JS tests across the iter-5 + iter-6 + iter-7 + iter-8
-  arc (+41 regression assertions): api-limiter clear() reject
+- 258 → 299 JS tests across this arc (+41 regression assertions): api-limiter clear() reject
   behavior, pill-backdrop guard in ytkit.js + theater-split,
   direct-innerHTML-SVG detector, locale parity gate, Retry-After
   honoring, YTKIT_SETTINGS_REPLACED handler presence, DOM-shape
@@ -4128,7 +4115,7 @@ download failures.
   channel, storage-quota banner threshold, storage-corruption
   detector trigger, per-ctx counter resync, MutationObserver
   consolidation invariants, TrustedHTML core delegation, popup
-  selector-health export schema version, and the M-phase
+  selector-health export schema version, and the module
   extraction guards (TranscriptService API surface + load order,
   StorageManager cache semantics + idempotent unload-flush).
 - ~47 → 80 Python tests for AstraDownloader: per-ctx logging
