@@ -16518,24 +16518,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _parseCompactCount(text) {
-                const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
-                if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
-                const match = raw.match(/(\d[\d,.]*)\s*([kmb])?\s*(?:views?|watching)/i);
-                if (!match) return null;
-                const suffix = match[2]?.toLowerCase();
-                let numeric = match[1];
-                if (suffix) {
-                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
-                    else numeric = numeric.replace(/,/g, '');
-                } else {
-                    numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
-                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
-                    else numeric = numeric.replace(/,/g, '');
-                }
-                const number = parseFloat(numeric);
-                if (!Number.isFinite(number)) return null;
-                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[suffix] || 1;
-                return Math.round(number * scale);
+                // Canonical implementation lives in core/text-metrics.js - keep
+                // exactly one copy so the grouping-aware logic can't diverge.
+                const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
+                return fn ? fn(text, null) : null;
             },
 
             _extractViewCount(element) {
@@ -32740,24 +32726,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _parseCompactViewCount(text) {
-                const raw = String(text || '').replace(/\u00a0/g, ' ').trim().toLowerCase();
-                if (!raw || /\bno\s+views?\b/.test(raw)) return 0;
-                const match = raw.match(/(\d[\d,.]*)\s*([kmb])?\s*(?:views?|watching)/i);
-                if (!match) return 0;
-                const suffix = match[2]?.toLowerCase();
-                let numeric = match[1];
-                if (suffix) {
-                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
-                    else numeric = numeric.replace(/,/g, '');
-                } else {
-                    numeric = numeric.replace(/(\d),(?=\d{3}\b)/g, '$1');
-                    if (numeric.includes(',') && !numeric.includes('.')) numeric = numeric.replace(',', '.');
-                    else numeric = numeric.replace(/,/g, '');
-                }
-                const number = parseFloat(numeric);
-                if (!Number.isFinite(number)) return 0;
-                const scale = { k: 1_000, m: 1_000_000, b: 1_000_000_000 }[suffix] || 1;
-                return Math.round(number * scale);
+                // Canonical implementation lives in core/text-metrics.js.
+                const fn = globalThis.YTKitCore && globalThis.YTKitCore.parseCompactCount;
+                return fn ? fn(text, 0) : 0;
             },
 
             _applySort(modeOverride) {

@@ -5094,6 +5094,29 @@ test('policy-profile: nullable-complex settings accept populated runtime shapes 
     assert.equal(bad.ok, false);
 });
 
+test('policy-profile: clamps out-of-range numbers and coerces unknown enums to the default', () => {
+    const core = loadPolicyProfileModule();
+    const pp = core.createPolicyProfile();
+    // Corrupted/hostile values are sanitized into safe ones rather than
+    // rejecting the whole snapshot.
+    const r = pp.validateSettingsSnapshot({
+        videosPerRow: 9999,            // max 8
+        hideVideosWatchedRatio: -3,    // min 0
+        videoRotationAngle: 47,        // enum [0,90,180,270] -> default 0
+        returnDislikeCacheHours: 0,    // min 1
+    }, { allowUnknown: true });
+    assert.equal(r.ok, true, r.errors && r.errors.join('; '));
+    assert.equal(r.settings.videosPerRow, 8);
+    assert.equal(r.settings.hideVideosWatchedRatio, 0);
+    assert.equal(r.settings.videoRotationAngle, 0);
+    assert.equal(r.settings.returnDislikeCacheHours, 1);
+
+    // In-range / valid values pass through untouched.
+    const ok = pp.validateSettingsSnapshot({ videosPerRow: 5, videoRotationAngle: 90 }, { allowUnknown: true });
+    assert.equal(ok.settings.videosPerRow, 5);
+    assert.equal(ok.settings.videoRotationAngle, 90);
+});
+
 test('v5.0.0 policy-profile: store-safe export reverts github-full keys to schema defaults', () => {
     const core = loadPolicyProfileModule();
     const pp = core.createPolicyProfile();
