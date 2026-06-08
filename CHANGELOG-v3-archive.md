@@ -1031,8 +1031,8 @@ This pass closes three observability gaps and one dead-code finding:
 
 ### Chore
 
-- `.gitignore` now covers `.claude/`, `.codex/`, `.factory/`,
-  `docs/research/`, and the underscore spelling of
+- `.gitignore` now covers the local working-notes and tooling
+  directories, and the underscore spelling of
   `CODEX_CHANGELOG.md` alongside the existing dashed form.
 
 ## [3.20.1] - Hardening Pass 8 - 2026-04-24

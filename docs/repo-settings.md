@@ -138,7 +138,7 @@ Current snapshot from 2026-06-05:
 - Hosted baseline:
   - Push run `27002182993`: `CodeQL (javascript-typescript)` and
     `CodeQL (python)` both succeeded on branch
-    `codex/research-feature-plan-2026-06-05`.
+    `the working feature branch`.
   - Pull-request run `27002184466`: both language jobs also succeeded on the
     same head SHA.
 - Default setup remains `not-configured` because this repository now uses
@@ -216,7 +216,7 @@ Current snapshot from 2026-06-05:
 - Required approving reviews on `main`: 1.
 - Require code-owner reviews on `main`: disabled.
 - CODEOWNERS errors endpoint on feature branch
-  `codex/research-feature-plan-2026-06-05`: `errors: []`.
+  `the working feature branch`: `errors: []`.
 - CODEOWNERS errors endpoint on default branch: `404 Not Found` until the file
   lands on `main`.
 
