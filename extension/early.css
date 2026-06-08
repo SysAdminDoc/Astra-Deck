@@ -105,19 +105,28 @@ ytd-video-owner-renderer.style-scope.ytd-watch-metadata {
 }
 
 /* YouTube page chrome: remove skeleton / loading placeholders and
- * the "For You" / "Breaking News" / "Shorts" rich-section shelves. */
-ytd-ghost-grid-renderer.style-scope.ytd-continuation-item-renderer,
-div.style-scope.ytd-rich-section-renderer,
-ytd-rich-section-renderer.style-scope.ytd-rich-grid-renderer,
-ytd-continuation-item-renderer.style-scope.ytd-rich-grid-renderer {
+ * the "For You" / "Breaking News" / "Shorts" rich-section shelves.
+ *
+ * These (and the avatar hides below) are the author's canonical UX
+ * defaults, applied at document_start so there is no flash before the
+ * content script runs. They are now OPT-OUT: the "Restore Native YouTube
+ * UI" feature adds `html.ytkit-restore-native-ui`, which the
+ * `html:not(.ytkit-restore-native-ui)` guard below disables so YouTube's
+ * own styling applies cleanly (no display:revert guesswork). The default
+ * — class absent — keeps the rules active with zero FOUC. */
+html:not(.ytkit-restore-native-ui) ytd-ghost-grid-renderer.style-scope.ytd-continuation-item-renderer,
+html:not(.ytkit-restore-native-ui) div.style-scope.ytd-rich-section-renderer,
+html:not(.ytkit-restore-native-ui) ytd-rich-section-renderer.style-scope.ytd-rich-grid-renderer,
+html:not(.ytkit-restore-native-ui) ytd-continuation-item-renderer.style-scope.ytd-rich-grid-renderer {
     display: none !important;
 }
 
 /* YouTube avatars: hide the IMG element inside yt-img-shadow wrappers,
  * which collapses channel/comment avatars site-wide. The more specific
- * watch-page owner-row avatar is handled by the same rule. */
-img.style-scope.yt-img-shadow,
-yt-img-shadow.style-scope.ytd-video-owner-renderer.no-transition {
+ * watch-page owner-row avatar is handled by the same rule. Opt-out via
+ * the `html.ytkit-restore-native-ui` guard (see above). */
+html:not(.ytkit-restore-native-ui) img.style-scope.yt-img-shadow,
+html:not(.ytkit-restore-native-ui) yt-img-shadow.style-scope.ytd-video-owner-renderer.no-transition {
     display: none !important;
 }
 

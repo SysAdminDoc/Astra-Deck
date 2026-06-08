@@ -434,7 +434,7 @@
     "reactionSpammer": false,
     "_reactionSpammerAck": false
   },
-  "expectedDefaulted": [],
+  "expectedDefaulted": ["restoreNativeYouTubeUi"],
   "expectedAbsent": [
     "preferredQuality",
     "useEnhancedBitrate",
