@@ -47,7 +47,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // to the settings catalogue, adding another 40 bytes.
     // NF1 videoNotes adds `videoNotes` + `videoNotesData`, adding another
     // 39 bytes to the empty settings payload.
-    assert.equal(assessment.totalBytes, 177980);
+    assert.equal(assessment.totalBytes, 178011);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
@@ -68,7 +68,7 @@ test('storage audit report records the sync decision', () => {
     const report = formatReport(buildAuditPayloads());
 
     assert.match(report, /Safe-store profile sync candidate: viable \(5\.4 KB/);
-    assert.match(report, /Full UI preferences payload: not viable for sync \(11\.4 KB/);
+    assert.match(report, /Full UI preferences payload: not viable for sync \(11\.5 KB/);
     assert.match(report, /Whole chrome\.storage\.local payload: not viable for sync \(173\.8 KB/);
     assert.match(report, /Keep histories, caches, diagnostics, watch progress, and downloaded-state data local-only/);
 });

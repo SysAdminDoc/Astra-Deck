@@ -473,5 +473,6 @@
   "audioTrackLanguage": false,
   "preferredAudioLang": "en",
   "notifyAutoDubbedAudio": false,
-  "sleepTimer": false
+  "sleepTimer": false,
+  "restoreNativeYouTubeUi": false
 }

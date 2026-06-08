@@ -4130,6 +4130,7 @@ return response;
             // v3.23.0 (L23): NewPipe-style sleep timer. Off by default;
             // user opens via the in-chrome moon button + a prompt.
             sleepTimer: false,
+            restoreNativeYouTubeUi: false,
         },
 
         // Settings versioning and migration
@@ -24447,6 +24448,23 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._mouseUpHandler) document.removeEventListener('mouseup', this._mouseUpHandler, true);
                 this._wheelHandler = null; this._mouseDownHandler = null;
                 this._mouseMoveHandler = null; this._mouseUpHandler = null;
+            }
+        },
+        {
+            id: 'restoreNativeYouTubeUi',
+            name: 'Restore Native YouTube UI',
+            description: 'Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default. Toggles the early.css opt-out class so YouTube renders its own styling.',
+            group: 'Theme',
+            icon: 'eye',
+            init() {
+                // early.css gates its baked-in avatar/shelf hides behind
+                // `html:not(.ytkit-restore-native-ui)`; adding the class disables
+                // them so the native UI shows. Applied on <html> (not body) to
+                // match the early.css selectors.
+                document.documentElement.classList.add('ytkit-restore-native-ui');
+            },
+            destroy() {
+                document.documentElement.classList.remove('ytkit-restore-native-ui');
             }
         },
         {
