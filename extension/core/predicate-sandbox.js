@@ -36,15 +36,61 @@
         const ALLOWED_METHODS = new Set(['includes', 'startsWith', 'endsWith', 'match', 'test']);
         const STRING_METHODS = new Set(['includes', 'startsWith', 'endsWith', 'match']);
         const REGEX_METHODS = new Set(['test']);
-        // ReDoS guard — same shape videoHider uses for keyword regex.
+        // ReDoS guard — same shape videoHider uses for keyword regex, plus a
+        // hard length cap and a nesting-aware scan (the flat [^()] heuristics
+        // below cannot see catastrophic *nested* groups like ((ab)*)* because a
+        // nested paren breaks their character classes).
+        const MAX_REGEX_SOURCE = 200;
         function hasUnsafeQuantifiers(pattern) {
+            if (typeof pattern !== 'string') return true;
+            // A single regex this long on a per-card hot path is abuse, and a
+            // bounded source length bounds worst-case backtracking work.
+            if (pattern.length > MAX_REGEX_SOURCE) return true;
+
             const adjacent = /([+*?]|\{\d+,?\d*\})\s*[+*?]/.test(pattern);
             const groupInner = /\(([^()]*(?:[+*?]|\{\d+,?\d*\})[^()]*)\)\s*(?:[+*?]|\{\d+,?\d*\})/.test(pattern);
             // Overlapping-alternation backtracking: a group containing `|`, then
             // quantified by +/*/{n,} (e.g. (a|a|a)+, (a|aa)+). Overlapping branches
             // alone are exponential — no inner quantifier needed.
             const altGroupQuantified = /\([^()]*\|[^()]*\)\s*(?:[+*]|\{\d+,?\d*\})/.test(pattern);
-            return adjacent || groupInner || altGroupQuantified;
+            if (adjacent || groupInner || altGroupQuantified) return true;
+
+            // Nesting-aware scan: reject any group immediately followed by a
+            // repetition quantifier (+ * {n,}) when the group's own contents
+            // contain a quantifier or alternation at ANY depth — the classic
+            // exponential forms ((a+)+, ((ab)*)*, ((a|b)+)+). `?` is excluded as
+            // an OUTER quantifier (0-or-1 can't drive repetition explosion) but
+            // counts as inner risk. Escapes and character classes are skipped so
+            // literal metacharacters (\+, [+*]) don't false-trip.
+            const stack = [];
+            for (let i = 0; i < pattern.length; i++) {
+                const ch = pattern[i];
+                if (ch === '\\') { i++; continue; }
+                if (ch === '[') {
+                    i++;
+                    while (i < pattern.length && pattern[i] !== ']') {
+                        if (pattern[i] === '\\') i++;
+                        i++;
+                    }
+                    continue;
+                }
+                if (ch === '(') { stack.push({ innerRisk: false }); continue; }
+                if (ch === ')') {
+                    const group = stack.pop();
+                    if (!group) continue; // unbalanced — new RegExp() will reject later
+                    const next = pattern[i + 1];
+                    const repeated = next === '+' || next === '*' || next === '{';
+                    if (repeated && group.innerRisk) return true;
+                    if (stack.length && (repeated || group.innerRisk)) {
+                        stack[stack.length - 1].innerRisk = true;
+                    }
+                    continue;
+                }
+                if (stack.length && (ch === '+' || ch === '*' || ch === '?' || ch === '|' || ch === '{')) {
+                    stack[stack.length - 1].innerRisk = true;
+                }
+            }
+            return false;
         }
 
         // ── Tokenizer ──
