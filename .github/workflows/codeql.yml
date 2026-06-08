@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 'codex/**'
     paths-ignore:
       - '**/*.md'
       - docs/**

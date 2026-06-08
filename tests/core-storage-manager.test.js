@@ -1,6 +1,6 @@
 'use strict';
 
-// Regression coverage for the iter-8 N19 extraction of the StorageManager
+// Regression coverage for the extraction of the StorageManager
 // cache+debounce layer out of ytkit.js into
 // extension/core/storage-manager.js (exported as createStorageCache).
 //
