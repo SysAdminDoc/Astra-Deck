@@ -1,7 +1,7 @@
 (() => {
     'use strict';
 
-    // iter-8 N18 (N11 M-phase #4): TranscriptService moved out of the
+    // TranscriptService moved out of the
     // 44k-line ytkit.js monolith into a focused core module.
     //
     // Owns YouTube transcript retrieval via 5-method failover:

@@ -1,7 +1,7 @@
 (() => {
     'use strict';
 
-    // iter-8 N23-extended (N11 M-phase #6): SVG icon library + createSVG
+    // SVG icon library + createSVG
     // helper extracted out of the ytkit.js monolith into a focused core
     // module. The library has zero ytkit.js-internal dependencies — it
     // only consumes `document.createElementNS` — so the extraction is

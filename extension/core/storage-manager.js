@@ -1,29 +1,29 @@
 (() => {
     'use strict';
 
-    // iter-8 N19 (N11 M-phase #5): the StorageManager cache+debounce layer
+    // the StorageManager cache+debounce layer
     // moved out of the 44k-line ytkit.js monolith into a focused core
     // module. NOTE: there are TWO storage layers in this codebase and this
     // module is the HIGH-LEVEL one:
     //
-    //   - extension/core/storage.js  -> low-level cache + chrome.storage
-    //                                   wire-up + debounced background
-    //                                   writes + change-listener fan-out.
-    //                                   Exposes storageRead / storageWrite /
-    //                                   storageWriteMany / flushPendingStorageWrites.
+    // - extension/core/storage.js  -> low-level cache + chrome.storage
+    // wire-up + debounced background
+    // writes + change-listener fan-out.
+    // Exposes storageRead / storageWrite /
+    // storageWriteMany / flushPendingStorageWrites.
     //
-    //   - this module (storage-manager.js) -> per-monolith convenience layer
-    //                                  on top of the low-level functions:
-    //                                  in-memory cache, dirty set, debounce,
-    //                                  local-write echo dedupe for the
-    //                                  background.js relay loop, and an
-    //                                  unload-flush guard.
+    // - this module (storage-manager.js) -> per-monolith convenience layer
+    // on top of the low-level functions:
+    // in-memory cache, dirty set, debounce,
+    // local-write echo dedupe for the
+    // background.js relay loop, and an
+    // unload-flush guard.
     //
     // The name collision between core.storageRead (low-level) and the
     // monolith's `StorageManager.get` (high-level) is a known confusion;
     // the new export is named `createStorageCache` to disambiguate, while
     // the call site in ytkit.js keeps the local variable name
-    // `StorageManager` for minimal-diff continuity with iter-7 and earlier.
+    // `StorageManager` for minimal-diff continuity with and earlier.
     //
     // Dependencies are passed in as accessor callbacks so unit tests can
     // stub the chrome.storage round-trip with plain object mocks.
