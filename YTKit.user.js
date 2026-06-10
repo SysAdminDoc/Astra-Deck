@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         YTKit v4.46.2
+// @name         YTKit v4.46.3
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      4.46.2
+// @version      4.46.3
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YTKit.user.js
-// @description  Ultimate YouTube customization with ad blocking, SponsorBlock, video/channel hiding, playback enhancements, and 115+ features
+// @description  Ultimate YouTube customization with ad blocking, video/channel hiding, playback enhancements, and 115+ features
 // @author       Matthew Parker
 // @match        https://www.youtube.com/*
 // @match        https://youtube.com/*
@@ -12012,7 +12012,7 @@
     }
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.2';
+    const YTKIT_VERSION = '4.46.3';
 
     // ── Z-Index Hierarchy ──
     const Z = {
@@ -12388,7 +12388,12 @@
 
         // Method 2: Innertube API (most reliable for SPA navigation)
         async _method2_InnertubeAPI(videoId) {
-            const apiKey = this._getInnertubeApiKey() || 'REDACTED_GOOGLE_API_KEY';
+            const apiKey = this._getInnertubeApiKey();
+            if (!apiKey) {
+                // No page-derived key — never send a placeholder (guaranteed 400).
+                // Throwing lets _getCaptionTracks fail over to the next method.
+                throw new Error('Innertube API key unavailable');
+            }
             const clientVersion = this._getClientVersion() || '2.20250120.00.00';
 
             const response = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {
@@ -13196,6 +13201,7 @@
         _lastCheck: 0,
         _serverVersion: null,
         _autoStartAttempted: false,
+        _checkPromise: null,
         _CHECK_INTERVAL: 30000, // Re-check every 30s
         // Ports the companion may bind — must match AstraDownloader.PORT_FALLBACKS.
         // It prefers 9751 but falls back when Windows (e.g. Hyper-V) blocks it.
@@ -13237,9 +13243,9 @@
             });
         },
 
-        // GitHub raw URL for the PowerShell installer
-        INSTALLER_URL: 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1',
-        INSTALLER_COMMAND: "powershell -ExecutionPolicy Bypass -Command \"irm 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1' | iex\"",
+        // GitHub Release URL for the compiled installer exe
+        INSTALLER_URL: 'https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe',
+        INSTALLER_FILE_NAME: 'AstraDownloader.exe',
 
         // Quick health check — returns { ok, token, version, port } or { ok: false }.
         // Tries the cached port first, then probes the fallback list.
@@ -13248,6 +13254,15 @@
             if (!force && this._status === 'running' && this._token && (now - this._lastCheck < this._CHECK_INTERVAL)) {
                 return { ok: true, token: this._token, version: this._serverVersion, port: this._port };
             }
+            // Single-flight: concurrent callers share one in-flight probe sweep
+            // instead of each launching their own 6-port storm.
+            if (this._checkPromise) return this._checkPromise;
+            this._checkPromise = this._checkImpl(force).finally(() => { this._checkPromise = null; });
+            return this._checkPromise;
+        },
+
+        async _checkImpl(force) {
+            const now = Date.now();
             const order = [this._port, ...this._PORT_CANDIDATES.filter(p => p !== this._port)];
             for (const port of order) {
                 const data = await this._probePort(port);
@@ -13374,29 +13389,18 @@
                 btnCol.appendChild(retryBtn);
             }
 
-            // 2. Copy Install Command
-            const copyBtn = makeBtn('Copy Install Command (PowerShell)', '#22c55e', 'none', async () => {
-                try {
-                    await navigator.clipboard.writeText(this.INSTALLER_COMMAND);
-                    copyBtn.querySelector('span').textContent = 'Copied! Paste in PowerShell (Win+X \u2192 Terminal)';
-                    copyBtn.style.background = '#16a34a';
-                    showToast('Install command copied! Open PowerShell and paste to install.', '#22c55e', { duration: 8 });
-                } catch (_) {
-                    openExternalWindow(this.INSTALLER_URL);
-                }
-            });
-            btnCol.appendChild(copyBtn);
-
-            // 3. Download Installer Script
-            const dlBtn = makeBtn('Download Installer Script (.ps1)', 'transparent', '1px solid #30363d', () => {
-                triggerDownload(this.INSTALLER_URL, 'Install-YTYT.ps1').catch(() => {
+            // 2. Download Astra Downloader (.exe) - GitHub Releases install flow
+            const dlBtn = makeBtn('Download Astra Downloader (.exe)', '#22c55e', 'none', () => {
+                triggerDownload(this.INSTALLER_URL, this.INSTALLER_FILE_NAME).catch(() => {
                     openExternalWindow(this.INSTALLER_URL);
                 });
-                showToast('Installer downloaded! Right-click \u2192 Run with PowerShell', '#3b82f6', { duration: 6 });
+                dlBtn.querySelector('span').textContent = 'Downloading\u2026 open the file to install';
+                dlBtn.style.background = '#16a34a';
+                showToast('Astra Downloader setup is downloading \u2014 open the file to install, then check again below.', '#22c55e', { duration: 8 });
             });
             btnCol.appendChild(dlBtn);
 
-            // 4. "I just installed it" — re-check
+            // 3. "I just installed it" — re-check
             const recheckBtn = makeBtn('I just installed it \u2014 check again', 'transparent', '1px solid #30363d', async () => {
                 recheckBtn.querySelector('span').textContent = 'Checking...';
                 this.resetAutoStart();
@@ -13411,7 +13415,7 @@
             });
             btnCol.appendChild(recheckBtn);
 
-            // 5. Dismiss
+            // 4. Dismiss
             if (!isRetryMode) {
                 const dismissBtn = makeBtn('Not now', 'transparent', 'none', () => {
                     prompt.remove();
@@ -25544,36 +25548,21 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         };
                         actions.appendChild(startBtn);
 
-                        // "Install" button — copies PowerShell command
+                        // "Install" button — downloads the Astra Downloader release exe
                         const installBtn = document.createElement('button');
                         installBtn.style.cssText = btnStyle + 'border:none;background:#22c55e;color:white;';
-                        installBtn.textContent = 'Install';
-                        installBtn.title = 'Copy install command for PowerShell';
-                        installBtn.onclick = async () => {
-                            try {
-                                await navigator.clipboard.writeText(MediaDLManager.INSTALLER_COMMAND);
-                                installBtn.textContent = 'Copied!';
-                                installBtn.style.background = '#16a34a';
-                                showToast('Paste in PowerShell (Win+X \u2192 Terminal) to install.', '#22c55e', { duration: 8 });
-                                setTimeout(() => { installBtn.textContent = 'Install'; installBtn.style.background = '#22c55e'; }, 3000);
-                            } catch (_) {
-                                openExternalWindow(MediaDLManager.INSTALLER_URL);
-                            }
-                        };
-                        actions.appendChild(installBtn);
-
-                        // "Download .ps1" button — downloads installer script
-                        const dlBtn = document.createElement('button');
-                        dlBtn.style.cssText = btnStyle + 'border:1px solid var(--ytkit-border);background:transparent;color:var(--ytkit-text-secondary);';
-                        dlBtn.textContent = 'Download .ps1';
-                        dlBtn.title = 'Download the installer script to run manually';
-                        dlBtn.onclick = () => {
-                            triggerDownload(MediaDLManager.INSTALLER_URL, 'Install-YTYT.ps1').catch(() => {
+                        installBtn.textContent = 'Download .exe';
+                        installBtn.title = 'Download Astra Downloader (.exe) from GitHub Releases';
+                        installBtn.onclick = () => {
+                            triggerDownload(MediaDLManager.INSTALLER_URL, MediaDLManager.INSTALLER_FILE_NAME).catch(() => {
                                 openExternalWindow(MediaDLManager.INSTALLER_URL);
                             });
-                            showToast('Installer downloaded! Right-click \u2192 Run with PowerShell', '#3b82f6', { duration: 6 });
+                            installBtn.textContent = 'Downloading...';
+                            installBtn.style.background = '#16a34a';
+                            setTimeout(() => { installBtn.textContent = 'Download .exe'; installBtn.style.background = '#22c55e'; }, 3000);
+                            showToast('Astra Downloader setup is downloading — open the file to install.', '#22c55e', { duration: 6 });
                         };
-                        actions.appendChild(dlBtn);
+                        actions.appendChild(installBtn);
 
                         // Show comparison table
                         if (comp) {
@@ -25663,42 +25652,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         githubLink.title = 'View on GitHub';
         githubLink.appendChild(ICONS.github());
 
-        // YTYT-Downloader Installer Button - Downloads a .bat launcher
+        // Astra Downloader installer button - downloads the release exe
         const ytToolsBtn = document.createElement('button');
         ytToolsBtn.className = 'ytkit-github';
-        ytToolsBtn.title = 'Download & run this script to setup local YouTube downloads (VLC/MPV streaming, yt-dlp)';
+        ytToolsBtn.title = 'Download Astra Downloader (.exe) to set up local YouTube downloads (VLC/MPV streaming, yt-dlp)';
         ytToolsBtn.style.cssText = 'background: linear-gradient(135deg, #f97316, #22c55e) !important; border: none; cursor: pointer;';
         const dlIcon = ICONS.download();
         dlIcon.style.color = 'white';
         ytToolsBtn.appendChild(dlIcon);
 
         ytToolsBtn.addEventListener('click', () => {
-            // Generate a .bat file that runs the PowerShell installer
-            const batContent = `@echo off
-title YTYT-Downloader Installer
-echo ========================================
-echo   YTYT-Downloader Installer
-echo   VLC/MPV Streaming ^& Local Downloads
-echo ========================================
-echo.
-echo Downloading and running installer...
-echo.
-powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/Install-YTYT.ps1' -OutFile '%TEMP%\\Install-YTYT.ps1'"
-powershell -ExecutionPolicy Bypass -File "%TEMP%\\Install-YTYT.ps1"
-echo.
-echo If the window closes immediately, right-click and Run as Administrator.
-pause
-`;
-            const blob = new Blob([batContent], { type: 'application/x-bat' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Install-YTYT.bat';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            showToast('📦 Installer downloaded! Double-click the .bat file to run.', '#22c55e');
+            triggerDownload(MediaDLManager.INSTALLER_URL, MediaDLManager.INSTALLER_FILE_NAME).catch(() => {
+                openExternalWindow(MediaDLManager.INSTALLER_URL);
+            });
+            showToast('Astra Downloader setup is downloading — open the file to install.', '#22c55e');
         });
         const ytToolsLink = ytToolsBtn; // Alias for existing appendChild call
 
