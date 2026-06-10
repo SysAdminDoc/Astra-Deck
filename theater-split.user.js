@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Theater Split v1.0.7
+// @name         Theater Split v1.0.8
 // @namespace    https://github.com/SysAdminDoc/Astra-Deck
-// @version      1.0.7
+// @version      1.0.8
 // @updateURL      https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @downloadURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/theater-split.user.js
 // @description  Fullscreen video on YouTube watch pages. Scroll down to split: video left, comments/chat right. Scroll up to return.
@@ -13,6 +13,12 @@
 // @run-at       document-start
 // @grant        none
 // ==/UserScript==
+
+// Version history:
+//   @version 1.0.7 - divider-drag mid-SPA-nav cleanup (abortDividerDrag in teardown)
+//   @version 1.0.8 - YTKit coexistence guard: stand down when YTKit's built-in
+//                    stickyVideo split is detected, instead of fighting it for
+//                    the same scroll gesture.
 
 (function() {
     'use strict';
@@ -3113,9 +3119,50 @@
         setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }
 
+    // ── YTKit coexistence guard (v1.0.8) ────────────────────────────────────
+    // YTKit's built-in stickyVideo feature (default ON in the userscript
+    // build) implements the same scroll-down-to-split gesture this
+    // standalone script does. Running both makes them fight over the
+    // scroll gesture and the player DOM. YTKit runs in a separate
+    // userscript/extension sandbox, so its JS globals (window.__ytkit_*)
+    // are not visible from here — detection goes through the shared DOM
+    // instead: YTKit marks <html> with ytkit-split-active /
+    // ytkit-split-open while its split is armed/open, and mounts
+    // #ytkit-split-wrapper / #ytkit-masthead-btn elements.
+    let ytkitConflictDisabled = false;
+    let ytkitMarkerObserver = null;
+
+    function ytkitPresent() {
+        const root = document.documentElement;
+        return root.classList.contains('ytkit-split-active')
+            || root.classList.contains('ytkit-split-open')
+            || !!document.getElementById('ytkit-split-wrapper')
+            || !!document.getElementById('ytkit-masthead-btn');
+    }
+
+    function disableForYtkit() {
+        if (ytkitConflictDisabled) return;
+        ytkitConflictDisabled = true;
+        if (ytkitMarkerObserver) { ytkitMarkerObserver.disconnect(); ytkitMarkerObserver = null; }
+        if (isActive) teardown();
+        console.info('[Theater Split] YTKit detected (built-in stickyVideo split) — Theater Split is standing down to avoid fighting over the same scroll gesture.');
+    }
+
+    function watchForYtkit() {
+        if (ytkitMarkerObserver || ytkitConflictDisabled) return;
+        // Defensive late detection: YTKit may arm its split after we boot
+        // (both scripts race at document-start). Watch <html> for the
+        // ytkit-split-* classes appearing and stand down when they do.
+        ytkitMarkerObserver = new MutationObserver(() => {
+            if (ytkitPresent()) disableForYtkit();
+        });
+        ytkitMarkerObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
+
     // ── Activate / Deactivate ───────────────────────────────────────────────
     function activate() {
-        if (isActive) return;
+        if (isActive || ytkitConflictDisabled) return;
+        if (ytkitPresent()) { disableForYtkit(); return; }
         videoType = detectVideoType();
         mountOverlay();
     }
@@ -3220,6 +3267,11 @@
 
     // ── Init ────────────────────────────────────────────────────────────────
     function init() {
+        if (ytkitPresent()) {
+            disableForYtkit();
+            return;
+        }
+        watchForYtkit();
         window.addEventListener('yt-navigate-finish', onNavigate);
         document.addEventListener('fullscreenchange', onFullscreenChange);
         window.addEventListener('popstate', () => setTimeout(onNavigate, 300));
