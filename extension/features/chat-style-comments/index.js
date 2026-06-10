@@ -1344,11 +1344,13 @@
         const removeRule = typeof options.removeMutationRule === 'function' ? options.removeMutationRule : null;
         const featureId = options.featureId || 'chatStyleComments';
         let processScheduled = false;
+        let destroyed = false;
         const runtime = {
             _commentSelectionSelectStartHandler: null,
             _mutationHandler: null,
             init() {
                 if (!doc || !win || !addRule) return;
+                destroyed = false;
                 this._commentSelectionSelectStartHandler = (e) => {
                     if (!isCommentTextSelectionTarget(e.target)) return;
                     e.stopPropagation();
@@ -1357,16 +1359,21 @@
                 win.addEventListener('selectstart', this._commentSelectionSelectStartHandler, true);
                 processAllComments(doc);
                 this._mutationHandler = () => {
-                    if (processScheduled) return;
+                    if (destroyed || processScheduled) return;
                     processScheduled = true;
                     raf(() => {
                         processScheduled = false;
+                        // A rAF queued just before destroy() fires after it —
+                        // without this guard it would re-tag the DOM that
+                        // cleanupRuntimeDom() just stripped.
+                        if (destroyed) return;
                         processAllComments(doc);
                     });
                 };
                 addRule(featureId, this._mutationHandler);
             },
             destroy() {
+                destroyed = true;
                 processScheduled = false;
                 if (this._commentSelectionSelectStartHandler && win) {
                     win.removeEventListener('selectstart', this._commentSelectionSelectStartHandler, true);

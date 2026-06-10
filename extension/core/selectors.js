@@ -458,7 +458,9 @@
         if (typeof core.waitForElement === 'function') {
             let cancel = null;
             let timeoutHandle = null;
+            let settle = null;
             const promise = new Promise((resolve) => {
+                settle = resolve;
                 cancel = core.waitForElement(selector, (element) => {
                     if (timeoutHandle != null) {
                         clearTimeout(timeoutHandle);
@@ -483,6 +485,11 @@
                     timeoutHandle = null;
                 }
                 cancel?.();
+                // Cancellation must still settle the promise — clearing the
+                // timer/observer without resolving leaves awaiting callers
+                // hung forever. resolve() is idempotent, so a cancel after a
+                // found-element resolve is a harmless no-op.
+                settle?.(null);
             };
             return promise;
         }

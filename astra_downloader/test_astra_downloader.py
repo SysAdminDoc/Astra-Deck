@@ -1815,6 +1815,148 @@ class EndToEndDownloadTests(unittest.TestCase):
             self.assertEqual(len(history.entries), 0,
                 "failed download must NOT write a history entry")
 
+    def test_parse_loop_crash_terminates_orphan_and_purges_cookie_jar(self):
+        """Audit fix: an unexpected exception inside the output-parsing loop
+        must not orphan the still-running yt-dlp tree. The finally has to
+        kill the process tree BEFORE unlinking the cookie jar, so the orphan
+        never outlives (or holds open) the credential file."""
+        token = "k" * 32
+
+        class ExplodingStdout:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                raise OSError("boom: stdout read failed mid-stream")
+
+        class FakeProc:
+            def __init__(self):
+                self.stdout = ExplodingStdout()
+                self.returncode = None
+
+            def poll(self):
+                # Still running — this is the orphan scenario.
+                return None
+
+            def wait(self, timeout=None):
+                return None
+
+            def terminate(self):
+                pass
+
+            def kill(self):
+                pass
+
+        fake_proc = FakeProc()
+        cookies = [{
+            "domain": ".youtube.com", "name": "SID", "value": "abc",
+            "path": "/", "secure": True, "httpOnly": True,
+            "expirationDate": 1700000000,
+        }]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = FakeConfig({
+                "ServerToken": token,
+                "DownloadPath": tmpdir,
+                "AudioDownloadPath": tmpdir,
+            })
+            history = FakeHistory()
+            with mock.patch.object(ad, 'INSTALL_DIR', Path(tmpdir)):
+                manager = ad.DownloadManager(config, history)
+                with mock.patch.object(ad.subprocess, 'Popen', return_value=fake_proc), \
+                     mock.patch.object(ad, 'probe_po_token_provider', return_value=None), \
+                     mock.patch.object(ad, 'write_persistent_log', return_value=None), \
+                     mock.patch.object(ad, 'terminate_process_tree') as terminate:
+                    dl_id, err = manager.start_download(
+                        url="https://www.youtube.com/watch?v=crashCase",
+                        cookies=cookies,
+                    )
+                    self.assertIsNone(err)
+                    dl = manager.downloads[dl_id]
+                    # Wait for the finally to finish (status flips to failed in
+                    # the except, BEFORE the finally runs — so poll on the
+                    # jar/process fields, not just the terminal status).
+                    deadline = time.time() + 2.0
+                    while time.time() < deadline:
+                        if dl.cookies_file is None and dl.process is None:
+                            break
+                        time.sleep(0.01)
+
+                    self.assertEqual(dl.status, "failed")
+                    terminate.assert_called_once_with(fake_proc)
+                    self.assertIsNone(dl.process,
+                        "finally must null dl.process after the kill")
+                    self.assertIsNone(dl.cookies_file,
+                        "cookie jar reference must be cleared")
+                    leftovers = list(Path(tmpdir).glob(".cookies.*.txt"))
+                    self.assertEqual(leftovers, [],
+                        "cookie jar file must be unlinked after the orphan is killed")
+                    self.assertEqual(len(history.entries), 0)
+
+
+class DownloadSizeCeilingTests(unittest.TestCase):
+    """Audit fix: download_file_atomic must enforce a byte ceiling while
+    streaming so a misbehaving CDN can't fill the disk before the SHA-256
+    check ever runs."""
+
+    class _FakeResponse:
+        def __init__(self, chunks, headers=None):
+            self._chunks = list(chunks)
+            self.headers = headers or {}
+
+        def raise_for_status(self):
+            pass
+
+        def iter_content(self, _chunk_size):
+            return iter(self._chunks)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def test_default_ceiling_constant_is_500_mb(self):
+        self.assertEqual(ad.HELPER_DOWNLOAD_MAX_BYTES, 500 * 1024 * 1024)
+
+    def test_rejects_oversized_content_length_before_streaming(self):
+        resp = self._FakeResponse([b"x" * 4], headers={"content-length": "1000"})
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "asset.bin"
+            with mock.patch.object(ad.http_requests, 'get', return_value=resp):
+                with self.assertRaises(RuntimeError):
+                    ad.download_file_atomic(
+                        "https://example.invalid/asset", target, max_bytes=10,
+                    )
+            self.assertFalse(target.exists())
+            self.assertEqual(list(Path(tmp).iterdir()), [],
+                "no partial temp file may remain after the abort")
+
+    def test_aborts_and_cleans_partial_when_stream_exceeds_limit(self):
+        # No content-length header — the server lies by omission, so the
+        # streamed byte count itself must trip the ceiling mid-download.
+        resp = self._FakeResponse([b"x" * 8, b"y" * 8])
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "asset.bin"
+            with mock.patch.object(ad.http_requests, 'get', return_value=resp):
+                with self.assertRaises(RuntimeError):
+                    ad.download_file_atomic(
+                        "https://example.invalid/asset", target, max_bytes=10,
+                    )
+            self.assertFalse(target.exists())
+            self.assertEqual(list(Path(tmp).iterdir()), [],
+                "partial download must be cleaned up on ceiling breach")
+
+    def test_download_within_limit_still_succeeds(self):
+        resp = self._FakeResponse([b"hello", b"world"],
+                                  headers={"content-length": "10"})
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "asset.bin"
+            with mock.patch.object(ad.http_requests, 'get', return_value=resp):
+                ad.download_file_atomic(
+                    "https://example.invalid/asset", target, max_bytes=10,
+                )
+            self.assertEqual(target.read_bytes(), b"helloworld")
+
 
 class ResponseSizeCapTests(unittest.TestCase):
     """v1.5.1 / RESEARCH_FEATURE_PLAN EI12: bounded HTTP surface.
@@ -2364,6 +2506,138 @@ class CompanionUpdateEndpointTests(unittest.TestCase):
         self.assertIn("SHA-256", body.get("error", ""))
         schedule.assert_not_called()
         exit_later.assert_not_called()
+
+    # ── Audit fix: version-skew reinstall-loop guard ──
+    # main's APP_VERSION can be bumped before the release asset exists; in
+    # that window releases/latest serves the binary already installed. The
+    # guard compares the asset digest against the last scheduled update (and
+    # the running frozen binary) and refuses to re-schedule a no-op replace.
+
+    @staticmethod
+    def _fake_payload(tag=b"A"):
+        return b"MZ" + tag + (b"\0" * ad.COMPANION_UPDATE_MIN_BYTES)
+
+    def test_same_asset_as_last_installed_update_is_not_rescheduled(self):
+        client = self._client()
+        payload = self._fake_payload()
+        expected_hash = hashlib.sha256(payload).hexdigest()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(payload)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected_hash), \
+             mock.patch.object(ad, 'schedule_companion_update_restart') as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later:
+            # State file says: this exact digest was already installed.
+            ad.record_last_installed_update_sha256(expected_hash)
+            resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+            leftovers = list(Path(tmp).glob(".AstraDownloader.update.*.exe"))
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertFalse(body.get("update_available"),
+            "re-serving the already-installed asset must not loop the update")
+        self.assertEqual(body.get("status"), "release-pending")
+        self.assertEqual(body.get("latest_version"), "9.9.9")
+        schedule.assert_not_called()
+        exit_later.assert_not_called()
+        self.assertEqual(leftovers, [],
+            "the downloaded duplicate asset must be deleted")
+
+    def test_asset_matching_running_frozen_binary_is_not_rescheduled(self):
+        client = self._client()
+        payload = self._fake_payload()
+        expected_hash = hashlib.sha256(payload).hexdigest()
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(payload)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256', return_value=expected_hash), \
+             mock.patch.object(ad, 'schedule_companion_update_restart') as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit') as exit_later, \
+             mock.patch.object(ad, 'is_frozen_app', return_value=True):
+            # Simulate the running frozen exe being byte-identical to the
+            # releases/latest asset. No state file exists — the running-binary
+            # digest alone must stop the loop.
+            running = Path(tmp) / "AstraDownloader.exe"
+            running.write_bytes(payload)
+            with mock.patch.object(ad, 'current_executable_path', return_value=running):
+                resp = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertFalse(body.get("update_available"))
+        self.assertEqual(body.get("status"), "release-pending")
+        schedule.assert_not_called()
+        exit_later.assert_not_called()
+
+    def test_successful_update_records_digest_and_newer_release_installs(self):
+        client = self._client()
+        payload_a = self._fake_payload(b"A")
+        payload_b = self._fake_payload(b"B")
+        hash_a = hashlib.sha256(payload_a).hexdigest()
+        hash_b = hashlib.sha256(payload_b).hexdigest()
+        serving = {'payload': payload_a, 'hash': hash_a}
+
+        def fake_download(_url, path, **_kwargs):
+            Path(path).write_bytes(serving['payload'])
+
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)), \
+             mock.patch.object(ad, 'fetch_latest_companion_version', return_value="9.9.9"), \
+             mock.patch.object(ad, 'download_file_atomic', side_effect=fake_download), \
+             mock.patch.object(ad, 'fetch_expected_sha256',
+                               side_effect=lambda *a, **k: serving['hash']), \
+             mock.patch.object(ad, 'schedule_companion_update_restart',
+                               return_value={'scheduled': True,
+                                             'target': str(Path(tmp) / "AstraDownloader.exe")}) as schedule, \
+             mock.patch.object(ad, 'schedule_companion_process_exit'):
+            # First cycle: release A installs and its digest gets recorded.
+            resp_a = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+            self.assertEqual(resp_a.status_code, 200)
+            self.assertTrue(resp_a.get_json().get("update_available"))
+            self.assertEqual(schedule.call_count, 1)
+            self.assertEqual(ad.read_last_installed_update_sha256(), hash_a,
+                "the scheduled update's digest must be persisted")
+
+            # Same release served again: refused (no reinstall loop).
+            resp_repeat = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+            self.assertEqual(resp_repeat.get_json().get("status"), "release-pending")
+            self.assertEqual(schedule.call_count, 1)
+
+            # A genuinely newer release (different bytes): installs normally.
+            serving['payload'], serving['hash'] = payload_b, hash_b
+            resp_b = client.post("/update", headers={"X-Auth-Token": self.TOKEN})
+            self.assertEqual(resp_b.status_code, 200)
+            self.assertTrue(resp_b.get_json().get("update_available"))
+            self.assertEqual(schedule.call_count, 2)
+            self.assertEqual(ad.read_last_installed_update_sha256(), hash_b)
+
+    def test_update_state_helpers_tolerate_missing_and_garbage_state(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             mock.patch.object(ad, 'INSTALL_DIR', Path(tmp)):
+            # No state file yet.
+            self.assertIsNone(ad.read_last_installed_update_sha256())
+            # Garbage / wrong-shape contents must read as None, not raise.
+            state = Path(tmp) / "companion-update-state.json"
+            for garbage in (b"not json", b"[]", b'{"sha256": 42}',
+                            b'{"sha256": "nothex"}'):
+                state.write_bytes(garbage)
+                self.assertIsNone(ad.read_last_installed_update_sha256())
+            # Round trip normalizes to lowercase hex.
+            digest = "A" * 64
+            ad.record_last_installed_update_sha256(digest)
+            self.assertEqual(ad.read_last_installed_update_sha256(), "a" * 64)
 
 
 class NativeMessagingBootstrapTests(unittest.TestCase):

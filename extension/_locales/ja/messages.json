@@ -1232,6 +1232,12 @@
   "feature_restoreNativeYouTubeUi_desc": {
     "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
   },
+  "feature_cleanUiPreset_name": {
+    "message": "Compact Clean UI"
+  },
+  "feature_cleanUiPreset_desc": {
+    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
+  },
   "feature_abLoop_name": {
     "message": "A-B Loop"
   },
@@ -2250,7 +2256,7 @@
     "message": "Forced Colors / High Contrast Support"
   },
   "feature_forcedColorsSupport_desc": {
-    "message": "When the OS reports forced-colors (Windows High Contrast, GTK forced colors), use system colors for every Astra-injected control so text remains readable and focus rings are visible."
+    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
   },
   "feature_globalAriaLiveRegion_name": {
     "message": "Live Region For Toasts"
