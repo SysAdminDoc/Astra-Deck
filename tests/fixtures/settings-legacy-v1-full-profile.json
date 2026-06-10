@@ -429,12 +429,10 @@
     "hideQualityPopup": true
   },
   "expectedOverrides": {
-    "hidePinnedComments": true,
-    "autoExpandComments": true,
     "reactionSpammer": false,
     "_reactionSpammerAck": false
   },
-  "expectedDefaulted": ["restoreNativeYouTubeUi"],
+  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset"],
   "expectedAbsent": [
     "preferredQuality",
     "useEnhancedBitrate",

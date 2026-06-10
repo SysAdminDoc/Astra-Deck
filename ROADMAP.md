@@ -83,6 +83,13 @@
   Acceptance: live_chat frames load only chat-relevant modules (or full bundle exits init before non-chat feature registration); Premium Live Chat, chat filters, and Reaction Spammer still work; measured script-eval time in the chat iframe drops materially (record before/after in the diagnostic log).
   Complexity: M
 
+- [ ] P1 — Userscript/extension sync is structural drift, not sync
+  Why: `sync-userscript.js` only rewrites the metadata header and re-bundles a hardcoded 22-module list; the ~15k-line monolith body is hand-maintained. The extension carries 247 feature ids vs 178 in the userscript; SponsorBlock, subscriptionGroups, the v4 export schema-validation wiring, and most post-v3 fixes never reached the userscript (the bundled `policy-profile.js` ships but is never called by the userscript's export/import path). Bundling also re-indents module template literals, so "verbatim" parity is already false.
+  Evidence: 2026-06-10 audit; `V5_BUNDLE_MODULES` (22) vs manifest content_scripts (~64); userscript `exportVersion: 3` vs extension `exportVersion: 4`.
+  Touches: `sync-userscript.js` (drift report or real conversion), CI guard comparing module lists, `YTKit.user.js` export/import path, decision on feature-parity scope
+  Acceptance: either a documented, CI-enforced "userscript ships subset X" contract, or the userscript export/import wires `validateSettingsSnapshot` and a drift report fails CI when a bundled module diverges.
+  Complexity: L
+
 ### P1 — Accessibility
 
 - [ ] P1 — RTL locale support (Arabic, Hebrew)
@@ -244,6 +251,34 @@
   Touches: `extension/ytkit.js` (DeArrow UI: vote buttons on replaced titles, submit dialog), `extension/background.js` + `core/data-flow.js` (POST endpoints on sponsor.ajay.app, userID generation/storage with credential-scrub exemption review), privacy policy text
   Acceptance: Users can vote on a replaced title and submit a new title/timestamp thumbnail; the generated userID never leaves DeArrow requests and is excluded from settings exports; feature is off by default.
   Complexity: M
+
+- [ ] P3 — storage.js: failed-flush retry can resurrect a stale value over a newer successful write
+  Why: when two immediate flushes interleave and the older one fails, its catch merges the stale snapshot back into the retry payload, overwriting the newer value; the onChanged echo check then misses and the stale value applies as an external change.
+  Where: `extension/core/storage.js:92-118` (re-stage failed keys from `extensionStateCache` instead of the stale `writes` snapshot)
+
+- [ ] P3 — styles.js `stripCommentRestyleCss` corrupts CSS containing at-rules (latent)
+  Why: the `}`-split would delete an `@media`/`@supports` opener if a filtered selector appears first inside it, leaking subsequent rules out of the query. No current builder emits at-rules; one `@media` away from active breakage with no test guard.
+  Where: `extension/core/styles.js:81-91`
+
+- [ ] P3 — Companion update helper should re-verify the staged EXE digest before MoveFileEx
+  Why: the SHA-256 check runs in the exiting process, but the detached PowerShell helper swaps the file minutes later with no re-hash — a same-user process can replace the staged binary in the window (TOCTOU; limited new privilege but defeats the integrity check).
+  Where: `astra_downloader/astra_downloader.py:1216-1263` (pass the expected digest into the helper and re-hash before the move)
+
+- [ ] P3 — Reproducible release artifacts (fixed zip/CRX timestamps)
+  Why: zips preserve fresh-copy mtimes and CRX signing doesn't pin `forceDateTime`, so byte-identical inputs hash differently per run — `compare-release-digests` only works against the producing run and third parties can't reproduce attested hashes.
+  Where: `build-extension.js` (zip with fixed entry timestamps; pass `forceDateTime` to crx3)
+
+- [ ] P3 — generate-release-manifest: reject stray files and empty commit metadata
+  Why: unexpected files in `build/` are silently hashed into the manifest/SHA256SUMS as "auxiliary" and uploaded+attested; `git()` failures emit `commit: ""` silently.
+  Where: `scripts/generate-release-manifest.js:23-33, 92-136` (allowlist asset names, hard-fail on `*.pem`, fail when both `GITHUB_SHA` and `git rev-parse` are empty)
+
+- [ ] P3 — i18n: non-EN locales still say "MediaDL" and miss the new popup clipboard-fallback key
+  Why: the 4.46.3 "Astra Downloader" naming pass updated inline fallbacks and `en` only — 9 locales keep the old product names in their translated strings, and `selectorHealthCopySaveFallback` is not bundled in any locale (English fallback shows everywhere).
+  Where: `extension/_locales/*/messages.json` (companion-name keys + `selectorHealthCopySaveFallback`), `npm run i18n:proofing-export` queue
+
+- [ ] P3 — Settings panel: remove or re-wire the vestigial `_panelCleanups` machinery
+  Why: no `.push()` call site remains; `buildSettingsPanel._panelObs` watches every `document.body` class flip for the session purely to iterate an always-empty array — dead contract + background observer cost.
+  Where: `extension/ytkit.js:1061, 35150-35157`
 
 - [ ] P3 — Play subscription group as queue
   Why: PocketTube's "play all videos by collection" is its stickiest feature; Astra Deck groups can already enumerate rendered videos per group but offer no one-click way to watch them.
