@@ -2749,6 +2749,8 @@
             _videoType: 'standard',        // 'live' | 'vod' | 'standard'
             _positionedEls: [],            // elements we CSS-positioned over right panel
             _scrollTarget: null,           // which element receives scroll/wheel handlers
+            _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
+            _destroyed: false,             // blocks zombie mounts after teardown
 
             _getPlayer()  { return document.querySelector('#player-container'); },
             _belowCache: null,
@@ -4792,7 +4794,10 @@
                 this._videoType = VideoTypeDetector.refresh();
 
                 const doMount = () => {
-                    if (this._isActive) return;
+                    // _destroyed guard: the waitForElement chains below can
+                    // fire several seconds later — after teardown they must
+                    // not resurrect an overlay with no styles and no teardown.
+                    if (this._destroyed || this._isActive) return;
                     // Apply class right before mount — prevents broken half-state
                     // where masthead is hidden but overlay hasn’t mounted yet
                     document.documentElement.classList.add('ytkit-split-active');
@@ -4807,15 +4812,27 @@
                 if (player && hasContent) {
                     doMount();
                 } else {
-                    waitForElement('#player-container', () => {
-                        waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                    this._cancelPendingWaits();
+                    this._pendingWaits.push(waitForElement('#player-container', () => {
+                        if (this._destroyed) return;
+                        this._pendingWaits.push(waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                            if (this._destroyed) return;
                             if (window.location.pathname.startsWith('/watch')) doMount();
-                        });
-                    });
+                        }));
+                    }));
                 }
             },
 
+            _cancelPendingWaits() {
+                for (const cancel of this._pendingWaits) {
+                    try { if (typeof cancel === 'function') cancel(); }
+                    catch { /* reason: wait cancellation is best-effort teardown */ }
+                }
+                this._pendingWaits = [];
+            },
+
             init() {
+                this._destroyed = false;
                 const css = buildSplitShellCss();
                 this._styleEl = injectStyle(stripCommentRestyleCss(css), this.id, true);
                 this._splitMetaStyleEl?.remove();
@@ -4829,6 +4846,8 @@
             },
 
             destroy() {
+                this._destroyed = true;
+                this._cancelPendingWaits();
                 this._unmount();
                 this._restoreSplitActionDock();
                 this._stopChatObserver();

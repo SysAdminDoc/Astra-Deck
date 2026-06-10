@@ -19,8 +19,8 @@
       "expected": {
         "hideCreateButton": false,
         "autoMaxResolution": false,
-        "hidePinnedComments": true,
-        "autoExpandComments": true,
+        "hidePinnedComments": false,
+        "autoExpandComments": false,
         "safeUnknownKey": "custom-v1"
       },
       "absent": ["preferredQuality", "useEnhancedBitrate", "hideQualityPopup", "__proto__", "constructor"]
