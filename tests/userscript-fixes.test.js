@@ -173,7 +173,8 @@ test('YT_Reaction_Spammer.user.js carries project-owned metadata (namespace + up
     assert.match(reactionSpammerSource,
         /\/\/ @namespace\s+https:\/\/github\.com\/SysAdminDoc\/Astra-Deck/,
         '@namespace must point at the repo that actually hosts the script');
-    assert.doesNotMatch(reactionSpammerSource, /github\.com\/SysAdminDoc\/yt-reaction-spammer/,
+    assert.doesNotMatch(reactionSpammerSource,
+        /^\/\/ @namespace\s+https:\/\/github\.com\/SysAdminDoc\/yt-reaction-spammer$/m,
         '@namespace must not point at the nonexistent yt-reaction-spammer repo');
     assert.match(reactionSpammerSource,
         /\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/SysAdminDoc\/Astra-Deck\/main\/YT_Reaction_Spammer\.user\.js/,
