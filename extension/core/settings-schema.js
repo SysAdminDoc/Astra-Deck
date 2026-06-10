@@ -215,8 +215,10 @@ const SETTINGS_SCHEMA = Object.freeze([
     // Default 0.8 lets a feed where 20% of cards survive the filter
     // continue to paginate normally instead of locking after one
     // unlucky batch streak. Invalid values fall back to 0.8 at the
-    // call site; range is documented as (0, 1].
-    Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, min: 0, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+    // call site; range is documented as (0, 1]. min is 0.05 (not 0):
+    // every consumer treats raw <= 0 as invalid and silently falls back
+    // to 0.8, so a schema-legal 0 would never actually behave as 0.
+    Object.freeze({ key: "hideVideosSubsLoadHiddenRatio", category: "content-filter", type: "number", defaultValue: 0.8, min: 0.05, max: 1, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "hideVideosRemoveHiddenCards", category: "content-filter", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosShowQuickHideButton", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "hideVideosAllowChannelBlock", category: "content-filter", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "feed", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
@@ -738,6 +740,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "notifyAutoDubbedAudio", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "sleepTimer", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "restoreNativeYouTubeUi", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.0" }),
+    Object.freeze({ key: "cleanUiPreset", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "4.46.3" }),
 ]);
 
 // Build a {key: defaultValue} map for chrome.storage.local seeding +
