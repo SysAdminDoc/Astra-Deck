@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name         YT Reaction Spammer
-// @namespace    https://github.com/SysAdminDoc/yt-reaction-spammer
-// @version      0.3.0
+// @namespace    https://github.com/SysAdminDoc/Astra-Deck
+// @version      0.3.1
+// @updateURL    https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YT_Reaction_Spammer.user.js
+// @downloadURL  https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/YT_Reaction_Spammer.user.js
 // @description  Pick which YouTube live-chat reactions to spam; fires them in a random sequence at a chosen interval (minimum 500 ms).
 // @author       SysAdminDoc
 // @match        https://www.youtube.com/live_chat*
@@ -15,6 +17,17 @@
 
   const PANEL_ID  = 'yt-reaction-spammer-panel';
   const STORAGE   = 'yt-reaction-spammer-state-v1';
+
+  // ---------- YTKit coexistence guard (v0.3.1) ----------
+  // The Astra Deck extension ships an integrated reaction spammer that
+  // mounts #ytkit-reaction-spammer-launcher / #ytkit-reaction-spammer-panel
+  // into this same live-chat frame. Running both would double-fire
+  // reactions and stack two panels. If YTKit's UI is mounted, this
+  // standalone script stands down.
+  let ytkitConflictDisabled = false;
+  const ytkitSpammerPresent = () =>
+    !!document.getElementById('ytkit-reaction-spammer-launcher') ||
+    !!document.getElementById('ytkit-reaction-spammer-panel');
 
   // v0.3.0 (N3): 500 ms floor on the spam interval. Faster than ~2 Hz risks
   // YouTube's automated-behavior heuristics flagging the account. The upper
@@ -394,7 +407,17 @@
   };
 
   // ---------- bootstrap ----------
+  const disableForYtkit = () => {
+    if (ytkitConflictDisabled) return;
+    ytkitConflictDisabled = true;
+    stop();
+    document.getElementById(PANEL_ID)?.remove();
+    console.info('[YT Reaction Spammer] YTKit integrated reaction spammer detected — standalone panel is standing down.');
+  };
+
   const ready = () => {
+    if (ytkitConflictDisabled) return;
+    if (ytkitSpammerPresent()) { disableForYtkit(); return; }
     if (document.body) buildPanel();
     else setTimeout(ready, 100);
   };
@@ -402,6 +425,13 @@
 
   // Re-scan reactions when chat DOM mutates (panel may load late)
   const mo = new MutationObserver(() => {
+    // Defensive late detection: YTKit's integrated spammer UI may mount
+    // after this script boots — stand down as soon as it appears.
+    if (ytkitConflictDisabled || ytkitSpammerPresent()) {
+      disableForYtkit();
+      mo.disconnect();
+      return;
+    }
     if (!listEl) return;
     const found = findButtons().size;
     const rendered = listEl.querySelectorAll('button[title^="Fire "]').length;
