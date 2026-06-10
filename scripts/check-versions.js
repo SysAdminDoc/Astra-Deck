@@ -90,8 +90,14 @@ function readSettingsMetaVersion() {
 
 function parseTagFlag(argv) {
     const idx = argv.indexOf('--tag');
-    if (idx === -1 || idx + 1 >= argv.length) return null;
+    if (idx === -1) return null;
+    // `--tag` with a missing/empty value must fail loudly. An empty string
+    // here used to fall through the falsy `if (tagOverride)` gate and
+    // silently skip tag validation — e.g. when a CI variable expands empty.
     const raw = argv[idx + 1];
+    if (raw === undefined || raw.trim() === '' || raw.startsWith('--')) {
+        throw new Error('--tag requires a non-empty value (e.g. --tag v4.46.2); refusing to silently skip tag validation');
+    }
     return raw.startsWith('v') ? raw.slice(1) : raw;
 }
 

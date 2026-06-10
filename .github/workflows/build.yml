@@ -14,6 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -65,14 +66,34 @@ jobs:
           path: build/*
           if-no-files-found: error
 
+      # Attestation steps are retried once: sigstore/rekor outages are transient
+      # (a timeout failed the v4.46.2 release), but a release must never ship
+      # silently unattested — the retry step is fatal if it fails too.
       - name: Attest build provenance
+        id: attest-provenance
         if: startsWith(github.ref, 'refs/tags/')
+        continue-on-error: true
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
+        with:
+          subject-path: build/*
+
+      - name: Attest build provenance (retry)
+        if: startsWith(github.ref, 'refs/tags/') && steps.attest-provenance.outcome == 'failure'
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
         with:
           subject-path: build/*
 
       - name: Attest npm SBOM
+        id: attest-sbom
         if: startsWith(github.ref, 'refs/tags/')
+        continue-on-error: true
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4
+        with:
+          subject-path: build/*
+          sbom-path: build/astra-deck-npm-sbom.cdx.json
+
+      - name: Attest npm SBOM (retry)
+        if: startsWith(github.ref, 'refs/tags/') && steps.attest-sbom.outcome == 'failure'
         uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4
         with:
           subject-path: build/*
