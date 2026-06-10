@@ -5,7 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execSync } = require('child_process');
+const crypto = require('crypto');
+const { execSync, execFileSync } = require('child_process');
 const crx3 = require('crx3');
 const { getUserscriptBasename, resolveUserscriptPath } = require('./scripts/repo-paths');
 const {
@@ -297,7 +298,11 @@ const STAGE_SKIP_SUFFIXES = [
     '.tmp',
     '.bak',
     '.orig',
-    '.rej'
+    '.rej',
+    // Key material and logs must never ship inside an artifact, even if a
+    // stray ytkit.pem / debug.log lands in extension/ on a developer machine.
+    '.pem',
+    '.log'
 ];
 
 function shouldStageEntry(entryName) {
@@ -320,19 +325,22 @@ function copyDir(src, dest) {
     }
 }
 
-function escapePowershellSingleQuotedString(value) {
-    return String(value).replace(/'/g, "''");
-}
-
 function createZip(sourceDir, zipPath) {
     if (process.platform === 'win32') {
-        // Use Get-ChildItem -Force to include dotfiles, unlike the \* glob
-        const escapedSourceDir = escapePowershellSingleQuotedString(sourceDir);
-        const escapedZipPath = escapePowershellSingleQuotedString(zipPath);
-        execSync(
-            `powershell -NoProfile -Command "Get-ChildItem -LiteralPath '${escapedSourceDir}' -Force | Compress-Archive -DestinationPath '${escapedZipPath}' -Force"`,
-            { stdio: 'inherit' }
-        );
+        // Windows ships bsdtar at System32\tar.exe; `-a` infers ZIP format
+        // from the .zip suffix. PowerShell 5.1's archive cmdlet writes
+        // backslash entry separators, which AMO rejects for XPIs and which
+        // break unzip on Linux — bsdtar writes forward slashes. The full
+        // System32 path matters: a bare `tar` resolves to GNU tar inside
+        // Git Bash, which silently emits a POSIX tar instead of a ZIP.
+        // Enumerating top-level entries (instead of `.`) includes dotfiles
+        // while avoiding bsdtar's `./` entry-name prefix.
+        const bsdtar = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
+        const entries = fs.readdirSync(sourceDir);
+        if (!entries.length) {
+            throw new Error('createZip: nothing to package in ' + sourceDir);
+        }
+        execFileSync(bsdtar, ['-a', '-cf', zipPath, '-C', sourceDir, ...entries], { stdio: 'inherit' });
     } else {
         execSync('cd "' + sourceDir + '" && zip -r "' + zipPath + '" .', { stdio: 'inherit' });
     }
@@ -525,6 +533,22 @@ async function build() {
             : null
     };
 
+    // Ephemeral mode: generate ONE throwaway RSA key up front and hand the
+    // same key to every crx3() call in this run. (Previously keyPath was left
+    // undefined, so crx3 generated a fresh in-memory key per CRX — store-safe
+    // and github-full validation artifacts got DIFFERENT extension IDs in a
+    // single build, and the rename/cleanup logic never fired because crx3
+    // never writes a .pem for generated keys.)
+    if (crxSigningConfig.mode === 'ephemeral') {
+        const { privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+        fs.writeFileSync(
+            crxSigningConfig.generatedKeyPath,
+            privateKey.export({ type: 'pkcs8', format: 'pem' }),
+            { encoding: 'utf8', mode: 0o600 }
+        );
+        console.log('Generated single-run ephemeral CRX signing key for validation artifacts; it will be deleted before build exit');
+    }
+
     try {
         for (const profile of SELECTED_BUILD_PROFILES) {
             await buildProfileArtifacts(profile, crxSigningConfig);
@@ -572,25 +596,18 @@ async function buildProfileArtifacts(profile, crxSigningConfig = resolveCrxSigni
 
         try {
             const crxFiles = listFiles(chromeStageDir);
+            // External mode signs with the maintainer key; ephemeral mode
+            // signs with the single per-run key written by build() so every
+            // profile in the run shares one extension ID.
             const keyPath = crxSigningConfig.mode === 'external'
                 ? crxSigningConfig.keyPath
-                : (crxSigningConfig.generatedKeyPath && fs.existsSync(crxSigningConfig.generatedKeyPath)
-                    ? crxSigningConfig.generatedKeyPath
-                    : undefined);
+                : (crxSigningConfig.generatedKeyPath || undefined);
 
             await crx3(crxFiles, {
                 keyPath: keyPath,
                 crxPath: chromeCrxPath,
                 zipPath: undefined // already have the ZIP
             });
-
-            if (crxSigningConfig.mode === 'ephemeral' && !keyPath) {
-                const generatedKey = chromeCrxPath.replace('.crx', '.pem');
-                if (fs.existsSync(generatedKey)) {
-                    fs.renameSync(generatedKey, crxSigningConfig.generatedKeyPath);
-                    console.log('Generated temporary CRX signing key for validation artifacts; it will be deleted before build exit');
-                }
-            }
 
             console.log(profile + ' Chrome CRX: build/' + chromeCrxName + ' (' + formatSize(chromeCrxPath) + ' KB)');
         } catch (e) {
@@ -640,5 +657,6 @@ module.exports = {
     getManifestProfileHostPermissions,
     getManifestProfileOptionalHostPermissions,
     patchManifestForBuildProfile,
-    resolveCrxSigningConfig
+    resolveCrxSigningConfig,
+    shouldStageEntry
 };

@@ -73,6 +73,33 @@ const PATTERNS = [
     { name: 'setInterval(string)', regex: /\bsetInterval\s*\(\s*["'`]/g, allowComment: true },
 ];
 
+// Blank out the CONTENTS of string literals (single, double, backtick) so a
+// `//` inside a string — most commonly a URL like 'https://…' — cannot be
+// mistaken for a line comment by the suppression check below. Quote chars are
+// preserved; escaped quotes are honored. An unterminated string (the match
+// itself sits inside one) leaves the remainder stripped, which is the
+// conservative direction: the finding stays flagged.
+function stripStringLiteralContents(lineText) {
+    let out = '';
+    let quote = null;
+    for (let i = 0; i < lineText.length; i += 1) {
+        const ch = lineText[i];
+        if (quote) {
+            if (ch === '\\') { i += 1; continue; }
+            if (ch === quote) {
+                quote = null;
+                out += ch;
+            }
+            continue;
+        }
+        if (ch === '"' || ch === "'" || ch === '`') {
+            quote = ch;
+        }
+        out += ch;
+    }
+    return out;
+}
+
 const findings = [];
 
 for (const rel of SCAN_FILES) {
@@ -89,9 +116,11 @@ for (const rel of SCAN_FILES) {
             const lineIdx = src.slice(0, offset).split('\n').length - 1;
             const colIdx = offset - src.lastIndexOf('\n', offset - 1) - 1;
             const lineText = lines[lineIdx] || '';
-            // Skip if the match sits inside a line comment.
+            // Skip if the match sits inside a line comment. String-literal
+            // contents are stripped first so `fetch('https://x'); eval(` is
+            // NOT false-greened by the `//` inside the URL.
             if (allowComment) {
-                const beforeMatchOnLine = lineText.slice(0, colIdx);
+                const beforeMatchOnLine = stripStringLiteralContents(lineText.slice(0, colIdx));
                 if (beforeMatchOnLine.includes('//')) continue;
                 // Block-comment check is structurally hard; we accept
                 // the false-positive risk and document an // eslint-
