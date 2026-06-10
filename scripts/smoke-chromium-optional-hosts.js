@@ -37,6 +37,10 @@ const STAGE_SKIP_SUFFIXES = [
     '.bak',
     '.orig',
     '.rej',
+    // Keep in sync with build-extension.js — key material and logs must
+    // never reach a staged artifact.
+    '.pem',
+    '.log',
 ];
 
 function shouldStageEntry(entryName) {
