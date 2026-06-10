@@ -28,7 +28,9 @@
   --text-primary: #f4f6fb;
   --text-secondary: #c8d2e1;
   --text-muted: #8f9bb0;
-  --text-subtle: #6c7789;
+  /* 6.17:1 on the #08090c page bg (was #6c7789 at 4.40:1, failing AA
+     for the small-text surfaces this token paints). */
+  --text-subtle: #8290a8;
 
   /* ── Accent (flame) ── */
   --accent: #ff6b4a;
@@ -1275,6 +1277,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 22px;
   height: 22px;
   border-radius: 6px;
@@ -1290,6 +1293,14 @@ body {
               border-color var(--dur-quick, 120ms) var(--ease-out, ease-out),
               color var(--dur-quick, 120ms) var(--ease-out, ease-out);
 }
+/* Hit-area expansion: keeps the 22×22 visual but widens the clickable
+   region to 26×26 (≥24 px touch target) via a transparent overlay. */
+.schema-overview-list .so-key-reset-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+}
+
 .schema-overview-list .so-key-reset-btn:hover {
   background: rgba(255, 184, 77, 0.12);
   border-color: rgba(255, 184, 77, 0.42);
@@ -1306,6 +1317,7 @@ body {
 
 .schema-overview-list .so-key-switch {
   appearance: none;
+  position: relative;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
@@ -1324,6 +1336,15 @@ body {
 
 .schema-overview-list .so-key-switch::before {
   content: 'off';
+}
+
+/* Hit-area expansion: the switch reads ~17 px tall; a transparent
+   ::after overlay lifts the clickable region to ≥24 px without
+   changing the rendered size. (::before is taken by the on/off text.) */
+.schema-overview-list .so-key-switch::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
 }
 
 .schema-overview-list .so-key-switch.on {
@@ -1406,24 +1427,28 @@ body {
   box-shadow: var(--focus-ring);
 }
 
+/* Hit-area expansion: input[type=color] can't host pseudo-elements,
+   so the element itself grows to 24×24 (≥24 px touch target) with
+   transparent padding shrinking the painted swatch back to ~22×18.
+   The 1px outline moves from the input onto the swatch so the
+   rendered chip looks the same as before. */
 .schema-overview-list .so-key-color {
   appearance: none;
-  width: 22px;
-  height: 18px;
-  padding: 0;
-  border: 1px solid var(--border-subtle);
+  width: 24px;
+  height: 24px;
+  padding: 3px 1px;
+  border: none;
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
 }
 
 .schema-overview-list .so-key-color::-webkit-color-swatch-wrapper { padding: 0; }
-.schema-overview-list .so-key-color::-webkit-color-swatch { border: none; border-radius: 5px; }
-.schema-overview-list .so-key-color::-moz-color-swatch    { border: none; border-radius: 5px; }
+.schema-overview-list .so-key-color::-webkit-color-swatch { border: 1px solid var(--border-subtle); border-radius: 5px; }
+.schema-overview-list .so-key-color::-moz-color-swatch    { border: 1px solid var(--border-subtle); border-radius: 5px; }
 
 .schema-overview-list .so-key-color:focus-visible {
   outline: none;
-  border-color: var(--accent-border);
   box-shadow: var(--focus-ring);
 }
 
@@ -1964,9 +1989,27 @@ button:focus-visible {
     color var(--dur-quick) var(--ease-out);
 }
 
+/* Hit-area expansion: the visual stays 22×22 but a transparent
+   pseudo-element widens the clickable region to 26×26 (≥24 px touch
+   target) without shifting layout or the hover backdrop. */
+.clear-search::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+}
+
 .clear-search:hover {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
+}
+
+/* Persistent search mini-DSL hint (paired with #q via aria-describedby).
+   Replaces hover-only documentation in the input's title attribute. */
+.search-hint {
+  margin: 4px 14px 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-subtle);
 }
 
 /* ── Toggle list ── */
