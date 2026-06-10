@@ -9739,14 +9739,9 @@ test('v4.47.0 polish batch — EI-NEW2 / EI-NEW3 / EI-NEW4 invariants pinned', (
     assert.equal(defaultsJson.reactionSpammerMinIntervalMs, 500,
         'default-settings.json must catalogue reactionSpammerMinIntervalMs: 500');
 
-    // Phase V: ROADMAP matrix promotes Iridium + Control Panel.
-    const roadmapSrc = fs.readFileSync(
-        path.join(__dirname, '..', 'ROADMAP.md'), 'utf8'
-    );
-    assert.match(roadmapSrc, /\| 21 \| Iridium for YouTube/,
-        'ROADMAP must promote Iridium for YouTube as row 21 in Phase 1 matrix');
-    assert.match(roadmapSrc, /\| 22 \| Control Panel for YouTube/,
-        'ROADMAP must promote Control Panel for YouTube as row 22 in Phase 1 matrix');
+    // (The former ROADMAP matrix assertions were dropped: ROADMAP.md is a
+    // living planning document, and pinning its prose froze a long-replaced
+    // competitor matrix. Code invariants above are the durable part.)
 });
 
 test('v4.47.0 NF33 — hideVideosFromHome subs-load gate uses configurable hiddenRatio', () => {
