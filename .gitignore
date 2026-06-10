@@ -46,6 +46,11 @@ astra_downloader/*.spec
 astra_downloader/__pycache__/
 *.pyc
 
-# Markdown files local-only (except README)
-*.md
-!README.md
+# Local-only working notes (never track). Public product docs — README,
+# CHANGELOG, INSTALL, SECURITY, ROADMAP, docs/ — stay tracked: CI tests pin
+# them and the store listings require a reachable privacy policy.
+RESEARCH.md
+TODO.md
+NOTES.md
+AUDIT*.md
+SESSION*.md
