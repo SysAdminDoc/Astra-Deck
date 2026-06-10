@@ -341,6 +341,9 @@
             features.clear();
             cleanups.clear();
             categoryCleanups.clear();
+            // Drop health entries too — otherwise getHealthSnapshot() reports
+            // ghost features forever after a full registry reset.
+            health.clear();
         }
 
         return Object.freeze({
