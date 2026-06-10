@@ -341,7 +341,9 @@ test('settings backup import/export paths use strict schema validation and scrub
     assert.match(popupMergeBlock, /validateSettingsForBackupImport\(migrated\)/,
         'Popup imports must validate migrated settings against SETTINGS_SCHEMA before writing storage');
 
-    const panelPrepareStart = ytkitSource.indexOf('_prepareImportedSettings(settings)');
+    // Signature carries an options bag so importAllSettings can thread the
+    // backup's top-level settingsSchemaVersion into the migration chain.
+    const panelPrepareStart = ytkitSource.indexOf('_prepareImportedSettings(settings, options = {})');
     assert.ok(panelPrepareStart > -1, 'ytkit settingsManager._prepareImportedSettings must exist');
     const panelPrepareBlock = ytkitSource.slice(panelPrepareStart, panelPrepareStart + 1400);
     assert.match(panelPrepareBlock, /_validateSettingsForBackupImport\(migrated\)/,
@@ -675,13 +677,13 @@ test('popup.js import accepts exportVersion >= 3 without an upper cap', () => {
 test('settings imports run schema migrations before stamping the current version', () => {
     assert.match(
         ytkitSource,
-        /_prepareImportedSettings\s*\(\s*settings\s*\)/,
+        /_prepareImportedSettings\s*\(\s*settings\s*,\s*options\s*=\s*\{\}\s*\)/,
         'Content-script import path must prepare imported settings through a dedicated migration helper'
     );
     assert.match(
         ytkitSource,
-        /_migrate\s*\(\s*this\._sanitize\s*\(\s*settings\s*\)\s*,\s*'profile-import'\s*\)/,
-        'Content-script imports must run the migration chain from the imported _settingsVersion'
+        /_migrate\s*\(\s*this\._sanitize\s*\(\s*settings\s*\)\s*,\s*'profile-import'\s*,\s*options\s*\)/,
+        'Content-script imports must run the migration chain from the imported _settingsVersion (seeded from the backup schema version when the inner marker is absent)'
     );
     assert.match(
         ytkitSource,
@@ -4781,11 +4783,12 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     }
     assert.ok(Array.isArray(settingsSchemaModule.SETTINGS_SCHEMA),
         'SETTINGS_SCHEMA must be an array');
-    // Per-video notes added videoNotes + videoNotesData, lifting the pin from
-    // 360 to 362. Keep the literal so a future schema
+    // Per-video notes added videoNotes + videoNotesData (360 → 362);
+    // cleanUiPreset (Compact Clean UI opt-in) lifted the pin from 363
+    // to 364. Keep the literal so a future schema
     // addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 363,
-        'SETTINGS_SCHEMA must cover all 363 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 364,
+        'SETTINGS_SCHEMA must cover all 364 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

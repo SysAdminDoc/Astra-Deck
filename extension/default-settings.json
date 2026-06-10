@@ -474,5 +474,6 @@
   "preferredAudioLang": "en",
   "notifyAutoDubbedAudio": false,
   "sleepTimer": false,
-  "restoreNativeYouTubeUi": false
+  "restoreNativeYouTubeUi": false,
+  "cleanUiPreset": false
 }
