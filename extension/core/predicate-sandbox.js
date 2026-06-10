@@ -150,7 +150,15 @@
                     const startPos = i;
                     let num = '';
                     while (i < len && /[0-9.]/.test(src[i])) { num += src[i]; i++; }
-                    tokens.push({ type: 'number', value: Number(num), pos: startPos });
+                    const value = Number(num);
+                    // Malformed numerics ('1.2.3', '1..0') coerce to NaN —
+                    // surfacing them as a compile-time PredicateError keeps the
+                    // "errors at compile, never at eval" contract instead of
+                    // silently building an always-false comparison.
+                    if (Number.isNaN(value)) {
+                        throw new PredicateError(`Invalid number literal "${num}"`, startPos);
+                    }
+                    tokens.push({ type: 'number', value, pos: startPos });
                     continue;
                 }
                 if (/[a-zA-Z_$]/.test(ch)) {

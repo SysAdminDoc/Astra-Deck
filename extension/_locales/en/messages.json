@@ -108,7 +108,7 @@
     "message": "…% complete. … remaining."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
   },
   "dlProgressAriaAudio": {
     "message": "Audio download progress"
@@ -123,7 +123,7 @@
     "message": "Video Download"
   },
   "dlProgressCompleteCopy": {
-    "message": "The local downloader finished successfully."
+    "message": "Astra Downloader finished successfully."
   },
   "dlProgressConnectAudio": {
     "message": "Connecting to the local audio downloader."
@@ -138,7 +138,7 @@
     "message": "ETA"
   },
   "dlProgressFailureDefault": {
-    "message": "Local downloader failed"
+    "message": "Astra Downloader failed"
   },
   "dlProgressInProgress": {
     "message": "In progress"
@@ -147,13 +147,13 @@
     "message": "Local"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck lost contact with the local downloader. Choose Repair downloader to recover."
+    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
   },
   "dlProgressLostTitle": {
     "message": "Connection to downloader lost"
   },
   "dlProgressLostToast": {
-    "message": "Lost contact with the local downloader."
+    "message": "Lost contact with Astra Downloader."
   },
   "dlProgressPreparing": {
     "message": "Preparing download…"
@@ -165,7 +165,7 @@
     "message": "Ready"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Momentary hiccup with the local downloader — retrying automatically."
+    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
   },
   "dlProgressSkippedDefault": {
     "message": "Already downloaded — skipped."
@@ -210,7 +210,7 @@
     "message": "Wrapping up"
   },
   "dlRepairAria": {
-    "message": "Open local downloader repair steps"
+    "message": "Open Astra Downloader repair steps"
   },
   "dlRepairBtn": {
     "message": "Repair downloader"
@@ -669,13 +669,13 @@
     "message": "A download is already in progress."
   },
   "toastDlInstallPrompt": {
-    "message": "Install the local downloader to enable downloads."
+    "message": "Install Astra Downloader to enable downloads."
   },
   "toastDlReady": {
-    "message": "Local downloader is ready."
+    "message": "Astra Downloader is ready."
   },
   "toastDlRequestFailed": {
-    "message": "Local downloader request failed."
+    "message": "Astra Downloader request failed."
   },
   "toastDlRunning": {
     "message": "Astra Downloader is running!"
@@ -687,7 +687,7 @@
     "message": "Starting Astra Downloader…"
   },
   "toastDlStopped": {
-    "message": "Local downloader stopped. Starting it again…"
+    "message": "Astra Downloader stopped. Starting it again…"
   },
   "toggleStateOff": {
     "message": "Disabled"
@@ -1231,6 +1231,12 @@
   },
   "feature_restoreNativeYouTubeUi_desc": {
     "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+  },
+  "feature_cleanUiPreset_name": {
+    "message": "Compact Clean UI"
+  },
+  "feature_cleanUiPreset_desc": {
+    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
   },
   "feature_abLoop_name": {
     "message": "A-B Loop"
@@ -2250,7 +2256,7 @@
     "message": "Forced Colors / High Contrast Support"
   },
   "feature_forcedColorsSupport_desc": {
-    "message": "When the OS reports forced-colors (Windows High Contrast, GTK forced colors), use system colors for every Astra-injected control so text remains readable and focus rings are visible."
+    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
   },
   "feature_globalAriaLiveRegion_name": {
     "message": "Live Region For Toasts"

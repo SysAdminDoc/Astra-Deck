@@ -102,6 +102,30 @@ function parseSha256Sums(text) {
     return entries;
 }
 
+// Recursively find *.pem files under `dir` (repo-relative forward-slash
+// paths). Used by the key-leak readiness check: a stray private key anywhere
+// inside extension/ would be staged into every artifact, not just one that
+// lands in the repo root.
+function listPemFiles(dir, repoRoot) {
+    const out = [];
+    let entries;
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (err) {
+        if (err && err.code === 'ENOENT') return out;
+        throw err;
+    }
+    for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            out.push(...listPemFiles(full, repoRoot));
+        } else if (entry.name.toLowerCase().endsWith('.pem')) {
+            out.push(path.relative(repoRoot, full).split(path.sep).join('/'));
+        }
+    }
+    return out;
+}
+
 function listBuildFiles(buildDir = BUILD_DIR) {
     try {
         return fs.readdirSync(buildDir, { withFileTypes: true })
@@ -164,11 +188,18 @@ function buildReadinessReport(options = {}) {
     }
 
     const rootKeyPath = path.join(repoRoot, 'ytkit.pem');
+    const extensionPemFiles = listPemFiles(path.join(repoRoot, 'extension'), repoRoot);
+    const keyLeaks = [
+        ...(fs.existsSync(rootKeyPath) ? ['ytkit.pem'] : []),
+        ...extensionPemFiles
+    ];
     checks.push(check(
         'root-signing-key',
-        'No private signing key in repo root',
-        fs.existsSync(rootKeyPath) ? 'fail' : 'pass',
-        fs.existsSync(rootKeyPath) ? 'ytkit.pem exists in repo root' : 'no root ytkit.pem'
+        'No private signing key in repo root or extension/',
+        keyLeaks.length ? 'fail' : 'pass',
+        keyLeaks.length
+            ? `key material found: ${keyLeaks.join(', ')}`
+            : 'no root ytkit.pem; no *.pem under extension/'
     ));
 
     const sbomPath = path.join(buildDir, SBOM_NAME);

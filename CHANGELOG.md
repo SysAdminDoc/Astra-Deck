@@ -6,6 +6,143 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+## [4.46.3] - 2026-06-10
+
+Deep engineering + product-quality audit pass across the extension, userscript,
+companion app, build system, and CI.
+
+### Repo & CI baseline
+- **Restored the public product-doc set** (changelogs, INSTALL, CONTRIBUTING,
+  SECURITY, HARDENING, ROADMAP, docs/, GitHub issue/PR templates) that the
+  markdown purge untracked: the validate suites read these files, so any fresh
+  clone failed `npm test` and `pytest`, every docs link in the README 404'd,
+  and the store-required privacy-policy URL was unreachable. True working
+  notes stay local-only.
+- **Added `.gitattributes` (eol=lf):** a `core.autocrlf=true` Windows checkout
+  failed 8 tests that were green in CI because the suite slices sources with
+  `\n`-anchored regexes. Checkouts now match the Linux runners on every
+  platform.
+- **Release attestation is now retryable:** the v4.46.2 release run failed on a
+  transient sigstore/rekor timeout after a successful build. Attestation gets a
+  second attempt before failing, and the build job has a timeout.
+
+### Security & data integrity
+- **Settings backups no longer re-enable features on import.** Schema-only
+  exports stripped the internal version stamp, so every import re-ran the
+  legacy migrations and force-flipped `hidePinnedComments` /
+  `autoExpandComments` back on. Imports now seed from the backup's schema
+  version, and the seeding migrations only apply when the key is absent
+  (popup and in-page importers).
+- **Mixed-version safety:** the storage-change relay and profile load no longer
+  lower a newer settings-schema stamp written by a newer build (the same
+  downgrade hazard 4.46.1 closed for `load()`).
+- **Companion: crashed download loops no longer orphan yt-dlp.** The
+  exception path now terminates the process tree before the in-use cookie
+  jar is deleted.
+- **Companion: self-update can no longer reinstall the same binary in a loop**
+  when the main-branch version is bumped ahead of the published release —
+  the downloaded artifact's digest is compared against the running binary
+  and the last-installed digest.
+- **Companion: bounded helper downloads** (yt-dlp/ffmpeg/update fetches now
+  enforce a 500 MB ceiling while streaming) and the yt-dlp/ffmpeg version
+  caches are lock-guarded like the other probe caches.
+- **Build artifacts can no longer ship a stray key:** `.pem`/`.log` files
+  inside `extension/` are excluded from staging, and the release-readiness
+  gate scans the whole extension tree for keys instead of just the repo root.
+- **Bug-report bundles** now redact via the same scrub patterns as settings
+  exports, so the two redaction surfaces can't drift.
+
+### Fixed — extension
+- **Video Notes:** a note typed within the save-debounce window of a
+  navigation was saved under the *next* video's id (and clearing a note could
+  delete the next video's note). Pending saves are captured per-video and
+  flushed before teardown.
+- **Subscription Groups:** groups can finally be populated from the UI — an
+  "Edit channels" panel adds/removes the channels rendered in the feed
+  (the old description promised drag-in that never existed); selecting an
+  empty group now shows an explanatory notice instead of a blank feed;
+  "YouTube default" sort actually restores the original order instead of
+  keeping the previous mode's ordering; the duration sort reads badges on
+  the new lockup-view-model cards instead of mis-parsing title timestamps;
+  the digest "Mark read" toast counts channels, not videos; staged
+  unsubscribes past their 30-day undo window are now actually pruned; and
+  toggling the feature on from a non-subscriptions page no longer leaves it
+  inert until the second visit.
+- **Stream Links panel:** no longer serves the cold-load video's expired
+  stream URLs after SPA navigation — it reads the live player response,
+  validates the video id, and closes on navigation.
+- **Download health pill / Cobalt fallback:** untracked navigation timers
+  could resurrect the UI (and fire health probes) after the feature was
+  disabled; timers are tracked and cleared.
+- **Theater Split:** disabling the feature while a watch page was still
+  loading could mount a style-less zombie overlay with no teardown path —
+  pending element-waits are now cancelled on destroy (module and fallback).
+- **Transcripts:** the DOM-panel fallback emitted Innertube continuation
+  tokens as fetch URLs (turning "no transcript" into a fake network error),
+  and a valid-but-empty json3 response blocked the XML fallback.
+- **Predicate filters:** malformed numbers (`1.2.3`) now fail at compile time
+  with a position instead of silently compiling an always-false predicate.
+- **Popup:** clearing the search via × or Escape now also resets the schema
+  overview; inline number/string editors clamp through the same policy as
+  imports; a storage-corruption warning no longer triggers an endless
+  diagnostic write/render loop while the popup is open.
+
+### Fixed — userscript & standalone scripts
+- **The MediaDL install prompt pointed at a deleted PowerShell installer
+  (HTTP 404) and asked users to `irm | iex` it.** All four install surfaces
+  now download the signed-release `AstraDownloader.exe` directly.
+- **Transcript fallback sent a poison placeholder API key** (guaranteed 400)
+  when page extraction failed; the Innertube method now fails over cleanly.
+- The `@description` no longer advertises SponsorBlock (extension-only);
+  companion health checks are single-flight like the extension.
+- **theater-split.user.js** (v1.0.8) stands down when YTKit's built-in
+  Theater Split is active instead of fighting it for the same gesture;
+  **YT_Reaction_Spammer.user.js** (v0.3.1) gained update/download URLs (it
+  could never auto-update), a corrected namespace, and a stand-down guard
+  against YTKit's integrated spammer.
+
+### UX, accessibility & theming
+- **Toasts, panel search, and category headers are no longer suppressed for
+  every install.** The maintainer's personal Stylebot rules in `early.css`
+  hid the global toast (the product's only feedback/Undo surface), the
+  settings panel's search box, and the per-category Enable-all switches for
+  all users. They now live behind a new off-by-default "Compact Clean UI"
+  preset (`cleanUiPreset`).
+- **Light-theme support for in-page widgets:** the RYD pill, subscription
+  toolbar/chips, transcript search button, and monetization pill were
+  white-on-white on YouTube's light theme (≈1:1 contrast); each family now
+  carries light-mode overrides.
+- **Focus visibility:** the settings panel's generic `:focus-visible` ring
+  computed to 1.26:1 — it now uses the strong focus-ring token; muted help
+  text was bumped from 3.87:1 to ≥4.5:1 contrast.
+- **Reduced motion** now covers the install-prompt/download-panel entrance
+  animations and the What's New badge; **forced-colors (Windows High
+  Contrast) CSS is always injected** instead of hiding behind a default-off
+  toggle that high-contrast users couldn't comfortably reach.
+- Feature-card preview tooltips show on keyboard focus and mirror into
+  `aria-description`; the stats overlay drops the hacker-green styling and
+  exposes `aria-pressed`; the popup search documents its `risk:`/`category:`
+  mini-DSL in a visible hint instead of a hover-only tooltip; popup hit
+  targets meet the 24 px minimum; `<html lang>` follows the chosen locale.
+- **Microcopy:** the local companion is called "Astra Downloader" everywhere
+  (was a mix of MediaDL / Local downloader / Companion); the clipboard
+  failure message no longer tells users to open DevTools.
+
+### Build & gates
+- **Windows release ZIPs/XPIs are valid again:** PowerShell 5.1
+  `Compress-Archive` wrote backslash entry paths (AMO rejects these and
+  Linux unzip mangles them); packaging now uses the system bsdtar with
+  forward-slash entries.
+- **Ephemeral CRX signing actually works:** validation builds previously
+  signed each profile with a different throwaway key and the advertised key
+  cleanup was dead code; both profiles now share one generated key that is
+  verifiably deleted after the build.
+- Gate hardening: `check-no-eval` no longer skips lines where a URL precedes
+  the match; `check-contrast` rejects non-hex colors instead of silently
+  evaluating against black; `check-versions` fails on an empty `--tag`; a
+  new parity test pins the two duplicated manifest `content_scripts` lists
+  to each other.
+
 ## [4.46.2] - 2026-06-08
 
 ### Fixed

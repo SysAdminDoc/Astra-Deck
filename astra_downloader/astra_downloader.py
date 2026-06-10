@@ -139,6 +139,11 @@ COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/l
 COMPANION_UPDATE_SHA256_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe.sha256"
 COMPANION_UPDATE_TIMEOUT_SECONDS = 120
 COMPANION_UPDATE_MIN_BYTES = 1024
+# Hard ceiling for any single helper download (companion exe, yt-dlp, ffmpeg
+# zip, icon). The largest legitimate asset (the ffmpeg archive) is well under
+# 200 MB; a misbehaving CDN, truncating proxy, or endless redirect body must
+# not be able to fill the disk before the SHA-256 check ever runs.
+HELPER_DOWNLOAD_MAX_BYTES = 500 * 1024 * 1024  # 500 MB
 
 DEFAULT_CONFIG = {
     # v1.2.2: default to the profile's Videos folder directly (was Videos/YouTube
@@ -337,12 +342,18 @@ def atomic_write_json(path, data):
             pass
 
 
-def download_file_atomic(url, path, timeout=60, chunk_size=65536, progress_cb=None):
+def download_file_atomic(url, path, timeout=60, chunk_size=65536, progress_cb=None,
+                         max_bytes=HELPER_DOWNLOAD_MAX_BYTES):
     """Download with atomic replacement.
 
     progress_cb(downloaded_bytes, total_bytes_or_None) is fired roughly each
     chunk when supplied. It MUST be cheap and thread-safe — the caller is
     responsible for marshaling back to Qt.
+
+    max_bytes caps the stream (audit fix): the byte count is checked while
+    streaming so a server that lies about (or omits) content-length cannot
+    fill the disk; on breach the partial temp file is removed and a
+    RuntimeError raised before any SHA-256 verification would run.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -355,14 +366,23 @@ def download_file_atomic(url, path, timeout=60, chunk_size=65536, progress_cb=No
                 total = int(r.headers.get('content-length', '') or 0) or None
             except (TypeError, ValueError):
                 total = None
+            if max_bytes and total and total > max_bytes:
+                raise RuntimeError(
+                    f"Download too large: server advertises {total} bytes "
+                    f"(limit {max_bytes})"
+                )
             downloaded = 0
             last_cb = 0.0
             with open(tmp, 'wb') as f:
                 for chunk in r.iter_content(chunk_size):
                     if chunk:
                         f.write(chunk)
+                        downloaded += len(chunk)
+                        if max_bytes and downloaded > max_bytes:
+                            raise RuntimeError(
+                                f"Download exceeded the {max_bytes} byte limit; aborted"
+                            )
                         if progress_cb is not None:
-                            downloaded += len(chunk)
                             now = time.monotonic()
                             # Throttle to ~10 Hz so very fast downloads don't
                             # flood the Qt event loop with progress signals.
@@ -569,11 +589,16 @@ class RateLimiter:
 
 
 # ── v1.2.0: cached version strings for /health ──
+# Audit fix: lock-guarded like _po_token_provider_cache / _deno_runtime_cache.
+# /health is served by concurrent waitress threads; the previous unguarded
+# read-modify-write was a benign race (worst case: duplicate subprocess probe)
+# but inconsistent with the other shared probe caches.
 _version_cache = {
     'ytdlp': {'value': None, 'checked_at': 0.0},
     'ffmpeg': {'value': None, 'checked_at': 0.0},
 }
 _VERSION_CACHE_TTL_SECONDS = 3600
+_VERSION_CACHE_LOCK = threading.Lock()
 
 
 def _run_captured(args, timeout=5):
@@ -594,18 +619,19 @@ def _run_captured(args, timeout=5):
 def get_ytdlp_version(force=False):
     if not YTDLP_PATH.exists():
         return None
-    cache = _version_cache['ytdlp']
-    now = time.time()
-    if not force and cache['value'] and (now - cache['checked_at']) < _VERSION_CACHE_TTL_SECONDS:
+    with _VERSION_CACHE_LOCK:
+        cache = _version_cache['ytdlp']
+        now = time.time()
+        if not force and cache['value'] and (now - cache['checked_at']) < _VERSION_CACHE_TTL_SECONDS:
+            return cache['value']
+        output = _run_captured([str(YTDLP_PATH), '--version'])
+        version = output.strip().splitlines()[0] if output.strip() else ''
+        if re.match(r'^\d{4}\.\d{1,2}\.\d{1,2}', version):
+            cache['value'] = version
+        elif version:
+            cache['value'] = version[:32]
+        cache['checked_at'] = now
         return cache['value']
-    output = _run_captured([str(YTDLP_PATH), '--version'])
-    version = output.strip().splitlines()[0] if output.strip() else ''
-    if re.match(r'^\d{4}\.\d{1,2}\.\d{1,2}', version):
-        cache['value'] = version
-    elif version:
-        cache['value'] = version[:32]
-    cache['checked_at'] = now
-    return cache['value']
 
 
 # v1.4.0 (N1): cached probe for bgutil-ytdlp-pot-provider.
@@ -888,16 +914,17 @@ def build_youtube_extractor_args(url, po_token_provider=None):
 def get_ffmpeg_version(force=False):
     if not FFMPEG_PATH.exists():
         return None
-    cache = _version_cache['ffmpeg']
-    now = time.time()
-    if not force and cache['value'] and (now - cache['checked_at']) < _VERSION_CACHE_TTL_SECONDS:
+    with _VERSION_CACHE_LOCK:
+        cache = _version_cache['ffmpeg']
+        now = time.time()
+        if not force and cache['value'] and (now - cache['checked_at']) < _VERSION_CACHE_TTL_SECONDS:
+            return cache['value']
+        output = _run_captured([str(FFMPEG_PATH), '-version'])
+        first = output.splitlines()[0] if output else ''
+        m = re.search(r'ffmpeg version (\S+)', first)
+        cache['value'] = (m.group(1) if m else '')[:64] or None
+        cache['checked_at'] = now
         return cache['value']
-    output = _run_captured([str(FFMPEG_PATH), '-version'])
-    first = output.splitlines()[0] if output else ''
-    m = re.search(r'ffmpeg version (\S+)', first)
-    cache['value'] = (m.group(1) if m else '')[:64] or None
-    cache['checked_at'] = now
-    return cache['value']
 
 
 # v1.4.0 (NX10): ffmpeg 8.0 dropped OpenSSL <=1.1.0; 8.1.1 removed the
@@ -1078,7 +1105,8 @@ def _run_ytdlp_self_update(config, source_tag):
     if result.returncode == 0:
         mark_ytdlp_update_check(config)
         # Invalidate version cache so /health reports the new version.
-        _version_cache['ytdlp']['checked_at'] = 0.0
+        with _VERSION_CACHE_LOCK:
+            _version_cache['ytdlp']['checked_at'] = 0.0
         version_after = get_ytdlp_version(force=True) or version_before
         write_persistent_log(
             f"yt-dlp {source_tag} update ok ({version_before} -> {version_after}): {stdout}"
@@ -1191,6 +1219,48 @@ def validate_companion_update_binary(path):
     if header != b'MZ':
         raise RuntimeError('Downloaded Astra Downloader update is not a Windows executable.')
     return True
+
+
+# Audit fix (version-skew loop): "update available" is decided by parsing
+# APP_VERSION from the repo's main branch, but the artifact comes from
+# releases/latest. When main is bumped before the release asset is published,
+# releases/latest still serves the binary we're already running — every
+# /update cycle would download the same exe, pass MZ/size/SHA validation,
+# schedule a replace, restart, and report update_available again, forever.
+# We persist the SHA-256 of the last update this install scheduled and refuse
+# to schedule a replace whose digest matches it (or matches the running
+# frozen binary). A genuinely newer release has a different digest, so it
+# still installs normally.
+def _companion_update_state_path():
+    # Computed per call (not a module constant) so tests that patch
+    # INSTALL_DIR are honored, matching how update_path is built.
+    return INSTALL_DIR / 'companion-update-state.json'
+
+
+def read_last_installed_update_sha256():
+    """Lowercase hex digest of the last scheduled update, or None."""
+    try:
+        data = json.loads(_companion_update_state_path().read_text(encoding='utf-8'))
+    except Exception:
+        return None
+    value = data.get('sha256') if isinstance(data, dict) else None
+    if isinstance(value, str):
+        value = value.strip().lower()
+        if re.fullmatch(r'[0-9a-f]{64}', value):
+            return value
+    return None
+
+
+def record_last_installed_update_sha256(digest):
+    """Persist the digest of the update we just scheduled. Best-effort."""
+    try:
+        atomic_write_json(_companion_update_state_path(), {
+            'sha256': str(digest).strip().lower(),
+            'recorded_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'app_version': APP_VERSION,
+        })
+    except Exception as e:  # noqa: BLE001
+        write_persistent_log(f"Could not persist companion update state: {e}")
 
 
 def _safe_update_paths(update_path, target_path=None):
@@ -1365,7 +1435,39 @@ def _run_companion_self_update(restart=True):
                 'current_version': current_version,
                 'latest_version': latest_version,
             }
+        # Version-skew guard (see read_last_installed_update_sha256): the
+        # artifact digest equals expected_hash — verify_file_sha256 just
+        # proved it — so compare that against the running frozen binary and
+        # the last update this install scheduled. A match means the
+        # releases/latest asset has not actually changed (main's APP_VERSION
+        # was bumped ahead of the release), and installing it again can only
+        # loop, never advance the version.
+        downloaded_digest = str(expected_hash).strip().lower()
+        same_as_running = False
+        if is_frozen_app():
+            try:
+                same_as_running = _compute_sha256(current_executable_path()) == downloaded_digest
+            except Exception:
+                same_as_running = False
+        if same_as_running or downloaded_digest == read_last_installed_update_sha256():
+            try:
+                update_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            write_persistent_log(
+                f"Companion update skipped: releases/latest asset (sha256 "
+                f"{downloaded_digest[:12]}...) matches the installed binary; the "
+                f"release for {latest_version} is not published yet."
+            )
+            return {
+                'ok': True,
+                'update_available': False,
+                'status': 'release-pending',
+                'current_version': current_version,
+                'latest_version': latest_version,
+            }
         schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
+        record_last_installed_update_sha256(downloaded_digest)
         if restart:
             schedule_companion_process_exit()
         write_persistent_log(
@@ -1711,7 +1813,12 @@ def write_cookies_netscape(cookies, target_path):
             os.fsync(fh.fileno())
         os.replace(tmp, target_path)
         try:
-            # Best-effort tighten perms so cookie jar is not world-readable.
+            # Best-effort permission tightening. On POSIX this makes the jar
+            # owner-read/write only; on Windows os.chmod() only toggles the
+            # read-only attribute and does NOT restrict who can read the file.
+            # The real same-user isolation boundary on Windows is the
+            # inherited NTFS ACL of %LOCALAPPDATA% (the jar lives under
+            # INSTALL_DIR), which already denies other non-admin users.
             os.chmod(target_path, 0o600)
         except OSError:
             pass
@@ -2736,6 +2843,22 @@ class DownloadManager(QObject):
             # history entry exists.
             if stop_watchdog is not None:
                 stop_watchdog.set()
+            # Audit fix: if we got here via the generic except (e.g. an
+            # unexpected error inside the output-parsing loop), yt-dlp and any
+            # ffmpeg child may still be running — without this they'd be
+            # orphaned (holding a MAX_CONCURRENT slot's process alive and
+            # keeping the cookie jar in use while we unlink it below). The
+            # normal-completion and cancelled paths are unaffected:
+            # terminate_process_tree() returns immediately when the process
+            # has already exited, and the cancel() thread's own kill is
+            # idempotent with this one.
+            orphan = dl.process
+            if orphan is not None and orphan.poll() is None:
+                try:
+                    terminate_process_tree(orphan)
+                except Exception:
+                    # reason: best-effort kill; never mask the original error
+                    pass
             dl.process = None
             # Cookie jar holds session credentials — purge it as soon as the
             # download process exits so it never outlives the one request that
@@ -3400,6 +3523,15 @@ class SetupWorker(QThread):
                             total = int(r.headers.get('content-length', '') or 0) or None
                         except (TypeError, ValueError):
                             total = None
+                        # Audit fix: same byte ceiling as download_file_atomic —
+                        # a misbehaving CDN must not fill the disk before the
+                        # SHA-256 sidecar check. Breach raises; the outer
+                        # finally removes the partial tmp_zip.
+                        if total and total > HELPER_DOWNLOAD_MAX_BYTES:
+                            raise RuntimeError(
+                                f"ffmpeg archive too large: server advertises {total} "
+                                f"bytes (limit {HELPER_DOWNLOAD_MAX_BYTES})"
+                            )
                         downloaded = 0
                         last_cb = 0.0
                         with open(tmp_zip, 'wb') as data:
@@ -3407,6 +3539,11 @@ class SetupWorker(QThread):
                                 if chunk:
                                     data.write(chunk)
                                     downloaded += len(chunk)
+                                    if downloaded > HELPER_DOWNLOAD_MAX_BYTES:
+                                        raise RuntimeError(
+                                            f"ffmpeg archive exceeded the "
+                                            f"{HELPER_DOWNLOAD_MAX_BYTES} byte limit; aborted"
+                                        )
                                     now = time.monotonic()
                                     if now - last_cb > 0.1:
                                         last_cb = now
@@ -4721,7 +4858,8 @@ class MainWindow(QMainWindow):
                 )
                 if result.returncode == 0:
                     mark_ytdlp_update_check(self.config)
-                    _version_cache['ytdlp']['checked_at'] = 0.0
+                    with _VERSION_CACHE_LOCK:
+                        _version_cache['ytdlp']['checked_at'] = 0.0
                     self.log_message.emit(
                         f"yt-dlp update: {(result.stdout or '').strip()[:200]}"
                     )
@@ -4763,7 +4901,8 @@ class MainWindow(QMainWindow):
             return
         # Clear cached version string so /health reflects reality during the
         # window where ffmpeg is not yet re-downloaded.
-        _version_cache['ffmpeg'] = {'value': None, 'checked_at': 0.0}
+        with _VERSION_CACHE_LOCK:
+            _version_cache['ffmpeg'] = {'value': None, 'checked_at': 0.0}
         self._refresh_tools_status()
         try:
             self.config.set("LastFfmpegCheck", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
