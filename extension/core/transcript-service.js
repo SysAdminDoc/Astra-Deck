@@ -255,12 +255,27 @@
                     throw new Error('No language menu found in panel data');
                 }
 
-                const tracks = languageMenu.map(item => ({
-                    baseUrl: item.continuation?.reloadContinuationData?.continuation,
-                    languageCode: item.languageCode || 'unknown',
-                    name: item.title || 'Unknown',
-                    kind: item.title?.toLowerCase().includes('auto') ? 'asr' : 'manual'
-                }));
+                // The language menu carries Innertube continuation TOKENS, not
+                // timedtext URLs — a token can never be fetched as a transcript
+                // (token + '&fmt=json3' always fails), which used to convert
+                // "no transcript" into a misleading network error. Only surface
+                // a track when the scraped item genuinely holds a fetchable
+                // timedtext URL; otherwise report no tracks so _getCaptionTracks
+                // falls through honestly. The panel is also never validated
+                // against the current video id, so a stale SPA panel must not
+                // fabricate tracks for the wrong video.
+                const tracks = languageMenu
+                    .filter(item => typeof item.baseUrl === 'string' && item.baseUrl.includes('/api/timedtext'))
+                    .map(item => ({
+                        baseUrl: item.baseUrl,
+                        languageCode: item.languageCode || 'unknown',
+                        name: item.title || 'Unknown',
+                        kind: item.title?.toLowerCase().includes('auto') ? 'asr' : 'manual'
+                    }));
+
+                if (tracks.length === 0) {
+                    throw new Error('Transcript panel has no fetchable caption URLs (continuation tokens only)');
+                }
 
                 const videoTitle = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.textContent || videoId;
 
@@ -320,21 +335,31 @@
 
                 const formats = ['json3', 'xml'];
 
+                // A format can parse successfully yet yield zero segments
+                // (e.g. a valid-but-empty json3 body). Only short-circuit on a
+                // non-empty result; otherwise keep trying the remaining
+                // formats and only hand back the empty parse after every
+                // format has had its chance.
+                let emptyResult = null;
                 for (const fmt of formats) {
                     try {
                         const url = fmt === 'xml' ? baseUrl : `${baseUrl}&fmt=${fmt}`;
                         const { text: content } = await extensionFetchText({ url });
 
-                        if (fmt === 'json3') {
-                            return this._parseJSON3(content);
-                        } else {
-                            return this._parseXML(content);
+                        const segments = fmt === 'json3'
+                            ? this._parseJSON3(content)
+                            : this._parseXML(content);
+                        if (segments && segments.length > 0) {
+                            return segments;
                         }
+                        emptyResult = segments || [];
+                        this._log(`Format ${fmt} parsed but produced no segments, trying next format`);
                     } catch (e) {
                         this._log(`Format ${fmt} failed:`, e.message);
                     }
                 }
 
+                if (emptyResult) return emptyResult;
                 throw new Error('Failed to fetch transcript in any format');
             },
 

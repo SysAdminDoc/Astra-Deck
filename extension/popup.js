@@ -195,6 +195,23 @@ async function initI18n() {
     } catch (_) { I18N.ready = true; }
 }
 
+// Keep <html lang> truthful for assistive tech. popup.html ships
+// lang="en"; once initI18n resolves the effective locale (manual
+// override or chrome.i18n auto-detect) the document language must
+// follow, otherwise screen readers announce localized strings with
+// English pronunciation rules. Locale tags are stored with an
+// underscore (pt_BR) but the lang attribute wants BCP-47 (pt-BR).
+function applyDocumentLanguage() {
+    try {
+        const resolvedLocale = I18N.override
+            || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage())
+            || 'en';
+        if (resolvedLocale) {
+            document.documentElement.lang = resolvedLocale.replace('_', '-');
+        }
+    } catch (_) { /* reason: lang attribute is best-effort a11y metadata */ }
+}
+
 function t(key, fallback) {
     try {
         if (I18N.map && Object.prototype.hasOwnProperty.call(I18N.map, key)) {
@@ -295,12 +312,16 @@ const SETTINGS_IMPORT_MIGRATIONS = Object.freeze({
     2(settings) {
         return settings;
     },
+    // Migrations 3 and 4 exist to seed new defaults onto pre-v3/v4
+    // snapshots. They must stay conditional — an imported backup that
+    // carries an explicit user choice (false) must not be flipped back
+    // to true just because the version marker was stripped or old.
     3(settings) {
-        settings.hidePinnedComments = true;
+        if (settings.hidePinnedComments === undefined) settings.hidePinnedComments = true;
         return settings;
     },
     4(settings) {
-        settings.autoExpandComments = true;
+        if (settings.autoExpandComments === undefined) settings.autoExpandComments = true;
         return settings;
     },
     5(settings) {
@@ -623,10 +644,19 @@ function recordSettingsMigrationDiagnostic(settings, message) {
     settings._errors = errors;
 }
 
-function migrateImportedSettings(settings, currentVersion, source = 'popup-import') {
+function migrateImportedSettings(settings, currentVersion, source = 'popup-import', options = {}) {
     const migrated = sanitizeSettingsObject(settings);
     const targetVersion = normalizeSettingsVersion(currentVersion || SETTINGS_VERSION_FALLBACK);
-    const startingVersion = normalizeSettingsVersion(migrated._settingsVersion);
+    // buildExportSnapshot({ schemaOnly: true }) strips the inner
+    // `_settingsVersion` marker on export (it is not a schema key), so
+    // a re-imported backup would otherwise re-run every migration from
+    // v1. Seed from the backup's top-level `settingsSchemaVersion`
+    // (threaded through options.backupSchemaVersion) when the inner
+    // marker is missing; an explicit inner marker still wins.
+    const versionSeed = (migrated._settingsVersion !== undefined && migrated._settingsVersion !== null)
+        ? migrated._settingsVersion
+        : options.backupSchemaVersion;
+    const startingVersion = normalizeSettingsVersion(versionSeed);
     let version = startingVersion;
 
     if (version > targetVersion) {
@@ -674,8 +704,8 @@ async function loadSettingsImportCatalog() {
     return { defaults: sanitizeSettingsObject(defaults), settingsVersion };
 }
 
-function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, source) {
-    const migrated = migrateImportedSettings(settings, settingsVersion, source);
+function mergeImportedSettingsWithDefaults(settings, defaults, settingsVersion, source, options = {}) {
+    const migrated = migrateImportedSettings(settings, settingsVersion, source, options);
     const validated = validateSettingsForBackupImport(migrated);
     return sanitizeSettingsObject({
         ...defaults,
@@ -1904,12 +1934,12 @@ async function copySelectorHealthReport() {
             if (ok) {
                 setStatus(t('selectorHealthCopyDone', 'Copied — paste into a GitHub issue.'));
             } else {
-                setStatus(t('selectorHealthCopyFail', 'Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead.'));
+                setStatus(t('selectorHealthCopySaveFallback', 'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.'));
             }
         }
     } catch (_) {
         // reason: any unexpected failure must not break the popup
-        setStatus(t('selectorHealthCopyFail', 'Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead.'));
+        setStatus(t('selectorHealthCopySaveFallback', 'Couldn’t copy to the clipboard. Try again, or use the Diagnostics Save button to download the report instead.'));
     } finally {
         _selectorHealthCopyInFlight = false;
         if (selectorHealthCopyBtn) selectorHealthCopyBtn.disabled = false;
@@ -2293,8 +2323,18 @@ function buildSchemaOverviewKeyRow(entry, settings) {
         const persist = async () => {
             const raw = input.value.trim();
             if (raw === '') return;     // empty input leaves the prior value untouched
-            const next = Number(raw);
+            let next = Number(raw);
             if (!Number.isFinite(next)) return;
+            // Route through the same clamp/enum coercion the import path
+            // applies (policy-profile clampSettingValue) so an inline edit
+            // can't persist an out-of-range value that a backup
+            // round-trip would clamp. Reflect the clamped value back
+            // into the input so the user sees what was saved.
+            const policy = ensurePolicyProfile();
+            if (policy && typeof policy.clampSettingValue === 'function') {
+                next = policy.clampSettingValue(next, entry);
+                if (String(next) !== raw) input.value = String(next);
+            }
             if (popupState.settings[entry.key] === next) return;
             input.disabled = true;
             try {
@@ -2337,10 +2377,22 @@ function buildSchemaOverviewKeyRow(entry, settings) {
             if (typeof current === 'string') input.value = current;
         }
         const persist = async () => {
-            const raw = (input.value || '').toString();
+            let raw = (input.value || '').toString();
             // For the colour picker an empty value never happens; for
             // the text input we let empty strings persist so a user
             // can intentionally clear a string-shaped setting.
+            // Same clamp/enum coercion as the import path: an enum-typed
+            // string entry edited to an unrecognized value coerces back
+            // to the schema default instead of persisting raw. Reflect
+            // the coerced value so the input shows what was saved.
+            const policy = ensurePolicyProfile();
+            if (policy && typeof policy.clampSettingValue === 'function') {
+                const coerced = policy.clampSettingValue(raw, entry);
+                if (typeof coerced === 'string' && coerced !== raw) {
+                    raw = coerced;
+                    input.value = coerced;
+                }
+            }
             if (popupState.settings[entry.key] === raw) return;
             input.disabled = true;
             try {
@@ -2601,7 +2653,21 @@ function appendDataFlowMeta(container, label, value) {
     container.appendChild(wrap);
 }
 
+// Dedupe guard for recordCorruptionDiagnostic. Writing the diagnostic
+// mutates SETTINGS_STORAGE_KEY, which re-fires onStorageChanged →
+// renderStorageInfo → renderStorageWarningBanner → back here. While a
+// corrupted key persists in storage that was an unbounded write loop.
+// Recording only when the corruption signature (sorted key+reason
+// list) differs from the last successfully recorded one terminates
+// the loop after one write per distinct finding.
+let _lastCorruptionSignature = null;
+
 async function recordCorruptionDiagnostic(corruption) {
+    const signature = corruption
+        .map((f) => `${f.key}:${f.kind}`)
+        .sort()
+        .join('|');
+    if (signature === _lastCorruptionSignature) return;
     try {
         const items = await storageGet([SETTINGS_STORAGE_KEY]);
         const settings = isPlainObject(items[SETTINGS_STORAGE_KEY])
@@ -2620,6 +2686,7 @@ async function recordCorruptionDiagnostic(corruption) {
         });
         settings._errors = arr;
         await storageSet({ [SETTINGS_STORAGE_KEY]: settings });
+        _lastCorruptionSignature = signature;
     } catch (_) {
         // reason: best-effort — if even writing the diagnostic fails the
         // popup banner is still surfaced, which is the user-facing
@@ -2695,13 +2762,23 @@ const TRUST_SIGNAL_LOCAL_ONLY_KEYS = new Set([
 // the value.
 function redactBugReportSettings(settings) {
     if (!isPlainObject(settings)) return {};
+    // Union of the explicit key list with the policy-profile scrub
+    // predicate (ALWAYS_SCRUB_KEY_PATTERNS) so the bug-report surface
+    // can never drift behind the export scrubber.
+    const policy = ensurePolicyProfile();
+    const scrubByPolicy = (policy && typeof policy.shouldScrubKey === 'function')
+        ? policy.shouldScrubKey
+        : () => false;
     const out = { ...settings };
-    for (const key of BUG_REPORT_REDACTED_KEYS) {
-        if (key in out) {
-            const v = out[key];
-            if (typeof v === 'string' && v.length > 0) {
-                out[key] = `[redacted — ${v.length} chars]`;
-            }
+    for (const key of Object.keys(out)) {
+        if (!BUG_REPORT_REDACTED_KEYS.includes(key) && !scrubByPolicy(key)) continue;
+        const v = out[key];
+        if (typeof v === 'string' && v.length > 0) {
+            out[key] = `[redacted — ${v.length} chars]`;
+        } else if (v !== undefined && v !== null && typeof v !== 'string') {
+            // Non-string secret-shaped values (unexpected, but possible
+            // via import) are masked outright — presence stays visible.
+            out[key] = '[redacted]';
         }
     }
     return out;
@@ -3265,7 +3342,12 @@ async function importSettings(file) {
                 importedSettings,
                 importCatalog.defaults,
                 importCatalog.settingsVersion,
-                'popup-import'
+                'popup-import',
+                // Backup-level schema version stamped by buildExportData.
+                // Lets the migration chain start from the exporter's
+                // version even though schemaOnly exports strip the inner
+                // `_settingsVersion` marker.
+                { backupSchemaVersion: data.settingsSchemaVersion }
             );
         }
 
@@ -3309,6 +3391,24 @@ const reenableMediadlButton = $('#reenable-mediadl-btn');
 const updateCompanionButton = $('#update-companion-btn');
 // v4.47.0 NF18: on-demand yt-dlp self-update button.
 const updateYtdlpButton = $('#update-ytdlp-btn');
+
+// Gate the companion-maintenance buttons on the effective policy
+// profile. Under store-safe no Astra Downloader companion can exist
+// (it is a github-full-only feature), so "Update Astra Downloader" /
+// "Update yt-dlp" would be dead controls. Mirrors the
+// #reenable-mediadl-btn pattern: JS drives the hidden flag from live
+// state; re-evaluated at boot and on every storage change so flipping
+// githubFullProfile updates the buttons without reopening the popup.
+function refreshCompanionUpdateVisibility() {
+    if (!updateCompanionButton && !updateYtdlpButton) return;
+    const policy = ensurePolicyProfile();
+    const effective = policy
+        ? policy.resolveEffectiveProfile(popupState.settings || {})
+        : 'store-safe';
+    const show = effective === 'github-full';
+    if (updateCompanionButton) updateCompanionButton.hidden = !show;
+    if (updateYtdlpButton) updateYtdlpButton.hidden = !show;
+}
 
 async function readMediadlDismissed() {
     if (!chrome?.storage?.local) return false;
@@ -3454,7 +3554,7 @@ async function updateCompanionNow() {
             if (result.update_available === false || result.status === 'current') {
                 showStatus(`Astra Downloader already at v${latest || current || '?'}.`, 'success', 5200);
             } else {
-                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting companion.`, 'success', 7200);
+                showStatus(`Astra Downloader update ready: v${current || '?'} -> v${latest || '?'}. Restarting Astra Downloader.`, 'success', 7200);
             }
         } else {
             const err = (result && result.error) || 'Update failed.';
@@ -3680,6 +3780,7 @@ function installWheelScrolling() {
 
 (async () => {
     await initI18n();
+    applyDocumentLanguage();
     applyI18n();
     initLanguageDropdown();
 
@@ -3733,11 +3834,15 @@ function installWheelScrolling() {
         // every settings-schema category with live enabled/total counts.
         // v4.29.0: expanded-category state restored above.
         renderSchemaOverview();
+        // Companion update buttons only make sense under github-full.
+        refreshCompanionUpdateVisibility();
         registerOptionalHostPermissionListeners();
         void refreshOptionalHostGrantState();
     } catch (error) {
         console.warn('[Astra Deck popup] Failed to load settings:', error);
         render({}, '');
+        // Settings unknown — fail closed to the store-safe shape.
+        refreshCompanionUpdateVisibility();
         showStatus(t('statusQuickCtrlLoadFail', 'Quick controls could not be loaded. Try reopening the popup.'), 'error', 5000);
     }
     focusInitialPopupControl();
@@ -3765,11 +3870,16 @@ function installWheelScrolling() {
             event.preventDefault();
             q.value = '';
             render(popupState.settings, '');
+            // The schema overview consults q.value too — clearing the
+            // filter must un-filter the overview, not just the toggles.
+            renderSchemaOverview();
         }
     });
     clearSearchButton.addEventListener('click', () => {
         q.value = '';
         render(popupState.settings, '');
+        // Keep the schema overview in sync with the cleared filter.
+        renderSchemaOverview();
         q.focus();
     });
 
@@ -3792,6 +3902,9 @@ function installWheelScrolling() {
             // privacyDataFlowPanel from the in-page workspace must
             // surface in the popup on next render.
             renderDataFlowPanel();
+            // Profile flips (githubFullProfile / safeStoreProfile) must
+            // show/hide the companion update buttons immediately.
+            refreshCompanionUpdateVisibility();
             // v4.23.0: keep the schema overview's counts in sync
             // when settings change from any source — but never blow away
             // a focused inline editor (number/text/JSON), which would
