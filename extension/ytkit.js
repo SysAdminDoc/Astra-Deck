@@ -701,7 +701,7 @@ return response;
     // Settings version for migrations
 
     // ── Version ──
-    const YTKIT_VERSION = '4.46.2';
+    const YTKIT_VERSION = '4.46.3';
     const BRAND = Object.freeze({
         name: 'Astra Deck',
         short: 'Astra',
@@ -2258,7 +2258,7 @@ return response;
         repairBtn.type = 'button';
         repairBtn.className = 'ytkit-dl-progress__action';
         repairBtn.textContent = t('dlRepairBtn', 'Repair downloader');
-        repairBtn.setAttribute('aria-label', t('dlRepairAria', 'Open local downloader repair steps'));
+        repairBtn.setAttribute('aria-label', t('dlRepairAria', 'Open Astra Downloader repair steps'));
         repairBtn.addEventListener('click', () => MediaDLManager.showInstallPrompt('retry'));
         actions.appendChild(repairBtn);
 
@@ -2336,7 +2336,7 @@ return response;
                     data.status === 'processing' ? t('dlProgressStateFinishing', 'Finishing') : t('dlProgressStateDownloading', 'Downloading'),
                     data.eta
                         ? t('dlProgressActiveEtaTpl', `${p.toFixed(1)}% complete. ${data.eta} remaining.`).replace('{pct}', p.toFixed(1)).replace('{eta}', data.eta)
-                        : t('dlProgressActiveTpl', `${p.toFixed(1)}% complete. Stay on YouTube while the local downloader finishes.`).replace('{pct}', p.toFixed(1))
+                        : t('dlProgressActiveTpl', `${p.toFixed(1)}% complete. Stay on YouTube while Astra Downloader finishes.`).replace('{pct}', p.toFixed(1))
                 );
 
                 if (data.status === 'done' || data.status === 'complete') {
@@ -2347,7 +2347,7 @@ return response;
                     pct.textContent = '100%';
                     spd.textContent = '';
                     eta.textContent = t('dlProgressReady', 'Ready');
-                    setProgressState('success', t('dlProgressStateComplete', 'Complete'), t('dlProgressCompleteCopy', 'The local downloader finished successfully.'));
+                    setProgressState('success', t('dlProgressStateComplete', 'Complete'), t('dlProgressCompleteCopy', 'Astra Downloader finished successfully.'));
                     setTimeout(() => panel.remove(), 4000);
                     return;
                 }
@@ -2371,14 +2371,14 @@ return response;
                 }
                 if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                     stopPolling();
-                    const failureReason = data.error || t('dlProgressFailureDefault', 'Local downloader failed');
+                    const failureReason = data.error || t('dlProgressFailureDefault', 'Astra Downloader failed');
                     fill.classList.remove('is-success');
                     fill.classList.add('is-error');
                     title.textContent = failureReason;
                     pct.textContent = t('dlProgressStateFailed', 'Failed');
                     spd.textContent = '';
                     eta.textContent = '';
-                    const needsRepair = /cookie|yt-dlp|unauthorized|local downloader/i.test(failureReason);
+                    const needsRepair = /cookie|yt-dlp|unauthorized|local downloader|astra downloader/i.test(failureReason);
                     setProgressState('error', t('dlProgressStateNeedsAttention', 'Needs Attention'), failureReason, needsRepair);
                     showToast(failureReason, '#ef4444', { duration: 6 });
                     if (needsRepair) {
@@ -2400,15 +2400,15 @@ return response;
                     pct.textContent = t('dlProgressStateError', 'Error');
                     spd.textContent = '';
                     eta.textContent = '';
-                    setProgressState('error', t('dlProgressStateLost', 'Connection Lost'), t('dlProgressLostCopy', 'Astra Deck lost contact with the local downloader. Choose Repair downloader to recover.'), true);
-                    showToast(t('dlProgressLostToast', 'Lost contact with the local downloader.'), '#ef4444', { duration: 5 });
+                    setProgressState('error', t('dlProgressStateLost', 'Connection Lost'), t('dlProgressLostCopy', 'Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover.'), true);
+                    showToast(t('dlProgressLostToast', 'Lost contact with Astra Downloader.'), '#ef4444', { duration: 5 });
                     return;
                 }
                 // Transient error — surface a gentle status update but keep polling.
                 setProgressState(
                     'active',
                     t('dlProgressStateReconnecting', 'Reconnecting'),
-                    t('dlProgressReconnectingCopy', 'Momentary hiccup with the local downloader — retrying automatically.')
+                    t('dlProgressReconnectingCopy', 'Momentary hiccup with Astra Downloader — retrying automatically.')
                 );
             }
             if (!stopped && panel.isConnected) {
@@ -2676,7 +2676,7 @@ return response;
             const titleEl = document.createElement('span');
             titleEl.id = 'ytkit-install-prompt-title';
             titleEl.className = 'ytkit-install-prompt__title';
-            titleEl.textContent = isRetryMode ? 'Reconnect the local downloader' : 'Set up local downloads';
+            titleEl.textContent = isRetryMode ? 'Reconnect Astra Downloader' : 'Set up local downloads';
             const closeBtn = document.createElement('button');
             closeBtn.className = 'ytkit-install-prompt__close';
             closeBtn.type = 'button';
@@ -2765,7 +2765,7 @@ return response;
             // 1. Retry / Start Server
             if (isRetryMode) {
                 const retryBtn = makeBtn('Start service', 'primary', async () => {
-                    setPromptNote('Starting the local downloader service…', 'warning');
+                    setPromptNote('Starting the Astra Downloader service…', 'warning');
                     setPromptButtonState(retryBtn, 'Starting…');
                     retryBtn.disabled = true;
                     retryBtn.setAttribute('aria-busy', 'true');
@@ -2776,7 +2776,7 @@ return response;
                         prompt.remove();
                     } else {
                         retryBtn.setAttribute('aria-busy', 'false');
-                        setPromptNote('The service did not respond. Run setup below to repair the local downloader, then check again.', 'error');
+                        setPromptNote('The service did not respond. Run setup below to repair Astra Downloader, then check again.', 'error');
                         setPromptButtonState(retryBtn, 'Try again', 'danger');
                         retryBtn.disabled = false;
                     }
@@ -2800,7 +2800,7 @@ return response;
                     'success'
                 );
                 copyBtn.disabled = false;
-            }, 'Recommended. Installs or repairs the local downloader.');
+            }, 'Recommended. Installs or repairs Astra Downloader.');
             btnCol.appendChild(copyBtn);
 
             // 3. Copy PowerShell command
@@ -2819,14 +2819,14 @@ return response;
 
             // 4. "I just installed it" — re-check
             const recheckBtn = makeBtn('Check again', 'ghost', async () => {
-                setPromptNote('Checking for the local downloader service…', 'warning');
+                setPromptNote('Checking for the Astra Downloader service…', 'warning');
                 setPromptButtonState(recheckBtn, 'Checking…');
                 recheckBtn.disabled = true;
                 recheckBtn.setAttribute('aria-busy', 'true');
                 this.resetAutoStart();
                 const result = await this.tryAutoStart(5);
                 if (result.ok) {
-                    showToast(t('toastDlReady', 'Local downloader is ready.'), '#22c55e', { duration: 4 });
+                    showToast(t('toastDlReady', 'Astra Downloader is ready.'), '#22c55e', { duration: 4 });
                     prompt.remove();
                 } else {
                     recheckBtn.setAttribute('aria-busy', 'false');
@@ -2911,7 +2911,7 @@ return response;
         }
         if (!mdl.ok) {
             DebugManager.log('Download', 'Local yt-dlp server unavailable');
-            showToast(t('toastDlInstallPrompt', 'Install the local downloader to enable downloads.'), '#f59e0b', { duration: 4 });
+            showToast(t('toastDlInstallPrompt', 'Install Astra Downloader to enable downloads.'), '#f59e0b', { duration: 4 });
             if (!storageRead('ytkit_mediadl_prompt_dismissed', false)) {
                 MediaDLManager.showInstallPrompt(MediaDLManager._autoStartAttempted ? 'retry' : 'install');
             }
@@ -2925,7 +2925,7 @@ return response;
             let finalError = e;
             if (_isDownloaderConnectionError(e)) {
                 DebugManager.log('Download', 'Local downloader request failed; attempting one server restart');
-                showToast(t('toastDlStopped', 'Local downloader stopped. Starting it again…'), '#3b82f6', { duration: 4 });
+                showToast(t('toastDlStopped', 'Astra Downloader stopped. Starting it again…'), '#3b82f6', { duration: 4 });
                 MediaDLManager.resetAutoStart();
                 const restarted = await MediaDLManager.tryAutoStart(5);
                 if (restarted.ok) {
@@ -2938,7 +2938,7 @@ return response;
                 }
             }
             DebugManager.log('Download', `MediaDL download failed: ${finalError.message}`);
-            showToast(t('toastDlRequestFailed', 'Local downloader request failed.'), '#ef4444', { duration: 4 });
+            showToast(t('toastDlRequestFailed', 'Astra Downloader request failed.'), '#ef4444', { duration: 4 });
             MediaDLManager.showInstallPrompt('retry');
         } finally {
             _downloadInProgress = false;
@@ -2983,7 +2983,7 @@ return response;
                         { duration: 15 }
                     );
                 } else {
-                    showToast('MediaDL: ' + (resp.error || 'Unknown error'), '#ef4444', { duration: 5 });
+                    showToast('Astra Downloader: ' + (resp.error || 'Unknown error'), '#ef4444', { duration: 5 });
                 }
             } catch (error) {
                 DebugManager.log('MediaDL', `Download request error: ${error.message}`);
@@ -4131,6 +4131,9 @@ return response;
             // user opens via the in-chrome moon button + a prompt.
             sleepTimer: false,
             restoreNativeYouTubeUi: false,
+            // v4.46.2 — the owner's Stylebot-derived panel/toast preset moved
+            // out of unconditional early.css rules; opt-in via html.ytkit-clean-ui.
+            cleanUiPreset: false,
         },
 
         // Settings versioning and migration
@@ -4143,12 +4146,16 @@ return response;
                 // if (s.oldKey !== undefined) { s.newKey = s.oldKey; delete s.oldKey; }
                 return s;
             },
+            // Migrations 3 and 4 exist to seed new defaults onto pre-v3/v4
+            // snapshots. They must stay conditional — an imported backup that
+            // carries an explicit user choice (false) must not be flipped back
+            // to true just because the version marker was stripped or old.
             3: (s) => {
-                s.hidePinnedComments = true;
+                if (s.hidePinnedComments === undefined) s.hidePinnedComments = true;
                 return s;
             },
             4: (s) => {
-                s.autoExpandComments = true;
+                if (s.autoExpandComments === undefined) s.autoExpandComments = true;
                 return s;
             },
             5: (s) => {
@@ -4216,8 +4223,17 @@ return response;
             }
         },
 
-        _migrate(savedSettings, source = 'load') {
-            let version = this._normalizeVersion(savedSettings._settingsVersion);
+        _migrate(savedSettings, source = 'load', options = {}) {
+            // buildExportSnapshot({ schemaOnly: true }) strips the inner
+            // `_settingsVersion` marker on export (it is not a schema key), so
+            // a re-imported backup would otherwise re-run every migration from
+            // v1. Seed from the backup's top-level `settingsSchemaVersion`
+            // (threaded through options.backupSchemaVersion) when the inner
+            // marker is missing; an explicit inner marker still wins.
+            const versionSeed = (savedSettings._settingsVersion !== undefined && savedSettings._settingsVersion !== null)
+                ? savedSettings._settingsVersion
+                : options.backupSchemaVersion;
+            let version = this._normalizeVersion(versionSeed);
             const startingVersion = version;
             if (version > this.SETTINGS_VERSION) {
                 this._recordMigrationStep(
@@ -4310,8 +4326,8 @@ return response;
             };
         },
 
-        _prepareImportedSettings(settings) {
-            const migrated = this._sanitize(this._migrate(this._sanitize(settings), 'profile-import'));
+        _prepareImportedSettings(settings, options = {}) {
+            const migrated = this._sanitize(this._migrate(this._sanitize(settings), 'profile-import', options));
             const validated = this._validateSettingsForBackupImport(migrated);
             return this._normalizeProfileModel(this._sanitize({
                 ...this.defaults,
@@ -4502,7 +4518,9 @@ return response;
                 };
 
                 try {
-                    const newSettings = this._prepareImportedSettings(settings);
+                    const newSettings = this._prepareImportedSettings(settings, {
+                        backupSchemaVersion: importedData.settingsSchemaVersion
+                    });
                     const bytesEstimate = estimateSerializedBytes({
                         [STORAGE_KEYS.settings]: newSettings,
                         ...(hiddenVideos !== null ? { [STORAGE_KEYS.hiddenVideos]: hiddenVideos } : {}),
@@ -5105,9 +5123,21 @@ return response;
 
     function applyExternalSettingsUpdate({ source = 'storage', nextSettings = null } = {}) {
         const previousSettings = appState.settings || settingsManager.load();
-        const resolvedSettings = nextSettings
-            ? settingsManager._sanitize({ ...settingsManager.defaults, ...settingsManager._sanitize(nextSettings), _settingsVersion: settingsManager.SETTINGS_VERSION })
-            : settingsManager.load();
+        let resolvedSettings;
+        if (nextSettings) {
+            const sanitizedNext = settingsManager._sanitize(nextSettings);
+            // Mirror load(): never LOWER a stamp written by a newer build.
+            // During a mixed-version window (e.g. a newer popup writing to
+            // storage read by an older tab) forcing SETTINGS_VERSION here
+            // would re-arm forward migrations the newer build already ran.
+            const incomingVersion = settingsManager._normalizeVersion(sanitizedNext._settingsVersion);
+            const targetVersion = incomingVersion > settingsManager.SETTINGS_VERSION
+                ? incomingVersion
+                : settingsManager.SETTINGS_VERSION;
+            resolvedSettings = settingsManager._sanitize({ ...settingsManager.defaults, ...sanitizedNext, _settingsVersion: targetVersion });
+        } else {
+            resolvedSettings = settingsManager.load();
+        }
         const changedKeys = getChangedSettingKeys(previousSettings, resolvedSettings);
         const changedKeysSet = new Set(changedKeys);
 
@@ -8766,6 +8796,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _videoType: 'standard',        // 'live' | 'vod' | 'standard'
             _positionedEls: [],            // elements we CSS-positioned over right panel
             _scrollTarget: null,           // which element receives scroll/wheel handlers
+            _pendingWaits: [],             // cancel fns for in-flight waitForElement chains
+            _destroyed: false,             // blocks zombie mounts after teardown
 
             _getPlayer()  { return document.querySelector('#player-container'); },
             _belowCache: null,
@@ -10809,7 +10841,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._videoType = VideoTypeDetector.refresh();
 
                 const doMount = () => {
-                    if (this._isActive) return;
+                    // _destroyed guard: the waitForElement chains below can
+                    // fire several seconds later — after teardown they must
+                    // not resurrect an overlay with no styles and no teardown.
+                    if (this._destroyed || this._isActive) return;
                     // Apply class right before mount — prevents broken half-state
                     // where masthead is hidden but overlay hasn’t mounted yet
                     document.documentElement.classList.add('ytkit-split-active');
@@ -10824,15 +10859,27 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (player && hasContent) {
                     doMount();
                 } else {
-                    waitForElement('#player-container', () => {
-                        waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                    this._cancelPendingWaits();
+                    this._pendingWaits.push(waitForElement('#player-container', () => {
+                        if (this._destroyed) return;
+                        this._pendingWaits.push(waitForElement('#below, ytd-watch-metadata, ytd-live-chat-frame, #chat', () => {
+                            if (this._destroyed) return;
                             if (window.location.pathname.startsWith('/watch')) doMount();
-                        });
-                    });
+                        }));
+                    }));
                 }
             },
 
+            _cancelPendingWaits() {
+                for (const cancel of this._pendingWaits) {
+                    try { if (typeof cancel === 'function') cancel(); }
+                    catch { /* reason: wait cancellation is best-effort teardown */ }
+                }
+                this._pendingWaits = [];
+            },
+
             init() {
+                this._destroyed = false;
                 const stickyVideoFeatures = globalThis.YTKitFeatures && globalThis.YTKitFeatures.stickyVideo;
                 const css = (stickyVideoFeatures && typeof stickyVideoFeatures.buildSplitShellCss === 'function'
                     && stickyVideoFeatures.buildSplitShellCss())
@@ -13496,6 +13543,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             destroy() {
+                this._destroyed = true;
+                this._cancelPendingWaits();
                 this._unmount();
                 this._restoreSplitActionDock();
                 this._stopChatObserver();
@@ -17467,7 +17516,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     items.push({
                         id: 'setup-mediadl',
                         icon: 'settings',
-                        label: 'Install Local Downloader',
+                        label: 'Install Astra Downloader',
                         class: 'ytkit-item-setup',
                         action: () => MediaDLManager.showInstallPrompt('install')
                     });
@@ -20612,6 +20661,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _textarea: null,
             _statusEl: null,
             _saveTimer: null,
+            _pendingSave: null,
             _attachTimer: null,
             _navRule: null,
 
@@ -20689,8 +20739,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (countEl) countEl.textContent = `${String(value || '').length}/${this._MAX_NOTE_CHARS}`;
             },
 
-            _saveCurrentNote(value) {
-                const videoId = getVideoId();
+            // videoId/title are captured at SCHEDULE time and passed through:
+            // resolving getVideoId() when the debounce fires races SPA
+            // navigation — typing on video A then clicking video B within the
+            // 450ms window would save A's text under B (or, when the textarea
+            // was just cleared, delete B's note).
+            _saveCurrentNote(value, videoId = getVideoId(), title = this._currentTitle()) {
                 if (!videoId) return;
                 const now = Date.now();
                 const notes = this._readNotes();
@@ -20707,7 +20761,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const existing = notes[videoId];
                 notes[videoId] = {
                     videoId,
-                    title: this._currentTitle(),
+                    title,
                     note: text,
                     url: this._currentUrl(videoId),
                     createdAt: existing?.createdAt || now,
@@ -20722,10 +20776,26 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._saveTimer) clearTimeout(this._saveTimer);
                 this._updateStatus('Saving...');
                 this._updateCount(value);
+                this._pendingSave = {
+                    value,
+                    videoId: getVideoId(),
+                    title: this._currentTitle()
+                };
                 this._saveTimer = setTimeout(() => {
                     this._saveTimer = null;
-                    this._saveCurrentNote(value);
+                    this._flushPendingSave();
                 }, 450);
+            },
+
+            _flushPendingSave() {
+                const pending = this._pendingSave;
+                this._pendingSave = null;
+                if (this._saveTimer) {
+                    clearTimeout(this._saveTimer);
+                    this._saveTimer = null;
+                }
+                if (!pending) return;
+                this._saveCurrentNote(pending.value, pending.videoId, pending.title);
             },
 
             _deleteCurrentNote() {
@@ -20865,6 +20935,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._ensureStyles();
                 this._navRule = () => {
+                    // Persist any debounced edit under the video it was typed
+                    // on BEFORE tearing the panel down for the next video.
+                    this._flushPendingSave();
                     document.querySelectorAll('.ytkit-video-notes-container').forEach(el => el.remove());
                     this._container = null;
                     this._textarea = null;
@@ -20876,9 +20949,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             destroy() {
-                if (this._saveTimer) clearTimeout(this._saveTimer);
+                this._flushPendingSave();
                 if (this._attachTimer) clearTimeout(this._attachTimer);
-                this._saveTimer = null;
                 this._attachTimer = null;
                 removeNavigateRule(this.id);
                 this._navRule = null;
@@ -22689,7 +22761,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                 const overlay = document.createElement('div');
                 overlay.id = 'ytkit-stats-overlay';
-                overlay.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.75);color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;border-radius:6px;z-index:100;pointer-events:none;line-height:1.6;display:none;';
+                overlay.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.75);color:#e8ecf4;font-family:monospace;font-size:11px;padding:8px 12px;border-radius:6px;z-index:100;pointer-events:none;line-height:1.6;display:none;';
                 player.appendChild(overlay);
                 this._overlay = overlay;
 
@@ -22699,8 +22771,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.className = 'ytp-button ytkit-player-btn ytkit-player-btn--text ytkit-stats-btn';
                 btn.title = 'Toggle Stats';
                 btn.textContent = 'STATS';
+                btn.setAttribute('aria-label', 'Toggle playback stats overlay');
+                btn.setAttribute('aria-pressed', 'false');
                 btn.addEventListener('click', () => {
-                    overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+                    const show = overlay.style.display === 'none';
+                    overlay.style.display = show ? 'block' : 'none';
+                    btn.setAttribute('aria-pressed', String(show));
                 });
                 const controls = player.querySelector('.ytp-right-controls');
                 if (controls) controls.insertBefore(btn, controls.firstChild);
@@ -24471,6 +24547,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
             destroy() {
                 document.documentElement.classList.remove('ytkit-restore-native-ui');
+            }
+        },
+        {
+            id: 'cleanUiPreset',
+            name: 'Compact Clean UI',
+            description: 'Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default.',
+            group: 'Theme',
+            icon: 'eye-off',
+            init() {
+                // early.css gates the owner's Stylebot-derived preset behind
+                // `html.ytkit-clean-ui`. Applied on <html> (not body) to match
+                // the early.css selectors, mirroring restoreNativeYouTubeUi.
+                document.documentElement.classList.add('ytkit-clean-ui');
+            },
+            destroy() {
+                document.documentElement.classList.remove('ytkit-clean-ui');
             }
         },
         {
@@ -27421,7 +27513,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const merged = { ...settingsManager.defaults, ...profiles[name] };
                 merged._profiles = profiles;
                 merged._activeProfile = name;
-                merged._settingsVersion = settingsManager.SETTINGS_VERSION;
+                // Mirror load(): preserve the highest known stamp instead of
+                // forcing the running version — applying a profile must not
+                // lower a stamp written by a newer build (that would re-arm
+                // forward migrations it already ran).
+                const snapshotVersion = settingsManager._normalizeVersion(profiles[name]?._settingsVersion);
+                const currentVersion = settingsManager._normalizeVersion(appState?.settings?._settingsVersion);
+                merged._settingsVersion = Math.max(snapshotVersion, currentVersion, settingsManager.SETTINGS_VERSION);
                 settingsManager.save(merged);
                 if (typeof showToast === 'function') showToast(`Applied profile: ${name}. Reloading…`, '#22c55e');
                 setTimeout(() => location.reload(), 600);
@@ -30937,6 +31035,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _styleElement: null,
             _container: null,
             _pollTimer: null,
+            _navTimer: null,
+            _destroyed: false,
 
             _ensureStyles() {
                 if (this._styleElement) return;
@@ -31039,9 +31139,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                this._destroyed = false;
                 this._ensureStyles();
                 addNavigateRule(this.id, () => {
-                    setTimeout(() => { this._attach(); this._render(); }, 1500);
+                    // Track + guard the deferred attach: an untracked timeout
+                    // would fire after teardown and resurrect the pills.
+                    if (this._navTimer) clearTimeout(this._navTimer);
+                    this._navTimer = setTimeout(() => {
+                        this._navTimer = null;
+                        if (this._destroyed) return;
+                        this._attach();
+                        this._render();
+                    }, 1500);
                 });
                 this._attach();
                 this._render();
@@ -31058,7 +31167,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             destroy() {
+                this._destroyed = true;
                 removeNavigateRule(this.id);
+                if (this._navTimer) clearTimeout(this._navTimer);
+                this._navTimer = null;
                 if (this._pollTimer) clearInterval(this._pollTimer);
                 this._pollTimer = null;
                 this._container?.remove();
@@ -31112,7 +31224,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             _extractFormats() {
-                const data = this._parsePlayerResponse();
+                // Prefer the shared `_rw` player-response bridge (href-keyed
+                // cache + brace-counting fallback) over the local inline
+                // <script> regex scrape. Either source ultimately reads the
+                // cold-load ytInitialPlayerResponse, which goes stale after a
+                // SPA navigation — so always validate the response belongs to
+                // the CURRENT video before exposing its (expired) stream URLs.
+                const data = (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null)
+                    || this._parsePlayerResponse();
+                if (data?.videoDetails?.videoId !== getVideoId()) {
+                    return { formats: [], adaptive: [] };
+                }
                 const formats = data?.streamingData?.formats || [];
                 const adaptive = data?.streamingData?.adaptiveFormats || [];
                 return { formats, adaptive };
@@ -31209,6 +31331,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             init() {
                 this._ensureStyles();
                 addNavigateRule(this.id, () => {
+                    // Close any open panel — its stream URLs belong to the
+                    // previous video and are already expiring.
+                    this._panel?.remove();
+                    this._panel = null;
                     if (this._navTimer) clearTimeout(this._navTimer);
                     this._navTimer = setTimeout(() => this._attach(), 1500);
                 });
@@ -31238,6 +31364,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             icon: 'download-cloud',
             pages: [PageTypes.WATCH],
             _hooked: false,
+            _navTimer: null,
 
             _isAllowed() {
                 // Default to safe-store posture if profile model unavailable.
@@ -31304,9 +31431,15 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
+                this._hooked = true;
                 // Wire a small button next to the existing download button.
                 addNavigateRule(this.id, () => {
-                    setTimeout(() => {
+                    // Track + guard the deferred attach: an untracked timeout
+                    // would fire after teardown and resurrect the button.
+                    if (this._navTimer) clearTimeout(this._navTimer);
+                    this._navTimer = setTimeout(() => {
+                        this._navTimer = null;
+                        if (!this._hooked) return;
                         if (!isWatchPagePath()) return;
                         const anchor = document.querySelector('.ytkit-download-btn');
                         if (!anchor || anchor.parentElement?.querySelector('.ytkit-cobalt-fallback-btn')) return;
@@ -31319,11 +31452,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         anchor.insertAdjacentElement('afterend', btn);
                     }, 1500);
                 });
-                this._hooked = true;
             },
 
             destroy() {
                 removeNavigateRule(this.id);
+                if (this._navTimer) clearTimeout(this._navTimer);
+                this._navTimer = null;
                 document.querySelectorAll('.ytkit-cobalt-fallback-btn').forEach(b => b.remove());
                 this._hooked = false;
             }
@@ -31400,7 +31534,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!history) {
                     const err = document.createElement('div');
                     err.className = 'ytkit-dl-history-panel__empty';
-                    err.textContent = 'Astra Downloader unreachable. Start the local downloader and try again.';
+                    err.textContent = 'Astra Downloader unreachable. Start Astra Downloader and try again.';
                     panel.appendChild(err);
                 } else if (!history.length) {
                     const empty = document.createElement('div');
@@ -31496,6 +31630,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-ryd-pill[data-tone="offline"]{color:#f59e0b;}
                     .ytkit-ryd-estimate{margin-left:4px;font:500 10px/1 system-ui;color:rgba(255,255,255,0.42);letter-spacing:0;text-transform:lowercase;}
                     .ytkit-ryd-ratio{margin-left:8px;font:500 11px/1 system-ui;color:rgba(255,255,255,0.55);}
+                    /* YouTube light theme: the white-on-translucent defaults are unreadable. */
+                    html:not([dark]) .ytkit-ryd-pill{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.05));color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-ryd-pill[data-tone="cached"]{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-ryd-pill[data-tone="offline"]{color:#b45309;}
+                    html:not([dark]) .ytkit-ryd-estimate{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-ryd-ratio{color:var(--yt-spec-text-secondary,#606060);}
                 `, 'ryd-pill');
             },
 
@@ -31785,6 +31925,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-monet-pill[data-tone="paid"]{background:rgba(248,113,113,0.14);color:#fecaca;border:1px solid rgba(248,113,113,0.35);}
                     .ytkit-monet-pill[data-tone="sponsored"]{background:rgba(251,146,60,0.14);color:#fed7aa;border:1px solid rgba(251,146,60,0.36);}
                     .ytkit-monet-pill[data-tone="clean"]{background:rgba(34,197,94,0.14);color:#bbf7d0;border:1px solid rgba(34,197,94,0.36);}
+                    /* YouTube light theme: swap the pastel-on-dark text for deep tones. */
+                    html:not([dark]) .ytkit-monet-pill[data-tone="paid"]{background:rgba(248,113,113,0.12);color:#991b1b;border-color:rgba(153,27,27,0.4);}
+                    html:not([dark]) .ytkit-monet-pill[data-tone="sponsored"]{background:rgba(251,146,60,0.12);color:#9a3412;border-color:rgba(154,52,18,0.4);}
+                    html:not([dark]) .ytkit-monet-pill[data-tone="clean"]{background:rgba(34,197,94,0.12);color:#166534;border-color:rgba(22,101,52,0.4);}
                 `, 'monet-indicator');
             },
 
@@ -32099,13 +32243,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'subscriptionGroups',
             name: 'Subscription Groups',
-            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up.',
+            description: 'PocketTube-grade local groups for your subscriptions feed. Create named groups, add channels via the Edit Channels panel, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up.',
             group: 'Subscriptions',
             icon: 'folder-tree',
             pages: [PageTypes.SUBSCRIPTIONS],
             _styleElement: null,
             _toolbar: null,
             _digestPanel: null,
+            _membersPanel: null,
             _activeGroupId: '',     // '' = all subscriptions
             _observer: null,
             _navRule: null,
@@ -32155,6 +32300,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-dead-badge{background:#f59e0b;color:#1f1300;}
                     .ytkit-sub-staged-badge{background:#22c55e;color:#022c14;}
                     .ytkit-sub-hidden-by-group{display:none !important;}
+                    .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 system-ui;}
+                    .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
+                    .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+                    .ytkit-sub-members-title{margin:0;color:#f8fafc;font:700 13px/1.2 system-ui;}
+                    .ytkit-sub-members-meta{color:rgba(226,232,240,0.62);font:11px/1.3 system-ui;}
+                    .ytkit-sub-members-close{min-height:28px;padding:5px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.22);background:rgba(255,255,255,0.04);color:#e5e7eb;font:700 11px/1 system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
+                    .ytkit-sub-members-close:hover{background:rgba(255,255,255,0.08);}
+                    .ytkit-sub-members-close:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);}
+                    .ytkit-sub-members-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px;max-height:280px;overflow:auto;}
+                    .ytkit-sub-members-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.055);cursor:pointer;}
+                    .ytkit-sub-members-row:hover{background:rgba(255,255,255,0.07);}
+                    .ytkit-sub-members-row input{accent-color:#7c3aed;cursor:pointer;}
+                    .ytkit-sub-members-row input:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
+                    .ytkit-sub-members-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f8fafc;font-weight:600;}
+                    .ytkit-sub-members-empty{padding:10px;border-radius:6px;background:rgba(255,255,255,0.035);color:rgba(226,232,240,0.62);}
+                    /* YouTube light theme: toolbar + chips ship dark-only colors above. */
+                    html:not([dark]) .ytkit-sub-toolbar{background:var(--yt-spec-badge-chip-background,rgba(0,0,0,0.04));border-color:rgba(0,0,0,0.1);}
+                    html:not([dark]) .ytkit-sub-toolbar__label{color:var(--yt-spec-text-secondary,#606060);}
+                    html:not([dark]) .ytkit-sub-toolbar select,html:not([dark]) .ytkit-sub-toolbar button{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:var(--yt-spec-text-primary,#0f0f0f);}
+                    html:not([dark]) .ytkit-sub-toolbar button:hover{background:rgba(0,0,0,0.1);}
+                    html:not([dark]) .ytkit-sub-toolbar button[data-action="scan-stale"]{color:#1d4ed8;}
+                    html:not([dark]) .ytkit-sub-toolbar button[data-action="digest"]{color:#075985;}
+                    html:not([dark]) .ytkit-sub-toolbar button[data-action="stage-unsubscribe"]{color:#92400e;}
+                    html:not([dark]) .ytkit-sub-toolbar button[data-action="undo-staged-unsubscribe"]{color:#166534;}
+                    html:not([dark]) .ytkit-sub-group-chip{background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.38);color:#5b21b6;}
+                    html:not([dark]) .ytkit-sub-group-chip[data-active="1"]{background:#7c3aed;color:#fff;}
+                    html:not([dark]) .ytkit-sub-group-chip[data-depth="1"]{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.34);color:#1d4ed8;}
+                    html:not([dark]) .ytkit-sub-group-empty{background:rgba(245,158,11,0.1);border-color:rgba(180,83,9,0.4);color:#92400e;}
                 `, 'subscription-groups');
             },
 
@@ -32193,7 +32366,20 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _readUnsubscribeStaging() {
                 const data = appState?.settings?.[this._UNSUB_STAGE_KEY];
-                return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+                const staged = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+                // Enforce the 30-day undo deadline that is stored/displayed but
+                // was never enforced: drop expired records so the staging map
+                // can't grow forever and the badge/toolbar reflect reality.
+                const now = Date.now();
+                const pruned = {};
+                let dropped = 0;
+                for (const [channelId, record] of Object.entries(staged)) {
+                    const undoUntil = Number(record?.undoUntil) || 0;
+                    if (undoUntil && now > undoUntil) { dropped++; continue; }
+                    pruned[channelId] = record;
+                }
+                if (dropped > 0) this._writeUnsubscribeStaging(pruned);
+                return pruned;
             },
 
             _writeUnsubscribeStaging(next) {
@@ -32350,6 +32536,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (!channelId || !allowed.has(channelId)) card.classList.add('ytkit-sub-hidden-by-group');
                     else card.classList.remove('ytkit-sub-hidden-by-group');
                 });
+                this._renderGroupEmptyState(allowed);
             },
 
             _applyNewSinceMarkers() {
@@ -32504,18 +32691,22 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const summaries = this._collectRenderedCardSummaries();
                 const next = { ...this._readLastVisit() };
                 const now = Date.now();
-                let marked = 0;
+                // Count distinct CHANNELS (the toast says "channels") — the
+                // summaries list has one entry per rendered VIDEO, so a plain
+                // counter over-reports when a channel has several cards.
+                const markedChannels = new Set();
                 for (const item of summaries) {
                     if (allowed && !allowed.has(item.channelId)) continue;
                     next[item.channelId] = now;
-                    marked++;
+                    markedChannels.add(item.channelId);
                 }
-                if (allowed && marked === 0) {
+                if (allowed && markedChannels.size === 0) {
                     for (const channelId of allowed) {
                         next[channelId] = now;
-                        marked++;
+                        markedChannels.add(channelId);
                     }
                 }
+                const marked = markedChannels.size;
                 this._writeLastVisit(this._capLastVisitMap(next));
                 this._applyNewSinceMarkers();
                 this._applySort();
@@ -32760,23 +32951,50 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
             _applySort(modeOverride) {
                 const mode = this._normalizeSubscriptionSortMode(modeOverride || this._getActiveSortMode());
-                if (mode === 'default') return;
                 const container = document.querySelector('ytd-rich-grid-renderer #contents, ytd-section-list-renderer #contents');
                 if (!container) return;
                 const cards = Array.from(container.querySelectorAll(':scope > ytd-rich-item-renderer, :scope > ytd-video-renderer'));
                 if (!cards.length) return;
+                if (mode === 'default') {
+                    // Restore YouTube's native order. Cards carry an original
+                    // index stamped before the first re-append; without this,
+                    // switching back to 'default' kept the previous mode's DOM
+                    // order until the next navigation.
+                    const stamped = cards.filter(card => card.dataset.ytkitOrigIdx !== undefined);
+                    if (!stamped.length) return;
+                    cards.sort((a, b) =>
+                        (Number(a.dataset.ytkitOrigIdx) || 0) - (Number(b.dataset.ytkitOrigIdx) || 0));
+                    cards.forEach(card => container.appendChild(card));
+                    return;
+                }
+                // Stamp original DOM order once per card so 'default' can be
+                // restored later. Cards rendered after a sort get appended
+                // after the highest existing stamp (their native position).
+                let nextOrigIdx = cards.reduce((max, card) => {
+                    const idx = Number(card.dataset.ytkitOrigIdx);
+                    return Number.isFinite(idx) && idx >= max ? idx + 1 : max;
+                }, 0);
+                cards.forEach(card => {
+                    if (card.dataset.ytkitOrigIdx === undefined) card.dataset.ytkitOrigIdx = String(nextOrigIdx++);
+                });
                 const lastVisit = mode === 'new-since-last-visit' ? this._readLastVisit() : null;
                 const score = (card) => {
                     const text = card.textContent || '';
                     if (mode === 'duration-asc') {
-                        // Prefer the thumbnail duration badge so a timestamp in
-                        // the title (e.g. "10:30") can't be mistaken for runtime.
-                        const badge = card.querySelector('ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer');
-                        const m = (badge?.textContent || text).match(/(\d+):(\d+)(?::(\d+))?/);
+                        // Prefer the duration badge (classic renderer + newer
+                        // lockup badge-shape surfaces) so a title timestamp
+                        // ("10:30") can't be mistaken for runtime.
+                        const badge = card.querySelector('ytd-thumbnail-overlay-time-status-renderer #text, ytd-thumbnail-overlay-time-status-renderer, yt-thumbnail-badge-view-model, .badge-shape__text, .yt-badge-shape__text');
+                        const source = badge?.textContent || text;
+                        // Whole-card text fallback: take the LAST duration-shaped
+                        // match — titles precede the badge in text order.
+                        const matches = badge?.textContent
+                            ? [source.match(/(\d+):(\d+)(?::(\d+))?/)].filter(Boolean)
+                            : Array.from(source.matchAll(/(\d+):(\d+)(?::(\d+))?/g));
+                        const m = matches.length ? matches[matches.length - 1] : null;
                         if (!m) return Number.POSITIVE_INFINITY;
-                        // Normalize to SECONDS regardless of MM:SS vs HH:MM:SS —
-                        // the old formula scored MM:SS in seconds but HH:MM:SS in
-                        // minutes, so mixing short and long videos sorted wrong.
+                        // Score in SECONDS for both MM:SS and HH:MM:SS — the old
+                        // formula mixed units and sorted long videos wrong.
                         return m[3] !== undefined
                             ? (Number(m[1]) || 0) * 3600 + (Number(m[2]) || 0) * 60 + (Number(m[3]) || 0)
                             : (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0);
@@ -32956,6 +33174,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (!target || !target.parentElement) return;
                 const hadDigestPanel = Boolean(this._digestPanel);
                 this._closeDigestPanel();
+                this._closeMembersPanel();
                 this._toolbar?.remove();
                 const bar = document.createElement('div');
                 bar.className = 'ytkit-sub-toolbar';
@@ -33041,6 +33260,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     subBtn.setAttribute('aria-label', 'Create subscription subgroup');
                     subBtn.addEventListener('click', () => this._showNewGroupDialog(subBtn, this._activeGroupId));
                     bar.appendChild(subBtn);
+                }
+
+                if (this._activeGroupId && groups[this._activeGroupId]) {
+                    const activeGroupId = this._activeGroupId;
+                    const editBtn = document.createElement('button');
+                    editBtn.type = 'button';
+                    editBtn.dataset.action = 'edit-channels';
+                    editBtn.textContent = 'Edit Channels';
+                    editBtn.setAttribute('aria-label', `Edit channels in ${groups[activeGroupId].name || activeGroupId}`);
+                    editBtn.setAttribute('aria-haspopup', 'dialog');
+                    editBtn.addEventListener('click', () => this._toggleMembersPanel(activeGroupId));
+                    bar.appendChild(editBtn);
                 }
 
                 const sortLabel = document.createElement('span');
@@ -33151,7 +33382,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             },
 
             init() {
-                if (window.location.pathname !== '/feed/subscriptions') return;
+                // No init-level pathname guard: the settings-panel 'toggle'
+                // path calls initFeatureLifecycle from ANY page and marks
+                // _initialized unconditionally, so an early return here left
+                // the feature permanently inert (the page tracker skips init
+                // because _initialized is already true). The navigate rule and
+                // every deferred callback below re-check the path themselves.
                 this._ensureStyles();
                 this._navRule = () => {
                     if (window.location.pathname !== '/feed/subscriptions') return;
@@ -33194,6 +33430,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._stampTimer) { clearTimeout(this._stampTimer); this._stampTimer = null; }
                 this._navRule = null;
                 this._closeDigestPanel();
+                this._closeMembersPanel();
+                document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
                 this._toolbar?.remove();
                 this._toolbar = null;
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
@@ -33205,12 +33443,164 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     delete el.dataset.ytkitChannelAgeDays;
                     delete el.dataset.ytkitStagedUnsubscribe;
                 });
+                document.querySelectorAll('[data-ytkit-orig-idx]').forEach(el => { delete el.dataset.ytkitOrigIdx; });
                 // Audit pass: kill any orphan new-group dialog so it can't outlive the feature.
                 document.querySelector('.ytkit-sub-group-dialog')?.remove();
                 this._styleElement?.remove();
                 this._styleElement = null;
                 this._activeGroupId = '';
-            }
+            },
+
+            // ── Group membership editor (NF: Edit Channels) ──
+            // Kept below the lifecycle methods: the hardening suite pins
+            // toolbar/digest/lifecycle behavior inside a fixed-size slice
+            // of this feature block.
+            _renderGroupEmptyState(allowed) {
+                document.querySelectorAll('.ytkit-sub-group-empty').forEach(el => el.remove());
+                // Only an EMPTY group warrants the notice — it hides the whole
+                // feed with no visible reason. A populated group whose channels
+                // simply aren't rendered yet fills in as the feed loads.
+                if (!allowed || allowed.size > 0) return;
+                if (!this._toolbar?.isConnected) return;
+                const notice = document.createElement('div');
+                notice.className = 'ytkit-sub-group-empty';
+                notice.setAttribute('role', 'status');
+                notice.textContent = 'No channels in this group yet — click Edit channels to add some.';
+                this._toolbar.insertAdjacentElement('afterend', notice);
+            },
+
+            _closeMembersPanel(restoreFocus = false) {
+                if (!this._membersPanel) return;
+                this._membersPanel.remove();
+                this._membersPanel = null;
+                if (restoreFocus) {
+                    const btn = this._toolbar?.querySelector('button[data-action="edit-channels"]');
+                    if (btn) try { btn.focus(); } catch { /* reason: focus restore is best-effort */ }
+                }
+            },
+
+            _toggleMembersPanel(groupId) {
+                if (this._membersPanel) {
+                    this._closeMembersPanel();
+                    return;
+                }
+                this._renderMembersPanel(groupId);
+            },
+
+            _renderMembersPanel(groupId) {
+                this._closeMembersPanel();
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group || !this._toolbar?.isConnected) return;
+                const own = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
+                // List the channels currently rendered in the feed, using the
+                // same identity key the filter uses (_extractChannelIdFromCard
+                // via _collectRenderedCardSummaries), deduped per channel.
+                // Existing members that are not rendered right now still get a
+                // row so they can be removed.
+                const channels = new Map();
+                for (const item of this._collectRenderedCardSummaries()) {
+                    if (!channels.has(item.channelId)) channels.set(item.channelId, item.channelName || item.channelId);
+                }
+                for (const id of own) {
+                    if (!channels.has(id)) channels.set(id, id);
+                }
+
+                const panel = document.createElement('section');
+                panel.className = 'ytkit-sub-members-panel';
+                panel.setAttribute('role', 'dialog');
+                panel.setAttribute('aria-label', `Edit channels in ${group.name || groupId}`);
+                panel.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._closeMembersPanel(true);
+                    }
+                });
+
+                const head = document.createElement('div');
+                head.className = 'ytkit-sub-members-head';
+                const titleWrap = document.createElement('div');
+                const title = document.createElement('h3');
+                title.className = 'ytkit-sub-members-title';
+                title.textContent = `Edit channels — ${group.name || groupId}`;
+                const meta = document.createElement('div');
+                meta.className = 'ytkit-sub-members-meta';
+                meta.textContent = 'Check a channel to add it to this group. Changes save immediately. Scroll the feed to surface more channels.';
+                titleWrap.append(title, meta);
+                const close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'ytkit-sub-members-close';
+                close.textContent = 'Done';
+                close.setAttribute('aria-label', 'Close the channel membership editor');
+                close.addEventListener('click', () => {
+                    this._closeMembersPanel(true);
+                    this._renderToolbar();
+                    this._applyGroupFilter();
+                });
+                head.append(titleWrap, close);
+
+                const list = document.createElement('div');
+                list.className = 'ytkit-sub-members-list';
+                list.setAttribute('role', 'group');
+                list.setAttribute('aria-label', 'Rendered channels');
+
+                if (!channels.size) {
+                    const empty = document.createElement('div');
+                    empty.className = 'ytkit-sub-members-empty';
+                    empty.textContent = 'No channels rendered yet — scroll the subscriptions feed, then reopen this panel.';
+                    list.appendChild(empty);
+                }
+
+                const sorted = Array.from(channels.entries())
+                    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), undefined, { sensitivity: 'base' }));
+                for (const [channelId, channelName] of sorted) {
+                    const row = document.createElement('label');
+                    row.className = 'ytkit-sub-members-row';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = own.has(channelId);
+                    checkbox.setAttribute('aria-label', `Include ${channelName} in ${group.name || groupId}`);
+                    checkbox.addEventListener('change', () => {
+                        this._setGroupMembership(groupId, channelId, checkbox.checked);
+                    });
+                    const name = document.createElement('span');
+                    name.className = 'ytkit-sub-members-name';
+                    name.textContent = channelName;
+                    name.title = channelId;
+                    row.append(checkbox, name);
+                    list.appendChild(row);
+                }
+
+                panel.append(head, list);
+                this._toolbar.insertAdjacentElement('afterend', panel);
+                this._membersPanel = panel;
+                const firstFocusable = panel.querySelector('input, button');
+                if (firstFocusable) try { firstFocusable.focus(); } catch { /* reason: focus is best-effort on detached re-renders */ }
+            },
+
+            _setGroupMembership(groupId, channelId, included) {
+                const groups = this._readGroups();
+                const group = groups[groupId];
+                if (!group || !channelId) return;
+                const ids = new Set(Array.isArray(group.channelIds) ? group.channelIds : []);
+                if (included) ids.add(channelId);
+                else ids.delete(channelId);
+                const next = {
+                    ...groups,
+                    [groupId]: {
+                        ...group,
+                        channelIds: Array.from(ids).slice(0, 1000),
+                        updatedAt: Date.now()
+                    }
+                };
+                this._writeGroups(next);
+                this._applyGroupFilter();
+                this._applyNewSinceMarkers();
+                if (typeof showToast === 'function') {
+                    showToast(included ? 'Channel added to group' : 'Channel removed from group', '#7c3aed', { duration: 2 });
+                }
+            },
         },
         // ═══════════════════════════════════════════════════════════════════
         //  LOCAL AI SUMMARY — Chrome built-in ai.summarizer when available
@@ -33743,6 +34133,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleElement = injectStyle(`
                     .ytkit-transcript-search-btn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(124,58,237,0.32);background:rgba(124,58,237,0.12);color:#e9d5ff;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;outline:none;touch-action:manipulation;}
                     .ytkit-transcript-search-btn:hover{background:rgba(124,58,237,0.22);}
+                    /* YouTube light theme: lavender-on-translucent text is unreadable. */
+                    html:not([dark]) .ytkit-transcript-search-btn{background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.38);color:#5b21b6;}
+                    html:not([dark]) .ytkit-transcript-search-btn:hover{background:rgba(124,58,237,0.16);}
                     .ytkit-transcript-search-btn:focus-visible,.ytkit-transcript-search-panel input:focus-visible,.ytkit-transcript-search-panel__footer button:focus-visible{box-shadow:0 0 0 2px rgba(8,11,16,0.92),0 0 0 4px rgba(124,58,237,0.32);outline:none;}
                     .ytkit-transcript-search-panel{position:fixed;right:24px;top:80px;z-index:9000;width:520px;max-height:65vh;overflow:auto;padding:14px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;font:13px/1.5 system-ui;box-shadow:0 18px 48px rgba(0,0,0,.55);}
                     .ytkit-transcript-search-panel h4{margin:0 0 8px;font-size:14px;font-weight:700;color:#fafafa;}
@@ -33948,11 +34341,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'forcedColorsSupport',
             name: 'Forced Colors / High Contrast Support',
-            description: 'When the OS reports forced-colors (Windows High Contrast, GTK forced colors), use system colors for every Astra-injected control so text remains readable and focus rings are visible.',
+            description: 'Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect.',
             group: 'Accessibility',
             icon: 'contrast',
             _styleElement: null,
-            init() {
+            // v4.46.2: the @media (forced-colors: active) query only matches
+            // when the OS forces colors, so the CSS is injected once at boot
+            // regardless of this setting. init()/destroy() keep the sheet in
+            // place so toggling the legacy setting can't strip an active
+            // accessibility affordance.
+            ensureInjected() {
+                if (this._styleElement?.isConnected) return;
                 this._styleElement = injectStyle(`
                     @media (forced-colors: active) {
                         .ytkit-toast,
@@ -33989,9 +34388,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     }
                 `, 'forced-colors');
             },
+            init() {
+                this.ensureInjected();
+            },
             destroy() {
-                this._styleElement?.remove();
-                this._styleElement = null;
+                // Intentionally keep the stylesheet: forced-colors handling is
+                // always-on (see ensureInjected). The @media gate means it is
+                // inert unless the OS forces colors.
             }
         },
         // ═══════════════════════════════════════════════════════════════════
@@ -36839,12 +37242,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
                         // "Try Start" button — attempts auto-start via mediadl:// protocol
                         const startBtn = makeBannerButton('Start service');
-                        startBtn.title = 'Try to start the local downloader service';
+                        startBtn.title = 'Try to start the Astra Downloader service';
                         startBtn.onclick = async () => {
                             startBtn.textContent = 'Starting…';
                             startBtn.disabled = true;
                             banner.dataset.state = 'checking';
-                            text.textContent = 'Trying to start the local downloader service…';
+                            text.textContent = 'Trying to start the Astra Downloader service…';
                             MediaDLManager.resetAutoStart();
                             const r = await MediaDLManager.tryAutoStart(5);
                             if (r.ok) {
@@ -36854,10 +37257,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                                 startBtn.classList.add('is-success');
                             } else {
                                 banner.dataset.state = 'missing';
-                                text.textContent = 'The service did not start. Run setup to repair the local downloader.';
+                                text.textContent = 'The service did not start. Run setup to repair Astra Downloader.';
                                 startBtn.textContent = 'Start service';
                                 startBtn.disabled = false;
-                                showToast('The local downloader did not start. Run setup to repair it.', '#f59e0b', { duration: 4 });
+                                showToast('Astra Downloader did not start. Run setup to repair it.', '#f59e0b', { duration: 4 });
                             }
                         };
                         actions.appendChild(startBtn);
@@ -37252,10 +37655,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         featureMain.appendChild(glyph);
         featureMain.appendChild(info);
 
-        // Feature preview tooltip
+        // Feature preview tooltip — also mirrored into aria-description so
+        // assistive tech hears what sighted users see on hover/focus-within.
         const previewText = FEATURE_PREVIEWS[f.id];
         if (previewText) {
             card.dataset.preview = previewText;
+            card.setAttribute('aria-description', previewText);
             card.classList.add('ytkit-has-preview');
         }
 
@@ -38011,7 +38416,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 /* ─── Feature Preview Tooltip ─── */
 .ytkit-feature-card.ytkit-has-preview{position:relative;}
 .ytkit-feature-card.ytkit-has-preview::after{content:attr(data-preview);position:absolute;bottom:calc(100% + 8px);left:16px;right:16px;padding:8px 12px;background:#1a1a2e;color:var(--ytkit-text-secondary);font-size:11px;line-height:1.45;border-radius:8px;border:1px solid var(--ytkit-border);box-shadow:var(--ytkit-shadow-md);opacity:0;pointer-events:none;transition:opacity 0.2s ease 0.5s,transform 0.2s ease 0.5s;transform:translateY(4px);z-index:10;white-space:normal;}
-.ytkit-feature-card.ytkit-has-preview:hover::after{opacity:1;transform:translateY(0);}
+.ytkit-feature-card.ytkit-has-preview:hover::after,
+.ytkit-feature-card.ytkit-has-preview:focus-within::after{opacity:1;transform:translateY(0);}
 
 /* ─── Responsive Breakpoints ─── */
 @media (max-width:900px){
@@ -38069,7 +38475,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
     --ytkit-border-subtle: rgba(255,255,255,0.04);
     --ytkit-text-primary: #e8ecf4;
     --ytkit-text-secondary: #a0acbf;
-    --ytkit-text-muted: #6b7a90;
+    --ytkit-text-muted: #7e8ca3; /* 4.96:1 on --ytkit-bg-surface #181d27 (WCAG AA for the 10px help text) */
     --ytkit-accent: #ff6b4a;
     --ytkit-accent-soft: rgba(255,107,74,0.12);
     /* Shared motion curves so every Astra Deck surface (popup, options,
@@ -38387,7 +38793,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
     top: 50%;
     transform: translateY(-50%);
     padding: 4px 8px;
-    border-radius: 10px;
+    border-radius: 6px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.06);
     color: var(--ytkit-text-secondary);
@@ -39229,8 +39635,8 @@ body.ytkit-panel-open #ytkit-settings-panel {
 #ytkit-settings-panel textarea:focus-visible,
 #ytkit-settings-panel a:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(255,107,74,0.18);
-    border-color: rgba(255,107,74,0.35) !important;
+    box-shadow: var(--ytkit-focus-ring);
+    border-color: rgba(255,107,74,0.7) !important;
 }
 
 @media (max-width: 1120px) {
@@ -39398,6 +39804,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
         commentTextSelectionSupport.init();
 
         injectPanelStyles();
+
+        // v4.46.2: forced-colors support is unconditional — the
+        // @media (forced-colors: active) query is the gate, not the setting.
+        try {
+            getFeatureById('forcedColorsSupport')?.ensureInjected?.();
+        } catch (e) {
+            // reason: an injection failure must never block panel boot.
+            DebugManager.log('Init', `forced-colors injection failed: ${e.message}`);
+        }
 
     //  Page Feature Dock — per-page floating toggle strip
     //  Page Quick Settings Modal
@@ -42049,7 +42464,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
         .ytkit-not-interested-btn:focus-visible,
         .ytkit-wl-btn:focus-visible,
         .ytkit-dl-thumb-btn:focus-visible {
-            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.28) !important;
+            box-shadow: 0 0 0 2px rgba(8,11,16,0.92), 0 0 0 4px rgba(var(--ytkit-accent-rgb),0.8) !important;
             border-color: rgba(var(--ytkit-accent-rgb),0.34) !important;
         }
 
@@ -44454,7 +44869,7 @@ body.ytkit-panel-open #ytkit-settings-panel {
             width: fit-content;
             min-height: 20px;
             padding: 0 8px;
-            border-radius: 10px;
+            border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.58);

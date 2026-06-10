@@ -50,38 +50,37 @@ body.ytkit-hideVoiceSearch #voice-search-button { display: none !important; }
 body.ytkit-hideMiniPlayer ytd-miniplayer { display: none !important; }
 
 /* ─────────────────────────────────────────────────────────────────────
- * Baked-in owner UI preferences (v3.16.0)
+ * Compact Clean UI preset (owner preferences, opt-in since v4.46.2)
  *
  * Previously maintained as external Stylebot + uBlock element-hiding
- * rules. Inlined here so a clean extension install reproduces the
- * intended look without requiring two extra extensions. Rules are
- * unconditional (not gated behind a settings toggle) because they
- * represent the author's canonical UX defaults for this build.
- *
- * If any of these need to become optional in the future, move them
- * behind a `body.ytkit-cleanUi` body class the same way the rules
- * above are scoped.
+ * rules, then inlined unconditionally in v3.16.0. They are now gated
+ * behind the `cleanUiPreset` setting (default OFF): ytkit.js adds
+ * `html.ytkit-clean-ui` when the feature is enabled, exactly as the
+ * v3.16.0 comment prescribed. A clean install keeps the panel search,
+ * category headers (incl. their Enable-all switches), nav counts, and —
+ * critically — the global toast notifications (the product's only
+ * feedback + Undo surface) fully visible.
  * ──────────────────────────────────────────────────────────────────── */
 
 /* Settings panel: remove decorative / redundant chrome ───────────────── */
-.ytkit-brand-intro,
-.ytkit-brand-badges,
-.ytkit-search-container,
-.ytkit-pane-header,
-.ytkit-nav-count,
-.ytkit-shortcut,
-.ytkit-version {
+html.ytkit-clean-ui .ytkit-brand-intro,
+html.ytkit-clean-ui .ytkit-brand-badges,
+html.ytkit-clean-ui .ytkit-search-container,
+html.ytkit-clean-ui .ytkit-pane-header,
+html.ytkit-clean-ui .ytkit-nav-count,
+html.ytkit-clean-ui .ytkit-shortcut,
+html.ytkit-clean-ui .ytkit-version {
     display: none !important;
 }
 
 /* Settings panel: compress the left nav list.
  * Tight margins/padding on the buttons reclaim vertical room so more
  * feature toggles fit in the viewport at once. */
-button.ytkit-nav-btn {
+html.ytkit-clean-ui button.ytkit-nav-btn {
     margin: 0 !important;
     padding: 0 !important;
 }
-div.ytkit-nav-list {
+html.ytkit-clean-ui div.ytkit-nav-list {
     margin: -10px 0 !important;
     padding: 0 !important;
 }
@@ -89,18 +88,20 @@ div.ytkit-nav-list {
 /* Settings panel: suppress the global toast notifications.
  * Feedback is still visible in the diagnosticLog and inline status
  * banners; removing the floating toast keeps the UI quieter. */
-div.ytkit-global-toast {
+html.ytkit-clean-ui div.ytkit-global-toast {
     display: none !important;
 }
 
 /* Subscriptions page: hide the "resume load" banner. */
-div.ytkit-subs-load-banner {
+html.ytkit-clean-ui div.ytkit-subs-load-banner {
     display: none !important;
 }
 
 /* Watch page: bump the channel/video-owner row down slightly so the
- * collapsed header (without the avatar image) doesn't crowd the title. */
-ytd-video-owner-renderer.style-scope.ytd-watch-metadata {
+ * collapsed header (without the avatar image) doesn't crowd the title.
+ * Pairs with the avatar hide below, so it shares the same
+ * restore-native-ui opt-out guard rather than the clean-ui preset. */
+html:not(.ytkit-restore-native-ui) ytd-video-owner-renderer.style-scope.ytd-watch-metadata {
     margin-top: 10px !important;
 }
 
@@ -135,3 +136,21 @@ html:not(.ytkit-restore-native-ui) yt-img-shadow.style-scope.ytd-video-owner-ren
  * was omitted because `-px` is not a valid CSS length. If a specific
  * negative margin is wanted, replace with e.g. `margin-bottom: -4px`.
  */
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Motion accessibility — global, always-injected coverage.
+ *
+ * Disables the Astra entrance animations (install prompt, download
+ * progress panel, download options popup) and the What's New badge
+ * pulse when the OS asks for reduced motion. `!important` is required:
+ * the badge animation is applied via an inline style, and stylesheet
+ * !important declarations win over non-important inline styles.
+ * ──────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    #ytkit-mediadl-install-prompt,
+    .ytkit-dl-progress,
+    .ytkit-dl-popup,
+    #ytkit-whats-new-badge {
+        animation: none !important;
+    }
+}

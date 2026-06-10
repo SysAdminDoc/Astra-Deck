@@ -1,0 +1,18 @@
+# Normalize line endings: repository objects are LF, and working trees check
+# out LF on every platform. The Node test suite slices source and workflow
+# files with \n-anchored regexes, so a CRLF checkout (core.autocrlf=true on
+# Windows) fails 8 tests that are green in CI. Pinning eol=lf makes local
+# Windows checkouts behave exactly like the Linux CI runners.
+* text=auto eol=lf
+
+# Binary assets — never touch line endings.
+*.png binary
+*.ico binary
+*.jpg binary
+*.gif binary
+*.exe binary
+*.zip binary
+*.crx binary
+*.xpi binary
+*.pem binary
+*.mhtml -text
