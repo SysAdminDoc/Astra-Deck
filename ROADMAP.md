@@ -4,34 +4,6 @@
 
 ### P0 — Critical / Root-Cause
 
-- [ ] P0 — Bump yt-dlp pin to >= 2026.05 stable
-  Why: Current pin `2026.3.17` predates SABR-only format transition; `downloadStreamLinksPanel` will return empty results as YouTube removes `adaptiveFormats` from web client responses.
-  Evidence: yt-dlp/yt-dlp#12482 (SABR-only formats issue), YouTube SABR rollout confirmed by multiple sources.
-  Touches: `astra_downloader/requirements.txt`, `scripts/yt-dlp-smoke.py`, `.github/workflows/yt-dlp-smoke.yml`, `extension/ytkit.js` (downloadStreamLinksPanel SABR-only messaging)
-  Acceptance: `npm run build` and `yt-dlp-smoke.py` pass with the new pin; `/health` reports a yt-dlp version >= 2026.05; downloads succeed on videos that currently serve SABR-only.
-  Complexity: S
-
-- [ ] P0 — Prepare Liquid Glass selector resilience
-  Why: YouTube is rolling out a player UI redesign with rounded translucent controls ("Liquid Glass" aesthetic) that will change selector surfaces the extension depends on across `playerChrome`, `player`, and `mainVideo` selector packs.
-  Evidence: TechSpot, 9to5Google reporting on YouTube player redesign; existing `ytp-delhi-modern` canary selectors in `core/selector-packs/playerChrome.js`.
-  Touches: `extension/core/selector-packs/playerChrome.js`, `extension/core/selector-packs/player.js`, `extension/core/selector-packs/mainVideo.js`, `tests/selector-regression.test.js`, `mhtml/` fixtures
-  Acceptance: Fresh MHTML captures from current YouTube player; new selector canaries for Liquid Glass classes; selector regression tests pass against both old and new DOM shapes.
-  Complexity: M
-
-- [ ] P0 — E2E browser test harness with Puppeteer
-  Why: All 246+ JS tests are Node-only. Zero tests verify DOM interaction, MV3 service worker lifecycle, popup rendering, or content-script injection on a real YouTube page. YouTube DOM churn means regressions can ship silently.
-  Evidence: No Puppeteer/Playwright imports in codebase; `.gitignore` references `playwright/.auth/` but no test files exist; Chrome docs recommend Puppeteer for extension E2E.
-  Touches: New `tests/e2e/` directory, `package.json` (devDependency), CI workflow
-  Acceptance: At least 5 E2E tests covering: extension loads on youtube.com, settings panel opens, a toggle persists across navigation, popup renders with correct version, download button appears when companion is offline.
-  Complexity: L
-
-- [ ] P0 — Restore public availability of store-required docs and fix README 404 links
-  Why: Commit 8e920ed gitignored all .md except README; SECURITY.md, docs/privacy-policy.md, CHANGELOG.md, INSTALL.md, CONTRIBUTING.md, HARDENING.md, and every docs/ link in README now 404 on GitHub. CWS and AMO listings both require a working privacy-policy URL, so this hard-blocks the P1 store submissions; docs/architecture.md is referenced but does not exist even locally. Conflicts with the maintainer's global md-hygiene rule — resolve by re-tracking a minimal public set (SECURITY.md, docs/privacy-policy.md at minimum) or publishing via GitHub Pages and rewriting README links.
-  Evidence: `git ls-files '*.md'` returns only README.md; README.md lines 21-23, 447-465; CWS/AMO privacy-policy requirements (developer.chrome.com/docs/webstore, blog.mozilla.org/addons 2025-06-23 policy update).
-  Touches: `.gitignore`, `README.md`, `SECURITY.md`, `docs/privacy-policy.md` (re-track or Pages), `docs/architecture.md` (create or drop the link)
-  Acceptance: Every link in the rendered GitHub README resolves; the privacy-policy URL used in store listings returns 200 anonymously; GitHub shows the security policy on the repo Security tab.
-  Complexity: S
-
 ### P1 — Trust / Reliability / Distribution
 
 - [ ] P1 — Chrome Web Store submission (store-safe profile)
@@ -48,39 +20,11 @@
   Acceptance: Store-safe XPI submitted to AMO and either approved or rejected with actionable feedback.
   Complexity: M
 
-- [ ] P1 — Settings sync via chrome.storage.sync
-  Why: Users with multiple devices must manually export/import settings. `chrome.storage.sync` provides cross-device sync with 100KB total quota. Competitors (Enhancer, ImprovedTube) offer this.
-  Evidence: Zero references to `storage.sync` in the codebase; MDN docs confirm Firefox supports `storage.sync` with Mozilla account.
-  Touches: `extension/core/storage.js`, `extension/popup.js` (sync toggle UI), `extension/ytkit.js` (settings persistence layer)
-  Acceptance: Opt-in "Sync settings" toggle in popup; toggling a feature on Device A reflects on Device B within 30 seconds; large settings (hidden videos list, watch history) remain in `storage.local` only to respect the 100KB sync quota.
-  Complexity: M
-
 - [ ] P1 — Companion binary release (PyInstaller freeze + SHA256 sidecar)
   Why: README documents `AstraDownloader.exe` and `.sha256` as expected release assets, but no release has ever included them. Users must install Python 3.12 and run from source. This is the #1 onboarding friction for the download feature.
   Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists.
   Touches: `astra_downloader/build.py`, GitHub Release workflow, `scripts/stage-companion-release.js`
   Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
-  Complexity: M
-
-- [ ] P1 — Strip unused `cookies` permission from the store-safe manifest profile
-  Why: `cookies` is declared in `extension/manifest.json` but its only consumer is the `EXT_COOKIE_LIST` companion cookie bridge (`background.js` ~line 860 → `ytkit.js` ~line 2994), and store-safe strips the companion loopback origins — CWS has rejected extensions specifically for declaring-but-not-using `cookies`.
-  Evidence: chromium-extensions thread "Rejected for not using the cookies permission" (groups.google.com/a/chromium.org/g/chromium-extensions/c/wAKuD5DD2ts); `core/data-flow.js` marks `127.0.0.1:9751-9851` as profile `github-full`; `build-extension.js` rewrites only host_permissions/CSP, never `permissions`.
-  Touches: `build-extension.js` (profile-aware `permissions` rewrite), `core/data-flow.js` (declare API-permission ownership per origin/feature), `tests/hardening.test.js`, `docs/store-permission-rationale.md`
-  Acceptance: Built store-safe Chrome/Firefox manifests contain no `cookies` permission; GitHub-full manifests still do; cookie bridge degrades gracefully (existing "permission may not be granted" log path) and all tests pass.
-  Complexity: S
-
-- [ ] P1 — Update notifier for sideloaded installs
-  Why: The only current install paths (release ZIP/XPI/CRX sideload, userscript) have no auto-update; users silently stay on stale builds and miss security fixes. Only the companion has an update channel today.
-  Evidence: No `releases/latest` version check anywhere in `extension/` except the companion EXE URL (`ytkit.js` line 2424); repo is unlisted on CWS/AMO so browser auto-update never applies.
-  Touches: `extension/background.js` (daily `chrome.alarms` check against `https://api.github.com/repos/SysAdminDoc/Astra-Deck/releases/latest`, origin added to EXT_FETCH allowlist + manifest/CSP via `core/data-flow.js`), `extension/popup.js` (update badge + release-notes link), settings schema (opt-out toggle, default on)
-  Acceptance: When the latest release tag exceeds `chrome.runtime.getManifest().version`, the popup shows a non-blocking update notice linking to the release page; check is rate-limited to once/day; opt-out works; no notice when current.
-  Complexity: S
-
-- [ ] P1 — Slim the live_chat iframe content-script payload
-  Why: The second `content_scripts` block injects the full ~2.7 MB bundle (42K-line `ytkit.js` + 60 files) into every live-chat iframe with `all_frames: true`, where only chat features run; comparable bundles cost ~440 ms parse+eval per injection (DebugBear measurement of a 2.9 MB content script).
-  Evidence: `extension/manifest.json` lines 171-250; debugbear.com/blog/measuring-the-performance-impact-of-chrome-extensions; the duplicated 60-file list is already a build-generation candidate.
-  Touches: `build-extension.js` (generate both content_scripts blocks from one list; emit a chat-scoped entry), `extension/ytkit.js` (frame-type gate so non-chat feature init exits early in live_chat frames), `tests/` (manifest-shape regression)
-  Acceptance: live_chat frames load only chat-relevant modules (or full bundle exits init before non-chat feature registration); Premium Live Chat, chat filters, and Reaction Spammer still work; measured script-eval time in the chat iframe drops materially (record before/after in the diagnostic log).
   Complexity: M
 
 - [ ] P1 — Userscript/extension sync is structural drift, not sync
@@ -143,13 +87,6 @@
   Acceptance: All 111 Python tests pass; companion starts and serves downloads identically; each module is independently importable for testing.
   Complexity: L
 
-- [ ] P2 — SponsorBlock category parity: add `hook`, `exclusive_access`, and mute-action segments
-  Why: Upstream split Preview/Recap vs Hook/Greetings in v5.14 (July 2025) and supports `exclusive_access` full-video labels and `mute` action segments; Astra Deck ships only 9 categories (`ytkit.js` ~lines 26646-26654) so hook segments silently never skip.
-  Evidence: wiki.sponsor.ajay.app/w/Types; github.com/ajayyy/SponsorBlock/releases (v5.14); `extension/ytkit.js` sbCat_ map lacks `hook`/`exclusive_access`.
-  Touches: `extension/ytkit.js` (SponsorBlock category map, segment scheduler mute handling, settings panel toggles), `core/settings-schema.js`, locale bundles (`_locales/*/messages.json`), `tests/features/sponsorblock.test.js`
-  Acceptance: `hook` segments skip when enabled; `exclusive_access` renders a full-video label without skipping; `mute` action segments mute instead of seeking; new toggles appear in all 10 locales with English fallback.
-  Complexity: S
-
 - [ ] P2 — SponsorBlock per-channel skip profiles
   Why: SponsorBlock 6.0 (Sep 2025) made per-channel category overrides table-stakes; Astra Deck has only global category toggles, while it already ships the per-channel storage pattern (perChannelSpeed keyed by channel handle, 500-entry cap).
   Evidence: github.com/ajayyy/SponsorBlock/releases (v6.0 channel skip profiles); `extension/ytkit.js` perChannelSpeed StorageManager pattern.
@@ -171,13 +108,6 @@
   Acceptance: Distinct quality targets for windowed/fullscreen/PiP apply within ~1s of context change; defaults preserve current alwaysBestQuality behavior.
   Complexity: M
 
-- [ ] P2 — Subscription groups CSV/OPML export and Google Takeout import
-  Why: PocketTube (the 250K-user subscription-groups incumbent) offers CSV export; Takeout's subscriptions.csv is the standard migration source. Astra Deck's `subscriptionGroupData` has only versioned-JSON export, so users can't migrate in from PocketTube/Takeout or out to anything else.
-  Evidence: pockettube.io feature list; `subscriptionGroupData` schema v2 export/import in `extension/ytkit.js` (no CSV/OPML found by grep).
-  Touches: `extension/ytkit.js` (subscription groups import/export UI; CSV parse with header detection for Takeout `Channel Id,Channel Url,Channel Title`; OPML emit using channel RSS URLs), `tests/`
-  Acceptance: Export produces CSV and OPML files of all groups/channels; importing a Google Takeout subscriptions.csv stages channels into a chosen group; round-trip preserves group membership.
-  Complexity: S
-
 - [ ] P2 — Companion auto-provisions Deno runtime
   Why: yt-dlp >= 2026.04 requires an external JS runtime and the companion already auto-bootstraps yt-dlp.exe and ffmpeg.exe on first run — Deno is the one remaining manual step (winget/installer), surfaced only as a warning pill.
   Evidence: `astra_downloader/astra_downloader.py` `_bootstrap()` (yt-dlp/ffmpeg auto-download with SHA sidecars) vs `probe_deno_runtime()` (probe-only); yt-dlp 2025.11.12 release notes (external JS runtime required).
@@ -193,13 +123,6 @@
   Touches: New `tests/visual/` directory, Puppeteer screenshot comparison, CI integration
   Acceptance: CI captures popup screenshots in Chrome and Firefox; a baseline is committed; regressions fail the build with a diff image.
   Complexity: M
-
-- [ ] P2 — Watch history analytics export (CSV/JSON)
-  Why: `watchHistoryAnalytics` provides a 30-day bar chart modal, but the data cannot be exported. YouTube Watch Stats (CWS extension) and youtube-history-analyzer (GitHub) both offer CSV/JSON export. The data already exists in `storage.local`.
-  Evidence: `window.__ytkitOpenAnalytics()` exists; YouTube Watch Stats extension provides export; `researchSpacedReview` already exports to CSV.
-  Touches: `extension/ytkit.js` (analytics modal), existing CSV export pattern from `researchSpacedReview`
-  Acceptance: Analytics modal has "Export CSV" and "Export JSON" buttons; exported file contains daily watch-time data with video IDs and channel names.
-  Complexity: S
 
 ### P3 — Later / Under Consideration
 
@@ -252,33 +175,9 @@
   Acceptance: Users can vote on a replaced title and submit a new title/timestamp thumbnail; the generated userID never leaves DeArrow requests and is excluded from settings exports; feature is off by default.
   Complexity: M
 
-- [ ] P3 — storage.js: failed-flush retry can resurrect a stale value over a newer successful write
-  Why: when two immediate flushes interleave and the older one fails, its catch merges the stale snapshot back into the retry payload, overwriting the newer value; the onChanged echo check then misses and the stale value applies as an external change.
-  Where: `extension/core/storage.js:92-118` (re-stage failed keys from `extensionStateCache` instead of the stale `writes` snapshot)
-
-- [ ] P3 — styles.js `stripCommentRestyleCss` corrupts CSS containing at-rules (latent)
-  Why: the `}`-split would delete an `@media`/`@supports` opener if a filtered selector appears first inside it, leaking subsequent rules out of the query. No current builder emits at-rules; one `@media` away from active breakage with no test guard.
-  Where: `extension/core/styles.js:81-91`
-
 - [ ] P3 — Companion update helper should re-verify the staged EXE digest before MoveFileEx
   Why: the SHA-256 check runs in the exiting process, but the detached PowerShell helper swaps the file minutes later with no re-hash — a same-user process can replace the staged binary in the window (TOCTOU; limited new privilege but defeats the integrity check).
   Where: `astra_downloader/astra_downloader.py:1216-1263` (pass the expected digest into the helper and re-hash before the move)
-
-- [ ] P3 — Reproducible release artifacts (fixed zip/CRX timestamps)
-  Why: zips preserve fresh-copy mtimes and CRX signing doesn't pin `forceDateTime`, so byte-identical inputs hash differently per run — `compare-release-digests` only works against the producing run and third parties can't reproduce attested hashes.
-  Where: `build-extension.js` (zip with fixed entry timestamps; pass `forceDateTime` to crx3)
-
-- [ ] P3 — generate-release-manifest: reject stray files and empty commit metadata
-  Why: unexpected files in `build/` are silently hashed into the manifest/SHA256SUMS as "auxiliary" and uploaded+attested; `git()` failures emit `commit: ""` silently.
-  Where: `scripts/generate-release-manifest.js:23-33, 92-136` (allowlist asset names, hard-fail on `*.pem`, fail when both `GITHUB_SHA` and `git rev-parse` are empty)
-
-- [ ] P3 — i18n: non-EN locales still say "MediaDL" and miss the new popup clipboard-fallback key
-  Why: the 4.46.3 "Astra Downloader" naming pass updated inline fallbacks and `en` only — 9 locales keep the old product names in their translated strings, and `selectorHealthCopySaveFallback` is not bundled in any locale (English fallback shows everywhere).
-  Where: `extension/_locales/*/messages.json` (companion-name keys + `selectorHealthCopySaveFallback`), `npm run i18n:proofing-export` queue
-
-- [ ] P3 — Settings panel: remove or re-wire the vestigial `_panelCleanups` machinery
-  Why: no `.push()` call site remains; `buildSettingsPanel._panelObs` watches every `document.body` class flip for the session purely to iterate an always-empty array — dead contract + background observer cost.
-  Where: `extension/ytkit.js:1061, 35150-35157`
 
 - [ ] P3 — Play subscription group as queue
   Why: PocketTube's "play all videos by collection" is its stickiest feature; Astra Deck groups can already enumerate rendered videos per group but offer no one-click way to watch them.
