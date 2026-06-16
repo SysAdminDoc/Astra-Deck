@@ -35592,6 +35592,9 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         panel.setAttribute('aria-modal', 'true');
         panel.setAttribute('aria-labelledby', 'ytkit-panel-title');
         panel.setAttribute('aria-hidden', 'true');
+        const _rtlLocales = new Set(['ar', 'he', 'fa', 'ur']);
+        const _panelLocale = (_i18n.overrideLocale || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage()) || 'en').split(/[-_]/)[0].toLowerCase();
+        panel.dir = _rtlLocales.has(_panelLocale) ? 'rtl' : 'ltr';
 
         // Header
         const header = document.createElement('header');
@@ -37439,6 +37442,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
 
         document.body.appendChild(overlay);
         document.body.appendChild(panel);
+
+        if (panel.dir === 'rtl') {
+            injectStyle(`
+                #ytkit-settings-panel[dir="rtl"] .ytkit-sidebar { border-right: none; border-left: 1px solid rgba(255,255,255,0.08); }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-search-icon { left: auto; right: 14px; }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-search-meta { right: auto; left: 12px; }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-search-input { padding: 12px 40px 12px 84px; }
+                #ytkit-settings-panel[dir="rtl"] .ytkit-feature-card { text-align: right; }
+            `, 'ytkit-rtl-panel', true);
+        }
 
         attachUIEventListeners();
         updateAllToggleStates();

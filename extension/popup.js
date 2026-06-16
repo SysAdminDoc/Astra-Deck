@@ -152,7 +152,7 @@ const I18N = { override: null, map: null, ready: false };
 // Bundled locales — must match the directories under extension/_locales/.
 // Keep in sync with the language dropdown options in popup.html.
 const BUNDLED_LOCALES = Object.freeze([
-    'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
+    'ar', 'en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'pt_BR', 'ru', 'zh_CN'
 ]);
 const BUNDLED_LOCALE_SET = new Set(BUNDLED_LOCALES);
 
@@ -201,15 +201,20 @@ async function initI18n() {
 // follow, otherwise screen readers announce localized strings with
 // English pronunciation rules. Locale tags are stored with an
 // underscore (pt_BR) but the lang attribute wants BCP-47 (pt-BR).
+const RTL_LOCALES = new Set(['ar', 'he', 'fa', 'ur']);
+
 function applyDocumentLanguage() {
     try {
         const resolvedLocale = I18N.override
             || (chrome?.i18n?.getUILanguage && chrome.i18n.getUILanguage())
             || 'en';
         if (resolvedLocale) {
-            document.documentElement.lang = resolvedLocale.replace('_', '-');
+            const bcp47 = resolvedLocale.replace('_', '-');
+            document.documentElement.lang = bcp47;
+            const base = bcp47.split('-')[0].toLowerCase();
+            document.documentElement.dir = RTL_LOCALES.has(base) ? 'rtl' : 'ltr';
         }
-    } catch (_) { /* reason: lang attribute is best-effort a11y metadata */ }
+    } catch (_) { /* reason: lang/dir attributes are best-effort a11y metadata */ }
 }
 
 function t(key, fallback) {
@@ -242,6 +247,7 @@ function initLanguageDropdown() {
             // Map BCP-47 → bundled native label so an Auto user with a
             // German browser sees "Auto — Deutsch" instead of "Auto (de)".
             const NATIVE = {
+                ar: 'العربية',
                 en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français',
                 it: 'Italiano', ja: '日本語', ko: '한국어',
                 'pt-BR': 'Português', 'pt': 'Português',
