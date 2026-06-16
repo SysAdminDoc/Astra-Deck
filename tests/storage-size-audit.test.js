@@ -48,7 +48,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // NF1 videoNotes adds `videoNotes` + `videoNotesData`, adding another
     // 39 bytes to the empty settings payload.
     // cleanUiPreset (Compact Clean UI opt-in) adds another 22 bytes.
-    assert.equal(assessment.totalBytes, 178033);
+    // zenMode adds another 16 bytes.
+    assert.equal(assessment.totalBytes, 178049);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

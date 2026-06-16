@@ -3885,6 +3885,7 @@ return response;
             autoSubtitles: false,
             autoSubtitleLang: 'en',
             focusedMode: false,
+            zenMode: false,
             thumbnailQualityUpgrade: false,
             watchLaterQuickAdd: false,
             playlistEnhancer: false,
@@ -23613,6 +23614,48 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._styleEl = injectStyle(css, this.id, true);
             },
             destroy() { this._styleEl?.remove(); this._styleEl = null; }
+        },
+        {
+            id: 'zenMode',
+            name: 'Zen Mode',
+            description: 'Dims and blurs the page around the video player for a focused viewing experience',
+            group: 'Watch Page',
+            icon: 'moon',
+            pages: [PageTypes.WATCH],
+            _styleEl: null,
+            init() {
+                const css = `
+                    body.ytkit-zen-active::before {
+                        content: '';
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, 0.75);
+                        z-index: 1999;
+                        pointer-events: none;
+                    }
+                    @media (prefers-reduced-motion: no-preference) {
+                        body.ytkit-zen-active::before {
+                            backdrop-filter: blur(4px);
+                            -webkit-backdrop-filter: blur(4px);
+                        }
+                    }
+                    body.ytkit-zen-active #movie_player,
+                    body.ytkit-zen-active ytd-player#ytd-player {
+                        position: relative;
+                        z-index: 2000;
+                    }
+                    body.ytkit-zen-active .ytp-chrome-bottom {
+                        z-index: 2001;
+                    }
+                `;
+                this._styleEl = injectStyle(css, this.id, true);
+                document.body.classList.add('ytkit-zen-active');
+            },
+            destroy() {
+                document.body.classList.remove('ytkit-zen-active');
+                this._styleEl?.remove();
+                this._styleEl = null;
+            }
         },
         {
             id: 'thumbnailQualityUpgrade',
