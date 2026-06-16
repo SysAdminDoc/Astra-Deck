@@ -33,6 +33,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   Chrome's built-in Translator API is available (138+). Translates cue text
   on-device with auto-detected source language; "Show Original" toggles back.
   Graceful degradation when API unavailable.
+- **Classic Player Chrome:** new `classicPlayerChrome` toggle restores the
+  pre-Delhi/Liquid Glass player look in one click — opaque square controls,
+  solid red 3px progress bar, transparent time wrapper, no frosted glass on
+  player overlays. CSS-only, no DOM rebuild.
 
 ## [4.46.3] - 2026-06-10
 

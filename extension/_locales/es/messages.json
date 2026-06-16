@@ -620,6 +620,12 @@
   "feature_classicLayoutProfile_name": {
     "message": "Layout Profile"
   },
+  "feature_classicPlayerChrome_desc": {
+    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display"
+  },
+  "feature_classicPlayerChrome_name": {
+    "message": "Classic Player Chrome"
+  },
   "feature_cleanShareUrls_desc": {
     "message": "Remove tracking from share links"
   },

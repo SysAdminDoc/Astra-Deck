@@ -4063,6 +4063,7 @@ return response;
             rectangularizeYouTube: false,              // Forces 4-12px radii everywhere (no pill backdrops, ever)
             classicLayoutProfile: 'modern',            // 'modern' | 'classic-2020' | 'classic-2016'
             newPlayerUiRestore: false,                 // Control Panel-style restoration of older player chrome
+            classicPlayerChrome: false,                // One-toggle pre-redesign player look (CSS-only superset)
             tokenThemeBridge: false,                   // Maps Astra accent into --yt-sys-color-* tokens
             // v3.33.0 — Integrations & interop
             openInAlternativeFrontend: false,          // FreeTube / Invidious / Piped open-in buttons
@@ -34958,6 +34959,71 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         padding-bottom: 8px !important;
                     }
                 `, 'new-player-ui-restore');
+            },
+            destroy() {
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        {
+            id: 'classicPlayerChrome',
+            name: 'Classic Player Chrome',
+            description: 'One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display. CSS-only, no DOM rebuild.',
+            group: 'Theming',
+            icon: 'play',
+            _styleElement: null,
+            init() {
+                this._styleElement = injectStyle(`
+                    /* Hide Delhi modern overlay and pill actions */
+                    .ytp-delhi-modern,
+                    .ytp-overflow-panel-button,
+                    .ytp-delhi-modern-fullscreen-action,
+                    .ytp-action-pill,
+                    .ytp-actions-container { display: none !important; }
+
+                    /* Opaque control strip background */
+                    .ytp-chrome-bottom {
+                        background: rgba(0, 0, 0, 0.78) !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+                    .ytp-gradient-bottom { opacity: 0 !important; }
+
+                    /* Square progress bar — no border-radius, 3px height, solid red fill */
+                    .ytp-progress-bar-container { height: 3px !important; }
+                    .ytp-progress-bar,
+                    .ytp-play-progress,
+                    .ytp-load-progress,
+                    .ytp-progress-bar-padding { border-radius: 0 !important; }
+                    .ytp-play-progress {
+                        background: #f00 !important;
+                        background-image: none !important;
+                    }
+
+                    /* Classic time display — strip Delhi wrapper background */
+                    div.ytp-time-wrapper.ytp-time-wrapper-delhi {
+                        background-color: transparent !important;
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                        border-radius: 0 !important;
+                    }
+                    .ytp-time-display { color: #ddd !important; }
+
+                    /* Tighten chrome spacing */
+                    .ytp-chrome-bottom .ytp-chrome-controls { padding-bottom: 8px !important; }
+
+                    /* Remove frosted glass from the player overlay */
+                    #movie_player .ytp-chrome-top,
+                    #movie_player .ytp-cards-teaser,
+                    #movie_player .ytp-tooltip {
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                    }
+
+                    /* Solid progress tooltip background */
+                    .ytp-tooltip.ytp-preview,
+                    .ytp-tooltip-bg { background: rgba(0, 0, 0, 0.85) !important; border-radius: 2px !important; }
+                `, this.id, true);
             },
             destroy() {
                 this._styleElement?.remove();
