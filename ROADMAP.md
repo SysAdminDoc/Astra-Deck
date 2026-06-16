@@ -66,13 +66,6 @@
   Acceptance: Download flows work identically; monolith shrinks by ~1500 lines.
   Complexity: L
 
-- [ ] P2 — ESLint 10 migration
-  Why: `package.json` pins `eslint: ^10.2.1` and uses `eslint.config.js` (flat config), which is correct for ESLint 10. However, the config should be audited to ensure it leverages ESLint 10's per-file config lookup and JSX tracking improvements, and that custom rules in `scripts/eslint-rules/` are compatible.
-  Evidence: ESLint 10 released February 2026; eslintrc completely removed; project already uses flat config file.
-  Touches: `eslint.config.js`, `scripts/eslint-rules/*.js`, `package.json`
-  Acceptance: `npm run lint` passes cleanly on ESLint 10; custom rules (`require-catch-reason`, `no-post-await-addlistener`) work without deprecation warnings.
-  Complexity: S
-
 - [ ] P2 — Companion module split
   Why: `astra_downloader/astra_downloader.py` (5.3K lines) mixes Flask routes, Qt GUI, download management, yt-dlp subprocess control, config management, and health probes in a single file. Splitting improves testability and maintainability.
   Evidence: H26 audit noted threading concerns; `test_astra_downloader.py` must mock deeply to test individual concerns.
