@@ -209,8 +209,10 @@ test('transcript eyebrow and search meta use catalog radii (no stadium pills)', 
     assert.match(eyebrow, /border-radius:\s*6px/,
         'transcript eyebrow must use 6px radius (was a 20px-tall 10px-radius pill)');
 
-    const metaStart = ytkitSource.indexOf('.ytkit-search-meta {');
-    assert.ok(metaStart > -1, '.ytkit-search-meta rule must exist');
+    const metaRe = /\n\.ytkit-search-meta \{/;
+    const metaMatch = metaRe.exec(ytkitSource);
+    assert.ok(metaMatch, '.ytkit-search-meta rule must exist');
+    const metaStart = metaMatch.index + 1;
     const meta = ytkitSource.slice(metaStart, ytkitSource.indexOf('}', metaStart));
     assert.match(meta, /border-radius:\s*6px/,
         'search meta chip must use 6px radius');
