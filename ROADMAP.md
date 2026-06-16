@@ -161,10 +161,6 @@
   Acceptance: Users can vote on a replaced title and submit a new title/timestamp thumbnail; the generated userID never leaves DeArrow requests and is excluded from settings exports; feature is off by default.
   Complexity: M
 
-- [ ] P3 — Companion update helper should re-verify the staged EXE digest before MoveFileEx
-  Why: the SHA-256 check runs in the exiting process, but the detached PowerShell helper swaps the file minutes later with no re-hash — a same-user process can replace the staged binary in the window (TOCTOU; limited new privilege but defeats the integrity check).
-  Where: `astra_downloader/astra_downloader.py:1216-1263` (pass the expected digest into the helper and re-hash before the move)
-
 - [ ] P3 — Play subscription group as queue
   Why: PocketTube's "play all videos by collection" is its stickiest feature; Astra Deck groups can already enumerate rendered videos per group but offer no one-click way to watch them.
   Evidence: pockettube.io feature list; YouTube's anonymous playlist endpoint (`/watch_videos?video_ids=…`, ~50-ID cap) used by comparable tools.
