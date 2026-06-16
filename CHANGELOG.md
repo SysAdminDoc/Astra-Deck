@@ -37,6 +37,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   pre-Delhi/Liquid Glass player look in one click — opaque square controls,
   solid red 3px progress bar, transparent time wrapper, no frosted glass on
   player overlays. CSS-only, no DOM rebuild.
+- **Video age newest highlight:** `videoAgeColors` now highlights the freshest
+  video on the subscriptions page with a stronger green glow and auto-scrolls
+  to it on first load. Navigate resets the scroll target.
 
 ## [4.46.3] - 2026-06-10
 
