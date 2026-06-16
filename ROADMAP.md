@@ -133,13 +133,6 @@
   Acceptance: Toggle dims and blurs all page sections except the player; respects `prefers-reduced-motion` for the blur animation.
   Complexity: S
 
-- [ ] P3 — Supply chain audit for crx3 transitive dependencies
-  Why: The September 2025 Shai-Hulud npm supply chain worm compromised packages with billions of weekly downloads (chalk, debug, ansi-styles). `crx3` is the sole runtime dependency; its transitive tree should be audited.
-  Evidence: Shai-Hulud attack reports (Snyk, Tenable CVE-2026-45321); `crx3` depends on `pbf` which depends on `resolve-protobuf-schema` (already bumped for GHSA-j452-xhg8-qg39).
-  Touches: `package.json`, `package-lock.json`, `.github/workflows/validate.yml`
-  Acceptance: `npm audit` clean; transitive dependency tree documented; lockfile integrity verified.
-  Complexity: S
-
 - [ ] P3 — Chrome Prompt API (Gemini Nano) for transcript Q&A
   Why: Chrome 138+ ships the Prompt API stable for extensions. Astra Deck already uses the Summarizer API for `localAiSummary`. The Prompt API would enable on-device transcript Q&A without BYO keys.
   Evidence: Chrome Prompt API docs; `extension/ytkit.js` already checks `window.Summarizer || window.ai?.summarizer`.
