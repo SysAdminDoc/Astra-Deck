@@ -73,13 +73,6 @@
   Acceptance: User can override skip categories for the current channel from the player/settings UI; overrides persist with deterministic eviction; global defaults apply otherwise.
   Complexity: M
 
-- [ ] P2 — Classic player chrome restoration preset
-  Why: Four single-purpose extensions (OldYTPlayer, CustomTube, YouTube Redux, PlayerTube) exist solely to revert YouTube's 2025/26 "Delhi"/Liquid Glass player redesign and review demand is strong; Astra Deck already ships partial pieces (Delhi chrome hiding ~`ytkit.js` line 34292, `noFrostedGlass`) and can own this with one CSS-first preset toggle.
-  Evidence: chromewebstore listings for OldYTPlayer/CustomTube/YouTube Redux; tomsguide.com redesign-backlash coverage; existing `ytp-delhi-modern` selectors in `core/selector-packs/playerChrome.js`.
-  Touches: `extension/ytkit.js` (new `classicPlayerChrome` feature grouping existing + new CSS: opaque square controls, classic progress bar without pink gradient, classic time display), `core/selector-packs/playerChrome.js`, settings schema + locales, `early.css`
-  Acceptance: One toggle restores a pre-redesign player look (CSS-only, no DOM rebuild) on current YouTube; conflict-free with customProgressBarColor and nyanCatProgressBar (conflict map entries if needed); selector regression fixtures updated.
-  Complexity: M
-
 - [ ] P2 — Per-context quality (fullscreen vs windowed vs PiP)
   Why: Tweaks for YouTube ships per-context quality (fullscreen/theater/embedded/background) and it is the natural extension of `alwaysBestQuality`'s DOM-click quality forcing — e.g. best in fullscreen, capped in windowed to save bandwidth.
   Evidence: inzk.dev/tweaks-for-youtube/features; existing quality-forcing implementation in `extension/ytkit.js` (DOM click through `.ytp-settings-button`).
