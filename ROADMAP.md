@@ -126,13 +126,6 @@
   Acceptance: Search input appears above playlist panel; filters playlist items by title; keyboard shortcut optional.
   Complexity: S
 
-- [ ] P3 — Zen Mode (dim/blur everything except player)
-  Why: Tweaks for YouTube's "Zen Mode" and Enhancer's "Dim" feature provide focus by dimming the page around the player. Astra Deck has `focusedMode` (hides related videos) and `blueLightFilter` but no dim/blur overlay.
-  Evidence: Tweaks for YouTube Zen Mode; Enhancer for YouTube cinema mode.
-  Touches: `extension/ytkit.js` (new CSS feature), settings schema
-  Acceptance: Toggle dims and blurs all page sections except the player; respects `prefers-reduced-motion` for the blur animation.
-  Complexity: S
-
 - [ ] P3 — Chrome Prompt API (Gemini Nano) for transcript Q&A
   Why: Chrome 138+ ships the Prompt API stable for extensions. Astra Deck already uses the Summarizer API for `localAiSummary`. The Prompt API would enable on-device transcript Q&A without BYO keys.
   Evidence: Chrome Prompt API docs; `extension/ytkit.js` already checks `window.Summarizer || window.ai?.summarizer`.
