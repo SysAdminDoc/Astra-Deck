@@ -17,12 +17,12 @@ function dependencyReviewJobSource() {
     return match[0];
 }
 
-test('Dependency review stays PR-only and advisory until hosted graph setup is proven', () => {
+test('Dependency review is PR-only and enforced (no continue-on-error)', () => {
     const job = dependencyReviewJobSource();
     assert.match(job, /if:\s*github\.event_name == 'pull_request'/,
         'dependency review should remain PR-only');
-    assert.match(job, /continue-on-error:\s*\$\{\{\s*vars\.DEPENDENCY_REVIEW_REQUIRED != 'true'\s*\}\}/,
-        'dependency review must stay advisory until the repository variable explicitly enables enforcement');
+    assert.doesNotMatch(job, /continue-on-error/,
+        'dependency review must not use continue-on-error — failures must block the PR');
     assert.match(job, /contents:\s*read/);
     assert.match(job, /pull-requests:\s*read/);
 });
