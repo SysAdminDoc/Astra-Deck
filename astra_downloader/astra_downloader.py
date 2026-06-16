@@ -1276,16 +1276,19 @@ def _safe_update_paths(update_path, target_path=None):
     return update, target
 
 
-def schedule_companion_update_restart(update_path, target_path=None, restart_args=None, pid=None):
+def schedule_companion_update_restart(update_path, target_path=None, restart_args=None, pid=None, expected_sha256=None):
     """Schedule after-exit replacement and relaunch of AstraDownloader.exe.
 
     The running PyInstaller executable cannot be overwritten in-place on
-    Windows. A detached helper waits for this PID to exit, atomically replaces
-    the managed install-dir executable, then starts the new build.
+    Windows. A detached helper waits for this PID to exit, re-verifies the
+    staged binary's SHA-256 against expected_sha256 (closing the TOCTOU window
+    between the caller's verify and the move), then atomically replaces the
+    managed install-dir executable and starts the new build.
     """
     update, target = _safe_update_paths(update_path, target_path)
     restart_args = list(restart_args or ['--start-server'])
     current_pid = int(pid or os.getpid())
+    expected_digest = str(expected_sha256 or '').strip().lower()
     INSTALL_DIR.mkdir(parents=True, exist_ok=True)
 
     if sys.platform == 'win32':
@@ -1295,13 +1298,20 @@ param(
     [int] $ProcessId,
     [string] $SourcePath,
     [string] $TargetPath,
-    [string] $RestartArgs
+    [string] $RestartArgs,
+    [string] $ExpectedSHA256
 )
 $ErrorActionPreference = 'Stop'
 try {
     Wait-Process -Id $ProcessId -Timeout 45
 } catch {
     Start-Sleep -Seconds 2
+}
+if ($ExpectedSHA256 -and $ExpectedSHA256.Length -eq 64) {
+    $hash = (Get-FileHash -Path $SourcePath -Algorithm SHA256).Hash.ToLower()
+    if ($hash -ne $ExpectedSHA256.ToLower()) {
+        throw "SHA-256 mismatch before MoveFileEx: expected $ExpectedSHA256, got $hash — staged binary may have been tampered with"
+    }
 }
 Add-Type -TypeDefinition @'
 using System;
@@ -1329,11 +1339,13 @@ Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction Silent
             '-SourcePath', str(update),
             '-TargetPath', str(target),
             '-RestartArgs', command_line(restart_args),
+            '-ExpectedSHA256', expected_digest,
         ]
         subprocess.Popen(args, creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
     else:
         script = INSTALL_DIR / f".AstraDownloader.apply-update.{uuid.uuid4().hex}.py"
         script.write_text('''\
+import hashlib
 import os
 import subprocess
 import sys
@@ -1342,7 +1354,8 @@ import time
 pid = int(sys.argv[1])
 source = sys.argv[2]
 target = sys.argv[3]
-restart_args = sys.argv[4:]
+expected_sha256 = sys.argv[4] if len(sys.argv) > 4 else ''
+restart_args = sys.argv[5:]
 deadline = time.time() + 45
 while time.time() < deadline:
     try:
@@ -1350,6 +1363,14 @@ while time.time() < deadline:
     except OSError:
         break
     time.sleep(0.25)
+if expected_sha256 and len(expected_sha256) == 64:
+    h = hashlib.sha256()
+    with open(source, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b''):
+            h.update(chunk)
+    actual = h.hexdigest().lower()
+    if actual != expected_sha256.lower():
+        raise SystemExit(f'SHA-256 mismatch before replace: expected {expected_sha256}, got {actual}')
 os.replace(source, target)
 subprocess.Popen([target] + restart_args)
 try:
@@ -1357,7 +1378,7 @@ try:
 except OSError:
     pass
 ''', encoding='utf-8')
-        subprocess.Popen([sys.executable, str(script), str(current_pid), str(update), str(target)] + restart_args)
+        subprocess.Popen([sys.executable, str(script), str(current_pid), str(update), str(target), expected_digest] + restart_args)
     return {'scheduled': True, 'target': str(target), 'source': str(update)}
 
 
@@ -1466,7 +1487,7 @@ def _run_companion_self_update(restart=True):
                 'current_version': current_version,
                 'latest_version': latest_version,
             }
-        schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'])
+        schedule = schedule_companion_update_restart(update_path, install_target_exe(), ['--start-server'], expected_sha256=downloaded_digest)
         record_last_installed_update_sha256(downloaded_digest)
         if restart:
             schedule_companion_process_exit()
