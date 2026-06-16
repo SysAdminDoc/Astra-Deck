@@ -27,6 +27,8 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   warnings on ESLint 10.2.1.
 - **crx3 supply chain audit:** verified all 6 transitive deps are MIT/BSD,
   `protocol-buffers-schema` is post-advisory, `npm audit` clean.
+- **Playlist search:** new `playlistSearch` feature adds a debounced search
+  input above playlist panels; filters items by title with Escape-to-clear.
 
 ## [4.46.3] - 2026-06-10
 

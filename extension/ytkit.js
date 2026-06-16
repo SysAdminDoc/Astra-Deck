@@ -3889,6 +3889,7 @@ return response;
             thumbnailQualityUpgrade: false,
             watchLaterQuickAdd: false,
             playlistEnhancer: false,
+            playlistSearch: false,
             commentSearch: false,
             videoZoom: false,
             forceDarkEverywhere: false,
@@ -24159,6 +24160,92 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._playlistStyleEl?.remove(); this._playlistStyleEl = null;
                 document.querySelectorAll('.ytkit-playlist-enhance').forEach(b => b.remove());
                 document.querySelectorAll('.ytkit-playlist-duplicate-hidden').forEach((item) => item.classList.remove('ytkit-playlist-duplicate-hidden'));
+            }
+        },
+        {
+            id: 'playlistSearch',
+            name: 'Playlist Search',
+            description: 'Adds a search input above playlist panels to filter items by title',
+            group: 'Watch Page',
+            icon: 'search',
+            pages: [PageTypes.WATCH],
+            _bar: null,
+            _input: null,
+            _applyTimer: null,
+            _getPlaylistItems() {
+                const container = document.querySelector('ytd-playlist-panel-renderer #items, ytd-playlist-panel-video-renderer');
+                if (!container) return [];
+                return Array.from(container.querySelectorAll('ytd-playlist-panel-video-renderer'));
+            },
+            _applyFilter() {
+                const query = (this._input?.value || '').trim().toLowerCase();
+                const items = this._getPlaylistItems();
+                let visible = 0;
+                for (const item of items) {
+                    const title = (item.querySelector('#video-title')?.textContent || '').toLowerCase();
+                    const match = !query || title.includes(query);
+                    if (match) {
+                        item.style.removeProperty('display');
+                        visible++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+                if (this._bar) {
+                    const count = this._bar.querySelector('.ytkit-playlist-search-count');
+                    if (count) {
+                        count.textContent = query
+                            ? `${visible} of ${items.length}`
+                            : `${items.length} item${items.length === 1 ? '' : 's'}`;
+                    }
+                }
+            },
+            _create() {
+                if (this._bar?.isConnected) return;
+                const header = document.querySelector('ytd-playlist-panel-renderer #header-contents, ytd-playlist-panel-renderer .header');
+                if (!header) return;
+                const bar = document.createElement('div');
+                bar.className = 'ytkit-playlist-search-bar';
+                bar.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid rgba(255,255,255,0.08);';
+                const input = document.createElement('input');
+                input.type = 'search';
+                input.placeholder = 'Search playlist…';
+                input.setAttribute('aria-label', 'Search playlist items');
+                input.style.cssText = 'flex:1;min-height:28px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:inherit;font:inherit;font-size:12px;outline:none;';
+                input.addEventListener('input', () => {
+                    if (this._applyTimer) clearTimeout(this._applyTimer);
+                    this._applyTimer = setTimeout(() => { this._applyTimer = null; this._applyFilter(); }, 200);
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { input.value = ''; this._applyFilter(); }
+                });
+                const count = document.createElement('span');
+                count.className = 'ytkit-playlist-search-count';
+                count.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap;';
+                bar.appendChild(input);
+                bar.appendChild(count);
+                header.insertAdjacentElement('afterend', bar);
+                this._bar = bar;
+                this._input = input;
+                this._applyFilter();
+            },
+            init() {
+                this._create();
+                addNavigateRule(this.id, () => {
+                    this._bar?.remove(); this._bar = null; this._input = null;
+                    setTimeout(() => this._create(), 1500);
+                });
+                addMutationRule(this.id, () => {
+                    if (!this._bar?.isConnected) this._create();
+                });
+            },
+            destroy() {
+                removeNavigateRule(this.id);
+                removeMutationRule(this.id);
+                if (this._applyTimer) clearTimeout(this._applyTimer);
+                this._applyTimer = null;
+                for (const item of this._getPlaylistItems()) item.style.removeProperty('display');
+                this._bar?.remove(); this._bar = null; this._input = null;
             }
         },
         {
