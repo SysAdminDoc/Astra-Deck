@@ -421,6 +421,7 @@
   "rectangularizeYouTube": false,
   "classicLayoutProfile": "modern",
   "newPlayerUiRestore": false,
+  "classicPlayerChrome": false,
   "tokenThemeBridge": false,
   "openInAlternativeFrontend": false,
   "alternativeFrontendInstance": "https://yewtu.be",

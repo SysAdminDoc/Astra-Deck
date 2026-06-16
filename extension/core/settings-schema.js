@@ -646,6 +646,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "rectangularizeYouTube", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "classicLayoutProfile", category: "shell", type: "string", defaultValue: "modern", risk: "experimental", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "newPlayerUiRestore", category: "shell", type: "boolean", defaultValue: false, risk: "experimental", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "classicPlayerChrome", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "tokenThemeBridge", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── nav ───
