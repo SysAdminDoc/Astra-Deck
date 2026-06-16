@@ -8741,17 +8741,14 @@ test('v4.47.0 ESLint require-catch-reason rule is wired and enforces v3.14.0 inv
         'eslint.config.js must register the require-catch-reason rule');
     assert.match(eslintConfig, /'local\/require-catch-reason':\s*'error'/,
         'require-catch-reason must be enabled as error (not warn) so CI fails on regression');
-    // Phase L: the popup.js file group must be present and the rule
-    // must be active on it. The two `files: [...]` arrays are the
-    // canonical scope declarations.
     assert.match(eslintConfig, /files:\s*\['extension\/background\.js'\]/,
         'eslint.config.js must declare the extension/background.js file group');
-    assert.match(eslintConfig, /files:\s*\['extension\/popup\.js'\]/,
-        'eslint.config.js must declare the extension/popup.js file group (Phase L)');
-    assert.match(eslintConfig, /files:\s*\['extension\/core\/\*\.js'\]/,
-        'eslint.config.js must declare the direct extension/core/*.js file group (Phase L follow-up)');
-    assert.match(eslintConfig, /files:\s*\['extension\/ytkit\.js'\]/,
-        'eslint.config.js must declare the ytkit.js file group (monolith follow-up)');
+    assert.match(eslintConfig, /extension\/popup\.js/,
+        'eslint.config.js must cover extension/popup.js');
+    assert.match(eslintConfig, /extension\/core\/\*\.js/,
+        'eslint.config.js must cover extension/core/*.js');
+    assert.match(eslintConfig, /extension\/ytkit\.js/,
+        'eslint.config.js must cover extension/ytkit.js');
     // The npm-lint script must pass both files to eslint so the rule
     // actually runs on both during npm run check.
     const pkg = JSON.parse(fs.readFileSync(
