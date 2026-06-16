@@ -21969,6 +21969,74 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return this._cues.map(c => c.text).join('\n');
             },
 
+            _hasTranslatorApi() {
+                return typeof window.Translator !== 'undefined'
+                    || (typeof window.ai !== 'undefined' && typeof window.ai?.translator !== 'undefined');
+            },
+
+            _translatedCues: null,
+            _showingTranslation: false,
+
+            _renderCueTexts() {
+                const body = this._panel?.querySelector('.ytkit-transcript-body');
+                if (!body) return;
+                const lines = body.querySelectorAll('.ytkit-transcript-line__text');
+                const source = this._showingTranslation && this._translatedCues ? this._translatedCues : this._cues;
+                lines.forEach((el, i) => {
+                    if (source[i]) el.textContent = source[i].text;
+                });
+            },
+
+            async _translateTranscript() {
+                if (!this._hasTranslatorApi()) {
+                    if (typeof showToast === 'function') showToast('Chrome Translator API not available in this browser', '#f59e0b', { tone: 'warn' });
+                    return;
+                }
+                if (this._showingTranslation && this._translatedCues) {
+                    this._showingTranslation = false;
+                    this._renderCueTexts();
+                    const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
+                    if (btn) btn.textContent = 'Translate';
+                    return;
+                }
+                const btn = this._panel?.querySelector('[data-ytkit-translate-btn]');
+                if (btn) { btn.textContent = 'Translating…'; btn.disabled = true; }
+                try {
+                    const factory = window.Translator || window.ai?.translator;
+                    const userLang = (navigator.language || 'en').split('-')[0];
+                    const srcText = this._cues.slice(0, 5).map(c => c.text).join(' ');
+                    let sourceLang = 'en';
+                    try {
+                        const detectorFactory = window.LanguageDetector || window.ai?.languageDetector;
+                        if (detectorFactory?.create) {
+                            const detector = await detectorFactory.create();
+                            const results = await detector.detect(srcText);
+                            if (results?.[0]?.detectedLanguage) sourceLang = results[0].detectedLanguage;
+                            detector.destroy?.();
+                        }
+                    } catch (_) { /* reason: detection is best-effort; default to 'en' */ }
+                    const targetLang = sourceLang === userLang ? 'en' : userLang;
+                    const translator = await factory.create({ sourceLanguage: sourceLang, targetLanguage: targetLang });
+                    if (!translator) throw new Error('Translator factory returned no instance');
+                    const translated = [];
+                    for (const cue of this._cues) {
+                        const result = await translator.translate(cue.text);
+                        translated.push({ ...cue, text: String(result || cue.text) });
+                    }
+                    translator.destroy?.();
+                    this._translatedCues = translated;
+                    this._showingTranslation = true;
+                    this._renderCueTexts();
+                    if (btn) { btn.textContent = 'Show Original'; btn.disabled = false; }
+                    if (typeof showToast === 'function') showToast(`Translated to ${targetLang}`, '#22c55e');
+                } catch (e) {
+                    DebugManager.log('TranscriptTranslate', `Translation failed: ${e.message}`);
+                    if (typeof showToast === 'function') showToast(`Translation failed: ${e.message}`, '#ef4444');
+                    if (btn) { btn.textContent = 'Translate'; btn.disabled = false; }
+                }
+            },
+
+
             _buildSrt() {
                 const out = [];
                 for (let i = 0; i < this._cues.length; i++) {
@@ -22229,6 +22297,12 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     () => this._downloadFile(this._buildSrt(), `${this._videoIdSafe()}.srt`, 'application/x-subrip;charset=utf-8')));
                 exportBar.appendChild(mkBtn('Copy AI Prompt', 'Copy a ready-to-paste summary prompt',
                     () => this._copyToClipboard(this._buildLlmPrompt(), 'LLM prompt')));
+                if (this._hasTranslatorApi()) {
+                    const translateBtn = mkBtn('Translate', 'Translate transcript on-device using Chrome Translator API',
+                        () => this._translateTranscript());
+                    translateBtn.dataset.ytkitTranslateBtn = '1';
+                    exportBar.appendChild(translateBtn);
+                }
 
                 const body = document.createElement('div');
                 body.className = 'ytkit-transcript-body';
@@ -22264,6 +22338,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._createTimer = null;
                 removeNavigateRule('transcriptViewer');
                 this._panel?.remove(); this._panel = null;
+                this._translatedCues = null;
+                this._showingTranslation = false;
             }
         },
         {
