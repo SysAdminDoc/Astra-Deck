@@ -2460,6 +2460,35 @@ textarea:focus-visible {
   }
 }
 
+/* ── RTL layout overrides ──
+   Applied when popup.js sets dir="rtl" on <html> for Arabic, Hebrew, etc. */
+
+[dir="rtl"] .search-icon { left: auto; right: 10px; }
+[dir="rtl"] .clear-search { right: auto; left: 4px; }
+[dir="rtl"] .search-row input { padding: 0 32px 0 30px; }
+
+[dir="rtl"] .toggle,
+[dir="rtl"] .so-row-head,
+[dir="rtl"] .welcome-profile-btn { text-align: right; }
+
+[dir="rtl"] .welcome-profile-btn { align-items: flex-end; }
+[dir="rtl"] .welcome-profile-rec { right: auto; left: 8px; }
+
+[dir="rtl"] .actions-end { margin-left: 0; margin-right: auto; }
+
+[dir="rtl"] .so-key-reset-btn { margin-left: 0; margin-right: 4px; }
+
+[dir="rtl"] button[aria-busy="true"]::before { margin-right: 0; margin-left: 6px; }
+[dir="rtl"] button.undo-action { margin-right: 0; margin-left: 6px; }
+
+[dir="rtl"] #languageSelect {
+  padding: 0 10px 0 28px;
+  background-position: left 10px center;
+}
+
+[dir="rtl"] .switch::after { left: auto; right: 2px; }
+[dir="rtl"] .toggle.on .switch::after { transform: translateX(-14px); }
+
 @media (forced-colors: active) {
   .toggle,
   .stat-card,

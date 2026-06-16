@@ -3,242 +3,242 @@
     "message": "Astra Deck"
   },
   "clearFilterAria": {
-    "message": "Clear quick toggle filter"
+    "message": "مسح فلتر التبديل السريع"
   },
   "clearFilterBtn": {
-    "message": "Clear Filter"
+    "message": "مسح الفلتر"
   },
   "closeBtnAria": {
-    "message": "Close"
+    "message": "إغلاق"
   },
   "contextNoteAnyTab": {
-    "message": "Quick toggles are saved now and sync when YouTube is open."
+    "message": "التبديلات السريعة محفوظة الآن وتُزامَن عند فتح YouTube."
   },
   "contextNoteInlinePanel": {
-    "message": "Open the full workspace on this tab; quick toggles apply immediately."
+    "message": "افتح مساحة العمل الكاملة في هذه التبويبة؛ تُطبَّق التبديلات السريعة فوراً."
   },
   "contextNoteLaunch": {
-    "message": "Open a watchable YouTube tab to use the full in-page workspace."
+    "message": "افتح تبويبة YouTube قابلة للمشاهدة لاستخدام مساحة العمل الكاملة داخل الصفحة."
   },
   "contextStateAnyTab": {
-    "message": "Any Tab"
+    "message": "أي تبويبة"
   },
   "contextStateAriaLabel": {
-    "message": "Tab context"
+    "message": "سياق التبويبة"
   },
   "contextStateLocal": {
-    "message": "Local"
+    "message": "محلي"
   },
   "contextStateYouTube": {
     "message": "YouTube"
   },
   "controlPlural": {
-    "message": "controls"
+    "message": "عناصر تحكم"
   },
   "controlSingular": {
-    "message": "control"
+    "message": "عنصر تحكم"
   },
   "dataMgmtAria": {
-    "message": "Data management"
+    "message": "إدارة البيانات"
   },
   "dlPopupAria": {
-    "message": "Download options"
+    "message": "خيارات التنزيل"
   },
   "dlPopupChange": {
-    "message": "Change"
+    "message": "تغيير"
   },
   "dlPopupChangeAria": {
-    "message": "Choose a download folder"
+    "message": "اختر مجلد التنزيل"
   },
   "dlPopupCtaAudio": {
-    "message": "Download audio"
+    "message": "تنزيل الصوت"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as …"
+    "message": "تنزيل الصوت بصيغة …"
   },
   "dlPopupCtaVideo": {
-    "message": "Download video"
+    "message": "تنزيل الفيديو"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as … at …"
+    "message": "تنزيل الفيديو بصيغة … بجودة …"
   },
   "dlPopupDefault": {
-    "message": "Default"
+    "message": "افتراضي"
   },
   "dlPopupDownloaderOffline": {
-    "message": "Downloader not running"
+    "message": "المُنزِّل غير مُشغَّل"
   },
   "dlPopupFormat": {
-    "message": "Format"
+    "message": "الصيغة"
   },
   "dlPopupLoading": {
-    "message": "Loading…"
+    "message": "جارٍ التحميل…"
   },
   "dlPopupPickerUnavailable": {
-    "message": "Folder picker unavailable"
+    "message": "منتقي المجلد غير متاح"
   },
   "dlPopupPicking": {
-    "message": "Picking…"
+    "message": "جارٍ الاختيار…"
   },
   "dlPopupQuality": {
-    "message": "Quality"
+    "message": "الجودة"
   },
   "dlPopupReset": {
-    "message": "Reset"
+    "message": "إعادة تعيين"
   },
   "dlPopupResetAria": {
-    "message": "Reset to default download folder"
+    "message": "إعادة تعيين مجلد التنزيل الافتراضي"
   },
   "dlPopupSaveTo": {
-    "message": "Save to"
+    "message": "حفظ في"
   },
   "dlPopupTabAudioOnly": {
-    "message": "Audio only"
+    "message": "صوت فقط"
   },
   "dlPopupTabVideo": {
-    "message": "Video"
+    "message": "فيديو"
   },
   "dlPopupTitle": {
-    "message": "Download options"
+    "message": "خيارات التنزيل"
   },
   "dlPopupTypeAria": {
-    "message": "Download type"
+    "message": "نوع التنزيل"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% complete. … remaining."
+    "message": "…% مكتمل. … متبقٍّ."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
+    "message": "…% مكتمل. ابقَ على YouTube ريثما يُنهي Astra Downloader."
   },
   "dlProgressAriaAudio": {
-    "message": "Audio download progress"
+    "message": "تقدم تنزيل الصوت"
   },
   "dlProgressAriaVideo": {
-    "message": "Video download progress"
+    "message": "تقدم تنزيل الفيديو"
   },
   "dlProgressBadgeAudio": {
-    "message": "Audio Download"
+    "message": "تنزيل الصوت"
   },
   "dlProgressBadgeVideo": {
-    "message": "Video Download"
+    "message": "تنزيل الفيديو"
   },
   "dlProgressCompleteCopy": {
-    "message": "Astra Downloader finished successfully."
+    "message": "انتهى Astra Downloader بنجاح."
   },
   "dlProgressConnectAudio": {
-    "message": "Connecting to the local audio downloader."
+    "message": "جارٍ الاتصال بمُنزِّل الصوت المحلي."
   },
   "dlProgressConnectVideo": {
-    "message": "Connecting to the local video downloader."
+    "message": "جارٍ الاتصال بمُنزِّل الفيديو المحلي."
   },
   "dlProgressDismissAria": {
-    "message": "Dismiss download progress"
+    "message": "إخفاء تقدم التنزيل"
   },
   "dlProgressEtaPrefix": {
-    "message": "ETA"
+    "message": "الوقت المتبقي"
   },
   "dlProgressFailureDefault": {
-    "message": "Astra Downloader failed"
+    "message": "فشل Astra Downloader"
   },
   "dlProgressInProgress": {
-    "message": "In progress"
+    "message": "قيد التنفيذ"
   },
   "dlProgressLocal": {
-    "message": "Local"
+    "message": "محلي"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
+    "message": "فقد Astra Deck الاتصال بـ Astra Downloader. اختر \"إصلاح المُنزِّل\" للاسترداد."
   },
   "dlProgressLostTitle": {
-    "message": "Connection to downloader lost"
+    "message": "انقطع الاتصال بالمُنزِّل"
   },
   "dlProgressLostToast": {
-    "message": "Lost contact with Astra Downloader."
+    "message": "انقطع الاتصال بـ Astra Downloader."
   },
   "dlProgressPreparing": {
-    "message": "Preparing download…"
+    "message": "جارٍ تحضير التنزيل…"
   },
   "dlProgressQueue": {
-    "message": "Queue"
+    "message": "قائمة الانتظار"
   },
   "dlProgressReady": {
-    "message": "Ready"
+    "message": "جاهز"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
+    "message": "انقطاع مؤقت مع Astra Downloader — جارٍ إعادة المحاولة تلقائياً."
   },
   "dlProgressSkippedDefault": {
-    "message": "Already downloaded — skipped."
+    "message": "تم التنزيل مسبقاً — تم تخطيه."
   },
   "dlProgressStateAlreadyDownloaded": {
-    "message": "Already Downloaded"
+    "message": "تم التنزيل مسبقاً"
   },
   "dlProgressStateComplete": {
-    "message": "Complete"
+    "message": "مكتمل"
   },
   "dlProgressStateDownloading": {
-    "message": "Downloading"
+    "message": "جارٍ التنزيل"
   },
   "dlProgressStateError": {
-    "message": "Error"
+    "message": "خطأ"
   },
   "dlProgressStateFailed": {
-    "message": "Failed"
+    "message": "فشل"
   },
   "dlProgressStateFinishing": {
-    "message": "Finishing"
+    "message": "جارٍ الإنهاء"
   },
   "dlProgressStateLost": {
-    "message": "Connection Lost"
+    "message": "انقطع الاتصال"
   },
   "dlProgressStateNeedsAttention": {
-    "message": "Needs Attention"
+    "message": "يحتاج انتباهاً"
   },
   "dlProgressStatePreparing": {
-    "message": "Preparing"
+    "message": "جارٍ التحضير"
   },
   "dlProgressStateReconnecting": {
-    "message": "Reconnecting"
+    "message": "جارٍ إعادة الاتصال"
   },
   "dlProgressStateSkipped": {
-    "message": "Skipped"
+    "message": "تم التخطي"
   },
   "dlProgressWaiting": {
-    "message": "Waiting"
+    "message": "في الانتظار"
   },
   "dlProgressWrappingUp": {
-    "message": "Wrapping up"
+    "message": "جارٍ الإنهاء"
   },
   "dlRepairAria": {
-    "message": "Open Astra Downloader repair steps"
+    "message": "فتح خطوات إصلاح Astra Downloader"
   },
   "dlRepairBtn": {
-    "message": "Repair downloader"
+    "message": "إصلاح المُنزِّل"
   },
   "emptyNoMatch": {
-    "message": "No quick toggles match"
+    "message": "لا تبديلات سريعة مطابقة"
   },
   "emptyNoMatchHint": {
-    "message": "Clear the filter to see every quick control again."
+    "message": "امسح الفلتر لرؤية جميع عناصر التحكم السريعة."
   },
   "emptyNoToggles": {
-    "message": "No quick toggles available"
+    "message": "لا تبديلات سريعة متاحة"
   },
   "emptyNoTogglesHint": {
-    "message": "The popup could not load any quick controls right now."
+    "message": "تعذّر على النافذة المنبثقة تحميل أي عناصر تحكم سريعة الآن."
   },
   "enabledLabel": {
-    "message": "enabled"
+    "message": "مُفعَّل"
   },
   "exportBtn": {
-    "message": "Export"
+    "message": "تصدير"
   },
   "extActionTitle": {
     "message": "Astra Deck",
     "description": "Tooltip text for the toolbar action button."
   },
   "extDescription": {
-    "message": "Premium watch-page customization, split layouts, content controls, and local downloads for YouTube.",
+    "message": "تخصيص متميز لصفحة المشاهدة، وتخطيطات مقسّمة، وعناصر تحكم في المحتوى، وتنزيلات محلية لـ YouTube.",
     "description": "The extension description shown in the browser's extension management page."
   },
   "extName": {
@@ -246,103 +246,103 @@
     "description": "The extension name displayed in the browser UI."
   },
   "filterTogglesLabel": {
-    "message": "Filter quick toggles"
+    "message": "فلترة التبديلات السريعة"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter — try risk:api or category:downloads"
+    "message": "فلتر — جرّب risk:api أو category:downloads"
   },
   "groupQuickControls": {
-    "message": "Quick Controls"
+    "message": "عناصر التحكم السريعة"
   },
   "healthClearAria": {
-    "message": "Clear diagnostic log"
+    "message": "مسح سجل التشخيص"
   },
   "healthClearBtn": {
-    "message": "Clear"
+    "message": "مسح"
   },
   "storageBannerTitle": {
-    "message": "Storage usage high"
+    "message": "استخدام التخزين مرتفع"
   },
   "storageBannerSoftTpl": {
-    "message": "Storage at {size} — heading toward the ceiling."
+    "message": "التخزين عند {size} — يقترب من الحد الأقصى."
   },
   "storageBannerHardTpl": {
-    "message": "Storage at {size} — consider Reset."
+    "message": "التخزين عند {size} — ضع في اعتبارك إعادة التعيين."
   },
   "storageBannerCorruptionTpl": {
-    "message": "Storage data malformed — Reset to recover."
+    "message": "بيانات التخزين تالفة — أعِد التعيين للاسترداد."
   },
   "selectorHealthTitle": {
-    "message": "Selector health"
+    "message": "حالة المحدِّد"
   },
   "selectorHealthTotalTpl": {
-    "message": "{count} surfaces tracked"
+    "message": "{count} سطح مُتتبَّع"
   },
   "selectorHealthEmpty": {
-    "message": "No surfaces sampled yet."
+    "message": "لم يتم أخذ عينات من أي سطح بعد."
   },
   "selectorHealthCopyBtn": {
-    "message": "Copy report"
+    "message": "نسخ التقرير"
   },
   "selectorHealthCopyAria": {
-    "message": "Copy selector-health report to clipboard"
+    "message": "نسخ تقرير حالة المحدِّد إلى الحافظة"
   },
   "selectorHealthCopyPending": {
-    "message": "Building report…"
+    "message": "جارٍ إنشاء التقرير…"
   },
   "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
+    "message": "تم النسخ — الصقه في مشكلة GitHub."
   },
   "selectorHealthCopyFail": {
-    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
+    "message": "تم حظر الكتابة في الحافظة. افتح DevTools واستدعِ window.__ytkitDiagnostics.download() بدلاً من ذلك."
   },
   "selectorHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
+    "message": "افتح تبويبة YouTube لإنشاء التقرير."
   },
   "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
+    "message": "لا لقطة متاحة — قد تكون الصفحة لا تزال تحمّل."
   },
   "storageBannerReset": {
-    "message": "Reset"
+    "message": "إعادة تعيين"
   },
   "storageBannerResetAria": {
-    "message": "Reset all local data"
+    "message": "إعادة تعيين جميع البيانات المحلية"
   },
   "healthCopyAria": {
-    "message": "Copy diagnostic details"
+    "message": "نسخ تفاصيل التشخيص"
   },
   "healthCopyBtn": {
-    "message": "Copy"
+    "message": "نسخ"
   },
   "healthSaveAria": {
-    "message": "Save diagnostic log as JSON"
+    "message": "حفظ سجل التشخيص بصيغة JSON"
   },
   "healthSaveBtn": {
-    "message": "Save"
+    "message": "حفظ"
   },
   "statusDiagSaved": {
-    "message": "Diagnostic log saved."
+    "message": "تم حفظ سجل التشخيص."
   },
   "statusDiagSaveFail": {
-    "message": "Could not save log"
+    "message": "تعذّر حفظ السجل"
   },
   "healthEventPlural": {
-    "message": "events"
+    "message": "أحداث"
   },
   "healthEventSingular": {
-    "message": "event"
+    "message": "حدث"
   },
   "healthFallbackPrefix": {
-    "message": "TrustedTypes fallback active"
+    "message": "البديل TrustedTypes نشط"
   },
   "healthTitle": {
-    "message": "Diagnostics"
+    "message": "التشخيصات"
   },
   "importBtn": {
-    "message": "Import"
+    "message": "استيراد"
   },
   "languageAuto": {
-    "message": "Auto (browser default)"
+    "message": "تلقائي (افتراضي المتصفح)"
   },
   "languageAr": {
     "message": "العربية (Arabic)"
@@ -375,379 +375,379 @@
     "message": "Русский (Russian)"
   },
   "languageSelectLabel": {
-    "message": "Display language"
+    "message": "لغة العرض"
   },
   "languageTitle": {
-    "message": "Display language"
+    "message": "لغة العرض"
   },
   "languageZhCn": {
     "message": "简体中文 (Simplified Chinese)"
   },
   "loadingState": {
-    "message": "Loading"
+    "message": "جارٍ التحميل"
   },
   "openFullSettings": {
-    "message": "Open Full Settings"
+    "message": "فتح الإعدادات الكاملة"
   },
   "openYouTube": {
-    "message": "Open YouTube"
+    "message": "فتح YouTube"
   },
   "panelCloseAria": {
-    "message": "Close settings"
+    "message": "إغلاق الإعدادات"
   },
   "panelCloseTitle": {
-    "message": "Close (Esc)"
+    "message": "إغلاق (Esc)"
   },
   "panelIntro": {
-    "message": "Search, tune, and apply YouTube controls live without leaving the page."
+    "message": "ابحث وعدّل وطبّق عناصر تحكم YouTube مباشرة دون مغادرة الصفحة."
   },
   "panelLiveApplyBadge": {
-    "message": "Live apply"
+    "message": "تطبيق فوري"
   },
   "panelSearchAria": {
-    "message": "Search settings"
+    "message": "البحث في الإعدادات"
   },
   "panelSearchClearAria": {
-    "message": "Clear settings search"
+    "message": "مسح البحث في الإعدادات"
   },
   "panelSearchClearTitle": {
-    "message": "Clear search"
+    "message": "مسح البحث"
   },
   "panelSearchPlaceholder": {
-    "message": "Search settings…"
+    "message": "البحث في الإعدادات…"
   },
   "panelSidebarAria": {
-    "message": "Settings categories"
+    "message": "فئات الإعدادات"
   },
   "panelTitle": {
-    "message": "Settings"
+    "message": "الإعدادات"
   },
   "playerDownloadAria": {
-    "message": "Download video"
+    "message": "تنزيل الفيديو"
   },
   "playerDownloadTitle": {
-    "message": "Download Video"
+    "message": "تنزيل الفيديو"
   },
   "playerGearAriaTpl": {
-    "message": "Open … settings"
+    "message": "فتح إعدادات …"
   },
   "playerGearTitleTpl": {
-    "message": "… Settings"
+    "message": "إعدادات …"
   },
   "popupTitle": {
     "message": "Astra Deck"
   },
   "qtGroup_Feed_Cleanup": {
-    "message": "Feed Cleanup"
+    "message": "تنظيف الخلاصة"
   },
   "qtGroup_Focus": {
-    "message": "Focus"
+    "message": "التركيز"
   },
   "qtGroup_Playback": {
-    "message": "Playback"
+    "message": "التشغيل"
   },
   "qtGroup_Utilities": {
-    "message": "Utilities"
+    "message": "الأدوات"
   },
   "qtGroup_Watch_Flow": {
-    "message": "Watch Flow"
+    "message": "تدفق المشاهدة"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "فتح مقاطع الفيديو في وضع المسرح"
   },
   "qt_autoTheaterMode_name": {
-    "message": "Auto Theater"
+    "message": "وضع المسرح التلقائي"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "تدفئة المشغّل للمشاهدة في وقت متأخر"
   },
   "qt_blueLightFilter_name": {
-    "message": "Blue-Light Filter"
+    "message": "فلتر الضوء الأزرق"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "إزالة التتبع من روابط المشاركة"
   },
   "qt_cleanShareUrls_name": {
-    "message": "Clean URLs"
+    "message": "روابط نظيفة"
   },
   "qt_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "فلترة التعليقات داخل صفحة المشاهدة"
   },
   "qt_commentSearch_name": {
-    "message": "Comment Search"
+    "message": "البحث في التعليقات"
   },
   "qt_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "استبدال العناوين والصور المضلِّلة"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "تسجيل تشخيصات تفصيلية محلياً"
   },
   "qt_debugMode_name": {
-    "message": "Debug Mode"
+    "message": "وضع التصحيح"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "تتبع الاستراحات والمشاهدة اليومية"
   },
   "qt_digitalWellbeing_name": {
-    "message": "Digital Wellbeing"
+    "message": "الصحة الرقمية"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "إيقاف تشغيل الفيديو التالي تلقائياً"
   },
   "qt_disableAutoplayNext_name": {
-    "message": "No Autoplay"
+    "message": "بدون تشغيل تلقائي"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "إيقاف تحميل الخلاصة اللانهائي"
   },
   "qt_disableInfiniteScroll_name": {
-    "message": "Cap Scroll"
+    "message": "تحديد التمرير"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "إخفاء الشريط الجانبي في صفحة المشاهدة"
   },
   "qt_hideRelatedVideos_name": {
-    "message": "Hide Related"
+    "message": "إخفاء الصلة"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "إبقاء عناصر التحكم مرئية أثناء التمرير"
   },
   "qt_miniPlayerBar_name": {
-    "message": "Mini Player Bar"
+    "message": "شريط المشغّل المصغّر"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "الحفاظ على سرعة التشغيل ثابتة"
   },
   "qt_persistentSpeed_name": {
-    "message": "Persistent Speed"
+    "message": "سرعة ثابتة"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "إزالة أرفف وروابط Shorts"
   },
   "qt_removeAllShorts_name": {
-    "message": "Hide Shorts"
+    "message": "إخفاء Shorts"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "تخطي مقاطع الرعاة المُحدَّدة جماعياً"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "قراءة وتنقل وتصدير الترجمات"
   },
   "qt_transcriptViewer_name": {
-    "message": "Transcript Sidebar"
+    "message": "الشريط الجانبي للنص"
   },
   "quickTogglesAria": {
-    "message": "Quick toggles"
+    "message": "التبديلات السريعة"
   },
   "quickTogglesEyebrow": {
-    "message": "Quick toggles"
+    "message": "التبديلات السريعة"
   },
   "resetBtn": {
-    "message": "Reset"
+    "message": "إعادة تعيين"
   },
   "resultsAllAvailableTpl": {
-    "message": "… quick controls are available in this popup"
+    "message": "… عنصر تحكم سريع متاح في هذه النافذة"
   },
   "resultsMatchTpl": {
-    "message": "… of … … match this filter"
+    "message": "… من … … يطابق هذا الفلتر"
   },
   "resultsMatching": {
-    "message": "matching"
+    "message": "مطابق"
   },
   "speedBtnAriaTpl": {
-    "message": "Default playback speed …. Click to change."
+    "message": "سرعة التشغيل الافتراضية …. انقر للتغيير."
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: … — applies to every video"
+    "message": "سرعة التشغيل الافتراضية: … — تُطبَّق على كل فيديو"
   },
   "speedPopupAria": {
-    "message": "Default playback speed"
+    "message": "سرعة التشغيل الافتراضية"
   },
   "speedPopupHeader": {
-    "message": "Default speed"
+    "message": "السرعة الافتراضية"
   },
   "speedPopupSub": {
-    "message": "Applies to every video until changed."
+    "message": "تُطبَّق على كل فيديو حتى يتم التغيير."
   },
   "statBlocked": {
-    "message": "Blocked"
+    "message": "محظور"
   },
   "statBookmarks": {
-    "message": "Bookmarks"
+    "message": "الإشارات المرجعية"
   },
   "statHidden": {
-    "message": "Hidden"
+    "message": "مخفي"
   },
   "statKeys": {
-    "message": "Keys"
+    "message": "مفاتيح"
   },
   "statStorage": {
-    "message": "Storage"
+    "message": "التخزين"
   },
   "statusAllDataCleared": {
-    "message": "All data cleared."
+    "message": "تم مسح جميع البيانات."
   },
   "statusAllDataClearedUndo": {
-    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
+    "message": "تم مسح جميع البيانات. انقر على \"تراجع عن إعادة التعيين\" للاستعادة (حتى تغلق المتصفح)."
   },
   "statusResetUndone": {
-    "message": "Reset undone — all data restored."
+    "message": "تم التراجع عن إعادة التعيين — تم استعادة جميع البيانات."
   },
   "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
+    "message": "التراجع لم يعد متاحاً — انتهت صلاحية اللقطة مع جلسة المتصفح."
   },
   "statusResetSnapshotFail": {
-    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
+    "message": "تم إلغاء إعادة التعيين — تعذّر إعداد لقطة للتراجع (البيانات كبيرة جداً لإعادة تعيين قابلة للاسترداد). قم بتصدير نسخة احتياطية أولاً."
   },
   "statusResetUndoFail": {
-    "message": "Undo failed"
+    "message": "فشل التراجع"
   },
   "undoResetBtn": {
-    "message": "Undo Reset"
+    "message": "تراجع عن إعادة التعيين"
   },
   "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
+    "message": "استعادة البيانات من آخر إعادة تعيين"
   },
   "reenableMediadlBtn": {
-    "message": "Enable Downloader Prompts"
+    "message": "تفعيل مطالبات المُنزِّل"
   },
   "reenableMediadlAria": {
-    "message": "Re-enable Astra Downloader install prompts"
+    "message": "إعادة تفعيل مطالبات تثبيت Astra Downloader"
   },
   "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+    "message": "تم إعادة تفعيل مطالبات تثبيت Astra Downloader — أعِد تحميل تبويبة YouTube لرؤيتها."
   },
   "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+    "message": "تعذّر إعادة تفعيل مطالبات Astra Downloader. افتح chrome://extensions وأعِد التحميل."
   },
   "statusBackupExported": {
-    "message": "Backup exported."
+    "message": "تم تصدير النسخة الاحتياطية."
   },
   "statusBackupImported": {
-    "message": "Backup imported."
+    "message": "تم استيراد النسخة الاحتياطية."
   },
   "statusClipboardUnavailable": {
-    "message": "Clipboard unavailable — see browser console."
+    "message": "الحافظة غير متاحة — انظر وحدة تحكم المتصفح."
   },
   "statusDiagClearFail": {
-    "message": "Could not clear log"
+    "message": "تعذّر مسح السجل"
   },
   "statusDiagCleared": {
-    "message": "Diagnostic log cleared."
+    "message": "تم مسح سجل التشخيص."
   },
   "statusDiagCopied": {
-    "message": "Diagnostic copied to clipboard."
+    "message": "تم نسخ التشخيص إلى الحافظة."
   },
   "statusExportFail": {
-    "message": "Export failed"
+    "message": "فشل التصدير"
   },
   "statusImportFail": {
-    "message": "Import failed"
+    "message": "فشل الاستيراد"
   },
   "statusOpenWorkspaceFail": {
-    "message": "Could not open the full workspace. Try again."
+    "message": "تعذّر فتح مساحة العمل الكاملة. حاول مرة أخرى."
   },
   "statusQuickCtrlLoadFail": {
-    "message": "Quick controls could not be loaded. Try reopening the popup."
+    "message": "تعذّر تحميل عناصر التحكم السريعة. حاول إعادة فتح النافذة المنبثقة."
   },
   "statusResetFail": {
-    "message": "Reset failed"
+    "message": "فشلت إعادة التعيين"
   },
   "statusStorageReadFail": {
-    "message": "Storage read failed"
+    "message": "فشل قراءة التخزين"
   },
   "storageStatsAriaLabel": {
-    "message": "Storage statistics"
+    "message": "إحصائيات التخزين"
   },
   "toastDlCmdCopied": {
-    "message": "Fallback install command copied. Use it only if you cannot run the downloaded setup file."
+    "message": "تم نسخ أمر التثبيت الاحتياطي. استخدمه فقط إذا تعذّر تشغيل ملف الإعداد المُنزَّل."
   },
   "toastDlInProgress": {
-    "message": "A download is already in progress."
+    "message": "يوجد تنزيل جارٍ بالفعل."
   },
   "toastDlInstallPrompt": {
-    "message": "Install Astra Downloader to enable downloads."
+    "message": "ثبّت Astra Downloader لتفعيل التنزيلات."
   },
   "toastDlReady": {
-    "message": "Astra Downloader is ready."
+    "message": "Astra Downloader جاهز."
   },
   "toastDlRequestFailed": {
-    "message": "Astra Downloader request failed."
+    "message": "فشل طلب Astra Downloader."
   },
   "toastDlRunning": {
-    "message": "Astra Downloader is running!"
+    "message": "Astra Downloader يعمل!"
   },
   "toastDlStarted": {
-    "message": "Astra Downloader started!"
+    "message": "بدأ Astra Downloader!"
   },
   "toastDlStarting": {
-    "message": "Starting Astra Downloader…"
+    "message": "جارٍ تشغيل Astra Downloader…"
   },
   "toastDlStopped": {
-    "message": "Astra Downloader stopped. Starting it again…"
+    "message": "توقف Astra Downloader. جارٍ إعادة تشغيله…"
   },
   "toggleStateOff": {
-    "message": "Disabled"
+    "message": "معطَّل"
   },
   "toggleStateOffLower": {
-    "message": "disabled"
+    "message": "معطَّل"
   },
   "toggleStateOn": {
-    "message": "Enabled"
+    "message": "مُفعَّل"
   },
   "toggleStateOnLower": {
-    "message": "enabled"
+    "message": "مُفعَّل"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update …. Try again."
+    "message": "تعذّر تحديث …. حاول مرة أخرى."
   },
   "workspaceEyebrow": {
-    "message": "Settings workspace"
+    "message": "مساحة عمل الإعدادات"
   },
   "workspaceSupport": {
-    "message": "Quick toggles save immediately and sync to YouTube."
+    "message": "تُحفظ التبديلات السريعة فوراً وتُزامَن مع YouTube."
   },
   "workspaceTitle": {
-    "message": "Controls and backups"
+    "message": "عناصر التحكم والنسخ الاحتياطية"
   },
   "dataFlowTitle": {
-    "message": "Data flow"
+    "message": "تدفق البيانات"
   },
   "dataFlowNote": {
-    "message": "Active origins are highlighted. Disable the driving toggle to mute an origin entirely."
+    "message": "المصادر النشطة مميَّزة. عطِّل زر التحكم الخاص بها لإسكات المصدر بالكامل."
   },
   "dataFlowSummaryTpl": {
-    "message": "{active}/{total} origins active"
+    "message": "{active}/{total} مصدر نشط"
   },
   "dataFlowActive": {
-    "message": "active"
+    "message": "نشط"
   },
   "dataFlowInactive": {
-    "message": "idle"
+    "message": "خامل"
   },
   "dataFlowProfile": {
-    "message": "profile"
+    "message": "الملف الشخصي"
   },
   "dataFlowCreds": {
-    "message": "creds"
+    "message": "بيانات الاعتماد"
   },
   "dataFlowRisk": {
-    "message": "risk"
+    "message": "المخاطرة"
   },
   "dataFlowDriver": {
-    "message": "driver"
+    "message": "المحرِّك"
   },
   "schemaOverviewEyebrow": {
-    "message": "Settings overview"
+    "message": "نظرة عامة على الإعدادات"
   },
   "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} settings on across {categories} categories"
+    "message": "{enabled}/{total} إعداد مُفعَّل عبر {categories} فئة"
   },
   "feature_hideCreateButton_name": {
     "message": "Hide Create Button"
@@ -2139,7 +2139,7 @@
     "message": "Disable Loudness Normalization"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren’t officially supported."
+    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren't officially supported."
   },
   "feature_initialPlayerStateForeground_name": {
     "message": "Initial Player State (Foreground)"
@@ -2151,7 +2151,7 @@
     "message": "Initial Player State (Background)"
   },
   "feature_initialPlayerStateBackground_desc": {
-    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube’s default. Useful for queueing-up multiple tabs."
+    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube's default. Useful for queueing-up multiple tabs."
   },
   "feature_perChannelIntroOutro_name": {
     "message": "Per-Channel Intro/Outro Skip"
@@ -2229,7 +2229,7 @@
     "message": "Local AI Summary (browser built-in)"
   },
   "feature_localAiSummary_desc": {
-    "message": "Use Chrome’s built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
+    "message": "Use Chrome's built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
   },
   "feature_researchSpacedReview_name": {
     "message": "Study / Work Export"

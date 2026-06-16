@@ -323,6 +323,9 @@
   "languageAuto": {
     "message": "自动（浏览器默认）"
   },
+  "languageAr": {
+    "message": "العربية (Arabic)"
+  },
   "languageDe": {
     "message": "Deutsch (德语)"
   },
