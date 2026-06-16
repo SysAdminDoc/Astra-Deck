@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Dependency review enforcement:** removed the `DEPENDENCY_REVIEW_REQUIRED`
+  advisory gate; the dependency-review CI job now always fails the workflow run
+  on moderate-or-higher vulnerabilities without `continue-on-error`.
+- **Arabic locale + RTL support:** added `extension/_locales/ar/` with 865
+  translated keys. Popup and settings panel dynamically set `dir="rtl"` for RTL
+  locales (Arabic, Hebrew, Farsi, Urdu). RTL CSS overrides handle search icons,
+  switch toggles, sidebar borders, and language selector layout.
+
 ## [4.46.3] - 2026-06-10
 
 Deep engineering + product-quality audit pass across the extension, userscript,
