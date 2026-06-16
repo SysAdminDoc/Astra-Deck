@@ -1496,6 +1496,12 @@
   "feature_playlistQuickRemove_name": {
     "message": "Playlist Quick-Remove Overlay"
   },
+  "feature_playlistSearch_desc": {
+    "message": "Adds a search input above playlist panels to filter items by title"
+  },
+  "feature_playlistSearch_name": {
+    "message": "Playlist Search"
+  },
   "feature_popOutPlayer_desc": {
     "message": "Detach the video into a resizable floating Picture-in-Picture window with transport controls"
   },
