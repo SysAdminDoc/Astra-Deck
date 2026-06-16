@@ -32454,6 +32454,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 return ids;
             },
 
+            _playGroupAsQueue(groupId) {
+                const MAX_IDS = 50;
+                const groups = this._readGroups();
+                const allowed = this._getGroupChannelIdSet(groupId, groups);
+                if (!allowed?.size) return;
+                const ids = [];
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                for (const card of cards) {
+                    if (card.classList.contains('ytkit-sub-hidden-by-group')) continue;
+                    const channelId = this._extractChannelIdFromCard(card);
+                    if (!channelId || !allowed.has(channelId)) continue;
+                    const link = card.querySelector('a[href*="/watch?v="], a[href*="/shorts/"]');
+                    if (!link) continue;
+                    const m = link.href.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+                    if (m && !ids.includes(m[1])) ids.push(m[1]);
+                    if (ids.length >= MAX_IDS) break;
+                }
+                if (!ids.length) {
+                    if (typeof showToast === 'function') showToast('No videos visible in this group', '#6b7280', { tone: 'neutral' });
+                    return;
+                }
+                const url = `https://www.youtube.com/watch_videos?video_ids=${ids.join(',')}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+                const groupName = groups[groupId]?.name || groupId;
+                const truncated = ids.length >= MAX_IDS ? ` (capped at ${MAX_IDS})` : '';
+                if (typeof showToast === 'function') showToast(`Playing ${ids.length} videos from ${groupName}${truncated}`, '#22c55e');
+            },
+
             _exportGroups() {
                 const payload = {
                     schemaVersion: 2,
@@ -33272,6 +33300,14 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     editBtn.setAttribute('aria-haspopup', 'dialog');
                     editBtn.addEventListener('click', () => this._toggleMembersPanel(activeGroupId));
                     bar.appendChild(editBtn);
+
+                    const playBtn = document.createElement('button');
+                    playBtn.type = 'button';
+                    playBtn.dataset.action = 'play-all';
+                    playBtn.textContent = 'Play All';
+                    playBtn.setAttribute('aria-label', `Play all videos from ${groups[activeGroupId].name || activeGroupId}`);
+                    playBtn.addEventListener('click', () => this._playGroupAsQueue(activeGroupId));
+                    bar.appendChild(playBtn);
                 }
 
                 const sortLabel = document.createElement('span');

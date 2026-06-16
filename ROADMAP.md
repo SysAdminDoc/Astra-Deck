@@ -161,9 +161,3 @@
   Acceptance: Users can vote on a replaced title and submit a new title/timestamp thumbnail; the generated userID never leaves DeArrow requests and is excluded from settings exports; feature is off by default.
   Complexity: M
 
-- [ ] P3 — Play subscription group as queue
-  Why: PocketTube's "play all videos by collection" is its stickiest feature; Astra Deck groups can already enumerate rendered videos per group but offer no one-click way to watch them.
-  Evidence: pockettube.io feature list; YouTube's anonymous playlist endpoint (`/watch_videos?video_ids=…`, ~50-ID cap) used by comparable tools.
-  Touches: `extension/ytkit.js` (group toolbar "Play all" action building a watch_videos URL from the group's rendered new videos, newest-first, capped at 50)
-  Acceptance: Clicking "Play all" on a group opens a playable queue of that group's recent videos; counts above the cap are truncated with a toast; no YouTube write APIs are called.
-  Complexity: S
