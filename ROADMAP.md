@@ -27,12 +27,6 @@
   Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
   Complexity: M
 
-- [ ] P1 — Userscript/extension sync is structural drift, not sync
-  Why: `sync-userscript.js` only rewrites the metadata header and re-bundles a hardcoded 22-module list; the ~15k-line monolith body is hand-maintained. The extension carries 247 feature ids vs 178 in the userscript; SponsorBlock, subscriptionGroups, the v4 export schema-validation wiring, and most post-v3 fixes never reached the userscript (the bundled `policy-profile.js` ships but is never called by the userscript's export/import path). Bundling also re-indents module template literals, so "verbatim" parity is already false.
-  Evidence: 2026-06-10 audit; `V5_BUNDLE_MODULES` (22) vs manifest content_scripts (~64); userscript `exportVersion: 3` vs extension `exportVersion: 4`.
-  Touches: `sync-userscript.js` (drift report or real conversion), CI guard comparing module lists, `YTKit.user.js` export/import path, decision on feature-parity scope
-  Acceptance: either a documented, CI-enforced "userscript ships subset X" contract, or the userscript export/import wires `validateSettingsSnapshot` and a drift report fails CI when a bundled module diverges.
-  Complexity: L
 
 ### P1 — Accessibility
 
