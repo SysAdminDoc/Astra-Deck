@@ -36,13 +36,6 @@
 
 ### P1 — Accessibility
 
-- [ ] P1 — RTL locale support (Arabic, Hebrew)
-  Why: 10 locales shipped but zero RTL handling. No `dir="rtl"` in any HTML. Arabic is the 5th most spoken language globally. ImprovedTube supports 30+ languages including RTL.
-  Evidence: Zero matches for `dir="rtl"` or `direction: rtl` in `extension/`; i18n accessibility guide (intlpull.com) documents RTL as a baseline requirement.
-  Touches: `extension/popup.html`, `extension/popup.css`, `extension/ytkit.js` (settings panel CSS), `extension/_locales/` (new `ar` and/or `he` locale), `scripts/check-i18n.js`
-  Acceptance: Arabic locale added; popup and settings panel render correctly with RTL text direction; no clipping or overflow on RTL layout.
-  Complexity: M
-
 ### P2 — Quick Wins / Enhancement
 
 - [ ] P2 — Adopt Chrome built-in Translator API for anti-translate
