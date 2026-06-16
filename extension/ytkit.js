@@ -28750,8 +28750,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (/\b(\d+)\s+years?\s+ago/.test(t)) return 'ancient';
                 return null;
             },
+            _scrolledToNewest: false,
             _process() {
                 const items = document.querySelectorAll('ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer');
+                let freshest = null;
                 for (const it of items) {
                     if (it.dataset.ytkitAge) continue;
                     const meta = it.querySelector('#metadata-line, .ytd-video-meta-block, ytd-video-meta-block');
@@ -28760,7 +28762,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     if (cls) {
                         it.dataset.ytkitAge = cls;
                         it.classList.add('ytkit-age-' + cls);
+                        if (cls === 'fresh' && !freshest) freshest = it;
                     }
+                }
+                const isSubs = location.pathname === '/feed/subscriptions';
+                if (isSubs && freshest && !this._scrolledToNewest) {
+                    freshest.classList.add('ytkit-age-newest');
+                    this._scrolledToNewest = true;
+                    try {
+                        freshest.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } catch (_) { /* reason: scrollIntoView best-effort */ }
                 }
             },
             init() {
@@ -28779,6 +28790,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-age-month::before   { border-color: #eab308 !important; }
                     .ytkit-age-year::before    { border-color: #f97316 !important; }
                     .ytkit-age-ancient::before { border-color: #ef4444 !important; opacity: 0.65; }
+                    .ytkit-age-newest::before  { border-color: #22c55e !important; border-width: 4px !important; box-shadow: 0 0 18px rgba(34, 197, 94, 0.7), inset 0 0 8px rgba(34, 197, 94, 0.1) !important; }
                 `, this.id, true);
                 this._process();
                 this._mutRule = () => this._process();
@@ -28787,15 +28799,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer',
                     this._mutRule
                 );
-                addNavigateRule('videoAgeColors', this._mutRule);
+                addNavigateRule('videoAgeColors', () => { this._scrolledToNewest = false; this._mutRule(); });
             },
             destroy() {
                 removeScopedMutationRule('videoAgeColors');
                 removeNavigateRule('videoAgeColors');
                 this._styleEl?.remove(); this._styleEl = null;
+                this._scrolledToNewest = false;
                 document.querySelectorAll('[data-ytkit-age]').forEach(el => {
                     delete el.dataset.ytkitAge;
-                    el.classList.remove('ytkit-age-fresh', 'ytkit-age-week', 'ytkit-age-month', 'ytkit-age-year', 'ytkit-age-ancient');
+                    el.classList.remove('ytkit-age-fresh', 'ytkit-age-week', 'ytkit-age-month', 'ytkit-age-year', 'ytkit-age-ancient', 'ytkit-age-newest');
                 });
             }
         },
