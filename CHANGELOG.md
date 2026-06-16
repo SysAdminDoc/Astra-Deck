@@ -29,6 +29,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   `protocol-buffers-schema` is post-advisory, `npm audit` clean.
 - **Playlist search:** new `playlistSearch` feature adds a debounced search
   input above playlist panels; filters items by title with Escape-to-clear.
+- **Chrome Translator API:** transcript viewer shows a "Translate" button when
+  Chrome's built-in Translator API is available (138+). Translates cue text
+  on-device with auto-detected source language; "Show Original" toggles back.
+  Graceful degradation when API unavailable.
 
 ## [4.46.3] - 2026-06-10
 

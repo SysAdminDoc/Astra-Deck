@@ -38,13 +38,6 @@
 
 ### P2 — Quick Wins / Enhancement
 
-- [ ] P2 — Adopt Chrome built-in Translator API for anti-translate
-  Why: `antiTranslate` and `antiTranslateTranscript` currently work by suppressing YouTube's translation or stripping `tlang` params. Chrome 138+ ships a stable on-device Translator API that could provide local transcript translation without BYO keys, complementing the existing `localAiSummary` (Summarizer API) integration.
-  Evidence: Chrome Translator API stable since Chrome 138; `extension/ytkit.js` already uses `window.Summarizer || window.ai?.summarizer` for local AI summary; zero references to Translator/LanguageDetector APIs in codebase.
-  Touches: `extension/ytkit.js` (transcript viewer, anti-translate features), `extension/manifest.json` (permissions if needed)
-  Acceptance: When Chrome Translator API is available, transcript viewer offers a "Translate" button that translates transcript text on-device; graceful degradation when API unavailable.
-  Complexity: S
-
 - [ ] P2 — Monolith decomposition: SponsorBlock feature peel
   Why: SponsorBlock rendering, segment fetching, skip scheduling, and progress bar painting are self-contained (~800 lines) but inline in the 45.6K-line monolith. Peeling this into `features/sponsorblock/index.js` matches the established pattern (11 modules already peeled) and makes the code independently testable.
   Evidence: `tests/features/sponsorblock.test.js` already exists (93 lines) but tests source-string patterns, not module exports; `features/` directory has the established pattern.
