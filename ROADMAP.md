@@ -112,13 +112,6 @@
   Acceptance: When Prompt API available, user can ask questions about the current video's transcript; responses generated on-device; graceful fallback when unavailable.
   Complexity: M
 
-- [ ] P3 — Color-coded video age borders on feed cards
-  Why: YouTube Alchemy implements color-coded borders indicating video age (fresh/week/month/year). Astra Deck has `videoAgeColors` (v3.9.0) but it uses CSS pseudo-elements. The YouTube Alchemy approach of highlighting the last uploaded video on the subscriptions page with auto-scroll is a UX improvement.
-  Evidence: YouTube Alchemy README; Astra Deck `videoAgeColors` already exists but could be enhanced.
-  Touches: `extension/ytkit.js` (enhance `videoAgeColors`), settings schema
-  Acceptance: Subscription page highlights the most recent video per channel with a distinct border and optional auto-scroll to the first new video.
-  Complexity: S
-
 - [ ] P3 — DeArrow submission and voting (write-side)
   Why: Astra Deck consumes DeArrow titles/thumbnails but cannot contribute or vote, so users who spot bad replacements have no recourse; the official DeArrow extension supports right-click submit and thumbs up/down voting.
   Evidence: github.com/ajayyy/DeArrow (submission/voting flow, requires a locally generated private userID); Astra Deck DeArrow integration is fetch-and-cache only.
