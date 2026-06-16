@@ -402,6 +402,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── watch-player ───
     Object.freeze({ key: "focusedMode", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "zenMode", category: "watch-player", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
 
     // ─── shell ───
     Object.freeze({ key: "thumbnailQualityUpgrade", category: "shell", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "global", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

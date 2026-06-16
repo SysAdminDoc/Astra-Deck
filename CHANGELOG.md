@@ -13,6 +13,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   translated keys. Popup and settings panel dynamically set `dir="rtl"` for RTL
   locales (Arabic, Hebrew, Farsi, Urdu). RTL CSS overrides handle search icons,
   switch toggles, sidebar borders, and language selector layout.
+- **Zen Mode:** new `zenMode` watch-page feature that dims and blurs the page
+  around the video player using a CSS `::before` overlay with `backdrop-filter`.
+  Respects `prefers-reduced-motion` (no blur when reduced motion is on).
+- **Play subscription group as queue:** "Play All" button on the subscription
+  group toolbar collects visible video IDs and opens `/watch_videos` (capped at
+  50 IDs) in a new tab.
+- **Companion update TOCTOU fix:** the PowerShell/Python update helper now
+  re-verifies the staged EXE's SHA-256 digest before `MoveFileEx`, closing the
+  time-of-check-to-time-of-use window.
+- **ESLint 10 config consolidation:** deduplicated four config blocks into two
+  using shared plugin and languageOptions objects; confirmed no deprecation
+  warnings on ESLint 10.2.1.
+- **crx3 supply chain audit:** verified all 6 transitive deps are MIT/BSD,
+  `protocol-buffers-schema` is post-advisory, `npm audit` clean.
 
 ## [4.46.3] - 2026-06-10
 

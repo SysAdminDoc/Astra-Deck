@@ -212,6 +212,7 @@
   "autoSubtitles": false,
   "autoSubtitleLang": "en",
   "focusedMode": false,
+  "zenMode": false,
   "thumbnailQualityUpgrade": false,
   "watchLaterQuickAdd": false,
   "playlistEnhancer": false,
