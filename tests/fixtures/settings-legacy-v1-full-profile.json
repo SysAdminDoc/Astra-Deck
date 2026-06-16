@@ -432,7 +432,7 @@
     "reactionSpammer": false,
     "_reactionSpammerAck": false
   },
-  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode"],
+  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode", "playlistSearch"],
   "expectedAbsent": [
     "preferredQuality",
     "useEnhancedBitrate",

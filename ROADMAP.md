@@ -119,13 +119,6 @@
   Acceptance: At least volumeBoost and audioNormalization work in the extension build via MAIN world bridge; feature toggles in settings panel.
   Complexity: XL
 
-- [ ] P3 — Search within playlist
-  Why: Tweaks for YouTube offers Ctrl+Shift+F to search within playlist panels. Astra Deck has `commentSearch` for comments but no equivalent for playlists.
-  Evidence: Tweaks for YouTube features page; YouTube Alchemy also implements playlist search.
-  Touches: `extension/ytkit.js` (new feature), settings schema
-  Acceptance: Search input appears above playlist panel; filters playlist items by title; keyboard shortcut optional.
-  Complexity: S
-
 - [ ] P3 — Chrome Prompt API (Gemini Nano) for transcript Q&A
   Why: Chrome 138+ ships the Prompt API stable for extensions. Astra Deck already uses the Summarizer API for `localAiSummary`. The Prompt API would enable on-device transcript Q&A without BYO keys.
   Evidence: Chrome Prompt API docs; `extension/ytkit.js` already checks `window.Summarizer || window.ai?.summarizer`.
