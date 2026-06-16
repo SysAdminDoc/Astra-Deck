@@ -344,6 +344,9 @@
   "languageAuto": {
     "message": "Auto (predefinito del browser)"
   },
+  "languageAr": {
+    "message": "العربية (Arabic)"
+  },
   "languageDe": {
     "message": "Deutsch (Tedesco)"
   },
