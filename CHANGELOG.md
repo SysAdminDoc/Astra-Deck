@@ -22,6 +22,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 - **Userscript overlay hardening:** removed blur filters from injected chips,
   dropdowns, miniplayer chrome, and page-modal overlays so long sessions avoid
   expensive live backdrop effects.
+- **Dependency hardening:** updated the Firefox tooling chain to `web-ext`
+  10.4.0, clearing vulnerable dev transitive packages including `shell-quote`,
+  `tmp`, and `undici`.
 - **Play subscription group as queue:** "Play All" button on the subscription
   group toolbar collects visible video IDs and opens `/watch_videos` (capped at
   50 IDs) in a new tab.
