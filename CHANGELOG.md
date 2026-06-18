@@ -13,9 +13,15 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   translated keys. Popup and settings panel dynamically set `dir="rtl"` for RTL
   locales (Arabic, Hebrew, Farsi, Urdu). RTL CSS overrides handle search icons,
   switch toggles, sidebar borders, and language selector layout.
-- **Zen Mode:** new `zenMode` watch-page feature that dims and blurs the page
-  around the video player using a CSS `::before` overlay with `backdrop-filter`.
-  Respects `prefers-reduced-motion` (no blur when reduced motion is on).
+- **Zen Mode:** new `zenMode` watch-page feature that dims the page around the
+  video player using a static CSS `::before` overlay. It avoids
+  `backdrop-filter` so the focus effect stays cheap on long YouTube sessions.
+- **Sleep Timer polish:** replaced the blocking browser prompt with an inline
+  player popover, quick minute presets, validation feedback, and cleanup on
+  cancel/start/destroy. Settings copy now describes the workflow directly.
+- **Userscript overlay hardening:** removed blur filters from injected chips,
+  dropdowns, miniplayer chrome, and page-modal overlays so long sessions avoid
+  expensive live backdrop effects.
 - **Play subscription group as queue:** "Play All" button on the subscription
   group toolbar collects visible video IDs and opens `/watch_videos` (capped at
   50 IDs) in a new tab.

@@ -1791,7 +1791,7 @@
     "message": "Show Time in Tab Title"
   },
   "feature_sleepTimer_desc": {
-    "message": "Pause playback after a configurable number of minutes. NewPipe-style. The chip in the player chrome counts down + offers a Cancel + a +5 min top-up."
+    "message": "Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes."
   },
   "feature_sleepTimer_name": {
     "message": "Sleep Timer"
@@ -2133,7 +2133,7 @@
     "message": "YouTube Music Compatibility"
   },
   "feature_zenMode_desc": {
-    "message": "Dims and blurs the page around the video player for a focused viewing experience"
+    "message": "Dims the page around the video player for a focused viewing experience"
   },
   "feature_zenMode_name": {
     "message": "Zen Mode"
