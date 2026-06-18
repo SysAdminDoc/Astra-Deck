@@ -19805,15 +19805,16 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // v3.23.0 (L23): NewPipe-style sleep timer. One toggle + a numeric
         // input (1-180 min) + a status chip in the player chrome that
         // counts down and pauses playback at zero. Cheap, contained,
-        // never auto-actions outside the scoped pause call.
+        // and limited to the scoped pause call.
         {
             id: 'sleepTimer',
             name: 'Sleep Timer',
-            description: 'Pause playback after a configurable number of minutes. NewPipe-style. The chip in the player chrome counts down + offers a Cancel + a +5 min top-up.',
+            description: 'Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes.',
             group: 'Video Player',
             icon: 'moon',
             pages: [PageTypes.WATCH],
             _chip: null,
+            _popover: null,
             _interval: null,
             _endsAt: 0,
             _injectTimer: null,
@@ -19850,6 +19851,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const span = Math.max(1, Math.min(180, Number(minutes) || 0));
                 this._endsAt = Date.now() + span * 60 * 1000;
                 this._interval = setInterval(() => this._tick(), 1000);
+                this._dismissPopover();
                 this._renderChip();
                 announceA11y(`Sleep timer set for ${span} minutes.`);
             },
@@ -19870,6 +19872,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     this._chip.remove();
                     this._chip = null;
                 }
+                this._dismissPopover();
             },
             _renderChip() {
                 if (this._chip) this._chip.remove();
@@ -19911,12 +19914,131 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 player.appendChild(chip);
                 this._chip = chip;
             },
+            _dismissPopover() {
+                if (this._popover) {
+                    this._popover.remove();
+                    this._popover = null;
+                }
+            },
+            _startFromInput(input, error) {
+                const raw = String(input?.value || '').trim();
+                const minutes = Number(raw);
+                if (!Number.isFinite(minutes) || minutes < 1 || minutes > 180) {
+                    if (error) error.textContent = 'Enter a value from 1 to 180 minutes.';
+                    input?.focus?.();
+                    return false;
+                }
+                this._start(minutes);
+                return true;
+            },
+            _showTimerPopover(anchor) {
+                this._dismissPopover();
+                const player = document.querySelector('.ytp-chrome-bottom');
+                if (!player) return;
+
+                const popover = document.createElement('div');
+                popover.className = 'ytkit-sleep-popover';
+                popover.setAttribute('role', 'dialog');
+                popover.setAttribute('aria-label', 'Set sleep timer');
+                popover.style.cssText = 'position:absolute;right:12px;bottom:64px;z-index:2147483641;width:min(280px,calc(100vw - 32px));box-sizing:border-box;padding:12px;background:rgba(20,20,28,0.98);color:#f4f6fb;border:1px solid rgba(255,255,255,0.14);border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,0.55);font:12px/1.35 system-ui,Segoe UI,Roboto,Arial,sans-serif;display:flex;flex-direction:column;gap:10px;';
+
+                const focusRing = '0 0 0 2px rgba(96,165,250,0.75)';
+                const wireFocus = (node, restingBoxShadow = '') => {
+                    node.addEventListener('focus', () => { node.style.boxShadow = focusRing; });
+                    node.addEventListener('blur', () => { node.style.boxShadow = restingBoxShadow; });
+                };
+
+                const title = document.createElement('div');
+                title.textContent = 'Sleep timer';
+                title.style.cssText = 'font-size:13px;font-weight:700;color:#fff;';
+
+                const hint = document.createElement('div');
+                hint.textContent = 'Pause playback after the selected number of minutes.';
+                hint.style.cssText = 'color:rgba(244,246,251,0.72);';
+
+                const label = document.createElement('label');
+                label.textContent = 'Minutes';
+                label.style.cssText = 'display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;color:rgba(244,246,251,0.78);';
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.max = '180';
+                input.step = '1';
+                input.value = '30';
+                input.inputMode = 'numeric';
+                input.style.cssText = 'height:34px;box-sizing:border-box;border-radius:6px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);color:#fff;padding:0 10px;font:600 13px system-ui,Segoe UI,Roboto,Arial,sans-serif;outline:none;';
+                wireFocus(input);
+                label.appendChild(input);
+
+                const error = document.createElement('div');
+                error.setAttribute('role', 'alert');
+                error.setAttribute('aria-live', 'assertive');
+                error.style.cssText = 'min-height:16px;color:#fecaca;font-size:11px;';
+
+                const presets = document.createElement('div');
+                presets.style.cssText = 'display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;';
+                [15, 30, 45, 60].forEach((minutes) => {
+                    const preset = document.createElement('button');
+                    preset.type = 'button';
+                    preset.textContent = `${minutes}`;
+                    preset.setAttribute('aria-label', `Set sleep timer for ${minutes} minutes`);
+                    preset.style.cssText = 'height:32px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.07);color:#f4f6fb;font:600 12px system-ui;cursor:pointer;';
+                    wireFocus(preset);
+                    preset.addEventListener('click', () => {
+                        input.value = String(minutes);
+                        this._startFromInput(input, error);
+                    });
+                    presets.appendChild(preset);
+                });
+
+                const actions = document.createElement('div');
+                actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
+
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = 'Cancel';
+                cancel.style.cssText = 'height:34px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(244,246,251,0.78);padding:0 12px;font:600 12px system-ui;cursor:pointer;';
+                wireFocus(cancel);
+                cancel.addEventListener('click', () => {
+                    this._dismissPopover();
+                    anchor?.focus?.();
+                });
+
+                const start = document.createElement('button');
+                start.type = 'button';
+                start.textContent = 'Start';
+                start.style.cssText = 'height:34px;border-radius:6px;border:1px solid rgba(34,197,94,0.42);background:rgba(34,197,94,0.18);color:#bbf7d0;padding:0 14px;font:700 12px system-ui;cursor:pointer;';
+                wireFocus(start);
+                start.addEventListener('click', () => this._startFromInput(input, error));
+
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        this._startFromInput(input, error);
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this._dismissPopover();
+                        anchor?.focus?.();
+                    }
+                });
+                popover.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        this._dismissPopover();
+                        anchor?.focus?.();
+                    }
+                });
+
+                actions.append(cancel, start);
+                popover.append(title, hint, label, error, presets, actions);
+                player.appendChild(popover);
+                this._popover = popover;
+                setTimeout(() => input.focus(), 0);
+            },
             _inject() {
-                // Surface a "Set sleep timer" launcher button in the YT
-                // settings menu adjacent area — actually, simpler: render
-                // a single button on the right side of the player chrome
-                // when no timer is active. The chip from _renderChip
-                // replaces it when a timer is set.
+                // Surface a single launcher in the player controls while no
+                // timer is active. The countdown chip replaces it after start.
                 if (this._interval) return;
                 const controls = document.querySelector('.ytp-right-controls');
                 if (!controls || controls.querySelector('.ytkit-sleep-launcher')) return;
@@ -19925,16 +20047,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 btn.title = 'Sleep timer';
                 btn.setAttribute('aria-label', 'Set sleep timer');
                 TrustedHTML.setHTML(btn, '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>');
-                btn.addEventListener('click', () => {
-                    const raw = prompt('Sleep timer — minutes (1-180):', '30');
-                    if (raw === null) return;
-                    const n = Number(raw);
-                    if (!Number.isFinite(n) || n < 1 || n > 180) {
-                        showToast('Enter 1-180 minutes.', '#ef4444', { duration: 4 });
-                        return;
-                    }
-                    this._start(n);
-                });
+                btn.addEventListener('click', () => this._showTimerPopover(btn));
                 controls.insertBefore(btn, controls.firstChild);
             },
             init() {
@@ -23696,7 +23809,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'zenMode',
             name: 'Zen Mode',
-            description: 'Dims and blurs the page around the video player for a focused viewing experience',
+            description: 'Dims the page around the video player for a focused viewing experience',
             group: 'Watch Page',
             icon: 'moon',
             pages: [PageTypes.WATCH],
@@ -23710,12 +23823,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         background: rgba(0, 0, 0, 0.75);
                         z-index: 1999;
                         pointer-events: none;
-                    }
-                    @media (prefers-reduced-motion: no-preference) {
-                        body.ytkit-zen-active::before {
-                            backdrop-filter: blur(4px);
-                            -webkit-backdrop-filter: blur(4px);
-                        }
+                        box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.45);
                     }
                     body.ytkit-zen-active #movie_player,
                     body.ytkit-zen-active ytd-player#ytd-player {
