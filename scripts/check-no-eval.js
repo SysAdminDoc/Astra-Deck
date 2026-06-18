@@ -68,7 +68,7 @@ const PATTERNS = [
     // setTimeout/setInterval with a string first arg — the legacy
     // implicit-eval interface. We catch the simple `setTimeout("…"`
     // form; setTimeout(varName) where varName happens to be a string
-    // at runtime is undetectable statically and out of scope.
+    // at runtime is not knowable by this source-text scan.
     { name: 'setTimeout(string)',  regex: /\bsetTimeout\s*\(\s*["'`]/g, allowComment: true },
     { name: 'setInterval(string)', regex: /\bsetInterval\s*\(\s*["'`]/g, allowComment: true },
 ];
