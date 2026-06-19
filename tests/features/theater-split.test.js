@@ -91,12 +91,44 @@ test('stickyVideo factory returns the full Theater Split runtime surface', () =>
         '_expandSplit',
         '_collapseSplit',
         '_unmount',
-        '_dockSplitHeader'
+        '_dockSplitHeader',
+        '_resolveSplitPanelType'
     ]) {
         assert.equal(typeof feature[method], 'function', 'factory feature must expose ' + method);
     }
     assert.equal(feature._isActive, false);
     assert.equal(feature._isSplit, false);
+});
+
+test('stickyVideo resolves premiered-video chat placeholders back to comments', () => {
+    const { mod } = loadModule();
+    const feature = mod.createStickyVideoFeature();
+    const makeChat = (attrs = [], extra = {}) => ({
+        hidden: false,
+        hasAttribute: (name) => attrs.includes(name),
+        getAttribute: (name) => (name === 'aria-hidden' && attrs.includes('aria-hidden')) ? 'true' : null,
+        ...extra
+    });
+    const visibleChat = makeChat();
+    const hiddenChat = makeChat(['hidden']);
+    const collapsedChat = makeChat(['collapsed']);
+    const belowWithComments = { querySelector: () => ({}) };
+    const belowWithoutComments = { querySelector: () => null };
+
+    assert.equal(feature._isSplitChatCandidate(hiddenChat), false,
+        'hidden chat placeholders must not be treated as usable split chat');
+    assert.equal(feature._resolveSplitPanelType('vod', hiddenChat, belowWithComments), 'standard',
+        'past live/premiere pages with hidden chat should show comments full-height');
+    assert.equal(feature._resolveSplitPanelType('vod', collapsedChat, belowWithComments), 'standard',
+        'collapsed replay shells on comments pages should not reserve a blank chat band');
+    assert.equal(feature._resolveSplitPanelType('vod', visibleChat, belowWithComments), 'vod',
+        'real VOD chat replay remains a split chat plus comments surface');
+    assert.equal(feature._resolveSplitPanelType('standard', visibleChat, belowWithComments), 'standard',
+        'stale chat nodes on ordinary comment pages must not steal the right panel');
+    assert.equal(feature._resolveSplitPanelType('standard', visibleChat, belowWithoutComments), 'live',
+        'late visible chat without a comments surface still reclassifies as live');
+    assert.equal(feature._resolveSplitPanelType('premiere', visibleChat, belowWithComments), 'standard',
+        'premiered videos with a comments surface prefer comments over chat chrome');
 });
 
 test('stickyVideo style builders preserve the monolith fallback CSS', () => {
@@ -186,6 +218,17 @@ test('stickyVideo chat observer lifecycle uses one teardown path (NF32)', () => 
         '_unmount must stop the shared chat observer');
     assert.match(block, /destroy\(\)\s*\{[\s\S]*this\._stopChatObserver\(\)/,
         'destroy must stop the shared chat observer even when no overlay is active');
+});
+
+test('stickyVideo inline fallback keeps the comments-first panel resolver', () => {
+    const [block] = extractFeatureBlock(sources.ytkit, 'stickyVideo');
+
+    assert.match(block, /_resolveSplitPanelType\(rawType, chatEl, below\)/,
+        'inline fallback must keep the split panel type resolver');
+    assert.match(block, /_isSplitChatCandidate\(chatEl\)/,
+        'inline fallback must filter hidden chat placeholders');
+    assert.match(block, /Late chat ignored, using \$\{resolvedType\} comments panel/,
+        'late stale chat frames must be ignored in favor of the comments panel');
 });
 
 test('abortDividerDrag exists in the userscript companion (H8)', () => {

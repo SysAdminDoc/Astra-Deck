@@ -2761,7 +2761,39 @@
                 this._belowCache = document.querySelector('#below') || document.querySelector('ytd-watch-metadata')?.parentElement;
                 return this._belowCache;
             },
-            _getChatEl()  { return VideoTypeDetector.getChatEl(); },
+            _getChatEl() {
+                const chatEl = VideoTypeDetector.getChatEl();
+                return this._isSplitChatCandidate(chatEl) ? chatEl : null;
+            },
+
+            _isSplitChatCandidate(chatEl) {
+                if (!chatEl || typeof chatEl.hasAttribute !== 'function') return false;
+                if (chatEl.hidden === true || chatEl.hasAttribute('hidden')) return false;
+                if (typeof chatEl.getAttribute === 'function' && chatEl.getAttribute('aria-hidden') === 'true') return false;
+                return true;
+            },
+
+            _hasSplitCommentsSurface(below) {
+                return !!below?.querySelector?.('ytd-comments#comments, ytd-comments, ytd-comments-header-renderer, ytd-comment-thread-renderer');
+            },
+
+            _resolveSplitPanelType(rawType, chatEl, below) {
+                const type = rawType || 'standard';
+                const hasChat = this._isSplitChatCandidate(chatEl);
+                const hasComments = this._hasSplitCommentsSurface(below);
+                const chatCollapsed = hasChat && typeof chatEl.hasAttribute === 'function' && chatEl.hasAttribute('collapsed');
+
+                if (type === 'live') return 'live';
+                if (type === 'vod') {
+                    if (hasChat && !chatCollapsed) return 'vod';
+                    return below ? 'standard' : 'vod';
+                }
+                if (type === 'premiere') {
+                    return hasChat && !hasComments && !chatCollapsed ? 'live' : 'standard';
+                }
+                if (type === 'standard' && hasChat && !hasComments && !chatCollapsed) return 'live';
+                return 'standard';
+            },
 
             // Nudge YouTube's player to recalculate control bar layout.
             _triggerPlayerResize() {
@@ -3848,11 +3880,15 @@
 
             _handleChatFound(chatEl, options = {}) {
                 if (!chatEl || !this._isActive) return;
-                let detectedType = VideoTypeDetector.refresh();
-                if (detectedType === 'standard') detectedType = 'live';
-                if (detectedType === 'live' || detectedType === 'vod') {
-                    this._videoType = detectedType;
+                const detectedType = VideoTypeDetector.refresh();
+                const below = this._getBelow();
+                const resolvedType = this._resolveSplitPanelType(detectedType, chatEl, below);
+                this._videoType = resolvedType;
+                if (resolvedType === 'live' || resolvedType === 'vod') {
                     this._prepareSecondaryForChat();
+                } else {
+                    DebugManager.log('Theater', `Late chat ignored, using ${resolvedType} comments panel`);
+                    return;
                 }
                 if (!options.position || !this._isSplit) {
                     DebugManager.log('Theater', `Late chat detected, reclassified as ${this._videoType}`);
@@ -4431,10 +4467,8 @@
                 const divider = wrapper.querySelector('#ytkit-split-divider');
                 const below   = this._getBelow();
                 const chatEl  = this._getChatEl();
-                if (chatEl) {
-                    const detectedType = VideoTypeDetector.refresh();
-                    this._videoType = detectedType === 'standard' ? 'live' : detectedType;
-                }
+                const detectedType = chatEl ? VideoTypeDetector.refresh() : this._videoType;
+                this._videoType = this._resolveSplitPanelType(detectedType, chatEl, below);
                 const type    = this._videoType;
                 document.documentElement.classList.toggle('ytkit-split-live', type === 'live');
 
