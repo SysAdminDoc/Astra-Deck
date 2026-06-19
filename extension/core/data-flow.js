@@ -182,6 +182,8 @@
         sbCat_preview: 'sponsorBlock',
         sbCat_filler: 'sponsorBlock',
         sbCat_poi_highlight: 'sponsorBlock',
+        sbPerChannelProfiles: 'sponsorBlock',
+        sbPerChannelProfilesData: 'sponsorBlock',
         // DeArrow shape/format sub-toggles
         daReplaceTitles: 'deArrow',
         daReplaceThumbs: 'deArrow',

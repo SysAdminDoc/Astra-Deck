@@ -272,6 +272,8 @@
   "sbCat_preview": true,
   "sbCat_filler": true,
   "sbCat_poi_highlight": false,
+  "sbPerChannelProfiles": false,
+  "sbPerChannelProfilesData": {},
   "showStatisticsDashboard": false,
   "settingsProfiles": false,
   "debugMode": false,
@@ -361,7 +363,8 @@
     "sbCat_music_offtopic",
     "sbCat_preview",
     "sbCat_filler",
-    "sbCat_poi_highlight"
+    "sbCat_poi_highlight",
+    "sbPerChannelProfiles"
   ],
   "advancedLocalPredicate": false,
   "advancedLocalPredicateCode": "",
