@@ -4787,8 +4787,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // cleanUiPreset (Compact Clean UI opt-in) lifted the pin from 363
     // to 364; zenMode lifted it to 365. Keep the literal so a future
     // schema addition must bump this number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 367,
-        'SETTINGS_SCHEMA must cover all 367 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 369,
+        'SETTINGS_SCHEMA must cover all 369 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
