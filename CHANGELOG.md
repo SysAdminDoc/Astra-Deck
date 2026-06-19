@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Theater Split premiered-video comments:** hidden/collapsed live-chat
+  placeholders no longer switch the right panel into chat mode when the watch
+  page has a normal comments surface. Premiered videos now keep comments
+  visible instead of reserving a blank chat band in `#ytkit-split-right`.
 - **Dependency review enforcement:** removed the `DEPENDENCY_REVIEW_REQUIRED`
   advisory gate; the dependency-review CI job now always fails the workflow run
   on moderate-or-higher vulnerabilities without `continue-on-error`.
