@@ -1718,6 +1718,12 @@
   "feature_sbCat_sponsor_name": {
     "message": "Skip Sponsors"
   },
+  "feature_sbPerChannelProfiles_desc": {
+    "message": "Override which SponsorBlock categories are skipped on a per-channel basis"
+  },
+  "feature_sbPerChannelProfiles_name": {
+    "message": "SponsorBlock Per-Channel Profiles"
+  },
   "feature_scrollToPlayer_desc": {
     "message": "Automatically scrolls to the top of the page when navigating to a new video"
   },
