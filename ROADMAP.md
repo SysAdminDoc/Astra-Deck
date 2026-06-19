@@ -6,27 +6,7 @@
 
 ### P1 — Trust / Reliability / Distribution
 
-- [ ] P1 — Chrome Web Store submission (store-safe profile)
-  Why: The store-safe build profile exists and strips AI/Cobalt/loopback permissions, but has never been submitted. Every major competitor (Enhancer, ImprovedTube, Tweaks, Unhook) is CWS-published. Side-loading requires developer mode, which most users won't enable.
-  Evidence: CWS review process docs; `docs/cws-submission-checklist.md` and `docs/store-permission-rationale.md` already prepared; Enhancer for YouTube and ImprovedTube are CWS precedent for 100-200+ feature YouTube extensions.
-  Touches: Chrome Web Store developer dashboard, `docs/cws-submission-checklist.md`, store listing assets (screenshots, description)
-  Acceptance: Store-safe profile submitted and either approved or rejected with actionable feedback.
-  Complexity: M
-
-- [ ] P1 — Firefox AMO submission (store-safe profile)
-  Why: Firefox XPI distribution currently requires manual install. AMO listing provides auto-updates, trust signal, and discoverability. Firefox 142+ manifest patch is already automated.
-  Evidence: AMO updated policies (August 2025); Enhancer for YouTube lost Firefox AMO presence, creating an opportunity gap.
-  Touches: AMO developer dashboard, `scripts/manifest-patch.js` output verification, store listing assets
-  Acceptance: Store-safe XPI submitted to AMO and either approved or rejected with actionable feedback.
-  Complexity: M
-
-- [ ] P1 — Companion binary release (PyInstaller freeze + SHA256 sidecar)
-  Why: README documents `AstraDownloader.exe` and `.sha256` as expected release assets, but no release has ever included them. Users must install Python 3.12 and run from source. This is the #1 onboarding friction for the download feature.
-  Evidence: README "Astra Downloader Companion Setup" section; `astra_downloader/build.py` exists; `scripts/stage-companion-release.js` exists.
-  Touches: `astra_downloader/build.py`, GitHub Release workflow, `scripts/stage-companion-release.js`
-  Acceptance: `AstraDownloader.exe` and `AstraDownloader.exe.sha256` attached to a GitHub Release; the EXE runs on a clean Windows 10 machine without Python installed; `/health` returns valid JSON.
-  Complexity: M
-
+(Moved to Roadmap_Blocked.md — CWS submission, AMO submission, companion binary release all require manual external actions.)
 
 ### P1 — Accessibility
 
@@ -67,13 +47,6 @@
   Acceptance: User can override skip categories for the current channel from the player/settings UI; overrides persist with deterministic eviction; global defaults apply otherwise.
   Complexity: M
 
-- [ ] P2 — Per-context quality (fullscreen vs windowed vs PiP)
-  Why: Tweaks for YouTube ships per-context quality (fullscreen/theater/embedded/background) and it is the natural extension of `alwaysBestQuality`'s DOM-click quality forcing — e.g. best in fullscreen, capped in windowed to save bandwidth.
-  Evidence: inzk.dev/tweaks-for-youtube/features; existing quality-forcing implementation in `extension/ytkit.js` (DOM click through `.ytp-settings-button`).
-  Touches: `extension/ytkit.js` (quality engine context detection via fullscreenchange/PiP events, per-context target settings), settings schema + locales
-  Acceptance: Distinct quality targets for windowed/fullscreen/PiP apply within ~1s of context change; defaults preserve current alwaysBestQuality behavior.
-  Complexity: M
-
 - [ ] P2 — Companion auto-provisions Deno runtime
   Why: yt-dlp >= 2026.04 requires an external JS runtime and the companion already auto-bootstraps yt-dlp.exe and ffmpeg.exe on first run — Deno is the one remaining manual step (winget/installer), surfaced only as a warning pill.
   Evidence: `astra_downloader/astra_downloader.py` `_bootstrap()` (yt-dlp/ffmpeg auto-download with SHA sidecars) vs `probe_deno_runtime()` (probe-only); yt-dlp 2025.11.12 release notes (external JS runtime required).
@@ -83,12 +56,7 @@
 
 ### P2 — Observability / Developer Experience
 
-- [ ] P2 — Visual regression testing for popup
-  Why: The popup is the primary user-facing control surface. CSS changes, i18n string length variations, and Chrome version differences can cause visual regressions that unit tests cannot catch.
-  Evidence: No visual regression tests in the codebase; popup has been through multiple redesigns (v3.11, v3.19, v4.x).
-  Touches: New `tests/visual/` directory, Puppeteer screenshot comparison, CI integration
-  Acceptance: CI captures popup screenshots in Chrome and Firefox; a baseline is committed; regressions fail the build with a diff image.
-  Complexity: M
+(Visual regression testing moved to Roadmap_Blocked.md — requires headless browser environment.)
 
 ### P3 — Later / Under Consideration
 

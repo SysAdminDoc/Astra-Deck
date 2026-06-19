@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **SponsorBlock per-channel profiles:** added an opt-in watch-page channel
+  chip for overriding SponsorBlock skip categories per channel, with profile
+  data capped at 500 entries and wired through schema/defaults/export guards.
 - **Theater Split premiered-video comments:** hidden/collapsed live-chat
   placeholders no longer switch the right panel into chat mode when the watch
   page has a normal comments surface. Premiered videos now keep comments
