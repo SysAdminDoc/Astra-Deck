@@ -3950,6 +3950,8 @@ return response;
             sbCat_preview: true,
             sbCat_filler: true,
             sbCat_poi_highlight: false,
+            sbPerChannelProfiles: false,       // Per-channel SponsorBlock skip category overrides
+            sbPerChannelProfilesData: {},      // { channelId: { categories: { sponsor: true, intro: false, ... }, updatedAt: ts } }
             showStatisticsDashboard: false,
             settingsProfiles: false,
             debugMode: false,
@@ -3992,7 +3994,8 @@ return response;
                 'hiddenPlayerControls', 'hiddenWatchElementsManager', 'hiddenWatchElements',
                 'sponsorBlock', 'sbCat_sponsor', 'sbCat_intro', 'sbCat_outro',
                 'sbCat_selfpromo', 'sbCat_interaction', 'sbCat_music_offtopic',
-                'sbCat_preview', 'sbCat_filler', 'sbCat_poi_highlight'
+                'sbCat_preview', 'sbCat_filler', 'sbCat_poi_highlight',
+                'sbPerChannelProfiles'
             ],
             advancedLocalPredicate: false,
             advancedLocalPredicateCode: '',
@@ -27112,10 +27115,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _cache: null,
             _cachePersistTimer: null,
 
+            _getChannelId() {
+                const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                if (link) {
+                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    if (m) return m[1];
+                }
+                const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                if (handleLink) return handleLink.getAttribute('href') || '';
+                return '';
+            },
+
             _getEnabledCategories() {
+                // Global defaults
+                const globalCats = [];
+                for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
+                    if (appState.settings[key]) globalCats.push(apiName);
+                }
+                // Per-channel override check
+                if (!appState.settings.sbPerChannelProfiles) return globalCats;
+                const channelId = this._getChannelId();
+                if (!channelId) return globalCats;
+                const profiles = appState.settings.sbPerChannelProfilesData;
+                if (!profiles || typeof profiles !== 'object') return globalCats;
+                const profile = profiles[channelId];
+                if (!profile || typeof profile.categories !== 'object') return globalCats;
+                // Apply per-channel overrides: if a category is explicitly set,
+                // use that value; otherwise fall through to global default.
                 const cats = [];
                 for (const [key, apiName] of Object.entries(this._CATEGORY_MAP)) {
-                    if (appState.settings[key]) cats.push(apiName);
+                    const channelOverride = profile.categories[apiName];
+                    if (typeof channelOverride === 'boolean') {
+                        if (channelOverride) cats.push(apiName);
+                    } else {
+                        // No per-channel override for this category; use global
+                        if (appState.settings[key]) cats.push(apiName);
+                    }
                 }
                 return cats;
             },
@@ -27484,6 +27519,294 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         { id: 'sbCat_preview', name: 'Skip Previews', description: 'Preview or recap of upcoming content', group: 'Content', icon: 'fast-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_filler', name: 'Skip Filler', description: 'Tangential or filler content', group: 'Content', icon: 'scissors', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_poi_highlight', name: 'Highlight Point of Interest', description: 'Jump to the highlight/point of interest (disabled by default)', group: 'Content', icon: 'star', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
+
+        // ── SponsorBlock Per-Channel Profiles ──
+        {
+            id: 'sbPerChannelProfiles',
+            name: 'SponsorBlock Per-Channel Profiles',
+            description: 'Override which SponsorBlock categories are skipped on a per-channel basis. Adds a chip next to the channel name on the watch page to configure overrides. Overrides persist in sbPerChannelProfilesData with a 500-entry cap.',
+            group: 'Content',
+            icon: 'user-cog',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _panel: null,
+            _navRule: null,
+
+            _CATEGORY_LABELS: {
+                sponsor: 'Sponsors',
+                intro: 'Intros',
+                outro: 'Outros',
+                selfpromo: 'Self-Promo',
+                interaction: 'Interaction',
+                music_offtopic: 'Non-Music',
+                preview: 'Previews',
+                filler: 'Filler',
+                poi_highlight: 'Highlights',
+            },
+
+            _CATEGORY_COLORS: {
+                sponsor: '#00d400',
+                selfpromo: '#ffff00',
+                interaction: '#cc00ff',
+                intro: '#00ffff',
+                outro: '#0202ed',
+                preview: '#008fd6',
+                music_offtopic: '#ff9900',
+                filler: '#7300FF',
+                poi_highlight: '#ff1684',
+            },
+
+            _SB_CATEGORY_MAP: {
+                sbCat_sponsor: 'sponsor',
+                sbCat_intro: 'intro',
+                sbCat_outro: 'outro',
+                sbCat_selfpromo: 'selfpromo',
+                sbCat_interaction: 'interaction',
+                sbCat_music_offtopic: 'music_offtopic',
+                sbCat_preview: 'preview',
+                sbCat_filler: 'filler',
+                sbCat_poi_highlight: 'poi_highlight',
+            },
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-sb-channel-chip{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 8px;border-radius:6px;background:rgba(0,212,0,0.14);color:#a7f3d0;border:1px solid rgba(0,212,0,0.32);font:600 11px/1 system-ui;letter-spacing:.02em;cursor:pointer;position:relative;}
+                    .ytkit-sb-channel-chip:hover{background:rgba(0,212,0,0.24);}
+                    .ytkit-sb-channel-chip[data-has-override="true"]{background:rgba(251,146,60,0.14);color:#fed7aa;border-color:rgba(251,146,60,0.36);}
+                    .ytkit-sb-profile-panel{position:absolute;bottom:calc(100% + 6px);left:0;z-index:90;min-width:220px;padding:8px;border-radius:10px;background:rgba(7,10,16,0.96);border:1px solid rgba(255,255,255,0.1);box-shadow:0 12px 32px rgba(0,0,0,0.5);font:12px/1.4 system-ui;color:#e5e7eb;}
+                    .ytkit-sb-profile-panel-title{font:600 11px/1 system-ui;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px 2px;}
+                    .ytkit-sb-profile-row{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;}
+                    .ytkit-sb-profile-row:hover{background:rgba(255,255,255,0.06);}
+                    .ytkit-sb-profile-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+                    .ytkit-sb-profile-label{flex:1;font-size:11px;color:#d1d5db;}
+                    .ytkit-sb-profile-state{font-size:10px;color:#9ca3af;min-width:40px;text-align:right;}
+                    .ytkit-sb-profile-reset{display:block;margin:6px auto 0;padding:3px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:transparent;color:#9ca3af;font:11px/1.2 system-ui;cursor:pointer;}
+                    .ytkit-sb-profile-reset:hover{background:rgba(255,255,255,0.08);color:#e5e7eb;}
+                `, 'sb-channel-profiles');
+            },
+
+            _currentChannelId() {
+                const link = document.querySelector('ytd-video-owner-renderer a[href*="/channel/"], #channel-name a[href*="/channel/"]');
+                if (link) {
+                    const m = (link.getAttribute('href') || '').match(/\/channel\/([A-Za-z0-9_-]+)/);
+                    if (m) return m[1];
+                }
+                const handleLink = document.querySelector('ytd-video-owner-renderer a[href^="/@"], #channel-name a[href^="/@"]');
+                if (handleLink) return handleLink.getAttribute('href') || '';
+                return '';
+            },
+
+            _readProfile(channelId) {
+                const data = appState?.settings?.sbPerChannelProfilesData;
+                if (!data || typeof data !== 'object') return null;
+                const profile = data[channelId];
+                if (!profile || typeof profile.categories !== 'object') return null;
+                return profile;
+            },
+
+            _hasOverride(channelId) {
+                return this._readProfile(channelId) !== null;
+            },
+
+            _getCategoryState(channelId, apiName) {
+                const profile = this._readProfile(channelId);
+                if (profile && typeof profile.categories[apiName] === 'boolean') {
+                    return { source: 'channel', enabled: profile.categories[apiName] };
+                }
+                // Fall back to global setting
+                const globalKey = Object.entries(this._SB_CATEGORY_MAP).find(([, v]) => v === apiName)?.[0];
+                return { source: 'global', enabled: globalKey ? !!appState.settings[globalKey] : false };
+            },
+
+            _writeProfile(channelId, categories) {
+                if (!channelId) return;
+                const data = { ...(appState?.settings?.sbPerChannelProfilesData || {}) };
+                if (categories === null) {
+                    delete data[channelId];
+                } else {
+                    data[channelId] = { categories, updatedAt: Date.now() };
+                }
+                // Cap at 500 entries — evict oldest
+                const entries = Object.entries(data);
+                if (entries.length > 500) {
+                    entries.sort((a, b) => (b[1]?.updatedAt || 0) - (a[1]?.updatedAt || 0));
+                    for (const [key] of entries.slice(500)) delete data[key];
+                }
+                appState.settings.sbPerChannelProfilesData = data;
+                try { settingsManager.save(appState.settings); }
+                catch (e) { DebugManager.log('SBChannelProfile', `Save failed: ${e.message}`); }
+            },
+
+            _toggleCategory(channelId, apiName) {
+                const state = this._getCategoryState(channelId, apiName);
+                const profile = this._readProfile(channelId);
+                const categories = profile ? { ...profile.categories } : {};
+                categories[apiName] = !state.enabled;
+                this._writeProfile(channelId, categories);
+                // Force SponsorBlock to re-evaluate for this video
+                const sb = getFeatureById('sponsorBlock');
+                if (sb?._initialized) {
+                    sb._videoId = null;
+                    sb._segments = [];
+                    sb._clearBarSegments?.();
+                    sb._clearSchedule?.();
+                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.());
+                }
+            },
+
+            _resetChannel(channelId) {
+                this._writeProfile(channelId, null);
+                // Force SponsorBlock to re-evaluate
+                const sb = getFeatureById('sponsorBlock');
+                if (sb?._initialized) {
+                    sb._videoId = null;
+                    sb._segments = [];
+                    sb._clearBarSegments?.();
+                    sb._clearSchedule?.();
+                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.());
+                }
+            },
+
+            _closePanel() {
+                this._panel?.remove();
+                this._panel = null;
+            },
+
+            _openPanel(channelId) {
+                this._closePanel();
+                const panel = document.createElement('div');
+                panel.className = 'ytkit-sb-profile-panel';
+
+                const title = document.createElement('div');
+                title.className = 'ytkit-sb-profile-panel-title';
+                title.textContent = 'SponsorBlock Categories';
+                panel.appendChild(title);
+
+                for (const [apiName, label] of Object.entries(this._CATEGORY_LABELS)) {
+                    const state = this._getCategoryState(channelId, apiName);
+                    const row = document.createElement('div');
+                    row.className = 'ytkit-sb-profile-row';
+                    row.title = `${label}: ${state.enabled ? 'skip' : 'allow'} (${state.source})`;
+
+                    const dot = document.createElement('span');
+                    dot.className = 'ytkit-sb-profile-dot';
+                    dot.style.background = state.enabled
+                        ? (this._CATEGORY_COLORS[apiName] || '#00d400')
+                        : 'rgba(115,115,115,0.5)';
+                    row.appendChild(dot);
+
+                    const labelEl = document.createElement('span');
+                    labelEl.className = 'ytkit-sb-profile-label';
+                    labelEl.textContent = label;
+                    row.appendChild(labelEl);
+
+                    const stateEl = document.createElement('span');
+                    stateEl.className = 'ytkit-sb-profile-state';
+                    stateEl.textContent = state.enabled ? 'skip' : 'allow';
+                    if (state.source === 'channel') stateEl.style.color = '#fed7aa';
+                    row.appendChild(stateEl);
+
+                    row.addEventListener('click', () => {
+                        this._toggleCategory(channelId, apiName);
+                        // Re-render panel
+                        this._openPanel(channelId);
+                        this._updateChipState(channelId);
+                    });
+
+                    panel.appendChild(row);
+                }
+
+                // Reset button
+                if (this._hasOverride(channelId)) {
+                    const resetBtn = document.createElement('button');
+                    resetBtn.type = 'button';
+                    resetBtn.className = 'ytkit-sb-profile-reset';
+                    resetBtn.textContent = 'Reset to global defaults';
+                    resetBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this._resetChannel(channelId);
+                        this._closePanel();
+                        this._updateChipState(channelId);
+                        if (typeof showToast === 'function') showToast('SponsorBlock overrides reset to global defaults for this channel.', '#00d400');
+                    });
+                    panel.appendChild(resetBtn);
+                }
+
+                // Close on outside click
+                const closeHandler = (e) => {
+                    if (!panel.contains(e.target) && !this._btn?.contains(e.target)) {
+                        this._closePanel();
+                        document.removeEventListener('click', closeHandler, true);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closeHandler, true), 0);
+
+                // Attach to the chip's parent
+                if (this._btn?.parentElement) {
+                    this._btn.style.position = 'relative';
+                    this._btn.appendChild(panel);
+                    this._panel = panel;
+                }
+            },
+
+            _updateChipState(channelId) {
+                if (!this._btn) return;
+                const hasOverride = this._hasOverride(channelId);
+                this._btn.dataset.hasOverride = hasOverride ? 'true' : 'false';
+                this._btn.textContent = hasOverride ? 'SB: channel' : 'SB: global';
+            },
+
+            _renderChip() {
+                if (!isWatchPagePath()) return;
+                const channelId = this._currentChannelId();
+                if (!channelId) return;
+                const host = document.querySelector('ytd-video-owner-renderer #upload-info, ytd-video-owner-renderer #container, ytd-channel-name');
+                if (!host || host.querySelector('.ytkit-sb-channel-chip')) {
+                    // Re-render text when channel switches mid-SPA-navigation.
+                    const existing = host?.querySelector('.ytkit-sb-channel-chip');
+                    if (existing) this._updateChipState(channelId);
+                    return;
+                }
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'ytkit-sb-channel-chip';
+                this._btn = chip;
+                this._updateChipState(channelId);
+                chip.title = 'Click to configure SponsorBlock skip categories for this channel';
+                chip.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = this._currentChannelId();
+                    if (!id) return;
+                    if (this._panel) {
+                        this._closePanel();
+                    } else {
+                        this._openPanel(id);
+                    }
+                });
+                host.appendChild(chip);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { this._closePanel(); setTimeout(() => this._renderChip(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._closePanel();
+                this._btn?.remove();
+                this._btn = null;
+                document.querySelectorAll('.ytkit-sb-channel-chip').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
 
         // ── DeArrow ──
         {
