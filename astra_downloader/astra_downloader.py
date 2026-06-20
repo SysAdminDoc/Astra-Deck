@@ -268,6 +268,8 @@ MAX_TEXT_FIELD = 500
 MAX_PATH_FIELD = 2048
 LOG_MAX_BYTES = 1024 * 1024
 _LOG_LOCK = threading.Lock()
+_LOG_RING_MAX = 20
+_log_ring = __import__('collections').deque(maxlen=_LOG_RING_MAX)
 DOWNLOAD_REQUEST_ALLOWED_FIELDS = frozenset({
     'url',
     'audioOnly',
@@ -298,6 +300,7 @@ def write_persistent_log(message, path=LOG_PATH):
     try:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with _LOG_LOCK:
             if path.exists() and path.stat().st_size > LOG_MAX_BYTES:
                 backup = path.with_suffix(path.suffix + ".1")
@@ -307,11 +310,16 @@ def write_persistent_log(message, path=LOG_PATH):
                     path.replace(backup)
                 except Exception:
                     pass
-            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with open(path, 'a', encoding='utf-8') as f:
                 f.write(f"{ts} {message}\n")
+            _log_ring.append({'ts': ts, 'msg': message[:MAX_TEXT_FIELD]})
     except Exception:
         pass
+
+
+def get_recent_log_entries():
+    with _LOG_LOCK:
+        return list(_log_ring)
 
 
 def log_crash(context="Unhandled exception"):
@@ -3252,6 +3260,7 @@ def create_api(config, dl_manager, history):
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
             },
+            "recentErrors": get_recent_log_entries(),
         }
         # v3.15.0: Token disclosure is now gated by the Host check at
         # `guard_request()` — DNS-rebinding attacks send `Host: attacker.com`
