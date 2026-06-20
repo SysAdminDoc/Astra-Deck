@@ -2341,6 +2341,7 @@ return response;
 
                 if (data.status === 'done' || data.status === 'complete') {
                     stopPolling();
+                    DiagnosticLog?.record?.('download-outcome', 'success');
                     fill.style.width = '100%';
                     fill.classList.remove('is-error');
                     fill.classList.add('is-success');
@@ -2358,6 +2359,7 @@ return response;
                     // staring at a "downloading" spinner that never ends.
                     stopPolling();
                     const skipReason = data.error || t('dlProgressSkippedDefault', 'Already downloaded — skipped.');
+                    DiagnosticLog?.record?.('download-outcome', `skipped: ${skipReason.slice(0, 200)}`);
                     fill.style.width = '100%';
                     fill.classList.remove('is-error');
                     title.textContent = skipReason;
@@ -2372,6 +2374,7 @@ return response;
                 if (data.status === 'error' || data.status === 'failed' || data.status === 'cancelled') {
                     stopPolling();
                     const failureReason = data.error || t('dlProgressFailureDefault', 'Astra Downloader failed');
+                    DiagnosticLog?.record?.('download-outcome', `${data.status}: ${failureReason.slice(0, 200)}`);
                     fill.classList.remove('is-success');
                     fill.classList.add('is-error');
                     title.textContent = failureReason;
