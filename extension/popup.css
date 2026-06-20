@@ -993,6 +993,80 @@ body {
   font-style: italic;
 }
 
+/* ── Feature performance dashboard ──────────────────────────────── */
+.feature-perf {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.feature-perf[hidden] { display: none; }
+.feature-perf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.feature-perf-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.feature-perf-total {
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.feature-perf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.feature-perf-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 0;
+}
+.feature-perf-row .fp-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feature-perf-row .fp-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent, #ff4e45);
+  min-width: 2px;
+}
+.feature-perf-row .fp-ms {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 10px;
+  min-width: 36px;
+  text-align: right;
+}
+.feature-perf-slow .fp-name { color: #ff8585; }
+.feature-perf-slow .fp-bar { background: #ff8585; }
+.feature-perf-empty {
+  text-align: center;
+  padding: 6px 0;
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
 /* ── Schema-driven category overview (v4.23.0) ───────────────────────
    Read-only roll-up of every settings-schema category with live
    enabled/total counts. Schema source of truth: extension/core/
