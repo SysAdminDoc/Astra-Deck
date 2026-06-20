@@ -32525,7 +32525,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  RETURN YOUTUBE DISLIKE — Cached, rate-limited
         // ═══════════════════════════════════════════════════════════════════
-        {
+        (globalThis.YTKitFeatures?.createReturnDislikeFeature?.({
+            appState,
+            DebugManager,
+            extensionFetchJson,
+            storageReadJSON: storageReadJSON || ((k, d) => d),
+            storageWriteJSON: storageWriteJSON || (() => {}),
+            getVideoId,
+            isWatchPagePath,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            PageTypes
+        }) || {
             id: 'returnDislike',
             name: 'Return YouTube Dislike',
             description: 'Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default.',
@@ -32728,7 +32740,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._cache = null;
                 this._budgetWindow = { start: 0, count: 0 };
             }
-        },
+        }),
         // ═══════════════════════════════════════════════════════════════════
         //  ANTI-TRANSLATE AUDIO TRACK — Force original-language audio
         // ═══════════════════════════════════════════════════════════════════
