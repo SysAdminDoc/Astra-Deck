@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Security: pin Werkzeug >= 3.1.6 and Jinja2 >= 3.1.6 in requirements.txt.**
+  Flask 3.1.3 did not constrain these transitive dependencies. CVE-2026-21860
+  and CVE-2026-27199 (Werkzeug path traversal via Windows device names in
+  `safe_join()`) and CVE-2025-27516 (Jinja2 sandbox escape) are now floor-pinned
+  so fresh installs and CI cannot resolve to vulnerable versions.
 - **Feature module test coverage:** added dedicated test files for 9 peeled
   feature modules that lacked unit coverage: return-dislike, player-dock,
   youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
