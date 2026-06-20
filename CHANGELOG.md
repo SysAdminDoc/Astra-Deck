@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feature performance dashboard:** new popup section showing the slowest
+  feature init times with visual bars. Queries the content script via
+  `YTKIT_GET_FEATURE_PERF` for lifecycle timing data. Features > 50ms are
+  flagged in red. Hidden when no YouTube tab is active.
 - **Subscription content-type filter:** `subscriptionFilterLive` and
   `subscriptionFilterStreamed` toggles hide live/upcoming and previously-streamed
   cards from the subscription feed. Uses CSS class filtering alongside the
