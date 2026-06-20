@@ -860,12 +860,20 @@ def provision_deno():
                 raise RuntimeError('deno.exe not found in archive')
         reset_deno_runtime_cache()
         return str(DENO_PATH)
-    except Exception:
+    except Exception as e:
+        write_persistent_log(f"Deno provisioning failed: {e}")
         return None
     finally:
         try:
             tmp_zip.unlink(missing_ok=True)
         except OSError:
+            pass
+        # Clean up partial extraction if tmp_exe was created but not moved
+        try:
+            if tmp_exe.exists():
+                tmp_exe.unlink(missing_ok=True)
+        except (OSError, NameError):
+            # reason: NameError if tmp_exe was never assigned (zip download failed)
             pass
 
 
