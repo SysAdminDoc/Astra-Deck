@@ -794,6 +794,12 @@
   "feature_dearrowPeekButton_name": {
     "message": "DeArrow Peek Button"
   },
+  "feature_deArrowVoting_desc": {
+    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles. Uses a local private userID. Off by default."
+  },
+  "feature_deArrowVoting_name": {
+    "message": "DeArrow Voting"
+  },
   "feature_debugMode_desc": {
     "message": "Enable verbose diagnostic logging to the console"
   },
