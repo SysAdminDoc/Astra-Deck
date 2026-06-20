@@ -4895,10 +4895,10 @@ return response;
         return !!feature && !feature._arrayKey && !feature.type && !isRetiredCommentFeature(feature);
     }
 
-    function updateFeatureHealth(feature, status, source = 'runtime', error = null) {
+    function updateFeatureHealth(feature, status, source = 'runtime', error = null, elapsedMs = null) {
         if (!feature?.id) return;
         try {
-            setFeatureHealth(feature.id, {
+            const patch = {
                 status,
                 source,
                 name: getFeatureName(feature) || feature.id,
@@ -4906,7 +4906,12 @@ return response;
                 settingKey: getFeatureSettingKey(feature),
                 initialized: !!feature._initialized,
                 lastError: error ? String(error?.message || error) : null
-            });
+            };
+            if (typeof elapsedMs === 'number') {
+                if (status === 'initialized') patch.initMs = Math.round(elapsedMs * 100) / 100;
+                if (status === 'destroyed') patch.destroyMs = Math.round(elapsedMs * 100) / 100;
+            }
+            setFeatureHealth(feature.id, patch);
         } catch (healthError) {
             DebugManager.log('Runtime', `Feature health update failed for "${feature.id}": ${healthError.message}`);
         }
@@ -4914,10 +4919,12 @@ return response;
 
     function initFeatureLifecycle(feature, source = 'runtime') {
         if (!feature || feature._arrayKey) return false;
+        const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
         try {
             feature.init?.();
             feature._initialized = true;
-            updateFeatureHealth(feature, 'initialized', source);
+            const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
+            updateFeatureHealth(feature, 'initialized', source, null, elapsed);
             return true;
         } catch (error) {
             updateFeatureHealth(feature, 'init-error', source, error);
@@ -4927,10 +4934,12 @@ return response;
 
     function destroyFeatureLifecycle(feature, source = 'runtime') {
         if (!feature || feature._arrayKey) return false;
+        const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
         try {
             feature.destroy?.();
             feature._initialized = false;
-            updateFeatureHealth(feature, 'destroyed', source);
+            const elapsed = typeof performance !== 'undefined' ? performance.now() - t0 : 0;
+            updateFeatureHealth(feature, 'destroyed', source, null, elapsed);
             return true;
         } catch (error) {
             updateFeatureHealth(feature, 'destroy-error', source, error);
