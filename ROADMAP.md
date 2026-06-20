@@ -12,13 +12,6 @@
 
 ### P2 — Quick Wins / Enhancement
 
-- [ ] P2 — Monolith decomposition: SponsorBlock feature peel
-  Why: SponsorBlock rendering, segment fetching, skip scheduling, and progress bar painting are self-contained (~800 lines) but inline in the 45.6K-line monolith. Peeling this into `features/sponsorblock/index.js` matches the established pattern (11 modules already peeled) and makes the code independently testable.
-  Evidence: `tests/features/sponsorblock.test.js` already exists (93 lines) but tests source-string patterns, not module exports; `features/` directory has the established pattern.
-  Touches: New `extension/features/sponsorblock/index.js`, `extension/ytkit.js` (delegate to module), `extension/manifest.json` (content_scripts), `tests/features/sponsorblock.test.js`
-  Acceptance: SponsorBlock feature works identically; the peeled module is testable via direct import; monolith `ytkit.js` shrinks by ~800 lines.
-  Complexity: M
-
 - [ ] P2 — Monolith decomposition: DeArrow feature peel
   Why: DeArrow cache, title formatting, thumbnail replacement, and API fetching are self-contained (~600 lines) but inline. Same rationale as SponsorBlock peel.
   Evidence: `tests/features/dearrow.test.js` already exists (107 lines); peeling matches the `features/` pattern.
