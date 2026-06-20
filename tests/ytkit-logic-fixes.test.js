@@ -179,7 +179,7 @@ test('videoNotes captures videoId/title at schedule time and flushes before tear
 // ── item 3: deferred nav-rule attach timers must be tracked + guarded ──
 
 test('downloadHealthPanel tracks its navigate-rule timer and guards against post-destroy resurrection', () => {
-    const block = featureBlock('downloadHealthPanel', 10500);
+    const block = featureBlock('downloadHealthPanel', 12000);
     const initBlock = methodSlice(block, 'init() {', 1200);
     assert.match(initBlock, /this\._navTimer\s*=\s*setTimeout/,
         'navigate rule must store the deferred attach timer');
