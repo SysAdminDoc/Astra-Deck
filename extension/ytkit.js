@@ -4078,6 +4078,8 @@ return response;
             subscriptionUnsubscribeStagingData: {},    // { channelId: { channelId, channelName, ageDays, stagedAt, undoUntil, reason, source } }
             subscriptionAiTags: false,                 // Master toggle for AI-generated group tags
             subscriptionAiTagData: {},                 // { groupId: { tags: string[], generatedAt: ms } }
+            subscriptionFilterLive: false,             // Hide live/streaming cards from subscription feed
+            subscriptionFilterStreamed: false,          // Hide previously-streamed cards from subscription feed
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
             localAiTranscriptQa: false,                // Uses Chrome's Prompt API (Gemini Nano) for transcript Q&A
@@ -33548,7 +33550,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     .ytkit-sub-dead-badge,.ytkit-sub-staged-badge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font:700 10px/1.4 system-ui;letter-spacing:.04em;}
                     .ytkit-sub-dead-badge{background:#f59e0b;color:#1f1300;}
                     .ytkit-sub-staged-badge{background:#22c55e;color:#022c14;}
-                    .ytkit-sub-hidden-by-group{display:none !important;}
+                    .ytkit-sub-hidden-by-group,.ytkit-sub-hidden-by-type{display:none !important;}
                     .ytkit-sub-group-empty{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.28);color:#fde68a;font:12px/1.45 system-ui;}
                     .ytkit-sub-members-panel{margin:-6px 0 14px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.88);border:1px solid rgba(148,163,184,0.22);color:#e5e7eb;font:12px/1.45 system-ui;box-shadow:0 14px 28px rgba(0,0,0,0.24);}
                     .ytkit-sub-members-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
@@ -33850,6 +33852,28 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     else card.classList.remove('ytkit-sub-hidden-by-group');
                 });
                 this._renderGroupEmptyState(allowed);
+            },
+
+            _applyContentTypeFilter() {
+                const filterLive = !!appState?.settings?.subscriptionFilterLive;
+                const filterStreamed = !!appState?.settings?.subscriptionFilterStreamed;
+                const cards = document.querySelectorAll('ytd-rich-item-renderer, ytd-video-renderer');
+                cards.forEach(card => {
+                    if (!filterLive && !filterStreamed) {
+                        card.classList.remove('ytkit-sub-hidden-by-type');
+                        return;
+                    }
+                    const isLive = filterLive && !!card.querySelector(
+                        'ytd-thumbnail-overlay-time-status-renderer[overlay-style="LIVE"],' +
+                        'ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"],' +
+                        '.badge-style-type-live-now, [aria-label*="LIVE"]'
+                    );
+                    const isStreamed = filterStreamed && /\b(?:Streamed|Streamed live)\b/i.test(
+                        card.querySelector('#metadata-line, ytd-video-meta-block, #meta')?.textContent || ''
+                    );
+                    if (isLive || isStreamed) card.classList.add('ytkit-sub-hidden-by-type');
+                    else card.classList.remove('ytkit-sub-hidden-by-type');
+                });
             },
 
             _applyNewSinceMarkers() {
@@ -34731,6 +34755,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         if (window.location.pathname !== '/feed/subscriptions') return;
                         this._renderToolbar();
                         this._applyGroupFilter();
+                        this._applyContentTypeFilter();
                         this._applyNewSinceMarkers();
                         this._renderDeadChannelMarkers();
                         this._applySort();
@@ -34764,6 +34789,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._toolbar?.remove();
                 this._toolbar = null;
                 document.querySelectorAll('.ytkit-sub-hidden-by-group').forEach(el => el.classList.remove('ytkit-sub-hidden-by-group'));
+                document.querySelectorAll('.ytkit-sub-hidden-by-type').forEach(el => el.classList.remove('ytkit-sub-hidden-by-type'));
                 document.querySelectorAll('.ytkit-sub-new-badge').forEach(el => el.remove());
                 document.querySelectorAll('.ytkit-sub-dead-badge, .ytkit-sub-staged-badge').forEach(el => el.remove());
                 document.querySelectorAll('[data-ytkit-dead-channel], [data-ytkit-staged-unsubscribe]').forEach(el => {
