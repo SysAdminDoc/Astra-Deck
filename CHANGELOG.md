@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **yt-dlp pin bump 2026.3.17 → 2026.6.9:** closes three CVEs (cookie leak
+  with curl, dangerous file type creation, aria2c manifest vulnerability) and
+  picks up YouTube extractor improvements. The companion does not use `--exec`
+  or aria2c, so the yt-dlp 2026.06.09 breaking changes are non-impacting.
 - **SponsorBlock per-channel profiles:** added an opt-in watch-page channel
   chip for overriding SponsorBlock skip categories per channel, with profile
   data capped at 500 entries and wired through schema/defaults/export guards.

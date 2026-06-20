@@ -203,7 +203,7 @@ curl -fsSL https://deno.land/install.sh | sh
 
 Astra Downloader's `/health` endpoint surfaces `denoRuntime: { installed, version, path, ytdlpNeedsRuntime, advice }` (since v1.5.0). The Astra Deck `downloadHealthPanel` renders a "Deno: missing" pill next to the download button when the bundled yt-dlp.exe is recent enough to need the runtime but Deno isn't installed. On older yt-dlp builds (pre-2026.04, the in-field stable line) the pill stays quiet.
 
-The repo pins `yt-dlp==2026.3.17` and `curl_cffi==0.15.0` in
+The repo pins `yt-dlp==2026.6.9` and `curl_cffi==0.15.0` in
 `astra_downloader/requirements.txt` for CI. The monthly/manual
 `.github/workflows/yt-dlp-smoke.yml` workflow installs those pins and runs a
 bounded media download through `scripts/yt-dlp-smoke.py` against a stable public
