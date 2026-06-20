@@ -6,6 +6,9 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Subscription group CSV export:** new CSV button alongside the existing
+  JSON export on the subscription groups toolbar. RFC 4180 compliant with
+  formula-injection neutralization. Columns: Group, Channel, Handle, URL.
 - **Onboarding preset profiles:** three curated settings bundles — Privacy
   (clean URLs, no Shorts, no AI Summary), Researcher (transcript viewer,
   bookmarks, watch time, AI summary), and Power User (speed, stats, A-B

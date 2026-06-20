@@ -109,10 +109,4 @@
   Acceptance: When Writer API is available, a "Draft" button appears in YouTube's comment composer; responses generated on-device; graceful fallback when unavailable; feature off by default.
   Complexity: M
 
-- [ ] P3 — Subscription group CSV export
-  Why: Subscription groups export as JSON only. CSV is more accessible for spreadsheet users who want to audit, share, or process their subscription data externally.
-  Evidence: pockettube.io (CSV export feature); `extension/ytkit.js` subscription groups already export schemaVersion 2 JSON.
-  Touches: `extension/ytkit.js` (add CSV export option alongside JSON in subscription groups toolbar), `core/` (RFC 4180 CSV serializer if not already present)
-  Acceptance: Subscription groups can be exported as CSV with columns: group name, channel name, channel handle, channel URL; CSV follows RFC 4180; special characters properly escaped.
-  Complexity: S
 
