@@ -11,6 +11,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
   video-filters, wave-8-css, theme-css. All 14 peeled modules now have
   test files in `tests/features/`. Total test count: 821 (up from 800).
+- **Security: scrub DeArrow private userID from settings exports.**
+  The `ytkit-da-user-id` storage key (locally generated DeArrow voting
+  identity) was not covered by the `ALWAYS_SCRUB_KEY_PATTERNS` in
+  `core/policy-profile.js`. Settings exports would include the raw user
+  ID, allowing cross-device identity correlation. Fixed: added explicit
+  pattern `^ytkit-da-user-id$` to the scrub list.
 - **Audit: fix 4 bugs from PO Token resilience refactor:**
   - Transcript viewer: `trackLabel` variable was scoped inside an `else`
     block but referenced outside it, causing `undefined` in the metadata
