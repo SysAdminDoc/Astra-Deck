@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **DeArrow voting:** new `deArrowVoting` feature adds thumbs up/down vote
+  buttons on watch-page titles replaced by DeArrow. Votes use a locally
+  generated private userID that never leaves DeArrow requests and is
+  excluded from settings exports. The DeArrow `_processPage` now stamps
+  replaced titles with `data-ytkit-dearrow-original` and
+  `data-ytkit-dearrow-uuid` attributes. Off by default; extension-only.
 - **Threaded comment DOM adaptation:** updated `core/selector-packs/comments.js`
   with threaded reply container selectors (`#more-replies-sub-thread`,
   `#expanded-threads`, `#expander-contents`) for YouTube's 3-level nested

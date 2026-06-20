@@ -4789,8 +4789,8 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // to 364; zenMode lifted it to 365; preset profiles added 3 more.
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 373,
-        'SETTINGS_SCHEMA must cover all 373 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 374,
+        'SETTINGS_SCHEMA must cover all 374 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
