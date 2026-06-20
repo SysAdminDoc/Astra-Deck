@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Structured companion error log:** `write_persistent_log` now records entries
+  to a 20-entry in-memory ring buffer alongside the disk log. The `/health`
+  endpoint includes a `recentErrors` array with the latest log entries, making
+  companion-side diagnostics accessible from the extension's diagnostic download.
 - **Crash-loop auto-recovery:** if the content script crashes 3+ times within
   30 seconds (tracked via localStorage timestamps), Astra Deck auto-enters safe
   mode and shows a 15-second toast explaining what happened. The counter is
