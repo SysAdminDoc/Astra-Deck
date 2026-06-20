@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Download outcome telemetry:** download completion, failure, skip, and
+  cancellation now record entries in the diagnostic log under the
+  `download-outcome` category. The diagnostic download JSON includes
+  these entries for troubleshooting download complaints.
 - **SponsorBlock-adjusted remaining time:** when both `remainingTimeDisplay`
   and `sponsorBlock` are enabled, the remaining time display now subtracts
   the total duration of auto-skip segments ahead of the current playback

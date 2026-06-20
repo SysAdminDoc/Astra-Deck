@@ -108,13 +108,6 @@
 
 ### P2 — Observability / Developer Experience
 
-- [ ] P2 — Download failure rate telemetry in diagnostic log
-  Why: Download failures (SABR, PO-token, network, ffmpeg merge) are the most common user complaint vector but there is no aggregate visibility. The diagnostic log (`core/diagnostic-log.js`) already exists but download outcomes are not recorded.
-  Evidence: `core/diagnostic-log.js` provides capped ring-buffer storage; download progress panel tracks per-download status but doesn't aggregate; Cobalt fallback already records `cobalt-fallback` diagnostic entries.
-  Touches: `extension/ytkit.js` (record download outcome — success/failure/cancelled/timeout + failure reason — in diagnostic log), `core/diagnostic-log.js` (no changes needed, just consumption)
-  Acceptance: Diagnostic download JSON includes a `download-outcomes` section with success/failure counts and most recent failure reasons. Helps triage download complaints.
-  Complexity: S
-
 ### P3 — Later / Under Consideration
 
 - [ ] P3 — Chrome Language Detector API for auto-translate detection
