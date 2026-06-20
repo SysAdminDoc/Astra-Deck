@@ -44,6 +44,15 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: S
   Blocker: Requires creating new markdown documentation files. Maintainer-authored trust documentation.
 
+## P3 — Blocked on External API Stability
+
+- [ ] P3 — Chrome Writer/Rewriter API for comment drafting
+  Why: Chrome's Writer and Rewriter APIs offer on-device text generation and refinement. When stable, they could power comment drafting assistance without BYO keys.
+  Touches: `extension/ytkit.js` (comment composer enhancement), `core/capability-probe.js`, settings schema
+  Acceptance: When Writer API is available, a "Draft" button appears in YouTube's comment composer; responses generated on-device; feature off by default.
+  Complexity: M
+  Blocker: Chrome Writer/Rewriter APIs are in Developer Trial as of June 2026, not yet stable. Implementing against an unstable API surface creates maintenance burden.
+
 ## P2 — Observability / Developer Experience
 
 - [ ] P2 — Visual regression testing for popup

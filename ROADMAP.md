@@ -76,11 +76,5 @@
   Acceptance: All extension-injected tooltips and popovers use CSS Anchor Positioning; JS positioning fallback for browsers below the baseline; no visual regression.
   Complexity: M
 
-- [ ] P3 — Chrome Writer/Rewriter API for comment drafting
-  Why: Chrome's Writer and Rewriter APIs (currently Developer Trial) offer on-device text generation and refinement. When stable, they could power comment drafting assistance without BYO keys.
-  Evidence: developer.chrome.com/docs/ai/built-in-apis (Writer/Rewriter in Developer Trial); `extension/ytkit.js` already probes `window.Summarizer`.
-  Touches: `extension/ytkit.js` (comment composer enhancement), `core/capability-probe.js` (Writer/Rewriter detection), settings schema
-  Acceptance: When Writer API is available, a "Draft" button appears in YouTube's comment composer; responses generated on-device; graceful fallback when unavailable; feature off by default.
-  Complexity: M
 
-
+(Chrome Writer/Rewriter API moved to Roadmap_Blocked.md — API still in Developer Trial, not stable.)
