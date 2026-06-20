@@ -27819,7 +27819,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     clearTimeout(self._reloadTimer);
                     self._reloadTimer = setTimeout(() => {
                         self._reloadTimer = null;
-                        self._loadForVideo().then(() => self._scheduleNextSkip());
+                        self._loadForVideo().then(() => self._scheduleNextSkip()).catch(() => { /* reason: segment reload is best-effort */ });
                     }, 800);
                 };
                 addNavigateRule(this._navRuleId, reloadSegments);
@@ -28007,7 +28007,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     sb._segments = [];
                     sb._clearBarSegments?.();
                     sb._clearSchedule?.();
-                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.());
+                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.()).catch(() => { /* reason: segment reload is best-effort */ });
                 }
             },
 
@@ -28020,7 +28020,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     sb._segments = [];
                     sb._clearBarSegments?.();
                     sb._clearSchedule?.();
-                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.());
+                    sb._loadForVideo?.().then(() => sb._scheduleNextSkip?.()).catch(() => { /* reason: segment reload is best-effort */ });
                 }
             },
 
