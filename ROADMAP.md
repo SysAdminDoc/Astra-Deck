@@ -8,13 +8,6 @@
 
 (CWS submission, AMO submission, companion binary release moved to Roadmap_Blocked.md — require manual external actions.)
 
-- [ ] P1 — SABR download format support
-  Why: YouTube's `web` client now returns only SABR-format streaming URLs for a growing share of videos (yt-dlp issue #12482), breaking the normal download path. Without SABR awareness, downloads fail silently and users see empty format lists or errors.
-  Evidence: github.com/yt-dlp/yt-dlp/issues/12482 (SABR-only web client); `yt-dlp-ytse` plugin provides `--extractor-args youtube:formats=sabr` workaround; `astra_downloader/astra_downloader.py` builds yt-dlp subprocess argv without SABR flags.
-  Touches: `astra_downloader/astra_downloader.py` (add SABR extractor-arg or bundle yt-dlp-ytse plugin), `astra_downloader/test_astra_downloader.py`, `/health` endpoint (surface SABR capability status), `extension/ytkit.js` downloadHealthPanel (render SABR status pill)
-  Acceptance: Downloads succeed on videos that return SABR-only formats; `/health` reports SABR download capability; health panel surfaces SABR status; fallback to non-SABR path when available.
-  Complexity: M
-
 ### P1 — Accessibility
 
 ### P2 — Quick Wins / Enhancement
@@ -80,13 +73,6 @@
   Evidence: github.com/ParticleCore/Iridium (archived Jan 31, 2026); ghacks.net (Enhancer for YouTube Firefox discontinuation Aug 2025, HN item 44962001); RYD trust incident (HN item 45696329).
   Touches: `docs/migration-from-iridium.md`, `docs/migration-from-enhancer.md` (feature mapping tables + import instructions), README.md (migration links)
   Acceptance: Each migration doc maps the competitor's top features to Astra Deck equivalents; includes step-by-step install instructions; linked from README "Related" section.
-  Complexity: S
-
-- [ ] P2 — Per-feature performance budget
-  Why: The 46.8K-line monolith init path processes 247 feature definitions. No instrumentation exists to detect if a single feature's init/destroy takes excessive time. A performance budget would gate CI on init latency.
-  Evidence: `core/registry.js` tracks feature health snapshots but not timing; `core/feature-lifecycle.js` manages init/destroy delegation; crash-recovery (3 strikes) exists but no timing gate.
-  Touches: `core/feature-lifecycle.js` (wrap init/destroy in performance.now timing), `core/registry.js` (store timing in health snapshot), `tests/` (CI assertion that no feature exceeds budget), `scripts/` (optional timing report script)
-  Acceptance: Each feature init/destroy is timed; a CI test fails if any single feature exceeds a configurable budget (e.g., 50ms init, 20ms destroy); timing data available in diagnostic download.
   Complexity: S
 
 - [ ] P2 — Supply chain transparency documentation

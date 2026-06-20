@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Per-feature performance timing:** `initFeatureLifecycle` and
+  `destroyFeatureLifecycle` now capture `performance.now()` elapsed time.
+  `initMs`/`destroyMs` fields are stored in the registry health snapshot
+  and the lifecycle snapshot, surfaced in the diagnostic download JSON.
 - **yt-dlp pin bump 2026.3.17 → 2026.6.9:** closes three CVEs (cookie leak
   with curl, dangerous file type creation, aria2c manifest vulnerability) and
   picks up YouTube extractor improvements. The companion does not use `--exec`

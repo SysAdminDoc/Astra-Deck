@@ -5041,6 +5041,26 @@ test('v5.0.0 feature-lifecycle: destroy is best-effort and never throws on sub-f
     assert.ok(snap.lastError, 'lastError must capture the teardown failure for diagnostics');
 });
 
+test('feature-lifecycle: snapshot includes init/destroy timing', () => {
+    const core = loadLifecycleModule();
+    const lc = core.createLifecycle({ logger: { warn() {} } });
+    lc.defineFeature({
+        id: 'timed',
+        category: 'shell',
+        init() {},
+        destroy() {}
+    });
+    lc.start('timed');
+    const afterInit = lc.snapshot().find((s) => s.id === 'timed');
+    assert.equal(typeof afterInit.initMs, 'number', 'initMs must be a number after start');
+    assert.ok(afterInit.initMs >= 0, 'initMs must be non-negative');
+    assert.equal(afterInit.destroyMs, null, 'destroyMs must be null before destroy');
+    lc.destroy('timed');
+    const afterDestroy = lc.snapshot().find((s) => s.id === 'timed');
+    assert.equal(typeof afterDestroy.destroyMs, 'number', 'destroyMs must be a number after destroy');
+    assert.ok(afterDestroy.destroyMs >= 0, 'destroyMs must be non-negative');
+});
+
 test('v5.0.0 policy-profile: effective profile resolution honours both flags', () => {
     const core = loadPolicyProfileModule();
     const pp = core.createPolicyProfile();
