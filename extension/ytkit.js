@@ -4870,6 +4870,14 @@ return response;
         const track = pickTranscriptTrack(tracks);
         if (!track) return { cues: null, source: null, error: 'No caption tracks available' };
 
+        // Guard against missing/corrupt baseUrl — skip API fetch, try panel fallback
+        if (!track.baseUrl || typeof track.baseUrl !== 'string') {
+            DiagnosticLog?.record('transcript-po-token', 'Caption track has no baseUrl; trying engagement-panel fallback.');
+            const panelCues = _scrapeEngagementPanelTranscript();
+            if (panelCues) return { cues: panelCues, source: 'panel', track };
+            return { cues: null, source: null, track, error: 'Caption track has no fetchable URL.' };
+        }
+
         // Try json3 API first
         try {
             const { response, data } = await extensionFetchJson({
@@ -22632,7 +22640,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         // No API tracks — try engagement-panel fallback before giving up
                         const panelCues = _scrapeEngagementPanelTranscript();
                         if (panelCues && panelCues.length > 0) {
-                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube’s transcript panel (API captions unavailable).', 'info');
+                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube transcript panel (API captions unavailable).', 'info');
                             body.textContent = '';
                             body.classList.remove('is-stateful');
                             this._cues = panelCues;
@@ -22643,6 +22651,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                             return;
                         }
                     }
+                    let trackLabel = 'Transcript';
                     if (this._cues.length === 0) {
                         // Have API tracks — fetch with PO Token fallback
                         const result = await fetchTranscriptWithFallback(tracks);
@@ -22655,10 +22664,13 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         }
                         this._cues = result.cues;
                         if (result.source === 'panel') {
-                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube’s transcript panel (API required PO Token).', 'info');
+                            trackLabel = 'Panel Transcript';
+                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube transcript panel (API required PO Token).', 'info');
                         } else {
-                            const trackLabel = this._getTrackLabel(result.track);
+                            trackLabel = this._getTrackLabel(result.track);
                         }
+                    } else {
+                        trackLabel = 'Panel Transcript';
                     }
                     body.textContent = '';
                     body.classList.remove('is-stateful');
@@ -29292,7 +29304,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     const vid = getVideoId() || 'video';
-                    const lang = track.languageCode || 'en';
+                    const lang = result.track?.languageCode || 'en';
                     a.href = url; a.download = `${vid}_${lang}.srt`;
                     a.click();
                     setTimeout(() => URL.revokeObjectURL(url), 5000);
@@ -30208,15 +30220,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    // Use PO Token resilient fetch with engagement-panel fallback
+                    // PO Token resilient fetch: tries json3 API, then engagement-panel DOM scrape
                     const result = await fetchTranscriptWithFallback(tracks || []);
                     if (result.cues && result.cues.length > 0) {
                         return result.cues.map(c => c.text).filter(Boolean).join(' ');
-                    }
-                    // Final fallback: engagement-panel DOM scrape (may already be covered by fetchTranscriptWithFallback)
-                    const panelCues = _scrapeEngagementPanelTranscript();
-                    if (panelCues && panelCues.length > 0) {
-                        return panelCues.map(c => c.text).filter(Boolean).join(' ');
                     }
                     throw new Error(result.error || 'No captions available');
                 } catch (e) { throw e; }
