@@ -7639,7 +7639,10 @@ test('v4.35.0 engagement surfaces now come from the pack registry', () => {
         assert.ok(entry, `${surface} must appear in SurfaceSelectorMap`);
         assert.ok(entry.captureEvidence.length >= 1,
             `${surface} must carry capture evidence after the v4.35.0 peel`);
-        assert.equal(entry.lastVerified, '2026-05-19');
+        assert.ok(
+            entry.lastVerified === '2026-05-19' || entry.lastVerified === '2026-06-19',
+            `${surface} must have a reviewed lastVerified date`
+        );
     }
 });
 

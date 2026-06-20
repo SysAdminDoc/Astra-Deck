@@ -71,9 +71,3 @@
 
 ### P3 — Later / Under Consideration
 
-- [ ] P3 — Threaded comment DOM adaptation
-  Why: YouTube rolled out threaded comments (up to 3 nesting levels) with red visual thread connectors and voice replies (Jan–March 2026). Comment-manipulating features (`commentSearch`, `commentNavigator`, `sortCommentsNewest`, `commentEnhancements`, `creatorCommentHighlight`) may not account for nested reply structure.
-  Evidence: socialmediatoday.com (YouTube comment threading rollout Jan–March 2026); SponsorBlock v6.1.3 changelog noted "fixes for YouTube layout changes" in this period; `core/selector-packs/comments.js` covers comment DOM selectors.
-  Touches: `extension/ytkit.js` (comment features: verify nesting-level traversal), `core/selector-packs/comments.js` (add selectors for threaded reply containers if missing), `tests/features/` (regression tests)
-  Acceptance: `commentSearch`, `commentNavigator`, `sortCommentsNewest` work correctly with threaded 3-level nested comments. No broken layouts on voice-reply comment elements.
-  Complexity: M
