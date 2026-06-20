@@ -133,6 +133,9 @@ ARCHIVE_PATH = INSTALL_DIR / 'archive.txt'
 
 YTDLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
 FFMPEG_URL = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+DENO_DIR = INSTALL_DIR / 'deno'
+DENO_PATH = DENO_DIR / 'deno.exe'
+DENO_ZIP_URL = "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
 ICON_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/AstraDownloader.ico"
 COMPANION_UPDATE_VERSION_URL = "https://raw.githubusercontent.com/SysAdminDoc/Astra-Deck/main/astra_downloader/astra_downloader.py"
 COMPANION_UPDATE_EXE_URL = "https://github.com/SysAdminDoc/Astra-Deck/releases/latest/download/AstraDownloader.exe"
@@ -813,20 +816,68 @@ def ytdlp_needs_external_runtime(version_string):
     return parsed >= YTDLP_EXTERNAL_RUNTIME_CUTOFF
 
 
+def provision_deno():
+    """Download Deno into DENO_DIR if not already present.
+
+    Returns the path to the provisioned deno.exe, or None on failure.
+    Follows the same atomic-download pattern as yt-dlp and ffmpeg.
+    """
+    if DENO_PATH.exists():
+        return str(DENO_PATH)
+    DENO_DIR.mkdir(parents=True, exist_ok=True)
+    import zipfile
+    tmp_zip = DENO_DIR / f'.deno.{uuid.uuid4().hex}.zip'
+    try:
+        with http_requests.get(DENO_ZIP_URL, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            total_bytes = 0
+            with open(tmp_zip, 'wb') as f:
+                for chunk in r.iter_content(65536):
+                    if chunk:
+                        f.write(chunk)
+                        total_bytes += len(chunk)
+                        if total_bytes > HELPER_DOWNLOAD_MAX_BYTES:
+                            raise RuntimeError('Deno archive exceeded size limit')
+                f.flush()
+                os.fsync(f.fileno())
+        if tmp_zip.stat().st_size <= 0:
+            raise RuntimeError('Downloaded Deno archive was empty')
+        tmp_exe = DENO_PATH.with_name(f'.deno.{uuid.uuid4().hex}.exe')
+        with zipfile.ZipFile(tmp_zip) as zf:
+            found = False
+            for entry in zf.namelist():
+                if entry.replace('\\', '/').endswith('deno.exe') or entry == 'deno.exe':
+                    with zf.open(entry) as src, open(tmp_exe, 'wb') as dst:
+                        shutil.copyfileobj(src, dst)
+                        dst.flush()
+                        os.fsync(dst.fileno())
+                    if tmp_exe.stat().st_size <= 0:
+                        raise RuntimeError('deno.exe in archive was empty')
+                    os.replace(tmp_exe, DENO_PATH)
+                    found = True
+                    break
+            if not found:
+                raise RuntimeError('deno.exe not found in archive')
+        reset_deno_runtime_cache()
+        return str(DENO_PATH)
+    except Exception:
+        return None
+    finally:
+        try:
+            tmp_zip.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 def probe_deno_runtime(force=False):
     """Best-effort detection of an installed external JavaScript runtime.
 
     Returns ``{'installed': bool, 'version': str | None, 'path': str | None,
-    'ytdlpNeedsRuntime': bool, 'advice': str}``. Cached for 60 s.
+    'source': 'bundled' | 'system' | None, 'ytdlpNeedsRuntime': bool,
+    'advice': str}``. Cached for 60 s.
 
-    Detection primitive is ``shutil.which('deno')`` — a Python-conventional
-    way to check PATH that doesn't shell out and has no shell-injection
-    surface. Version is captured via ``deno --version`` and parsed
-    permissively. The advice field is an empty string when the runtime
-    isn't needed; otherwise concrete install hints (winget / direct site).
-
-    Future: when yt-dlp adds wider runtime support, we can probe for
-    other runtimes here (Node, Bun) and surface whichever is present.
+    Checks the bundled DENO_DIR first, then falls back to system PATH
+    via ``shutil.which('deno')``.
     """
     with _DENO_RUNTIME_CACHE_LOCK:
         cache = _deno_runtime_cache
@@ -835,12 +886,20 @@ def probe_deno_runtime(force=False):
             return cache['value']
         ytdlp_version = get_ytdlp_version()
         needs_runtime = ytdlp_needs_external_runtime(ytdlp_version or '')
-        deno_path = shutil.which('deno')
+        deno_path = None
+        source = None
+        if DENO_PATH.exists():
+            deno_path = str(DENO_PATH)
+            source = 'bundled'
+        else:
+            system_deno = shutil.which('deno')
+            if system_deno:
+                deno_path = system_deno
+                source = 'system'
         installed = deno_path is not None
         version = None
         if installed:
             output = _run_captured([deno_path, '--version'], timeout=DENO_RUNTIME_PROBE_TIMEOUT)
-            # Output is multi-line; the first line is the deno semver.
             if output:
                 first_line = output.strip().splitlines()[0] if output.strip() else ''
                 m = re.search(r'(\d+\.\d+\.\d+)', first_line)
@@ -852,15 +911,14 @@ def probe_deno_runtime(force=False):
         if needs_runtime and not installed:
             advice = (
                 'yt-dlp >= 2026.04 needs an external JavaScript runtime for '
-                'YouTube. Install Deno: winget install DenoLand.Deno OR '
-                'https://deno.com/.'
+                'YouTube. Click Provision Deno in the companion, or install '
+                'manually: winget install DenoLand.Deno.'
             )
-        elif needs_runtime and installed:
-            advice = ''
         result = {
             'installed': installed,
             'version': version,
             'path': deno_path,
+            'source': source,
             'ytdlpNeedsRuntime': needs_runtime,
             'advice': advice,
         }
@@ -2711,10 +2769,15 @@ class DownloadManager(QObject):
         watchdog_thread = None
         watchdog_killed = {'value': None}
         try:
+            env = None
+            if DENO_PATH.exists():
+                env = os.environ.copy()
+                env['PATH'] = str(DENO_DIR) + os.pathsep + env.get('PATH', '')
             proc = subprocess.Popen(
                 args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding='utf-8', errors='replace', bufsize=1,
-                creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+                creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP,
+                env=env,
             )
             dl.process = proc
             last_lines = []
@@ -3174,6 +3237,16 @@ def create_api(config, dl_manager, history):
             resp["token"] = token
         return cors_response(resp)
 
+    @api.route('/provision-deno', methods=['POST'])
+    def provision_deno_endpoint():
+        if request.headers.get('X-MDL-Token') != token:
+            return cors_response({"error": "Unauthorized"}, 403)
+        result = provision_deno()
+        if result:
+            runtime = probe_deno_runtime(force=True)
+            return cors_response({"ok": True, "path": result, "denoRuntime": runtime})
+        return cors_response({"ok": False, "error": "Failed to download Deno. Check network connection."}, 500)
+
     @api.route('/download', methods=['POST'])
     def download():
         if not check_auth():
@@ -3615,6 +3688,21 @@ class SetupWorker(QThread):
                         pass
             else:
                 self.log.emit("ffmpeg already installed")
+            self.progress.emit(55)
+
+            # Deno (56-60% — only when yt-dlp needs the external runtime)
+            ytdlp_ver = get_ytdlp_version()
+            if ytdlp_needs_external_runtime(ytdlp_ver or '') and not DENO_PATH.exists():
+                system_deno = shutil.which('deno')
+                if not system_deno:
+                    self.log.emit("Downloading Deno runtime...")
+                    result = provision_deno()
+                    if result:
+                        self.log.emit("  Done")
+                    else:
+                        self.log.emit("  Deno download failed (non-critical)")
+                else:
+                    self.log.emit(f"Deno found on system PATH: {system_deno}")
             self.progress.emit(60)
 
             # Icon

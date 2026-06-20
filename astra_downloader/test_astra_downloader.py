@@ -1568,11 +1568,11 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         # these fields. Adding fields is safe (additive); renaming or
         # dropping any of these would break the downloadHealthPanel.
         self.assertEqual(set(result.keys()), {
-            'installed', 'version', 'path', 'ytdlpNeedsRuntime', 'advice'
+            'installed', 'version', 'path', 'source', 'ytdlpNeedsRuntime', 'advice'
         })
         self.assertTrue(result['installed'])
         self.assertEqual(result['version'], '2.4.1')
-        self.assertEqual(result['path'], '/usr/local/bin/deno')
+        self.assertIn(result['source'], ('bundled', 'system'))
         self.assertTrue(result['ytdlpNeedsRuntime'])
         self.assertEqual(result['advice'], '')
 
@@ -1628,6 +1628,50 @@ class DenoRuntimeProbeTests(unittest.TestCase):
         # Only the force=True call should have hit shutil.which; the
         # other two reads should have come from cache.
         self.assertEqual(call_count['n'], 1)
+
+
+class DenoProvisionTests(unittest.TestCase):
+    """provision_deno auto-download and /provision-deno endpoint."""
+
+    def test_provision_deno_returns_none_on_network_failure(self):
+        original_get = ad.http_requests.get
+        ad.http_requests.get = lambda *a, **k: (_ for _ in ()).throw(Exception("offline"))
+        original_path = ad.DENO_PATH
+        ad.DENO_PATH = Path('/nonexistent/deno.exe')
+        try:
+            result = ad.provision_deno()
+            self.assertIsNone(result)
+        finally:
+            ad.http_requests.get = original_get
+            ad.DENO_PATH = original_path
+
+    def test_provision_deno_endpoint_requires_token(self):
+        config = FakeConfig({"ServerToken": "f" * 32})
+        manager = ad.DownloadManager(config, FakeHistory())
+        api = ad.create_api(config, manager, FakeHistory())
+        resp = api.test_client().post("/provision-deno")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_probe_includes_source_field(self):
+        ad.reset_deno_runtime_cache()
+        original_which = ad.shutil.which
+        original_get_version = ad.get_ytdlp_version
+        ad.shutil.which = lambda binary: '/usr/local/bin/deno' if binary == 'deno' else None
+        ad.get_ytdlp_version = lambda force=False: '2026.05.03'
+        ad._run_captured_orig = ad._run_captured
+        ad._run_captured = lambda args, timeout=5: 'deno 2.4.1\n'
+        original_deno_path = ad.DENO_PATH
+        ad.DENO_PATH = Path('/nonexistent/deno.exe')
+        try:
+            result = ad.probe_deno_runtime(force=True)
+            self.assertIn('source', result)
+            self.assertEqual(result['source'], 'system')
+        finally:
+            ad.shutil.which = original_which
+            ad.get_ytdlp_version = original_get_version
+            ad._run_captured = ad._run_captured_orig
+            ad.DENO_PATH = original_deno_path
+            ad.reset_deno_runtime_cache()
 
 
 class HealthDenoRuntimeSurfaceTests(unittest.TestCase):

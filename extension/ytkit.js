@@ -31979,13 +31979,34 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 const deno = data.denoRuntime;
                 if (deno && deno.ytdlpNeedsRuntime) {
                     const tone = deno.installed ? 'ok' : 'warn';
-                    const value = deno.installed
+                    const label = deno.installed
                         ? (deno.version ? `v${deno.version}` : 'installed')
                         : 'missing';
-                    const pill = this._renderPill('Deno', value, tone);
-                    if (!deno.installed && deno.advice) {
-                        pill.title = deno.advice;
-                    } else if (deno.installed && deno.path) {
+                    const suffix = deno.source === 'bundled' ? ' (bundled)' : '';
+                    const pill = this._renderPill('Deno', label + suffix, tone);
+                    if (!deno.installed) {
+                        pill.title = 'Click to auto-provision Deno';
+                        pill.style.cursor = 'pointer';
+                        pill.addEventListener('click', async () => {
+                            pill.textContent = 'Provisioning...';
+                            try {
+                                const resp = await extensionFetchJson(
+                                    `http://127.0.0.1:${data.port}/provision-deno`,
+                                    { method: 'POST', headers: { 'X-MDL-Token': data.token } }
+                                );
+                                if (resp?.ok) {
+                                    showToast('Deno provisioned successfully', '#22c55e');
+                                    this._poll();
+                                } else {
+                                    showToast(resp?.error || 'Deno provision failed', '#ef4444');
+                                    pill.textContent = 'Deno: failed';
+                                }
+                            } catch (e) {
+                                showToast('Deno provision failed: ' + e.message, '#ef4444');
+                                pill.textContent = 'Deno: failed';
+                            }
+                        }, { once: true });
+                    } else if (deno.path) {
                         pill.title = deno.path;
                     }
                     this._container.appendChild(pill);
