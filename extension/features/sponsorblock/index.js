@@ -425,7 +425,7 @@
                     clearTimeout(self._reloadTimer);
                     self._reloadTimer = setTimeout(() => {
                         self._reloadTimer = null;
-                        self._loadForVideo().then(() => self._scheduleNextSkip());
+                        self._loadForVideo().then(() => self._scheduleNextSkip()).catch(() => { /* reason: segment reload is best-effort */ });
                     }, 800);
                 };
                 addNavigateRule(this._navRuleId, reloadSegments);
