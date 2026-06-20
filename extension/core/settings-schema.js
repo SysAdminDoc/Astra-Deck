@@ -73,6 +73,11 @@ const CAPABILITIES = Object.freeze([
     // value-level concern, not a toggle-level one, so this capability
     // is reserved for future Ollama-only features.
     'ollama',
+    // Document Picture-in-Picture API (Chrome 116+, Firefox 151+).
+    // Used by popOutPlayer to open a rich PiP window with custom
+    // controls. Falls back to standard video.requestPictureInPicture()
+    // where unsupported (Safari, older Firefox).
+    'documentPip',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([
