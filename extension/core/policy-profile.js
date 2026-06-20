@@ -136,6 +136,7 @@
             /^auth/i,
             /[a-z]Auth/,
             /pinHash/i,
+            /^ytkit-da-user-id$/,
         ]);
 
         function shouldScrubKey(key) {
