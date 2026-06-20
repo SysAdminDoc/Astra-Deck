@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Threaded comment DOM adaptation:** updated `core/selector-packs/comments.js`
+  with threaded reply container selectors (`#more-replies-sub-thread`,
+  `#expanded-threads`, `#expander-contents`) for YouTube's 3-level nested
+  comment threading (Jan–March 2026 rollout). Verified that `commentSearch`,
+  `commentNavigator`, `sortCommentsNewest`, and `commentEnhancements` all
+  handle nested replies correctly through existing `textContent` and
+  thread-level traversal patterns.
 - **CSS Anchor Positioning for popups:** the speed popup and download popup
   now use CSS Anchor Positioning (Baseline 2026: Chrome 125+, Firefox 147+)
   when available. Popups are anchored to their trigger buttons with automatic
