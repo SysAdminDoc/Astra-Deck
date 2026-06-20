@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **DeArrow monolith peel:** the DeArrow feature (API fetch, branding cache,
+  title formatting, thumbnail replacement) is now in
+  `features/dearrow/index.js`. The monolith delegates to the factory via
+  `YTKitFeatures.createDeArrowFeature(deps)` with the inline implementation
+  as a compatibility fallback.
 - **SponsorBlock monolith peel:** the ~480-line SponsorBlock feature
   (hash-prefix API fetch, segment cache, skip scheduling, progress bar
   painting) is now in `features/sponsorblock/index.js`. The monolith
