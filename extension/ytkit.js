@@ -35024,7 +35024,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         {
             id: 'localAiTranscriptQa',
             name: 'Transcript Q&A (browser built-in)',
-            description: 'Ask questions about the current video’s transcript using Chrome’s on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button.',
+            description: 'Ask questions about the current video transcript using the Chrome on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button.',
             group: 'Research',
             icon: 'message-circle',
             pages: [PageTypes.WATCH],
@@ -35189,7 +35189,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn.className = 'ytkit-ai-qa-btn';
                 this._btn.textContent = 'Q&A';
                 this._btn.title = this._hasPromptApi()
-                    ? 'Ask questions about this video using Chrome’s on-device AI.'
+                    ? 'Ask questions about this video using on-device AI.'
                     : 'Chrome Prompt API not detected — requires Chrome 138+ with Gemini Nano.';
                 this._btn.addEventListener('click', () => this._openQaPanel());
                 anchor.insertAdjacentElement('afterend', this._btn);
