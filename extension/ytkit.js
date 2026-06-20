@@ -31968,6 +31968,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 } else {
                     this._container.appendChild(this._renderPill('PO Token', 'unreachable', 'err'));
                 }
+                // SABR support pill — surfaces whether yt-dlp can
+                // download SABR-only YouTube formats natively. Until
+                // yt-dlp PR #13515 merges, SABR support is "limited" and
+                // some videos may fail to download.
+                if (data.sabrSupport) {
+                    const sabrTone = data.sabrSupport === 'native' ? 'ok' : 'warn';
+                    const sabrLabel = data.sabrSupport === 'native' ? 'native' : 'limited';
+                    const sabrPill = this._renderPill('SABR', sabrLabel, sabrTone);
+                    if (data.sabrSupport !== 'native') {
+                        sabrPill.title = 'Some YouTube videos use SABR-only formats that yt-dlp cannot yet download natively. See yt-dlp issue #12482.';
+                    }
+                    this._container.appendChild(sabrPill);
+                }
                 // Deno runtime pill — only renders when the
                 // bundled yt-dlp.exe is recent enough to need an external
                 // JS runtime (>= 2026.04). Stays quiet on older yt-dlp

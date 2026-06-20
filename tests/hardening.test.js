@@ -3347,10 +3347,10 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
 
 // ── v3.27.0 P1: Downloads & local media library invariants ──
 
-test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg pills', () => {
+test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg / SABR pills', () => {
     const start = ytkitSource.indexOf("id: 'downloadHealthPanel'");
     assert.ok(start > -1, 'downloadHealthPanel must exist');
-    const block = ytkitSource.slice(start, start + 9500);
+    const block = ytkitSource.slice(start, start + 11000);
     assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/health'/,
         'must query the local /health endpoint');
     // Hardening pass added a route + visibility gate inside the interval
@@ -3364,6 +3364,7 @@ test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp 
     assert.match(block, /poTokenProvider/, 'must surface PO Token state');
     assert.match(block, /ytDlpVersion/, 'must surface yt-dlp version');
     assert.match(block, /ffmpegCapabilities/, 'must surface ffmpeg freshness');
+    assert.match(block, /sabrSupport/, 'must surface SABR support status');
     const destroyIdx = block.indexOf('destroy()');
     const destroyBlock = block.slice(destroyIdx, destroyIdx + 1000);
     assert.match(destroyBlock, /clearInterval\(this\._pollTimer\)/,
