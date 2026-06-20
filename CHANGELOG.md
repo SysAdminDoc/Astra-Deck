@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Return YouTube Dislike feature peel:** the ~200-line RYD feature
+  (API fetch, cache, dislike pill, ratio badge) is now in
+  `features/return-dislike/index.js`. The monolith delegates to the factory
+  via `YTKitFeatures.createReturnDislikeFeature(deps)` with the inline
+  implementation as a compatibility fallback.
 - **Download outcome telemetry:** download completion, failure, skip, and
   cancellation now record entries in the diagnostic log under the
   `download-outcome` category. The diagnostic download JSON includes

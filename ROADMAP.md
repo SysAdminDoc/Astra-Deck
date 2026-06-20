@@ -99,12 +99,6 @@
   Acceptance: Selector fixture regenerated from a live 2026-era YouTube watch page. All critical playerChrome/playerSettings selectors match. Regression test passes with fresh fixture.
   Complexity: S
 
-- [ ] P2 — Monolith decomposition: Return YouTube Dislike peel
-  Why: RYD API fetch, cache, dislike count rendering, ratio calculation, and card badge are self-contained (~400 lines) but inline. Same rationale as the SponsorBlock and DeArrow peels already in ROADMAP.
-  Evidence: `extension/ytkit.js:32502` (`id: 'returnDislike'`); RYD code is fully self-contained with its own cache, API URL, and rendering; the `features/` peel pattern is established with 11 modules.
-  Touches: New `extension/features/return-dislike/index.js`, `extension/ytkit.js` (delegate to module), `extension/manifest.json` (content_scripts)
-  Acceptance: RYD feature works identically; the peeled module is testable via direct import.
-  Complexity: S
 
 ### P2 — Observability / Developer Experience
 
