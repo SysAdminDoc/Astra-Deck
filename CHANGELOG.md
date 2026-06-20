@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **SponsorBlock monolith peel:** the ~480-line SponsorBlock feature
+  (hash-prefix API fetch, segment cache, skip scheduling, progress bar
+  painting) is now in `features/sponsorblock/index.js`. The monolith
+  delegates to the factory via
+  `YTKitFeatures.createSponsorBlockFeature(deps)` with the inline
+  implementation as a compatibility fallback.
 - **Chrome Language Detector API for antiTranslate:** when Chrome 138+
   Language Detector API is available, the antiTranslate feature uses it to
   detect whether a video title/description has been auto-translated by
