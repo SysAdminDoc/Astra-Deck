@@ -53,6 +53,15 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Chrome Writer/Rewriter APIs are in Developer Trial as of June 2026, not yet stable. Implementing against an unstable API surface creates maintenance burden.
 
+## P2 — Browser-Gated
+
+- [ ] P2 — Selector fixture refresh for Delhi Modern player
+  Why: YouTube's "Delhi Modern" player rollout (Oct 2025–Jan 2026) changed player button DOM to translucent overlay buttons. The selector packs have canaries for `ytp-delhi-modern` but the MHTML fixture may predate the completed rollout.
+  Touches: `scripts/capture-watch-mhtml.js`, `scripts/build-selector-fixtures.js`, `tests/selector-regression.test.js`, `core/selector-packs/playerChrome.js`
+  Acceptance: Selector fixture regenerated from a live 2026-era YouTube watch page. All critical playerChrome/playerSettings selectors match.
+  Complexity: S
+  Blocker: Requires a live Chrome browser to capture MHTML from YouTube. Browser binaries not available in this environment.
+
 ## P2 — Observability / Developer Experience
 
 - [ ] P2 — Visual regression testing for popup

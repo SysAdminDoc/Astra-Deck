@@ -78,6 +78,9 @@ const CAPABILITIES = Object.freeze([
     // controls. Falls back to standard video.requestPictureInPicture()
     // where unsupported (Safari, older Firefox).
     'documentPip',
+    // Chrome 138+ Language Detector API. Used by antiTranslate to detect
+    // whether a video title/description has been auto-translated by YouTube.
+    'languageDetector',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([
