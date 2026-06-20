@@ -559,6 +559,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "videoRotationAngle", category: "playback-audio", type: "number", defaultValue: 0, enum: [0, 90, 180, 270], risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "videoFlip", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "videoFlipMode", category: "playback-audio", type: "string", defaultValue: "none", enum: ["none", "horizontal", "vertical", "both"], risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: false, internal: false, since: "4.47.0" }),
+    Object.freeze({ key: "monoToStereo", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "4.47.0" }),
     Object.freeze({ key: "frameByFrameButtons", category: "playback-audio", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── research-ai ───

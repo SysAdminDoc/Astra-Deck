@@ -260,6 +260,7 @@
     "videoRotationAngle": 1,
     "videoFlip": true,
     "videoFlipMode": "horizontal",
+    "monoToStereo": true,
     "frameByFrameButtons": true,
     "digitalWellbeing": true,
     "dwBreakIntervalMin": 31,

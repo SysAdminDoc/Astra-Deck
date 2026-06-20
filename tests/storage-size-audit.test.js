@@ -54,7 +54,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // Preset profiles (Privacy, Researcher, PowerUser) add 3 booleans.
     // Video flip adds boolean toggle + string mode key.
     // Subscription content-type filter adds 2 booleans.
-    assert.equal(assessment.totalBytes, 178410);
+    // Mono-to-stereo adds 1 boolean.
+    assert.equal(assessment.totalBytes, 178431);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
