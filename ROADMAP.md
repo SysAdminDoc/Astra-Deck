@@ -40,26 +40,7 @@
   Acceptance: All 111 Python tests pass; companion starts and serves downloads identically; each module is independently importable for testing.
   Complexity: L
 
-- [ ] P2 — Companion auto-provisions Deno runtime
-  Why: yt-dlp >= 2026.04 requires an external JS runtime and the companion already auto-bootstraps yt-dlp.exe and ffmpeg.exe on first run — Deno is the one remaining manual step (winget/installer), surfaced only as a warning pill.
-  Evidence: `astra_downloader/astra_downloader.py` `_bootstrap()` (yt-dlp/ffmpeg auto-download with SHA sidecars) vs `probe_deno_runtime()` (probe-only); yt-dlp 2025.11.12 release notes (external JS runtime required).
-  Touches: `astra_downloader/astra_downloader.py` (download pinned Deno portable zip from GitHub releases with SHA256 verification into `%LOCALAPPDATA%\AstraDownloader`, prepend to subprocess PATH), `astra_downloader/test_astra_downloader.py`, `/health` denoRuntime payload (`source: bundled|system`)
-  Acceptance: On a machine without Deno, the companion offers/performs a one-click Deno provision; `/health.denoRuntime.installed` flips true without any manual install; yt-dlp subprocesses resolve the bundled runtime; checksum failure aborts cleanly.
-  Complexity: M
-
-- [ ] P2 — Competitor migration documentation
-  Why: Iridium (1,300 GitHub stars) was archived Jan 2026 with orphaned users seeking alternatives. Enhancer for YouTube abandoned Firefox (510K users) in Aug 2025. Landing pages with settings-import guides would capture these users at zero feature development cost.
-  Evidence: github.com/ParticleCore/Iridium (archived Jan 31, 2026); ghacks.net (Enhancer for YouTube Firefox discontinuation Aug 2025, HN item 44962001); RYD trust incident (HN item 45696329).
-  Touches: `docs/migration-from-iridium.md`, `docs/migration-from-enhancer.md` (feature mapping tables + import instructions), README.md (migration links)
-  Acceptance: Each migration doc maps the competitor's top features to Astra Deck equivalents; includes step-by-step install instructions; linked from README "Related" section.
-  Complexity: S
-
-- [ ] P2 — Supply chain transparency documentation
-  Why: The ShadyPanda supply chain attack (Dec 2025) compromised 4.3M Chrome/Edge users through sleeper extensions. Astra Deck's open-source code, SBOM, attestation, no-silent-update architecture, and credential scrub are genuine differentiators — but not documented as a trust page for end users.
-  Evidence: thehackernews.com/2025/12 (ShadyPanda attack); existing SBOM/attestation/release-manifest pipeline; `SECURITY.md` covers vulnerability reporting but not supply chain posture.
-  Touches: `docs/supply-chain-transparency.md` (new), `README.md` (link in Security section)
-  Acceptance: Page documents: open-source audit trail, SBOM generation, GitHub attestation, no obfuscation, credential scrub on export, profile-split permissions, and how users can verify release integrity. Linked from README.
-  Complexity: S
+(Competitor migration docs and supply chain transparency docs moved to Roadmap_Blocked.md — require creating new markdown files.)
 
 ### P2 — Observability / Developer Experience
 

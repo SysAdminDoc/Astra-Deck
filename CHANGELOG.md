@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Companion auto-provisions Deno:** when yt-dlp >= 2026.04 needs an
+  external JS runtime and no Deno is found on PATH, the companion
+  auto-downloads Deno into `%LOCALAPPDATA%\AstraDownloader\deno\` during
+  setup. New `/provision-deno` POST endpoint lets the extension trigger
+  on-demand provisioning. The health panel Deno pill is now clickable when
+  Deno is missing — one click triggers auto-provision. `probe_deno_runtime`
+  now returns a `source` field (`bundled` or `system`). The yt-dlp
+  subprocess PATH is prepended with the bundled Deno directory when present.
 - **Subscription group CSV export:** new CSV button alongside the existing
   JSON export on the subscription groups toolbar. RFC 4180 compliant with
   formula-injection neutralization. Columns: Group, Channel, Handle, URL.
