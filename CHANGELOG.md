@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chrome Language Detector API for antiTranslate:** when Chrome 138+
+  Language Detector API is available, the antiTranslate feature uses it to
+  detect whether a video title/description has been auto-translated by
+  YouTube. Falls back to the existing text-comparison heuristic when the
+  API is unavailable. Added `languageDetector` capability probe.
 - **Return YouTube Dislike feature peel:** the ~200-line RYD feature
   (API fetch, cache, dislike pill, ratio badge) is now in
   `features/return-dislike/index.js`. The monolith delegates to the factory

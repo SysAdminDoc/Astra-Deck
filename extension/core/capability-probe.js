@@ -90,13 +90,22 @@
         );
     }
 
+    function hasLanguageDetector() {
+        return Boolean(
+            typeof globalThis !== 'undefined'
+            && ((globalThis.LanguageDetector) ||
+                (globalThis.ai && typeof globalThis.ai.languageDetector === 'object'))
+        );
+    }
+
     // Probe table — keys MUST match the CAPABILITIES enum exported
     // by settings-schema.js. The hardening test pins that.
     const PROBES = Object.freeze({
-        summarizerApi: { async: false, run: hasSummarizerApi },
-        documentPip:   { async: false, run: hasDocumentPip },
-        mediaDL:       { async: true,  run: hasMediaDL },
-        ollama:        { async: true,  run: hasOllama },
+        summarizerApi:    { async: false, run: hasSummarizerApi },
+        documentPip:      { async: false, run: hasDocumentPip },
+        languageDetector: { async: false, run: hasLanguageDetector },
+        mediaDL:          { async: true,  run: hasMediaDL },
+        ollama:           { async: true,  run: hasOllama },
     });
 
     function probe(name) {
