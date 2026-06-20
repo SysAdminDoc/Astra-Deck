@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Settings PIN protection:** optional 4-6 digit PIN gates the in-page
+  settings panel and popup management actions (export/import/reset). PIN
+  stored as SHA-256 hash in `chrome.storage.local` (standalone key,
+  separate from settings export). Set/change/clear via the PIN button in
+  the settings panel header. "Forgot PIN?" recovery clears all settings.
+  Credential scrub pattern added to `policy-profile.js`.
 - **Document PiP cross-browser:** updated `popOutPlayer` for Firefox 151+
   stable Document PiP support (no about:config flag needed). Added
   `documentPip` capability probe so the popup can surface availability.

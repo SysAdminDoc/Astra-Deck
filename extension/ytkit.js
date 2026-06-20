@@ -5132,8 +5132,188 @@ return response;
         return true;
     }
 
-    function toggleSettingsPanel(force) {
-        return setSettingsPanelOpen(force ?? !isSettingsPanelOpen());
+    // ── Settings PIN gate ──
+    const PIN_STORAGE_KEY = 'ytkit_pin_hash';
+    const PIN_SALT = 'ytkit-pin-salt-v1:';
+    let _pinHashCache = null;
+    let _pinSessionUnlocked = false;
+
+    async function _hashPin(pin) {
+        const data = new TextEncoder().encode(PIN_SALT + pin);
+        const buf = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function _loadPinHash() {
+        if (_pinHashCache !== null) return _pinHashCache;
+        try {
+            const result = await chrome.storage.local.get(PIN_STORAGE_KEY);
+            _pinHashCache = result[PIN_STORAGE_KEY] || '';
+        } catch (_) { /* reason: storage may be unavailable in userscript mode */ _pinHashCache = ''; }
+        return _pinHashCache;
+    }
+
+    async function isPinSet() { return !!(await _loadPinHash()); }
+
+    async function verifyPin(pin) {
+        const stored = await _loadPinHash();
+        if (!stored) return true;
+        return (await _hashPin(pin)) === stored;
+    }
+
+    async function setPin(pin) {
+        const hash = await _hashPin(pin);
+        await chrome.storage.local.set({ [PIN_STORAGE_KEY]: hash });
+        _pinHashCache = hash;
+        _pinSessionUnlocked = true;
+    }
+
+    async function clearPin() {
+        await chrome.storage.local.remove(PIN_STORAGE_KEY);
+        _pinHashCache = '';
+        _pinSessionUnlocked = false;
+    }
+
+    function _showPinDialog(onSuccess) {
+        if (document.getElementById('ytkit-pin-overlay')) return;
+        const overlay = document.createElement('div');
+        overlay.id = 'ytkit-pin-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a2e;border-radius:12px;padding:24px 28px;min-width:280px;text-align:center;color:#e0e0e0;font-family:system-ui,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+        card.innerHTML = '';
+        const title = document.createElement('div');
+        title.textContent = 'Enter PIN';
+        title.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:16px;';
+        card.appendChild(title);
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.inputMode = 'numeric';
+        input.pattern = '[0-9]*';
+        input.maxLength = 6;
+        input.placeholder = '4–6 digits';
+        input.autocomplete = 'off';
+        input.style.cssText = 'width:120px;padding:10px 12px;font-size:20px;text-align:center;border:2px solid #333;border-radius:8px;background:#0d0d1a;color:#fff;letter-spacing:8px;outline:none;';
+        card.appendChild(input);
+        const error = document.createElement('div');
+        error.style.cssText = 'color:#ef4444;font-size:13px;margin-top:8px;min-height:20px;';
+        card.appendChild(error);
+        const actions = document.createElement('div');
+        actions.style.cssText = 'margin-top:16px;display:flex;gap:8px;justify-content:center;';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'padding:8px 16px;border:1px solid #444;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:13px;';
+        const unlockBtn = document.createElement('button');
+        unlockBtn.textContent = 'Unlock';
+        unlockBtn.style.cssText = 'padding:8px 16px;border:none;border-radius:6px;background:#ff4e45;color:#fff;cursor:pointer;font-size:13px;font-weight:600;';
+        actions.appendChild(cancelBtn);
+        actions.appendChild(unlockBtn);
+        card.appendChild(actions);
+        const forgotLink = document.createElement('div');
+        forgotLink.textContent = 'Forgot PIN? (resets all settings)';
+        forgotLink.style.cssText = 'margin-top:12px;font-size:11px;color:#888;cursor:pointer;text-decoration:underline;';
+        card.appendChild(forgotLink);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        input.focus();
+        async function tryUnlock() {
+            const pin = input.value.trim();
+            if (pin.length < 4) { error.textContent = 'PIN must be 4–6 digits'; return; }
+            if (await verifyPin(pin)) {
+                _pinSessionUnlocked = true;
+                overlay.remove();
+                onSuccess();
+            } else {
+                error.textContent = 'Incorrect PIN';
+                input.value = '';
+                input.focus();
+            }
+        }
+        unlockBtn.addEventListener('click', tryUnlock);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+        cancelBtn.addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        forgotLink.addEventListener('click', async () => {
+            if (confirm('This will clear your PIN and reset ALL Astra Deck settings. Continue?')) {
+                await clearPin();
+                try { await chrome.storage.local.remove('ytSuiteSettings'); } catch(_) { /* reason: storage may fail */ }
+                overlay.remove();
+                showToast('PIN cleared and settings reset. Reload to apply.', '#f59e0b', { duration: 6 });
+            }
+        });
+    }
+
+    function _showPinManageDialog() {
+        if (document.getElementById('ytkit-pin-overlay')) return;
+        const overlay = document.createElement('div');
+        overlay.id = 'ytkit-pin-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a2e;border-radius:12px;padding:24px 28px;min-width:280px;text-align:center;color:#e0e0e0;font-family:system-ui,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:16px;font-weight:600;margin-bottom:16px;';
+        card.appendChild(title);
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.inputMode = 'numeric';
+        input.pattern = '[0-9]*';
+        input.maxLength = 6;
+        input.autocomplete = 'off';
+        input.style.cssText = 'width:120px;padding:10px 12px;font-size:20px;text-align:center;border:2px solid #333;border-radius:8px;background:#0d0d1a;color:#fff;letter-spacing:8px;outline:none;';
+        card.appendChild(input);
+        const status = document.createElement('div');
+        status.style.cssText = 'font-size:13px;margin-top:8px;min-height:20px;';
+        card.appendChild(status);
+        const actions = document.createElement('div');
+        actions.style.cssText = 'margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;';
+        card.appendChild(actions);
+        overlay.appendChild(card);
+        const close = () => overlay.remove();
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        (async () => {
+            const hasPin = await isPinSet();
+            title.textContent = hasPin ? 'Change or Clear PIN' : 'Set a Settings PIN';
+            input.placeholder = hasPin ? 'New PIN' : '4-6 digits';
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = hasPin ? 'Change PIN' : 'Set PIN';
+            saveBtn.style.cssText = 'padding:8px 16px;border:none;border-radius:6px;background:#ff4e45;color:#fff;cursor:pointer;font-size:13px;font-weight:600;';
+            saveBtn.addEventListener('click', async () => {
+                const pin = input.value.trim();
+                if (!/^\d{4,6}$/.test(pin)) { status.textContent = 'Enter 4-6 digits'; status.style.color = '#ef4444'; return; }
+                await setPin(pin);
+                status.textContent = 'PIN saved'; status.style.color = '#22c55e';
+                setTimeout(close, 800);
+            });
+            actions.appendChild(saveBtn);
+            if (hasPin) {
+                const clearBtn = document.createElement('button');
+                clearBtn.textContent = 'Clear PIN';
+                clearBtn.style.cssText = 'padding:8px 16px;border:1px solid #444;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:13px;';
+                clearBtn.addEventListener('click', async () => {
+                    await clearPin();
+                    status.textContent = 'PIN cleared'; status.style.color = '#22c55e';
+                    setTimeout(close, 800);
+                });
+                actions.appendChild(clearBtn);
+            }
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.cssText = 'padding:8px 16px;border:1px solid #444;border-radius:6px;background:transparent;color:#ccc;cursor:pointer;font-size:13px;';
+            cancelBtn.addEventListener('click', close);
+            actions.appendChild(cancelBtn);
+            document.body.appendChild(overlay);
+            input.focus();
+        })();
+    }
+
+    async function toggleSettingsPanel(force) {
+        const wantOpen = force ?? !isSettingsPanelOpen();
+        if (wantOpen && !_pinSessionUnlocked && await isPinSet()) {
+            _showPinDialog(() => setSettingsPanelOpen(true));
+            return false;
+        }
+        return setSettingsPanelOpen(wantOpen);
     }
 
     function applyExternalSettingsUpdate({ source = 'storage', nextSettings = null } = {}) {
@@ -36439,7 +36619,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         closeBtn.appendChild(ICONS.close());
         closeBtn.onclick = () => setSettingsPanelOpen(false);
 
+        const pinBtn = document.createElement('button');
+        pinBtn.className = 'ytkit-close';
+        pinBtn.type = 'button';
+        pinBtn.style.cssText = 'font-size:14px;margin-right:4px;width:auto;padding:4px 8px;';
+        pinBtn.textContent = 'PIN';
+        pinBtn.title = 'PIN lock';
+        (async () => {
+            pinBtn.title = (await isPinSet()) ? 'Change or clear PIN' : 'Set a PIN lock';
+        })();
+        pinBtn.onclick = () => _showPinManageDialog();
         header.appendChild(brand);
+        header.appendChild(pinBtn);
         header.appendChild(closeBtn);
 
         // Body

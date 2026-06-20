@@ -47,13 +47,6 @@
   Acceptance: On a machine without Deno, the companion offers/performs a one-click Deno provision; `/health.denoRuntime.installed` flips true without any manual install; yt-dlp subprocesses resolve the bundled runtime; checksum failure aborts cleanly.
   Complexity: M
 
-- [ ] P2 — Settings PIN protection
-  Why: Shared-device and child-safety users need a way to lock the settings panel. BlockTube ships password protection; it's a recurring community request. The settings panel currently opens for anyone on the browser profile.
-  Evidence: github.com/amitbl/blocktube (password protection feature); community requests on Reddit for extension locking; `extension/ytkit.js` settings panel has no access gate.
-  Touches: `extension/ytkit.js` (PIN entry gate before settings panel open, PIN set/change/clear flow), `extension/popup.js` (PIN gate on export/import/reset), `core/storage.js` (store hashed PIN in chrome.storage.local), settings schema + locales
-  Acceptance: When PIN is set, opening the settings panel or popup management actions requires correct PIN entry; PIN stored as bcrypt/scrypt hash, not plaintext; "Forgot PIN" clears all settings as a recovery path; PIN is excluded from settings export by credential scrub.
-  Complexity: S
-
 - [ ] P2 — Onboarding preset profiles
   Why: The 200+ settings surface overwhelms new users. Curated preset bundles ("Privacy-focused", "Researcher", "Power User", "Minimal") would let users configure 20-40 settings in one action, dramatically lowering the discovery barrier.
   Evidence: `settingsProfiles` already supports save/load/delete/export/import; `feedTriageProfile` and `lowPowerProfile` are existing recipe toggles that prove the pattern; PocketTube and Enhancer for YouTube ship curated defaults.
