@@ -51,7 +51,8 @@ test('typical local payload is not storage.sync eligible', () => {
     // zenMode adds 16 bytes, playlistSearch 23 bytes, classicPlayerChrome 28 bytes.
     // SponsorBlock per-channel profiles add a boolean toggle, local data object,
     // and one safe-sync allowlist entry.
-    assert.equal(assessment.totalBytes, 178182);
+    // Preset profiles (Privacy, Researcher, PowerUser) add 3 booleans.
+    assert.equal(assessment.totalBytes, 178253);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);
