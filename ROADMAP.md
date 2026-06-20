@@ -47,13 +47,6 @@
   Acceptance: On a machine without Deno, the companion offers/performs a one-click Deno provision; `/health.denoRuntime.installed` flips true without any manual install; yt-dlp subprocesses resolve the bundled runtime; checksum failure aborts cleanly.
   Complexity: M
 
-- [ ] P2 — Onboarding preset profiles
-  Why: The 200+ settings surface overwhelms new users. Curated preset bundles ("Privacy-focused", "Researcher", "Power User", "Minimal") would let users configure 20-40 settings in one action, dramatically lowering the discovery barrier.
-  Evidence: `settingsProfiles` already supports save/load/delete/export/import; `feedTriageProfile` and `lowPowerProfile` are existing recipe toggles that prove the pattern; PocketTube and Enhancer for YouTube ship curated defaults.
-  Touches: `extension/ytkit.js` (preset definitions, one-click apply UI in settings panel), `extension/popup.js` (preset selector in popup for first-run), settings schema
-  Acceptance: At least 3 named presets ship; selecting a preset applies its settings bundle and creates a backup snapshot (like feedTriageProfile); toggling off restores prior values; presets are read-only (users customize via save-as).
-  Complexity: S
-
 - [ ] P2 — Competitor migration documentation
   Why: Iridium (1,300 GitHub stars) was archived Jan 2026 with orphaned users seeking alternatives. Enhancer for YouTube abandoned Firefox (510K users) in Aug 2025. Landing pages with settings-import guides would capture these users at zero feature development cost.
   Evidence: github.com/ParticleCore/Iridium (archived Jan 31, 2026); ghacks.net (Enhancer for YouTube Firefox discontinuation Aug 2025, HN item 44962001); RYD trust incident (HN item 45696329).
