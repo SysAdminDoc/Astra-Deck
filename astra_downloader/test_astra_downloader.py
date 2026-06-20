@@ -684,7 +684,7 @@ class CookieThreatModelDocTests(unittest.TestCase):
             "CVE-2023-35934",
             "GHSA-v8mc-9377-rwjj",
             "2023.07.06",
-            "yt-dlp==2026.3.17",
+            "yt-dlp==2026.6.9",
             "ALLOWED_COOKIE_DOMAINS",
             ".youtube.com",
             "write_cookies_netscape()",

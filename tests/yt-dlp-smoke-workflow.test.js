@@ -10,7 +10,7 @@ const repoRoot = path.join(__dirname, '..');
 test('downloader requirements carry exact yt-dlp smoke pins', () => {
     const requirements = fs.readFileSync(
         path.join(repoRoot, 'astra_downloader', 'requirements.txt'), 'utf8');
-    assert.match(requirements, /^yt-dlp==2026\.3\.17$/m,
+    assert.match(requirements, /^yt-dlp==2026\.6\.9$/m,
         'requirements.txt must pin yt-dlp exactly so Dependabot opens reviewed bump PRs');
     assert.match(requirements, /^curl_cffi==0\.15\.0$/m,
         'requirements.txt must pin curl_cffi exactly for the yt-dlp smoke environment');
