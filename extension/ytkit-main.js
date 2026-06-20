@@ -296,4 +296,93 @@
     applyContextQuality();
 })();
 
+    // ──────────────────────────────────────────────────────────────────
+    // Feature 3: Mono-to-stereo audio converter (data-ytkit-mono-to-stereo)
+    // ──────────────────────────────────────────────────────────────────
+    // Forces mono downmix via a channelCount=1 gain node, then the
+    // browser's built-in mono→stereo upmix centers the signal equally
+    // in both ears. When disabled, the gain node passes through at
+    // channelCount=2. createMediaElementSource is one-shot per element,
+    // so we keep the graph alive and toggle the merge behavior.
+(function() {
+    'use strict';
+    var AC = typeof AudioContext !== 'undefined' ? AudioContext
+           : typeof webkitAudioContext !== 'undefined' ? webkitAudioContext : null;
+    if (!AC) return;
+
+    var _enabled = false;
+    var _ctx = null;
+    var _source = null;
+    var _merge = null;
+    var _connectedVideo = null;
+
+    function getVideo() {
+        return document.querySelector('.html5-main-video');
+    }
+
+    function connect() {
+        var video = getVideo();
+        if (!video) return;
+        if (_connectedVideo === video && _ctx) {
+            syncMerge();
+            return;
+        }
+        cleanup();
+        try {
+            _ctx = new AC();
+            _source = _ctx.createMediaElementSource(video);
+            _merge = _ctx.createGain();
+            syncMerge();
+            _source.connect(_merge);
+            _merge.connect(_ctx.destination);
+            _connectedVideo = video;
+        } catch (e) {
+            // reason: createMediaElementSource can throw if already connected
+            cleanup();
+        }
+    }
+
+    function syncMerge() {
+        if (!_merge) return;
+        if (_enabled) {
+            _merge.channelCount = 1;
+            _merge.channelCountMode = 'explicit';
+            _merge.channelInterpretation = 'speakers';
+        } else {
+            _merge.channelCount = 2;
+            _merge.channelCountMode = 'max';
+            _merge.channelInterpretation = 'speakers';
+        }
+    }
+
+    function cleanup() {
+        if (_source) { try { _source.disconnect(); } catch (e) { /* reason: already disconnected */ } _source = null; }
+        if (_merge) { try { _merge.disconnect(); } catch (e) { /* reason: already disconnected */ } _merge = null; }
+        if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* reason: already closing */ } }
+        _ctx = null;
+        _connectedVideo = null;
+    }
+
+    _obsRegister(['data-ytkit-mono-to-stereo'], function() {
+        var val = document.documentElement.getAttribute('data-ytkit-mono-to-stereo');
+        var next = val === '1';
+        if (next === _enabled) return;
+        _enabled = next;
+        if (_enabled) connect();
+        else if (_merge) syncMerge();
+    });
+
+    document.addEventListener('loadstart', function(e) {
+        if (!_enabled) return;
+        if (e && e.target && e.target.classList && e.target.classList.contains('html5-main-video')) {
+            _connectedVideo = null;
+            connect();
+        }
+    }, true);
+
+    window.addEventListener('yt-navigate-finish', function() {
+        if (_enabled) { _connectedVideo = null; setTimeout(connect, 500); }
+    });
+})();
+
 })();  // outer N9 IIFE closes here

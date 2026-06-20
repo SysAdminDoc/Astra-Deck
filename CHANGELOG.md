@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Mono-to-stereo audio conversion:** new `monoToStereo` feature uses the MAIN
+  world Web Audio API bridge to force mono downmix via a channelCount=1 gain node,
+  then the browser's built-in mono-to-stereo upmix centers the signal equally in
+  both ears. Fixes one-sided recordings, lectures, and old content that sounds
+  unbalanced on headphones. Off by default; the audio graph stays passthrough
+  when disabled so stereo content is unaffected.
 - **Onboarding wizard:** the first-run welcome card now has a second step after
   profile selection (Store-Safe / GitHub-Full). Step 2 offers three preset
   profiles — Privacy, Researcher, Power User — or a "Skip" option for manual
