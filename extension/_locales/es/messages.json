@@ -135,7 +135,7 @@
     "message": "…% complete. … remaining."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
   },
   "dlProgressAriaAudio": {
     "message": "Progreso de descarga de audio"
@@ -150,7 +150,7 @@
     "message": "Descarga de video"
   },
   "dlProgressCompleteCopy": {
-    "message": "El descargador local terminó correctamente."
+    "message": "Astra Downloader finished successfully."
   },
   "dlProgressConnectAudio": {
     "message": "Conectando con el descargador local de audio."
@@ -165,7 +165,7 @@
     "message": "ETA"
   },
   "dlProgressFailureDefault": {
-    "message": "Falló el descargador local"
+    "message": "Astra Downloader failed"
   },
   "dlProgressInProgress": {
     "message": "En progreso"
@@ -174,13 +174,13 @@
     "message": "Local"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck perdió el contacto con el descargador local. Elige «Reparar descargador» para recuperar."
+    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
   },
   "dlProgressLostTitle": {
     "message": "Conexión con el descargador perdida"
   },
   "dlProgressLostToast": {
-    "message": "Contacto perdido con el descargador local."
+    "message": "Lost contact with Astra Downloader."
   },
   "dlProgressPreparing": {
     "message": "Preparando descarga…"
@@ -192,7 +192,7 @@
     "message": "Listo"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Problema momentáneo con el descargador local — reintentando automáticamente."
+    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
   },
   "dlProgressSkippedDefault": {
     "message": "Ya descargado — omitido."
@@ -237,7 +237,7 @@
     "message": "Finalizando"
   },
   "dlRepairAria": {
-    "message": "Abrir pasos de reparación del descargador local"
+    "message": "Open Astra Downloader repair steps"
   },
   "dlRepairBtn": {
     "message": "Reparar descargador"
@@ -2018,6 +2018,12 @@
   "feature_videoResolutionBadge_name": {
     "message": "Resolution Badge on Thumbnails"
   },
+  "feature_videoFlip_desc": {
+    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+  },
+  "feature_videoFlip_name": {
+    "message": "Video Flip"
+  },
   "feature_videoRotation_desc": {
     "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
   },
@@ -2601,13 +2607,13 @@
     "message": "Ya hay una descarga en progreso."
   },
   "toastDlInstallPrompt": {
-    "message": "Instala el descargador local para habilitar las descargas."
+    "message": "Install Astra Downloader to enable downloads."
   },
   "toastDlReady": {
-    "message": "El descargador local está listo."
+    "message": "Astra Downloader is ready."
   },
   "toastDlRequestFailed": {
-    "message": "Falló la solicitud al descargador local."
+    "message": "Astra Downloader request failed."
   },
   "toastDlRunning": {
     "message": "¡Astra Downloader está en ejecución!"
@@ -2619,7 +2625,7 @@
     "message": "Iniciando Astra Downloader…"
   },
   "toastDlStopped": {
-    "message": "Descargador local detenido. Iniciándolo de nuevo…"
+    "message": "Astra Downloader stopped. Starting it again…"
   },
   "toggleStateOff": {
     "message": "Desactivado"

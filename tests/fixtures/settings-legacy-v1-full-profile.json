@@ -258,6 +258,8 @@
     "disableSpaNavigation": true,
     "videoRotation": true,
     "videoRotationAngle": 1,
+    "videoFlip": true,
+    "videoFlipMode": "horizontal",
     "frameByFrameButtons": true,
     "digitalWellbeing": true,
     "dwBreakIntervalMin": 31,

@@ -2018,6 +2018,12 @@
   "feature_videoResolutionBadge_name": {
     "message": "Resolution Badge on Thumbnails"
   },
+  "feature_videoFlip_desc": {
+    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+  },
+  "feature_videoFlip_name": {
+    "message": "Video Flip"
+  },
   "feature_videoRotation_desc": {
     "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
   },

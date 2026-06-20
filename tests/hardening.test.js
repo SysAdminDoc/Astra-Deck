@@ -4787,10 +4787,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // Per-video notes added videoNotes + videoNotesData (360 → 362);
     // cleanUiPreset (Compact Clean UI opt-in) lifted the pin from 363
     // to 364; zenMode lifted it to 365; preset profiles added 3 more.
+    // Video flip added videoFlip + videoFlipMode (374 → 376).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 374,
-        'SETTINGS_SCHEMA must cover all 374 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 376,
+        'SETTINGS_SCHEMA must cover all 376 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {

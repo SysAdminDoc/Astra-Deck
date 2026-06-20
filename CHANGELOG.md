@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Video Flip:** new `videoFlip` feature with `videoFlipMode` select
+  (none/horizontal/vertical/both). Mirrors the video via CSS `scale` property,
+  composing cleanly with existing `videoRotation` transforms. Useful for mirrored
+  dance tutorials, text readability, and flipped recordings.
 - **Security: pin Werkzeug >= 3.1.6 and Jinja2 >= 3.1.6 in requirements.txt.**
   Flask 3.1.3 did not constrain these transitive dependencies. CVE-2026-21860
   and CVE-2026-27199 (Werkzeug path traversal via Windows device names in

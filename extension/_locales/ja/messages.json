@@ -135,7 +135,7 @@
     "message": "…% complete. … remaining."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while the local downloader finishes."
+    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
   },
   "dlProgressAriaAudio": {
     "message": "音声ダウンロードの進捗"
@@ -150,7 +150,7 @@
     "message": "動画ダウンロード"
   },
   "dlProgressCompleteCopy": {
-    "message": "ローカルダウンローダーは正常に完了しました。"
+    "message": "Astra Downloader finished successfully."
   },
   "dlProgressConnectAudio": {
     "message": "ローカル音声ダウンローダーに接続中。"
@@ -165,7 +165,7 @@
     "message": "ETA"
   },
   "dlProgressFailureDefault": {
-    "message": "ローカルダウンローダー失敗"
+    "message": "Astra Downloader failed"
   },
   "dlProgressInProgress": {
     "message": "進行中"
@@ -174,13 +174,13 @@
     "message": "ローカル"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck はローカルダウンローダーとの通信を失いました。「ダウンローダーを修復」を選択して復旧してください。"
+    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
   },
   "dlProgressLostTitle": {
     "message": "ダウンローダーへの接続喪失"
   },
   "dlProgressLostToast": {
-    "message": "ローカルダウンローダーとの通信を失いました。"
+    "message": "Lost contact with Astra Downloader."
   },
   "dlProgressPreparing": {
     "message": "ダウンロードの準備中…"
@@ -192,7 +192,7 @@
     "message": "準備完了"
   },
   "dlProgressReconnectingCopy": {
-    "message": "ローカルダウンローダーで一時的な問題 — 自動的に再試行中。"
+    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
   },
   "dlProgressSkippedDefault": {
     "message": "すでにダウンロード済み — スキップしました。"
@@ -237,7 +237,7 @@
     "message": "完了処理中"
   },
   "dlRepairAria": {
-    "message": "ローカルダウンローダー修復手順を開く"
+    "message": "Open Astra Downloader repair steps"
   },
   "dlRepairBtn": {
     "message": "ダウンローダーを修復"
@@ -2018,6 +2018,12 @@
   "feature_videoResolutionBadge_name": {
     "message": "Resolution Badge on Thumbnails"
   },
+  "feature_videoFlip_desc": {
+    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+  },
+  "feature_videoFlip_name": {
+    "message": "Video Flip"
+  },
   "feature_videoRotation_desc": {
     "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
   },
@@ -2601,13 +2607,13 @@
     "message": "ダウンロードはすでに進行中です。"
   },
   "toastDlInstallPrompt": {
-    "message": "ダウンロードを有効にするにはローカルダウンローダーをインストールしてください。"
+    "message": "Install Astra Downloader to enable downloads."
   },
   "toastDlReady": {
-    "message": "ローカルダウンローダーは準備完了です。"
+    "message": "Astra Downloader is ready."
   },
   "toastDlRequestFailed": {
-    "message": "ローカルダウンローダーのリクエストが失敗しました。"
+    "message": "Astra Downloader request failed."
   },
   "toastDlRunning": {
     "message": "Astra Downloader は実行中です！"
@@ -2619,7 +2625,7 @@
     "message": "Astra Downloader を起動中…"
   },
   "toastDlStopped": {
-    "message": "ローカルダウンローダーが停止しました。再起動中…"
+    "message": "Astra Downloader stopped. Starting it again…"
   },
   "toggleStateOff": {
     "message": "無効"

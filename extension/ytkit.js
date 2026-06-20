@@ -3987,6 +3987,8 @@ return response;
             // v3.8.0 additions
             videoRotation: false,
             videoRotationAngle: 0,           // 0 | 90 | 180 | 270
+            videoFlip: false,
+            videoFlipMode: 'none',           // none | horizontal | vertical | both
             frameByFrameButtons: false,
             digitalWellbeing: false,
             dwBreakIntervalMin: 30,          // 0 = off
@@ -28791,6 +28793,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._styleEl?.remove(); this._styleEl = null;
                 removeNavigateRule('videoRotation');
+            }
+        },
+
+        // ── Video Flip ──
+        {
+            id: 'videoFlip',
+            name: 'Video Flip',
+            description: 'Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings',
+            group: 'Video Player',
+            icon: 'flip-horizontal',
+            type: 'select',
+            options: [
+                { value: 'none',       label: 'None' },
+                { value: 'horizontal', label: 'Horizontal' },
+                { value: 'vertical',   label: 'Vertical' },
+                { value: 'both',       label: 'Both' },
+            ],
+            settingKey: 'videoFlipMode',
+            _styleEl: null,
+            _apply() {
+                const mode = appState.settings.videoFlipMode || 'none';
+                const SCALE_MAP = { none: null, horizontal: '-1 1', vertical: '1 -1', both: '-1 -1' };
+                const scaleValue = SCALE_MAP[mode] || null;
+                const css = scaleValue
+                    ? `.html5-main-video { scale: ${scaleValue} !important; }`
+                    : `.html5-main-video { scale: 1 1 !important; }`;
+                if (this._styleEl) this._styleEl.textContent = css;
+                else this._styleEl = injectStyle(css, this.id, true);
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('videoFlip', this._navRule);
+            },
+            destroy() {
+                this._styleEl?.remove(); this._styleEl = null;
+                removeNavigateRule('videoFlip');
             }
         },
 
