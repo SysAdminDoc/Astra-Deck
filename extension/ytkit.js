@@ -3989,6 +3989,7 @@ return response;
             videoRotationAngle: 0,           // 0 | 90 | 180 | 270
             videoFlip: false,
             videoFlipMode: 'none',           // none | horizontal | vertical | both
+            monoToStereo: false,
             frameByFrameButtons: false,
             digitalWellbeing: false,
             dwBreakIntervalMin: 30,          // 0 = off
@@ -28847,6 +28848,30 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._styleEl?.remove(); this._styleEl = null;
                 removeNavigateRule('videoFlip');
+            }
+        },
+
+        // ── Mono-to-Stereo Audio ──
+        {
+            id: 'monoToStereo',
+            name: 'Mono to Stereo',
+            description: 'Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones',
+            group: 'Video Player',
+            icon: 'headphones',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-mono-to-stereo', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-mono-to-stereo');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('monoToStereo', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('monoToStereo');
             }
         },
 

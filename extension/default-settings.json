@@ -284,6 +284,7 @@
   "videoRotationAngle": 0,
   "videoFlip": false,
   "videoFlipMode": "none",
+  "monoToStereo": false,
   "frameByFrameButtons": false,
   "digitalWellbeing": false,
   "dwBreakIntervalMin": 30,
