@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Subscription content-type filter:** `subscriptionFilterLive` and
+  `subscriptionFilterStreamed` toggles hide live/upcoming and previously-streamed
+  cards from the subscription feed. Uses CSS class filtering alongside the
+  existing group filter.
 - **Video Flip:** new `videoFlip` feature with `videoFlipMode` select
   (none/horizontal/vertical/both). Mirrors the video via CSS `scale` property,
   composing cleanly with existing `videoRotation` transforms. Useful for mirrored

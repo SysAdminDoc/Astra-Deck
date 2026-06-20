@@ -351,6 +351,8 @@
         "research"
       ]
     },
+    "subscriptionFilterLive": true,
+    "subscriptionFilterStreamed": true,
     "localAiSummary": true,
     "researchSpacedReview": true,
     "researchTranscriptIndex": true,
