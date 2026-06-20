@@ -4836,6 +4836,77 @@ return response;
         return byCode(pref) || byCode(navLang) || byCode('en') || tracks[0];
     }
 
+    // PO Token resilience: engagement-panel HTML transcript scrape.
+    // YouTube increasingly requires Proof-of-Origin Tokens for timedtext
+    // API access. When the json3 fetch returns empty or errors, this
+    // fallback reads the rendered engagement-panel transcript DOM instead.
+    function _scrapeEngagementPanelTranscript() {
+        const segs = document.querySelectorAll(
+            'ytd-transcript-segment-renderer .segment-text, ' +
+            'ytd-transcript-segment-renderer yt-formatted-string'
+        );
+        if (!segs || segs.length === 0) return null;
+        const cues = [];
+        segs.forEach(seg => {
+            const text = seg.textContent?.trim();
+            if (!text) return;
+            const row = seg.closest('ytd-transcript-segment-renderer');
+            const tsEl = row?.querySelector('.segment-timestamp, .ytd-transcript-segment-renderer[class*="timestamp"]');
+            const tsText = tsEl?.textContent?.trim() || '';
+            // Parse timestamp like "1:23" or "12:34" into seconds
+            const parts = tsText.split(':').map(Number).filter(n => !isNaN(n));
+            let startSec = 0;
+            if (parts.length === 2) startSec = parts[0] * 60 + parts[1];
+            else if (parts.length === 3) startSec = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            cues.push({ start: startSec, text });
+        });
+        return cues.length > 0 ? cues : null;
+    }
+
+    // Fetch transcript with PO Token fallback. Tries json3 API first,
+    // then falls back to engagement-panel DOM scraping.
+    // Returns { cues: [{start, text}], source: 'api'|'panel'|null }
+    async function fetchTranscriptWithFallback(tracks) {
+        const track = pickTranscriptTrack(tracks);
+        if (!track) return { cues: null, source: null, error: 'No caption tracks available' };
+
+        // Try json3 API first
+        try {
+            const { response, data } = await extensionFetchJson({
+                url: track.baseUrl + '&fmt=json3'
+            });
+            if (response && response.status >= 200 && response.status < 300 && data?.events?.length > 0) {
+                const cues = [];
+                for (const ev of data.events) {
+                    if (!ev.segs) continue;
+                    const text = ev.segs.map(s => s.utf8 || '').join('').trim();
+                    if (!text) continue;
+                    const startSec = (ev.tStartMs || 0) / 1000;
+                    const durSec = (ev.dDurationMs != null) ? ev.dDurationMs / 1000 : null;
+                    const endSec = durSec != null ? startSec + durSec : null;
+                    cues.push({ start: startSec, end: endSec, text });
+                }
+                if (cues.length > 0) {
+                    return { cues, source: 'api', track };
+                }
+            }
+            // Empty response — likely PO Token required
+            DiagnosticLog?.record('transcript-po-token',
+                'timedtext API returned empty or error — may require PO Token. Attempting engagement-panel fallback.');
+        } catch (e) {
+            DiagnosticLog?.record('transcript-po-token',
+                `timedtext API fetch failed: ${e.message}. Attempting engagement-panel fallback.`);
+        }
+
+        // Fallback: engagement-panel HTML scrape
+        const panelCues = _scrapeEngagementPanelTranscript();
+        if (panelCues) {
+            return { cues: panelCues, source: 'panel', track };
+        }
+
+        return { cues: null, source: null, track, error: 'Transcript unavailable — YouTube may require a Proof-of-Origin Token for this video.' };
+    }
+
     // v3.14.0: Selector chain with first-miss diagnostics. Used at the
     // highest-churn YouTube DOM regions so platform drift surfaces in
     // diagnosticLog instead of silent feature no-ops.
@@ -22558,38 +22629,43 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
                     if (!tracks || tracks.length === 0) {
-                        this._setTranscriptMeta('No Captions', 'This video does not expose a transcript track that Astra Deck can read.', 'warning');
-                        this._renderBodyState(body, 'empty', 'No transcript available', 'Try another video with captions enabled, or reopen this panel after captions finish loading.');
-                        body.setAttribute('aria-busy', 'false');
-                        return;
+                        // No API tracks — try engagement-panel fallback before giving up
+                        const panelCues = _scrapeEngagementPanelTranscript();
+                        if (panelCues && panelCues.length > 0) {
+                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube’s transcript panel (API captions unavailable).', 'info');
+                            body.textContent = '';
+                            body.classList.remove('is-stateful');
+                            this._cues = panelCues;
+                        } else {
+                            this._setTranscriptMeta('No Captions', 'This video does not expose a transcript track that Astra Deck can read.', 'warning');
+                            this._renderBodyState(body, 'empty', 'No transcript available', 'Try another video with captions enabled, or reopen this panel after captions finish loading.');
+                            body.setAttribute('aria-busy', 'false');
+                            return;
+                        }
                     }
-                    // v4.47.0 NF29: language preference for transcript fetch.
-                    // Precedence: explicit `transcriptPreferredLanguage` setting
-                    // → navigator.language base → 'en' (legacy fallback) → first
-                    // track. 'auto' / empty / undefined skip step 1.
-                    const track = pickTranscriptTrack(tracks);
-                    const trackLabel = this._getTrackLabel(track);
-                    const { response, data } = await extensionFetchJson({
-                        url: track.baseUrl + '&fmt=json3'
-                    });
-                    if (!this._panel || !panel.isConnected) return;
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        this._setTranscriptMeta('Unavailable', 'The transcript could not be fetched from YouTube right now.', 'danger');
-                        this._renderBodyState(body, 'error', 'Transcript unavailable', 'Reload the page or try again in a moment if captions are still processing.');
-                        body.setAttribute('aria-busy', 'false');
-                        return;
+                    if (this._cues.length === 0) {
+                        // Have API tracks — fetch with PO Token fallback
+                        const result = await fetchTranscriptWithFallback(tracks);
+                        if (!this._panel || !panel.isConnected) return;
+                        if (!result.cues || result.cues.length === 0) {
+                            this._setTranscriptMeta('Unavailable', result.error || 'The transcript could not be fetched from YouTube right now.', 'danger');
+                            this._renderBodyState(body, 'error', 'Transcript unavailable', result.error || 'Reload the page or try again in a moment if captions are still processing.');
+                            body.setAttribute('aria-busy', 'false');
+                            return;
+                        }
+                        this._cues = result.cues;
+                        if (result.source === 'panel') {
+                            this._setTranscriptMeta('Panel Transcript', 'Loaded from YouTube’s transcript panel (API required PO Token).', 'info');
+                        } else {
+                            const trackLabel = this._getTrackLabel(result.track);
+                        }
                     }
                     body.textContent = '';
                     body.classList.remove('is-stateful');
 
-                    (data.events || []).forEach(ev => {
-                        if (!ev.segs) return;
-                        const text = ev.segs.map(s => s.utf8).join('').trim();
+                    this._cues.forEach(cue => {
+                        const { start: startSec, end: endSec, text } = cue;
                         if (!text) return;
-                        const startSec = (ev.tStartMs || 0) / 1000;
-                        const durSec = (ev.dDurationMs != null) ? ev.dDurationMs / 1000 : null;
-                        const endSec = durSec != null ? startSec + durSec : null;
-                        this._cues.push({ start: startSec, end: endSec, text });
                         const stamp = this._fmtTimestamp(startSec);
 
                         const line = document.createElement('button');
@@ -29197,27 +29273,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!tracks || !tracks.length) { showToast('No captions available', '#ef4444'); return; }
-                    // v4.47.0 NF29: language preference for transcript fetch.
-                    // Precedence: explicit `transcriptPreferredLanguage` setting
-                    // → navigator.language base → 'en' (legacy fallback) → first
-                    // track. 'auto' / empty / undefined skip step 1.
-                    const track = pickTranscriptTrack(tracks);
                     showToast('Fetching captions…', '#3b82f6');
-                    const { response, data } = await extensionFetchJson({
-                        url: track.baseUrl + '&fmt=json3'
-                    });
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        throw new Error('HTTP ' + response?.status);
+                    // Use PO Token resilient fetch with engagement-panel fallback
+                    const result = await fetchTranscriptWithFallback(tracks || []);
+                    if (!result.cues || result.cues.length === 0) {
+                        throw new Error(result.error || 'No captions available');
                     }
                     const lines = [];
                     let idx = 1;
-                    for (const ev of (data.events || [])) {
-                        if (!ev.segs) continue;
-                        const text = ev.segs.map(s => s.utf8 || '').join('').replace(/\n/g, ' ').trim();
+                    for (const cue of result.cues) {
+                        const text = (cue.text || '').replace(/\n/g, ' ').trim();
                         if (!text) continue;
-                        const start = ev.tStartMs || 0;
-                        const end = start + (ev.dDurationMs || 2000);
+                        const start = (cue.start || 0) * 1000;
+                        const end = cue.end != null ? cue.end * 1000 : start + 2000;
                         lines.push(`${idx++}\n${this._formatTs(start)} --> ${this._formatTs(end)}\n${text}\n`);
                     }
                     const blob = new Blob([lines.join('\n')], { type: 'text/srt' });
@@ -30140,23 +30208,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     const pageData = document.querySelector('ytd-watch-flexy');
                     const playerResponse = pageData?.__data?.playerResponse || pageData?.playerResponse;
                     const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                    if (!tracks?.length) throw new Error('No captions available');
-                    // v4.47.0 NF29: language preference for transcript fetch.
-                    // Precedence: explicit `transcriptPreferredLanguage` setting
-                    // → navigator.language base → 'en' (legacy fallback) → first
-                    // track. 'auto' / empty / undefined skip step 1.
-                    const track = pickTranscriptTrack(tracks);
-                    const { response, data } = await extensionFetchJson({
-                        url: track.baseUrl + '&fmt=json3'
-                    });
-                    if (!response || response.status < 200 || response.status >= 300) {
-                        throw new Error('Caption fetch HTTP ' + response?.status);
+                    // Use PO Token resilient fetch with engagement-panel fallback
+                    const result = await fetchTranscriptWithFallback(tracks || []);
+                    if (result.cues && result.cues.length > 0) {
+                        return result.cues.map(c => c.text).filter(Boolean).join(' ');
                     }
-                    return (data.events || [])
-                        .filter(e => e.segs)
-                        .map(e => e.segs.map(s => s.utf8 || '').join('').trim())
-                        .filter(Boolean)
-                        .join(' ');
+                    // Final fallback: engagement-panel DOM scrape (may already be covered by fetchTranscriptWithFallback)
+                    const panelCues = _scrapeEngagementPanelTranscript();
+                    if (panelCues && panelCues.length > 0) {
+                        return panelCues.map(c => c.text).filter(Boolean).join(' ');
+                    }
+                    throw new Error(result.error || 'No captions available');
                 } catch (e) { throw e; }
             },
             async _callLLM(prompt) {
