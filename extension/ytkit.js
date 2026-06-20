@@ -27291,7 +27291,24 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
 
         // ── SponsorBlock ──
-        {
+        (globalThis.YTKitFeatures?.createSponsorBlockFeature?.({
+            appState,
+            DebugManager,
+            DiagnosticLog,
+            extensionFetchJson,
+            storageReadJSON: storageReadJSON || ((k, d) => d),
+            storageWriteJSON: storageWriteJSON || (() => {}),
+            getVideoId,
+            getMainVideoElement,
+            getMoviePlayerElement,
+            getPlayerProgressBar,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            announceA11y,
+            VIDEO_ID_PATTERN,
+            PageTypes
+        }) || {
             id: 'sponsorBlock',
             name: 'SponsorBlock',
             description: 'Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data',
@@ -27733,7 +27750,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._segments = [];
                 this._videoId = null;
             }
-        },
+        }),
         // SponsorBlock category sub-features
         { id: 'sbCat_sponsor', name: 'Skip Sponsors', description: 'Paid promotions and sponsorship segments', group: 'Content', icon: 'dollar-sign', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
         { id: 'sbCat_intro', name: 'Skip Intros', description: 'Intro animations and branding', group: 'Content', icon: 'skip-forward', isSubFeature: true, parentId: 'sponsorBlock', init(){}, destroy(){} },
