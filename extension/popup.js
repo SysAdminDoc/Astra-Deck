@@ -4063,6 +4063,23 @@ function installWheelScrolling() {
         }
     });
 
+    const openSidePanelBtn = $('#openSidePanel');
+    if (openSidePanelBtn) {
+        if (typeof chrome.sidePanel?.open === 'function') {
+            openSidePanelBtn.addEventListener('click', async () => {
+                try {
+                    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+                    await chrome.sidePanel.open({ tabId: tab?.id });
+                    window.close();
+                } catch (err) {
+                    showStatus('Could not open side panel: ' + err.message, 'error', 3000);
+                }
+            });
+        } else {
+            openSidePanelBtn.hidden = true;
+        }
+    }
+
     exportButton.addEventListener('click', async () => { if (await popupRequirePin()) void exportSettings(); });
     importButton.addEventListener('click', async () => { if (await popupRequirePin()) importFileInput.click(); });
     importFileInput.addEventListener('change', (event) => {

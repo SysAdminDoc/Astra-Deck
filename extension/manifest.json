@@ -26,8 +26,12 @@
     "storage",
     "unlimitedStorage",
     "cookies",
-    "downloads"
+    "downloads",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "host_permissions": [
     "https://*.youtube.com/*",
     "https://*.youtube-nocookie.com/*",

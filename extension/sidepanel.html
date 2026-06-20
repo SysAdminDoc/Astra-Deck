@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="script-src 'self'; object-src 'self';">
+  <title>Astra Deck — Dashboard</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header class="sp-header">
+    <strong class="sp-title">Astra Deck Dashboard</strong>
+    <span class="sp-version" id="sp-version"></span>
+  </header>
+
+  <section class="sp-section" id="sp-perf" aria-label="Feature performance">
+    <h2 class="sp-section-title">Feature Init Timing</h2>
+    <span class="sp-section-meta" id="sp-perf-total"></span>
+    <ul class="sp-perf-list" id="sp-perf-list" role="list"></ul>
+    <p class="sp-empty" id="sp-perf-empty" hidden>No YouTube tab active.</p>
+  </section>
+
+  <section class="sp-section" id="sp-selector" aria-label="Selector health">
+    <h2 class="sp-section-title">Selector Health</h2>
+    <span class="sp-section-meta" id="sp-selector-total"></span>
+    <ul class="sp-selector-list" id="sp-selector-list" role="list"></ul>
+    <p class="sp-empty" id="sp-selector-empty" hidden>No YouTube tab active.</p>
+  </section>
+
+  <section class="sp-section" id="sp-storage" aria-label="Storage stats">
+    <h2 class="sp-section-title">Storage</h2>
+    <div class="sp-storage-stats" id="sp-storage-stats"></div>
+  </section>
+
+  <footer class="sp-footer">
+    <button type="button" class="sp-refresh-btn" id="sp-refresh">Refresh</button>
+  </footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
