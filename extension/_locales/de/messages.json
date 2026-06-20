@@ -350,6 +350,12 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "Always Show Progress Bar"
   },
+  "feature_antiTranslate_desc": {
+    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
+  },
+  "feature_antiTranslate_name": {
+    "message": "Anti-Translate (Original Titles + Descriptions)"
+  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
   },
@@ -361,12 +367,6 @@
   },
   "feature_antiTranslateTranscript_name": {
     "message": "Anti-Translate Transcript"
-  },
-  "feature_antiTranslate_desc": {
-    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
-  },
-  "feature_antiTranslate_name": {
-    "message": "Anti-Translate (Original Titles + Descriptions)"
   },
   "feature_astraContextMenu_desc": {
     "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
@@ -776,17 +776,17 @@
   "feature_daTitleFormat_name": {
     "message": "Title Format"
   },
-  "feature_deArrowChannelOverridesPanel_desc": {
-    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
-  },
-  "feature_deArrowChannelOverridesPanel_name": {
-    "message": "DeArrow Per-Channel Overrides"
-  },
   "feature_deArrow_desc": {
     "message": "Replace clickbait titles and thumbnails"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
+  },
+  "feature_deArrowChannelOverridesPanel_desc": {
+    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
+  },
+  "feature_deArrowChannelOverridesPanel_name": {
+    "message": "DeArrow Per-Channel Overrides"
   },
   "feature_dearrowPeekButton_desc": {
     "message": "Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)"
@@ -968,6 +968,12 @@
   "feature_forceDarkEverywhere_name": {
     "message": "Force Dark on All YouTube Pages"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "Forced Colors / High Contrast Support"
+  },
   "feature_forceH264_desc": {
     "message": "Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge."
   },
@@ -980,17 +986,17 @@
   "feature_forceStandardFps_name": {
     "message": "Force Standard Frame Rate"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "Forced Colors / High Contrast Support"
-  },
   "feature_frameByFrameButtons_desc": {
     "message": "Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation"
   },
   "feature_frameByFrameButtons_name": {
     "message": "Frame-by-Frame Buttons"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "Double-Click Fullscreen"
   },
   "feature_fullTitles_desc": {
     "message": "Remove the 2-line clamp on thumbnail titles so long titles show in full"
@@ -1003,12 +1009,6 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "Full-Width Subscriptions"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "Double-Click Fullscreen"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes)."
@@ -1046,17 +1046,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "Hide Watch Page Elements"
   },
-  "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
-  },
-  "feature_hideAiSummary_name": {
-    "message": "Hide AI Summary"
-  },
   "feature_hideAirplayButton_desc": {
     "message": "Remove the Airplay icon from the player controls"
   },
   "feature_hideAirplayButton_name": {
     "message": "Hide Airplay Button"
+  },
+  "feature_hideAiSummary_desc": {
+    "message": "Remove AI-generated summaries and Ask AI buttons"
+  },
+  "feature_hideAiSummary_name": {
+    "message": "Hide AI Summary"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "Removes the autoplay toggle switch from the player controls"
@@ -1352,17 +1352,17 @@
   "feature_noFrostedGlass_name": {
     "message": "Disable Frosted Glass"
   },
-  "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
-  },
-  "feature_notInterestedButton_name": {
-    "message": "\"Not Interested\" on Thumbnails"
-  },
   "feature_notifyAutoDubbedAudio_desc": {
     "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
   },
   "feature_notifyAutoDubbedAudio_name": {
     "message": "Notify on AI-dubbed audio"
+  },
+  "feature_notInterestedButton_desc": {
+    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
+  },
+  "feature_notInterestedButton_name": {
+    "message": "\"Not Interested\" on Thumbnails"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "Replace the video progress bar with a Nyan Cat animation"
@@ -1531,6 +1531,24 @@
   },
   "feature_premiumLiveChat_name": {
     "message": "Premium Live Chat"
+  },
+  "feature_presetPowerUser_desc": {
+    "message": "Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values."
+  },
+  "feature_presetPowerUser_name": {
+    "message": "Power User Preset"
+  },
+  "feature_presetPrivacy_desc": {
+    "message": "Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values."
+  },
+  "feature_presetPrivacy_name": {
+    "message": "Privacy Preset"
+  },
+  "feature_presetResearcher_desc": {
+    "message": "Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values."
+  },
+  "feature_presetResearcher_name": {
+    "message": "Researcher Preset"
   },
   "feature_preventAutoplay_desc": {
     "message": "Stop videos from automatically playing on page load"
@@ -2000,6 +2018,12 @@
   "feature_videoScreenshot_name": {
     "message": "Video Screenshot"
   },
+  "feature_videosPerRow_desc": {
+    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "Videos Per Row"
+  },
   "feature_videoVisualFilters_desc": {
     "message": "Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element"
   },
@@ -2011,12 +2035,6 @@
   },
   "feature_videoZoom_name": {
     "message": "Video Zoom & Pan"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
-  },
-  "feature_videosPerRow_name": {
-    "message": "Videos Per Row"
   },
   "feature_vlcMpvHandoff_desc": {
     "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
@@ -2282,21 +2300,6 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "Feed-Bereinigung"
-  },
-  "qtGroup_Focus": {
-    "message": "Fokus"
-  },
-  "qtGroup_Playback": {
-    "message": "Wiedergabe"
-  },
-  "qtGroup_Utilities": {
-    "message": "Dienstprogramme"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "Wiedergabe-Fluss"
-  },
   "qt_autoTheaterMode_desc": {
     "message": "Open videos in theater view"
   },
@@ -2387,6 +2390,21 @@
   "qt_transcriptViewer_name": {
     "message": "Transkript-Seitenleiste"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Feed-Bereinigung"
+  },
+  "qtGroup_Focus": {
+    "message": "Fokus"
+  },
+  "qtGroup_Playback": {
+    "message": "Wiedergabe"
+  },
+  "qtGroup_Utilities": {
+    "message": "Dienstprogramme"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Wiedergabe-Fluss"
+  },
   "quickTogglesAria": {
     "message": "Schnellumschalter"
   },
@@ -2405,11 +2423,11 @@
   "resultsAllAvailableTpl": {
     "message": "… quick controls are available in this popup"
   },
-  "resultsMatchTpl": {
-    "message": "… of … … match this filter"
-  },
   "resultsMatching": {
     "message": "übereinstimmend"
+  },
+  "resultsMatchTpl": {
+    "message": "… of … … match this filter"
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} settings on across {categories} categories"
@@ -2492,20 +2510,20 @@
   "statusClipboardUnavailable": {
     "message": "Zwischenablage nicht verfügbar — siehe Browser-Konsole."
   },
-  "statusDiagClearFail": {
-    "message": "Protokoll konnte nicht gelöscht werden"
-  },
   "statusDiagCleared": {
     "message": "Diagnoseprotokoll gelöscht."
+  },
+  "statusDiagClearFail": {
+    "message": "Protokoll konnte nicht gelöscht werden"
   },
   "statusDiagCopied": {
     "message": "Diagnose in die Zwischenablage kopiert."
   },
-  "statusDiagSaveFail": {
-    "message": "Protokoll konnte nicht gespeichert werden"
-  },
   "statusDiagSaved": {
     "message": "Diagnoseprotokoll gespeichert."
+  },
+  "statusDiagSaveFail": {
+    "message": "Protokoll konnte nicht gespeichert werden"
   },
   "statusExportFail": {
     "message": "Export fehlgeschlagen"
@@ -2513,11 +2531,11 @@
   "statusImportFail": {
     "message": "Import fehlgeschlagen"
   },
-  "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
-  },
   "statusMediadlReenabled": {
     "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+  },
+  "statusMediadlReenableFail": {
+    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
   },
   "statusOpenWorkspaceFail": {
     "message": "Vollständiger Arbeitsbereich konnte nicht geöffnet werden. Versuchen Sie es erneut."

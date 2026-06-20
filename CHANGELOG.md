@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Onboarding preset profiles:** three curated settings bundles — Privacy
+  (clean URLs, no Shorts, no AI Summary), Researcher (transcript viewer,
+  bookmarks, watch time, AI summary), and Power User (speed, stats, A-B
+  loop, focused mode). Each follows the existing recipe-toggle pattern with
+  backup snapshot for safe toggle-off. All off by default.
 - **Settings PIN protection:** optional 4-6 digit PIN gates the in-page
   settings panel and popup management actions (export/import/reset). PIN
   stored as SHA-256 hash in `chrome.storage.local` (standalone key,
