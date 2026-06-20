@@ -92,24 +92,12 @@
   Acceptance: Userscript fetches and displays SponsorBlock segments, auto-skips enabled categories, renders colored segment bars on the progress bar. Same 9 category toggles as extension.
   Complexity: L
 
-- [ ] P2 — Selector fixture refresh for Delhi Modern player
-  Why: YouTube's "Delhi Modern" player rollout (Oct 2025–Jan 2026) changed player button DOM to translucent overlay buttons. The selector packs have canaries for `ytp-delhi-modern` but the MHTML fixture used by `tests/selector-regression.test.js` may predate the completed rollout. Stale fixtures mean false-green tests.
-  Evidence: `core/selector-packs/playerChrome.js` and `playerSettings.js` reference `.ytp-overflow-panel` and `.ytp-time-wrapper-delhi` as canaries; `tests/fixtures/selector-surface-matches.json` generated from decoded MHTML; CLAUDE.md notes MHTML capture timeouts.
-  Touches: `scripts/capture-watch-mhtml.js` (refresh capture), `scripts/build-selector-fixtures.js` (rebuild fixture), `tests/selector-regression.test.js` (verify matches), `core/selector-packs/playerChrome.js` (update if needed)
-  Acceptance: Selector fixture regenerated from a live 2026-era YouTube watch page. All critical playerChrome/playerSettings selectors match. Regression test passes with fresh fixture.
-  Complexity: S
+(Selector fixture refresh moved to Roadmap_Blocked.md — requires live browser MHTML capture.)
 
 
 ### P2 — Observability / Developer Experience
 
 ### P3 — Later / Under Consideration
-
-- [ ] P3 — Chrome Language Detector API for auto-translate detection
-  Why: Chrome 138+ ships the Language Detector API stable. Astra Deck's `antiTranslate` feature currently compares YouTube's interface language against the video's original language using DOM text heuristics. The Language Detector API could improve detection accuracy.
-  Evidence: developer.chrome.com/docs/ai/built-in-apis (Language Detector stable Chrome 138+); `extension/ytkit.js` `antiTranslate` feature uses DOM text comparison; Chrome Translator API already adopted for transcript viewer.
-  Touches: `extension/ytkit.js` (antiTranslate: use LanguageDetector API to detect video title/description language when available), `core/capability-probe.js` (add languageDetector probe)
-  Acceptance: When Language Detector API available, antiTranslate uses it for more accurate auto-translate detection. Falls back to existing heuristics otherwise.
-  Complexity: S
 
 - [ ] P3 — Threaded comment DOM adaptation
   Why: YouTube rolled out threaded comments (up to 3 nesting levels) with red visual thread connectors and voice replies (Jan–March 2026). Comment-manipulating features (`commentSearch`, `commentNavigator`, `sortCommentsNewest`, `commentEnhancements`, `creatorCommentHighlight`) may not account for nested reply structure.
