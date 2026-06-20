@@ -69,10 +69,4 @@
 
 ### P2 — Quick Wins / Enhancement
 
-- [ ] P2 — Feature module test coverage for peeled modules
-  Why: 14 feature modules have been peeled from the monolith but only 6 have dedicated test files in `tests/features/`. The 8 modules without tests (return-dislike, player-dock, youtube-music-compat, blue-light-filter, subtitles, home-subs-css, video-filters, wave-8-css) were peeled with inline fallbacks and pass integration tests, but lack unit-level coverage for their factory functions and edge cases.
-  Evidence: `ls tests/features/` shows 6 test files; `ls extension/features/` shows 14 modules. The `next-monolith-peel.test.js` covers peel mechanics but not per-feature behavior.
-  Touches: New test files in `tests/features/` for each untested module: `return-dislike.test.js`, `player-dock.test.js`, `youtube-music-compat.test.js`, `blue-light-filter.test.js`, `subtitles.test.js`, `home-subs-css.test.js`, `video-filters.test.js`, `wave-8-css.test.js`
-  Acceptance: Each peeled module has a dedicated test file that imports the factory function, exercises the create/init/destroy lifecycle, and verifies key behaviors. All existing 800 tests continue to pass.
-  Complexity: M
 

@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Feature module test coverage:** added dedicated test files for 9 peeled
+  feature modules that lacked unit coverage: return-dislike, player-dock,
+  youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
+  video-filters, wave-8-css, theme-css. All 14 peeled modules now have
+  test files in `tests/features/`. Total test count: 821 (up from 800).
 - **Transcript PO Token resilience:** all transcript fetch paths (transcript
   viewer, subtitle download, AI video summary, local AI summary, transcript
   Q&A, transcript index) now fall back to engagement-panel HTML scraping when
