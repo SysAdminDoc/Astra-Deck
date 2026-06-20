@@ -19931,9 +19931,35 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 }, delay);
             },
 
+            _languageDetector: null,
+            async _initLanguageDetector() {
+                if (this._languageDetector) return;
+                try {
+                    const factory = globalThis.LanguageDetector || globalThis.ai?.languageDetector;
+                    if (factory && typeof factory.create === 'function') {
+                        this._languageDetector = await factory.create();
+                    }
+                } catch { /* reason: LanguageDetector is a progressive enhancement */ }
+            },
+
+            async _isTranslated(text, originalText) {
+                if (!text || !originalText) return text !== originalText;
+                if (text === originalText) return false;
+                if (!this._languageDetector) return text !== originalText;
+                try {
+                    const [detectedDisplay, detectedOriginal] = await Promise.all([
+                        this._languageDetector.detect(text),
+                        this._languageDetector.detect(originalText)
+                    ]);
+                    const displayLang = detectedDisplay?.[0]?.detectedLanguage;
+                    const originalLang = detectedOriginal?.[0]?.detectedLanguage;
+                    if (displayLang && originalLang) return displayLang !== originalLang;
+                } catch { /* reason: LanguageDetector fallback to text comparison */ }
+                return text !== originalText;
+            },
+
             _process() {
-                // YouTube stores original title in data attributes or in the ytInitialData structure
-                // The most reliable method: override title elements that have title attribute with original text
+                this._initLanguageDetector();
                 document.querySelectorAll('#video-title[title]:not([ytkit-antitranslate])').forEach(el => {
                     const original = el.getAttribute('title');
                     const displayed = el.textContent.trim();
