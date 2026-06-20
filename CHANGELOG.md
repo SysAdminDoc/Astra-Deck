@@ -11,6 +11,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
   video-filters, wave-8-css, theme-css. All 14 peeled modules now have
   test files in `tests/features/`. Total test count: 821 (up from 800).
+- **Reliability: companion Deno provisioning error logging + temp cleanup.**
+  `provision_deno()` silently swallowed all exceptions via bare
+  `except Exception: return None`. Now logs errors to the persistent log.
+  Also cleans up partial `tmp_exe` extraction artifacts in the `finally`
+  block to prevent orphaned temp files on permission errors.
 - **Reliability: add catch handlers to SponsorBlock segment reload promises.**
   Three `_loadForVideo().then(...)` calls in the SponsorBlock peeled module
   and monolith fallback lacked `.catch()` handlers, risking unhandled
