@@ -1416,6 +1416,8 @@ test('ytkit feature lifecycle is bridged through the core registry', () => {
         'feature destroy should have one shared lifecycle path');
     assert.ok(source.includes('setFeatureHealth(feature.id'),
         'lifecycle changes should update registry feature health');
+    assert.ok(source.includes('performance.now()') && source.includes('initMs'),
+        'feature lifecycle should capture init/destroy timing via performance.now()');
     assert.ok(source.includes("featureHealth() { return getFeatureHealthSnapshot(); }"),
         'debug API should expose registry health snapshots');
     assert.ok(source.includes("categoryHealth() { return getCategoryHealthSnapshot(); }"),
