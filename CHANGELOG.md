@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **SABR download failure diagnostic:** when yt-dlp fails because all available
+  formats were SABR-only, the download progress panel now shows a clear error
+  message explaining the limitation instead of a generic failure. The download
+  health panel surfaces a new "SABR: limited" warn pill so users understand why
+  some videos may not download. Companion `/health` now includes `sabrSupport`
+  field.
 - **i18n coverage CI gate:** `scripts/i18n-coverage.js` gains `--fail-above <n>`
   flag that exits non-zero when any non-English locale exceeds n
   placeholder-identical keys. Wired into `npm run check` at threshold 670
