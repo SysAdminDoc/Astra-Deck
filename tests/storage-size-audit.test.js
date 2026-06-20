@@ -52,7 +52,7 @@ test('typical local payload is not storage.sync eligible', () => {
     // SponsorBlock per-channel profiles add a boolean toggle, local data object,
     // and one safe-sync allowlist entry.
     // Preset profiles (Privacy, Researcher, PowerUser) add 3 booleans.
-    assert.equal(assessment.totalBytes, 178281);
+    assert.equal(assessment.totalBytes, 178303);
     assert.equal(assessment.ok, false);
     assert.equal(assessment.totalOk, false);
     assert.equal(assessment.perItemOk, false);

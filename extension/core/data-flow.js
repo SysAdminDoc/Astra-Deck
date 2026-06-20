@@ -187,6 +187,7 @@
         // DeArrow shape/format sub-toggles
         daReplaceTitles: 'deArrow',
         daReplaceThumbs: 'deArrow',
+        deArrowVoting: 'deArrow',
         // Astra Downloader sub-knobs
         downloadQuality: 'showLocalDownloadButton',
         downloadVideoFormat: 'showLocalDownloadButton',

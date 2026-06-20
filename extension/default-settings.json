@@ -393,6 +393,7 @@
   "returnDislikeShowRatio": true,
   "deArrowChannelOverrides": {},
   "deArrowChannelOverridesPanel": false,
+  "deArrowVoting": false,
   "qualityProfileMatrix": false,
   "qualityDefaultNormal": "inherit",
   "qualityDefaultTheater": "inherit",

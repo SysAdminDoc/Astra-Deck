@@ -614,6 +614,7 @@ const SETTINGS_SCHEMA = Object.freeze([
     Object.freeze({ key: "returnDislikeShowRatio", category: "enrichment", type: "boolean", defaultValue: true, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "deArrowChannelOverrides", category: "enrichment", type: "object", defaultValue: {}, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: false, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "deArrowChannelOverridesPanel", category: "enrichment", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
+    Object.freeze({ key: "deArrowVoting", category: "enrichment", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
 
     // ─── quality-codec ───
     Object.freeze({ key: "qualityProfileMatrix", category: "quality-codec", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "player", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
