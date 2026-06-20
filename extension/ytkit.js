@@ -4059,6 +4059,9 @@ return response;
             forcedColorsSupport: false,                // Windows High Contrast / forced-colors media handling
             globalAriaLiveRegion: false,               // Mounts a single role=status live region for all toasts
             lowPowerProfile: false,                    // Throttles intervals/observers when on battery-saver
+            presetPrivacy: false,                      // Preset: privacy-focused settings bundle
+            presetResearcher: false,                   // Preset: research/study workflow
+            presetPowerUser: false,                    // Preset: max feature density
             lowPowerProfileBackup: null,               // Backup of pre-applied flags
             // v3.32.0 — Premium visual system
             oledTheme: false,                          // True OLED black via --yt-sys-* token bridge
@@ -35413,6 +35416,122 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 if (this._readBackup()) this._restore();
             }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  PRESET PROFILES — curated bundles for onboarding
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'presetPrivacy',
+            name: 'Privacy Preset',
+            description: 'Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'shield',
+            _RECIPE: {
+                cleanShareUrls: true,
+                removeAllShorts: true,
+                redirectShorts: true,
+                disableInfiniteScroll: true,
+                hideNotificationBadge: true,
+                autoClosePopups: true,
+                hideAiSummary: true,
+                hideJumpAheadButton: true,
+                antiTranslate: true,
+                forceDarkEverywhere: true
+            },
+            _BACKUP_KEY: 'ytkit-preset-privacy-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPrivacy', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Privacy preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Privacy preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        {
+            id: 'presetResearcher',
+            name: 'Researcher Preset',
+            description: 'Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'book-open',
+            _RECIPE: {
+                transcriptViewer: true,
+                timestampBookmarks: true,
+                watchTimeTracker: true,
+                localAiSummary: true,
+                commentSearch: true,
+                copyVideoTitle: true,
+                autoExpandDescription: true,
+                showPlaylistDuration: true,
+                remainingTimeDisplay: true,
+                researchTranscriptIndex: true
+            },
+            _BACKUP_KEY: 'ytkit-preset-researcher-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetResearcher', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Researcher preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Researcher preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
+        },
+        {
+            id: 'presetPowerUser',
+            name: 'Power User Preset',
+            description: 'Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values.',
+            group: 'Advanced',
+            icon: 'zap',
+            _RECIPE: {
+                persistentSpeed: true,
+                fineSpeedControl: true,
+                resumePlayback: true,
+                miniPlayerBar: true,
+                playbackStatsOverlay: true,
+                abLoop: true,
+                focusedMode: true,
+                showTimeInTabTitle: true,
+                chapterNavButtons: true,
+                videoLoopButton: true,
+                alwaysShowProgressBar: true,
+                pipButton: true
+            },
+            _BACKUP_KEY: 'ytkit-preset-power-backup',
+            _readBackup() { try { return storageReadJSON?.(this._BACKUP_KEY, null) ?? null; } catch { return null; } },
+            _writeBackup(snapshot) { try { storageWriteJSON?.(this._BACKUP_KEY, snapshot); } catch (e) { DebugManager.log('PresetPower', `Backup write failed: ${e.message}`); } },
+            _clearBackup() { try { storageWriteJSON?.(this._BACKUP_KEY, null); } catch { /* reason: non-critical */ } },
+            _apply() {
+                const backup = {};
+                for (const key of Object.keys(this._RECIPE)) { backup[key] = appState.settings[key]; appState.settings[key] = this._RECIPE[key]; }
+                this._writeBackup(backup); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Power User preset applied. Toggle off to restore.', '#22c55e', { duration: 5 });
+            },
+            _restore() {
+                const backup = this._readBackup(); if (!backup || typeof backup !== 'object') return;
+                for (const key of Object.keys(backup)) appState.settings[key] = backup[key];
+                this._clearBackup(); settingsManager.save(appState.settings);
+                if (typeof showToast === 'function') showToast('Power User preset off. Previous values restored.', '#6b7280', { duration: 4 });
+            },
+            init() { if (this._readBackup()) return; this._apply(); },
+            destroy() { if (this._readBackup()) this._restore(); }
         },
         // ═══════════════════════════════════════════════════════════════════
         //  OLED THEME — True black via --yt-sys-* token bridge
