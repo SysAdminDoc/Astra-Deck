@@ -1,0 +1,205 @@
+:root {
+  --bg: #0f1115;
+  --surface: #181b22;
+  --surface-raised: #1e2128;
+  --border: rgba(255,255,255,0.08);
+  --border-subtle: rgba(255,255,255,0.05);
+  --text-primary: #f4f6fb;
+  --text-secondary: #c7cad1;
+  --text-muted: #8b8f9a;
+  --text-subtle: #5f6370;
+  --accent: #ff4e45;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 12px;
+  min-width: 200px;
+}
+
+.sp-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.sp-version {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-section {
+  margin-bottom: 14px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.sp-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.sp-section-meta {
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+  float: right;
+  margin-top: -18px;
+}
+
+.sp-empty {
+  text-align: center;
+  padding: 8px;
+  color: var(--text-subtle);
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* ── Performance list ── */
+.sp-perf-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-perf-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.sp-perf-row .fp-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.sp-perf-row .fp-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+  min-width: 2px;
+}
+
+.sp-perf-row .fp-ms {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 10px;
+  min-width: 40px;
+  text-align: right;
+}
+
+.sp-perf-slow .fp-name { color: #ff8585; }
+.sp-perf-slow .fp-bar { background: #ff8585; }
+
+/* ── Selector health list ── */
+.sp-selector-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-selector-list li {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 8px;
+  padding: 3px 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.sp-selector-list .sh-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-selector-list .sh-stats {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.sp-selector-list .sh-errors { color: #ff8585; }
+.sp-selector-list .sh-drifts { color: #ffb84d; }
+
+/* ── Storage stats ── */
+.sp-storage-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.sp-stat {
+  padding: 6px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.sp-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 700;
+}
+
+.sp-stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* ── Footer ── */
+.sp-footer {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.sp-refresh-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xs);
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sp-refresh-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+.sp-refresh-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

@@ -100,6 +100,7 @@ support bundle.
 | `unlimitedStorage` | Prevents silent quota failure for local YouTube caches and long-term user data; bounded LRU cleanup still trims large stores. |
 | `cookies` | Reads YouTube cookies only when the user starts an authenticated local download flow so yt-dlp can access media the user can already view. Cookies are not sent to Astra Deck servers. |
 | `downloads` | Saves user-requested exports, thumbnails, transcript files, diagnostic bundles, and media handoff files to the user's Downloads folder. |
+| `sidePanel` | Provides an optional persistent dashboard panel (Chrome only) for diagnostics, selector health, and storage stats so the popup stays compact. |
 
 ## Store-Safe Host Permissions
 

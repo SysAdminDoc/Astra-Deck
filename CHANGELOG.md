@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chrome Side Panel dashboard:** new `sidepanel.html` provides a persistent,
+  resizable diagnostic dashboard with feature init timing, selector health, and
+  storage stats. Opens via the "Dashboard" button in the popup. Chrome-only
+  progressive enhancement (Firefox hides the button; the `sidePanel` permission
+  and `side_panel` manifest entry are stripped from Firefox builds by
+  `manifest-patch.js`). The side panel runs in the extension context — no
+  Trusted Types concerns. Permission rationale doc updated.
 - **Mono-to-stereo audio conversion:** new `monoToStereo` feature uses the MAIN
   world Web Audio API bridge to force mono downmix via a channelCount=1 gain node,
   then the browser's built-in mono-to-stereo upmix centers the signal equally in
