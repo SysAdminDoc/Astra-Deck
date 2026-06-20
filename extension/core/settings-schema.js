@@ -81,6 +81,9 @@ const CAPABILITIES = Object.freeze([
     // Chrome 138+ Language Detector API. Used by antiTranslate to detect
     // whether a video title/description has been auto-translated by YouTube.
     'languageDetector',
+    // Chrome 138+ Prompt API (Gemini Nano on-device). Used by
+    // localAiTranscriptQa for on-device transcript Q&A.
+    'promptApi',
 ]);
 
 const SETTINGS_SCHEMA = Object.freeze([
@@ -639,6 +642,7 @@ const SETTINGS_SCHEMA = Object.freeze([
 
     // ─── research-ai ───
     Object.freeze({ key: "localAiSummary", category: "research-ai", type: "boolean", defaultValue: false, risk: "api", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["summarizerApi"]) }),
+    Object.freeze({ key: "localAiTranscriptQa", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'extension', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0", requires: Object.freeze(["promptApi"]) }),
     Object.freeze({ key: "researchSpacedReview", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "researchTranscriptIndex", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),
     Object.freeze({ key: "researchTranscriptSearchPanel", category: "research-ai", type: "boolean", defaultValue: false, risk: "safe", profile: "both", scope: "watch", vehicle: 'both', immediateApply: true, destroyRequired: true, internal: false, since: "0.1.0" }),

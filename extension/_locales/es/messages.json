@@ -1304,6 +1304,12 @@
   "feature_localAiSummary_name": {
     "message": "Local AI Summary (browser built-in)"
   },
+  "feature_localAiTranscriptQa_desc": {
+    "message": "Ask questions about the current video transcript using Chrome Prompt API (Gemini Nano). Runs on-device, no API keys needed."
+  },
+  "feature_localAiTranscriptQa_name": {
+    "message": "Transcript Q&A (browser built-in)"
+  },
   "feature_logoToSubscriptions_desc": {
     "message": "Point the native YouTube home mark to your subscriptions feed"
   },
