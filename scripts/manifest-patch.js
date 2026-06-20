@@ -35,6 +35,14 @@ function patchManifestForFirefox(ffManifest) {
     // Firefox's "Show Downloads" collision is moot — there is no shortcut
     // left to collide.
 
+    // Chrome-only: side_panel API + sidePanel permission. Firefox uses
+    // sidebar_action which has a different API surface. Strip both so
+    // Firefox builds don't carry unsupported keys.
+    delete ffManifest.side_panel;
+    if (Array.isArray(ffManifest.permissions)) {
+        ffManifest.permissions = ffManifest.permissions.filter(p => p !== 'sidePanel');
+    }
+
     return ffManifest;
 }
 

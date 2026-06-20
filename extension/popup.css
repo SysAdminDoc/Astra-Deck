@@ -1787,6 +1787,21 @@ body {
   cursor: not-allowed;
 }
 
+.cta-button.cta-secondary {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  color: var(--text-secondary, #c7cad1);
+  font-size: 11px;
+}
+.cta-button.cta-secondary:hover { border-color: var(--border-strong, rgba(255,255,255,0.15)); color: var(--text-primary, #f4f6fb); }
+.cta-button.cta-secondary::before { display: none; }
+.cta-button.cta-secondary[hidden] { display: none; }
+
+.main-action {
+  display: flex;
+  gap: 6px;
+}
+
 /* ── Actions Row ── */
 
 .actions-row {
