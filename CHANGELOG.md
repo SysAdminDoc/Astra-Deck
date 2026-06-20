@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Onboarding wizard:** the first-run welcome card now has a second step after
+  profile selection (Store-Safe / GitHub-Full). Step 2 offers three preset
+  profiles — Privacy, Researcher, Power User — or a "Skip" option for manual
+  configuration. Selecting a preset applies it via the existing recipe-toggle
+  system with backup snapshots for safe toggle-off.
 - **Structured companion error log:** `write_persistent_log` now records entries
   to a 20-entry in-memory ring buffer alongside the disk log. The `/health`
   endpoint includes a `recentErrors` array with the latest log entries, making
