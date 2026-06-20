@@ -28051,7 +28051,19 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         },
 
         // ── DeArrow ──
-        {
+        (globalThis.YTKitFeatures?.createDeArrowFeature?.({
+            appState,
+            DebugManager,
+            extensionFetchJson,
+            storageReadJSON: storageReadJSON || ((k, d) => d),
+            storageWriteJSON: storageWriteJSON || (() => {}),
+            isWatchPagePath,
+            addNavigateRule,
+            removeNavigateRule,
+            injectStyle,
+            announceA11y,
+            PageTypes
+        }) || {
             id: 'deArrow',
             name: 'DeArrow',
             description: 'Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database',
@@ -28317,7 +28329,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                     el.classList.remove('da-replaced-thumb');
                 });
             }
-        },
+        }),
         // DeArrow sub-features
         { id: 'daReplaceTitles', name: 'Replace Titles', description: 'Replace clickbait titles with crowdsourced alternatives', group: 'Content', icon: 'type', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
         { id: 'daReplaceThumbs', name: 'Replace Thumbnails', description: 'Replace clickbait thumbnails with video screenshots', group: 'Content', icon: 'image', isSubFeature: true, parentId: 'deArrow', init(){}, destroy(){} },
