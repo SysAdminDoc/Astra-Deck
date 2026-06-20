@@ -12,13 +12,6 @@
 
 ### P2 — Quick Wins / Enhancement
 
-- [ ] P2 — Monolith decomposition: DeArrow feature peel
-  Why: DeArrow cache, title formatting, thumbnail replacement, and API fetching are self-contained (~600 lines) but inline. Same rationale as SponsorBlock peel.
-  Evidence: `tests/features/dearrow.test.js` already exists (107 lines); peeling matches the `features/` pattern.
-  Touches: New `extension/features/dearrow/index.js`, `extension/ytkit.js`, `extension/manifest.json`, `tests/features/dearrow.test.js`
-  Acceptance: DeArrow feature works identically; monolith shrinks by ~600 lines; DeArrow-specific tests can import the module directly.
-  Complexity: M
-
 - [ ] P2 — Monolith decomposition: Download UI peel
   Why: Download popup, progress panel, health panel, stream links panel, and Cobalt fallback total ~1500 lines. They have clear boundaries and a single integration surface (`ytKitDownload`).
   Evidence: Download UI is the largest unpelled feature domain; `MediaDLManager` singleton is already semi-isolated.
