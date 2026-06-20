@@ -2024,6 +2024,12 @@
   "feature_videoFlip_name": {
     "message": "Video Flip"
   },
+  "feature_monoToStereo_desc": {
+    "message": "Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones"
+  },
+  "feature_monoToStereo_name": {
+    "message": "Mono to Stereo"
+  },
   "feature_videoRotation_desc": {
     "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
   },

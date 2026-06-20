@@ -4789,10 +4789,11 @@ test('v5.0.0 settings-schema exports the required surface', () => {
     // to 364; zenMode lifted it to 365; preset profiles added 3 more.
     // Video flip added videoFlip + videoFlipMode (374 → 376).
     // Subscription content-type filter added 2 booleans (376 → 378).
+    // Mono-to-stereo added 1 boolean (378 → 379).
     // Keep the literal so a future schema addition must bump this
     // number deliberately.
-    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 378,
-        'SETTINGS_SCHEMA must cover all 378 keys');
+    assert.equal(settingsSchemaModule.SETTINGS_SCHEMA.length, 379,
+        'SETTINGS_SCHEMA must cover all 379 keys');
 });
 
 test('v5.0.0 schema entries carry full metadata with values from the canonical enums', () => {
