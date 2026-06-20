@@ -61,13 +61,6 @@
   Acceptance: At least 3 named presets ship; selecting a preset applies its settings bundle and creates a backup snapshot (like feedTriageProfile); toggling off restores prior values; presets are read-only (users customize via save-as).
   Complexity: S
 
-- [ ] P2 — Document PiP cross-browser expansion (Firefox 151+)
-  Why: Firefox 151 (May 2026) shipped Document Picture-in-Picture API support. The existing `popOutPlayer` feature uses Document PiP on Chrome with a fallback — Firefox can now use the native path, enabling custom HTML controls in the PiP window.
-  Evidence: developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API (Firefox 151+ support); `extension/ytkit.js` popOutPlayer feature; `core/capability-probe.js` (existing capability detection).
-  Touches: `extension/ytkit.js` (remove Firefox fallback branch in popOutPlayer, ensure cross-browser Document PiP works), `core/capability-probe.js` (update Document PiP probe), tests
-  Acceptance: popOutPlayer uses Document PiP API natively on Firefox 151+; custom controls render in PiP window on both Chrome and Firefox; fallback still works on older Firefox.
-  Complexity: S
-
 - [ ] P2 — Competitor migration documentation
   Why: Iridium (1,300 GitHub stars) was archived Jan 2026 with orphaned users seeking alternatives. Enhancer for YouTube abandoned Firefox (510K users) in Aug 2025. Landing pages with settings-import guides would capture these users at zero feature development cost.
   Evidence: github.com/ParticleCore/Iridium (archived Jan 31, 2026); ghacks.net (Enhancer for YouTube Firefox discontinuation Aug 2025, HN item 44962001); RYD trust incident (HN item 45696329).

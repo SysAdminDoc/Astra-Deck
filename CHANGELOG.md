@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Document PiP cross-browser:** updated `popOutPlayer` for Firefox 151+
+  stable Document PiP support (no about:config flag needed). Added
+  `documentPip` capability probe so the popup can surface availability.
+  Firefox fallback message now version-aware — 151+ gets a generic retry
+  hint, older Firefox gets an upgrade suggestion.
 - **Per-feature performance timing:** `initFeatureLifecycle` and
   `destroyFeatureLifecycle` now capture `performance.now()` elapsed time.
   `initMs`/`destroyMs` fields are stored in the registry health snapshot
