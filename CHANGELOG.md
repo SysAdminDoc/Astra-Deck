@@ -11,6 +11,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
   video-filters, wave-8-css, theme-css. All 14 peeled modules now have
   test files in `tests/features/`. Total test count: 821 (up from 800).
+- **Reliability: add catch handlers to SponsorBlock segment reload promises.**
+  Three `_loadForVideo().then(...)` calls in the SponsorBlock peeled module
+  and monolith fallback lacked `.catch()` handlers, risking unhandled
+  promise rejections on network errors or unexpected runtime exceptions.
+  Added `.catch(() => {})` with `reason:` comments.
 - **Security: scrub DeArrow private userID from settings exports.**
   The `ytkit-da-user-id` storage key (locally generated DeArrow voting
   identity) was not covered by the `ALWAYS_SCRUB_KEY_PATTERNS` in
