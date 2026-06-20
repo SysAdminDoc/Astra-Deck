@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **i18n coverage CI gate:** `scripts/i18n-coverage.js` gains `--fail-above <n>`
+  flag that exits non-zero when any non-English locale exceeds n
+  placeholder-identical keys. Wired into `npm run check` at threshold 670
+  (just above the current worst-case locale, ratchets down as translations
+  land). Prevents locale coverage regression.
 - **View Transitions on SPA navigation:** `core/navigation.js` now wraps
   navigate-rule execution in `document.startViewTransition()` when available
   (Baseline 2025, all major browsers). Feature UI teardown/rebuild animates
