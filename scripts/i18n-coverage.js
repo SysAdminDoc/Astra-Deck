@@ -78,6 +78,9 @@ function parseArgs(argv = process.argv.slice(2), repoRoot = REPO_ROOT) {
         } else if (arg === '--warn-feature-identical-above') {
             i += 1;
             args.warnFeatureIdenticalAbove = parseNonNegativeInt(argv[i], arg);
+        } else if (arg === '--fail-above') {
+            i += 1;
+            args.failAbove = parseNonNegativeInt(argv[i], arg);
         } else if (arg === '--no-write') {
             args.writeReport = false;
         } else if (arg === '--help' || arg === '-h') {
@@ -267,6 +270,20 @@ function emitWarnings(report, threshold) {
     return warnings;
 }
 
+function checkThreshold(report, threshold) {
+    if (!Number.isInteger(threshold)) return [];
+    const failures = [];
+    for (const r of report.rows) {
+        if (r.placeholderIdentical > threshold) {
+            failures.push(`${r.name}: ${r.placeholderIdentical} placeholder-identical keys exceed threshold ${threshold}`);
+        }
+    }
+    for (const failure of failures) {
+        console.error(`[i18n-coverage] FAIL ${failure}`);
+    }
+    return failures;
+}
+
 function printHelp() {
     console.log([
         'Usage: node scripts/i18n-coverage.js [options]',
@@ -275,6 +292,7 @@ function printHelp() {
         '  --locales-dir <path>                 Locale directory to scan',
         '  --output <path>                      Markdown report path',
         '  --warn-feature-identical-above <n>   Warn when unresolved feature copy exceeds n',
+        '  --fail-above <n>                     Exit non-zero when any locale has more than n placeholder-identical keys',
         '  --no-write                           Analyze without writing the report',
         '  -h, --help                           Show this help'
     ].join('\n'));
@@ -295,6 +313,10 @@ function main(argv = process.argv.slice(2)) {
         console.log(`[i18n-coverage] analyzed ${report.rows.length} locale(s) against ${report.totalKeys} EN keys`);
     }
     emitWarnings(report, options.warnFeatureIdenticalAbove);
+    const failures = checkThreshold(report, options.failAbove);
+    if (failures.length > 0) {
+        process.exitCode = 1;
+    }
 }
 
 if (require.main === module) {
@@ -309,6 +331,7 @@ if (require.main === module) {
 module.exports = {
     analyzeLocale,
     buildCoverageReport,
+    checkThreshold,
     DEFAULT_FEATURE_WARNING_BASELINE,
     emitWarnings,
     parseArgs,
