@@ -411,6 +411,7 @@
   "subscriptionAiTags": false,
   "subscriptionAiTagData": {},
   "localAiSummary": false,
+  "localAiTranscriptQa": false,
   "researchSpacedReview": false,
   "researchTranscriptIndex": false,
   "researchTranscriptSearchPanel": false,

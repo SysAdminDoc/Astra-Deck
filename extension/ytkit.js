@@ -4054,6 +4054,7 @@ return response;
             subscriptionAiTagData: {},                 // { groupId: { tags: string[], generatedAt: ms } }
             // v3.30.0 — Research workspace
             localAiSummary: false,                     // Uses Chrome's built-in ai.summarizer when available
+            localAiTranscriptQa: false,                // Uses Chrome's Prompt API (Gemini Nano) for transcript Q&A
             researchSpacedReview: false,               // Export study/work data to Markdown + CSV
             researchTranscriptIndex: false,            // IndexedDB-backed transcript search across visited videos
             researchTranscriptSearchPanel: false,      // Adds a watch-page button that opens a search UI on the index
@@ -34789,6 +34790,201 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 this._btn?.remove();
                 this._btn = null;
                 document.querySelectorAll('.ytkit-local-ai-modal, .ytkit-local-ai-btn').forEach(el => el.remove());
+                this._styleElement?.remove();
+                this._styleElement = null;
+            }
+        },
+        // ═══════════════════════════════════════════════════════════════════
+        //  LOCAL AI TRANSCRIPT Q&A — Chrome Prompt API (Gemini Nano)
+        // ═══════════════════════════════════════════════════════════════════
+        {
+            id: 'localAiTranscriptQa',
+            name: 'Transcript Q&A (browser built-in)',
+            description: 'Ask questions about the current video’s transcript using Chrome’s on-device Prompt API (Gemini Nano). No API keys needed; runs entirely on-device. Adds a Q&A button next to the Local Summary button.',
+            group: 'Research',
+            icon: 'message-circle',
+            pages: [PageTypes.WATCH],
+            _styleElement: null,
+            _btn: null,
+            _navRule: null,
+            _session: null,
+            _transcript: null,
+
+            _ensureStyles() {
+                if (this._styleElement) return;
+                this._styleElement = injectStyle(`
+                    .ytkit-ai-qa-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin-left:6px;border-radius:8px;border:1px solid rgba(59,130,246,0.32);background:rgba(59,130,246,0.12);color:#bfdbfe;font:600 12px/1 'YouTube Sans',system-ui;cursor:pointer;}
+                    .ytkit-ai-qa-btn:hover{background:rgba(59,130,246,0.22);}
+                    .ytkit-ai-qa-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9100;background:rgba(0,0,0,0.5);}
+                    .ytkit-ai-qa-modal__body{max-width:640px;width:90%;max-height:80vh;overflow:auto;padding:18px;border-radius:12px;background:#0f0f10;color:#e5e7eb;border:1px solid #3f3f46;display:flex;flex-direction:column;gap:12px;}
+                    .ytkit-ai-qa-modal__body h4{margin:0;}
+                    .ytkit-ai-qa-input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #3f3f46;background:#1a1a2e;color:#e5e7eb;font:13px/1.4 system-ui;resize:none;}
+                    .ytkit-ai-qa-input:focus{outline:none;border-color:rgba(59,130,246,0.5);}
+                    .ytkit-ai-qa-answer{white-space:pre-wrap;font:13px/1.5 system-ui;padding:10px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);min-height:40px;}
+                    .ytkit-ai-qa-actions{display:flex;gap:8px;align-items:center;}
+                    .ytkit-ai-qa-ask{padding:6px 14px;border-radius:6px;border:none;background:rgba(59,130,246,0.8);color:#fff;cursor:pointer;font:600 12px/1 system-ui;}
+                    .ytkit-ai-qa-ask:hover{background:rgba(59,130,246,1);}
+                    .ytkit-ai-qa-ask:disabled{opacity:0.5;cursor:not-allowed;}
+                    .ytkit-ai-qa-close{padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e5e7eb;cursor:pointer;font:12px/1 system-ui;}
+                `, 'ai-qa');
+            },
+
+            _hasPromptApi() {
+                return typeof window.LanguageModel !== 'undefined'
+                    || (typeof window.ai !== 'undefined' && typeof window.ai.languageModel !== 'undefined');
+            },
+
+            async _fetchTranscript() {
+                const f = getFeatureById('aiVideoSummary');
+                if (f?._fetchTranscriptText) {
+                    try { return await f._fetchTranscriptText(); }
+                    catch (e) { DebugManager.log('TranscriptQA', `Transcript fetch failed: ${e.message}`); }
+                }
+                const segs = document.querySelectorAll('ytd-transcript-segment-renderer .segment-text, ytd-transcript-segment-renderer yt-formatted-string');
+                return Array.from(segs).map(s => s.textContent?.trim()).filter(Boolean).join(' ');
+            },
+
+            async _getSession(transcript) {
+                if (this._session && this._transcript === transcript) return this._session;
+                const factory = window.LanguageModel || window.ai?.languageModel;
+                if (!factory) return null;
+                try {
+                    this._session = await factory.create({
+                        systemPrompt: `You are an assistant that answers questions about YouTube video content. Answer ONLY based on the transcript provided. If the transcript does not contain the answer, say so. Be concise.\n\nTranscript:\n${transcript.slice(0, 6000)}`
+                    });
+                    this._transcript = transcript;
+                    return this._session;
+                } catch (e) {
+                    DebugManager.log('TranscriptQA', `Session creation failed: ${e.message}`);
+                    return null;
+                }
+            },
+
+            _destroySession() {
+                try { this._session?.destroy?.(); } catch (_) { /* reason: session cleanup is best-effort */ }
+                this._session = null;
+                this._transcript = null;
+            },
+
+            _openQaPanel() {
+                if (!this._hasPromptApi()) {
+                    if (typeof showToast === 'function') showToast('Chrome Prompt API not available. Requires Chrome 138+ with Gemini Nano.', '#f59e0b');
+                    return;
+                }
+                document.querySelector('.ytkit-ai-qa-modal')?.remove();
+                const overlay = document.createElement('div');
+                overlay.className = 'ytkit-ai-qa-modal';
+
+                const inner = document.createElement('div');
+                inner.className = 'ytkit-ai-qa-modal__body';
+
+                const h = document.createElement('h4');
+                h.textContent = 'Transcript Q&A';
+                inner.appendChild(h);
+
+                const input = document.createElement('textarea');
+                input.className = 'ytkit-ai-qa-input';
+                input.placeholder = 'Ask a question about this video…';
+                input.rows = 2;
+                inner.appendChild(input);
+
+                const answer = document.createElement('div');
+                answer.className = 'ytkit-ai-qa-answer';
+                answer.textContent = 'Ask a question and the on-device model will answer based on the transcript.';
+                inner.appendChild(answer);
+
+                const actions = document.createElement('div');
+                actions.className = 'ytkit-ai-qa-actions';
+
+                const askBtn = document.createElement('button');
+                askBtn.type = 'button';
+                askBtn.className = 'ytkit-ai-qa-ask';
+                askBtn.textContent = 'Ask';
+
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'ytkit-ai-qa-close';
+                closeBtn.textContent = 'Close';
+
+                const self = this;
+                askBtn.addEventListener('click', async () => {
+                    const question = input.value.trim();
+                    if (!question) return;
+                    askBtn.disabled = true;
+                    answer.textContent = 'Thinking…';
+                    try {
+                        if (!self._transcript) {
+                            answer.textContent = 'Loading transcript…';
+                            const text = await self._fetchTranscript();
+                            if (!text || text.length < 50) {
+                                answer.textContent = 'No transcript available for this video.';
+                                askBtn.disabled = false;
+                                return;
+                            }
+                            self._transcript = text;
+                        }
+                        const session = await self._getSession(self._transcript);
+                        if (!session) {
+                            answer.textContent = 'Failed to create Prompt API session. The model may not be downloaded yet.';
+                            askBtn.disabled = false;
+                            return;
+                        }
+                        const result = await session.prompt(question);
+                        answer.textContent = String(result || '(no response)');
+                    } catch (e) {
+                        DebugManager.log('TranscriptQA', `Prompt failed: ${e.message}`);
+                        answer.textContent = `Error: ${e.message}`;
+                    }
+                    askBtn.disabled = false;
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        askBtn.click();
+                    }
+                });
+
+                closeBtn.addEventListener('click', () => overlay.remove());
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+                actions.appendChild(askBtn);
+                actions.appendChild(closeBtn);
+                inner.appendChild(actions);
+                overlay.appendChild(inner);
+                document.body.appendChild(overlay);
+                input.focus();
+            },
+
+            _attach() {
+                if (!isWatchPagePath()) return;
+                const anchor = document.querySelector('.ytkit-local-ai-btn, .ytkit-ai-summary-btn, .ytp-right-controls .ytkit-player-btn');
+                if (!anchor || anchor.parentElement?.querySelector('.ytkit-ai-qa-btn')) return;
+                this._btn = document.createElement('button');
+                this._btn.type = 'button';
+                this._btn.className = 'ytkit-ai-qa-btn';
+                this._btn.textContent = 'Q&A';
+                this._btn.title = this._hasPromptApi()
+                    ? 'Ask questions about this video using Chrome’s on-device AI.'
+                    : 'Chrome Prompt API not detected — requires Chrome 138+ with Gemini Nano.';
+                this._btn.addEventListener('click', () => this._openQaPanel());
+                anchor.insertAdjacentElement('afterend', this._btn);
+            },
+
+            init() {
+                this._ensureStyles();
+                this._navRule = () => { setTimeout(() => this._attach(), 1500); };
+                addNavigateRule(this.id, this._navRule);
+                this._navRule();
+            },
+
+            destroy() {
+                removeNavigateRule(this.id);
+                this._navRule = null;
+                this._btn?.remove();
+                this._btn = null;
+                this._destroySession();
+                document.querySelectorAll('.ytkit-ai-qa-modal, .ytkit-ai-qa-btn').forEach(el => el.remove());
                 this._styleElement?.remove();
                 this._styleElement = null;
             }

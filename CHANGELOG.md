@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Transcript Q&A (Chrome Prompt API / Gemini Nano):** new
+  `localAiTranscriptQa` feature adds a "Q&A" button next to the AI summary
+  controls. When Chrome 138+'s Prompt API is available, users can ask
+  questions about the current video's transcript and get on-device answers
+  from Gemini Nano. No API keys needed; runs entirely locally. Graceful
+  fallback when the API is unavailable. Off by default. Added `promptApi`
+  capability probe to detect API availability.
+
 - **DeArrow monolith peel:** the DeArrow feature (API fetch, branding cache,
   title formatting, thumbnail replacement) is now in
   `features/dearrow/index.js`. The monolith delegates to the factory via
