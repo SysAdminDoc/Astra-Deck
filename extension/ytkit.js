@@ -5624,6 +5624,21 @@ return response;
                     return false;
                 }
 
+                if (message.type === 'YTKIT_GET_FEATURE_PERF') {
+                    try {
+                        const lifecycle = typeof getLifecycle === 'function' ? getLifecycle() : null;
+                        const snapshot = lifecycle?.snapshot?.() || [];
+                        const entries = snapshot
+                            .filter((s) => typeof s.initMs === 'number' && s.initMs > 0)
+                            .map((s) => ({ id: s.id, initMs: Math.round(s.initMs * 100) / 100, destroyMs: s.destroyMs != null ? Math.round(s.destroyMs * 100) / 100 : null }))
+                            .sort((a, b) => b.initMs - a.initMs);
+                        sendResponse?.({ ok: true, features: entries.slice(0, 20), totalFeatures: entries.length });
+                    } catch (e) {
+                        sendResponse?.({ ok: false, error: String(e?.message || e) });
+                    }
+                    return false;
+                }
+
                 // v4.47.0 NF18: popup-triggered on-demand yt-dlp -U via
                 // the Astra Downloader /update-ytdlp endpoint. The popup
                 // cannot reach 127.0.0.1 directly (CSP + no per-popup
