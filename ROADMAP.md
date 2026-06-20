@@ -76,13 +76,6 @@
   Acceptance: All extension-injected tooltips and popovers use CSS Anchor Positioning; JS positioning fallback for browsers below the baseline; no visual regression.
   Complexity: M
 
-- [ ] P3 — View Transitions API for SPA navigation smoothness
-  Why: View Transitions reached Baseline 2025 for same-document transitions (cross-browser). YouTube's SPA navigation causes Astra Deck to teardown/reinit UI elements abruptly. View Transitions would smooth these transitions.
-  Evidence: web.dev/blog/web-platform-12-2025 (Baseline 2025); `core/navigation.js` handles `yt-navigate-finish` and `popstate`.
-  Touches: `core/navigation.js` (wrap UI teardown/rebuild in `document.startViewTransition()`), `extension/ytkit.js` (feature UI elements opt into view-transition-name)
-  Acceptance: Astra Deck UI elements (settings panel, download popup, subscription toolbar) transition smoothly on YouTube SPA navigation; no visual regression on browsers without support.
-  Complexity: M
-
 - [ ] P3 — Chrome Writer/Rewriter API for comment drafting
   Why: Chrome's Writer and Rewriter APIs (currently Developer Trial) offer on-device text generation and refinement. When stable, they could power comment drafting assistance without BYO keys.
   Evidence: developer.chrome.com/docs/ai/built-in-apis (Writer/Rewriter in Developer Trial); `extension/ytkit.js` already probes `window.Summarizer`.

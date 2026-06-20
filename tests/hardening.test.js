@@ -3350,7 +3350,7 @@ test('disableLoudnessNormalization flips the html data attribute for the MAIN-wo
 test('downloadHealthPanel reads /health every 30s and renders PO Token / yt-dlp / ffmpeg pills', () => {
     const start = ytkitSource.indexOf("id: 'downloadHealthPanel'");
     assert.ok(start > -1, 'downloadHealthPanel must exist');
-    const block = ytkitSource.slice(start, start + 8000);
+    const block = ytkitSource.slice(start, start + 9500);
     assert.match(block, /MediaDLManager\.baseUrl\(\) \+ '\/health'/,
         'must query the local /health endpoint');
     // Hardening pass added a route + visibility gate inside the interval

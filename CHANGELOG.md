@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **View Transitions on SPA navigation:** `core/navigation.js` now wraps
+  navigate-rule execution in `document.startViewTransition()` when available
+  (Baseline 2025, all major browsers). Feature UI teardown/rebuild animates
+  smoothly on YouTube SPA navigation. Falls back to direct execution on
+  browsers without support.
 - **Companion auto-provisions Deno:** when yt-dlp >= 2026.04 needs an
   external JS runtime and no Deno is found on PATH, the companion
   auto-downloads Deno into `%LOCALAPPDATA%\AstraDownloader\deno\` during
