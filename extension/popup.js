@@ -3101,29 +3101,46 @@ async function pickWelcomeProfile(profile) {
     if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = true;
     if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = true;
     if (welcomeDismissBtn) welcomeDismissBtn.disabled = true;
-    // Apply profile by writing the gating boolean directly. Reuses
-    // the existing writeSetting path so the policy-profile resolver
-    // sees the change and refreshes the schema overview.
     try {
         if (profile === 'github-full') {
             await writeSetting('githubFullProfile', true);
         } else {
-            // store-safe is the default (githubFullProfile=false). Set
-            // it explicitly anyway so the user's choice is recorded —
-            // matters for the popup overview's profile-badge logic
-            // and for any export+import round-trip downstream.
             await writeSetting('githubFullProfile', false);
         }
-        await dismissWelcomeCard(`profile-${profile}`);
-        // Re-render the overview so any profile-gating badges refresh.
         renderSchemaOverview();
+        transitionToPresetStep();
     } catch (err) {
         showStatus(t('statusWelcomeProfileFail',
             'Could not apply profile') + ': ' + err.message, 'error', 4200);
-        // Re-enable so the user can retry on failure.
         if (welcomeProfileSafeBtn) welcomeProfileSafeBtn.disabled = false;
         if (welcomeProfileFullBtn) welcomeProfileFullBtn.disabled = false;
         if (welcomeDismissBtn) welcomeDismissBtn.disabled = false;
+    } finally {
+        _welcomePickInFlight = false;
+    }
+}
+
+function transitionToPresetStep() {
+    const step1 = document.getElementById('welcome-step-profile');
+    const step2 = document.getElementById('welcome-step-preset');
+    if (step1) step1.hidden = true;
+    if (step2) step2.hidden = false;
+    if (welcomeDismissBtn) welcomeDismissBtn.hidden = true;
+}
+
+async function pickWelcomePreset(presetKey) {
+    if (_welcomePickInFlight) return;
+    _welcomePickInFlight = true;
+    document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = true; });
+    try {
+        if (presetKey) {
+            await writeSetting(presetKey, true);
+        }
+        await dismissWelcomeCard(presetKey ? `preset-${presetKey}` : 'preset-skip');
+        renderSchemaOverview();
+    } catch (err) {
+        showStatus('Could not apply preset: ' + err.message, 'error', 4200);
+        document.querySelectorAll('.welcome-preset-btn, .welcome-preset-skip').forEach(b => { b.disabled = false; });
     } finally {
         _welcomePickInFlight = false;
     }
@@ -3165,6 +3182,13 @@ if (welcomeProfileSafeBtn) {
 }
 if (welcomeProfileFullBtn) {
     welcomeProfileFullBtn.addEventListener('click', () => { void pickWelcomeProfile('github-full'); });
+}
+for (const btn of document.querySelectorAll('.welcome-preset-btn')) {
+    btn.addEventListener('click', () => { void pickWelcomePreset(btn.dataset.preset || null); });
+}
+const welcomePresetSkipBtn = document.getElementById('welcome-preset-skip');
+if (welcomePresetSkipBtn) {
+    welcomePresetSkipBtn.addEventListener('click', () => { void pickWelcomePreset(null); });
 }
 if (whatsNewDismissBtn) {
     whatsNewDismissBtn.addEventListener('click', () => { void dismissWhatsNew(); });
