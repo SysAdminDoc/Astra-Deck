@@ -83,10 +83,18 @@
         return fetchWithTimeout(`http://127.0.0.1:${OLLAMA_PORT}/api/version`, PROBE_TIMEOUT_MS);
     }
 
+    function hasDocumentPip() {
+        return Boolean(
+            typeof globalThis !== 'undefined'
+            && globalThis.documentPictureInPicture
+        );
+    }
+
     // Probe table — keys MUST match the CAPABILITIES enum exported
     // by settings-schema.js. The hardening test pins that.
     const PROBES = Object.freeze({
         summarizerApi: { async: false, run: hasSummarizerApi },
+        documentPip:   { async: false, run: hasDocumentPip },
         mediaDL:       { async: true,  run: hasMediaDL },
         ollama:        { async: true,  run: hasOllama },
     });
