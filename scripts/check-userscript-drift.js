@@ -91,6 +91,41 @@ try {
     errors.push(`Could not read userscript: ${e.message}`);
 }
 
+// ── 6. Feature-ID parity (informational, not gated) ──
+// Extract unique feature IDs from the extension (ytkit.js + features/) and the
+// userscript, then report the parity ratio. This makes the 79-feature gap
+// visible in CI output without blocking the build.
+
+function extractFeatureIds(filePath) {
+    try {
+        const src = fs.readFileSync(filePath, 'utf8');
+        const ids = new Set();
+        const re = /^\s+id:\s*'([a-zA-Z][a-zA-Z0-9]*)'/gm;
+        let hit;
+        while ((hit = re.exec(src)) !== null) ids.add(hit[1]);
+        return ids;
+    } catch (_) { return new Set(); }
+}
+
+const extIds = new Set();
+const ytkitPath = path.join(REPO_ROOT, 'extension', 'ytkit.js');
+for (const id of extractFeatureIds(ytkitPath)) extIds.add(id);
+
+const featuresDir = path.join(REPO_ROOT, 'extension', 'features');
+if (fs.existsSync(featuresDir)) {
+    const entries = fs.readdirSync(featuresDir, { withFileTypes: true });
+    for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const idx = path.join(featuresDir, entry.name, 'index.js');
+        for (const id of extractFeatureIds(idx)) extIds.add(id);
+    }
+}
+
+const { resolveUserscriptPath: resolveUs } = require(path.join(REPO_ROOT, 'scripts', 'repo-paths'));
+const usIds = extractFeatureIds(resolveUs(REPO_ROOT));
+const parity = extIds.size > 0 ? Math.round((usIds.size / extIds.size) * 100) : 0;
+const extOnly = [...extIds].filter(id => !usIds.has(id)).sort();
+
 // ── Report ──
 
 if (errors.length === 0) {
@@ -98,6 +133,7 @@ if (errors.length === 0) {
     const manifestFeatures = [...manifestJsFiles].filter(f => f.startsWith('features/'));
     console.log(`[check-userscript-drift] ${manifestFeatures.length} manifest feature module(s) covered by V5_BUNDLE_MODULES`);
     console.log(`[check-userscript-drift] Userscript bundle markers present`);
+    console.log(`[check-userscript-drift] Feature-ID parity: ${usIds.size}/${extIds.size} (${parity}%) — ${extOnly.length} extension-only`);
     process.exit(0);
 }
 
