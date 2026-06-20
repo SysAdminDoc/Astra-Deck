@@ -165,6 +165,7 @@
         "features/youtube-music-compat/index.js",
         "features/return-dislike/index.js",
         "features/sponsorblock/index.js",
+        "features/dearrow/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -246,6 +247,7 @@
         "features/youtube-music-compat/index.js",
         "features/return-dislike/index.js",
         "features/sponsorblock/index.js",
+        "features/dearrow/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
