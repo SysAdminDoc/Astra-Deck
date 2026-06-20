@@ -1975,6 +1975,74 @@ if (selectorHealthCopyBtn) {
     selectorHealthCopyBtn.addEventListener('click', () => { void copySelectorHealthReport(); });
 }
 
+// Feature performance dashboard. Queries the active YouTube tab for
+// per-feature init timing via YTKIT_GET_FEATURE_PERF, then renders the
+// slowest features with a visual bar. Threshold: features > 50ms are
+// flagged. The section is hidden when no YT tab is active or the
+// content script doesn't respond.
+const featurePerfSection = $('#feature-perf');
+const featurePerfList = $('#feature-perf-list');
+const featurePerfTotal = $('#feature-perf-total');
+
+async function renderFeaturePerfDashboard() {
+    if (!featurePerfSection || !featurePerfList) return;
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (!tab || !tab.id || !isSupportedInlinePanelUrl(tab.url || '')) {
+            featurePerfSection.hidden = true;
+            return;
+        }
+        const response = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve(null), 1500);
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_GET_FEATURE_PERF' }, (msg) => {
+                    clearTimeout(timer);
+                    if (chrome.runtime.lastError) { resolve(null); return; }
+                    resolve(msg);
+                });
+            } catch { clearTimeout(timer); resolve(null); }
+        });
+        if (!response || response.ok === false || !Array.isArray(response.features)) {
+            featurePerfSection.hidden = true;
+            return;
+        }
+        const top = response.features.slice(0, 10);
+        featurePerfList.textContent = '';
+        if (top.length === 0) {
+            const empty = document.createElement('li');
+            empty.className = 'feature-perf-empty';
+            empty.textContent = 'No features initialized yet.';
+            featurePerfList.appendChild(empty);
+        } else {
+            const maxMs = top[0].initMs || 1;
+            for (const feat of top) {
+                const li = document.createElement('li');
+                li.className = 'feature-perf-row';
+                if (feat.initMs > 50) li.classList.add('feature-perf-slow');
+                const name = document.createElement('span');
+                name.className = 'fp-name';
+                name.textContent = feat.id;
+                const bar = document.createElement('span');
+                bar.className = 'fp-bar';
+                bar.style.width = Math.max(2, (feat.initMs / maxMs) * 100) + '%';
+                const ms = document.createElement('span');
+                ms.className = 'fp-ms';
+                ms.textContent = feat.initMs + 'ms';
+                li.appendChild(name);
+                li.appendChild(bar);
+                li.appendChild(ms);
+                featurePerfList.appendChild(li);
+            }
+        }
+        if (featurePerfTotal) {
+            featurePerfTotal.textContent = `${response.totalFeatures} feature${response.totalFeatures === 1 ? '' : 's'} measured`;
+        }
+        featurePerfSection.hidden = false;
+    } catch (_) {
+        featurePerfSection.hidden = true;
+    }
+}
+
 // v4.12.0: data-flow panel. Reads extension/core/data-flow.js's
 // catalogue (bundled into popup.html) and renders the per-origin chip
 // surface gated on the `privacyDataFlowPanel` schema setting. Operates
@@ -3825,6 +3893,7 @@ function installWheelScrolling() {
     // Hides the section if the user isn't on a YouTube page or if the
     // content script doesn't respond in time.
     void renderSelectorHealthDashboard();
+    void renderFeaturePerfDashboard();
 
     // v4.47.0 NF21: render the first-run welcome card + What's New
     // banner in parallel with the rest of boot. Both are best-effort —
