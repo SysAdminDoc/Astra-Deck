@@ -48,13 +48,6 @@
   Acceptance: Users can vote on a replaced title and submit a new title/timestamp thumbnail; the generated userID never leaves DeArrow requests and is excluded from settings exports; feature is off by default.
   Complexity: M
 
-- [ ] P3 — CSS Anchor Positioning for tooltip/popover UI
-  Why: CSS Anchor Positioning reached Baseline 2026 (Chrome 125+, Firefox 147+, Safari 26+). Astra Deck's tooltips, popovers, and contextual panels currently use JavaScript-based positioning. Migrating to native CSS anchoring eliminates JS calculation overhead and improves maintainability.
-  Evidence: css-tricks.com/interop-2026 (Baseline 2026); `extension/ytkit.js` uses absolute positioning + getBoundingClientRect for download popup, speed popup, settings panel tooltips.
-  Touches: `extension/ytkit.js` (replace JS positioning with CSS anchor-name/position-anchor), `extension/popup.css` (anchor-positioned tooltips), `extension/early.css`
-  Acceptance: All extension-injected tooltips and popovers use CSS Anchor Positioning; JS positioning fallback for browsers below the baseline; no visual regression.
-  Complexity: M
-
 
 (Chrome Writer/Rewriter API moved to Roadmap_Blocked.md — API still in Developer Trial, not stable.)
 
