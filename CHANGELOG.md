@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **CSS Anchor Positioning for popups:** the speed popup and download popup
+  now use CSS Anchor Positioning (Baseline 2026: Chrome 125+, Firefox 147+)
+  when available. Popups are anchored to their trigger buttons with automatic
+  flip-block fallback. JS `getBoundingClientRect` positioning is kept as a
+  fallback for browsers that don't support `anchor-name`. No visual change
+  on supported browsers — positioning is identical but now handled by CSS.
 - **Transcript Q&A (Chrome Prompt API / Gemini Nano):** new
   `localAiTranscriptQa` feature adds a "Q&A" button next to the AI summary
   controls. When Chrome 138+'s Prompt API is available, users can ask

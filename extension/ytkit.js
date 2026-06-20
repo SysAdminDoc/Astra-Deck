@@ -1413,6 +1413,29 @@ return response;
             font-family: "SF Mono", "Cascadia Mono", ui-monospace, Menlo, Consolas, monospace !important;
         }
         /* Speed control popup */
+        /* CSS Anchor Positioning: anchor the speed popup to its trigger */
+        @supports (anchor-name: --ytkit-speed-anchor) {
+            .ytkit-po-speed { anchor-name: --ytkit-speed-anchor !important; }
+            .ytkit-speed-popup {
+                position-anchor: --ytkit-speed-anchor !important;
+                inset: unset !important;
+                top: unset !important; left: unset !important;
+                bottom: anchor(top) !important;
+                left: anchor(center) !important;
+                translate: -50% -8px !important;
+                position-try-fallbacks: flip-block !important;
+            }
+            .ytkit-po-dl { anchor-name: --ytkit-dl-anchor !important; }
+            .ytkit-dl-popup {
+                position-anchor: --ytkit-dl-anchor !important;
+                inset: unset !important;
+                top: unset !important; left: unset !important;
+                bottom: anchor(top) !important;
+                left: anchor(center) !important;
+                translate: -50% -8px !important;
+                position-try-fallbacks: flip-block !important;
+            }
+        }
         .ytkit-speed-popup {
             position: fixed !important;
             z-index: 2147483647 !important;
@@ -3117,8 +3140,8 @@ return response;
         document.body.appendChild(popup);
         _speedPopup = popup;
 
-        // Position above the anchor; flip below if no room.
-        if (anchorEl) {
+        // Position above the anchor; skip when CSS Anchor Positioning is active.
+        if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
             const ph = popup.offsetHeight;
@@ -3406,8 +3429,8 @@ return response;
         document.body.appendChild(popup);
         _dlPopup = popup;
 
-        // Position above the anchor
-        if (anchorEl) {
+        // Position above the anchor; skip when CSS Anchor Positioning is active.
+        if (anchorEl && !CSS.supports?.('anchor-name: --x')) {
             const r = anchorEl.getBoundingClientRect();
             const pw = popup.offsetWidth;
             const ph = popup.offsetHeight;
