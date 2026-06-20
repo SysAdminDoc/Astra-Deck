@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **SponsorBlock-adjusted remaining time:** when both `remainingTimeDisplay`
+  and `sponsorBlock` are enabled, the remaining time display now subtracts
+  the total duration of auto-skip segments ahead of the current playback
+  position. Matches YouTube Alchemy's adjusted-remaining-time behavior.
 - **SABR download failure diagnostic:** when yt-dlp fails because all available
   formats were SABR-only, the download progress panel now shows a clear error
   message explaining the limitation instead of a generic failure. The download

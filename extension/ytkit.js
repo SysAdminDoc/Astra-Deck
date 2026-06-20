@@ -19090,7 +19090,18 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             _update() {
                 const video = getMainVideoElement();
                 if (!video || !video.duration) { if (this._el) this._el.textContent = ''; return; }
-                const remaining = (video.duration - video.currentTime) / (video.playbackRate || 1);
+                let skipDuration = 0;
+                const sb = getFeatureById?.('sponsorBlock');
+                if (sb?._segments?.length && appState?.settings?.sponsorBlock) {
+                    for (const seg of sb._segments) {
+                        if (!seg.segment || seg.segment.length < 2) continue;
+                        const [start, end] = seg.segment;
+                        if (end > video.currentTime) {
+                            skipDuration += end - Math.max(start, video.currentTime);
+                        }
+                    }
+                }
+                const remaining = (video.duration - video.currentTime - skipDuration) / (video.playbackRate || 1);
                 if (!this._el) {
                     const timeDisplay = document.querySelector('.ytp-time-display');
                     if (!timeDisplay) return;

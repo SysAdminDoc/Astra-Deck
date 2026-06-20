@@ -99,13 +99,6 @@
   Acceptance: Selector fixture regenerated from a live 2026-era YouTube watch page. All critical playerChrome/playerSettings selectors match. Regression test passes with fresh fixture.
   Complexity: S
 
-- [ ] P2 — SponsorBlock remaining-time adjustment
-  Why: YouTube Alchemy displays remaining time adjusted for SponsorBlock skips + playback speed. Astra Deck has `remainingTimeDisplay` and `sponsorBlock` but does not subtract skippable segment duration from the remaining-time calculation. Power users who use both features see inaccurate remaining time.
-  Evidence: YouTube Alchemy feature comparison (greasyfork.org/en/scripts/521686); Astra Deck `remainingTimeDisplay` at `extension/ytkit.js` computes `duration - currentTime` without SponsorBlock segment awareness.
-  Touches: `extension/ytkit.js` (remainingTimeDisplay: query SponsorBlock segment cache for remaining skippable segments ahead of currentTime; subtract total from display)
-  Acceptance: When both `remainingTimeDisplay` and `sponsorBlock` are enabled, remaining time subtracts the total duration of auto-skip segments between currentTime and end.
-  Complexity: S
-
 - [ ] P2 — Monolith decomposition: Return YouTube Dislike peel
   Why: RYD API fetch, cache, dislike count rendering, ratio calculation, and card badge are self-contained (~400 lines) but inline. Same rationale as the SponsorBlock and DeArrow peels already in ROADMAP.
   Evidence: `extension/ytkit.js:32502` (`id: 'returnDislike'`); RYD code is fully self-contained with its own cache, API URL, and rendering; the `features/` peel pattern is established with 11 modules.
