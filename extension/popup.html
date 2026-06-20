@@ -46,17 +46,37 @@
                 data-i18n-attr-aria-label="welcomeDismissAria" aria-label="Dismiss welcome card"
                 data-i18n="welcomeDismiss">Skip</button>
       </header>
-      <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
-      <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
-        <button type="button" class="welcome-profile-btn is-recommended" id="welcome-profile-safe" data-profile="store-safe" aria-describedby="welcome-profile-safe-rec">
-          <span class="welcome-profile-rec" id="welcome-profile-safe-rec" data-i18n="welcomeProfileRecommended">Recommended</span>
-          <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
-          <span class="welcome-profile-desc" data-i18n="welcomeProfileSafeDesc">Everything that ships on extension stores. No download companion, no BYO AI keys.</span>
-        </button>
-        <button type="button" class="welcome-profile-btn" id="welcome-profile-full" data-profile="github-full">
-          <strong class="welcome-profile-title" data-i18n="welcomeProfileFullTitle">GitHub-Full</strong>
-          <span class="welcome-profile-desc" data-i18n="welcomeProfileFullDesc">Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers.</span>
-        </button>
+      <div class="welcome-step" id="welcome-step-profile">
+        <p class="welcome-body" data-i18n="welcomeBody">Pick a profile to start. You can change it any time in Settings.</p>
+        <div class="welcome-profile-row" role="group" aria-label="Pick a starting profile">
+          <button type="button" class="welcome-profile-btn is-recommended" id="welcome-profile-safe" data-profile="store-safe" aria-describedby="welcome-profile-safe-rec">
+            <span class="welcome-profile-rec" id="welcome-profile-safe-rec" data-i18n="welcomeProfileRecommended">Recommended</span>
+            <strong class="welcome-profile-title" data-i18n="welcomeProfileSafeTitle">Store-Safe</strong>
+            <span class="welcome-profile-desc" data-i18n="welcomeProfileSafeDesc">Everything that ships on extension stores. No download companion, no BYO AI keys.</span>
+          </button>
+          <button type="button" class="welcome-profile-btn" id="welcome-profile-full" data-profile="github-full">
+            <strong class="welcome-profile-title" data-i18n="welcomeProfileFullTitle">GitHub-Full</strong>
+            <span class="welcome-profile-desc" data-i18n="welcomeProfileFullDesc">Adds the local downloader, Cobalt fallback, custom CSS, and AI summary providers.</span>
+          </button>
+        </div>
+      </div>
+      <div class="welcome-step" id="welcome-step-preset" hidden>
+        <p class="welcome-body">How will you use YouTube? Pick a preset or skip to configure manually.</p>
+        <div class="welcome-preset-row" role="group" aria-label="Pick a usage preset">
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-privacy" data-preset="presetPrivacy">
+            <strong class="welcome-preset-title">Privacy</strong>
+            <span class="welcome-preset-desc">Clean URLs, hide Shorts, block infinite scroll, no AI summary.</span>
+          </button>
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-researcher" data-preset="presetResearcher">
+            <strong class="welcome-preset-title">Researcher</strong>
+            <span class="welcome-preset-desc">Transcripts, bookmarks, watch time, AI summary, comment search.</span>
+          </button>
+          <button type="button" class="welcome-preset-btn" id="welcome-preset-power" data-preset="presetPowerUser">
+            <strong class="welcome-preset-title">Power User</strong>
+            <span class="welcome-preset-desc">Persistent speed, A-B loop, stats overlay, PiP, focused mode.</span>
+          </button>
+        </div>
+        <button type="button" class="welcome-preset-skip" id="welcome-preset-skip">Skip — configure manually</button>
       </div>
     </section>
 
