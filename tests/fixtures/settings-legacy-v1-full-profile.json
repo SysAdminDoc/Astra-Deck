@@ -432,7 +432,7 @@
     "reactionSpammer": false,
     "_reactionSpammerAck": false
   },
-  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode", "playlistSearch", "classicPlayerChrome", "sbPerChannelProfiles", "sbPerChannelProfilesData", "presetPrivacy", "presetResearcher", "presetPowerUser"],
+  "expectedDefaulted": ["restoreNativeYouTubeUi", "cleanUiPreset", "zenMode", "playlistSearch", "classicPlayerChrome", "sbPerChannelProfiles", "sbPerChannelProfilesData", "presetPrivacy", "presetResearcher", "presetPowerUser", "localAiTranscriptQa"],
   "expectedAbsent": [
     "preferredQuality",
     "useEnhancedBitrate",
