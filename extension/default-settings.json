@@ -413,6 +413,8 @@
   "subscriptionUnsubscribeStagingData": {},
   "subscriptionAiTags": false,
   "subscriptionAiTagData": {},
+  "subscriptionFilterLive": false,
+  "subscriptionFilterStreamed": false,
   "localAiSummary": false,
   "localAiTranscriptQa": false,
   "researchSpacedReview": false,
