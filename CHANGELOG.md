@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Crash-loop auto-recovery:** if the content script crashes 3+ times within
+  30 seconds (tracked via localStorage timestamps), Astra Deck auto-enters safe
+  mode and shows a 15-second toast explaining what happened. The counter is
+  cleared on successful init. This protects against corrupted-settings crash
+  loops that would otherwise require the user to know about `?ytkit=safe`.
 - **Feature performance dashboard:** new popup section showing the slowest
   feature init times with visual bars. Queries the content script via
   `YTKIT_GET_FEATURE_PERF` for lifecycle timing data. Features > 50ms are
