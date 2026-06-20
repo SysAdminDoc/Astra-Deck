@@ -81,14 +81,6 @@
 
 ## Research-Driven Additions (June 2026 Cycle 2)
 
-### P1 — Reliability
-
-- [ ] P1 — SABR download failure diagnostic
-  Why: YouTube's `web` client returns SABR-only streaming URLs for a growing share of videos. yt-dlp `2026.06.09` cannot download SABR formats (PR #13515 still in draft). The companion passes `formats=duplicate` which surfaces SABR entries but yt-dlp silently fails to download them. Users see no error — their download simply produces nothing or a degraded result.
-  Evidence: yt-dlp issue #12482 (SABR-only formats); PR #13515 in draft as of June 14, 2026; companion uses `formats=duplicate` at `astra_downloader/astra_downloader.py:962`; stream links panel shows "SABR-only" label (`extension/ytkit.js:32172`) but download failures are silent.
-  Touches: `astra_downloader/astra_downloader.py` (detect when yt-dlp exits with no output file for a SABR-only video; surface diagnostic), `extension/ytkit.js` download progress panel (SABR-specific failure message), download health panel (new "SABR: limited" warn pill when yt-dlp lacks native SABR support)
-  Acceptance: When a download fails because all formats were SABR-only, the progress panel shows a clear error message explaining the limitation. Health panel surfaces SABR support status.
-  Complexity: M
 
 
 ### P2 — Quick Wins / Enhancement

@@ -2908,6 +2908,17 @@ class DownloadManager(QObject):
                         dl.error = " ".join(last_lines)[-240:]
                     else:
                         dl.error = "Unknown error"
+                    # SABR diagnostic: detect when yt-dlp fails because
+                    # all available formats were SABR-only (no downloadable
+                    # HTTPS streams). Surface a clear user-facing message.
+                    combined = " ".join(last_lines).lower()
+                    if ('sabr' in combined or 'no video formats' in combined
+                            or 'requested format is not available' in combined):
+                        dl.error = (
+                            "This video only offers SABR streaming formats that "
+                            "yt-dlp cannot yet download. This is a YouTube platform "
+                            "limitation, not an Astra Deck bug. See yt-dlp issue #12482."
+                        )
 
         except FileNotFoundError:
             if dl.status != "cancelled":
@@ -3220,6 +3231,15 @@ def create_api(config, dl_manager, history):
             # ``ytdlpNeedsRuntime && !installed``, and stays quiet when
             # the bundled yt-dlp predates the cutoff.
             "denoRuntime": probe_deno_runtime(),
+            # v1.6.0: SABR (Server-Based Adaptive Bitrate) support status.
+            # YouTube's web client now returns SABR-only streaming URLs for
+            # a growing share of videos. yt-dlp PR #13515 adds native SABR
+            # download support but is still in draft. Until it merges, the
+            # companion passes formats=duplicate which surfaces both HTTPS
+            # and SABR entries, but SABR entries cannot be downloaded. The
+            # extension health panel surfaces "SABR: limited" when native
+            # support is absent, so users understand why some downloads fail.
+            "sabrSupport": "limited",
             "rateLimit": {
                 "downloadMaxPerWindow": RATE_LIMIT_DOWNLOAD_MAX,
                 "downloadWindowSeconds": RATE_LIMIT_DOWNLOAD_WINDOW_SECONDS,
