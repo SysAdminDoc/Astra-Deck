@@ -11,6 +11,20 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
   youtube-music-compat, blue-light-filter, subtitles, home-subs-css,
   video-filters, wave-8-css, theme-css. All 14 peeled modules now have
   test files in `tests/features/`. Total test count: 821 (up from 800).
+- **Audit: fix 4 bugs from PO Token resilience refactor:**
+  - Transcript viewer: `trackLabel` variable was scoped inside an `else`
+    block but referenced outside it, causing `undefined` in the metadata
+    bar. Fixed: `trackLabel` now declared at correct scope.
+  - Subtitle download: `track.languageCode` referenced an undeclared
+    variable after refactor to `fetchTranscriptWithFallback`. Fixed: uses
+    `result.track?.languageCode` now.
+  - AI summary: redundant engagement-panel fallback after
+    `fetchTranscriptWithFallback` already covers it. Fixed: removed dead
+    code path.
+  - Transcript fetch helper: added guard for missing/corrupt `baseUrl`
+    on caption tracks to prevent fetching `undefined&fmt=json3`.
+  - Fixed curly/smart apostrophes (`'`) in string literals that caused
+    JavaScript syntax errors breaking the content script parser.
 - **Transcript PO Token resilience:** all transcript fetch paths (transcript
   viewer, subtitle download, AI video summary, local AI summary, transcript
   Q&A, transcript index) now fall back to engagement-panel HTML scraping when
