@@ -33369,6 +33369,42 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (typeof showToast === 'function') showToast('Exported subscription groups', '#22c55e');
             },
 
+            _csvEscape(value) {
+                const s = String(value ?? '');
+                if (/[",\r\n]/.test(s) || s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') || s.startsWith('\t')) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            },
+
+            _exportGroupsCsv() {
+                const groups = this._readGroups();
+                const rows = ['Group,Channel,Handle,URL'];
+                for (const [id, group] of Object.entries(groups)) {
+                    const name = group.name || id;
+                    const channels = Array.isArray(group.channels) ? group.channels : [];
+                    if (channels.length === 0) {
+                        rows.push(this._csvEscape(name) + ',,,');
+                        continue;
+                    }
+                    for (const ch of channels) {
+                        const chName = ch.name || '';
+                        const handle = ch.handle || '';
+                        const url = ch.url || (handle ? `https://www.youtube.com/${handle}` : '');
+                        rows.push([name, chName, handle, url].map(v => this._csvEscape(v)).join(','));
+                    }
+                }
+                const csv = rows.join('\r\n') + '\r\n';
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `astra-deck-subscription-groups-${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                if (typeof showToast === 'function') showToast('Exported subscription groups as CSV', '#22c55e');
+            },
+
             _importGroups(json) {
                 try {
                     const data = JSON.parse(json);
@@ -34220,9 +34256,17 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 exportBtn.type = 'button';
                 exportBtn.dataset.action = 'export';
                 exportBtn.textContent = 'Export';
-                exportBtn.setAttribute('aria-label', 'Export subscription groups');
+                exportBtn.setAttribute('aria-label', 'Export subscription groups as JSON');
                 exportBtn.addEventListener('click', () => this._exportGroups());
                 bar.appendChild(exportBtn);
+
+                const csvBtn = document.createElement('button');
+                csvBtn.type = 'button';
+                csvBtn.dataset.action = 'export-csv';
+                csvBtn.textContent = 'CSV';
+                csvBtn.setAttribute('aria-label', 'Export subscription groups as CSV');
+                csvBtn.addEventListener('click', () => this._exportGroupsCsv());
+                bar.appendChild(csvBtn);
 
                 const importBtn = document.createElement('button');
                 importBtn.type = 'button';
