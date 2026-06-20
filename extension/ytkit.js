@@ -47565,8 +47565,35 @@ body.ytkit-panel-open #ytkit-settings-panel {
 
         // ── Lifetime Ad Block Stats Flush ──
 
+        // ── Global crash-loop guard ──
+        // If the content script crashes 3+ times within 30s, auto-enter
+        // safe mode so a corrupted-settings crash loop doesn't brick the
+        // extension. Uses localStorage (synchronous, content-script-accessible)
+        // with namespaced key. Timestamps older than the window are pruned.
+        const _CRASH_SESSION_KEY = '_ytkit_crash_guard';
+        const _CRASH_THRESHOLD = 3;
+        const _CRASH_WINDOW_MS = 30000;
+        let _crashGuardTriggered = false;
+        try {
+            const now = Date.now();
+            const raw = localStorage.getItem(_CRASH_SESSION_KEY);
+            let timestamps = [];
+            if (raw) {
+                try { timestamps = JSON.parse(raw); } catch (_) { /* reason: corrupted — reset */ }
+                if (!Array.isArray(timestamps)) timestamps = [];
+            }
+            timestamps = timestamps.filter(t => typeof t === 'number' && now - t < _CRASH_WINDOW_MS);
+            if (timestamps.length >= _CRASH_THRESHOLD) {
+                _crashGuardTriggered = true;
+                console.warn('[YTKit] Crash-loop guard triggered — entering safe mode automatically.');
+            }
+            timestamps.push(now);
+            localStorage.setItem(_CRASH_SESSION_KEY, JSON.stringify(timestamps.slice(-(_CRASH_THRESHOLD + 1))));
+        } catch (_) { /* reason: localStorage unavailable — skip guard */ }
+
         // ── Safe Mode + Diagnostics ──
-        const isSafeMode = getUrlParam('ytkit') === 'safe' ||
+        const isSafeMode = _crashGuardTriggered ||
+                           getUrlParam('ytkit') === 'safe' ||
                            storageRead('ytkit_safe_mode', false);
 
         window.ytkit = {
@@ -47772,6 +47799,15 @@ body.ytkit-panel-open #ytkit-settings-panel {
                 });
             });
         } // end !isSafeMode
+
+        // Clear crash-loop guard on successful init
+        try {
+            if (!_crashGuardTriggered) localStorage.removeItem(_CRASH_SESSION_KEY);
+        } catch (_) { /* reason: localStorage unavailable */ }
+
+        if (_crashGuardTriggered) {
+            showToast('Astra Deck detected repeated crashes and entered safe mode. Check your settings or reset.', '#f97316', { duration: 15 });
+        }
 
         if (DebugManager._enabled) {
             console.log(`%c[YTKit] v${YTKIT_VERSION} Initialized${isSafeMode ? ' (SAFE MODE)' : ''}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
