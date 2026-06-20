@@ -6,6 +6,14 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Transcript PO Token resilience:** all transcript fetch paths (transcript
+  viewer, subtitle download, AI video summary, local AI summary, transcript
+  Q&A, transcript index) now fall back to engagement-panel HTML scraping when
+  YouTube's timedtext API returns empty or errors due to Proof-of-Origin
+  Token requirements. Failures are logged to the diagnostic log under the
+  `transcript-po-token` category. New shared `fetchTranscriptWithFallback()`
+  and `_scrapeEngagementPanelTranscript()` helpers replace direct
+  `captionTrack.baseUrl + '&fmt=json3'` fetches.
 - **DeArrow voting:** new `deArrowVoting` feature adds thumbs up/down vote
   buttons on watch-page titles replaced by DeArrow. Votes use a locally
   generated private userID that never leaves DeArrow requests and is
