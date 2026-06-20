@@ -28,6 +28,22 @@ Items moved here from ROADMAP.md because they cannot be completed programmatical
   Complexity: M
   Blocker: Requires PyInstaller freeze on a clean Windows machine with Python 3.12 + all Qt/Flask dependencies installed, plus manual verification that the EXE runs standalone. Build environment not available in this context.
 
+## P2 — Documentation
+
+- [ ] P2 — Competitor migration documentation
+  Why: Iridium (1,300 GitHub stars) was archived Jan 2026 with orphaned users seeking alternatives. Enhancer for YouTube abandoned Firefox (510K users) in Aug 2025. Landing pages with settings-import guides would capture these users at zero feature development cost.
+  Touches: `docs/migration-from-iridium.md`, `docs/migration-from-enhancer.md`, README.md
+  Acceptance: Each migration doc maps the competitor's top features to Astra Deck equivalents with install instructions.
+  Complexity: S
+  Blocker: Requires creating new markdown documentation files. Maintainer-authored content for migration guides.
+
+- [ ] P2 — Supply chain transparency documentation
+  Why: Post-ShadyPanda (4.3M users compromised Dec 2025), Astra Deck's open-source audit trail and SBOM/attestation pipeline are differentiators not documented for end users.
+  Touches: `docs/supply-chain-transparency.md`, README.md
+  Acceptance: Page documents audit trail, SBOM, attestation, credential scrub, profile-split permissions, and release integrity verification.
+  Complexity: S
+  Blocker: Requires creating new markdown documentation files. Maintainer-authored trust documentation.
+
 ## P2 — Observability / Developer Experience
 
 - [ ] P2 — Visual regression testing for popup
