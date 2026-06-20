@@ -282,6 +282,8 @@
   "disableSpaNavigation": false,
   "videoRotation": false,
   "videoRotationAngle": 0,
+  "videoFlip": false,
+  "videoFlipMode": "none",
   "frameByFrameButtons": false,
   "digitalWellbeing": false,
   "dwBreakIntervalMin": 30,
