@@ -5830,6 +5830,41 @@ return response;
         commentEnhancements: 'Highlights creator replies, shows like heat, collapse toggle',
     };
 
+    // ── Download UI module delegation ──
+    // If the peeled download-ui module loaded before ytkit.js, construct
+    // the factory with deps now. The feature objects below prefer the
+    // module's instances and fall back to the inline literals.
+    const _downloadUI = globalThis.YTKitFeatures?.createDownloadUIFeature?.({
+        appState,
+        extensionFetchJson,
+        extensionFetchText,
+        showToast,
+        DebugManager,
+        DiagnosticLog,
+        storageRead,
+        storageWrite,
+        storageReadJSON: storageReadJSON || ((k, d) => d),
+        storageWriteJSON: storageWriteJSON || (() => {}),
+        getVideoId,
+        isWatchPagePath,
+        addNavigateRule,
+        removeNavigateRule,
+        injectStyle,
+        TrustedHTML,
+        openExternalUrl,
+        openProtocol,
+        triggerDownload,
+        browserCookies,
+        getProfileExportMode,
+        normalizeCookieExpiry,
+        showToast,
+        PageTypes,
+        ICONS: globalThis.YTKitCore?.ICONS,
+        BRAND,
+        t,
+        getPlayerResponseGlobal: () => (typeof _rw !== 'undefined' && _rw ? _rw.ytInitialPlayerResponse : null),
+    }) || null;
+
     const features = [
         // ─── Interface ───
         // v4.43.0: six Home / Subscriptions CSS-only features peel out
@@ -32195,9 +32230,10 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             }
         },
         // ═══════════════════════════════════════════════════════════════════
-        //  DOWNLOAD HEALTH PANEL — Pills for poTokenProvider, yt-dlp, ffmpeg
+        //  DOWNLOAD FEATURES — delegated to features/download-ui/ peel
         // ═══════════════════════════════════════════════════════════════════
-        {
+
+        _downloadUI?.downloadHealthPanel || {
             id: 'downloadHealthPanel',
             name: 'Downloader Health Pills',
             description: 'Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage.',
@@ -32388,7 +32424,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  STREAM LINKS PANEL — Adaptive format URLs (advanced)
         // ═══════════════════════════════════════════════════════════════════
-        {
+        _downloadUI?.downloadStreamLinksPanel || {
             id: 'downloadStreamLinksPanel',
             name: 'Stream Links Panel',
             description: 'Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off.',
@@ -32562,7 +32598,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  COBALT FALLBACK — GitHub-full profile only, default off
         // ═══════════════════════════════════════════════════════════════════
-        {
+        _downloadUI?.downloadCobaltFallback || {
             id: 'downloadCobaltFallback',
             name: 'Cobalt Fallback (GitHub profile)',
             description: 'When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab.',
@@ -32671,7 +32707,7 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
         // ═══════════════════════════════════════════════════════════════════
         //  DOWNLOAD HISTORY PANEL — Last N completed downloads
         // ═══════════════════════════════════════════════════════════════════
-        {
+        _downloadUI?.downloadHistoryPanel || {
             id: 'downloadHistoryPanel',
             name: 'Download History Panel',
             description: 'Adds a "History" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session.',
