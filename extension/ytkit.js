@@ -3925,6 +3925,7 @@ return response;
             customCssCode: '',
             shareMenuCleaner: false,
             autoClosePopups: false,
+            autoDismissContentWarning: true,
             videoResolutionBadge: false,
             likeViewRatio: false,
             downloadThumbnail: false,
@@ -25427,6 +25428,32 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                 if (this._dismissTimer) { clearTimeout(this._dismissTimer); this._dismissTimer = null; }
                 removeMutationRule('autoClosePopups');
                 removeNavigateRule('autoClosePopups');
+            }
+        },
+        {
+            id: 'autoDismissContentWarning',
+            name: 'Auto-Dismiss Content Warnings',
+            description: 'Automatically clicks "I understand and wish to proceed" on videos with content warnings',
+            group: 'Playback',
+            icon: 'shield-off',
+            pages: [PageTypes.WATCH],
+
+            _dismiss() {
+                const btn = document.querySelector('yt-player-error-message-renderer #button button[aria-label="I understand and wish to proceed"]');
+                if (btn && btn.offsetParent !== null) {
+                    btn.click();
+                    DebugManager.log('ContentWarning', 'Auto-dismissed content warning');
+                }
+            },
+
+            init() {
+                addMutationRule('autoDismissContentWarning', () => this._dismiss());
+                addNavigateRule('autoDismissContentWarning', () => this._dismiss());
+                this._dismiss();
+            },
+            destroy() {
+                removeMutationRule('autoDismissContentWarning');
+                removeNavigateRule('autoDismissContentWarning');
             }
         },
         {

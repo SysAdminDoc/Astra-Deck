@@ -386,6 +386,12 @@
   "feature_autoClosePopups_name": {
     "message": "Auto-Close Popups"
   },
+  "feature_autoDismissContentWarning_desc": {
+    "message": "Automatically clicks \"I understand and wish to proceed\" on videos with content warnings"
+  },
+  "feature_autoDismissContentWarning_name": {
+    "message": "Auto-Dismiss Content Warnings"
+  },
   "feature_autoDismissStillWatching_desc": {
     "message": "Automatically clicks the \"Continue Watching\" button when YouTube pauses playback for inactivity"
   },
