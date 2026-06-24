@@ -4019,6 +4019,9 @@ return response;
             videoFlip: false,
             videoFlipMode: 'none',           // none | horizontal | vertical | both
             monoToStereo: false,
+            volumeBoost: false,
+            volumeBoostLevel: 2,
+            audioNormalization: false,
             frameByFrameButtons: false,
             digitalWellbeing: false,
             dwBreakIntervalMin: 30,          // 0 = off
@@ -28960,6 +28963,66 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
             destroy() {
                 this._remove();
                 removeNavigateRule('monoToStereo');
+            }
+        },
+
+        // ── Volume Boost ──
+        {
+            id: 'volumeBoost',
+            name: 'Volume Boost',
+            description: 'Amplify audio beyond 100% via a Web Audio gain node (up to 10x). Useful for quiet recordings. Adjust intensity with volumeBoostLevel.',
+            group: 'Video Player',
+            icon: 'volume-2',
+            _apply() {
+                const level = parseFloat(appState.settings?.volumeBoostLevel) || 2;
+                document.documentElement.setAttribute('data-ytkit-volume-boost', String(Math.max(1, Math.min(10, level))));
+            },
+            _remove() {
+                document.documentElement.setAttribute('data-ytkit-volume-boost', '1');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('volumeBoost', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('volumeBoost');
+            }
+        },
+        {
+            id: 'volumeBoostLevel',
+            name: 'Volume Boost Level',
+            description: 'Gain multiplier for Volume Boost (1.0 = unity, max 10.0)',
+            group: 'Video Player',
+            icon: 'sliders',
+            type: 'range',
+            min: 1, max: 10, step: 0.5,
+            dependsOn: 'volumeBoost',
+            init() {}, destroy() {}
+        },
+
+        // ── Audio Normalization ──
+        {
+            id: 'audioNormalization',
+            name: 'Audio Normalization',
+            description: 'Compress dynamic range so quiet and loud passages play at similar volume. Uses a DynamicsCompressorNode in the MAIN world audio graph.',
+            group: 'Video Player',
+            icon: 'activity',
+            _apply() {
+                document.documentElement.setAttribute('data-ytkit-audio-normalize', '1');
+            },
+            _remove() {
+                document.documentElement.removeAttribute('data-ytkit-audio-normalize');
+            },
+            init() {
+                this._apply();
+                this._navRule = () => this._apply();
+                addNavigateRule('audioNormalization', this._navRule);
+            },
+            destroy() {
+                this._remove();
+                removeNavigateRule('audioNormalization');
             }
         },
 

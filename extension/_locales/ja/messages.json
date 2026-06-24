@@ -350,12 +350,6 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "プログレスバーを常時表示"
   },
-  "feature_antiTranslate_desc": {
-    "message": "YouTube による動画タイトルと説明文の自動翻訳を防止します。グリッドサムネイルと視聴ページで原語テキストを復元します。"
-  },
-  "feature_antiTranslate_name": {
-    "message": "翻訳防止（原語タイトル＋説明文）"
-  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "YouTube が自動吹き替え音声トラックを配信した場合、元の音声に切り替えを試みます。ベストエフォート — movie_player の getAvailableAudioTracks() / setAudioTrack() を使用。"
   },
@@ -368,11 +362,23 @@
   "feature_antiTranslateTranscript_name": {
     "message": "文字起こし翻訳防止"
   },
+  "feature_antiTranslate_desc": {
+    "message": "YouTube による動画タイトルと説明文の自動翻訳を防止します。グリッドサムネイルと視聴ページで原語テキストを復元します。"
+  },
+  "feature_antiTranslate_name": {
+    "message": "翻訳防止（原語タイトル＋説明文）"
+  },
   "feature_astraContextMenu_desc": {
     "message": "プレーヤーやフィードカードを右クリックして Astra アクションを利用: チャンネル非表示、動画 URL コピー、タイムスタンプリンクコピー、文字起こしを開く。デフォルトオフ — contextmenu リスナーを追加しますが、YouTube のネイティブ右クリックをブロックしません。"
   },
   "feature_astraContextMenu_name": {
     "message": "Astra コンテキストメニュー"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "ダイナミックレンジを圧縮し、静かな部分と大きな部分を同じような音量で再生します。"
+  },
+  "feature_audioNormalization_name": {
+    "message": "オーディオ正規化"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "YouTube の設定を開かずに優先音声言語を保存します。スクリプトがネイティブメニューから音声トラックを切り替えると、YouTube は再生を再開します。"
@@ -782,29 +788,29 @@
   "feature_daTitleFormat_name": {
     "message": "タイトルフォーマット"
   },
-  "feature_deArrow_desc": {
-    "message": "釣りタイトルとサムネイルを DeArrow データベースのクラウドソース代替に置換"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "視聴ページのチャンネル名横に小さな DeArrow モードチップを追加。クリックで DeArrow → 元 → オフ → DeArrow を切り替え。オーバーライドはチャンネル ID ごとに保持されます。"
   },
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "DeArrow チャンネル別オーバーライド"
   },
-  "feature_dearrowPeekButton_desc": {
-    "message": "Alt キーを押している間、元の YouTube タイトルを一時的に表示 (DeArrow/カスタムタイトルを一時解除)"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "DeArrow ピークボタン"
-  },
   "feature_deArrowVoting_desc": {
     "message": "DeArrow のタイトル置換に投票。置換されたタイトルの横にサムズアップ/ダウンボタンを追加。ローカルのプライベート userID を使用。デフォルトオフ。"
   },
   "feature_deArrowVoting_name": {
     "message": "DeArrow 投票"
+  },
+  "feature_deArrow_desc": {
+    "message": "釣りタイトルとサムネイルを DeArrow データベースのクラウドソース代替に置換"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "Alt キーを押している間、元の YouTube タイトルを一時的に表示 (DeArrow/カスタムタイトルを一時解除)"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "DeArrow ピークボタン"
   },
   "feature_debugMode_desc": {
     "message": "コンソールに詳細な診断ログを有効化"
@@ -980,12 +986,6 @@
   "feature_forceDarkEverywhere_name": {
     "message": "全 YouTube ページでダーク強制"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "常時有効: OS が強制カラーを報告した場合（Windows ハイコントラスト、GTK 強制カラー）、Astra が注入するコントロールはシステムカラーを自動使用し、テキストの可読性とフォーカスリングの視認性を確保。メディアクエリ自体がゲートであり、このトグルは設定の互換性のために残されています。"
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "強制カラー/ハイコントラストサポート"
-  },
   "feature_forceH264_desc": {
     "message": "古いハードウェアでの CPU 負荷を低減するため H.264 (AVC) を VP9/AV1 より優先。最大画質が下がる可能性あり。MAIN ワールドコーデックブリッジを使用。"
   },
@@ -998,17 +998,17 @@
   "feature_forceStandardFps_name": {
     "message": "標準フレームレート強制"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "常時有効: OS が強制カラーを報告した場合（Windows ハイコントラスト、GTK 強制カラー）、Astra が注入するコントロールはシステムカラーを自動使用し、テキストの可読性とフォーカスリングの視認性を確保。メディアクエリ自体がゲートであり、このトグルは設定の互換性のために残されています。"
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "強制カラー/ハイコントラストサポート"
+  },
   "feature_frameByFrameButtons_desc": {
     "message": "正確なフレームナビゲーション用に、プレーヤーコントロールに戻る (,) と進む (.) のコマ送りボタンを追加"
   },
   "feature_frameByFrameButtons_name": {
     "message": "コマ送りボタン"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "動画上のどこでもダブルクリックでフルスクリーンを切り替え（デフォルトのシーク動作を置換）"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "ダブルクリックでフルスクリーン"
   },
   "feature_fullTitles_desc": {
     "message": "サムネイルタイトルの 2 行制限を解除し、長いタイトルを全文表示"
@@ -1021,6 +1021,12 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "全幅登録チャンネル"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "動画上のどこでもダブルクリックでフルスクリーンを切り替え（デフォルトのシーク動作を置換）"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "ダブルクリックでフルスクリーン"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "ドキュメント本文に role=status / aria-live=polite の非表示コンテナを1つ配置。スクリーンリーダーが Astra の書き込み（トースト、フィルター結果、ダウンロード状態の変化）を読み上げます。"
@@ -1058,17 +1064,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "視聴ページの要素を非表示"
   },
-  "feature_hideAirplayButton_desc": {
-    "message": "プレーヤーコントロールから Airplay アイコンを削除"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "Airplay ボタンを非表示"
-  },
   "feature_hideAiSummary_desc": {
     "message": "AI 生成の要約と Ask AI ボタンを削除"
   },
   "feature_hideAiSummary_name": {
     "message": "AI 要約を非表示"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "プレーヤーコントロールから Airplay アイコンを削除"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "Airplay ボタンを非表示"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "プレーヤーコントロールから自動再生トグルスイッチを削除"
@@ -1346,6 +1352,12 @@
   "feature_monetizationIndicator_name": {
     "message": "収益化インジケーター"
   },
+  "feature_monoToStereo_desc": {
+    "message": "モノラル音声を両耳に均等に配置 — 片側だけの録音、講義、ヘッドホンで偏って聞こえる古いコンテンツを修正"
+  },
+  "feature_monoToStereo_name": {
+    "message": "モノラルからステレオ"
+  },
   "feature_musicVideoSpeedLock_desc": {
     "message": "持続的再生速度が有効のとき、音楽カテゴリの動画を 1x に維持して楽曲の速度変更を防止"
   },
@@ -1370,17 +1382,17 @@
   "feature_noFrostedGlass_name": {
     "message": "すりガラス効果を無効化"
   },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "YouTube が AI 吹き替え音声トラックを自動選択したとき（例: 韓国語の動画に英語吹き替え）、一度だけトーストを表示。プレーヤー設定から手動で元のトラックに切り替えできます。"
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "AI 吹き替え音声の通知"
-  },
   "feature_notInterestedButton_desc": {
     "message": "動画サムネイルに X ボタンを追加し、YouTube のフィードバック API で動画を素早く非表示"
   },
   "feature_notInterestedButton_name": {
     "message": "サムネイルに「興味なし」ボタン"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "YouTube が AI 吹き替え音声トラックを自動選択したとき（例: 韓国語の動画に英語吹き替え）、一度だけトーストを表示。プレーヤー設定から手動で元のトラックに切り替えできます。"
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "AI 吹き替え音声の通知"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "動画のプログレスバーを Nyan Cat アニメーションに置換"
@@ -2006,6 +2018,12 @@
   "feature_videoContextMenu_name": {
     "message": "プレーヤーダウンロードメニュー"
   },
+  "feature_videoFlip_desc": {
+    "message": "動画を水平または垂直に反転 — 鏡像ダンス動画、テキストの可読性、反転した録画に便利"
+  },
+  "feature_videoFlip_name": {
+    "message": "動画の反転"
+  },
   "feature_videoLoopButton_desc": {
     "message": "プレーヤーコントロールにワンクリックで動画をループさせるトグルボタンを追加"
   },
@@ -2024,18 +2042,6 @@
   "feature_videoResolutionBadge_name": {
     "message": "サムネイルの解像度バッジ"
   },
-  "feature_videoFlip_desc": {
-    "message": "動画を水平または垂直に反転 — 鏡像ダンス動画、テキストの可読性、反転した録画に便利"
-  },
-  "feature_videoFlip_name": {
-    "message": "動画の反転"
-  },
-  "feature_monoToStereo_desc": {
-    "message": "モノラル音声を両耳に均等に配置 — 片側だけの録音、講義、ヘッドホンで偏って聞こえる古いコンテンツを修正"
-  },
-  "feature_monoToStereo_name": {
-    "message": "モノラルからステレオ"
-  },
   "feature_videoRotation_desc": {
     "message": "CSS transform で動画を 90/180/270 度回転 — 横向きのスマホ録画に便利"
   },
@@ -2047,12 +2053,6 @@
   },
   "feature_videoScreenshot_name": {
     "message": "動画スクリーンショット"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "1行あたりの動画サムネイル数を設定 (0 = ウィンドウ幅に応じて動的)"
-  },
-  "feature_videosPerRow_name": {
-    "message": "1行あたりの動画数"
   },
   "feature_videoVisualFilters_desc": {
     "message": "動画要素に CSS フィルターで明るさ / コントラスト / 彩度 / 色相 / グレースケール / セピアを調整"
@@ -2066,11 +2066,29 @@
   "feature_videoZoom_name": {
     "message": "動画ズーム＆パン"
   },
+  "feature_videosPerRow_desc": {
+    "message": "1行あたりの動画サムネイル数を設定 (0 = ウィンドウ幅に応じて動的)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "1行あたりの動画数"
+  },
   "feature_vlcMpvHandoff_desc": {
     "message": "GitHub フルプロファイル専用。プレーヤー横に ytvlc:// または ytmpv:// プロトコル URL を発行するボタンを追加。プロトコルハンドラーは OS 側で登録が必要 — Astra Deck はバイナリを直接実行しません。デフォルトオフ。"
   },
   "feature_vlcMpvHandoff_name": {
     "message": "VLC / MPV ストリーム連携"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "ボリュームブーストのゲイン倍率（1.0 = 等倍、最大 10.0）"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "ボリュームブーストレベル"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "Web Audio ゲインノードで音声を100%以上に増幅します（最大10倍）。静かな録音に便利です。"
+  },
+  "feature_volumeBoost_name": {
+    "message": "ボリュームブースト"
   },
   "feature_volumeWheelMode_desc": {
     "message": "プレーヤー上でマウスホイールをスクロールして 5% 刻みで音量を変更。フローティングインジケーターチップが 1.2 秒間新しいレベルを表示。キーボードショートカットは追加されません。"
@@ -2330,6 +2348,21 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "フィードクリーンアップ"
+  },
+  "qtGroup_Focus": {
+    "message": "フォーカス"
+  },
+  "qtGroup_Playback": {
+    "message": "再生"
+  },
+  "qtGroup_Utilities": {
+    "message": "ユーティリティ"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "視聴フロー"
+  },
   "qt_autoTheaterMode_desc": {
     "message": "動画をシアター表示で開く"
   },
@@ -2420,21 +2453,6 @@
   "qt_transcriptViewer_name": {
     "message": "トランスクリプトサイドバー"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "フィードクリーンアップ"
-  },
-  "qtGroup_Focus": {
-    "message": "フォーカス"
-  },
-  "qtGroup_Playback": {
-    "message": "再生"
-  },
-  "qtGroup_Utilities": {
-    "message": "ユーティリティ"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "視聴フロー"
-  },
   "quickTogglesAria": {
     "message": "クイックトグル"
   },
@@ -2453,11 +2471,11 @@
   "resultsAllAvailableTpl": {
     "message": "… 個のクイックコントロールがこのポップアップで利用可能"
   },
-  "resultsMatching": {
-    "message": "一致"
-  },
   "resultsMatchTpl": {
     "message": "… 中 … 件がこのフィルターに一致"
+  },
+  "resultsMatching": {
+    "message": "一致"
   },
   "schemaOverviewCountTpl": {
     "message": "{categories} カテゴリで {enabled}/{total} 個の設定がオン"
@@ -2540,20 +2558,20 @@
   "statusClipboardUnavailable": {
     "message": "クリップボードが利用できません — ブラウザコンソールを参照。"
   },
-  "statusDiagCleared": {
-    "message": "診断ログをクリアしました。"
-  },
   "statusDiagClearFail": {
     "message": "ログをクリアできませんでした"
+  },
+  "statusDiagCleared": {
+    "message": "診断ログをクリアしました。"
   },
   "statusDiagCopied": {
     "message": "診断をクリップボードにコピーしました。"
   },
-  "statusDiagSaved": {
-    "message": "診断ログを保存しました。"
-  },
   "statusDiagSaveFail": {
     "message": "ログを保存できませんでした"
+  },
+  "statusDiagSaved": {
+    "message": "診断ログを保存しました。"
   },
   "statusExportFail": {
     "message": "エクスポート失敗"
@@ -2561,11 +2579,11 @@
   "statusImportFail": {
     "message": "インポート失敗"
   },
-  "statusMediadlReenabled": {
-    "message": "Astra Downloader のインストールプロンプトを再有効化しました。YouTube タブを再読み込みしてください。"
-  },
   "statusMediadlReenableFail": {
     "message": "Astra Downloader プロンプトを再有効化できませんでした。chrome://extensions を開いて再読み込みしてください。"
+  },
+  "statusMediadlReenabled": {
+    "message": "Astra Downloader のインストールプロンプトを再有効化しました。YouTube タブを再読み込みしてください。"
   },
   "statusOpenWorkspaceFail": {
     "message": "完全なワークスペースを開けませんでした。再試行してください。"
