@@ -6,6 +6,13 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Userscript: SponsorBlock integration.** The userscript now fetches
+  crowdsourced skip segments via the SponsorBlock hash-prefix privacy API,
+  auto-skips enabled categories during playback, and renders colored
+  segment bars on the progress bar. Same 9 category toggles as the
+  extension (sponsor, intro, outro, selfpromo, interaction, music_offtopic,
+  preview, filler, poi_highlight). Uses GM_xmlhttpRequest for cross-origin
+  API access. Cached locally with 12-hour TTL and 500-entry LRU cap.
 - **Popover API adoption for player popup menus.** Speed popup and
   download popup now use `popover="auto"` with `showPopover()` /
   `hidePopover()` when the Popover API is available (Chrome 114+,
