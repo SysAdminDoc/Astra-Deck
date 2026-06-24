@@ -63,11 +63,5 @@
 
 ### P3 — Later / Under Consideration
 
-- [ ] P3 — Companion native-messaging token bootstrap
-  Why: The current token exchange (extension reads `/health` with `X-MDL-Client` header) works but relies on the loopback network. Native messaging provides a direct, DNS-rebinding-immune channel for token exchange.
-  Evidence: `docs/native-messaging-token-bootstrap.md` design doc exists. The companion Flask server already validates tokens via `hmac.compare_digest`.
-  Touches: `astra_downloader/astra_downloader.py` (native messaging host), `extension/manifest.json` (nativeMessaging permission), `extension/background.js` (native messaging handler)
-  Acceptance: Extension discovers companion token via native messaging when available, falling back to `/health` probe.
-  Complexity: L
 
 

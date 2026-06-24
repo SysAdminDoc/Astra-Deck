@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Native messaging token bootstrap.** Extension-side `NATIVE_MSG_GET_TOKEN`
+  handler in background.js uses `chrome.runtime.connectNative()` to request
+  the companion token via a browser-pinned stdio pipe. Falls back to HTTP
+  `/health` when native messaging is unavailable or the host manifest is
+  not registered. `nativeMessaging` permission added to manifest; rationale
+  doc updated. Companion-side handlers were already scaffolded.
 - **Monolith decomposition: Download UI peel.** Extracted 1,626 lines of
   download UI code into `extension/features/download-ui/index.js`:
   MediaDLManager singleton, ytKitDownload orchestrator, showDownloadPopup,
