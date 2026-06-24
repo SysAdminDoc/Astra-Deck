@@ -33,10 +33,19 @@
     <div class="sp-storage-stats" id="sp-storage-stats"></div>
   </section>
 
+  <section class="sp-section" id="sp-settings" aria-label="Quick settings">
+    <h2 class="sp-section-title">Quick Settings</h2>
+    <input type="search" class="sp-search" id="sp-settings-search" placeholder="Filter settings…" autocomplete="off" spellcheck="false" aria-label="Filter settings">
+    <div class="sp-settings-list" id="sp-settings-list" role="list"></div>
+    <p class="sp-empty" id="sp-settings-empty" hidden>No settings match.</p>
+    <p class="sp-settings-count" id="sp-settings-count"></p>
+  </section>
+
   <footer class="sp-footer">
     <button type="button" class="sp-refresh-btn" id="sp-refresh">Refresh</button>
   </footer>
 
+  <script src="core/settings-schema.js"></script>
   <script src="sidepanel.js"></script>
 </body>
 </html>

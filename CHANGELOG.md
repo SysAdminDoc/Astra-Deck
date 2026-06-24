@@ -6,6 +6,11 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Chrome Side Panel: settings panel.** The Side Panel diagnostic dashboard
+  now includes a full schema-driven settings panel with search filter,
+  toggle switches, and live sync to YouTube tabs. Persists across SPA
+  navigation (unlike the in-page panel). Loads `settings-schema.js` for
+  the full 380-entry schema. Firefox falls back to the in-page panel.
 - **Userscript: SponsorBlock integration.** The userscript now fetches
   crowdsourced skip segments via the SponsorBlock hash-prefix privacy API,
   auto-skips enabled categories during playback, and renders colored

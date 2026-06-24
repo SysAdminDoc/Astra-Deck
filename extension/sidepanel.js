@@ -145,9 +145,119 @@ async function renderStorage() {
     } catch (_) { /* reason: storage read failed */ }
 }
 
+// ── Settings panel ──
+const SETTINGS_KEY = 'ytSuiteSettings';
+const settingsList = $('#sp-settings-list');
+const settingsEmpty = $('#sp-settings-empty');
+const settingsCount = $('#sp-settings-count');
+const settingsSearch = $('#sp-settings-search');
+let _settingsSchema = null;
+let _settingsState = {};
+
+function getSchema() {
+    if (_settingsSchema) return _settingsSchema;
+    const scope = typeof window !== 'undefined' && window.__YTKIT_SETTINGS_SCHEMA__;
+    if (!scope || !Array.isArray(scope.SETTINGS_SCHEMA)) return [];
+    _settingsSchema = scope.SETTINGS_SCHEMA.filter(e =>
+        e.type === 'boolean' && !e.internal && e.key !== '_settingsVersion'
+    );
+    return _settingsSchema;
+}
+
+async function loadSettings() {
+    try {
+        const data = await chrome.storage.local.get(SETTINGS_KEY);
+        _settingsState = (data && data[SETTINGS_KEY] && typeof data[SETTINGS_KEY] === 'object')
+            ? data[SETTINGS_KEY] : {};
+    } catch (_) { _settingsState = {}; }
+}
+
+async function writeSetting(key, value) {
+    _settingsState[key] = value;
+    try {
+        await chrome.storage.local.set({ [SETTINGS_KEY]: _settingsState });
+        const tabs = await chrome.tabs.query({ url: ['*://*.youtube.com/*'] });
+        for (const tab of tabs) {
+            try {
+                chrome.tabs.sendMessage(tab.id, { type: 'YTKIT_SETTING_CHANGED', key, value }, () => {
+                    void chrome.runtime.lastError;
+                });
+            } catch (_) { /* reason: tab may be closing */ }
+        }
+    } catch (_) { /* reason: storage write best-effort */ }
+}
+
+function renderSettings(filter) {
+    if (!settingsList) return;
+    settingsList.textContent = '';
+    const schema = getSchema();
+    const query = (filter || '').toLowerCase().trim();
+    const visible = schema.filter(entry => {
+        if (!query) return true;
+        return entry.key.toLowerCase().includes(query)
+            || (entry.category || '').toLowerCase().includes(query);
+    });
+
+    if (settingsEmpty) settingsEmpty.hidden = visible.length > 0;
+    if (settingsCount) settingsCount.textContent = query
+        ? `${visible.length} of ${schema.length} settings`
+        : `${schema.length} settings`;
+
+    for (const entry of visible) {
+        const on = Boolean(_settingsState[entry.key] ?? entry.defaultValue);
+        const row = document.createElement('div');
+        row.className = 'sp-setting-row';
+        row.setAttribute('role', 'switch');
+        row.setAttribute('aria-checked', String(on));
+        row.setAttribute('tabindex', '0');
+        row.title = `${entry.key} (${entry.category || 'general'})`;
+
+        const name = document.createElement('span');
+        name.className = 'sp-setting-name';
+        name.textContent = entry.key;
+
+        const sw = document.createElement('span');
+        sw.className = 'sp-setting-switch';
+
+        row.appendChild(name);
+        row.appendChild(sw);
+
+        row.addEventListener('click', async () => {
+            const next = !Boolean(_settingsState[entry.key] ?? entry.defaultValue);
+            row.setAttribute('aria-checked', String(next));
+            await writeSetting(entry.key, next);
+        });
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                row.click();
+            }
+        });
+        settingsList.appendChild(row);
+    }
+}
+
+if (settingsSearch) {
+    let _debounce = null;
+    settingsSearch.addEventListener('input', () => {
+        clearTimeout(_debounce);
+        _debounce = setTimeout(() => renderSettings(settingsSearch.value), 150);
+    });
+}
+
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes[SETTINGS_KEY]) {
+        _settingsState = (changes[SETTINGS_KEY].newValue && typeof changes[SETTINGS_KEY].newValue === 'object')
+            ? changes[SETTINGS_KEY].newValue : {};
+        renderSettings(settingsSearch?.value || '');
+    }
+});
+
 async function refresh() {
     const tab = await getActiveYouTubeTab();
     await Promise.all([renderPerf(tab), renderSelectorHealth(tab), renderStorage()]);
+    await loadSettings();
+    renderSettings(settingsSearch?.value || '');
 }
 
 if (refreshBtn) refreshBtn.addEventListener('click', () => { void refresh(); });
