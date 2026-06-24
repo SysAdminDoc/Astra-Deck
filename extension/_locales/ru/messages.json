@@ -350,12 +350,6 @@
   "feature_alwaysShowProgressBar_name": {
     "message": "Всегда показывать полосу прогресса"
   },
-  "feature_antiTranslate_desc": {
-    "message": "Запретить YouTube автоматически переводить названия и описания видео на ваш язык. Восстанавливает оригинальный текст на миниатюрах и странице просмотра."
-  },
-  "feature_antiTranslate_name": {
-    "message": "Антиперевод (оригинальные заголовки + описания)"
-  },
   "feature_antiTranslateAudioTrack_desc": {
     "message": "Когда YouTube подставляет автоматически дублированную аудиодорожку, попытаться переключиться на оригинальную. Наилучшие усилия — работает через movie_player getAvailableAudioTracks() / setAudioTrack() при наличии."
   },
@@ -368,11 +362,23 @@
   "feature_antiTranslateTranscript_name": {
     "message": "Антиперевод транскрипта"
   },
+  "feature_antiTranslate_desc": {
+    "message": "Запретить YouTube автоматически переводить названия и описания видео на ваш язык. Восстанавливает оригинальный текст на миниатюрах и странице просмотра."
+  },
+  "feature_antiTranslate_name": {
+    "message": "Антиперевод (оригинальные заголовки + описания)"
+  },
   "feature_astraContextMenu_desc": {
     "message": "Правый клик по плееру или карточке ленты открывает действия Astra: скрыть канал, копировать URL видео, копировать ссылку с таймкодом, открыть транскрипт. По умолчанию выключено — добавляет обработчик контекстного меню; не блокирует стандартное меню YouTube."
   },
   "feature_astraContextMenu_name": {
     "message": "Контекстное меню Astra"
+  },
+  "feature_audioNormalization_desc": {
+    "message": "Сжимает динамический диапазон, чтобы тихие и громкие фрагменты воспроизводились на одинаковой громкости."
+  },
+  "feature_audioNormalization_name": {
+    "message": "Нормализация звука"
   },
   "feature_audioTrackLanguage_desc": {
     "message": "Сохраняет предпочтительный язык аудио без автоматического открытия настроек YouTube. YouTube перезапускает воспроизведение при переключении аудиодорожки через встроенное меню."
@@ -782,29 +788,29 @@
   "feature_daTitleFormat_name": {
     "message": "Формат заголовков"
   },
-  "feature_deArrow_desc": {
-    "message": "Заменить кликбейтные заголовки и миниатюры краудсорсинговыми альтернативами из базы данных DeArrow"
-  },
-  "feature_deArrow_name": {
-    "message": "DeArrow"
-  },
   "feature_deArrowChannelOverridesPanel_desc": {
     "message": "Добавляет небольшой чип режима DeArrow рядом с именем канала на странице просмотра. Переключение по кругу: DeArrow → Оригинал → Выкл → DeArrow. Переопределения сохраняются в deArrowChannelOverrides по ID канала."
   },
   "feature_deArrowChannelOverridesPanel_name": {
     "message": "Переопределения DeArrow по каналам"
   },
-  "feature_dearrowPeekButton_desc": {
-    "message": "Удерживайте Alt, чтобы временно показать оригинальные заголовки YouTube (отменяет DeArrow/пользовательские заголовки, пока нажата)"
-  },
-  "feature_dearrowPeekButton_name": {
-    "message": "Кнопка просмотра DeArrow"
-  },
   "feature_deArrowVoting_desc": {
     "message": "Голосуйте за замены заголовков DeArrow. Добавляет кнопки «За/Против» рядом с заменёнными заголовками. Использует локальный приватный userID. По умолчанию выключено."
   },
   "feature_deArrowVoting_name": {
     "message": "Голосование DeArrow"
+  },
+  "feature_deArrow_desc": {
+    "message": "Заменить кликбейтные заголовки и миниатюры краудсорсинговыми альтернативами из базы данных DeArrow"
+  },
+  "feature_deArrow_name": {
+    "message": "DeArrow"
+  },
+  "feature_dearrowPeekButton_desc": {
+    "message": "Удерживайте Alt, чтобы временно показать оригинальные заголовки YouTube (отменяет DeArrow/пользовательские заголовки, пока нажата)"
+  },
+  "feature_dearrowPeekButton_name": {
+    "message": "Кнопка просмотра DeArrow"
   },
   "feature_debugMode_desc": {
     "message": "Включить подробное диагностическое логирование в консоль"
@@ -980,12 +986,6 @@
   "feature_forceDarkEverywhere_name": {
     "message": "Принудительная тёмная тема на всех страницах YouTube"
   },
-  "feature_forcedColorsSupport_desc": {
-    "message": "Всегда активно: когда ОС сообщает о принудительных цветах (высокая контрастность Windows, принудительные цвета GTK), элементы управления Astra автоматически используют системные цвета для сохранения читаемости текста и видимости рамок фокуса. Медиа-запрос сам является условием; этот переключатель сохранён для совместимости настроек и не даёт дополнительного эффекта."
-  },
-  "feature_forcedColorsSupport_name": {
-    "message": "Поддержка принудительных цветов / высокой контрастности"
-  },
   "feature_forceH264_desc": {
     "message": "Предпочитать H.264 (AVC) вместо VP9/AV1 для снижения нагрузки на CPU на старом оборудовании. Может снизить максимальное качество. Использует мост кодеков MAIN-мира."
   },
@@ -998,17 +998,17 @@
   "feature_forceStandardFps_name": {
     "message": "Принудительная стандартная частота кадров"
   },
+  "feature_forcedColorsSupport_desc": {
+    "message": "Всегда активно: когда ОС сообщает о принудительных цветах (высокая контрастность Windows, принудительные цвета GTK), элементы управления Astra автоматически используют системные цвета для сохранения читаемости текста и видимости рамок фокуса. Медиа-запрос сам является условием; этот переключатель сохранён для совместимости настроек и не даёт дополнительного эффекта."
+  },
+  "feature_forcedColorsSupport_name": {
+    "message": "Поддержка принудительных цветов / высокой контрастности"
+  },
   "feature_frameByFrameButtons_desc": {
     "message": "Добавить видимые кнопки «Назад на кадр» (,) и «Вперёд на кадр» (.) в элементы управления плеера для точной покадровой навигации"
   },
   "feature_frameByFrameButtons_name": {
     "message": "Кнопки покадрового перемещения"
-  },
-  "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Двойной клик в любом месте видео для переключения полноэкранного режима (заменяет стандартную перемотку)"
-  },
-  "feature_fullscreenOnDoubleClick_name": {
-    "message": "Полноэкранный режим по двойному клику"
   },
   "feature_fullTitles_desc": {
     "message": "Убрать ограничение в 2 строки для названий на миниатюрах, чтобы длинные названия отображались полностью"
@@ -1021,6 +1021,12 @@
   },
   "feature_fullWidthSubscriptions_name": {
     "message": "Подписки во всю ширину"
+  },
+  "feature_fullscreenOnDoubleClick_desc": {
+    "message": "Двойной клик в любом месте видео для переключения полноэкранного режима (заменяет стандартную перемотку)"
+  },
+  "feature_fullscreenOnDoubleClick_name": {
+    "message": "Полноэкранный режим по двойному клику"
   },
   "feature_globalAriaLiveRegion_desc": {
     "message": "Монтирует единый скрытый контейнер role=status / aria-live=polite в body документа. Программы чтения с экрана объявляют текст, который Astra записывает в него (уведомления, результаты фильтрации, изменения статуса загрузки)."
@@ -1058,17 +1064,17 @@
   "feature_hiddenWatchElementsManager_name": {
     "message": "Скрытие элементов страницы просмотра"
   },
-  "feature_hideAirplayButton_desc": {
-    "message": "Убрать значок Airplay из элементов управления плеера"
-  },
-  "feature_hideAirplayButton_name": {
-    "message": "Скрыть кнопку Airplay"
-  },
   "feature_hideAiSummary_desc": {
     "message": "Убрать AI-генерированные резюме и кнопки «Спросить AI»"
   },
   "feature_hideAiSummary_name": {
     "message": "Скрыть AI-резюме"
+  },
+  "feature_hideAirplayButton_desc": {
+    "message": "Убрать значок Airplay из элементов управления плеера"
+  },
+  "feature_hideAirplayButton_name": {
+    "message": "Скрыть кнопку Airplay"
   },
   "feature_hideAutoplayToggle_desc": {
     "message": "Убрать переключатель автовоспроизведения из элементов управления плеера"
@@ -1346,6 +1352,12 @@
   "feature_monetizationIndicator_name": {
     "message": "Индикатор монетизации"
   },
+  "feature_monoToStereo_desc": {
+    "message": "Центрировать монозвук равномерно в обоих ушах — исправляет односторонние записи, лекции и старый контент, который звучит неравномерно в наушниках"
+  },
+  "feature_monoToStereo_name": {
+    "message": "Моно в стерео"
+  },
   "feature_musicVideoSpeedLock_desc": {
     "message": "При включённой постоянной скорости воспроизведения оставлять видео категории «Музыка» на 1×, чтобы песни не ускорялись"
   },
@@ -1370,17 +1382,17 @@
   "feature_noFrostedGlass_name": {
     "message": "Отключить матовое стекло"
   },
-  "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Показать одноразовое уведомление, когда YouTube автоматически выбирает AI-дублированную аудиодорожку (например, английский дубляж корейского видео). Вы можете вручную переключиться на оригинальную дорожку в настройках плеера."
-  },
-  "feature_notifyAutoDubbedAudio_name": {
-    "message": "Уведомление об AI-дубляже"
-  },
   "feature_notInterestedButton_desc": {
     "message": "Добавить кнопку X на миниатюрах видео для быстрого удаления видео через API обратной связи YouTube"
   },
   "feature_notInterestedButton_name": {
     "message": "«Не интересно» на миниатюрах"
+  },
+  "feature_notifyAutoDubbedAudio_desc": {
+    "message": "Показать одноразовое уведомление, когда YouTube автоматически выбирает AI-дублированную аудиодорожку (например, английский дубляж корейского видео). Вы можете вручную переключиться на оригинальную дорожку в настройках плеера."
+  },
+  "feature_notifyAutoDubbedAudio_name": {
+    "message": "Уведомление об AI-дубляже"
   },
   "feature_nyanCatProgressBar_desc": {
     "message": "Заменить полосу прогресса видео анимацией Nyan Cat"
@@ -2006,6 +2018,12 @@
   "feature_videoContextMenu_name": {
     "message": "Меню загрузки плеера"
   },
+  "feature_videoFlip_desc": {
+    "message": "Зеркальное отражение видео по горизонтали или вертикали — полезно для зеркальных уроков танцев, читаемости текста или перевёрнутых записей"
+  },
+  "feature_videoFlip_name": {
+    "message": "Отражение видео"
+  },
   "feature_videoLoopButton_desc": {
     "message": "Добавить кнопку переключения зацикливания в элементы управления плеера для повтора видео в один клик"
   },
@@ -2024,18 +2042,6 @@
   "feature_videoResolutionBadge_name": {
     "message": "Значок разрешения на миниатюрах"
   },
-  "feature_videoFlip_desc": {
-    "message": "Зеркальное отражение видео по горизонтали или вертикали — полезно для зеркальных уроков танцев, читаемости текста или перевёрнутых записей"
-  },
-  "feature_videoFlip_name": {
-    "message": "Отражение видео"
-  },
-  "feature_monoToStereo_desc": {
-    "message": "Центрировать монозвук равномерно в обоих ушах — исправляет односторонние записи, лекции и старый контент, который звучит неравномерно в наушниках"
-  },
-  "feature_monoToStereo_name": {
-    "message": "Моно в стерео"
-  },
   "feature_videoRotation_desc": {
     "message": "Поворот видео на 90/180/270 градусов через CSS-трансформацию — полезно для боковых записей с телефона"
   },
@@ -2047,12 +2053,6 @@
   },
   "feature_videoScreenshot_name": {
     "message": "Скриншот видео"
-  },
-  "feature_videosPerRow_desc": {
-    "message": "Задать количество миниатюр видео в ряду (0 = динамически по ширине окна)"
-  },
-  "feature_videosPerRow_name": {
-    "message": "Видео в ряду"
   },
   "feature_videoVisualFilters_desc": {
     "message": "Настроить яркость / контраст / насыщенность / оттенок / серый тон / сепию через CSS-фильтр на элементе видео"
@@ -2066,11 +2066,29 @@
   "feature_videoZoom_name": {
     "message": "Масштабирование и панорамирование видео"
   },
+  "feature_videosPerRow_desc": {
+    "message": "Задать количество миниатюр видео в ряду (0 = динамически по ширине окна)"
+  },
+  "feature_videosPerRow_name": {
+    "message": "Видео в ряду"
+  },
   "feature_vlcMpvHandoff_desc": {
     "message": "Только для полного профиля GitHub. Добавляет кнопки рядом с плеером, которые запускают URL протоколов ytvlc:// или ytmpv://. Обработчик протокола должен быть зарегистрирован в вашей ОС — Astra Deck никогда не запускает бинарные файлы напрямую. По умолчанию выключено."
   },
   "feature_vlcMpvHandoff_name": {
     "message": "Передача потока в VLC / MPV"
+  },
+  "feature_volumeBoostLevel_desc": {
+    "message": "Множитель усиления для усиления громкости (1.0 = без усиления, макс 10.0)"
+  },
+  "feature_volumeBoostLevel_name": {
+    "message": "Уровень усиления громкости"
+  },
+  "feature_volumeBoost_desc": {
+    "message": "Усиливает звук выше 100% через узел усиления Web Audio (до 10x). Полезно для тихих записей."
+  },
+  "feature_volumeBoost_name": {
+    "message": "Усиление громкости"
   },
   "feature_volumeWheelMode_desc": {
     "message": "Прокручивайте колесо мыши над плеером для изменения громкости с шагом 5%. Плавающий индикатор показывает новый уровень 1,2 с; горячие клавиши не добавляются."
@@ -2330,6 +2348,21 @@
   "popupTitle": {
     "message": "Astra Deck"
   },
+  "qtGroup_Feed_Cleanup": {
+    "message": "Очистка ленты"
+  },
+  "qtGroup_Focus": {
+    "message": "Фокус"
+  },
+  "qtGroup_Playback": {
+    "message": "Воспроизведение"
+  },
+  "qtGroup_Utilities": {
+    "message": "Утилиты"
+  },
+  "qtGroup_Watch_Flow": {
+    "message": "Поток просмотра"
+  },
   "qt_autoTheaterMode_desc": {
     "message": "Открывать видео в режиме Theater"
   },
@@ -2420,21 +2453,6 @@
   "qt_transcriptViewer_name": {
     "message": "Боковая панель транскрипта"
   },
-  "qtGroup_Feed_Cleanup": {
-    "message": "Очистка ленты"
-  },
-  "qtGroup_Focus": {
-    "message": "Фокус"
-  },
-  "qtGroup_Playback": {
-    "message": "Воспроизведение"
-  },
-  "qtGroup_Utilities": {
-    "message": "Утилиты"
-  },
-  "qtGroup_Watch_Flow": {
-    "message": "Поток просмотра"
-  },
   "quickTogglesAria": {
     "message": "Быстрые переключатели"
   },
@@ -2453,11 +2471,11 @@
   "resultsAllAvailableTpl": {
     "message": "… quick controls are available in this popup"
   },
-  "resultsMatching": {
-    "message": "совпадает"
-  },
   "resultsMatchTpl": {
     "message": "… of … … match this filter"
+  },
+  "resultsMatching": {
+    "message": "совпадает"
   },
   "schemaOverviewCountTpl": {
     "message": "{enabled}/{total} settings on across {categories} categories"
@@ -2540,20 +2558,20 @@
   "statusClipboardUnavailable": {
     "message": "Буфер обмена недоступен — см. консоль браузера."
   },
-  "statusDiagCleared": {
-    "message": "Журнал диагностики очищен."
-  },
   "statusDiagClearFail": {
     "message": "Не удалось очистить журнал"
+  },
+  "statusDiagCleared": {
+    "message": "Журнал диагностики очищен."
   },
   "statusDiagCopied": {
     "message": "Диагностика скопирована в буфер обмена."
   },
-  "statusDiagSaved": {
-    "message": "Журнал диагностики сохранён."
-  },
   "statusDiagSaveFail": {
     "message": "Не удалось сохранить журнал"
+  },
+  "statusDiagSaved": {
+    "message": "Журнал диагностики сохранён."
   },
   "statusExportFail": {
     "message": "Ошибка экспорта"
@@ -2561,11 +2579,11 @@
   "statusImportFail": {
     "message": "Ошибка импорта"
   },
-  "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
-  },
   "statusMediadlReenableFail": {
     "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+  },
+  "statusMediadlReenabled": {
+    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
   },
   "statusOpenWorkspaceFail": {
     "message": "Не удалось открыть полную рабочую область. Попробуйте ещё раз."
