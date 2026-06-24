@@ -72,14 +72,6 @@
 
 
 
-### P1 — i18n / Distribution
-
-- [ ] P1 — Batch-translate feature-definition i18n keys for store submission
-  Why: 889 EN keys but non-EN locales are only 21–27% truly translated. 610–646 `feature_*_name` and `feature_*_desc` keys are placeholder-identical English. CWS/AMO submissions require credible translations to claim multi-language support.
-  Evidence: `scripts/i18n-coverage.js` reports de/es/fr/it at 21.6–21.9% translated; `extension/_locales/*/messages.json` feature keys are English copies.
-  Touches: All 10 non-EN `extension/_locales/*/messages.json` files, `scripts/i18n-coverage.js` threshold
-  Acceptance: All non-EN locales reach ≥60% real translation. Feature names and descriptions are translated, not English copies. i18n coverage gate threshold raised accordingly.
-  Complexity: L
 
 ### P2 — Quick Wins / Enhancement
 

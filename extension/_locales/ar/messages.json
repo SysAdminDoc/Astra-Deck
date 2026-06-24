@@ -273,1924 +273,1924 @@
     "description": "The extension name displayed in the browser UI."
   },
   "feature_abHide_ask_desc": {
-    "message": "Hide Ask or AI button below videos"
+    "message": "إخفاء زر السؤال أو الذكاء الاصطناعي أسفل الفيديوهات"
   },
   "feature_abHide_ask_name": {
-    "message": "Ask/AI Button"
+    "message": "زر السؤال/الذكاء الاصطناعي"
   },
   "feature_abHide_clip_desc": {
-    "message": "Hide clip button below videos"
+    "message": "إخفاء زر المقطع أسفل الفيديوهات"
   },
   "feature_abHide_clip_name": {
-    "message": "Clip Button"
+    "message": "زر المقطع"
   },
   "feature_abHide_like_desc": {
-    "message": "Hide like button below videos"
+    "message": "إخفاء زر الإعجاب أسفل الفيديوهات"
   },
   "feature_abHide_like_name": {
-    "message": "Like Button"
+    "message": "زر الإعجاب"
   },
   "feature_abHide_moreActions_desc": {
-    "message": "Hide more actions button below videos"
+    "message": "إخفاء زر المزيد من الإجراءات أسفل الفيديوهات"
   },
   "feature_abHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "المزيد من الإجراءات (...)"
   },
   "feature_abHide_save_desc": {
-    "message": "Hide save button below videos"
+    "message": "إخفاء زر الحفظ أسفل الفيديوهات"
   },
   "feature_abHide_save_name": {
-    "message": "Save Button"
+    "message": "زر الحفظ"
   },
   "feature_abHide_share_desc": {
-    "message": "Hide share button below videos"
+    "message": "إخفاء زر المشاركة أسفل الفيديوهات"
   },
   "feature_abHide_share_name": {
-    "message": "Share Button"
+    "message": "زر المشاركة"
   },
   "feature_abHide_sponsor_desc": {
-    "message": "Hide join/sponsor button below videos"
+    "message": "إخفاء زر الانضمام/الرعاية أسفل الفيديوهات"
   },
   "feature_abHide_sponsor_name": {
-    "message": "Join/Sponsor Button"
+    "message": "زر الانضمام/الرعاية"
   },
   "feature_abHide_thanks_desc": {
-    "message": "Hide thanks button below videos"
+    "message": "إخفاء زر الشكر أسفل الفيديوهات"
   },
   "feature_abHide_thanks_name": {
-    "message": "Thanks Button"
+    "message": "زر الشكر"
   },
   "feature_abLoop_desc": {
-    "message": "Set two points on the video timeline and loop between them. Visual markers on the progress bar."
+    "message": "حدّد نقطتين على المخطط الزمني للفيديو وكرّر التشغيل بينهما. علامات مرئية على شريط التقدم."
   },
   "feature_abLoop_name": {
-    "message": "A-B Loop"
+    "message": "تكرار A-B"
   },
   "feature_adaptiveLiveLayout_desc": {
-    "message": "Automatically adjust layout for live stream chat side-by-side"
+    "message": "ضبط التخطيط تلقائياً لعرض دردشة البث المباشر جنباً إلى جنب"
   },
   "feature_adaptiveLiveLayout_name": {
-    "message": "Adaptive Live Layout"
+    "message": "تخطيط البث المباشر التكيّفي"
   },
   "feature_ageRestrictionBypass_desc": {
-    "message": "Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required."
+    "message": "تجاوز التحقق من العمر عبر جلب بيانات الفيديو من نقطة التضمين في YouTube. لا يتطلب تسجيل دخول."
   },
   "feature_ageRestrictionBypass_name": {
-    "message": "Age Restriction Bypass"
+    "message": "تجاوز قيود العمر"
   },
   "feature_aiVideoSummary_desc": {
-    "message": "Bring-your-own-key LLM summary of the current video transcript (OpenAI/Anthropic/Gemini/Ollama)"
+    "message": "ملخص بنموذج لغوي كبير باستخدام مفتاحك الخاص لنص الفيديو الحالي (OpenAI/Anthropic/Gemini/Ollama)"
   },
   "feature_aiVideoSummary_name": {
-    "message": "AI Video Summary"
+    "message": "ملخص الفيديو بالذكاء الاصطناعي"
   },
   "feature_alwaysShowProgressBar_desc": {
-    "message": "Keep the video progress bar visible at all times instead of hiding on idle"
+    "message": "إبقاء شريط تقدم الفيديو مرئياً في جميع الأوقات بدلاً من إخفائه عند عدم النشاط"
   },
   "feature_alwaysShowProgressBar_name": {
-    "message": "Always Show Progress Bar"
+    "message": "إظهار شريط التقدم دائماً"
   },
   "feature_antiTranslate_desc": {
-    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
+    "message": "منع YouTube من ترجمة عناوين الفيديو والأوصاف تلقائياً إلى لغتك المحلية. يستعيد النص باللغة الأصلية على صور الشبكة المصغرة + صفحة المشاهدة."
   },
   "feature_antiTranslate_name": {
-    "message": "Anti-Translate (Original Titles + Descriptions)"
+    "message": "منع الترجمة (العناوين + الأوصاف الأصلية)"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
+    "message": "عندما يقدّم YouTube مساراً صوتياً مُدبلجاً تلقائياً، يحاول الرجوع إلى الأصلي. أفضل جهد — يعمل عبر movie_player getAvailableAudioTracks() / setAudioTrack() عند توفره."
   },
   "feature_antiTranslateAudioTrack_name": {
-    "message": "Anti-Translate Audio Track"
+    "message": "منع ترجمة المسار الصوتي"
   },
   "feature_antiTranslateTranscript_desc": {
-    "message": "Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available."
+    "message": "يزيل معلمات مسار الترجمة من عنوان URL لنص لوحة التفاعل ليقدّم YouTube الترجمة باللغة الأصلية. أفضل جهد؛ يعمل عند توفر مسار اللغة الأصلية."
   },
   "feature_antiTranslateTranscript_name": {
-    "message": "Anti-Translate Transcript"
+    "message": "منع ترجمة النص المكتوب"
   },
   "feature_astraContextMenu_desc": {
-    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
+    "message": "انقر بزر الماوس الأيمن على المشغّل أو بطاقة خلاصة للحصول على إجراءات Astra: إخفاء القناة، نسخ عنوان الفيديو، نسخ رابط الطابع الزمني، فتح النص. معطَّل افتراضياً — يضيف مستمع قائمة سياق؛ لا يحجب قائمة YouTube الأصلية."
   },
   "feature_astraContextMenu_name": {
-    "message": "Astra Context Menu"
+    "message": "قائمة سياق Astra"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu."
+    "message": "يحفظ لغة الصوت المفضلة دون فتح إعدادات YouTube تلقائياً. يعيد YouTube تشغيل الفيديو عند تبديل المسارات الصوتية عبر القائمة الأصلية."
   },
   "feature_audioTrackLanguage_name": {
-    "message": "Preferred Audio Track Language"
+    "message": "لغة المسار الصوتي المفضلة"
   },
   "feature_autoClosePopups_desc": {
-    "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
+    "message": "إغلاق تلقائي لنوافذ موافقة ملفات تعريف الارتباط، واستطلاعات الرأي، ونوافذ YouTube المنبثقة الأخرى"
   },
   "feature_autoClosePopups_name": {
-    "message": "Auto-Close Popups"
+    "message": "إغلاق النوافذ المنبثقة تلقائياً"
   },
   "feature_autoDismissContentWarning_desc": {
-    "message": "Automatically clicks \"I understand and wish to proceed\" on videos with content warnings"
+    "message": "ينقر تلقائياً على \"أفهم وأرغب في المتابعة\" على الفيديوهات ذات تحذيرات المحتوى"
   },
   "feature_autoDismissContentWarning_name": {
-    "message": "Auto-Dismiss Content Warnings"
+    "message": "تجاوز تحذيرات المحتوى تلقائياً"
   },
   "feature_autoDismissStillWatching_desc": {
-    "message": "Automatically clicks the \"Continue Watching\" button when YouTube pauses playback for inactivity"
+    "message": "ينقر تلقائياً على زر \"متابعة المشاهدة\" عندما يوقف YouTube التشغيل بسبب عدم النشاط"
   },
   "feature_autoDismissStillWatching_name": {
-    "message": "Auto-Dismiss \"Still Watching?\""
+    "message": "تجاوز \"هل ما زلت تشاهد؟\" تلقائياً"
   },
   "feature_autoDownloadOnVisit_desc": {
-    "message": "Automatically start download when visiting a video page"
+    "message": "بدء التنزيل تلقائياً عند زيارة صفحة فيديو"
   },
   "feature_autoDownloadOnVisit_name": {
-    "message": "Auto-Download Videos"
+    "message": "تنزيل الفيديوهات تلقائياً"
   },
   "feature_autoExpandComments_desc": {
-    "message": "Automatically expand truncated comments so full text is always visible"
+    "message": "توسيع التعليقات المقتطعة تلقائياً ليظهر النص الكامل دائماً"
   },
   "feature_autoExpandComments_name": {
-    "message": "Auto-Expand Comments"
+    "message": "توسيع التعليقات تلقائياً"
   },
   "feature_autoExpandDescription_desc": {
-    "message": "Automatically expands the video description so you never need to click \"Show more\""
+    "message": "يوسّع وصف الفيديو تلقائياً فلا تحتاج أبداً للنقر على \"عرض المزيد\""
   },
   "feature_autoExpandDescription_name": {
-    "message": "Auto-Expand Description"
+    "message": "توسيع الوصف تلقائياً"
   },
   "feature_autoLikeSubscribed_desc": {
-    "message": "Automatically like videos from channels you're subscribed to after watching for 30 seconds"
+    "message": "إعجاب تلقائي بفيديوهات القنوات المشترك بها بعد المشاهدة لمدة 30 ثانية"
   },
   "feature_autoLikeSubscribed_name": {
-    "message": "Auto-Like Subscribed Channels"
+    "message": "إعجاب تلقائي بالقنوات المشترك بها"
   },
   "feature_autoMaxResolution_desc": {
-    "message": "Force the highest available stream on every video (1080p Premium when offered)"
+    "message": "فرض أعلى دقة بث متاحة لكل فيديو (1080p Premium عند التوفر)"
   },
   "feature_autoMaxResolution_name": {
-    "message": "Always Best Quality"
+    "message": "أفضل جودة دائماً"
   },
   "feature_autoOpenChapters_desc": {
-    "message": "Automatically open the chapters panel when available"
+    "message": "فتح لوحة الفصول تلقائياً عند توفرها"
   },
   "feature_autoOpenChapters_name": {
-    "message": "Auto-Open Chapters"
+    "message": "فتح الفصول تلقائياً"
   },
   "feature_autoOpenTranscript_desc": {
-    "message": "Automatically open the transcript panel when available"
+    "message": "فتح لوحة النص المكتوب تلقائياً عند توفرها"
   },
   "feature_autoOpenTranscript_name": {
-    "message": "Auto-Open Transcript"
+    "message": "فتح النص المكتوب تلقائياً"
   },
   "feature_autoPauseOnSwitch_desc": {
-    "message": "Pauses playback when you switch to another tab, resumes when you return"
+    "message": "إيقاف التشغيل مؤقتاً عند الانتقال إلى تبويبة أخرى، واستئنافه عند العودة"
   },
   "feature_autoPauseOnSwitch_name": {
-    "message": "Auto-Pause on Tab Switch"
+    "message": "إيقاف مؤقت تلقائي عند تبديل التبويبة"
   },
   "feature_autoSkipChapters_desc": {
-    "message": "Automatically skip chapters matching patterns (intro, outro, recap, sponsor). Comma-separated."
+    "message": "تخطي الفصول المطابقة لأنماط (مقدمة، خاتمة، ملخص، راعٍ) تلقائياً. مفصولة بفواصل."
   },
   "feature_autoSkipChapters_name": {
-    "message": "Auto-Skip Chapters"
+    "message": "تخطي الفصول تلقائياً"
   },
   "feature_autoSubtitles_desc": {
-    "message": "Automatically turns on closed captions when a video starts playing"
+    "message": "تفعيل الترجمة المغلقة تلقائياً عند بدء تشغيل الفيديو"
   },
   "feature_autoSubtitles_name": {
-    "message": "Auto-Enable Subtitles"
+    "message": "تفعيل الترجمة تلقائياً"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Automatically enter theater (wide) mode when opening a video"
+    "message": "الدخول تلقائياً إلى وضع Theater (العرض الواسع) عند فتح فيديو"
   },
   "feature_autoTheaterMode_name": {
-    "message": "Auto Theater Mode"
+    "message": "وضع Theater تلقائي"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Apply a warm tint to reduce blue light emission. Configurable intensity."
+    "message": "تطبيق صبغة دافئة لتقليل انبعاث الضوء الأزرق. شدة قابلة للتعديل."
   },
   "feature_blueLightFilter_name": {
-    "message": "Blue Light Filter"
+    "message": "فلتر الضوء الأزرق"
   },
   "feature_bulkCardActions_desc": {
-    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
+    "message": "تفعيل وضع التحديد لاختيار بطاقات خلاصة متعددة، ثم إخفاء أو سماح أو نسخ الروابط بشكل جماعي. يظهر شريط إجراءات عائم أثناء التحديد."
   },
   "feature_bulkCardActions_name": {
-    "message": "Bulk Card Actions"
+    "message": "إجراءات جماعية على البطاقات"
   },
   "feature_bypassPlaylistMode_desc": {
-    "message": "Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist"
+    "message": "إزالة معلمة &list= من الصور المصغرة المنقورة حتى لا تعلق داخل قائمة تشغيل شخص آخر"
   },
   "feature_bypassPlaylistMode_name": {
-    "message": "Bypass Playlist Mode on Clicks"
+    "message": "تجاوز وضع قائمة التشغيل عند النقر"
   },
   "feature_channelAgeDisplay_desc": {
-    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date"
+    "message": "يعرض عمر الفيديو (مثلاً \"منذ سنتين و3 أشهر\") بجانب تاريخ الرفع"
   },
   "feature_channelAgeDisplay_name": {
-    "message": "Video Age Display"
+    "message": "عرض عمر الفيديو"
   },
   "feature_channelSubCount_desc": {
-    "message": "Shows the channel subscriber count more prominently below videos"
+    "message": "يعرض عدد مشتركي القناة بشكل أبرز أسفل الفيديوهات"
   },
   "feature_channelSubCount_name": {
-    "message": "Enhanced Channel Info"
+    "message": "معلومات القناة المحسّنة"
   },
   "feature_chapterJumpButtons_desc": {
-    "message": "Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter"
+    "message": "أزرار الفصل السابق/التالي في عناصر تحكم المشغّل اليمنى — للانتقال إلى الفصل السابق أو التالي"
   },
   "feature_chapterJumpButtons_name": {
-    "message": "Chapter Jump Buttons"
+    "message": "أزرار الانتقال بين الفصول"
   },
   "feature_chapterNavButtons_desc": {
-    "message": "Add Previous/Next Chapter buttons to the video player controls"
+    "message": "إضافة أزرار الفصل السابق/التالي إلى عناصر تحكم مشغّل الفيديو"
   },
   "feature_chapterNavButtons_name": {
-    "message": "Chapter Navigation"
+    "message": "التنقل بين الفصول"
   },
   "feature_chatHide_banner_desc": {
-    "message": "Hide chat banners"
+    "message": "إخفاء لافتات الدردشة"
   },
   "feature_chatHide_banner_name": {
-    "message": "Chat Banner"
+    "message": "لافتة الدردشة"
   },
   "feature_chatHide_bots_desc": {
-    "message": "Filter out known bot messages"
+    "message": "تصفية رسائل الروبوتات المعروفة"
   },
   "feature_chatHide_bots_name": {
-    "message": "Bot Messages"
+    "message": "رسائل الروبوتات"
   },
   "feature_chatHide_emoji_desc": {
-    "message": "Hide emoji picker button"
+    "message": "إخفاء زر منتقي الرموز التعبيرية"
   },
   "feature_chatHide_emoji_name": {
-    "message": "Emoji Button"
+    "message": "زر الرموز التعبيرية"
   },
   "feature_chatHide_header_desc": {
-    "message": "Hide the live chat header bar"
+    "message": "إخفاء شريط رأس الدردشة المباشرة"
   },
   "feature_chatHide_header_name": {
-    "message": "Chat Header"
+    "message": "رأس الدردشة"
   },
   "feature_chatHide_leaderboard_desc": {
-    "message": "Hide chat leaderboard"
+    "message": "إخفاء لوحة المتصدرين في الدردشة"
   },
   "feature_chatHide_leaderboard_name": {
-    "message": "Leaderboard"
+    "message": "لوحة المتصدرين"
   },
   "feature_chatHide_levelUp_desc": {
-    "message": "Hide level up messages"
+    "message": "إخفاء رسائل ارتفاع المستوى"
   },
   "feature_chatHide_levelUp_name": {
-    "message": "Level Up Messages"
+    "message": "رسائل ارتفاع المستوى"
   },
   "feature_chatHide_menu_desc": {
-    "message": "Hide the chat overflow menu"
+    "message": "إخفاء قائمة الدردشة الإضافية"
   },
   "feature_chatHide_menu_name": {
-    "message": "Chat Menu (...)"
+    "message": "قائمة الدردشة (...)"
   },
   "feature_chatHide_polls_desc": {
-    "message": "Hide polls in live chat"
+    "message": "إخفاء الاستطلاعات في الدردشة المباشرة"
   },
   "feature_chatHide_polls_name": {
-    "message": "Polls & Poll Banner"
+    "message": "الاستطلاعات ولافتة الاستطلاع"
   },
   "feature_chatHide_popout_desc": {
-    "message": "Hide the popout chat button"
+    "message": "إخفاء زر فتح الدردشة في نافذة منفصلة"
   },
   "feature_chatHide_popout_name": {
-    "message": "Popout Button"
+    "message": "زر النافذة المنفصلة"
   },
   "feature_chatHide_reactions_desc": {
-    "message": "Hide chat reactions panel"
+    "message": "إخفاء لوحة تفاعلات الدردشة"
   },
   "feature_chatHide_reactions_name": {
-    "message": "Reactions"
+    "message": "التفاعلات"
   },
   "feature_chatHide_superChats_desc": {
-    "message": "Hide super chat messages"
+    "message": "إخفاء رسائل Super Chat"
   },
   "feature_chatHide_superChats_name": {
-    "message": "Super Chats"
+    "message": "Super Chat"
   },
   "feature_chatHide_support_desc": {
-    "message": "Hide support/buy buttons in chat"
+    "message": "إخفاء أزرار الدعم/الشراء في الدردشة"
   },
   "feature_chatHide_support_name": {
-    "message": "Support Buttons"
+    "message": "أزرار الدعم"
   },
   "feature_chatHide_ticker_desc": {
-    "message": "Hide the super chat ticker"
+    "message": "إخفاء شريط Super Chat المتحرك"
   },
   "feature_chatHide_ticker_name": {
-    "message": "Super Chat Ticker"
+    "message": "شريط Super Chat المتحرك"
   },
   "feature_chatHide_timestamps_desc": {
-    "message": "Hide chat timestamps"
+    "message": "إخفاء الطوابع الزمنية في الدردشة"
   },
   "feature_chatHide_timestamps_name": {
-    "message": "Timestamps"
+    "message": "الطوابع الزمنية"
   },
   "feature_chatHide_topFan_desc": {
-    "message": "Hide fan/member badges"
+    "message": "إخفاء شارات المعجبين/الأعضاء"
   },
   "feature_chatHide_topFan_name": {
-    "message": "Fan Badges"
+    "message": "شارات المعجبين"
   },
   "feature_chatKeywordFilter_desc": {
-    "message": "Hide chat messages containing these words (comma-separated)"
+    "message": "إخفاء رسائل الدردشة التي تحتوي على هذه الكلمات (مفصولة بفواصل)"
   },
   "feature_chatKeywordFilter_name": {
-    "message": "Chat Keyword Filter"
+    "message": "فلتر كلمات الدردشة"
   },
   "feature_chatStyleComments_desc": {
-    "message": "Premium comment layout that preserves pinned comments, creator hearts, replies, and native actions"
+    "message": "تخطيط تعليقات متميز يحافظ على التعليقات المثبتة وقلوب المنشئ والردود والإجراءات الأصلية"
   },
   "feature_chatStyleComments_name": {
-    "message": "Studio Comments"
+    "message": "تعليقات الاستوديو"
   },
   "feature_chronologicalNotifications_desc": {
-    "message": "Sort notifications chronologically (newest first)"
+    "message": "ترتيب الإشعارات زمنياً (الأحدث أولاً)"
   },
   "feature_chronologicalNotifications_name": {
-    "message": "Sort Notifications"
+    "message": "ترتيب الإشعارات"
   },
   "feature_cinemaAmbientGlow_desc": {
-    "message": "Projects dominant video colors as a soft glow behind the player for an immersive cinema feel"
+    "message": "يعكس ألوان الفيديو السائدة كتوهج خفيف خلف المشغّل لتجربة سينمائية غامرة"
   },
   "feature_cinemaAmbientGlow_name": {
-    "message": "Cinema Ambient Glow"
+    "message": "التوهج السينمائي المحيط"
   },
   "feature_classicLayoutProfile_desc": {
-    "message": "Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
+    "message": "اختر ملف تخطيط. الحديث يحافظ على تخطيط YouTube 2025. الكلاسيكي 2020 يستعيد التباعد الأضيق والرأس الأصغر. الكلاسيكي 2016 يستعيد نسب صفحة المشاهدة القديمة."
   },
   "feature_classicLayoutProfile_name": {
-    "message": "Layout Profile"
+    "message": "ملف التخطيط"
   },
   "feature_classicPlayerChrome_desc": {
-    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display"
+    "message": "استعادة بنقرة واحدة لمظهر المشغّل قبل Delhi/Liquid Glass: عناصر تحكم مربعة معتمة، شريط تقدم كلاسيكي، عرض وقت أصلي"
   },
   "feature_classicPlayerChrome_name": {
-    "message": "Classic Player Chrome"
+    "message": "مظهر المشغّل الكلاسيكي"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Strip tracking params (si, pp, feature) from copied/shared YouTube links"
+    "message": "إزالة معلمات التتبع (si، pp، feature) من روابط YouTube المنسوخة/المشاركة"
   },
   "feature_cleanShareUrls_name": {
-    "message": "Clean Share URLs"
+    "message": "تنظيف روابط المشاركة"
   },
   "feature_cleanUiPreset_desc": {
-    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
+    "message": "إعداد مسبق: يخفي العلامة التجارية للوحة والبحث ورؤوس الفئات، ويضغط التنقل، ويكتم إشعارات التنبيه، ويخفي لافتة استئناف الاشتراكات. معطَّل افتراضياً."
   },
   "feature_cleanUiPreset_name": {
-    "message": "Compact Clean UI"
+    "message": "واجهة مضغوطة ونظيفة"
   },
   "feature_codecSelector_desc": {
-    "message": "Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
+    "message": "اختر برنامج ترميز الفيديو المفضل: تلقائي، H.264 (CPU منخفض)، VP9، أو AV1 (أفضل جودة). يشارك محرك الترميز مع فرض H.264."
   },
   "feature_codecSelector_name": {
-    "message": "Codec Selector"
+    "message": "محدد برنامج الترميز"
   },
   "feature_colorThemeManager_desc": {
-    "message": "Apply a color palette across YouTube (dark mode only)"
+    "message": "تطبيق لوحة ألوان على YouTube (الوضع الداكن فقط)"
   },
   "feature_colorThemeManager_name": {
-    "message": "Color Theme"
+    "message": "سمة الألوان"
   },
   "feature_commentEnhancements_desc": {
-    "message": "Highlight creator/OP replies, show like heat indicators, and add collapse-all-replies toggle per thread"
+    "message": "تمييز ردود المنشئ/الناشر الأصلي، وإظهار مؤشرات حرارة الإعجاب، وإضافة زر طي جميع الردود لكل سلسلة"
   },
   "feature_commentEnhancements_name": {
-    "message": "Comment Enhancements"
+    "message": "تحسينات التعليقات"
   },
   "feature_commentFilterManager_desc": {
-    "message": "Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded)."
+    "message": "إخفاء سلاسل التعليقات التي يتطابق كاتبها أو نصها مع قاعدة. كلمات مفصولة بفواصل، !كلمة للسماح، أو /نمط/أعلام لتعبير نمطي (محمي من ReDoS)."
   },
   "feature_commentFilterManager_name": {
-    "message": "Comment Filter"
+    "message": "فلتر التعليقات"
   },
   "feature_commentFilterRules_desc": {
-    "message": "One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded)."
+    "message": "قاعدة واحدة لكل سطر أو مفصولة بفواصل. كلمة تخفي المطابقات، !كلمة تسمح دائماً، @كاتب تستهدف الكاتب، /نمط/i تشغّل تعبيراً نمطياً (محمي من ReDoS)."
   },
   "feature_commentFilterRules_name": {
-    "message": "Comment Filter Rules"
+    "message": "قواعد فلتر التعليقات"
   },
   "feature_commentNavigator_desc": {
-    "message": "Floating thread navigator with live counts for visible comments and filtered results"
+    "message": "متصفح سلاسل عائم مع عدادات حية للتعليقات المرئية والنتائج المفلترة"
   },
   "feature_commentNavigator_name": {
-    "message": "Comment Navigator"
+    "message": "متصفح التعليقات"
   },
   "feature_commentSearch_desc": {
-    "message": "Adds a search bar above comments to filter and find specific comments"
+    "message": "يضيف شريط بحث فوق التعليقات لتصفية وإيجاد تعليقات محددة"
   },
   "feature_commentSearch_name": {
-    "message": "Comment Search"
+    "message": "البحث في التعليقات"
   },
   "feature_compactLayout_desc": {
-    "message": "Reduce spacing and padding for a denser interface"
+    "message": "تقليل التباعد والحشو لواجهة أكثر كثافة"
   },
   "feature_compactLayout_name": {
-    "message": "Compact Layout"
+    "message": "التخطيط المضغوط"
   },
   "feature_compactUnfixedHeader_desc": {
-    "message": "Reduce header height and let it scroll away instead of staying fixed"
+    "message": "تقليل ارتفاع الرأس والسماح له بالتمرير بعيداً بدلاً من البقاء ثابتاً"
   },
   "feature_compactUnfixedHeader_name": {
-    "message": "Compact / Unfixed Header"
+    "message": "رأس مضغوط / غير ثابت"
   },
   "feature_condenseComments_desc": {
-    "message": "Reduce spacing between comments for a tighter layout"
+    "message": "تقليل التباعد بين التعليقات لتخطيط أكثر إحكاماً"
   },
   "feature_condenseComments_name": {
-    "message": "Condense Comments"
+    "message": "ضغط التعليقات"
   },
   "feature_copyChapterMarkdown_desc": {
-    "message": "Copy all video chapters as a markdown timestamp list — button in player controls"
+    "message": "نسخ جميع فصول الفيديو كقائمة طوابع زمنية بتنسيق Markdown — زر في عناصر تحكم المشغّل"
   },
   "feature_copyChapterMarkdown_name": {
-    "message": "Copy Chapters as Markdown"
+    "message": "نسخ الفصول بتنسيق Markdown"
   },
   "feature_copyVideoTitle_desc": {
-    "message": "Adds a copy button next to the video title for one-click title copying"
+    "message": "يضيف زر نسخ بجانب عنوان الفيديو لنسخ العنوان بنقرة واحدة"
   },
   "feature_copyVideoTitle_name": {
-    "message": "Copy Video Title Button"
+    "message": "زر نسخ عنوان الفيديو"
   },
   "feature_creatorCommentHighlight_desc": {
-    "message": "Makes creator-badged and creator-hearted comments stand out with a stronger visual treatment"
+    "message": "يُبرز التعليقات ذات شارة المنشئ والتعليقات التي أعجب بها المنشئ بمعالجة بصرية أقوى"
   },
   "feature_creatorCommentHighlight_name": {
-    "message": "Highlight Creator Comments"
+    "message": "تمييز تعليقات المنشئ"
   },
   "feature_customCssInjection_desc": {
-    "message": "Inject your own custom CSS rules into YouTube pages"
+    "message": "حقن قواعد CSS مخصصة خاصة بك في صفحات YouTube"
   },
   "feature_customCssInjection_name": {
-    "message": "Custom CSS"
+    "message": "CSS مخصص"
   },
   "feature_customProgressBarColor_desc": {
-    "message": "Change the red progress bar to any color"
+    "message": "تغيير لون شريط التقدم الأحمر إلى أي لون"
   },
   "feature_customProgressBarColor_name": {
-    "message": "Custom Progress Bar Color"
+    "message": "لون شريط تقدم مخصص"
   },
   "feature_customSelectionColor_desc": {
-    "message": "Override the default text-selection background with your chosen color"
+    "message": "تجاوز خلفية تحديد النص الافتراضية بلون من اختيارك"
   },
   "feature_customSelectionColor_name": {
-    "message": "Custom Text Selection Color"
+    "message": "لون تحديد النص المخصص"
   },
   "feature_customSpeedButtons_desc": {
-    "message": "Adds quick speed buttons below the video player with presets from 0.5x to 3x"
+    "message": "يضيف أزرار سرعة سريعة أسفل مشغّل الفيديو بإعدادات مسبقة من 0.5x إلى 3x"
   },
   "feature_customSpeedButtons_name": {
-    "message": "Speed Preset Buttons"
+    "message": "أزرار السرعة المسبقة"
   },
   "feature_daCacheTTL_desc": {
-    "message": "Hours to cache branding data locally before refreshing"
+    "message": "عدد الساعات لتخزين بيانات العلامة التجارية محلياً قبل التحديث"
   },
   "feature_daCacheTTL_name": {
-    "message": "Cache Duration"
+    "message": "مدة التخزين المؤقت"
   },
   "feature_daFallbackFormat_desc": {
-    "message": "Format the original title when no crowdsourced submission exists"
+    "message": "تنسيق العنوان الأصلي عند عدم وجود اقتراح جماعي"
   },
   "feature_daFallbackFormat_name": {
-    "message": "Format Original Titles"
+    "message": "تنسيق العناوين الأصلية"
   },
   "feature_daReplaceThumbs_desc": {
-    "message": "Replace clickbait thumbnails with video screenshots"
+    "message": "استبدال الصور المصغرة المضلِّلة بلقطات من الفيديو"
   },
   "feature_daReplaceThumbs_name": {
-    "message": "Replace Thumbnails"
+    "message": "استبدال الصور المصغرة"
   },
   "feature_daReplaceTitles_desc": {
-    "message": "Replace clickbait titles with crowdsourced alternatives"
+    "message": "استبدال العناوين المضلِّلة ببدائل مقترحة جماعياً"
   },
   "feature_daReplaceTitles_name": {
-    "message": "Replace Titles"
+    "message": "استبدال العناوين"
   },
   "feature_daShowOriginalHover_desc": {
-    "message": "Hover over a replaced title to see the original"
+    "message": "مرّر الماوس فوق عنوان مستبدل لرؤية الأصلي"
   },
   "feature_daShowOriginalHover_name": {
-    "message": "Show Original on Hover"
+    "message": "إظهار الأصلي عند التمرير"
   },
   "feature_daTitleFormat_desc": {
-    "message": "How to format replacement titles"
+    "message": "كيفية تنسيق العناوين البديلة"
   },
   "feature_daTitleFormat_name": {
-    "message": "Title Format"
+    "message": "تنسيق العنوان"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails with crowdsourced alternatives from the DeArrow database"
+    "message": "استبدال العناوين والصور المصغرة المضلِّلة ببدائل مقترحة جماعياً من قاعدة بيانات DeArrow"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
   },
   "feature_deArrowChannelOverridesPanel_desc": {
-    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
+    "message": "يضيف شريحة وضع DeArrow صغيرة بجانب اسم القناة في صفحة المشاهدة. يتنقل بين DeArrow ← الأصلي ← إيقاف ← DeArrow بكل نقرة. تُحفظ التخصيصات حسب معرّف القناة."
   },
   "feature_deArrowChannelOverridesPanel_name": {
-    "message": "DeArrow Per-Channel Overrides"
+    "message": "تخصيصات DeArrow لكل قناة"
   },
   "feature_dearrowPeekButton_desc": {
-    "message": "Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)"
+    "message": "اضغط مع الاستمرار على Alt لإظهار عناوين YouTube الأصلية مؤقتاً (يلغي عناوين DeArrow/المخصصة أثناء الضغط)"
   },
   "feature_dearrowPeekButton_name": {
-    "message": "DeArrow Peek Button"
+    "message": "زر استعراض DeArrow"
   },
   "feature_deArrowVoting_desc": {
-    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles. Uses a local private userID. Off by default."
+    "message": "التصويت على بدائل عناوين DeArrow. يضيف أزرار إعجاب/عدم إعجاب بجانب العناوين المستبدلة. يستخدم معرّف مستخدم محلي خاص. معطَّل افتراضياً."
   },
   "feature_deArrowVoting_name": {
-    "message": "DeArrow Voting"
+    "message": "تصويت DeArrow"
   },
   "feature_debugMode_desc": {
-    "message": "Enable verbose diagnostic logging to the console"
+    "message": "تفعيل التسجيل التشخيصي المفصّل في وحدة التحكم"
   },
   "feature_debugMode_name": {
-    "message": "Debug Mode"
+    "message": "وضع التصحيح"
   },
   "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars."
+    "message": "يضيّق تباعد الصفوف والحشو ومقاييس الخطوط عبر الأسطح المحقونة من Astra. لا يغيّر تخطيط YouTube الأصلي — فقط اللوحات والشرائح والأشرطة الخاصة بنا."
   },
   "feature_denseMode_name": {
-    "message": "Dense Mode"
+    "message": "الوضع الكثيف"
   },
   "feature_diagnosticLog_desc": {
-    "message": "Capture a rolling log of YTKit errors and export as JSON for bug reports"
+    "message": "التقاط سجل متجدد لأخطاء YTKit وتصديره بصيغة JSON لتقارير الأخطاء"
   },
   "feature_diagnosticLog_name": {
-    "message": "Diagnostic Error Log"
+    "message": "سجل الأخطاء التشخيصي"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Break reminders every N minutes of active playback + optional daily watch-time cap. Timers persist across SPA navigation."
+    "message": "تذكيرات بالاستراحة كل N دقيقة من التشغيل النشط + حد مشاهدة يومي اختياري. المؤقتات تستمر عبر التنقل SPA."
   },
   "feature_digitalWellbeing_name": {
-    "message": "Digital Wellbeing"
+    "message": "الصحة الرقمية"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Prevents the next video from automatically playing when the current one finishes"
+    "message": "يمنع الفيديو التالي من التشغيل تلقائياً عند انتهاء الحالي"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "Disable Autoplay Next Video"
+    "message": "تعطيل التشغيل التلقائي للفيديو التالي"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Replace infinite scroll with a \"Load More\" button on home, search, and subscriptions pages"
+    "message": "استبدال التمرير اللانهائي بزر \"تحميل المزيد\" في صفحات الرئيسية والبحث والاشتراكات"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "Disable Infinite Scroll"
+    "message": "تعطيل التمرير اللانهائي"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren't officially supported."
+    "message": "منع YouTube من ضغط النطاق الديناميكي للفيديوهات المحمّلة حديثاً. أفضل جهد — YouTube يضبط الكسب عبر واجهات movie_player غير المدعومة رسمياً."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Disable Loudness Normalization"
+    "message": "تعطيل تسوية مستوى الصوت"
   },
   "feature_disableMiniPlayer_desc": {
-    "message": "Prevent the mini player from appearing when navigating away"
+    "message": "منع المشغّل المصغّر من الظهور عند الانتقال بعيداً"
   },
   "feature_disableMiniPlayer_name": {
-    "message": "Disable Mini Player"
+    "message": "تعطيل المشغّل المصغّر"
   },
   "feature_disablePlayOnHover_desc": {
-    "message": "Stop videos from playing when hovering over thumbnails"
+    "message": "إيقاف تشغيل الفيديوهات عند تمرير الماوس فوق الصور المصغرة"
   },
   "feature_disablePlayOnHover_name": {
-    "message": "Disable Hover Preview"
+    "message": "تعطيل المعاينة عند التمرير"
   },
   "feature_disableSpaNavigation_desc": {
-    "message": "Force full page loads instead of YouTube's smooth transitions (fixes player sizing issues)"
+    "message": "فرض تحميل الصفحة بالكامل بدلاً من الانتقالات السلسة في YouTube (يصلح مشاكل حجم المشغّل)"
   },
   "feature_disableSpaNavigation_name": {
-    "message": "Disable SPA Navigation"
+    "message": "تعطيل التنقل SPA"
   },
   "feature_downloadAudioFormat_desc": {
-    "message": "Default format for audio-only downloads"
+    "message": "الصيغة الافتراضية لتنزيلات الصوت فقط"
   },
   "feature_downloadAudioFormat_name": {
-    "message": "Audio Format"
+    "message": "صيغة الصوت"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab."
+    "message": "عند تعذر الوصول إلى Astra Downloader، يتراجع إلى مثيل Cobalt قابل للتكوين. يعمل فقط في ملف GitHub/الكامل وعندما يكون Astra Downloader غير متصل. يرسل عنوان الفيديو الحالي إلى المثيل المكوّن ويفتح عنوان الوسائط المُعاد في تبويبة جديدة."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt Fallback (GitHub profile)"
+    "message": "بديل Cobalt (ملف GitHub)"
   },
   "feature_downloadHealthPanel_desc": {
-    "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."
+    "message": "عرض شارات لإصدار yt-dlp في Astra Downloader وحالة ffmpeg وموفّر PO Token بجانب زر التنزيل. يقرأ /health كل 30 ثانية؛ بدون تخزين إضافي."
   },
   "feature_downloadHealthPanel_name": {
-    "message": "Downloader Health Pills"
+    "message": "شارات صحة المُنزِّل"
   },
   "feature_downloadHistoryPanel_desc": {
-    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session."
+    "message": "يضيف زر \"السجل\" بجانب زر التنزيل في صفحات المشاهدة. يعرض آخر 50 تنزيلاً مسجلاً من Astra Downloader. محلي فقط — يُجلب من نقطة /history المحلية لكل جلسة."
   },
   "feature_downloadHistoryPanel_name": {
-    "message": "Download History Panel"
+    "message": "لوحة سجل التنزيلات"
   },
   "feature_downloadQuality_desc": {
-    "message": "Preferred video quality for downloads"
+    "message": "جودة الفيديو المفضلة للتنزيلات"
   },
   "feature_downloadQuality_name": {
-    "message": "Download Quality"
+    "message": "جودة التنزيل"
   },
   "feature_downloadScreenshotFormat_desc": {
-    "message": "Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only."
+    "message": "صيغة الإخراج لزر لقطة المشغّل. PNG بدون فقدان وتنسخ إلى الحافظة؛ JPEG/WebP أصغر حجماً لكن للتنزيل فقط."
   },
   "feature_downloadScreenshotFormat_name": {
-    "message": "Screenshot Format"
+    "message": "صيغة لقطة الشاشة"
   },
   "feature_downloadStreamLinksPanel_desc": {
-    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off."
+    "message": "متقدم: كشف عناوين URL الأولية للبث التكيّفي للفيديو/الصوت (mp4/webm) المستخرجة من ytInitialPlayerResponse. محلي فقط — بدون قياس عن بُعد. مفيد لتسليم yt-dlp / VLC. معطَّل افتراضياً."
   },
   "feature_downloadStreamLinksPanel_name": {
-    "message": "Stream Links Panel"
+    "message": "لوحة روابط البث"
   },
   "feature_downloadSubtitlesWithScreenshot_desc": {
-    "message": "Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot."
+    "message": "دمج سطر الترجمة المعروض حالياً في الشريط السفلي من لقطة الشاشة. معطَّل افتراضياً. يتطلب لقطة شاشة الفيديو."
   },
   "feature_downloadSubtitlesWithScreenshot_name": {
-    "message": "Include Subtitles In Screenshot"
+    "message": "تضمين الترجمة في لقطة الشاشة"
   },
   "feature_downloadThumbnail_desc": {
-    "message": "Adds a button below the video to download the current video thumbnail in max resolution"
+    "message": "يضيف زراً أسفل الفيديو لتنزيل الصورة المصغرة للفيديو الحالي بأقصى دقة"
   },
   "feature_downloadThumbnail_name": {
-    "message": "Download Thumbnail Button"
+    "message": "زر تنزيل الصورة المصغرة"
   },
   "feature_downloadVideoFormat_desc": {
-    "message": "Default container format for video downloads"
+    "message": "صيغة الحاوية الافتراضية لتنزيلات الفيديو"
   },
   "feature_downloadVideoFormat_name": {
-    "message": "Video Format"
+    "message": "صيغة الفيديو"
   },
   "feature_enableCPU_Tamer_desc": {
-    "message": "Reduce CPU usage by throttling background timers via requestAnimationFrame gating"
+    "message": "تقليل استخدام CPU عبر خنق المؤقتات الخلفية من خلال بوابة requestAnimationFrame"
   },
   "feature_enableCPU_Tamer_name": {
-    "message": "CPU Tamer"
+    "message": "مُروِّض CPU"
   },
   "feature_enableHandleRevealer_desc": {
-    "message": "Show the original channel name next to @handle in comments"
+    "message": "إظهار اسم القناة الأصلي بجانب @المعرّف في التعليقات"
   },
   "feature_enableHandleRevealer_name": {
-    "message": "Comment Handle Revealer"
+    "message": "كاشف معرّفات التعليقات"
   },
   "feature_expandVideoWidth_desc": {
-    "message": "Stretch the video to fill the space when sidebar is hidden"
+    "message": "تمديد الفيديو لملء المساحة عند إخفاء الشريط الجانبي"
   },
   "feature_expandVideoWidth_name": {
-    "message": "Expand Video Width"
+    "message": "توسيع عرض الفيديو"
   },
   "feature_feedTriageProfile_desc": {
-    "message": "Flip on a curated focus recipe: hides Shorts, live streams, upcoming premieres, mixes, watched videos, and AI Summary. Toggling off restores prior values."
+    "message": "تفعيل وصفة تركيز منسّقة: تخفي Shorts والبث المباشر والعروض الأولى القادمة والمزيج والفيديوهات المشاهدة وملخص الذكاء الاصطناعي. التعطيل يستعيد القيم السابقة."
   },
   "feature_feedTriageProfile_name": {
-    "message": "Feed Triage Profile"
+    "message": "ملف فرز الخلاصة"
   },
   "feature_fineSpeedControl_desc": {
-    "message": "Extend speed range to 0.1x-16x with 0.05x increments. Scroll on the speed badge to adjust."
+    "message": "توسيع نطاق السرعة إلى 0.1x-16x بزيادات 0.05x. مرّر على شارة السرعة للتعديل."
   },
   "feature_fineSpeedControl_name": {
-    "message": "Fine Speed Control"
+    "message": "التحكم الدقيق بالسرعة"
   },
   "feature_fitPlayerToWindow_desc": {
-    "message": "Make the video player fill the entire browser window"
+    "message": "جعل مشغّل الفيديو يملأ نافذة المتصفح بالكامل"
   },
   "feature_fitPlayerToWindow_name": {
-    "message": "Fit Player to Window"
+    "message": "ملاءمة المشغّل للنافذة"
   },
   "feature_floatingLogoOnWatch_desc": {
-    "message": "Replace native player right-controls with Astra quick links, local tools, and settings"
+    "message": "استبدال عناصر التحكم اليمنى الأصلية للمشغّل بروابط Astra السريعة والأدوات المحلية والإعدادات"
   },
   "feature_floatingLogoOnWatch_name": {
-    "message": "Astra Player Dock"
+    "message": "لوحة مشغّل Astra"
   },
   "feature_focusedMode_desc": {
-    "message": "Hides everything except the video player and comments for a distraction-free experience"
+    "message": "يخفي كل شيء عدا مشغّل الفيديو والتعليقات لتجربة مشاهدة بلا تشتيت"
   },
   "feature_focusedMode_name": {
-    "message": "Focused Mode"
+    "message": "وضع التركيز"
   },
   "feature_forceDarkEverywhere_desc": {
-    "message": "Applies dark theme to YouTube pages that may not respect dark mode (settings, about, etc.)"
+    "message": "تطبيق السمة الداكنة على صفحات YouTube التي قد لا تلتزم بالوضع الداكن (الإعدادات، حول، إلخ.)"
   },
   "feature_forceDarkEverywhere_name": {
-    "message": "Force Dark on All YouTube Pages"
+    "message": "فرض الوضع الداكن على جميع صفحات YouTube"
   },
   "feature_forcedColorsSupport_desc": {
-    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
+    "message": "نشط دائماً: عندما يبلّغ نظام التشغيل عن ألوان إجبارية (Windows High Contrast، GTK)، تستخدم عناصر تحكم Astra المحقونة ألوان النظام تلقائياً لتبقى النصوص مقروءة وحلقات التركيز مرئية. استعلام الوسائط نفسه هو البوابة؛ هذا التبديل محتفظ به للتوافق."
   },
   "feature_forcedColorsSupport_name": {
-    "message": "Forced Colors / High Contrast Support"
+    "message": "دعم الألوان الإجبارية / التباين العالي"
   },
   "feature_forceH264_desc": {
-    "message": "Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge."
+    "message": "تفضيل H.264 (AVC) على VP9/AV1 لاستخدام CPU أقل على الأجهزة القديمة. قد يقلل الجودة القصوى. يستخدم جسر ترميز العالم الرئيسي."
   },
   "feature_forceH264_name": {
-    "message": "Force H.264 Codec"
+    "message": "فرض ترميز H.264"
   },
   "feature_forceStandardFps_desc": {
-    "message": "Dims HFR entries in the quality menu. For reliable 30fps, enable Force H.264 which caps at 1080p30."
+    "message": "يخفت إدخالات HFR في قائمة الجودة. للحصول على 30fps موثوقة، فعّل فرض H.264 الذي يحدّ عند 1080p30."
   },
   "feature_forceStandardFps_name": {
-    "message": "Force Standard Frame Rate"
+    "message": "فرض معدل الإطارات القياسي"
   },
   "feature_frameByFrameButtons_desc": {
-    "message": "Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation"
+    "message": "إضافة أزرار خطوة للخلف (,) وخطوة للأمام (.) مرئية إلى عناصر تحكم المشغّل للتنقل الدقيق بالإطارات"
   },
   "feature_frameByFrameButtons_name": {
-    "message": "Frame-by-Frame Buttons"
+    "message": "أزرار التنقل إطاراً بإطار"
   },
   "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
+    "message": "انقر نقراً مزدوجاً في أي مكان على الفيديو لتبديل ملء الشاشة (يستبدل سلوك التقديم الافتراضي)"
   },
   "feature_fullscreenOnDoubleClick_name": {
-    "message": "Double-Click Fullscreen"
+    "message": "ملء الشاشة بالنقر المزدوج"
   },
   "feature_fullTitles_desc": {
-    "message": "Remove the 2-line clamp on thumbnail titles so long titles show in full"
+    "message": "إزالة قيد السطرين على عناوين الصور المصغرة لعرض العناوين الطويلة كاملة"
   },
   "feature_fullTitles_name": {
-    "message": "Show Full Video Titles"
+    "message": "عرض عناوين الفيديو كاملة"
   },
   "feature_fullWidthSubscriptions_desc": {
-    "message": "Expand the subscription grid to fill the page"
+    "message": "توسيع شبكة الاشتراكات لملء الصفحة"
   },
   "feature_fullWidthSubscriptions_name": {
-    "message": "Full-Width Subscriptions"
+    "message": "اشتراكات بعرض كامل"
   },
   "feature_globalAriaLiveRegion_desc": {
-    "message": "Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes)."
+    "message": "يثبّت حاوية مخفية واحدة role=status / aria-live=polite تحت نص المستند. تعلن قارئات الشاشة أي نص يكتبه Astra فيها (نصوص التنبيهات، نتائج الفلاتر، تغييرات حالة التنزيل)."
   },
   "feature_globalAriaLiveRegion_name": {
-    "message": "Live Region For Toasts"
+    "message": "منطقة حية للتنبيهات"
   },
   "feature_grayscaleThumbnails_desc": {
-    "message": "Shows thumbnails in grayscale to reduce visual distraction — color restores on hover"
+    "message": "عرض الصور المصغرة بتدرج رمادي لتقليل التشتيت البصري — تعود الألوان عند التمرير"
   },
   "feature_grayscaleThumbnails_name": {
-    "message": "Grayscale Thumbnails"
+    "message": "صور مصغرة بتدرج رمادي"
   },
   "feature_hiddenActionButtonsManager_desc": {
-    "message": "Choose which action buttons to hide below videos"
+    "message": "اختر أزرار الإجراءات المراد إخفاؤها أسفل الفيديوهات"
   },
   "feature_hiddenActionButtonsManager_name": {
-    "message": "Hide Action Buttons"
+    "message": "إخفاء أزرار الإجراءات"
   },
   "feature_hiddenChatElementsManager_desc": {
-    "message": "Choose which live chat elements to hide"
+    "message": "اختر عناصر الدردشة المباشرة المراد إخفاؤها"
   },
   "feature_hiddenChatElementsManager_name": {
-    "message": "Hide Chat Elements"
+    "message": "إخفاء عناصر الدردشة"
   },
   "feature_hiddenPlayerControlsManager_desc": {
-    "message": "Choose which player control buttons to hide"
+    "message": "اختر أزرار تحكم المشغّل المراد إخفاؤها"
   },
   "feature_hiddenPlayerControlsManager_name": {
-    "message": "Hide Player Controls"
+    "message": "إخفاء عناصر تحكم المشغّل"
   },
   "feature_hiddenWatchElementsManager_desc": {
-    "message": "Choose which elements to hide below videos"
+    "message": "اختر العناصر المراد إخفاؤها أسفل الفيديوهات"
   },
   "feature_hiddenWatchElementsManager_name": {
-    "message": "Hide Watch Page Elements"
+    "message": "إخفاء عناصر صفحة المشاهدة"
   },
   "feature_hideAirplayButton_desc": {
-    "message": "Remove the Airplay icon from the player controls"
+    "message": "إزالة أيقونة Airplay من عناصر تحكم المشغّل"
   },
   "feature_hideAirplayButton_name": {
-    "message": "Hide Airplay Button"
+    "message": "إخفاء زر Airplay"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
+    "message": "إزالة الملخصات المُنشأة بالذكاء الاصطناعي وأزرار السؤال بالذكاء الاصطناعي"
   },
   "feature_hideAiSummary_name": {
-    "message": "Hide AI Summary"
+    "message": "إخفاء ملخص الذكاء الاصطناعي"
   },
   "feature_hideAutoplayToggle_desc": {
-    "message": "Removes the autoplay toggle switch from the player controls"
+    "message": "إزالة مفتاح تبديل التشغيل التلقائي من عناصر تحكم المشغّل"
   },
   "feature_hideAutoplayToggle_name": {
-    "message": "Hide Autoplay Toggle"
+    "message": "إخفاء مفتاح التشغيل التلقائي"
   },
   "feature_hideChannelJoinButton_desc": {
-    "message": "Remove the Join/membership button on channel pages"
+    "message": "إزالة زر الانضمام/العضوية من صفحات القنوات"
   },
   "feature_hideChannelJoinButton_name": {
-    "message": "Hide Channel Join Button"
+    "message": "إخفاء زر الانضمام للقناة"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you're not subscribed to in your subscriptions feed"
+    "message": "إخفاء فيديوهات القنوات غير المشترك بها من خلاصة الاشتراكات"
   },
   "feature_hideCollaborations_name": {
-    "message": "Hide Collaborations"
+    "message": "إخفاء التعاونات"
   },
   "feature_hideCommentActionMenu_desc": {
-    "message": "Remove action menu from individual comments"
+    "message": "إزالة قائمة الإجراءات من التعليقات الفردية"
   },
   "feature_hideCommentActionMenu_name": {
-    "message": "Hide Comment Actions"
+    "message": "إخفاء إجراءات التعليقات"
   },
   "feature_hideCommentDislikeButton_desc": {
-    "message": "Remove the dislike button from comment actions since it adds no useful feedback"
+    "message": "إزالة زر عدم الإعجاب من إجراءات التعليقات لأنه لا يقدم ملاحظات مفيدة"
   },
   "feature_hideCommentDislikeButton_name": {
-    "message": "Hide Comment Dislike"
+    "message": "إخفاء عدم الإعجاب بالتعليق"
   },
   "feature_hideCommentTeaser_desc": {
-    "message": "Remove the \"Scroll for comments\" prompt on watch pages"
+    "message": "إزالة رسالة \"مرّر لرؤية التعليقات\" من صفحات المشاهدة"
   },
   "feature_hideCommentTeaser_name": {
-    "message": "Hide Comment Teaser"
+    "message": "إخفاء مُلخّص التعليقات"
   },
   "feature_hideCreateButton_desc": {
-    "message": "Remove the \"Create\" button from the header toolbar"
+    "message": "إزالة زر \"إنشاء\" من شريط الأدوات العلوي"
   },
   "feature_hideCreateButton_name": {
-    "message": "Hide Create Button"
+    "message": "إخفاء زر الإنشاء"
   },
   "feature_hideDescriptionExtras_desc": {
-    "message": "Remove extra elements in the description area"
+    "message": "إزالة العناصر الإضافية في منطقة الوصف"
   },
   "feature_hideDescriptionExtras_name": {
-    "message": "Hide Description Extras"
+    "message": "إخفاء إضافات الوصف"
   },
   "feature_hideDescriptionRow_desc": {
-    "message": "Remove the video description panel below the player"
+    "message": "إزالة لوحة وصف الفيديو أسفل المشغّل"
   },
   "feature_hideDescriptionRow_name": {
-    "message": "Hide Description"
+    "message": "إخفاء الوصف"
   },
   "feature_hideEndCards_desc": {
-    "message": "Removes the clickable end screen cards/annotations that overlay the video in the last seconds. Also covered by Hide Video End Content."
+    "message": "إزالة بطاقات شاشة النهاية/التعليقات التوضيحية القابلة للنقر التي تظهر فوق الفيديو في الثواني الأخيرة. مشمولة أيضاً في إخفاء محتوى نهاية الفيديو."
   },
   "feature_hideEndCards_name": {
-    "message": "Hide End Screen Cards"
+    "message": "إخفاء بطاقات شاشة النهاية"
   },
   "feature_hideFundraiser_desc": {
-    "message": "Remove fundraiser and donation badges"
+    "message": "إزالة شارات جمع التبرعات والهبات"
   },
   "feature_hideFundraiser_name": {
-    "message": "Hide Fundraisers"
+    "message": "إخفاء جمع التبرعات"
   },
   "feature_hideHashtags_desc": {
-    "message": "Remove hashtag links above video titles"
+    "message": "إزالة روابط الهاشتاق فوق عناوين الفيديو"
   },
   "feature_hideHashtags_name": {
-    "message": "Hide Hashtags"
+    "message": "إخفاء الهاشتاقات"
   },
   "feature_hideInfoCards_desc": {
-    "message": "Removes the \"i\" info card teasers and popups that appear during video playback"
+    "message": "إزالة إعلانات بطاقات المعلومات \"i\" والنوافذ المنبثقة التي تظهر أثناء تشغيل الفيديو"
   },
   "feature_hideInfoCards_name": {
-    "message": "Hide Info Cards"
+    "message": "إخفاء بطاقات المعلومات"
   },
   "feature_hideInfoPanels_desc": {
-    "message": "Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)"
+    "message": "إزالة صناديق معلومات ويكيبيديا/السياق التي تظهر أسفل الفيديوهات (FEMA، COVID، إلخ.)"
   },
   "feature_hideInfoPanels_name": {
-    "message": "Hide Info Panels"
+    "message": "إخفاء لوحات المعلومات"
   },
   "feature_hideJumpAheadButton_desc": {
-    "message": "Remove the Jump Ahead prompt that appears after skipping on eligible videos."
+    "message": "إزالة رسالة القفز للأمام التي تظهر بعد التخطي في الفيديوهات المؤهلة."
   },
   "feature_hideJumpAheadButton_name": {
-    "message": "Hide Jump Ahead"
+    "message": "إخفاء القفز للأمام"
   },
   "feature_hideLatestPosts_desc": {
-    "message": "Hide community posts and updates sections from feeds"
+    "message": "إخفاء منشورات المجتمع وأقسام التحديثات من الخلاصات"
   },
   "feature_hideLatestPosts_name": {
-    "message": "Hide Latest Posts"
+    "message": "إخفاء آخر المنشورات"
   },
   "feature_hideLiveChatEngagement_desc": {
-    "message": "Remove engagement prompts in live chat"
+    "message": "إزالة رسائل التفاعل في الدردشة المباشرة"
   },
   "feature_hideLiveChatEngagement_name": {
-    "message": "Hide Chat Engagement"
+    "message": "إخفاء تفاعل الدردشة"
   },
   "feature_hideMembersOnly_desc": {
-    "message": "Hide members-only feed cards on Home and Subscriptions"
+    "message": "إخفاء بطاقات الأعضاء فقط في الرئيسية والاشتراكات"
   },
   "feature_hideMembersOnly_name": {
-    "message": "Hide Members Only"
+    "message": "إخفاء محتوى الأعضاء فقط"
   },
   "feature_hideMerchShelf_desc": {
-    "message": "Remove merchandise promotions below videos"
+    "message": "إزالة عروض البضائع أسفل الفيديوهات"
   },
   "feature_hideMerchShelf_name": {
-    "message": "Hide Merch Shelf"
+    "message": "إخفاء رف البضائع"
   },
   "feature_hideNewsHome_desc": {
-    "message": "Hide news sections from the homepage"
+    "message": "إخفاء أقسام الأخبار من الصفحة الرئيسية"
   },
   "feature_hideNewsHome_name": {
-    "message": "Hide News Section"
+    "message": "إخفاء قسم الأخبار"
   },
   "feature_hideNotificationBadge_desc": {
-    "message": "Removes the red notification count badge from the bell icon"
+    "message": "إزالة شارة عدد الإشعارات الحمراء من أيقونة الجرس"
   },
   "feature_hideNotificationBadge_name": {
-    "message": "Hide Notification Badge"
+    "message": "إخفاء شارة الإشعارات"
   },
   "feature_hideNotificationButton_desc": {
-    "message": "Remove the notification bell icon from the header"
+    "message": "إزالة أيقونة جرس الإشعارات من الرأس"
   },
   "feature_hideNotificationButton_name": {
-    "message": "Hide Notification Bell"
+    "message": "إخفاء جرس الإشعارات"
   },
   "feature_hidePaidContentOverlay_desc": {
-    "message": "Remove \"Includes paid promotion\" overlays on thumbnails and watch pages"
+    "message": "إزالة تراكبات \"يتضمن ترويجاً مدفوعاً\" على الصور المصغرة وصفحات المشاهدة"
   },
   "feature_hidePaidContentOverlay_name": {
-    "message": "Hide Promotion Badges"
+    "message": "إخفاء شارات الترويج"
   },
   "feature_hidePaidPromotionWatch_desc": {
-    "message": "Remove \"paid promotion\" labels on watch pages"
+    "message": "إزالة علامات \"ترويج مدفوع\" في صفحات المشاهدة"
   },
   "feature_hidePaidPromotionWatch_name": {
-    "message": "Hide Paid Promotion"
+    "message": "إخفاء الترويج المدفوع"
   },
   "feature_hidePinnedComments_desc": {
-    "message": "Remove pinned comments from the comments section"
+    "message": "إزالة التعليقات المثبتة من قسم التعليقات"
   },
   "feature_hidePinnedComments_name": {
-    "message": "Hide Pinned Comments"
+    "message": "إخفاء التعليقات المثبتة"
   },
   "feature_hidePlayables_desc": {
-    "message": "Hide YouTube Playables gaming content from feeds"
+    "message": "إخفاء محتوى ألعاب YouTube Playables من الخلاصات"
   },
   "feature_hidePlayables_name": {
-    "message": "Hide Playables"
+    "message": "إخفاء Playables"
   },
   "feature_hidePlaylistsHome_desc": {
-    "message": "Hide playlist sections from the homepage"
+    "message": "إخفاء أقسام قوائم التشغيل من الصفحة الرئيسية"
   },
   "feature_hidePlaylistsHome_name": {
-    "message": "Hide Playlist Shelves"
+    "message": "إخفاء أرفف قوائم التشغيل"
   },
   "feature_hideQueueOnThumbnails_desc": {
-    "message": "Remove the \"Add to queue\" overlay button that appears on thumbnail hover"
+    "message": "إزالة زر \"إضافة إلى قائمة الانتظار\" المتراكب الذي يظهر عند تمرير الماوس فوق الصورة المصغرة"
   },
   "feature_hideQueueOnThumbnails_name": {
-    "message": "Hide \"Add to Queue\" on Thumbnails"
+    "message": "إخفاء \"إضافة إلى قائمة الانتظار\" على الصور المصغرة"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Remove the related videos panel on watch pages"
+    "message": "إزالة لوحة الفيديوهات ذات الصلة في صفحات المشاهدة"
   },
   "feature_hideRelatedVideos_name": {
-    "message": "Hide Related Videos"
+    "message": "إخفاء الفيديوهات ذات الصلة"
   },
   "feature_hideSidebar_desc": {
-    "message": "Remove the left navigation sidebar completely"
+    "message": "إزالة الشريط الجانبي للتنقل الأيسر بالكامل"
   },
   "feature_hideSidebar_name": {
-    "message": "Hide Sidebar"
+    "message": "إخفاء الشريط الجانبي"
   },
   "feature_hideSubscriptionOptions_desc": {
-    "message": "Remove the \"Latest\" header and view toggles on subscriptions"
+    "message": "إزالة رأس \"الأحدث\" ومفاتيح تبديل العرض في الاشتراكات"
   },
   "feature_hideSubscriptionOptions_name": {
-    "message": "Hide Layout Options"
+    "message": "إخفاء خيارات التخطيط"
   },
   "feature_hideVideoEndContent_desc": {
-    "message": "Remove end cards, end screen, annotations, and video grid when videos finish. Superset of Hide End Screen Cards."
+    "message": "إزالة بطاقات النهاية وشاشة النهاية والتعليقات التوضيحية وشبكة الفيديو عند انتهاء الفيديوهات. مجموعة شاملة لإخفاء بطاقات شاشة النهاية."
   },
   "feature_hideVideoEndContent_name": {
-    "message": "Hide Video End Content"
+    "message": "إخفاء محتوى نهاية الفيديو"
   },
   "feature_hideVideosFromHome_desc": {
-    "message": "Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking."
+    "message": "إخفاء الفيديوهات/القنوات من الخلاصات. يتضمن فلتر كلمات وفلتر مدة وحظر قنوات."
   },
   "feature_hideVideosFromHome_name": {
-    "message": "Video Hider"
+    "message": "إخفاء الفيديوهات"
   },
   "feature_hideVoiceSearch_desc": {
-    "message": "Remove the microphone icon from the search bar"
+    "message": "إزالة أيقونة الميكروفون من شريط البحث"
   },
   "feature_hideVoiceSearch_name": {
-    "message": "Hide Voice Search"
+    "message": "إخفاء البحث الصوتي"
   },
   "feature_hideWatchedVideos_desc": {
-    "message": "Dim or hide videos with a red progress bar (already watched) from feeds"
+    "message": "تخفيت أو إخفاء الفيديوهات ذات شريط التقدم الأحمر (المشاهدة مسبقاً) من الخلاصات"
   },
   "feature_hideWatchedVideos_name": {
-    "message": "Hide Watched Videos"
+    "message": "إخفاء الفيديوهات المشاهدة"
   },
   "feature_homepageGridAlign_desc": {
-    "message": "Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights"
+    "message": "فرض شبكة صور مصغرة موحدة على الصفحة الرئيسية — يمنع الصفوف غير المحاذاة الناتجة عن ارتفاعات العنوان/البيانات الوصفية المتغيرة"
   },
   "feature_homepageGridAlign_name": {
-    "message": "Homepage Grid Align"
+    "message": "محاذاة شبكة الصفحة الرئيسية"
   },
   "feature_initialPlayerStateBackground_desc": {
-    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube's default. Useful for queueing-up multiple tabs."
+    "message": "عند فتح صفحة مشاهدة في تبويبة خلفية، تشغيل أو إيقاف مؤقت بغض النظر عن إعداد YouTube الافتراضي. مفيد لوضع عدة تبويبات في قائمة الانتظار."
   },
   "feature_initialPlayerStateBackground_name": {
-    "message": "Initial Player State (Background)"
+    "message": "حالة المشغّل الأولية (خلفية)"
   },
   "feature_initialPlayerStateForeground_desc": {
-    "message": "When opening a watch page in the foreground, play or pause regardless of the previous session’s autoplay choice. “Inherit” leaves YouTube’s native behavior alone."
+    "message": "عند فتح صفحة مشاهدة في المقدمة، تشغيل أو إيقاف مؤقت بغض النظر عن اختيار التشغيل التلقائي للجلسة السابقة. \"وراثة\" يترك سلوك YouTube الأصلي."
   },
   "feature_initialPlayerStateForeground_name": {
-    "message": "Initial Player State (Foreground)"
+    "message": "حالة المشغّل الأولية (مقدمة)"
   },
   "feature_keyMoments_desc": {
-    "message": "Highlights chapter markers on the progress bar with colored segments for quick visual navigation"
+    "message": "تمييز علامات الفصول على شريط التقدم بشرائح ملونة للتنقل البصري السريع"
   },
   "feature_keyMoments_name": {
-    "message": "Key Moments Highlights"
+    "message": "تمييز اللحظات المهمة"
   },
   "feature_likeViewRatio_desc": {
-    "message": "Shows the like-to-view percentage next to the view count on watch pages"
+    "message": "يعرض نسبة الإعجاب إلى المشاهدات بجانب عدد المشاهدات في صفحات المشاهدة"
   },
   "feature_likeViewRatio_name": {
-    "message": "Like-to-View Ratio"
+    "message": "نسبة الإعجاب إلى المشاهدات"
   },
   "feature_localAiSummary_desc": {
-    "message": "Use Chrome's built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
+    "message": "استخدام واجهة Summarizer المدمجة في Chrome عند توفرها. يعود إلى رسالة \"غير متاح\" واضحة — لا يوجّه بصمت إلى مزود بعيد. يضيف زر \"ملخص محلي\" بجانب زر ملخص الذكاء الاصطناعي الحالي."
   },
   "feature_localAiSummary_name": {
-    "message": "Local AI Summary (browser built-in)"
+    "message": "ملخص ذكاء اصطناعي محلي (مدمج في المتصفح)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Ask questions about the current video transcript using Chrome Prompt API (Gemini Nano). Runs on-device, no API keys needed."
+    "message": "اطرح أسئلة حول نص الفيديو الحالي باستخدام Chrome Prompt API (Gemini Nano). يعمل على الجهاز، بدون مفاتيح API."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Transcript Q&A (browser built-in)"
+    "message": "أسئلة وأجوبة النص (مدمج في المتصفح)"
   },
   "feature_logoToSubscriptions_desc": {
-    "message": "Point the native YouTube home mark to your subscriptions feed"
+    "message": "توجيه علامة YouTube الرئيسية إلى خلاصة الاشتراكات"
   },
   "feature_logoToSubscriptions_name": {
-    "message": "Logo Click → Subscriptions"
+    "message": "نقرة الشعار ← الاشتراكات"
   },
   "feature_lowPowerProfile_desc": {
-    "message": "When on, disables CPU-heavy features (cinema ambient glow, visual filters, playback stats overlay, monetization indicator, transcript index, transcript viewer, blue light filter) and bumps storage LRU sweep cadence. Toggle off to restore previous values from the backup snapshot."
+    "message": "عند التفعيل، يعطّل الميزات كثيفة CPU (التوهج السينمائي المحيط، الفلاتر المرئية، تراكب إحصائيات التشغيل، مؤشر التحقيق المالي، فهرس النص، عارض النص، فلتر الضوء الأزرق) ويزيد وتيرة مسح LRU للتخزين. التعطيل يستعيد القيم السابقة من اللقطة الاحتياطية."
   },
   "feature_lowPowerProfile_name": {
-    "message": "Low Power Profile"
+    "message": "ملف الطاقة المنخفضة"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Shows a floating mini-player bar at the bottom when you scroll past the video"
+    "message": "يعرض شريط مشغّل مصغّر عائم في الأسفل عند التمرير بعد الفيديو"
   },
   "feature_miniPlayerBar_name": {
-    "message": "Mini Player Bar"
+    "message": "شريط المشغّل المصغّر"
   },
   "feature_monetizationIndicator_desc": {
-    "message": "Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available."
+    "message": "يضيف شارة تحت العنوان توضح ما إذا كان الفيديو يحقق أرباحاً (يحتوي إعلانات / تراكب رعاية) أم لا. تقديري — يستخدم تراكب الترويج المدفوع وبطاقة الرعاية وبيانات فئة SponsorBlock عند توفرها."
   },
   "feature_monetizationIndicator_name": {
-    "message": "Monetization Indicator"
+    "message": "مؤشر تحقيق الأرباح"
   },
   "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up"
+    "message": "عند تفعيل سرعة التشغيل الثابتة، إبقاء فيديوهات فئة الموسيقى عند 1x حتى لا تُسرَّع الأغاني"
   },
   "feature_musicVideoSpeedLock_name": {
-    "message": "Lock 1× Speed on Music Videos"
+    "message": "قفل السرعة عند 1x لفيديوهات الموسيقى"
   },
   "feature_newPlayerUiRestore_desc": {
-    "message": "Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
+    "message": "يخفي عناصر واجهة المشغّل الجديدة في YouTube (لوحة Delhi الحديثة، أسطح الإجراءات). يستعيد شريط تقدم أضيق وعناصر تحكم بالنمط الأصلي."
   },
   "feature_newPlayerUiRestore_name": {
-    "message": "Restore Classic Player Chrome"
+    "message": "استعادة مظهر المشغّل الكلاسيكي"
   },
   "feature_noAmbientMode_desc": {
-    "message": "Turn off the glowing background effect that matches video colors"
+    "message": "إيقاف تأثير الخلفية المتوهجة المطابقة لألوان الفيديو"
   },
   "feature_noAmbientMode_name": {
-    "message": "Disable Ambient Mode"
+    "message": "تعطيل الوضع المحيط"
   },
   "feature_noFrostedGlass_desc": {
-    "message": "Remove blur effects from UI elements"
+    "message": "إزالة تأثيرات التمويه من عناصر الواجهة"
   },
   "feature_noFrostedGlass_name": {
-    "message": "Disable Frosted Glass"
+    "message": "تعطيل الزجاج المصنفر"
   },
   "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
+    "message": "عرض تنبيه لمرة واحدة عندما يختار YouTube تلقائياً مساراً صوتياً مُدبلجاً بالذكاء الاصطناعي (مثلاً فيديو كوري مُدبلج بالإنجليزية). يمكنك التبديل يدوياً إلى المسار الأصلي في إعدادات المشغّل."
   },
   "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notify on AI-dubbed audio"
+    "message": "إشعار عند الدبلجة بالذكاء الاصطناعي"
   },
   "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
+    "message": "إضافة زر X على صور الفيديو المصغرة لتجاهل الفيديوهات بسرعة عبر واجهة ملاحظات YouTube"
   },
   "feature_notInterestedButton_name": {
-    "message": "\"Not Interested\" on Thumbnails"
+    "message": "\"غير مهتم\" على الصور المصغرة"
   },
   "feature_nyanCatProgressBar_desc": {
-    "message": "Replace the video progress bar with a Nyan Cat animation"
+    "message": "استبدال شريط تقدم الفيديو برسوم متحركة Nyan Cat"
   },
   "feature_nyanCatProgressBar_name": {
-    "message": "Nyan Cat Progress Bar"
+    "message": "شريط تقدم Nyan Cat"
   },
   "feature_oledTheme_desc": {
-    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes."
+    "message": "خلفيات OLED سوداء حقيقية (#000) عبر رموز --yt-sys-color-baseline. تصمد أمام تبديلات سمة YouTube الأصلية لأننا نربط الرموز نفسها، وليس فئات السطح."
   },
   "feature_oledTheme_name": {
-    "message": "OLED Theme"
+    "message": "سمة OLED"
   },
   "feature_openInAlternativeFrontend_desc": {
-    "message": "Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting."
+    "message": "يضيف زراً بجانب المشغّل لفتح الفيديو الحالي في واجهتك الأمامية البديلة المكوّنة (Invidious / Piped / FreeTube). المثيل الافتراضي هو yewtu.be؛ غيّره عبر إعداد alternativeFrontendInstance."
   },
   "feature_openInAlternativeFrontend_name": {
-    "message": "Open In Alternative Frontend"
+    "message": "فتح في واجهة أمامية بديلة"
   },
   "feature_openInNewTab_desc": {
-    "message": "Makes video links on the home/subscriptions page open in a new tab instead of navigating away"
+    "message": "جعل روابط الفيديو في صفحة الرئيسية/الاشتراكات تُفتح في تبويبة جديدة بدلاً من الانتقال بعيداً"
   },
   "feature_openInNewTab_name": {
-    "message": "Open Videos in New Tab"
+    "message": "فتح الفيديوهات في تبويبة جديدة"
   },
   "feature_pauseOtherTabs_desc": {
-    "message": "When a video starts playing, pause YouTube in all other tabs"
+    "message": "عند بدء تشغيل فيديو، إيقاف YouTube مؤقتاً في جميع التبويبات الأخرى"
   },
   "feature_pauseOtherTabs_name": {
-    "message": "Pause Other Tabs on Play"
+    "message": "إيقاف التبويبات الأخرى عند التشغيل"
   },
   "feature_pcHide_autoplay_desc": {
-    "message": "Hide autoplay toggle from player"
+    "message": "إخفاء مفتاح التشغيل التلقائي من المشغّل"
   },
   "feature_pcHide_autoplay_name": {
-    "message": "Autoplay Toggle"
+    "message": "مفتاح التشغيل التلقائي"
   },
   "feature_pcHide_captions_desc": {
-    "message": "Hide captions overlay on video"
+    "message": "إخفاء تراكب الترجمة على الفيديو"
   },
   "feature_pcHide_captions_name": {
-    "message": "Captions Display"
+    "message": "عرض الترجمة"
   },
   "feature_pcHide_fullscreen_desc": {
-    "message": "Hide fullscreen button from player"
+    "message": "إخفاء زر ملء الشاشة من المشغّل"
   },
   "feature_pcHide_fullscreen_name": {
-    "message": "Fullscreen Button"
+    "message": "زر ملء الشاشة"
   },
   "feature_pcHide_miniplayer_desc": {
-    "message": "Hide miniplayer button from player"
+    "message": "إخفاء زر المشغّل المصغّر من المشغّل"
   },
   "feature_pcHide_miniplayer_name": {
-    "message": "Miniplayer Button"
+    "message": "زر المشغّل المصغّر"
   },
   "feature_pcHide_next_desc": {
-    "message": "Hide next video button from player"
+    "message": "إخفاء زر الفيديو التالي من المشغّل"
   },
   "feature_pcHide_next_name": {
-    "message": "Next Video Button"
+    "message": "زر الفيديو التالي"
   },
   "feature_pcHide_pip_desc": {
-    "message": "Hide PiP button from player"
+    "message": "إخفاء زر PiP من المشغّل"
   },
   "feature_pcHide_pip_name": {
-    "message": "Picture-in-Picture"
+    "message": "صورة داخل صورة"
   },
   "feature_pcHide_settings_desc": {
-    "message": "Hide settings gear from player controls"
+    "message": "إخفاء ترس الإعدادات من عناصر تحكم المشغّل"
   },
   "feature_pcHide_settings_name": {
-    "message": "Settings Gear"
+    "message": "ترس الإعدادات"
   },
   "feature_pcHide_subtitles_desc": {
-    "message": "Hide subtitles button from player"
+    "message": "إخفاء زر الترجمة من المشغّل"
   },
   "feature_pcHide_subtitles_name": {
-    "message": "Subtitles Button"
+    "message": "زر الترجمة"
   },
   "feature_pcHide_theater_desc": {
-    "message": "Hide theater mode button from player"
+    "message": "إخفاء زر وضع Theater من المشغّل"
   },
   "feature_pcHide_theater_name": {
-    "message": "Theater Mode Button"
+    "message": "زر وضع Theater"
   },
   "feature_pcHide_ytLogo_desc": {
-    "message": "Hide the native brand button from player controls"
+    "message": "إخفاء زر العلامة التجارية الأصلية من عناصر تحكم المشغّل"
   },
   "feature_pcHide_ytLogo_name": {
-    "message": "Native Brand Button"
+    "message": "زر العلامة التجارية الأصلية"
   },
   "feature_perChannelIntroOutro_desc": {
-    "message": "Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools → Set Intro/Outro). Stored under perChannelIntroOutroData."
+    "message": "تخطي أول N وآخر M ثانية من كل فيديو في قناة معيّنة. حدّد الإزاحات لكل قناة من صفحة المشاهدة (الأدوات ← تعيين المقدمة/الخاتمة). محفوظة تحت perChannelIntroOutroData."
   },
   "feature_perChannelIntroOutro_name": {
-    "message": "Per-Channel Intro/Outro Skip"
+    "message": "تخطي المقدمة/الخاتمة لكل قناة"
   },
   "feature_perChannelSpeed_desc": {
-    "message": "Remember and auto-apply preferred playback speed for each channel"
+    "message": "تذكّر وتطبيق سرعة التشغيل المفضلة لكل قناة تلقائياً"
   },
   "feature_perChannelSpeed_name": {
-    "message": "Per-Channel Speed Memory"
+    "message": "ذاكرة السرعة لكل قناة"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Remember your preferred playback speed globally and auto-apply it to every video"
+    "message": "تذكّر سرعة التشغيل المفضلة عالمياً وتطبيقها على كل فيديو تلقائياً"
   },
   "feature_persistentSpeed_name": {
-    "message": "Persistent Playback Speed"
+    "message": "سرعة التشغيل الثابتة"
   },
   "feature_pipButton_desc": {
-    "message": "Adds a one-click PiP button to the player controls for native browser Picture-in-Picture"
+    "message": "يضيف زر PiP بنقرة واحدة إلى عناصر تحكم المشغّل لوضع صورة داخل صورة الأصلي في المتصفح"
   },
   "feature_pipButton_name": {
-    "message": "Picture-in-Picture Button"
+    "message": "زر صورة داخل صورة"
   },
   "feature_playbackSpeedOSD_desc": {
-    "message": "Show speed overlay on the video player (like VLC) instead of corner toast"
+    "message": "عرض تراكب السرعة على مشغّل الفيديو (مثل VLC) بدلاً من تنبيه الزاوية"
   },
   "feature_playbackSpeedOSD_name": {
-    "message": "Speed Change OSD"
+    "message": "عرض OSD لتغيير السرعة"
   },
   "feature_playbackStatsOverlay_desc": {
-    "message": "Shows video codec, resolution, bitrate, and dropped frame count as a togglable overlay"
+    "message": "يعرض برنامج ترميز الفيديو والدقة ومعدل البت وعدد الإطارات المسقطة كتراكب قابل للتبديل"
   },
   "feature_playbackStatsOverlay_name": {
-    "message": "Playback Stats Overlay"
+    "message": "تراكب إحصائيات التشغيل"
   },
   "feature_playlistEnhancer_desc": {
-    "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
+    "message": "يضيف أدوات خلط ونسخ وإخفاء التكرارات إلى لوحات قوائم التشغيل"
   },
   "feature_playlistEnhancer_name": {
-    "message": "Playlist Enhancer"
+    "message": "محسّن قوائم التشغيل"
   },
   "feature_playlistQuickRemove_desc": {
-    "message": "Show a trash icon on each item in playlists you own for one-click removal"
+    "message": "عرض أيقونة سلة المهملات على كل عنصر في قوائم التشغيل التي تملكها لإزالة بنقرة واحدة"
   },
   "feature_playlistQuickRemove_name": {
-    "message": "Playlist Quick-Remove Overlay"
+    "message": "تراكب الإزالة السريعة من قائمة التشغيل"
   },
   "feature_playlistSearch_desc": {
-    "message": "Adds a search input above playlist panels to filter items by title"
+    "message": "يضيف حقل بحث فوق لوحات قوائم التشغيل لتصفية العناصر حسب العنوان"
   },
   "feature_playlistSearch_name": {
-    "message": "Playlist Search"
+    "message": "البحث في قائمة التشغيل"
   },
   "feature_popOutPlayer_desc": {
-    "message": "Detach the video into a resizable floating Picture-in-Picture window with transport controls"
+    "message": "فصل الفيديو في نافذة صورة داخل صورة عائمة قابلة لتغيير الحجم مع عناصر تحكم النقل"
   },
   "feature_popOutPlayer_name": {
-    "message": "Pop-Out Player"
+    "message": "مشغّل منفصل"
   },
   "feature_preciseViewCounts_desc": {
-    "message": "Show full view counts (1,234,567) instead of truncated (1.2M)"
+    "message": "عرض أعداد المشاهدات كاملة (1,234,567) بدلاً من المختصرة (1.2M)"
   },
   "feature_preciseViewCounts_name": {
-    "message": "Precise View Counts"
+    "message": "أعداد المشاهدات الدقيقة"
   },
   "feature_preloadComments_desc": {
-    "message": "Eagerly load the comment section so it is ready when you scroll down"
+    "message": "تحميل قسم التعليقات مسبقاً ليكون جاهزاً عند التمرير للأسفل"
   },
   "feature_preloadComments_name": {
-    "message": "Preload Comments"
+    "message": "التحميل المسبق للتعليقات"
   },
   "feature_premiumLiveChat_desc": {
-    "message": "Refine live chat with a polished header, elevated message rows, and a premium composer."
+    "message": "تحسين الدردشة المباشرة برأس مصقول وصفوف رسائل مرتفعة ومحرر متميز."
   },
   "feature_premiumLiveChat_name": {
-    "message": "Premium Live Chat"
+    "message": "الدردشة المباشرة المتميزة"
   },
   "feature_presetPowerUser_desc": {
-    "message": "Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values."
+    "message": "أقصى كثافة للميزات: إحصائيات التشغيل، سرعة ثابتة، تحكم دقيق بالسرعة، استئناف التشغيل، شريط المشغّل المصغّر، وضع التركيز، تكرار A-B. التعطيل يستعيد القيم السابقة."
   },
   "feature_presetPowerUser_name": {
-    "message": "Power User Preset"
+    "message": "إعداد المستخدم المتقدم"
   },
   "feature_presetPrivacy_desc": {
-    "message": "Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values."
+    "message": "حزمة الخصوصية: تنظيف روابط المشاركة، إخفاء شرائح التتبع، حظر التمرير اللانهائي، تعطيل التنقل SPA. التعطيل يستعيد القيم السابقة."
   },
   "feature_presetPrivacy_name": {
-    "message": "Privacy Preset"
+    "message": "إعداد الخصوصية"
   },
   "feature_presetResearcher_desc": {
-    "message": "Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values."
+    "message": "حزمة البحث/الدراسة: عارض النص، إشارات الطوابع الزمنية، متتبع وقت المشاهدة، ملخص الذكاء الاصطناعي، البحث في التعليقات. التعطيل يستعيد القيم السابقة."
   },
   "feature_presetResearcher_name": {
-    "message": "Researcher Preset"
+    "message": "إعداد الباحث"
   },
   "feature_preventAutoplay_desc": {
-    "message": "Stop videos from automatically playing on page load"
+    "message": "إيقاف تشغيل الفيديوهات تلقائياً عند تحميل الصفحة"
   },
   "feature_preventAutoplay_name": {
-    "message": "Prevent Autoplay"
+    "message": "منع التشغيل التلقائي"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "Set different default qualities for normal / theater / fullscreen / background / embed contexts. ISOLATED-world detects the context and writes data-ytkit-quality-context on <html>; the MAIN-world bridge re-applies the matching quality via movie_player.setPlaybackQualityRange()."
+    "message": "تعيين جودة افتراضية مختلفة لسياقات العادي / Theater / ملء الشاشة / الخلفية / التضمين. العالم المعزول يكشف السياق ويكتب data-ytkit-quality-context على <html>؛ جسر العالم الرئيسي يعيد تطبيق الجودة المطابقة عبر movie_player.setPlaybackQualityRange()."
   },
   "feature_qualityProfileMatrix_name": {
-    "message": "Per-Context Quality"
+    "message": "جودة لكل سياق"
   },
   "feature_quickLinkEditor_desc": {
-    "message": "Customize the Astra launcher menu. One link per line: Label | URL"
+    "message": "تخصيص قائمة مُشغّل Astra. رابط واحد لكل سطر: التسمية | العنوان"
   },
   "feature_quickLinkEditor_name": {
-    "message": "Edit Launcher Links"
+    "message": "تحرير روابط المُشغّل"
   },
   "feature_quickLinkMenu_desc": {
-    "message": "Adds a compact quick-links menu in the masthead with customizable links"
+    "message": "يضيف قائمة روابط سريعة مضغوطة في الرأس مع روابط قابلة للتخصيص"
   },
   "feature_quickLinkMenu_name": {
-    "message": "Quick Links"
+    "message": "الروابط السريعة"
   },
   "feature_reactionSpammer_desc": {
-    "message": "Select live chat reactions and send them in a randomized loop."
+    "message": "تحديد تفاعلات الدردشة المباشرة وإرسالها في حلقة عشوائية."
   },
   "feature_reactionSpammer_name": {
-    "message": "Reaction Spammer"
+    "message": "مُرسل تفاعلات متكرر"
   },
   "feature_rectangularizeYouTube_desc": {
-    "message": "Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
+    "message": "يزيل خلفيات YouTube المستديرة بالكامل. أي خلفية بنصف قطر حدود > 12px تُحدّ عند 8px. الصور الرمزية وحلقات التقدم تبقى دائرية."
   },
   "feature_rectangularizeYouTube_name": {
-    "message": "Rectangularize UI"
+    "message": "تربيع الواجهة"
   },
   "feature_redditComments_desc": {
-    "message": "Find Reddit discussions mentioning the current video (button in secondary sidebar)"
+    "message": "العثور على نقاشات Reddit التي تذكر الفيديو الحالي (زر في الشريط الجانبي الثانوي)"
   },
   "feature_redditComments_name": {
-    "message": "Reddit Comments"
+    "message": "تعليقات Reddit"
   },
   "feature_redirectHomeToSubs_desc": {
-    "message": "Automatically redirect the YouTube homepage to your subscriptions feed"
+    "message": "إعادة توجيه الصفحة الرئيسية لـ YouTube تلقائياً إلى خلاصة الاشتراكات"
   },
   "feature_redirectHomeToSubs_name": {
-    "message": "Redirect Home to Subscriptions"
+    "message": "إعادة توجيه الرئيسية إلى الاشتراكات"
   },
   "feature_redirectShorts_desc": {
-    "message": "Open Shorts in the standard video player"
+    "message": "فتح Shorts في مشغّل الفيديو القياسي"
   },
   "feature_redirectShorts_name": {
-    "message": "Redirect Shorts"
+    "message": "إعادة توجيه Shorts"
   },
   "feature_redirectToVideosTab_desc": {
-    "message": "Open channel pages directly on the Videos tab"
+    "message": "فتح صفحات القنوات مباشرة في تبويبة الفيديوهات"
   },
   "feature_redirectToVideosTab_name": {
-    "message": "Channels → Videos Tab"
+    "message": "القنوات ← تبويبة الفيديوهات"
   },
   "feature_reducedMotion_desc": {
-    "message": "Forces every Astra-injected animation, transition, and scroll behavior to be near-instant. Respects the OS prefers-reduced-motion setting automatically; this toggle adds an unconditional override on top."
+    "message": "يجبر كل رسوم متحركة وانتقال وسلوك تمرير محقون من Astra ليكون شبه فوري. يحترم إعداد prefers-reduced-motion في النظام تلقائياً؛ هذا التبديل يضيف تجاوزاً غير مشروط فوقه."
   },
   "feature_reducedMotion_name": {
-    "message": "Reduced Motion (strong)"
+    "message": "تقليل الحركة (قوي)"
   },
   "feature_remainingTimeDisplay_desc": {
-    "message": "Show time remaining next to current time in the player, adjusted for playback speed"
+    "message": "عرض الوقت المتبقي بجانب الوقت الحالي في المشغّل، معدّل لسرعة التشغيل"
   },
   "feature_remainingTimeDisplay_name": {
-    "message": "Remaining Time Display"
+    "message": "عرض الوقت المتبقي"
   },
   "feature_rememberVolume_desc": {
-    "message": "Persist your volume level across videos and sessions"
+    "message": "حفظ مستوى الصوت عبر الفيديوهات والجلسات"
   },
   "feature_rememberVolume_name": {
-    "message": "Remember Volume"
+    "message": "تذكّر مستوى الصوت"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Hide all Shorts videos from feeds and recommendations"
+    "message": "إخفاء جميع فيديوهات Shorts من الخلاصات والتوصيات"
   },
   "feature_removeAllShorts_name": {
-    "message": "Remove Shorts"
+    "message": "إزالة Shorts"
   },
   "feature_researchSpacedReview_desc": {
-    "message": "Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links."
+    "message": "تصدير بيانات وضع الدراسة/العمل إلى Markdown أو CSV: إجماليات وقت المشاهدة، حالة وضع التركيز، حالة الصحة الرقمية، وإشارات الطوابع الزمنية مع روابط عميقة."
   },
   "feature_researchSpacedReview_name": {
-    "message": "Study / Work Export"
+    "message": "تصدير الدراسة / العمل"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes the transcript of every video you open into a local IndexedDB. Adds a global \"Search Transcripts\" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry."
+    "message": "يفهرس نص كل فيديو تفتحه في IndexedDB محلي. يضيف لوحة \"البحث في النصوص\" عالمية تظهر من النافذة المنبثقة أو عبر window.__ytkitSearchTranscripts(query). يمكن مسح الفهرس من الإعدادات؛ بدون قياس عن بُعد."
   },
   "feature_researchTranscriptIndex_name": {
-    "message": "Transcript Search Index"
+    "message": "فهرس البحث في النصوص"
   },
   "feature_researchTranscriptSearchPanel_desc": {
-    "message": "Adds a \"Search transcripts\" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off."
+    "message": "يضيف زر \"البحث في النصوص\" في صفحة المشاهدة يفتح واجهة بحث على فهرس IndexedDB المحلي للنصوص. يتطلب تفعيل فهرس البحث في النصوص. معطَّل افتراضياً."
   },
   "feature_researchTranscriptSearchPanel_name": {
-    "message": "Transcript Search Panel"
+    "message": "لوحة البحث في النصوص"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+    "message": "إظهار الصور الرمزية للقناة/التعليقات وأرفف خلاصة الرئيسية التي يخفيها Astra Deck افتراضياً."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restore Native YouTube UI"
+    "message": "استعادة واجهة YouTube الأصلية"
   },
   "feature_resumePlayback_desc": {
-    "message": "Remember where you stopped watching and automatically resume from that point"
+    "message": "تذكّر أين توقفت عن المشاهدة واستئناف التشغيل تلقائياً من تلك النقطة"
   },
   "feature_resumePlayback_name": {
-    "message": "Resume Playback Position"
+    "message": "استئناف موضع التشغيل"
   },
   "feature_returnDislike_desc": {
-    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
+    "message": "استعادة عدد عدم الإعجاب التقديري عبر واجهة RYD العامة. مخزّن مؤقتاً محلياً؛ يلتزم بميزانية 100 طلب/دقيقة. لا تُرسل ملفات تعريف ارتباط. معطَّل افتراضياً."
   },
   "feature_returnDislike_name": {
-    "message": "Return YouTube Dislike"
+    "message": "استعادة عدم الإعجاب في YouTube"
   },
   "feature_reversePlaylist_desc": {
-    "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
+    "message": "يضيف زر \"عكس\" إلى لوحات قوائم التشغيل لتشغيل الأقدم أولاً"
   },
   "feature_reversePlaylist_name": {
-    "message": "Reverse Playlist Button"
+    "message": "زر عكس قائمة التشغيل"
   },
   "feature_rssFeedLink_desc": {
-    "message": "Show an RSS feed link on channel pages for subscribing via RSS readers"
+    "message": "عرض رابط RSS على صفحات القنوات للاشتراك عبر قارئات RSS"
   },
   "feature_rssFeedLink_name": {
-    "message": "RSS Feed Link"
+    "message": "رابط خلاصة RSS"
   },
   "feature_sbCat_filler_desc": {
-    "message": "Tangential or filler content"
+    "message": "محتوى هامشي أو حشو"
   },
   "feature_sbCat_filler_name": {
-    "message": "Skip Filler"
+    "message": "تخطي الحشو"
   },
   "feature_sbCat_interaction_desc": {
-    "message": "\"Like, subscribe, comment\" reminders"
+    "message": "تذكيرات \"اعجب، اشترك، علّق\""
   },
   "feature_sbCat_interaction_name": {
-    "message": "Skip Interaction Reminders"
+    "message": "تخطي تذكيرات التفاعل"
   },
   "feature_sbCat_intro_desc": {
-    "message": "Intro animations and branding"
+    "message": "رسوم المقدمة المتحركة والعلامة التجارية"
   },
   "feature_sbCat_intro_name": {
-    "message": "Skip Intros"
+    "message": "تخطي المقدمات"
   },
   "feature_sbCat_music_offtopic_desc": {
-    "message": "Non-music sections in music videos"
+    "message": "أقسام غير موسيقية في فيديوهات الموسيقى"
   },
   "feature_sbCat_music_offtopic_name": {
-    "message": "Skip Non-Music"
+    "message": "تخطي الأجزاء غير الموسيقية"
   },
   "feature_sbCat_outro_desc": {
-    "message": "Endcards and outro sequences"
+    "message": "بطاقات النهاية وتسلسلات الخاتمة"
   },
   "feature_sbCat_outro_name": {
-    "message": "Skip Outros"
+    "message": "تخطي الخاتمات"
   },
   "feature_sbCat_poi_highlight_desc": {
-    "message": "Jump to the highlight/point of interest (disabled by default)"
+    "message": "الانتقال إلى نقطة الاهتمام/اللحظة المميزة (معطَّل افتراضياً)"
   },
   "feature_sbCat_poi_highlight_name": {
-    "message": "Highlight Point of Interest"
+    "message": "تمييز نقطة الاهتمام"
   },
   "feature_sbCat_preview_desc": {
-    "message": "Preview or recap of upcoming content"
+    "message": "معاينة أو ملخص للمحتوى القادم"
   },
   "feature_sbCat_preview_name": {
-    "message": "Skip Previews"
+    "message": "تخطي المعاينات"
   },
   "feature_sbCat_selfpromo_desc": {
-    "message": "Creator promoting their own products or channels"
+    "message": "المنشئ يروّج لمنتجاته أو قنواته الخاصة"
   },
   "feature_sbCat_selfpromo_name": {
-    "message": "Skip Self-Promotion"
+    "message": "تخطي الترويج الذاتي"
   },
   "feature_sbCat_sponsor_desc": {
-    "message": "Paid promotions and sponsorship segments"
+    "message": "العروض الترويجية المدفوعة ومقاطع الرعاية"
   },
   "feature_sbCat_sponsor_name": {
-    "message": "Skip Sponsors"
+    "message": "تخطي الرعاة"
   },
   "feature_sbPerChannelProfiles_desc": {
-    "message": "Override which SponsorBlock categories are skipped on a per-channel basis"
+    "message": "تجاوز فئات SponsorBlock التي يتم تخطيها لكل قناة على حدة"
   },
   "feature_sbPerChannelProfiles_name": {
-    "message": "SponsorBlock Per-Channel Profiles"
+    "message": "ملفات SponsorBlock لكل قناة"
   },
   "feature_scrollToPlayer_desc": {
-    "message": "Automatically scrolls to the top of the page when navigating to a new video"
+    "message": "التمرير تلقائياً إلى أعلى الصفحة عند الانتقال إلى فيديو جديد"
   },
   "feature_scrollToPlayer_name": {
-    "message": "Scroll to Player on Navigate"
+    "message": "التمرير إلى المشغّل عند التنقل"
   },
   "feature_scrollWheelSpeed_desc": {
-    "message": "Adjust playback speed by scrolling the mouse wheel over the video player"
+    "message": "ضبط سرعة التشغيل بتمرير عجلة الماوس فوق مشغّل الفيديو"
   },
   "feature_scrollWheelSpeed_name": {
-    "message": "Scroll Wheel Speed"
+    "message": "سرعة عجلة التمرير"
   },
   "feature_searchFilterDefaults_desc": {
-    "message": "Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results"
+    "message": "تطبيق ترتيب فرز افتراضي تلقائياً (تاريخ الرفع، عدد المشاهدات، أو التقييم) على نتائج بحث YouTube"
   },
   "feature_searchFilterDefaults_name": {
-    "message": "Search Filter Defaults"
+    "message": "إعدادات فلتر البحث الافتراضية"
   },
   "feature_selectorHealthPanel_desc": {
-    "message": "Review live selector drift signals and export a JSON health report for fixture refreshes."
+    "message": "مراجعة إشارات انحراف المحدِّدات الحية وتصدير تقرير صحة JSON لتحديث التركيبات."
   },
   "feature_selectorHealthPanel_name": {
-    "message": "Selector Health"
+    "message": "صحة المحدِّدات"
   },
   "feature_settingsProfiles_desc": {
-    "message": "Save, load, switch, import, and export named setting configurations (e.g. Gaming / Work / Music). Controls appear at the top of the settings panel when enabled."
+    "message": "حفظ وتحميل وتبديل واستيراد وتصدير تكوينات إعدادات مسمّاة (مثلاً ألعاب / عمل / موسيقى). تظهر عناصر التحكم في أعلى لوحة الإعدادات عند التفعيل."
   },
   "feature_settingsProfiles_name": {
-    "message": "Settings Profiles"
+    "message": "ملفات الإعدادات"
   },
   "feature_shareMenuCleaner_desc": {
-    "message": "Removes social media buttons from the share dialog, leaving only the URL copy option"
+    "message": "إزالة أزرار وسائل التواصل الاجتماعي من نافذة المشاركة، مع ترك خيار نسخ العنوان فقط"
   },
   "feature_shareMenuCleaner_name": {
-    "message": "Clean Share Menu"
+    "message": "تنظيف قائمة المشاركة"
   },
   "feature_shortsAsRegularVideo_desc": {
-    "message": "Add native browser playback controls and scrubbing to YouTube Shorts"
+    "message": "إضافة عناصر تحكم التشغيل والتمرير الأصلية في المتصفح إلى YouTube Shorts"
   },
   "feature_shortsAsRegularVideo_name": {
-    "message": "Shorts Player Controls"
+    "message": "عناصر تحكم مشغّل Shorts"
   },
   "feature_showChannelVideoCount_desc": {
-    "message": "Display total uploaded video count next to the channel name on watch pages"
+    "message": "عرض إجمالي عدد الفيديوهات المرفوعة بجانب اسم القناة في صفحات المشاهدة"
   },
   "feature_showChannelVideoCount_name": {
-    "message": "Show Channel Video Count"
+    "message": "عرض عدد فيديوهات القناة"
   },
   "feature_showLocalDownloadButton_desc": {
-    "message": "Add a yt-dlp download options button on watch pages"
+    "message": "إضافة زر خيارات تنزيل yt-dlp في صفحات المشاهدة"
   },
   "feature_showLocalDownloadButton_name": {
-    "message": "Download Button"
+    "message": "زر التنزيل"
   },
   "feature_showPlaylistDuration_desc": {
-    "message": "Display total playlist runtime and speed-adjusted estimate next to the playlist header"
+    "message": "عرض مدة قائمة التشغيل الإجمالية والتقدير المعدّل حسب السرعة بجانب رأس قائمة التشغيل"
   },
   "feature_showPlaylistDuration_name": {
-    "message": "Show Playlist Duration"
+    "message": "عرض مدة قائمة التشغيل"
   },
   "feature_showStatisticsDashboard_desc": {
-    "message": "Track videos watched, time on YouTube, and videos hidden"
+    "message": "تتبع الفيديوهات المشاهدة والوقت على YouTube والفيديوهات المخفية"
   },
   "feature_showStatisticsDashboard_name": {
-    "message": "Statistics Dashboard"
+    "message": "لوحة الإحصائيات"
   },
   "feature_showTimeInTabTitle_desc": {
-    "message": "Prepend current playback time [5:23] to the browser tab title"
+    "message": "إضافة وقت التشغيل الحالي [5:23] في بداية عنوان تبويبة المتصفح"
   },
   "feature_showTimeInTabTitle_name": {
-    "message": "Show Time in Tab Title"
+    "message": "عرض الوقت في عنوان التبويبة"
   },
   "feature_sleepTimer_desc": {
-    "message": "Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes."
+    "message": "إيقاف التشغيل مؤقتاً بعد عدد محدد من الدقائق. شريحة العد التنازلي في المشغّل تتيح الإلغاء أو إضافة 5 دقائق."
   },
   "feature_sleepTimer_name": {
-    "message": "Sleep Timer"
+    "message": "مؤقت النوم"
   },
   "feature_sortCommentsNewest_desc": {
-    "message": "Automatically switch the comment sort order to \"Newest first\" on every video"
+    "message": "تبديل ترتيب التعليقات تلقائياً إلى \"الأحدث أولاً\" في كل فيديو"
   },
   "feature_sortCommentsNewest_name": {
-    "message": "Sort Comments Newest First"
+    "message": "ترتيب التعليقات الأحدث أولاً"
   },
   "feature_speedIndicatorOverlay_desc": {
-    "message": "Shows the current playback speed as a small overlay on the video when not at 1x"
+    "message": "يعرض سرعة التشغيل الحالية كتراكب صغير على الفيديو عندما لا تكون عند 1x"
   },
   "feature_speedIndicatorOverlay_name": {
-    "message": "Speed Indicator Overlay"
+    "message": "تراكب مؤشر السرعة"
   },
   "feature_speedStep_desc": {
-    "message": "How much to change speed per scroll tick"
+    "message": "مقدار تغيير السرعة لكل تدريجة تمرير"
   },
   "feature_speedStep_name": {
-    "message": "Speed Step Amount"
+    "message": "مقدار خطوة السرعة"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Automatically skip sponsored segments, intros, outros, and other non-content sections using crowdsourced data"
+    "message": "تخطي مقاطع الرعاية والمقدمات والخاتمات والأقسام غير المحتوى الأخرى تلقائياً باستخدام بيانات جماعية"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "feature_squareAvatars_desc": {
-    "message": "Make channel avatars square instead of round"
+    "message": "جعل الصور الرمزية للقنوات مربعة بدلاً من دائرية"
   },
   "feature_squareAvatars_name": {
-    "message": "Square Avatars"
+    "message": "صور رمزية مربعة"
   },
   "feature_squareSearchBar_desc": {
-    "message": "Remove rounded corners from the search bar"
+    "message": "إزالة الزوايا المستديرة من شريط البحث"
   },
   "feature_squareSearchBar_name": {
-    "message": "Square Search Bar"
+    "message": "شريط بحث مربع"
   },
   "feature_stickyChat_desc": {
-    "message": "Keeps the live chat panel pinned at the top of the sidebar when scrolling"
+    "message": "يبقي لوحة الدردشة المباشرة مثبتة في أعلى الشريط الجانبي عند التمرير"
   },
   "feature_stickyChat_name": {
-    "message": "Sticky Live Chat"
+    "message": "الدردشة المباشرة المثبتة"
   },
   "feature_stickyVideo_desc": {
-    "message": "Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen."
+    "message": "فيديو بملء الشاشة في صفحات المشاهدة. مرّر للأسفل لإظهار التعليقات جنباً إلى جنب. مرّر للأعلى للعودة إلى ملء الشاشة."
   },
   "feature_stickyVideo_name": {
-    "message": "Theater Split"
+    "message": "تقسيم Theater"
   },
   "feature_storageQuotaLRU_desc": {
-    "message": "LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
+    "message": "تحديد LRU للإعدادات المتزايدة (الفيديوهات المخفية، القنوات المخفية، إشارات الطوابع الزمنية، ذاكرة العلامة التجارية، ذاكرة مقاطع SponsorBlock) لمنع نفاد الحصة"
   },
   "feature_storageQuotaLRU_name": {
-    "message": "Storage Quota Management"
+    "message": "إدارة حصة التخزين"
   },
   "feature_styledFilterChips_desc": {
-    "message": "Compact, native-feeling filter chips on home and subscriptions"
+    "message": "شرائح فلتر مضغوطة بمظهر أصلي في الرئيسية والاشتراكات"
   },
   "feature_styledFilterChips_name": {
-    "message": "Styled Filter Chips"
+    "message": "شرائح فلتر مُنسّقة"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up."
+    "message": "مجموعات محلية بمستوى PocketTube لخلاصة الاشتراكات. أنشئ مجموعات مسمّاة، اسحب القنوات إليها، رتّب حسب التاريخ/المدة/غير المشاهد/الجديد منذ آخر زيارة. بيانات المجموعات في subscriptionGroupData (محلي فقط)؛ استخدم التصدير لنسخها احتياطياً."
   },
   "feature_subscriptionGroups_name": {
-    "message": "Subscription Groups"
+    "message": "مجموعات الاشتراكات"
   },
   "feature_subscriptionsGrid_desc": {
-    "message": "Use a denser grid layout on the subscriptions page"
+    "message": "استخدام تخطيط شبكي أكثر كثافة في صفحة الاشتراكات"
   },
   "feature_subscriptionsGrid_name": {
-    "message": "Subscriptions Grid"
+    "message": "شبكة الاشتراكات"
   },
   "feature_subtitleDownload_desc": {
-    "message": "One-click SRT download of the active caption track — standalone player button, no sidebar required"
+    "message": "تنزيل SRT بنقرة واحدة لمسار الترجمة النشط — زر مستقل في المشغّل، لا يحتاج شريطاً جانبياً"
   },
   "feature_subtitleDownload_name": {
-    "message": "Subtitle Download (SRT)"
+    "message": "تنزيل الترجمة (SRT)"
   },
   "feature_subtitleStyling_desc": {
-    "message": "Override YouTube caption appearance — font size/family/color, background, position, shadow"
+    "message": "تجاوز مظهر ترجمة YouTube — حجم/عائلة/لون الخط، الخلفية، الموضع، الظل"
   },
   "feature_subtitleStyling_name": {
-    "message": "Subtitle Styling"
+    "message": "تنسيق الترجمة"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Scroll video into full view when theater mode activates"
+    "message": "تمرير الفيديو إلى العرض الكامل عند تفعيل وضع Theater"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Theater Auto-Scroll"
+    "message": "التمرير التلقائي في وضع Theater"
   },
   "feature_themeAccentColor_desc": {
-    "message": "Custom accent color for highlights, progress bar, and active UI elements"
+    "message": "لون تمييز مخصص للعناصر البارزة وشريط التقدم وعناصر الواجهة النشطة"
   },
   "feature_themeAccentColor_name": {
-    "message": "Accent Color"
+    "message": "لون التمييز"
   },
   "feature_thinScrollbar_desc": {
-    "message": "Use a slim, unobtrusive scrollbar"
+    "message": "استخدام شريط تمرير نحيف وغير مزعج"
   },
   "feature_thinScrollbar_name": {
-    "message": "Thin Scrollbar"
+    "message": "شريط تمرير نحيف"
   },
   "feature_thumbnailPreviewSize_desc": {
-    "message": "Increase the size of thumbnail hover previews for easier viewing on large screens"
+    "message": "زيادة حجم معاينات الصور المصغرة عند التمرير لعرض أسهل على الشاشات الكبيرة"
   },
   "feature_thumbnailPreviewSize_name": {
-    "message": "Large Thumbnail Previews"
+    "message": "معاينات صور مصغرة كبيرة"
   },
   "feature_thumbnailQualityUpgrade_desc": {
-    "message": "Upgrades video thumbnails to maximum resolution where available"
+    "message": "ترقية الصور المصغرة للفيديو إلى أقصى دقة عند توفرها"
   },
   "feature_thumbnailQualityUpgrade_name": {
-    "message": "HD Thumbnails"
+    "message": "صور مصغرة HD"
   },
   "feature_timestampBookmarks_desc": {
-    "message": "Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions."
+    "message": "وضع إشارات مرجعية على لحظات في الفيديوهات مع ملاحظات مخصصة. انقر على إشارة للانتقال. تستمر عبر الجلسات."
   },
   "feature_timestampBookmarks_name": {
-    "message": "Timestamp Bookmarks"
+    "message": "إشارات الطوابع الزمنية"
   },
   "feature_titleCaseTransform_desc": {
-    "message": "Override YouTube's clickbait UPPERCASE titles with a casing style of your choice"
+    "message": "تجاوز عناوين YouTube المكتوبة بحروف كبيرة المضلِّلة بنمط كتابة من اختيارك"
   },
   "feature_titleCaseTransform_name": {
-    "message": "Transform Video Title Case"
+    "message": "تحويل حالة أحرف عنوان الفيديو"
   },
   "feature_titleNormalization_desc": {
-    "message": "Convert ALL CAPS titles to Title Case. Reduces clickbait without changing meaning."
+    "message": "تحويل العناوين المكتوبة بالكامل بأحرف كبيرة إلى حالة العنوان. يقلل التضليل دون تغيير المعنى."
   },
   "feature_titleNormalization_name": {
-    "message": "Normalize Clickbait Titles"
+    "message": "تسوية العناوين المضلِّلة"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
+    "message": "ينقل themeAccentColor للمستخدم إلى رموز YouTube الأصلية --yt-sys-color-* حتى تتبع الشارات الأصلية وحالات التمرير والأزرار الأساسية لون Astra المميز دون إعادة تنسيق كل سطح."
   },
   "feature_tokenThemeBridge_name": {
-    "message": "Native Token Theme Bridge"
+    "message": "جسر سمة الرموز الأصلية"
   },
   "feature_transcriptAiHandoff_desc": {
-    "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
+    "message": "يضيف زراً في المشغّل ينسخ النص ويفتح أداة الذكاء الاصطناعي المختارة مع مطالبة تلخيص معبأة مسبقاً"
   },
   "feature_transcriptAiHandoff_name": {
-    "message": "Transcript → AI One-Click Handoff"
+    "message": "تسليم النص للذكاء الاصطناعي بنقرة واحدة"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Adds a clickable transcript panel in the sidebar with timestamp navigation and export (txt/srt/clipboard/LLM prompt)"
+    "message": "يضيف لوحة نص قابلة للنقر في الشريط الجانبي مع تنقل بالطوابع الزمنية وتصدير (txt/srt/الحافظة/مطالبة LLM)"
   },
   "feature_transcriptViewer_name": {
-    "message": "Transcript Sidebar"
+    "message": "الشريط الجانبي للنص"
   },
   "feature_uiStyleManager_desc": {
-    "message": "Choose rounded or square UI elements"
+    "message": "اختيار عناصر واجهة مستديرة أو مربعة"
   },
   "feature_uiStyleManager_name": {
-    "message": "UI Style"
+    "message": "نمط الواجهة"
   },
   "feature_videoAgeColors_desc": {
-    "message": "Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
+    "message": "حدود صور مصغرة ملونة حسب عمر الرفع — جديد (أخضر)، أسبوع (أزرق)، شهر (أصفر)، سنة (برتقالي)، قديم جداً (أحمر)"
   },
   "feature_videoAgeColors_name": {
-    "message": "Video Age Color Coding"
+    "message": "ترميز ألوان عمر الفيديو"
   },
   "feature_videoContextMenu_desc": {
-    "message": "Right-click on the video player for yt-dlp download actions"
+    "message": "انقر بزر الماوس الأيمن على مشغّل الفيديو لإجراءات تنزيل yt-dlp"
   },
   "feature_videoContextMenu_name": {
-    "message": "Player Download Menu"
+    "message": "قائمة تنزيل المشغّل"
   },
   "feature_videoLoopButton_desc": {
-    "message": "Add a loop toggle button to the player controls for one-click video looping"
+    "message": "إضافة زر تبديل التكرار إلى عناصر تحكم المشغّل لتكرار الفيديو بنقرة واحدة"
   },
   "feature_videoLoopButton_name": {
-    "message": "Video Loop Button"
+    "message": "زر تكرار الفيديو"
   },
   "feature_videoNotes_desc": {
-    "message": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos."
+    "message": "احتفظ بملاحظة محلية للفيديو الحالي، صدّر أرشيف الملاحظات، وحدّد المخزن بآخر 1000 فيديو تم تحريرها مؤخراً."
   },
   "feature_videoNotes_name": {
-    "message": "Per-Video Notes"
+    "message": "ملاحظات لكل فيديو"
   },
   "feature_videoResolutionBadge_desc": {
-    "message": "Shows a 4K, HD, or SD badge on video thumbnails based on available quality"
+    "message": "يعرض شارة 4K أو HD أو SD على صور الفيديو المصغرة بناءً على الجودة المتاحة"
   },
   "feature_videoResolutionBadge_name": {
-    "message": "Resolution Badge on Thumbnails"
+    "message": "شارة الدقة على الصور المصغرة"
   },
   "feature_videoFlip_desc": {
-    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+    "message": "قلب الفيديو أفقياً أو رأسياً — مفيد لدروس الرقص المعكوسة وقراءة النصوص أو التسجيلات المقلوبة"
   },
   "feature_videoFlip_name": {
-    "message": "Video Flip"
+    "message": "قلب الفيديو"
   },
   "feature_monoToStereo_desc": {
-    "message": "Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones"
+    "message": "توسيط الصوت الأحادي بالتساوي في كلتا الأذنين — يصلح التسجيلات أحادية الجانب والمحاضرات والمحتوى القديم الذي يبدو غير متوازن على سماعات الرأس"
   },
   "feature_monoToStereo_name": {
-    "message": "Mono to Stereo"
+    "message": "أحادي إلى ستيريو"
   },
   "feature_videoRotation_desc": {
-    "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
+    "message": "تدوير الفيديو 90/180/270 درجة عبر تحويل CSS — مفيد لتسجيلات الهاتف الجانبية"
   },
   "feature_videoRotation_name": {
-    "message": "Video Rotation"
+    "message": "تدوير الفيديو"
   },
   "feature_videoScreenshot_desc": {
-    "message": "Capture the current video frame as a PNG image — copies to clipboard and downloads"
+    "message": "التقاط الإطار الحالي للفيديو كصورة PNG — ينسخ إلى الحافظة ويُنزّل"
   },
   "feature_videoScreenshot_name": {
-    "message": "Video Screenshot"
+    "message": "لقطة شاشة الفيديو"
   },
   "feature_videosPerRow_desc": {
-    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
+    "message": "تحديد عدد صور الفيديو المصغرة في كل صف (0 = ديناميكي حسب عرض النافذة)"
   },
   "feature_videosPerRow_name": {
-    "message": "Videos Per Row"
+    "message": "فيديوهات لكل صف"
   },
   "feature_videoVisualFilters_desc": {
-    "message": "Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element"
+    "message": "ضبط السطوع / التباين / التشبع / درجة اللون / التدرج الرمادي / البني الداكن عبر فلتر CSS على عنصر الفيديو"
   },
   "feature_videoVisualFilters_name": {
-    "message": "Video Visual Filters"
+    "message": "فلاتر الفيديو المرئية"
   },
   "feature_videoZoom_desc": {
-    "message": "Hold Ctrl and scroll on the video to zoom in, then drag to pan around"
+    "message": "اضغط Ctrl ومرّر على الفيديو للتكبير، ثم اسحب للتحريك"
   },
   "feature_videoZoom_name": {
-    "message": "Video Zoom & Pan"
+    "message": "تكبير وتحريك الفيديو"
   },
   "feature_vlcMpvHandoff_desc": {
-    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
+    "message": "ملف GitHub الكامل فقط. يضيف أزراراً بجانب المشغّل تُطلق عناوين URL لبروتوكول ytvlc:// أو ytmpv://. يجب تسجيل معالج البروتوكول على نظام التشغيل — Astra Deck لا يشغّل ملفات تنفيذية مباشرة. معطَّل افتراضياً."
   },
   "feature_vlcMpvHandoff_name": {
-    "message": "VLC / MPV Stream Handoff"
+    "message": "تسليم البث إلى VLC / MPV"
   },
   "feature_volumeWheelMode_desc": {
-    "message": "Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added."
+    "message": "تمرير عجلة الماوس فوق المشغّل لتغيير مستوى الصوت بخطوات 5%. تظهر شريحة مؤشر عائمة بالمستوى الجديد لمدة 1.2 ثانية؛ لا تُضاف اختصارات لوحة مفاتيح."
   },
   "feature_volumeWheelMode_name": {
-    "message": "Volume Wheel"
+    "message": "عجلة الصوت"
   },
   "feature_watchHistoryAnalytics_desc": {
-    "message": "Modal dashboard visualizing your 30-day YouTube watch time as a CSS bar chart (requires Watch Time Tracker)"
+    "message": "لوحة معلومات مشروطة تعرض وقت مشاهدتك على YouTube خلال 30 يوماً كرسم بياني شريطي CSS (يتطلب متتبع وقت المشاهدة)"
   },
   "feature_watchHistoryAnalytics_name": {
-    "message": "Watch History Analytics"
+    "message": "تحليلات سجل المشاهدة"
   },
   "feature_watchLaterCleanup_desc": {
-    "message": "Adds a \"Remove Watched\" button to the Watch Later playlist header for batch cleanup"
+    "message": "يضيف زر \"إزالة المشاهدة\" إلى رأس قائمة تشغيل المشاهدة لاحقاً للتنظيف الجماعي"
   },
   "feature_watchLaterCleanup_name": {
-    "message": "Watch Later Cleanup Button"
+    "message": "زر تنظيف المشاهدة لاحقاً"
   },
   "feature_watchLaterQuickAdd_desc": {
-    "message": "Adds a clock icon on every thumbnail for one-click Watch Later saving"
+    "message": "يضيف أيقونة ساعة على كل صورة مصغرة لحفظ المشاهدة لاحقاً بنقرة واحدة"
   },
   "feature_watchLaterQuickAdd_name": {
-    "message": "Watch Later Quick Button"
+    "message": "زر المشاهدة لاحقاً السريع"
   },
   "feature_watchPageRestyle_desc": {
-    "message": "Premium watch-page layout for title, description, and metadata without hiding native controls"
+    "message": "تخطيط متميز لصفحة المشاهدة للعنوان والوصف والبيانات الوصفية دون إخفاء عناصر التحكم الأصلية"
   },
   "feature_watchPageRestyle_name": {
-    "message": "Watch Page Restyle"
+    "message": "إعادة تنسيق صفحة المشاهدة"
   },
   "feature_watchPageTabs_desc": {
-    "message": "Horizontal tab bar above the comments/description area to quickly switch views on the watch page"
+    "message": "شريط تبويبات أفقي فوق منطقة التعليقات/الوصف للتبديل السريع بين العروض في صفحة المشاهدة"
   },
   "feature_watchPageTabs_name": {
-    "message": "Watch Page Tabs"
+    "message": "تبويبات صفحة المشاهدة"
   },
   "feature_watchProgress_desc": {
-    "message": "Show colored progress bars on video thumbnails based on your watch history (saved locally)"
+    "message": "عرض أشرطة تقدم ملونة على صور الفيديو المصغرة بناءً على سجل المشاهدة (محفوظ محلياً)"
   },
   "feature_watchProgress_name": {
-    "message": "Watch Progress Indicators"
+    "message": "مؤشرات تقدم المشاهدة"
   },
   "feature_watchTimeTracker_desc": {
-    "message": "Track your daily/weekly YouTube watch time with a stats widget in the settings panel"
+    "message": "تتبع وقت مشاهدتك اليومي/الأسبوعي على YouTube مع عنصر إحصائيات في لوحة الإعدادات"
   },
   "feature_watchTimeTracker_name": {
-    "message": "Watch Time Tracker"
+    "message": "متتبع وقت المشاهدة"
   },
   "feature_wheelSeek_desc": {
-    "message": "Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict."
+    "message": "تمرير عجلة الماوس فوق شريط التقدم للتقديم/الترجيع. الخطوة الافتراضية 5 ثوانٍ (تكوين عبر wheelSeekStepSec). التمرير في مكان آخر فوق المشغّل يقود عجلة الصوت إن كانت مفعّلة؛ الميزتان لا تتعارضان."
   },
   "feature_wheelSeek_name": {
-    "message": "Wheel Seek"
+    "message": "التقديم بالعجلة"
   },
   "feature_widenSearchBar_desc": {
-    "message": "Expand the search bar to use more available space"
+    "message": "توسيع شريط البحث لاستخدام المساحة المتاحة أكثر"
   },
   "feature_widenSearchBar_name": {
-    "message": "Widen Search Bar"
+    "message": "توسيع شريط البحث"
   },
   "feature_wpHide_askAISection_desc": {
-    "message": "Hide AI section in description"
+    "message": "إخفاء قسم الذكاء الاصطناعي في الوصف"
   },
   "feature_wpHide_askAISection_name": {
-    "message": "Ask AI Section"
+    "message": "قسم سؤال الذكاء الاصطناعي"
   },
   "feature_wpHide_askButton_desc": {
-    "message": "Hide Ask AI button"
+    "message": "إخفاء زر سؤال الذكاء الاصطناعي"
   },
   "feature_wpHide_askButton_name": {
-    "message": "Ask Button"
+    "message": "زر السؤال"
   },
   "feature_wpHide_channelInfoCards_desc": {
-    "message": "Hide channel info cards in description"
+    "message": "إخفاء بطاقات معلومات القناة في الوصف"
   },
   "feature_wpHide_channelInfoCards_name": {
-    "message": "Channel Info Cards"
+    "message": "بطاقات معلومات القناة"
   },
   "feature_wpHide_joinButton_desc": {
-    "message": "Hide join/membership button"
+    "message": "إخفاء زر الانضمام/العضوية"
   },
   "feature_wpHide_joinButton_name": {
-    "message": "Join Button"
+    "message": "زر الانضمام"
   },
   "feature_wpHide_moreActions_desc": {
-    "message": "Hide more actions menu button"
+    "message": "إخفاء زر قائمة المزيد من الإجراءات"
   },
   "feature_wpHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "المزيد من الإجراءات (...)"
   },
   "feature_wpHide_podcastSection_desc": {
-    "message": "Hide podcast/course section in description"
+    "message": "إخفاء قسم البودكاست/الدورة في الوصف"
   },
   "feature_wpHide_podcastSection_name": {
-    "message": "Podcast/Course Section"
+    "message": "قسم البودكاست/الدورة"
   },
   "feature_wpHide_saveButton_desc": {
-    "message": "Hide save to playlist button"
+    "message": "إخفاء زر الحفظ في قائمة التشغيل"
   },
   "feature_wpHide_saveButton_name": {
-    "message": "Save Button"
+    "message": "زر الحفظ"
   },
   "feature_wpHide_transcriptSection_desc": {
-    "message": "Hide transcript section in description"
+    "message": "إخفاء قسم النص المكتوب في الوصف"
   },
   "feature_wpHide_transcriptSection_name": {
-    "message": "Transcript Section"
+    "message": "قسم النص المكتوب"
   },
   "feature_youtubeMusicCompat_desc": {
-    "message": "Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating."
+    "message": "تطبيق سمات Astra Deck + OLED + ميزات الكثافة على music.youtube.com. الميزات الخاصة بالمشغّل (التنزيلات، RYD، SponsorBlock) تحتفظ ببوابتها الحالية لكل صفحة."
   },
   "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music Compatibility"
+    "message": "توافق YouTube Music"
   },
   "feature_zenMode_desc": {
-    "message": "Dims the page around the video player for a focused viewing experience"
+    "message": "يخفت الصفحة حول مشغّل الفيديو لتجربة مشاهدة مُركَّزة"
   },
   "feature_zenMode_name": {
-    "message": "Zen Mode"
+    "message": "وضع الهدوء"
   },
   "filterTogglesLabel": {
     "message": "فلترة التبديلات السريعة"
