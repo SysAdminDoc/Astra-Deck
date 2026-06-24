@@ -6,6 +6,10 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Security: cap regex input length for user-supplied filter patterns.**
+  `hideVideosFromHome` regex tests now cap title at 500 chars, channel at 200.
+  `commentFilterManager` regex tests cap body at 2,000 chars, author at 200.
+  Bounds worst-case backtracking time regardless of pattern complexity.
 - **Perf: popup toggle click delegation.** Replaced per-row
   `addEventListener('click')` in `render()` with a single delegated click
   handler on `#toggles`. Eliminates detached-DOM listener accumulation

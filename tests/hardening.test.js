@@ -3170,10 +3170,10 @@ test('commentFilterManager processes mutation addedNodes only, never full-docume
 
 test('commentFilterManager destroy() restores hidden threads and clears compiled rule cache', () => {
     const start = ytkitSource.indexOf("id: 'commentFilterManager'");
-    const block = ytkitSource.slice(start, start + 8000);
+    const block = ytkitSource.slice(start, start + 9000);
     const destroyIdx = block.indexOf('destroy()');
     assert.ok(destroyIdx > -1, 'commentFilterManager must define destroy()');
-    const destroyBlock = block.slice(destroyIdx, destroyIdx + 1500);
+    const destroyBlock = block.slice(destroyIdx, destroyIdx + 2000);
     assert.match(destroyBlock, /data-ytkit-comment-filter-hidden="1"/,
         'destroy() must unhide previously hidden threads');
     assert.match(destroyBlock, /this\._compiledRules\s*=\s*null/,
