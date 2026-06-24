@@ -28328,6 +28328,8 @@ html[dark] [fill="red"], html[dark] [fill="#FF0000"], html[dark] [fill="#F00"] {
                         timeout: 8000,
                     });
                     data._ts = Date.now();
+                    const existing = this._cache[videoId];
+                    if (existing && existing._ts && existing._ts > data._ts) return existing;
                     this._cache[videoId] = data;
                     this._cacheMeta[videoId] = data._ts;
                     // Evict oldest entries if in-memory cache exceeds 2000
