@@ -96,12 +96,6 @@
   Acceptance: Settings panel has a debounced search input that filters features by name, description, and category. Supports the same field:value DSL as the popup.
   Complexity: M
 
-- [ ] P2 — DeArrow cache write: timestamp-gate concurrent responses
-  Why: `_fetchBranding()` deduplicates in-flight requests via `_pending`, but if two requests for the same videoId complete out-of-order, the staler response can overwrite newer data in `_cache`.
-  Evidence: Deep audit finding (P1) — `_cache[videoId] = data` at line ~28334 has no timestamp comparison.
-  Touches: `extension/ytkit.js` (deArrow `_fetchBranding`), `extension/features/dearrow/index.js`
-  Acceptance: Cache writes check `data._ts > existing._ts` before overwriting. Test covers concurrent response ordering.
-  Complexity: S
 
 - [ ] P2 — Subscription group features: port to userscript
   Why: Subscription groups (nesting, digest, stale-channel staging, CSV export, queue playback) are extension-only. The userscript has 65% feature parity; subscription management is a high-value gap alongside SponsorBlock.
