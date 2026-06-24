@@ -70,9 +70,6 @@
 ### P1 — Security / Reliability
 
 
-- [ ] P2 — Add regex execution timeout for user-supplied filter patterns
-  Why: ReDoS guard checks pattern structure but doesn't enforce execution timeout. Alternation groups can still cause exponential backtracking.
-  Where: `extension/ytkit.js` (commentFilterManager, hideVideosFromHome)
 
 
 ### P1 — i18n / Distribution
