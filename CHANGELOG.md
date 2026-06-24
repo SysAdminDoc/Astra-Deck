@@ -6,6 +6,47 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **Security: fix double-sendResponse race in EXT_FETCH.** The `responded`
+  guard was scoped inside `startFetch()` but the permission-check `.catch()`
+  path was outside that scope. If `startFetch()` threw synchronously after
+  the timeout timer was armed, both the `.catch()` and the timeout could
+  call `sendResponse`. Hoisted `responded` to the outer scope and added
+  a guard on the `.catch()` path.
+- **Security: harden response header reconstruction.** Strip `\r\n` from
+  response header values before joining into the CRLF-delimited string
+  returned to the content script. The Fetch API normalizes headers in
+  practice, but the explicit strip prevents injection via any edge case.
+- **Security: add sandbox attribute to age-restriction bypass iframe.**
+  The embedded YouTube player iframe now carries
+  `sandbox="allow-scripts allow-same-origin allow-presentation"` and
+  validates the videoId format before constructing the embed URL.
+- **Security: reject unsafe object keys in subscription group imports.**
+  `_importGroups()` now checks `isSafeObjectKey()` on both group IDs and
+  parent IDs, preventing `__proto__`/`constructor` prototype pollution
+  from malicious JSON payloads.
+- **Security: validate Innertube API key format in transcript service.**
+  `_method2_InnertubeAPI()` now validates the extracted API key matches
+  `^[a-zA-Z0-9_-]{10,}$` and uses `encodeURIComponent()` in the URL,
+  preventing parameter injection from a crafted page.
+- **Security: add cookie domain allowlist to companion downloader.**
+  `write_cookies_netscape()` now rejects cookies whose domain is not in
+  `ALLOWED_COOKIE_DOMAINS` (YouTube, Google auth). Prevents a compromised
+  extension from injecting cookies for arbitrary domains into the yt-dlp
+  cookie jar.
+- **Security: add X-Content-Type-Options and X-Frame-Options headers to
+  companion Flask responses.** Defense-in-depth for the local REST API.
+- **Fix: mono-to-stereo AudioContext leak on disable.** Disabling the
+  feature previously called `syncMerge()` (adjusting channel count) but
+  left the AudioContext, source node, and gain node alive. Now calls
+  `cleanup()` to properly close the AudioContext and disconnect all nodes.
+- **Fix: data-flow origin matching logic error.** `originMatchesManifest()`
+  used a bidirectional `startsWith` check that incorrectly matched
+  `https://youtube.com` against `https://www.youtube.com/*`. Replaced
+  with proper URL parsing and hostname comparison.
+- **Privacy: strip query/fragment from tab URL in selector-health reports.**
+  The copy-to-clipboard and bug-report export now include only the origin
+  and pathname, preventing accidental disclosure of private playlists or
+  video IDs in pasted issue reports.
 - **Chrome Side Panel dashboard:** new `sidepanel.html` provides a persistent,
   resizable diagnostic dashboard with feature init timing, selector health, and
   storage stats. Opens via the "Dashboard" button in the popup. Chrome-only
