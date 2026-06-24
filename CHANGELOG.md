@@ -6,6 +6,12 @@ All notable changes to Astra Deck are documented here. Versions are listed newes
 
 ## [Unreleased]
 
+- **i18n: batch-translate feature definitions across all 10 locales.**
+  All `feature_*_name` and `feature_*_desc` keys translated from English
+  to Arabic, German, Spanish, French, Italian, Japanese, Korean, Brazilian
+  Portuguese, Russian, and Simplified Chinese. Coverage jumped from
+  21–27% to 92–99% across all non-EN locales (889 EN keys). Unblocks
+  credible CWS/AMO multi-language submission claims.
 - **Security: cap regex input length for user-supplied filter patterns.**
   `hideVideosFromHome` regex tests now cap title at 500 chars, channel at 200.
   `commentFilterManager` regex tests cap body at 2,000 chars, author at 200.

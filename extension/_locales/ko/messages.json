@@ -12,13 +12,13 @@
     "message": "닫기"
   },
   "contextNoteAnyTab": {
-    "message": "Quick toggles are saved now and sync when YouTube is open."
+    "message": "빠른 토글이 저장되었으며 YouTube가 열리면 동기화됩니다."
   },
   "contextNoteInlinePanel": {
-    "message": "Open the full workspace on this tab; quick toggles apply immediately."
+    "message": "이 탭에서 전체 작업 공간을 엽니다. 빠른 토글은 즉시 적용됩니다."
   },
   "contextNoteLaunch": {
-    "message": "Open a watchable YouTube tab to use the full in-page workspace."
+    "message": "전체 페이지 내 작업 공간을 사용하려면 YouTube 탭을 열어주세요."
   },
   "contextStateAnyTab": {
     "message": "모든 탭"
@@ -39,31 +39,31 @@
     "message": "컨트롤"
   },
   "dataFlowActive": {
-    "message": "active"
+    "message": "활성"
   },
   "dataFlowCreds": {
-    "message": "creds"
+    "message": "자격증명"
   },
   "dataFlowDriver": {
-    "message": "driver"
+    "message": "드라이버"
   },
   "dataFlowInactive": {
-    "message": "idle"
+    "message": "유휴"
   },
   "dataFlowNote": {
-    "message": "Active origins are highlighted. Disable the driving toggle to mute an origin entirely."
+    "message": "활성 출처가 강조 표시됩니다. 드라이빙 토글을 비활성화하면 해당 출처를 완전히 끌 수 있습니다."
   },
   "dataFlowProfile": {
-    "message": "profile"
+    "message": "프로필"
   },
   "dataFlowRisk": {
-    "message": "risk"
+    "message": "위험"
   },
   "dataFlowSummaryTpl": {
-    "message": "{active}/{total} origins active"
+    "message": "{active}/{total}개 출처 활성"
   },
   "dataFlowTitle": {
-    "message": "Data flow"
+    "message": "데이터 흐름"
   },
   "dataMgmtAria": {
     "message": "데이터 관리"
@@ -81,13 +81,13 @@
     "message": "오디오 다운로드"
   },
   "dlPopupCtaAudioAriaTpl": {
-    "message": "Download audio as …"
+    "message": "오디오를 …(으)로 다운로드"
   },
   "dlPopupCtaVideo": {
     "message": "비디오 다운로드"
   },
   "dlPopupCtaVideoAriaTpl": {
-    "message": "Download video as … at …"
+    "message": "비디오를 …(으)로 …에서 다운로드"
   },
   "dlPopupDefault": {
     "message": "기본값"
@@ -132,10 +132,10 @@
     "message": "다운로드 유형"
   },
   "dlProgressActiveEtaTpl": {
-    "message": "…% complete. … remaining."
+    "message": "…% 완료. … 남음."
   },
   "dlProgressActiveTpl": {
-    "message": "…% complete. Stay on YouTube while Astra Downloader finishes."
+    "message": "…% 완료. Astra Downloader가 끝날 때까지 YouTube에 머물러 주세요."
   },
   "dlProgressAriaAudio": {
     "message": "오디오 다운로드 진행률"
@@ -150,7 +150,7 @@
     "message": "비디오 다운로드"
   },
   "dlProgressCompleteCopy": {
-    "message": "Astra Downloader finished successfully."
+    "message": "Astra Downloader가 성공적으로 완료되었습니다."
   },
   "dlProgressConnectAudio": {
     "message": "로컬 오디오 다운로더에 연결 중."
@@ -162,10 +162,10 @@
     "message": "다운로드 진행률 닫기"
   },
   "dlProgressEtaPrefix": {
-    "message": "ETA"
+    "message": "예상 시간"
   },
   "dlProgressFailureDefault": {
-    "message": "Astra Downloader failed"
+    "message": "Astra Downloader 실패"
   },
   "dlProgressInProgress": {
     "message": "진행 중"
@@ -174,13 +174,13 @@
     "message": "로컬"
   },
   "dlProgressLostCopy": {
-    "message": "Astra Deck lost contact with Astra Downloader. Choose Repair downloader to recover."
+    "message": "Astra Deck이 Astra Downloader와의 연결을 잃었습니다. 복구하려면 다운로더 복구를 선택하세요."
   },
   "dlProgressLostTitle": {
     "message": "다운로더와의 연결이 끊어졌습니다"
   },
   "dlProgressLostToast": {
-    "message": "Lost contact with Astra Downloader."
+    "message": "Astra Downloader와의 연결이 끊어졌습니다."
   },
   "dlProgressPreparing": {
     "message": "다운로드 준비 중…"
@@ -192,7 +192,7 @@
     "message": "준비"
   },
   "dlProgressReconnectingCopy": {
-    "message": "Momentary hiccup with Astra Downloader — retrying automatically."
+    "message": "Astra Downloader에 잠시 문제가 발생했습니다. 자동으로 재시도 중입니다."
   },
   "dlProgressSkippedDefault": {
     "message": "이미 다운로드됨 — 건너뜀."
@@ -237,7 +237,7 @@
     "message": "마무리 중"
   },
   "dlRepairAria": {
-    "message": "Open Astra Downloader repair steps"
+    "message": "Astra Downloader 복구 단계 열기"
   },
   "dlRepairBtn": {
     "message": "다운로더 복구"
@@ -273,1930 +273,1930 @@
     "description": "The extension name displayed in the browser UI."
   },
   "feature_abHide_ask_desc": {
-    "message": "Hide Ask or AI button below videos"
+    "message": "동영상 아래의 질문/AI 버튼 숨기기"
   },
   "feature_abHide_ask_name": {
-    "message": "Ask/AI Button"
+    "message": "질문/AI 버튼"
   },
   "feature_abHide_clip_desc": {
-    "message": "Hide clip button below videos"
+    "message": "동영상 아래의 클립 버튼 숨기기"
   },
   "feature_abHide_clip_name": {
-    "message": "Clip Button"
+    "message": "클립 버튼"
   },
   "feature_abHide_like_desc": {
-    "message": "Hide like button below videos"
+    "message": "동영상 아래의 좋아요 버튼 숨기기"
   },
   "feature_abHide_like_name": {
-    "message": "Like Button"
+    "message": "좋아요 버튼"
   },
   "feature_abHide_moreActions_desc": {
-    "message": "Hide more actions button below videos"
+    "message": "동영상 아래의 더보기 버튼 숨기기"
   },
   "feature_abHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "더보기 (...)"
   },
   "feature_abHide_save_desc": {
-    "message": "Hide save button below videos"
+    "message": "동영상 아래의 저장 버튼 숨기기"
   },
   "feature_abHide_save_name": {
-    "message": "Save Button"
+    "message": "저장 버튼"
   },
   "feature_abHide_share_desc": {
-    "message": "Hide share button below videos"
+    "message": "동영상 아래의 공유 버튼 숨기기"
   },
   "feature_abHide_share_name": {
-    "message": "Share Button"
+    "message": "공유 버튼"
   },
   "feature_abHide_sponsor_desc": {
-    "message": "Hide join/sponsor button below videos"
+    "message": "동영상 아래의 가입/후원 버튼 숨기기"
   },
   "feature_abHide_sponsor_name": {
-    "message": "Join/Sponsor Button"
+    "message": "가입/후원 버튼"
   },
   "feature_abHide_thanks_desc": {
-    "message": "Hide thanks button below videos"
+    "message": "동영상 아래의 감사 버튼 숨기기"
   },
   "feature_abHide_thanks_name": {
-    "message": "Thanks Button"
+    "message": "감사 버튼"
   },
   "feature_abLoop_desc": {
-    "message": "Set two points on the video timeline and loop between them. Visual markers on the progress bar."
+    "message": "동영상 타임라인에 두 지점을 설정하고 그 사이를 반복 재생합니다. 진행 표시줄에 시각적 마커가 표시됩니다."
   },
   "feature_abLoop_name": {
-    "message": "A-B Loop"
+    "message": "A-B 반복"
   },
   "feature_adaptiveLiveLayout_desc": {
-    "message": "Automatically adjust layout for live stream chat side-by-side"
+    "message": "실시간 스트림 채팅을 나란히 배치하도록 레이아웃을 자동 조정"
   },
   "feature_adaptiveLiveLayout_name": {
-    "message": "Adaptive Live Layout"
+    "message": "적응형 라이브 레이아웃"
   },
   "feature_ageRestrictionBypass_desc": {
-    "message": "Bypass age verification by fetching video data from YouTube's embed endpoint. No sign-in required."
+    "message": "YouTube 임베드 엔드포인트에서 동영상 데이터를 가져와 연령 인증을 우회합니다. 로그인이 필요하지 않습니다."
   },
   "feature_ageRestrictionBypass_name": {
-    "message": "Age Restriction Bypass"
+    "message": "연령 제한 우회"
   },
   "feature_aiVideoSummary_desc": {
-    "message": "Bring-your-own-key LLM summary of the current video transcript (OpenAI/Anthropic/Gemini/Ollama)"
+    "message": "현재 동영상 자막의 LLM 요약 (OpenAI/Anthropic/Gemini/Ollama, 본인 API 키 사용)"
   },
   "feature_aiVideoSummary_name": {
-    "message": "AI Video Summary"
+    "message": "AI 동영상 요약"
   },
   "feature_alwaysShowProgressBar_desc": {
-    "message": "Keep the video progress bar visible at all times instead of hiding on idle"
+    "message": "비활성 시 숨기지 않고 동영상 진행 표시줄을 항상 표시"
   },
   "feature_alwaysShowProgressBar_name": {
-    "message": "Always Show Progress Bar"
+    "message": "진행 표시줄 항상 표시"
   },
   "feature_antiTranslate_desc": {
-    "message": "Prevent YouTube from auto-translating video titles AND descriptions to your locale. Restores the original-language text on grid thumbnails + watch page."
+    "message": "YouTube가 동영상 제목과 설명을 자동 번역하는 것을 방지합니다. 그리드 썸네일과 시청 페이지에서 원본 언어 텍스트를 복원합니다."
   },
   "feature_antiTranslate_name": {
-    "message": "Anti-Translate (Original Titles + Descriptions)"
+    "message": "자동 번역 방지 (원본 제목 + 설명)"
   },
   "feature_antiTranslateAudioTrack_desc": {
-    "message": "When YouTube serves an auto-dubbed audio track, attempt to switch back to the original. Best-effort — works through movie_player getAvailableAudioTracks() / setAudioTrack() when present."
+    "message": "YouTube가 자동 더빙 오디오 트랙을 제공할 때 원본으로 전환을 시도합니다. 최선의 노력 — movie_player의 getAvailableAudioTracks() / setAudioTrack()이 있을 때 작동합니다."
   },
   "feature_antiTranslateAudioTrack_name": {
-    "message": "Anti-Translate Audio Track"
+    "message": "오디오 트랙 자동 번역 방지"
   },
   "feature_antiTranslateTranscript_desc": {
-    "message": "Strips translation track parameters from the engagement-panel transcript URL so YouTube serves the original-language captions. Best-effort; works when the original-language track is available."
+    "message": "참여 패널 자막 URL에서 번역 트랙 매개변수를 제거하여 YouTube가 원본 언어 자막을 제공하도록 합니다. 원본 언어 트랙이 있을 때 작동합니다."
   },
   "feature_antiTranslateTranscript_name": {
-    "message": "Anti-Translate Transcript"
+    "message": "대본 자동 번역 방지"
   },
   "feature_astraContextMenu_desc": {
-    "message": "Right-click the player or a feed card to get Astra actions: Hide channel, Copy video URL, Copy timestamp link, Open transcript. Default off — adds a contextmenu listener; never blocks the native YouTube right-click."
+    "message": "플레이어나 피드 카드를 마우스 오른쪽 클릭하면 Astra 기능을 사용할 수 있습니다: 채널 숨기기, 동영상 URL 복사, 타임스탬프 링크 복사, 대본 열기. 기본 꺼짐 — 컨텍스트 메뉴 리스너를 추가하며, YouTube 기본 오른쪽 클릭을 차단하지 않습니다."
   },
   "feature_astraContextMenu_name": {
-    "message": "Astra Context Menu"
+    "message": "Astra 컨텍스트 메뉴"
   },
   "feature_audioTrackLanguage_desc": {
-    "message": "Stores your preferred audio language without opening YouTube settings automatically. YouTube restarts playback when scripts switch audio tracks through the native menu."
+    "message": "YouTube 설정을 열지 않고 선호하는 오디오 언어를 저장합니다. 스크립트가 네이티브 메뉴를 통해 오디오 트랙을 전환하면 YouTube가 재생을 다시 시작합니다."
   },
   "feature_audioTrackLanguage_name": {
-    "message": "Preferred Audio Track Language"
+    "message": "선호 오디오 트랙 언어"
   },
   "feature_autoClosePopups_desc": {
-    "message": "Automatically dismisses cookie consent, survey prompts, and other YouTube popups"
+    "message": "쿠키 동의, 설문 프롬프트 및 기타 YouTube 팝업을 자동으로 닫기"
   },
   "feature_autoClosePopups_name": {
-    "message": "Auto-Close Popups"
+    "message": "팝업 자동 닫기"
   },
   "feature_autoDismissContentWarning_desc": {
-    "message": "Automatically clicks \"I understand and wish to proceed\" on videos with content warnings"
+    "message": "콘텐츠 경고가 있는 동영상에서 \"이해하며 계속 진행합니다\"를 자동으로 클릭"
   },
   "feature_autoDismissContentWarning_name": {
-    "message": "Auto-Dismiss Content Warnings"
+    "message": "콘텐츠 경고 자동 해제"
   },
   "feature_autoDismissStillWatching_desc": {
-    "message": "Automatically clicks the \"Continue Watching\" button when YouTube pauses playback for inactivity"
+    "message": "YouTube가 비활성으로 재생을 일시 중지할 때 \"계속 시청\" 버튼을 자동으로 클릭"
   },
   "feature_autoDismissStillWatching_name": {
-    "message": "Auto-Dismiss \"Still Watching?\""
+    "message": "\"아직 시청 중?\" 자동 해제"
   },
   "feature_autoDownloadOnVisit_desc": {
-    "message": "Automatically start download when visiting a video page"
+    "message": "동영상 페이지를 방문하면 자동으로 다운로드 시작"
   },
   "feature_autoDownloadOnVisit_name": {
-    "message": "Auto-Download Videos"
+    "message": "동영상 자동 다운로드"
   },
   "feature_autoExpandComments_desc": {
-    "message": "Automatically expand truncated comments so full text is always visible"
+    "message": "잘린 댓글을 자동으로 펼쳐 전체 텍스트가 항상 보이도록 합니다"
   },
   "feature_autoExpandComments_name": {
-    "message": "Auto-Expand Comments"
+    "message": "댓글 자동 펼치기"
   },
   "feature_autoExpandDescription_desc": {
-    "message": "Automatically expands the video description so you never need to click \"Show more\""
+    "message": "동영상 설명을 자동으로 펼쳐 \"더보기\"를 클릭할 필요가 없습니다"
   },
   "feature_autoExpandDescription_name": {
-    "message": "Auto-Expand Description"
+    "message": "설명 자동 펼치기"
   },
   "feature_autoLikeSubscribed_desc": {
-    "message": "Automatically like videos from channels you're subscribed to after watching for 30 seconds"
+    "message": "구독한 채널의 동영상을 30초 시청 후 자동으로 좋아요"
   },
   "feature_autoLikeSubscribed_name": {
-    "message": "Auto-Like Subscribed Channels"
+    "message": "구독 채널 자동 좋아요"
   },
   "feature_autoMaxResolution_desc": {
-    "message": "Force the highest available stream on every video (1080p Premium when offered)"
+    "message": "모든 동영상에서 최고 화질 스트림을 강제 적용 (프리미엄 제공 시 1080p)"
   },
   "feature_autoMaxResolution_name": {
-    "message": "Always Best Quality"
+    "message": "항상 최고 화질"
   },
   "feature_autoOpenChapters_desc": {
-    "message": "Automatically open the chapters panel when available"
+    "message": "사용 가능할 때 챕터 패널을 자동으로 열기"
   },
   "feature_autoOpenChapters_name": {
-    "message": "Auto-Open Chapters"
+    "message": "챕터 자동 열기"
   },
   "feature_autoOpenTranscript_desc": {
-    "message": "Automatically open the transcript panel when available"
+    "message": "사용 가능할 때 대본 패널을 자동으로 열기"
   },
   "feature_autoOpenTranscript_name": {
-    "message": "Auto-Open Transcript"
+    "message": "대본 자동 열기"
   },
   "feature_autoPauseOnSwitch_desc": {
-    "message": "Pauses playback when you switch to another tab, resumes when you return"
+    "message": "다른 탭으로 전환하면 재생을 일시 중지하고, 돌아오면 재개합니다"
   },
   "feature_autoPauseOnSwitch_name": {
-    "message": "Auto-Pause on Tab Switch"
+    "message": "탭 전환 시 자동 일시 중지"
   },
   "feature_autoSkipChapters_desc": {
-    "message": "Automatically skip chapters matching patterns (intro, outro, recap, sponsor). Comma-separated."
+    "message": "패턴과 일치하는 챕터를 자동 건너뛰기 (인트로, 아웃트로, 요약, 스폰서). 쉼표로 구분."
   },
   "feature_autoSkipChapters_name": {
-    "message": "Auto-Skip Chapters"
+    "message": "챕터 자동 건너뛰기"
   },
   "feature_autoSubtitles_desc": {
-    "message": "Automatically turns on closed captions when a video starts playing"
+    "message": "동영상 재생 시작 시 자막을 자동으로 켜기"
   },
   "feature_autoSubtitles_name": {
-    "message": "Auto-Enable Subtitles"
+    "message": "자막 자동 활성화"
   },
   "feature_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "동영상을 열 때 자동으로 Theater(와이드) 모드로 진입"
   },
   "feature_autoTheaterMode_name": {
-    "message": "자동 시어터"
+    "message": "자동 Theater 모드"
   },
   "feature_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "블루라이트 방출을 줄이기 위해 따뜻한 색조를 적용합니다. 강도 조절 가능."
   },
   "feature_blueLightFilter_name": {
     "message": "블루라이트 필터"
   },
   "feature_bulkCardActions_desc": {
-    "message": "Toggle select-mode to multi-pick feed cards, then bulk hide, allow, or copy URLs. A floating action bar appears while selecting."
+    "message": "선택 모드를 켜서 피드 카드를 여러 개 선택한 후 일괄 숨기기, 허용 또는 URL 복사. 선택 중에는 플로팅 액션 바가 나타납니다."
   },
   "feature_bulkCardActions_name": {
-    "message": "Bulk Card Actions"
+    "message": "일괄 카드 작업"
   },
   "feature_bypassPlaylistMode_desc": {
-    "message": "Strip the &list= parameter from clicked thumbnails so you don't get stuck inside someone's playlist"
+    "message": "클릭한 썸네일에서 &list= 매개변수를 제거하여 다른 사람의 재생목록에 갇히지 않도록 합니다"
   },
   "feature_bypassPlaylistMode_name": {
-    "message": "Bypass Playlist Mode on Clicks"
+    "message": "클릭 시 재생목록 모드 우회"
   },
   "feature_channelAgeDisplay_desc": {
-    "message": "Shows how old a video is (e.g. \"2 years, 3 months ago\") next to the upload date"
+    "message": "업로드 날짜 옆에 동영상이 얼마나 오래 되었는지 표시 (예: \"2년 3개월 전\")"
   },
   "feature_channelAgeDisplay_name": {
-    "message": "Video Age Display"
+    "message": "동영상 게시 기간 표시"
   },
   "feature_channelSubCount_desc": {
-    "message": "Shows the channel subscriber count more prominently below videos"
+    "message": "동영상 아래에 채널 구독자 수를 더 눈에 띄게 표시"
   },
   "feature_channelSubCount_name": {
-    "message": "Enhanced Channel Info"
+    "message": "향상된 채널 정보"
   },
   "feature_chapterJumpButtons_desc": {
-    "message": "Prev/Next chapter buttons in the player right-controls — skip to the previous or next chapter"
+    "message": "플레이어 오른쪽 컨트롤에 이전/다음 챕터 버튼 — 이전 또는 다음 챕터로 이동"
   },
   "feature_chapterJumpButtons_name": {
-    "message": "Chapter Jump Buttons"
+    "message": "챕터 이동 버튼"
   },
   "feature_chapterNavButtons_desc": {
-    "message": "Add Previous/Next Chapter buttons to the video player controls"
+    "message": "동영상 플레이어 컨트롤에 이전/다음 챕터 버튼 추가"
   },
   "feature_chapterNavButtons_name": {
-    "message": "Chapter Navigation"
+    "message": "챕터 탐색"
   },
   "feature_chatHide_banner_desc": {
-    "message": "Hide chat banners"
+    "message": "채팅 배너 숨기기"
   },
   "feature_chatHide_banner_name": {
-    "message": "Chat Banner"
+    "message": "채팅 배너"
   },
   "feature_chatHide_bots_desc": {
-    "message": "Filter out known bot messages"
+    "message": "알려진 봇 메시지 필터링"
   },
   "feature_chatHide_bots_name": {
-    "message": "Bot Messages"
+    "message": "봇 메시지"
   },
   "feature_chatHide_emoji_desc": {
-    "message": "Hide emoji picker button"
+    "message": "이모지 선택기 버튼 숨기기"
   },
   "feature_chatHide_emoji_name": {
-    "message": "Emoji Button"
+    "message": "이모지 버튼"
   },
   "feature_chatHide_header_desc": {
-    "message": "Hide the live chat header bar"
+    "message": "실시간 채팅 헤더 바 숨기기"
   },
   "feature_chatHide_header_name": {
-    "message": "Chat Header"
+    "message": "채팅 헤더"
   },
   "feature_chatHide_leaderboard_desc": {
-    "message": "Hide chat leaderboard"
+    "message": "채팅 리더보드 숨기기"
   },
   "feature_chatHide_leaderboard_name": {
-    "message": "Leaderboard"
+    "message": "리더보드"
   },
   "feature_chatHide_levelUp_desc": {
-    "message": "Hide level up messages"
+    "message": "레벨 업 메시지 숨기기"
   },
   "feature_chatHide_levelUp_name": {
-    "message": "Level Up Messages"
+    "message": "레벨 업 메시지"
   },
   "feature_chatHide_menu_desc": {
-    "message": "Hide the chat overflow menu"
+    "message": "채팅 오버플로 메뉴 숨기기"
   },
   "feature_chatHide_menu_name": {
-    "message": "Chat Menu (...)"
+    "message": "채팅 메뉴 (...)"
   },
   "feature_chatHide_polls_desc": {
-    "message": "Hide polls in live chat"
+    "message": "실시간 채팅에서 투표 숨기기"
   },
   "feature_chatHide_polls_name": {
-    "message": "Polls & Poll Banner"
+    "message": "투표 및 투표 배너"
   },
   "feature_chatHide_popout_desc": {
-    "message": "Hide the popout chat button"
+    "message": "채팅 팝아웃 버튼 숨기기"
   },
   "feature_chatHide_popout_name": {
-    "message": "Popout Button"
+    "message": "팝아웃 버튼"
   },
   "feature_chatHide_reactions_desc": {
-    "message": "Hide chat reactions panel"
+    "message": "채팅 반응 패널 숨기기"
   },
   "feature_chatHide_reactions_name": {
-    "message": "Reactions"
+    "message": "반응"
   },
   "feature_chatHide_superChats_desc": {
-    "message": "Hide super chat messages"
+    "message": "슈퍼챗 메시지 숨기기"
   },
   "feature_chatHide_superChats_name": {
-    "message": "Super Chats"
+    "message": "슈퍼챗"
   },
   "feature_chatHide_support_desc": {
-    "message": "Hide support/buy buttons in chat"
+    "message": "채팅의 후원/구매 버튼 숨기기"
   },
   "feature_chatHide_support_name": {
-    "message": "Support Buttons"
+    "message": "후원 버튼"
   },
   "feature_chatHide_ticker_desc": {
-    "message": "Hide the super chat ticker"
+    "message": "슈퍼챗 티커 숨기기"
   },
   "feature_chatHide_ticker_name": {
-    "message": "Super Chat Ticker"
+    "message": "슈퍼챗 티커"
   },
   "feature_chatHide_timestamps_desc": {
-    "message": "Hide chat timestamps"
+    "message": "채팅 타임스탬프 숨기기"
   },
   "feature_chatHide_timestamps_name": {
-    "message": "Timestamps"
+    "message": "타임스탬프"
   },
   "feature_chatHide_topFan_desc": {
-    "message": "Hide fan/member badges"
+    "message": "팬/멤버 배지 숨기기"
   },
   "feature_chatHide_topFan_name": {
-    "message": "Fan Badges"
+    "message": "팬 배지"
   },
   "feature_chatKeywordFilter_desc": {
-    "message": "Hide chat messages containing these words (comma-separated)"
+    "message": "특정 단어가 포함된 채팅 메시지 숨기기 (쉼표로 구분)"
   },
   "feature_chatKeywordFilter_name": {
-    "message": "Chat Keyword Filter"
+    "message": "채팅 키워드 필터"
   },
   "feature_chatStyleComments_desc": {
-    "message": "Premium comment layout that preserves pinned comments, creator hearts, replies, and native actions"
+    "message": "고정 댓글, 크리에이터 하트, 답글 및 기본 기능을 보존하는 프리미엄 댓글 레이아웃"
   },
   "feature_chatStyleComments_name": {
-    "message": "Studio Comments"
+    "message": "스튜디오 댓글"
   },
   "feature_chronologicalNotifications_desc": {
-    "message": "Sort notifications chronologically (newest first)"
+    "message": "알림을 시간순으로 정렬 (최신 순)"
   },
   "feature_chronologicalNotifications_name": {
-    "message": "Sort Notifications"
+    "message": "알림 정렬"
   },
   "feature_cinemaAmbientGlow_desc": {
-    "message": "Projects dominant video colors as a soft glow behind the player for an immersive cinema feel"
+    "message": "플레이어 뒤에 동영상의 주요 색상을 부드러운 글로우로 투사하여 몰입감 있는 시네마 느낌을 줍니다"
   },
   "feature_cinemaAmbientGlow_name": {
-    "message": "Cinema Ambient Glow"
+    "message": "시네마 앰비언트 글로우"
   },
   "feature_classicLayoutProfile_desc": {
-    "message": "Pick a layout profile. Modern keeps YouTube's 2025 layout. Classic 2020 restores tighter spacing and the smaller masthead. Classic 2016 restores the older watch page proportions."
+    "message": "레이아웃 프로필을 선택합니다. 모던은 YouTube 2025 레이아웃을 유지합니다. 클래식 2020은 더 촘촘한 간격과 작은 마스트헤드를 복원합니다. 클래식 2016은 이전 시청 페이지 비율을 복원합니다."
   },
   "feature_classicLayoutProfile_name": {
-    "message": "Layout Profile"
+    "message": "레이아웃 프로필"
   },
   "feature_classicPlayerChrome_desc": {
-    "message": "One-toggle restoration of the pre-Delhi/Liquid Glass player look: opaque square controls, classic progress bar, original time display"
+    "message": "Delhi/Liquid Glass 이전 플레이어 디자인을 한 번에 복원: 불투명 사각형 컨트롤, 클래식 진행 표시줄, 원래 시간 표시"
   },
   "feature_classicPlayerChrome_name": {
-    "message": "Classic Player Chrome"
+    "message": "클래식 플레이어 크롬"
   },
   "feature_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "복사/공유된 YouTube 링크에서 추적 매개변수 (si, pp, feature) 제거"
   },
   "feature_cleanShareUrls_name": {
-    "message": "깨끗한 URL"
+    "message": "깨끗한 공유 URL"
   },
   "feature_cleanUiPreset_desc": {
-    "message": "Owner preset: hides panel branding, search, and category headers, compresses navigation, silences toast notifications, and hides the subscriptions resume banner. Off by default."
+    "message": "소유자 프리셋: 패널 브랜딩, 검색 및 카테고리 헤더를 숨기고, 탐색을 압축하며, 토스트 알림을 무음 처리하고, 구독 재개 배너를 숨깁니다. 기본 꺼짐."
   },
   "feature_cleanUiPreset_name": {
-    "message": "Compact Clean UI"
+    "message": "컴팩트 클린 UI"
   },
   "feature_codecSelector_desc": {
-    "message": "Choose which video codec to prefer: Auto, H.264 (low CPU), VP9, or AV1 (best quality). Shares codec engine with Force H.264."
+    "message": "선호하는 비디오 코덱을 선택: 자동, H.264 (낮은 CPU), VP9 또는 AV1 (최고 화질). H.264 강제와 코덱 엔진을 공유합니다."
   },
   "feature_codecSelector_name": {
-    "message": "Codec Selector"
+    "message": "코덱 선택기"
   },
   "feature_colorThemeManager_desc": {
-    "message": "Apply a color palette across YouTube (dark mode only)"
+    "message": "YouTube 전체에 색상 팔레트 적용 (다크 모드에서만)"
   },
   "feature_colorThemeManager_name": {
-    "message": "Color Theme"
+    "message": "색상 테마"
   },
   "feature_commentEnhancements_desc": {
-    "message": "Highlight creator/OP replies, show like heat indicators, and add collapse-all-replies toggle per thread"
+    "message": "크리에이터/원작자 답글 강조, 좋아요 히트 인디케이터 표시, 스레드별 답글 모두 접기 토글 추가"
   },
   "feature_commentEnhancements_name": {
-    "message": "Comment Enhancements"
+    "message": "댓글 기능 향상"
   },
   "feature_commentFilterManager_desc": {
-    "message": "Hide comment threads whose author or text matches a rule. Comma-separated keywords, !word to allowlist, or /pattern/flags for regex (ReDoS-guarded)."
+    "message": "작성자 또는 텍스트가 규칙과 일치하는 댓글 스레드를 숨깁니다. 쉼표로 구분된 키워드, !단어로 허용 목록, /패턴/플래그로 정규식 (ReDoS 방지)."
   },
   "feature_commentFilterManager_name": {
-    "message": "Comment Filter"
+    "message": "댓글 필터"
   },
   "feature_commentFilterRules_desc": {
-    "message": "One rule per line or comma-separated. word hides matches, !word always allows, @author targets the author, /pattern/i runs a regex (ReDoS-guarded)."
+    "message": "줄당 하나 또는 쉼표로 구분. 단어는 일치 항목을 숨기고, !단어는 항상 허용, @작성자는 작성자를 대상으로, /패턴/i는 정규식 실행 (ReDoS 방지)."
   },
   "feature_commentFilterRules_name": {
-    "message": "Comment Filter Rules"
+    "message": "댓글 필터 규칙"
   },
   "feature_commentNavigator_desc": {
-    "message": "Floating thread navigator with live counts for visible comments and filtered results"
+    "message": "보이는 댓글과 필터링된 결과의 실시간 카운트가 있는 플로팅 스레드 네비게이터"
   },
   "feature_commentNavigator_name": {
-    "message": "Comment Navigator"
+    "message": "댓글 네비게이터"
   },
   "feature_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "댓글 위에 검색 바를 추가하여 특정 댓글을 필터링하고 찾기"
   },
   "feature_commentSearch_name": {
     "message": "댓글 검색"
   },
   "feature_compactLayout_desc": {
-    "message": "Reduce spacing and padding for a denser interface"
+    "message": "더 밀집된 인터페이스를 위해 간격과 여백 줄이기"
   },
   "feature_compactLayout_name": {
-    "message": "Compact Layout"
+    "message": "컴팩트 레이아웃"
   },
   "feature_compactUnfixedHeader_desc": {
-    "message": "Reduce header height and let it scroll away instead of staying fixed"
+    "message": "헤더 높이를 줄이고 고정 대신 스크롤 시 사라지게 합니다"
   },
   "feature_compactUnfixedHeader_name": {
-    "message": "Compact / Unfixed Header"
+    "message": "컴팩트 / 비고정 헤더"
   },
   "feature_condenseComments_desc": {
-    "message": "Reduce spacing between comments for a tighter layout"
+    "message": "더 촘촘한 레이아웃을 위해 댓글 간 간격 줄이기"
   },
   "feature_condenseComments_name": {
-    "message": "Condense Comments"
+    "message": "댓글 압축"
   },
   "feature_copyChapterMarkdown_desc": {
-    "message": "Copy all video chapters as a markdown timestamp list — button in player controls"
+    "message": "모든 동영상 챕터를 마크다운 타임스탬프 목록으로 복사 — 플레이어 컨트롤의 버튼"
   },
   "feature_copyChapterMarkdown_name": {
-    "message": "Copy Chapters as Markdown"
+    "message": "챕터를 마크다운으로 복사"
   },
   "feature_copyVideoTitle_desc": {
-    "message": "Adds a copy button next to the video title for one-click title copying"
+    "message": "동영상 제목 옆에 원클릭 제목 복사를 위한 복사 버튼 추가"
   },
   "feature_copyVideoTitle_name": {
-    "message": "Copy Video Title Button"
+    "message": "동영상 제목 복사 버튼"
   },
   "feature_creatorCommentHighlight_desc": {
-    "message": "Makes creator-badged and creator-hearted comments stand out with a stronger visual treatment"
+    "message": "크리에이터 배지가 있거나 크리에이터가 하트를 누른 댓글을 더 강한 시각 효과로 돋보이게 합니다"
   },
   "feature_creatorCommentHighlight_name": {
-    "message": "Highlight Creator Comments"
+    "message": "크리에이터 댓글 강조"
   },
   "feature_customCssInjection_desc": {
-    "message": "Inject your own custom CSS rules into YouTube pages"
+    "message": "YouTube 페이지에 사용자 정의 CSS 규칙 삽입"
   },
   "feature_customCssInjection_name": {
-    "message": "Custom CSS"
+    "message": "사용자 정의 CSS"
   },
   "feature_customProgressBarColor_desc": {
-    "message": "Change the red progress bar to any color"
+    "message": "빨간색 진행 표시줄을 원하는 색상으로 변경"
   },
   "feature_customProgressBarColor_name": {
-    "message": "Custom Progress Bar Color"
+    "message": "진행 표시줄 색상 변경"
   },
   "feature_customSelectionColor_desc": {
-    "message": "Override the default text-selection background with your chosen color"
+    "message": "기본 텍스트 선택 배경색을 원하는 색상으로 변경"
   },
   "feature_customSelectionColor_name": {
-    "message": "Custom Text Selection Color"
+    "message": "텍스트 선택 색상 변경"
   },
   "feature_customSpeedButtons_desc": {
-    "message": "Adds quick speed buttons below the video player with presets from 0.5x to 3x"
+    "message": "동영상 플레이어 아래에 0.5x~3x 프리셋의 빠른 속도 버튼 추가"
   },
   "feature_customSpeedButtons_name": {
-    "message": "Speed Preset Buttons"
+    "message": "속도 프리셋 버튼"
   },
   "feature_daCacheTTL_desc": {
-    "message": "Hours to cache branding data locally before refreshing"
+    "message": "브랜딩 데이터를 새로고침하기 전까지 로컬에 캐시하는 시간"
   },
   "feature_daCacheTTL_name": {
-    "message": "Cache Duration"
+    "message": "캐시 유지 시간"
   },
   "feature_daFallbackFormat_desc": {
-    "message": "Format the original title when no crowdsourced submission exists"
+    "message": "크라우드소싱 제출이 없을 때 원본 제목의 형식 지정"
   },
   "feature_daFallbackFormat_name": {
-    "message": "Format Original Titles"
+    "message": "원본 제목 형식"
   },
   "feature_daReplaceThumbs_desc": {
-    "message": "Replace clickbait thumbnails with video screenshots"
+    "message": "어그로 썸네일을 동영상 스크린샷으로 교체"
   },
   "feature_daReplaceThumbs_name": {
-    "message": "Replace Thumbnails"
+    "message": "썸네일 교체"
   },
   "feature_daReplaceTitles_desc": {
-    "message": "Replace clickbait titles with crowdsourced alternatives"
+    "message": "어그로 제목을 크라우드소싱 대안으로 교체"
   },
   "feature_daReplaceTitles_name": {
-    "message": "Replace Titles"
+    "message": "제목 교체"
   },
   "feature_daShowOriginalHover_desc": {
-    "message": "Hover over a replaced title to see the original"
+    "message": "교체된 제목 위에 마우스를 올리면 원본 표시"
   },
   "feature_daShowOriginalHover_name": {
-    "message": "Show Original on Hover"
+    "message": "마우스 오버 시 원본 표시"
   },
   "feature_daTitleFormat_desc": {
-    "message": "How to format replacement titles"
+    "message": "교체 제목의 형식 지정 방법"
   },
   "feature_daTitleFormat_name": {
-    "message": "Title Format"
+    "message": "제목 형식"
   },
   "feature_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "DeArrow 데이터베이스의 크라우드소싱 대안으로 어그로 제목과 썸네일 교체"
   },
   "feature_deArrow_name": {
     "message": "DeArrow"
   },
   "feature_deArrowChannelOverridesPanel_desc": {
-    "message": "Adds a small DeArrow mode chip next to the channel name on the watch page. Cycles through DeArrow → Original → Off → DeArrow per click. Overrides persist in deArrowChannelOverrides keyed by channel ID."
+    "message": "시청 페이지의 채널 이름 옆에 작은 DeArrow 모드 칩을 추가합니다. 클릭할 때마다 DeArrow → 원본 → 끄기 → DeArrow 순으로 전환됩니다. 채널 ID별로 설정이 유지됩니다."
   },
   "feature_deArrowChannelOverridesPanel_name": {
-    "message": "DeArrow Per-Channel Overrides"
+    "message": "DeArrow 채널별 설정"
   },
   "feature_dearrowPeekButton_desc": {
-    "message": "Hold Alt to temporarily reveal original YouTube titles (undoes DeArrow/custom titles while pressed)"
+    "message": "Alt 키를 누르고 있으면 원본 YouTube 제목을 일시적으로 표시 (DeArrow/사용자 정의 제목을 누르는 동안 해제)"
   },
   "feature_dearrowPeekButton_name": {
-    "message": "DeArrow Peek Button"
+    "message": "DeArrow 미리보기 버튼"
   },
   "feature_deArrowVoting_desc": {
-    "message": "Vote on DeArrow title replacements. Adds thumbs up/down buttons next to replaced titles. Uses a local private userID. Off by default."
+    "message": "DeArrow 제목 교체에 투표합니다. 교체된 제목 옆에 좋아요/싫어요 버튼을 추가합니다. 로컬 비공개 사용자 ID를 사용합니다. 기본 꺼짐."
   },
   "feature_deArrowVoting_name": {
-    "message": "DeArrow Voting"
+    "message": "DeArrow 투표"
   },
   "feature_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "콘솔에 상세 진단 로깅 활성화"
   },
   "feature_debugMode_name": {
     "message": "디버그 모드"
   },
   "feature_denseMode_desc": {
-    "message": "Tightens row spacing, padding, and font metrics across Astra-injected surfaces. Does not change YouTube's native layout — only our own panels, chips, pills, and toolbars."
+    "message": "Astra가 삽입한 표면의 행 간격, 여백, 글꼴 메트릭을 압축합니다. YouTube 기본 레이아웃은 변경하지 않으며, 패널, 칩, 필, 도구 모음만 해당됩니다."
   },
   "feature_denseMode_name": {
-    "message": "Dense Mode"
+    "message": "고밀도 모드"
   },
   "feature_diagnosticLog_desc": {
-    "message": "Capture a rolling log of YTKit errors and export as JSON for bug reports"
+    "message": "YTKit 오류의 순환 로그를 캡처하고 버그 리포트용 JSON으로 내보내기"
   },
   "feature_diagnosticLog_name": {
-    "message": "Diagnostic Error Log"
+    "message": "진단 오류 로그"
   },
   "feature_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "활성 재생 N분마다 휴식 알림 + 선택적 일일 시청 시간 제한. 타이머는 SPA 탐색 간에 유지됩니다."
   },
   "feature_digitalWellbeing_name": {
     "message": "디지털 웰빙"
   },
   "feature_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "현재 동영상이 끝났을 때 다음 동영상이 자동 재생되지 않도록 방지"
   },
   "feature_disableAutoplayNext_name": {
-    "message": "자동재생 없음"
+    "message": "다음 동영상 자동재생 비활성화"
   },
   "feature_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "홈, 검색 및 구독 페이지에서 무한 스크롤을 \"더보기\" 버튼으로 대체"
   },
   "feature_disableInfiniteScroll_name": {
-    "message": "스크롤 제한"
+    "message": "무한 스크롤 비활성화"
   },
   "feature_disableLoudnessNormalization_desc": {
-    "message": "Stop YouTube from compressing the dynamic range of newly-loaded videos. Best effort — YouTube clamps the gain through movie_player APIs that aren’t officially supported."
+    "message": "YouTube가 새로 로드된 동영상의 다이내믹 레인지를 압축하는 것을 방지합니다. 최선의 노력 — YouTube가 공식 지원하지 않는 movie_player API를 통해 게인을 제한합니다."
   },
   "feature_disableLoudnessNormalization_name": {
-    "message": "Disable Loudness Normalization"
+    "message": "음량 정규화 비활성화"
   },
   "feature_disableMiniPlayer_desc": {
-    "message": "Prevent the mini player from appearing when navigating away"
+    "message": "페이지를 떠날 때 미니 플레이어가 나타나지 않도록 방지"
   },
   "feature_disableMiniPlayer_name": {
-    "message": "Disable Mini Player"
+    "message": "미니 플레이어 비활성화"
   },
   "feature_disablePlayOnHover_desc": {
-    "message": "Stop videos from playing when hovering over thumbnails"
+    "message": "썸네일 위에 마우스를 올릴 때 동영상이 재생되지 않도록 방지"
   },
   "feature_disablePlayOnHover_name": {
-    "message": "Disable Hover Preview"
+    "message": "호버 미리보기 비활성화"
   },
   "feature_disableSpaNavigation_desc": {
-    "message": "Force full page loads instead of YouTube's smooth transitions (fixes player sizing issues)"
+    "message": "YouTube의 부드러운 전환 대신 전체 페이지 로드 강제 (플레이어 크기 문제 수정)"
   },
   "feature_disableSpaNavigation_name": {
-    "message": "Disable SPA Navigation"
+    "message": "SPA 탐색 비활성화"
   },
   "feature_downloadAudioFormat_desc": {
-    "message": "Default format for audio-only downloads"
+    "message": "오디오 전용 다운로드의 기본 포맷"
   },
   "feature_downloadAudioFormat_name": {
-    "message": "Audio Format"
+    "message": "오디오 포맷"
   },
   "feature_downloadCobaltFallback_desc": {
-    "message": "When Astra Downloader is unreachable, fall back to a configurable cobalt.tools instance. Only runs in the GitHub/full profile and only when Astra Downloader is offline. POSTs the current video URL to the configured instance and opens the returned media URL in a new tab."
+    "message": "Astra Downloader에 연결할 수 없을 때 설정 가능한 Cobalt 인스턴스로 대체합니다. GitHub/전체 프로필에서만 실행되며 Astra Downloader가 오프라인일 때만 작동합니다. 현재 동영상 URL을 설정된 인스턴스에 POST하고 반환된 미디어 URL을 새 탭에서 엽니다."
   },
   "feature_downloadCobaltFallback_name": {
-    "message": "Cobalt Fallback (GitHub profile)"
+    "message": "Cobalt 대체 (GitHub 프로필)"
   },
   "feature_downloadHealthPanel_desc": {
-    "message": "Show pills for Astra Downloader yt-dlp version, ffmpeg freshness, and PO Token provider state next to the download button. Reads /health every 30 s; no extra storage."
+    "message": "다운로드 버튼 옆에 Astra Downloader의 yt-dlp 버전, ffmpeg 최신 상태, PO Token 프로바이더 상태를 필로 표시합니다. 30초마다 /health를 읽으며 추가 저장소를 사용하지 않습니다."
   },
   "feature_downloadHealthPanel_name": {
-    "message": "Downloader Health Pills"
+    "message": "다운로더 상태 필"
   },
   "feature_downloadHistoryPanel_desc": {
-    "message": "Adds a \"History\" button next to the download button on watch pages. Lists the last 50 downloads recorded by Astra Downloader. Local-only — fetched from the local /history endpoint per session."
+    "message": "시청 페이지의 다운로드 버튼 옆에 \"기록\" 버튼을 추가합니다. Astra Downloader가 기록한 최근 50개 다운로드를 표시합니다. 로컬 전용 — 세션마다 로컬 /history 엔드포인트에서 가져옵니다."
   },
   "feature_downloadHistoryPanel_name": {
-    "message": "Download History Panel"
+    "message": "다운로드 기록 패널"
   },
   "feature_downloadQuality_desc": {
-    "message": "Preferred video quality for downloads"
+    "message": "다운로드 시 선호하는 동영상 화질"
   },
   "feature_downloadQuality_name": {
-    "message": "Download Quality"
+    "message": "다운로드 화질"
   },
   "feature_downloadScreenshotFormat_desc": {
-    "message": "Output format for the player screenshot button. PNG is lossless and copies to clipboard; JPEG/WebP are smaller files but download-only."
+    "message": "플레이어 스크린샷 버튼의 출력 포맷. PNG는 무손실이며 클립보드에 복사됩니다. JPEG/WebP는 파일이 작지만 다운로드만 가능합니다."
   },
   "feature_downloadScreenshotFormat_name": {
-    "message": "Screenshot Format"
+    "message": "스크린샷 포맷"
   },
   "feature_downloadStreamLinksPanel_desc": {
-    "message": "Advanced: expose the raw adaptive video/audio stream URLs (mp4/webm) parsed from ytInitialPlayerResponse. Local-only — no telemetry. Useful for yt-dlp / VLC handoff. Default off."
+    "message": "고급: ytInitialPlayerResponse에서 파싱된 원시 적응형 비디오/오디오 스트림 URL(mp4/webm)을 노출합니다. 로컬 전용 — 원격 전송 없음. yt-dlp / VLC 전달에 유용합니다. 기본 꺼짐."
   },
   "feature_downloadStreamLinksPanel_name": {
-    "message": "Stream Links Panel"
+    "message": "스트림 링크 패널"
   },
   "feature_downloadSubtitlesWithScreenshot_desc": {
-    "message": "Bake the currently rendered caption line into the bottom band of the screenshot. Off by default. Requires Video Screenshot."
+    "message": "현재 렌더링된 자막 줄을 스크린샷 하단에 삽입합니다. 기본 꺼짐. 동영상 스크린샷이 필요합니다."
   },
   "feature_downloadSubtitlesWithScreenshot_name": {
-    "message": "Include Subtitles In Screenshot"
+    "message": "스크린샷에 자막 포함"
   },
   "feature_downloadThumbnail_desc": {
-    "message": "Adds a button below the video to download the current video thumbnail in max resolution"
+    "message": "동영상 아래에 현재 동영상 썸네일을 최대 해상도로 다운로드하는 버튼 추가"
   },
   "feature_downloadThumbnail_name": {
-    "message": "Download Thumbnail Button"
+    "message": "썸네일 다운로드 버튼"
   },
   "feature_downloadVideoFormat_desc": {
-    "message": "Default container format for video downloads"
+    "message": "비디오 다운로드의 기본 컨테이너 포맷"
   },
   "feature_downloadVideoFormat_name": {
-    "message": "Video Format"
+    "message": "비디오 포맷"
   },
   "feature_enableCPU_Tamer_desc": {
-    "message": "Reduce CPU usage by throttling background timers via requestAnimationFrame gating"
+    "message": "requestAnimationFrame 제어를 통해 백그라운드 타이머를 조절하여 CPU 사용량 감소"
   },
   "feature_enableCPU_Tamer_name": {
     "message": "CPU Tamer"
   },
   "feature_enableHandleRevealer_desc": {
-    "message": "Show the original channel name next to @handle in comments"
+    "message": "댓글에서 @핸들 옆에 원래 채널 이름 표시"
   },
   "feature_enableHandleRevealer_name": {
-    "message": "Comment Handle Revealer"
+    "message": "댓글 핸들 표시기"
   },
   "feature_expandVideoWidth_desc": {
-    "message": "Stretch the video to fill the space when sidebar is hidden"
+    "message": "사이드바가 숨겨지면 동영상을 전체 공간에 맞게 확장"
   },
   "feature_expandVideoWidth_name": {
-    "message": "Expand Video Width"
+    "message": "동영상 너비 확장"
   },
   "feature_feedTriageProfile_desc": {
-    "message": "Flip on a curated focus recipe: hides Shorts, live streams, upcoming premieres, mixes, watched videos, and AI Summary. Toggling off restores prior values."
+    "message": "큐레이션된 집중 레시피 켜기: Shorts, 실시간 스트림, 예정된 프리미어, 믹스, 시청한 동영상, AI 요약을 숨깁니다. 끄면 이전 값이 복원됩니다."
   },
   "feature_feedTriageProfile_name": {
-    "message": "Feed Triage Profile"
+    "message": "피드 정리 프로필"
   },
   "feature_fineSpeedControl_desc": {
-    "message": "Extend speed range to 0.1x-16x with 0.05x increments. Scroll on the speed badge to adjust."
+    "message": "속도 범위를 0.1x~16x, 0.05x 단위로 확장합니다. 속도 배지 위에서 스크롤하여 조정합니다."
   },
   "feature_fineSpeedControl_name": {
-    "message": "Fine Speed Control"
+    "message": "미세 속도 제어"
   },
   "feature_fitPlayerToWindow_desc": {
-    "message": "Make the video player fill the entire browser window"
+    "message": "동영상 플레이어가 브라우저 창 전체를 채우도록 설정"
   },
   "feature_fitPlayerToWindow_name": {
-    "message": "Fit Player to Window"
+    "message": "플레이어를 창에 맞추기"
   },
   "feature_floatingLogoOnWatch_desc": {
-    "message": "Replace native player right-controls with Astra quick links, local tools, and settings"
+    "message": "기본 플레이어 오른쪽 컨트롤을 Astra 빠른 링크, 로컬 도구 및 설정으로 교체"
   },
   "feature_floatingLogoOnWatch_name": {
-    "message": "Astra Player Dock"
+    "message": "Astra 플레이어 독"
   },
   "feature_focusedMode_desc": {
-    "message": "Hides everything except the video player and comments for a distraction-free experience"
+    "message": "동영상 플레이어와 댓글을 제외한 모든 것을 숨겨 방해 없는 시청 경험 제공"
   },
   "feature_focusedMode_name": {
-    "message": "Focused Mode"
+    "message": "집중 모드"
   },
   "feature_forceDarkEverywhere_desc": {
-    "message": "Applies dark theme to YouTube pages that may not respect dark mode (settings, about, etc.)"
+    "message": "다크 모드를 따르지 않을 수 있는 YouTube 페이지(설정, 정보 등)에 다크 테마 적용"
   },
   "feature_forceDarkEverywhere_name": {
-    "message": "Force Dark on All YouTube Pages"
+    "message": "모든 YouTube 페이지에 다크 모드 강제 적용"
   },
   "feature_forcedColorsSupport_desc": {
-    "message": "Always active: when the OS reports forced-colors (Windows High Contrast, GTK forced colors), Astra-injected controls automatically use system colors so text remains readable and focus rings are visible. The media query itself is the gate; this toggle is retained for settings compatibility and has no additional effect."
+    "message": "항상 활성: OS가 강제 색상을 보고하면(Windows 고대비, GTK 강제 색상) Astra 삽입 컨트롤이 자동으로 시스템 색상을 사용하여 텍스트 가독성과 포커스 링 가시성을 보장합니다. 미디어 쿼리 자체가 게이트이며, 이 토글은 설정 호환성을 위해 유지됩니다."
   },
   "feature_forcedColorsSupport_name": {
-    "message": "Forced Colors / High Contrast Support"
+    "message": "강제 색상 / 고대비 지원"
   },
   "feature_forceH264_desc": {
-    "message": "Prefer H.264 (AVC) over VP9/AV1 for lower CPU usage on older hardware. May reduce max quality. Uses MAIN world codec bridge."
+    "message": "오래된 하드웨어에서 CPU 사용량을 줄이기 위해 VP9/AV1 대신 H.264 (AVC)를 선호합니다. 최대 화질이 제한될 수 있습니다. MAIN 월드 코덱 브릿지를 사용합니다."
   },
   "feature_forceH264_name": {
-    "message": "Force H.264 Codec"
+    "message": "H.264 코덱 강제"
   },
   "feature_forceStandardFps_desc": {
-    "message": "Dims HFR entries in the quality menu. For reliable 30fps, enable Force H.264 which caps at 1080p30."
+    "message": "화질 메뉴에서 고프레임레이트(HFR) 항목을 흐리게 표시합니다. 안정적인 30fps를 위해 H.264 강제를 활성화하면 1080p30으로 제한됩니다."
   },
   "feature_forceStandardFps_name": {
-    "message": "Force Standard Frame Rate"
+    "message": "표준 프레임 레이트 강제"
   },
   "feature_frameByFrameButtons_desc": {
-    "message": "Add visible step-back (,) and step-forward (.) buttons to the player controls for precise frame navigation"
+    "message": "정밀한 프레임 탐색을 위해 플레이어 컨트롤에 한 프레임 뒤로(,)와 앞으로(.) 버튼 추가"
   },
   "feature_frameByFrameButtons_name": {
-    "message": "Frame-by-Frame Buttons"
+    "message": "프레임 단위 이동 버튼"
   },
   "feature_fullscreenOnDoubleClick_desc": {
-    "message": "Double-click anywhere on the video to toggle fullscreen (replaces default seek behavior)"
+    "message": "동영상 아무 곳이나 더블 클릭하여 전체 화면 전환 (기본 탐색 동작 대체)"
   },
   "feature_fullscreenOnDoubleClick_name": {
-    "message": "Double-Click Fullscreen"
+    "message": "더블 클릭 전체 화면"
   },
   "feature_fullTitles_desc": {
-    "message": "Remove the 2-line clamp on thumbnail titles so long titles show in full"
+    "message": "썸네일 제목의 2줄 제한을 해제하여 긴 제목을 전체 표시"
   },
   "feature_fullTitles_name": {
-    "message": "Show Full Video Titles"
+    "message": "전체 동영상 제목 표시"
   },
   "feature_fullWidthSubscriptions_desc": {
-    "message": "Expand the subscription grid to fill the page"
+    "message": "구독 그리드를 페이지 전체 너비로 확장"
   },
   "feature_fullWidthSubscriptions_name": {
-    "message": "Full-Width Subscriptions"
+    "message": "전체 너비 구독"
   },
   "feature_globalAriaLiveRegion_desc": {
-    "message": "Mounts a single hidden role=status / aria-live=polite container under the document body. Screen readers announce any text Astra writes into it (toast bodies, filter outcomes, download status changes)."
+    "message": "문서 본문 아래에 숨겨진 role=status / aria-live=polite 컨테이너를 마운트합니다. 스크린 리더가 Astra가 여기에 쓴 텍스트를 읽어줍니다 (토스트 내용, 필터 결과, 다운로드 상태 변경)."
   },
   "feature_globalAriaLiveRegion_name": {
-    "message": "Live Region For Toasts"
+    "message": "토스트용 라이브 영역"
   },
   "feature_grayscaleThumbnails_desc": {
-    "message": "Shows thumbnails in grayscale to reduce visual distraction — color restores on hover"
+    "message": "시각적 산만함을 줄이기 위해 썸네일을 흑백으로 표시 — 마우스를 올리면 색상 복원"
   },
   "feature_grayscaleThumbnails_name": {
-    "message": "Grayscale Thumbnails"
+    "message": "흑백 썸네일"
   },
   "feature_hiddenActionButtonsManager_desc": {
-    "message": "Choose which action buttons to hide below videos"
+    "message": "동영상 아래에서 숨길 액션 버튼 선택"
   },
   "feature_hiddenActionButtonsManager_name": {
-    "message": "Hide Action Buttons"
+    "message": "액션 버튼 숨기기"
   },
   "feature_hiddenChatElementsManager_desc": {
-    "message": "Choose which live chat elements to hide"
+    "message": "숨길 실시간 채팅 요소 선택"
   },
   "feature_hiddenChatElementsManager_name": {
-    "message": "Hide Chat Elements"
+    "message": "채팅 요소 숨기기"
   },
   "feature_hiddenPlayerControlsManager_desc": {
-    "message": "Choose which player control buttons to hide"
+    "message": "숨길 플레이어 컨트롤 버튼 선택"
   },
   "feature_hiddenPlayerControlsManager_name": {
-    "message": "Hide Player Controls"
+    "message": "플레이어 컨트롤 숨기기"
   },
   "feature_hiddenWatchElementsManager_desc": {
-    "message": "Choose which elements to hide below videos"
+    "message": "동영상 아래에서 숨길 요소 선택"
   },
   "feature_hiddenWatchElementsManager_name": {
-    "message": "Hide Watch Page Elements"
+    "message": "시청 페이지 요소 숨기기"
   },
   "feature_hideAirplayButton_desc": {
-    "message": "Remove the Airplay icon from the player controls"
+    "message": "플레이어 컨트롤에서 Airplay 아이콘 제거"
   },
   "feature_hideAirplayButton_name": {
-    "message": "Hide Airplay Button"
+    "message": "Airplay 버튼 숨기기"
   },
   "feature_hideAiSummary_desc": {
-    "message": "Remove AI-generated summaries and Ask AI buttons"
+    "message": "AI 생성 요약 및 AI에게 물어보기 버튼 제거"
   },
   "feature_hideAiSummary_name": {
-    "message": "Hide AI Summary"
+    "message": "AI 요약 숨기기"
   },
   "feature_hideAutoplayToggle_desc": {
-    "message": "Removes the autoplay toggle switch from the player controls"
+    "message": "플레이어 컨트롤에서 자동재생 토글 스위치 제거"
   },
   "feature_hideAutoplayToggle_name": {
-    "message": "Hide Autoplay Toggle"
+    "message": "자동재생 토글 숨기기"
   },
   "feature_hideChannelJoinButton_desc": {
-    "message": "Remove the Join/membership button on channel pages"
+    "message": "채널 페이지에서 가입/멤버십 버튼 제거"
   },
   "feature_hideChannelJoinButton_name": {
-    "message": "Hide Channel Join Button"
+    "message": "채널 가입 버튼 숨기기"
   },
   "feature_hideCollaborations_desc": {
-    "message": "Hide videos from channels you're not subscribed to in your subscriptions feed"
+    "message": "구독 피드에서 구독하지 않은 채널의 동영상 숨기기"
   },
   "feature_hideCollaborations_name": {
-    "message": "Hide Collaborations"
+    "message": "콜라보 숨기기"
   },
   "feature_hideCommentActionMenu_desc": {
-    "message": "Remove action menu from individual comments"
+    "message": "개별 댓글에서 액션 메뉴 제거"
   },
   "feature_hideCommentActionMenu_name": {
-    "message": "Hide Comment Actions"
+    "message": "댓글 액션 숨기기"
   },
   "feature_hideCommentDislikeButton_desc": {
-    "message": "Remove the dislike button from comment actions since it adds no useful feedback"
+    "message": "유용한 피드백을 제공하지 않는 댓글 싫어요 버튼 제거"
   },
   "feature_hideCommentDislikeButton_name": {
-    "message": "Hide Comment Dislike"
+    "message": "댓글 싫어요 숨기기"
   },
   "feature_hideCommentTeaser_desc": {
-    "message": "Remove the \"Scroll for comments\" prompt on watch pages"
+    "message": "시청 페이지의 \"댓글을 보려면 스크롤\" 프롬프트 제거"
   },
   "feature_hideCommentTeaser_name": {
-    "message": "Hide Comment Teaser"
+    "message": "댓글 티저 숨기기"
   },
   "feature_hideCreateButton_desc": {
-    "message": "Remove the \"Create\" button from the header toolbar"
+    "message": "헤더 도구 모음에서 \"만들기\" 버튼 제거"
   },
   "feature_hideCreateButton_name": {
-    "message": "Hide Create Button"
+    "message": "만들기 버튼 숨기기"
   },
   "feature_hideDescriptionExtras_desc": {
-    "message": "Remove extra elements in the description area"
+    "message": "설명 영역의 추가 요소 제거"
   },
   "feature_hideDescriptionExtras_name": {
-    "message": "Hide Description Extras"
+    "message": "설명 부가 요소 숨기기"
   },
   "feature_hideDescriptionRow_desc": {
-    "message": "Remove the video description panel below the player"
+    "message": "플레이어 아래의 동영상 설명 패널 제거"
   },
   "feature_hideDescriptionRow_name": {
-    "message": "Hide Description"
+    "message": "설명 숨기기"
   },
   "feature_hideEndCards_desc": {
-    "message": "Removes the clickable end screen cards/annotations that overlay the video in the last seconds. Also covered by Hide Video End Content."
+    "message": "동영상 마지막 몇 초에 오버레이되는 클릭 가능한 최종 화면 카드/주석을 제거합니다. 동영상 종료 콘텐츠 숨기기에도 포함됩니다."
   },
   "feature_hideEndCards_name": {
-    "message": "Hide End Screen Cards"
+    "message": "최종 화면 카드 숨기기"
   },
   "feature_hideFundraiser_desc": {
-    "message": "Remove fundraiser and donation badges"
+    "message": "모금 활동 및 기부 배지 제거"
   },
   "feature_hideFundraiser_name": {
-    "message": "Hide Fundraisers"
+    "message": "모금 활동 숨기기"
   },
   "feature_hideHashtags_desc": {
-    "message": "Remove hashtag links above video titles"
+    "message": "동영상 제목 위의 해시태그 링크 제거"
   },
   "feature_hideHashtags_name": {
-    "message": "Hide Hashtags"
+    "message": "해시태그 숨기기"
   },
   "feature_hideInfoCards_desc": {
-    "message": "Removes the \"i\" info card teasers and popups that appear during video playback"
+    "message": "동영상 재생 중 나타나는 \"i\" 정보 카드 티저와 팝업 제거"
   },
   "feature_hideInfoCards_name": {
-    "message": "Hide Info Cards"
+    "message": "정보 카드 숨기기"
   },
   "feature_hideInfoPanels_desc": {
-    "message": "Remove Wikipedia/context info boxes that appear below videos (FEMA, COVID, etc.)"
+    "message": "동영상 아래에 나타나는 위키백과/맥락 정보 상자 제거 (FEMA, COVID 등)"
   },
   "feature_hideInfoPanels_name": {
-    "message": "Hide Info Panels"
+    "message": "정보 패널 숨기기"
   },
   "feature_hideJumpAheadButton_desc": {
-    "message": "Remove the Jump Ahead prompt that appears after skipping on eligible videos."
+    "message": "적용 가능한 동영상에서 건너뛰기 후 나타나는 '바로 이동' 프롬프트 제거."
   },
   "feature_hideJumpAheadButton_name": {
-    "message": "Hide Jump Ahead"
+    "message": "바로 이동 숨기기"
   },
   "feature_hideLatestPosts_desc": {
-    "message": "Hide community posts and updates sections from feeds"
+    "message": "피드에서 커뮤니티 게시물 및 업데이트 섹션 숨기기"
   },
   "feature_hideLatestPosts_name": {
-    "message": "Hide Latest Posts"
+    "message": "최근 게시물 숨기기"
   },
   "feature_hideLiveChatEngagement_desc": {
-    "message": "Remove engagement prompts in live chat"
+    "message": "실시간 채팅의 참여 유도 프롬프트 제거"
   },
   "feature_hideLiveChatEngagement_name": {
-    "message": "Hide Chat Engagement"
+    "message": "채팅 참여 유도 숨기기"
   },
   "feature_hideMembersOnly_desc": {
-    "message": "Hide members-only feed cards on Home and Subscriptions"
+    "message": "홈 및 구독에서 멤버 전용 피드 카드 숨기기"
   },
   "feature_hideMembersOnly_name": {
-    "message": "Hide Members Only"
+    "message": "멤버 전용 숨기기"
   },
   "feature_hideMerchShelf_desc": {
-    "message": "Remove merchandise promotions below videos"
+    "message": "동영상 아래의 상품 홍보 제거"
   },
   "feature_hideMerchShelf_name": {
-    "message": "Hide Merch Shelf"
+    "message": "상품 선반 숨기기"
   },
   "feature_hideNewsHome_desc": {
-    "message": "Hide news sections from the homepage"
+    "message": "홈페이지에서 뉴스 섹션 숨기기"
   },
   "feature_hideNewsHome_name": {
-    "message": "Hide News Section"
+    "message": "뉴스 섹션 숨기기"
   },
   "feature_hideNotificationBadge_desc": {
-    "message": "Removes the red notification count badge from the bell icon"
+    "message": "종 아이콘의 빨간 알림 숫자 배지 제거"
   },
   "feature_hideNotificationBadge_name": {
-    "message": "Hide Notification Badge"
+    "message": "알림 배지 숨기기"
   },
   "feature_hideNotificationButton_desc": {
-    "message": "Remove the notification bell icon from the header"
+    "message": "헤더에서 알림 종 아이콘 제거"
   },
   "feature_hideNotificationButton_name": {
-    "message": "Hide Notification Bell"
+    "message": "알림 종 숨기기"
   },
   "feature_hidePaidContentOverlay_desc": {
-    "message": "Remove \"Includes paid promotion\" overlays on thumbnails and watch pages"
+    "message": "썸네일과 시청 페이지에서 \"유료 프로모션 포함\" 오버레이 제거"
   },
   "feature_hidePaidContentOverlay_name": {
-    "message": "Hide Promotion Badges"
+    "message": "프로모션 배지 숨기기"
   },
   "feature_hidePaidPromotionWatch_desc": {
-    "message": "Remove \"paid promotion\" labels on watch pages"
+    "message": "시청 페이지에서 \"유료 프로모션\" 라벨 제거"
   },
   "feature_hidePaidPromotionWatch_name": {
-    "message": "Hide Paid Promotion"
+    "message": "유료 프로모션 숨기기"
   },
   "feature_hidePinnedComments_desc": {
-    "message": "Remove pinned comments from the comments section"
+    "message": "댓글 섹션에서 고정된 댓글 제거"
   },
   "feature_hidePinnedComments_name": {
-    "message": "Hide Pinned Comments"
+    "message": "고정 댓글 숨기기"
   },
   "feature_hidePlayables_desc": {
-    "message": "Hide YouTube Playables gaming content from feeds"
+    "message": "피드에서 YouTube Playables 게임 콘텐츠 숨기기"
   },
   "feature_hidePlayables_name": {
-    "message": "Hide Playables"
+    "message": "Playables 숨기기"
   },
   "feature_hidePlaylistsHome_desc": {
-    "message": "Hide playlist sections from the homepage"
+    "message": "홈페이지에서 재생목록 섹션 숨기기"
   },
   "feature_hidePlaylistsHome_name": {
-    "message": "Hide Playlist Shelves"
+    "message": "재생목록 선반 숨기기"
   },
   "feature_hideQueueOnThumbnails_desc": {
-    "message": "Remove the \"Add to queue\" overlay button that appears on thumbnail hover"
+    "message": "썸네일 호버 시 나타나는 \"대기열에 추가\" 오버레이 버튼 제거"
   },
   "feature_hideQueueOnThumbnails_name": {
-    "message": "Hide \"Add to Queue\" on Thumbnails"
+    "message": "썸네일의 \"대기열에 추가\" 숨기기"
   },
   "feature_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "시청 페이지의 관련 동영상 패널 제거"
   },
   "feature_hideRelatedVideos_name": {
     "message": "관련 동영상 숨기기"
   },
   "feature_hideSidebar_desc": {
-    "message": "Remove the left navigation sidebar completely"
+    "message": "왼쪽 탐색 사이드바 완전히 제거"
   },
   "feature_hideSidebar_name": {
-    "message": "Hide Sidebar"
+    "message": "사이드바 숨기기"
   },
   "feature_hideSubscriptionOptions_desc": {
-    "message": "Remove the \"Latest\" header and view toggles on subscriptions"
+    "message": "구독에서 \"최신\" 헤더 및 보기 토글 제거"
   },
   "feature_hideSubscriptionOptions_name": {
-    "message": "Hide Layout Options"
+    "message": "레이아웃 옵션 숨기기"
   },
   "feature_hideVideoEndContent_desc": {
-    "message": "Remove end cards, end screen, annotations, and video grid when videos finish. Superset of Hide End Screen Cards."
+    "message": "동영상이 끝날 때 종료 카드, 최종 화면, 주석, 동영상 그리드를 제거합니다. 최종 화면 카드 숨기기의 상위 기능입니다."
   },
   "feature_hideVideoEndContent_name": {
-    "message": "Hide Video End Content"
+    "message": "동영상 종료 콘텐츠 숨기기"
   },
   "feature_hideVideosFromHome_desc": {
-    "message": "Hide videos/channels from feeds. Includes keyword filter, duration filter, and channel blocking."
+    "message": "피드에서 동영상/채널 숨기기. 키워드 필터, 길이 필터, 채널 차단을 포함합니다."
   },
   "feature_hideVideosFromHome_name": {
-    "message": "Video Hider"
+    "message": "동영상 숨기기 도구"
   },
   "feature_hideVoiceSearch_desc": {
-    "message": "Remove the microphone icon from the search bar"
+    "message": "검색 바에서 마이크 아이콘 제거"
   },
   "feature_hideVoiceSearch_name": {
-    "message": "Hide Voice Search"
+    "message": "음성 검색 숨기기"
   },
   "feature_hideWatchedVideos_desc": {
-    "message": "Dim or hide videos with a red progress bar (already watched) from feeds"
+    "message": "피드에서 빨간 진행 표시줄이 있는 동영상(이미 시청한 동영상)을 흐리게 하거나 숨기기"
   },
   "feature_hideWatchedVideos_name": {
-    "message": "Hide Watched Videos"
+    "message": "시청한 동영상 숨기기"
   },
   "feature_homepageGridAlign_desc": {
-    "message": "Force uniform thumbnail grid on the homepage — prevents misaligned rows caused by variable title/metadata heights"
+    "message": "홈페이지에서 균일한 썸네일 그리드 강제 적용 — 가변 제목/메타데이터 높이로 인한 행 정렬 불일치 방지"
   },
   "feature_homepageGridAlign_name": {
-    "message": "Homepage Grid Align"
+    "message": "홈페이지 그리드 정렬"
   },
   "feature_initialPlayerStateBackground_desc": {
-    "message": "When opening a watch page in a background tab, play or pause regardless of YouTube’s default. Useful for queueing-up multiple tabs."
+    "message": "백그라운드 탭에서 시청 페이지를 열 때 YouTube 기본값과 관계없이 재생 또는 일시 중지합니다. 여러 탭을 미리 열어두는 데 유용합니다."
   },
   "feature_initialPlayerStateBackground_name": {
-    "message": "Initial Player State (Background)"
+    "message": "초기 플레이어 상태 (백그라운드)"
   },
   "feature_initialPlayerStateForeground_desc": {
-    "message": "When opening a watch page in the foreground, play or pause regardless of the previous session’s autoplay choice. “Inherit” leaves YouTube’s native behavior alone."
+    "message": "포그라운드에서 시청 페이지를 열 때 이전 세션의 자동재생 선택과 관계없이 재생 또는 일시 중지합니다. \"상속\"은 YouTube 기본 동작을 유지합니다."
   },
   "feature_initialPlayerStateForeground_name": {
-    "message": "Initial Player State (Foreground)"
+    "message": "초기 플레이어 상태 (포그라운드)"
   },
   "feature_keyMoments_desc": {
-    "message": "Highlights chapter markers on the progress bar with colored segments for quick visual navigation"
+    "message": "빠른 시각적 탐색을 위해 진행 표시줄에 챕터 마커를 색상 세그먼트로 강조 표시"
   },
   "feature_keyMoments_name": {
-    "message": "Key Moments Highlights"
+    "message": "주요 순간 강조"
   },
   "feature_likeViewRatio_desc": {
-    "message": "Shows the like-to-view percentage next to the view count on watch pages"
+    "message": "시청 페이지에서 조회수 옆에 좋아요 대비 조회수 비율 표시"
   },
   "feature_likeViewRatio_name": {
-    "message": "Like-to-View Ratio"
+    "message": "좋아요/조회수 비율"
   },
   "feature_localAiSummary_desc": {
-    "message": "Use Chrome’s built-in Summarizer API when available. Falls back to a clear \"not available\" message — never silently routes to a remote provider. Adds a \"Local Summary\" button next to the existing AI Summary button."
+    "message": "사용 가능한 경우 Chrome 내장 Summarizer API를 사용합니다. \"사용 불가\" 메시지로 명확히 안내하며, 원격 제공자로 자동 전환하지 않습니다. 기존 AI 요약 버튼 옆에 \"로컬 요약\" 버튼을 추가합니다."
   },
   "feature_localAiSummary_name": {
-    "message": "Local AI Summary (browser built-in)"
+    "message": "로컬 AI 요약 (브라우저 내장)"
   },
   "feature_localAiTranscriptQa_desc": {
-    "message": "Ask questions about the current video transcript using Chrome Prompt API (Gemini Nano). Runs on-device, no API keys needed."
+    "message": "Chrome Prompt API(Gemini Nano)를 사용하여 현재 동영상 대본에 대해 질문합니다. 기기에서 실행되며 API 키가 필요하지 않습니다."
   },
   "feature_localAiTranscriptQa_name": {
-    "message": "Transcript Q&A (browser built-in)"
+    "message": "대본 Q&A (브라우저 내장)"
   },
   "feature_logoToSubscriptions_desc": {
-    "message": "Point the native YouTube home mark to your subscriptions feed"
+    "message": "YouTube 홈 로고를 구독 피드로 연결"
   },
   "feature_logoToSubscriptions_name": {
-    "message": "Logo Click → Subscriptions"
+    "message": "로고 클릭 → 구독"
   },
   "feature_lowPowerProfile_desc": {
-    "message": "When on, disables CPU-heavy features (cinema ambient glow, visual filters, playback stats overlay, monetization indicator, transcript index, transcript viewer, blue light filter) and bumps storage LRU sweep cadence. Toggle off to restore previous values from the backup snapshot."
+    "message": "켜면 CPU 부하가 높은 기능(시네마 앰비언트 글로우, 시각 필터, 재생 통계 오버레이, 수익화 표시기, 대본 인덱스, 대본 뷰어, 블루라이트 필터)을 비활성화하고 스토리지 LRU 정리 주기를 높입니다. 끄면 백업 스냅샷에서 이전 값을 복원합니다."
   },
   "feature_lowPowerProfile_name": {
-    "message": "Low Power Profile"
+    "message": "저전력 프로필"
   },
   "feature_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "동영상을 스크롤로 지나칠 때 하단에 플로팅 미니 플레이어 바 표시"
   },
   "feature_miniPlayerBar_name": {
     "message": "미니 플레이어 바"
   },
   "feature_monetizationIndicator_desc": {
-    "message": "Adds a pill under the title showing whether the video is monetized (has ads / sponsorship overlay) or not. Heuristic — uses paid promotion overlay, sponsorship card, and SponsorBlock category data when available."
+    "message": "제목 아래에 동영상의 수익화 여부(광고/스폰서 오버레이)를 보여주는 필을 추가합니다. 휴리스틱 — 유료 프로모션 오버레이, 스폰서십 카드, SponsorBlock 카테고리 데이터를 활용합니다."
   },
   "feature_monetizationIndicator_name": {
-    "message": "Monetization Indicator"
+    "message": "수익화 표시기"
   },
   "feature_musicVideoSpeedLock_desc": {
-    "message": "When Persistent Playback Speed is enabled, keep music-category videos at 1× so songs aren't sped up"
+    "message": "재생 속도 유지가 활성화되어 있을 때 음악 카테고리 동영상은 1x로 유지하여 노래가 빨라지지 않도록 합니다"
   },
   "feature_musicVideoSpeedLock_name": {
-    "message": "Lock 1× Speed on Music Videos"
+    "message": "음악 동영상 1x 속도 고정"
   },
   "feature_newPlayerUiRestore_desc": {
-    "message": "Hides YouTube's new-player chrome elements (Delhi modern overflow panel, pill action surfaces). Restores a tighter progress bar and original-style controls."
+    "message": "YouTube의 새 플레이어 크롬 요소(Delhi 모던 오버플로 패널, 필 액션 표면)를 숨깁니다. 더 촘촘한 진행 표시줄과 원래 스타일 컨트롤을 복원합니다."
   },
   "feature_newPlayerUiRestore_name": {
-    "message": "Restore Classic Player Chrome"
+    "message": "클래식 플레이어 크롬 복원"
   },
   "feature_noAmbientMode_desc": {
-    "message": "Turn off the glowing background effect that matches video colors"
+    "message": "동영상 색상과 어울리는 배경 글로우 효과 끄기"
   },
   "feature_noAmbientMode_name": {
-    "message": "Disable Ambient Mode"
+    "message": "앰비언트 모드 비활성화"
   },
   "feature_noFrostedGlass_desc": {
-    "message": "Remove blur effects from UI elements"
+    "message": "UI 요소에서 블러 효과 제거"
   },
   "feature_noFrostedGlass_name": {
-    "message": "Disable Frosted Glass"
+    "message": "유리 효과 비활성화"
   },
   "feature_notifyAutoDubbedAudio_desc": {
-    "message": "Show a one-time toast when YouTube auto-selects an AI-dubbed audio track (e.g. an English-dubbed Korean video). You can manually switch to the original track in the player settings."
+    "message": "YouTube가 AI 더빙 오디오 트랙을 자동 선택할 때 일회성 토스트를 표시합니다(예: 한국어 동영상이 영어로 더빙된 경우). 플레이어 설정에서 수동으로 원본 트랙으로 전환할 수 있습니다."
   },
   "feature_notifyAutoDubbedAudio_name": {
-    "message": "Notify on AI-dubbed audio"
+    "message": "AI 더빙 오디오 알림"
   },
   "feature_notInterestedButton_desc": {
-    "message": "Add an X button on video thumbnails to quickly dismiss videos via YouTube's feedback API"
+    "message": "동영상 썸네일에 X 버튼을 추가하여 YouTube 피드백 API를 통해 빠르게 동영상 제거"
   },
   "feature_notInterestedButton_name": {
-    "message": "\"Not Interested\" on Thumbnails"
+    "message": "썸네일에 \"관심 없음\""
   },
   "feature_nyanCatProgressBar_desc": {
-    "message": "Replace the video progress bar with a Nyan Cat animation"
+    "message": "동영상 진행 표시줄을 냥캣 애니메이션으로 교체"
   },
   "feature_nyanCatProgressBar_name": {
-    "message": "Nyan Cat Progress Bar"
+    "message": "냥캣 진행 표시줄"
   },
   "feature_oledTheme_desc": {
-    "message": "True OLED black (#000) backgrounds via the --yt-sys-color-baseline tokens. Survives YouTube's native theme switches because we hook the tokens themselves, not the surface classes."
+    "message": "--yt-sys-color-baseline 토큰을 통한 완전한 OLED 블랙(#000) 배경. 토큰 자체를 후킹하므로 YouTube의 기본 테마 전환에도 유지됩니다."
   },
   "feature_oledTheme_name": {
-    "message": "OLED Theme"
+    "message": "OLED 테마"
   },
   "feature_openInAlternativeFrontend_desc": {
-    "message": "Adds a button next to the player to open the current video in your configured alternative frontend (Invidious / Piped / FreeTube). Default instance is yewtu.be; change via alternativeFrontendInstance setting."
+    "message": "현재 동영상을 설정된 대체 프론트엔드(Invidious / Piped / FreeTube)에서 여는 버튼을 플레이어 옆에 추가합니다. 기본 인스턴스는 yewtu.be이며 alternativeFrontendInstance 설정에서 변경 가능합니다."
   },
   "feature_openInAlternativeFrontend_name": {
-    "message": "Open In Alternative Frontend"
+    "message": "대체 프론트엔드에서 열기"
   },
   "feature_openInNewTab_desc": {
-    "message": "Makes video links on the home/subscriptions page open in a new tab instead of navigating away"
+    "message": "홈/구독 페이지의 동영상 링크를 현재 탭 대신 새 탭에서 열기"
   },
   "feature_openInNewTab_name": {
-    "message": "Open Videos in New Tab"
+    "message": "새 탭에서 동영상 열기"
   },
   "feature_pauseOtherTabs_desc": {
-    "message": "When a video starts playing, pause YouTube in all other tabs"
+    "message": "동영상 재생 시작 시 다른 모든 탭의 YouTube를 일시 중지"
   },
   "feature_pauseOtherTabs_name": {
-    "message": "Pause Other Tabs on Play"
+    "message": "재생 시 다른 탭 일시 중지"
   },
   "feature_pcHide_autoplay_desc": {
-    "message": "Hide autoplay toggle from player"
+    "message": "플레이어에서 자동재생 토글 숨기기"
   },
   "feature_pcHide_autoplay_name": {
-    "message": "Autoplay Toggle"
+    "message": "자동재생 토글"
   },
   "feature_pcHide_captions_desc": {
-    "message": "Hide captions overlay on video"
+    "message": "동영상의 자막 오버레이 숨기기"
   },
   "feature_pcHide_captions_name": {
-    "message": "Captions Display"
+    "message": "자막 표시"
   },
   "feature_pcHide_fullscreen_desc": {
-    "message": "Hide fullscreen button from player"
+    "message": "플레이어에서 전체 화면 버튼 숨기기"
   },
   "feature_pcHide_fullscreen_name": {
-    "message": "Fullscreen Button"
+    "message": "전체 화면 버튼"
   },
   "feature_pcHide_miniplayer_desc": {
-    "message": "Hide miniplayer button from player"
+    "message": "플레이어에서 미니플레이어 버튼 숨기기"
   },
   "feature_pcHide_miniplayer_name": {
-    "message": "Miniplayer Button"
+    "message": "미니플레이어 버튼"
   },
   "feature_pcHide_next_desc": {
-    "message": "Hide next video button from player"
+    "message": "플레이어에서 다음 동영상 버튼 숨기기"
   },
   "feature_pcHide_next_name": {
-    "message": "Next Video Button"
+    "message": "다음 동영상 버튼"
   },
   "feature_pcHide_pip_desc": {
-    "message": "Hide PiP button from player"
+    "message": "플레이어에서 PiP 버튼 숨기기"
   },
   "feature_pcHide_pip_name": {
-    "message": "Picture-in-Picture"
+    "message": "PiP (화면 속 화면)"
   },
   "feature_pcHide_settings_desc": {
-    "message": "Hide settings gear from player controls"
+    "message": "플레이어 컨트롤에서 설정 톱니바퀴 숨기기"
   },
   "feature_pcHide_settings_name": {
-    "message": "Settings Gear"
+    "message": "설정 톱니바퀴"
   },
   "feature_pcHide_subtitles_desc": {
-    "message": "Hide subtitles button from player"
+    "message": "플레이어에서 자막 버튼 숨기기"
   },
   "feature_pcHide_subtitles_name": {
-    "message": "Subtitles Button"
+    "message": "자막 버튼"
   },
   "feature_pcHide_theater_desc": {
-    "message": "Hide theater mode button from player"
+    "message": "플레이어에서 Theater 모드 버튼 숨기기"
   },
   "feature_pcHide_theater_name": {
-    "message": "Theater Mode Button"
+    "message": "Theater 모드 버튼"
   },
   "feature_pcHide_ytLogo_desc": {
-    "message": "Hide the native brand button from player controls"
+    "message": "플레이어 컨트롤에서 기본 브랜드 버튼 숨기기"
   },
   "feature_pcHide_ytLogo_name": {
-    "message": "Native Brand Button"
+    "message": "기본 브랜드 버튼"
   },
   "feature_perChannelIntroOutro_desc": {
-    "message": "Skip the first N and last M seconds of every video on a given channel. Set offsets per channel from the watch page (Tools → Set Intro/Outro). Stored under perChannelIntroOutroData."
+    "message": "특정 채널의 모든 동영상에서 처음 N초와 마지막 M초를 건너뜁니다. 시청 페이지에서 채널별 오프셋을 설정합니다 (도구 → 인트로/아웃트로 설정). perChannelIntroOutroData에 저장됩니다."
   },
   "feature_perChannelIntroOutro_name": {
-    "message": "Per-Channel Intro/Outro Skip"
+    "message": "채널별 인트로/아웃트로 건너뛰기"
   },
   "feature_perChannelSpeed_desc": {
-    "message": "Remember and auto-apply preferred playback speed for each channel"
+    "message": "각 채널에 대한 선호 재생 속도를 기억하고 자동 적용"
   },
   "feature_perChannelSpeed_name": {
-    "message": "Per-Channel Speed Memory"
+    "message": "채널별 속도 기억"
   },
   "feature_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "선호하는 재생 속도를 전체적으로 기억하고 모든 동영상에 자동 적용"
   },
   "feature_persistentSpeed_name": {
-    "message": "지속적인 속도"
+    "message": "재생 속도 유지"
   },
   "feature_pipButton_desc": {
-    "message": "Adds a one-click PiP button to the player controls for native browser Picture-in-Picture"
+    "message": "네이티브 브라우저 PiP를 위한 원클릭 PiP 버튼을 플레이어 컨트롤에 추가"
   },
   "feature_pipButton_name": {
-    "message": "Picture-in-Picture Button"
+    "message": "PiP 버튼"
   },
   "feature_playbackSpeedOSD_desc": {
-    "message": "Show speed overlay on the video player (like VLC) instead of corner toast"
+    "message": "코너 토스트 대신 동영상 플레이어에 속도 오버레이 표시 (VLC 스타일)"
   },
   "feature_playbackSpeedOSD_name": {
-    "message": "Speed Change OSD"
+    "message": "속도 변경 OSD"
   },
   "feature_playbackStatsOverlay_desc": {
-    "message": "Shows video codec, resolution, bitrate, and dropped frame count as a togglable overlay"
+    "message": "동영상 코덱, 해상도, 비트레이트, 드롭된 프레임 수를 토글 가능한 오버레이로 표시"
   },
   "feature_playbackStatsOverlay_name": {
-    "message": "Playback Stats Overlay"
+    "message": "재생 통계 오버레이"
   },
   "feature_playlistEnhancer_desc": {
-    "message": "Adds shuffle, copy, and hide-duplicate tools to playlist panels"
+    "message": "재생목록 패널에 셔플, 복사, 중복 숨기기 도구 추가"
   },
   "feature_playlistEnhancer_name": {
-    "message": "Playlist Enhancer"
+    "message": "재생목록 강화"
   },
   "feature_playlistQuickRemove_desc": {
-    "message": "Show a trash icon on each item in playlists you own for one-click removal"
+    "message": "소유한 재생목록의 각 항목에 원클릭 제거를 위한 휴지통 아이콘 표시"
   },
   "feature_playlistQuickRemove_name": {
-    "message": "Playlist Quick-Remove Overlay"
+    "message": "재생목록 빠른 제거 오버레이"
   },
   "feature_playlistSearch_desc": {
-    "message": "Adds a search input above playlist panels to filter items by title"
+    "message": "재생목록 패널 위에 제목별 항목 필터링을 위한 검색 입력란 추가"
   },
   "feature_playlistSearch_name": {
-    "message": "Playlist Search"
+    "message": "재생목록 검색"
   },
   "feature_popOutPlayer_desc": {
-    "message": "Detach the video into a resizable floating Picture-in-Picture window with transport controls"
+    "message": "동영상을 재생 컨트롤이 있는 크기 조절 가능한 플로팅 PiP 창으로 분리"
   },
   "feature_popOutPlayer_name": {
-    "message": "Pop-Out Player"
+    "message": "팝아웃 플레이어"
   },
   "feature_preciseViewCounts_desc": {
-    "message": "Show full view counts (1,234,567) instead of truncated (1.2M)"
+    "message": "축약(1.2M) 대신 전체 조회수(1,234,567) 표시"
   },
   "feature_preciseViewCounts_name": {
-    "message": "Precise View Counts"
+    "message": "정확한 조회수"
   },
   "feature_preloadComments_desc": {
-    "message": "Eagerly load the comment section so it is ready when you scroll down"
+    "message": "스크롤 시 바로 볼 수 있도록 댓글 섹션을 미리 로드"
   },
   "feature_preloadComments_name": {
-    "message": "Preload Comments"
+    "message": "댓글 미리 로드"
   },
   "feature_premiumLiveChat_desc": {
-    "message": "Refine live chat with a polished header, elevated message rows, and a premium composer."
+    "message": "세련된 헤더, 향상된 메시지 행, 프리미엄 작성기로 실시간 채팅을 개선합니다."
   },
   "feature_premiumLiveChat_name": {
-    "message": "Premium Live Chat"
+    "message": "프리미엄 실시간 채팅"
   },
   "feature_presetPowerUser_desc": {
-    "message": "Maximum feature density: playback stats, persistent speed, fine speed control, resume playback, mini player bar, focused mode, A-B loop. Toggle off to restore prior values."
+    "message": "최대 기능 밀도: 재생 통계, 속도 유지, 미세 속도 제어, 재생 위치 복원, 미니 플레이어 바, 집중 모드, A-B 반복. 끄면 이전 값이 복원됩니다."
   },
   "feature_presetPowerUser_name": {
-    "message": "Power User Preset"
+    "message": "파워 유저 프리셋"
   },
   "feature_presetPrivacy_desc": {
-    "message": "Privacy-focused bundle: clean share URLs, hide tracking chips, block infinite scroll, disable SPA navigation. Toggle off to restore prior values."
+    "message": "개인정보 보호 번들: 깨끗한 공유 URL, 추적 칩 숨기기, 무한 스크롤 차단, SPA 탐색 비활성화. 끄면 이전 값이 복원됩니다."
   },
   "feature_presetPrivacy_name": {
-    "message": "Privacy Preset"
+    "message": "개인정보 프리셋"
   },
   "feature_presetResearcher_desc": {
-    "message": "Research/study bundle: transcript viewer, timestamp bookmarks, watch time tracker, AI summary, comment search. Toggle off to restore prior values."
+    "message": "연구/학습 번들: 대본 뷰어, 타임스탬프 북마크, 시청 시간 추적기, AI 요약, 댓글 검색. 끄면 이전 값이 복원됩니다."
   },
   "feature_presetResearcher_name": {
-    "message": "Researcher Preset"
+    "message": "연구자 프리셋"
   },
   "feature_preventAutoplay_desc": {
-    "message": "Stop videos from automatically playing on page load"
+    "message": "페이지 로드 시 동영상이 자동 재생되지 않도록 방지"
   },
   "feature_preventAutoplay_name": {
-    "message": "Prevent Autoplay"
+    "message": "자동 재생 방지"
   },
   "feature_qualityProfileMatrix_desc": {
-    "message": "Set different default qualities for normal / theater / fullscreen / background / embed contexts. ISOLATED-world detects the context and writes data-ytkit-quality-context on <html>; the MAIN-world bridge re-applies the matching quality via movie_player.setPlaybackQualityRange()."
+    "message": "일반 / Theater / 전체 화면 / 백그라운드 / 임베드 컨텍스트에 대해 각각 다른 기본 화질을 설정합니다. ISOLATED 월드가 컨텍스트를 감지하고 <html>에 data-ytkit-quality-context를 기록하며, MAIN 월드 브릿지가 movie_player.setPlaybackQualityRange()로 일치하는 화질을 재적용합니다."
   },
   "feature_qualityProfileMatrix_name": {
-    "message": "Per-Context Quality"
+    "message": "컨텍스트별 화질"
   },
   "feature_quickLinkEditor_desc": {
-    "message": "Customize the Astra launcher menu. One link per line: Label | URL"
+    "message": "Astra 런처 메뉴를 사용자 지정합니다. 줄당 하나의 링크: 라벨 | URL"
   },
   "feature_quickLinkEditor_name": {
-    "message": "Edit Launcher Links"
+    "message": "런처 링크 편집"
   },
   "feature_quickLinkMenu_desc": {
-    "message": "Adds a compact quick-links menu in the masthead with customizable links"
+    "message": "마스트헤드에 사용자 지정 가능한 링크가 있는 컴팩트 빠른 링크 메뉴 추가"
   },
   "feature_quickLinkMenu_name": {
-    "message": "Quick Links"
+    "message": "빠른 링크"
   },
   "feature_reactionSpammer_desc": {
-    "message": "Select live chat reactions and send them in a randomized loop."
+    "message": "실시간 채팅 반응을 선택하고 무작위 루프로 전송합니다."
   },
   "feature_reactionSpammer_name": {
-    "message": "Reaction Spammer"
+    "message": "반응 연속 전송"
   },
   "feature_rectangularizeYouTube_desc": {
-    "message": "Strips YouTube's pill / stadium / fully-rounded backdrops. Any backdrop with border-radius > 12px gets clamped to 8px. Avatars and progress rings stay circular."
+    "message": "YouTube의 필/경기장/완전 둥근 배경을 제거합니다. border-radius > 12px인 배경은 8px로 제한됩니다. 아바타와 진행 링은 원형을 유지합니다."
   },
   "feature_rectangularizeYouTube_name": {
-    "message": "Rectangularize UI"
+    "message": "UI 각진 모양으로"
   },
   "feature_redditComments_desc": {
-    "message": "Find Reddit discussions mentioning the current video (button in secondary sidebar)"
+    "message": "현재 동영상을 언급하는 Reddit 토론 찾기 (보조 사이드바의 버튼)"
   },
   "feature_redditComments_name": {
-    "message": "Reddit Comments"
+    "message": "Reddit 댓글"
   },
   "feature_redirectHomeToSubs_desc": {
-    "message": "Automatically redirect the YouTube homepage to your subscriptions feed"
+    "message": "YouTube 홈페이지를 구독 피드로 자동 리디렉션"
   },
   "feature_redirectHomeToSubs_name": {
-    "message": "Redirect Home to Subscriptions"
+    "message": "홈을 구독으로 리디렉션"
   },
   "feature_redirectShorts_desc": {
-    "message": "Open Shorts in the standard video player"
+    "message": "Shorts를 일반 동영상 플레이어에서 열기"
   },
   "feature_redirectShorts_name": {
-    "message": "Redirect Shorts"
+    "message": "Shorts 리디렉션"
   },
   "feature_redirectToVideosTab_desc": {
-    "message": "Open channel pages directly on the Videos tab"
+    "message": "채널 페이지를 동영상 탭에서 바로 열기"
   },
   "feature_redirectToVideosTab_name": {
-    "message": "Channels → Videos Tab"
+    "message": "채널 → 동영상 탭"
   },
   "feature_reducedMotion_desc": {
-    "message": "Forces every Astra-injected animation, transition, and scroll behavior to be near-instant. Respects the OS prefers-reduced-motion setting automatically; this toggle adds an unconditional override on top."
+    "message": "Astra가 삽입한 모든 애니메이션, 전환, 스크롤 동작을 거의 즉각적으로 만듭니다. OS의 prefers-reduced-motion 설정을 자동으로 존중하며, 이 토글은 무조건적 오버라이드를 추가합니다."
   },
   "feature_reducedMotion_name": {
-    "message": "Reduced Motion (strong)"
+    "message": "모션 감소 (강력)"
   },
   "feature_remainingTimeDisplay_desc": {
-    "message": "Show time remaining next to current time in the player, adjusted for playback speed"
+    "message": "플레이어에서 현재 시간 옆에 재생 속도를 반영한 남은 시간 표시"
   },
   "feature_remainingTimeDisplay_name": {
-    "message": "Remaining Time Display"
+    "message": "남은 시간 표시"
   },
   "feature_rememberVolume_desc": {
-    "message": "Persist your volume level across videos and sessions"
+    "message": "동영상과 세션 간에 볼륨 수준 유지"
   },
   "feature_rememberVolume_name": {
-    "message": "Remember Volume"
+    "message": "볼륨 기억"
   },
   "feature_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "피드와 추천에서 모든 Shorts 동영상 숨기기"
   },
   "feature_removeAllShorts_name": {
-    "message": "Shorts 숨기기"
+    "message": "Shorts 제거"
   },
   "feature_researchSpacedReview_desc": {
-    "message": "Export study/work-mode data to Markdown or CSV: watch-time totals, focused-mode state, digital-wellbeing state, and timestamp bookmarks with deep links."
+    "message": "학습/작업 모드 데이터를 마크다운 또는 CSV로 내보내기: 시청 시간 총계, 집중 모드 상태, 디지털 웰빙 상태, 딥 링크가 포함된 타임스탬프 북마크."
   },
   "feature_researchSpacedReview_name": {
-    "message": "Study / Work Export"
+    "message": "학습 / 작업 내보내기"
   },
   "feature_researchTranscriptIndex_desc": {
-    "message": "Indexes the transcript of every video you open into a local IndexedDB. Adds a global \"Search Transcripts\" panel surfaced from the popup or via window.__ytkitSearchTranscripts(query). Index can be cleared from settings; no telemetry."
+    "message": "열어본 모든 동영상의 대본을 로컬 IndexedDB에 인덱싱합니다. 팝업 또는 window.__ytkitSearchTranscripts(query)에서 표시되는 전역 \"대본 검색\" 패널을 추가합니다. 인덱스는 설정에서 삭제 가능하며, 원격 전송 없음."
   },
   "feature_researchTranscriptIndex_name": {
-    "message": "Transcript Search Index"
+    "message": "대본 검색 인덱스"
   },
   "feature_researchTranscriptSearchPanel_desc": {
-    "message": "Adds a \"Search transcripts\" button on the watch page that opens a search UI over the local IndexedDB transcript index. Requires Transcript Search Index to be on. Default off."
+    "message": "시청 페이지에 로컬 IndexedDB 대본 인덱스를 검색하는 UI를 여는 \"대본 검색\" 버튼을 추가합니다. 대본 검색 인덱스가 켜져 있어야 합니다. 기본 꺼짐."
   },
   "feature_researchTranscriptSearchPanel_name": {
-    "message": "Transcript Search Panel"
+    "message": "대본 검색 패널"
   },
   "feature_restoreNativeYouTubeUi_desc": {
-    "message": "Show the channel/comment avatars and home-feed shelves that Astra Deck hides by default."
+    "message": "Astra Deck이 기본으로 숨기는 채널/댓글 아바타 및 홈 피드 선반을 다시 표시합니다."
   },
   "feature_restoreNativeYouTubeUi_name": {
-    "message": "Restore Native YouTube UI"
+    "message": "YouTube 기본 UI 복원"
   },
   "feature_resumePlayback_desc": {
-    "message": "Remember where you stopped watching and automatically resume from that point"
+    "message": "시청을 멈춘 위치를 기억하고 해당 지점에서 자동으로 재개"
   },
   "feature_resumePlayback_name": {
-    "message": "Resume Playback Position"
+    "message": "재생 위치 복원"
   },
   "feature_returnDislike_desc": {
-    "message": "Restore an estimated dislike count via the public Return YouTube Dislike API. Cached locally; respects a 100 req/min budget. No cookies sent. Off by default."
+    "message": "공개 RYD API를 통해 추정 싫어요 수를 복원합니다. 로컬 캐시 사용, 분당 100건 요청 한도 준수, 쿠키 미전송. 기본 꺼짐."
   },
   "feature_returnDislike_name": {
-    "message": "Return YouTube Dislike"
+    "message": "YouTube 싫어요 복원"
   },
   "feature_reversePlaylist_desc": {
-    "message": "Adds a \"Reverse\" button to playlist panels to play oldest first"
+    "message": "오래된 순으로 재생하기 위해 재생목록 패널에 \"역순\" 버튼 추가"
   },
   "feature_reversePlaylist_name": {
-    "message": "Reverse Playlist Button"
+    "message": "재생목록 역순 버튼"
   },
   "feature_rssFeedLink_desc": {
-    "message": "Show an RSS feed link on channel pages for subscribing via RSS readers"
+    "message": "RSS 리더로 구독할 수 있도록 채널 페이지에 RSS 피드 링크 표시"
   },
   "feature_rssFeedLink_name": {
-    "message": "RSS Feed Link"
+    "message": "RSS 피드 링크"
   },
   "feature_sbCat_filler_desc": {
-    "message": "Tangential or filler content"
+    "message": "주제에서 벗어나거나 불필요한 콘텐츠"
   },
   "feature_sbCat_filler_name": {
-    "message": "Skip Filler"
+    "message": "불필요 내용 건너뛰기"
   },
   "feature_sbCat_interaction_desc": {
-    "message": "\"Like, subscribe, comment\" reminders"
+    "message": "\"좋아요, 구독, 댓글\" 안내"
   },
   "feature_sbCat_interaction_name": {
-    "message": "Skip Interaction Reminders"
+    "message": "참여 요청 건너뛰기"
   },
   "feature_sbCat_intro_desc": {
-    "message": "Intro animations and branding"
+    "message": "인트로 애니메이션 및 브랜딩"
   },
   "feature_sbCat_intro_name": {
-    "message": "Skip Intros"
+    "message": "인트로 건너뛰기"
   },
   "feature_sbCat_music_offtopic_desc": {
-    "message": "Non-music sections in music videos"
+    "message": "뮤직 비디오에서 음악이 아닌 부분"
   },
   "feature_sbCat_music_offtopic_name": {
-    "message": "Skip Non-Music"
+    "message": "비음악 부분 건너뛰기"
   },
   "feature_sbCat_outro_desc": {
-    "message": "Endcards and outro sequences"
+    "message": "엔드카드와 아웃트로 시퀀스"
   },
   "feature_sbCat_outro_name": {
-    "message": "Skip Outros"
+    "message": "아웃트로 건너뛰기"
   },
   "feature_sbCat_poi_highlight_desc": {
-    "message": "Jump to the highlight/point of interest (disabled by default)"
+    "message": "하이라이트/관심 지점으로 이동 (기본 비활성화)"
   },
   "feature_sbCat_poi_highlight_name": {
-    "message": "Highlight Point of Interest"
+    "message": "관심 지점 강조"
   },
   "feature_sbCat_preview_desc": {
-    "message": "Preview or recap of upcoming content"
+    "message": "다가올 콘텐츠의 미리보기 또는 요약"
   },
   "feature_sbCat_preview_name": {
-    "message": "Skip Previews"
+    "message": "미리보기 건너뛰기"
   },
   "feature_sbCat_selfpromo_desc": {
-    "message": "Creator promoting their own products or channels"
+    "message": "크리에이터가 자신의 제품이나 채널을 홍보하는 부분"
   },
   "feature_sbCat_selfpromo_name": {
-    "message": "Skip Self-Promotion"
+    "message": "자기 홍보 건너뛰기"
   },
   "feature_sbCat_sponsor_desc": {
-    "message": "Paid promotions and sponsorship segments"
+    "message": "유료 프로모션 및 스폰서 구간"
   },
   "feature_sbCat_sponsor_name": {
-    "message": "Skip Sponsors"
+    "message": "스폰서 건너뛰기"
   },
   "feature_sbPerChannelProfiles_desc": {
-    "message": "Override which SponsorBlock categories are skipped on a per-channel basis"
+    "message": "채널별로 건너뛸 SponsorBlock 카테고리를 개별 설정"
   },
   "feature_sbPerChannelProfiles_name": {
-    "message": "SponsorBlock Per-Channel Profiles"
+    "message": "SponsorBlock 채널별 프로필"
   },
   "feature_scrollToPlayer_desc": {
-    "message": "Automatically scrolls to the top of the page when navigating to a new video"
+    "message": "새 동영상으로 이동할 때 자동으로 페이지 상단으로 스크롤"
   },
   "feature_scrollToPlayer_name": {
-    "message": "Scroll to Player on Navigate"
+    "message": "탐색 시 플레이어로 스크롤"
   },
   "feature_scrollWheelSpeed_desc": {
-    "message": "Adjust playback speed by scrolling the mouse wheel over the video player"
+    "message": "동영상 플레이어 위에서 마우스 휠을 스크롤하여 재생 속도 조정"
   },
   "feature_scrollWheelSpeed_name": {
-    "message": "Scroll Wheel Speed"
+    "message": "스크롤 휠 속도"
   },
   "feature_searchFilterDefaults_desc": {
-    "message": "Automatically apply a default sort order (upload date, view count, or rating) to YouTube search results"
+    "message": "YouTube 검색 결과에 기본 정렬 순서(업로드 날짜, 조회수, 평점) 자동 적용"
   },
   "feature_searchFilterDefaults_name": {
-    "message": "Search Filter Defaults"
+    "message": "검색 필터 기본값"
   },
   "feature_selectorHealthPanel_desc": {
-    "message": "Review live selector drift signals and export a JSON health report for fixture refreshes."
+    "message": "실시간 셀렉터 드리프트 신호를 확인하고 픽스처 갱신을 위한 JSON 상태 보고서를 내보냅니다."
   },
   "feature_selectorHealthPanel_name": {
-    "message": "Selector Health"
+    "message": "셀렉터 상태"
   },
   "feature_settingsProfiles_desc": {
-    "message": "Save, load, switch, import, and export named setting configurations (e.g. Gaming / Work / Music). Controls appear at the top of the settings panel when enabled."
+    "message": "명명된 설정 구성(예: 게임 / 작업 / 음악)을 저장, 로드, 전환, 가져오기, 내보내기합니다. 활성화하면 설정 패널 상단에 컨트롤이 나타납니다."
   },
   "feature_settingsProfiles_name": {
-    "message": "Settings Profiles"
+    "message": "설정 프로필"
   },
   "feature_shareMenuCleaner_desc": {
-    "message": "Removes social media buttons from the share dialog, leaving only the URL copy option"
+    "message": "공유 대화 상자에서 소셜 미디어 버튼을 제거하고 URL 복사 옵션만 남김"
   },
   "feature_shareMenuCleaner_name": {
-    "message": "Clean Share Menu"
+    "message": "깨끗한 공유 메뉴"
   },
   "feature_shortsAsRegularVideo_desc": {
-    "message": "Add native browser playback controls and scrubbing to YouTube Shorts"
+    "message": "YouTube Shorts에 기본 브라우저 재생 컨트롤과 스크러빙 추가"
   },
   "feature_shortsAsRegularVideo_name": {
-    "message": "Shorts Player Controls"
+    "message": "Shorts 플레이어 컨트롤"
   },
   "feature_showChannelVideoCount_desc": {
-    "message": "Display total uploaded video count next to the channel name on watch pages"
+    "message": "시청 페이지에서 채널 이름 옆에 총 업로드 동영상 수 표시"
   },
   "feature_showChannelVideoCount_name": {
-    "message": "Show Channel Video Count"
+    "message": "채널 동영상 수 표시"
   },
   "feature_showLocalDownloadButton_desc": {
-    "message": "Add a yt-dlp download options button on watch pages"
+    "message": "시청 페이지에 yt-dlp 다운로드 옵션 버튼 추가"
   },
   "feature_showLocalDownloadButton_name": {
-    "message": "Download Button"
+    "message": "다운로드 버튼"
   },
   "feature_showPlaylistDuration_desc": {
-    "message": "Display total playlist runtime and speed-adjusted estimate next to the playlist header"
+    "message": "재생목록 헤더 옆에 총 재생 시간과 속도 조정 예상 시간 표시"
   },
   "feature_showPlaylistDuration_name": {
-    "message": "Show Playlist Duration"
+    "message": "재생목록 재생 시간 표시"
   },
   "feature_showStatisticsDashboard_desc": {
-    "message": "Track videos watched, time on YouTube, and videos hidden"
+    "message": "시청한 동영상 수, YouTube 이용 시간, 숨긴 동영상 수 추적"
   },
   "feature_showStatisticsDashboard_name": {
-    "message": "Statistics Dashboard"
+    "message": "통계 대시보드"
   },
   "feature_showTimeInTabTitle_desc": {
-    "message": "Prepend current playback time [5:23] to the browser tab title"
+    "message": "브라우저 탭 제목에 현재 재생 시간 [5:23] 추가"
   },
   "feature_showTimeInTabTitle_name": {
-    "message": "Show Time in Tab Title"
+    "message": "탭 제목에 시간 표시"
   },
   "feature_sleepTimer_desc": {
-    "message": "Pause playback after a chosen number of minutes. The player countdown chip lets you cancel or add 5 minutes."
+    "message": "설정한 시간(분) 후 재생을 일시 중지합니다. 플레이어 카운트다운 칩으로 취소하거나 5분을 추가할 수 있습니다."
   },
   "feature_sleepTimer_name": {
-    "message": "Sleep Timer"
+    "message": "수면 타이머"
   },
   "feature_sortCommentsNewest_desc": {
-    "message": "Automatically switch the comment sort order to \"Newest first\" on every video"
+    "message": "모든 동영상에서 댓글 정렬 순서를 \"최신순\"으로 자동 전환"
   },
   "feature_sortCommentsNewest_name": {
-    "message": "Sort Comments Newest First"
+    "message": "댓글 최신순 정렬"
   },
   "feature_speedIndicatorOverlay_desc": {
-    "message": "Shows the current playback speed as a small overlay on the video when not at 1x"
+    "message": "1x가 아닐 때 동영상에 현재 재생 속도를 작은 오버레이로 표시"
   },
   "feature_speedIndicatorOverlay_name": {
-    "message": "Speed Indicator Overlay"
+    "message": "속도 표시 오버레이"
   },
   "feature_speedStep_desc": {
-    "message": "How much to change speed per scroll tick"
+    "message": "스크롤 한 번당 속도 변화량"
   },
   "feature_speedStep_name": {
-    "message": "Speed Step Amount"
+    "message": "속도 단계"
   },
   "feature_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "크라우드소싱 데이터를 사용하여 스폰서 구간, 인트로, 아웃트로 등 비콘텐츠 섹션을 자동 건너뛰기"
   },
   "feature_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "feature_squareAvatars_desc": {
-    "message": "Make channel avatars square instead of round"
+    "message": "채널 아바타를 원형 대신 사각형으로 표시"
   },
   "feature_squareAvatars_name": {
-    "message": "Square Avatars"
+    "message": "사각형 아바타"
   },
   "feature_squareSearchBar_desc": {
-    "message": "Remove rounded corners from the search bar"
+    "message": "검색 바의 둥근 모서리 제거"
   },
   "feature_squareSearchBar_name": {
-    "message": "Square Search Bar"
+    "message": "사각형 검색 바"
   },
   "feature_stickyChat_desc": {
-    "message": "Keeps the live chat panel pinned at the top of the sidebar when scrolling"
+    "message": "스크롤할 때 사이드바 상단에 실시간 채팅 패널을 고정"
   },
   "feature_stickyChat_name": {
-    "message": "Sticky Live Chat"
+    "message": "실시간 채팅 고정"
   },
   "feature_stickyVideo_desc": {
-    "message": "Fullscreen video on watch pages. Scroll down to reveal comments side-by-side. Scroll back to top to return to fullscreen."
+    "message": "시청 페이지에서 동영상을 전체 화면으로 표시. 아래로 스크롤하면 댓글이 나란히 나타납니다. 위로 스크롤하면 전체 화면으로 복귀합니다."
   },
   "feature_stickyVideo_name": {
-    "message": "Theater Split"
+    "message": "Theater 분할"
   },
   "feature_storageQuotaLRU_desc": {
-    "message": "LRU-cap growing settings (hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache) to prevent quota exhaustion"
+    "message": "할당량 소진을 방지하기 위해 증가하는 설정(hiddenVideos, hiddenChannels, timestampBookmarks, da_branding_cache, sb_segments_cache)에 LRU 상한 적용"
   },
   "feature_storageQuotaLRU_name": {
-    "message": "Storage Quota Management"
+    "message": "스토리지 할당량 관리"
   },
   "feature_styledFilterChips_desc": {
-    "message": "Compact, native-feeling filter chips on home and subscriptions"
+    "message": "홈과 구독에서 컴팩트하고 네이티브 느낌의 필터 칩"
   },
   "feature_styledFilterChips_name": {
-    "message": "Styled Filter Chips"
+    "message": "스타일 필터 칩"
   },
   "feature_subscriptionGroups_desc": {
-    "message": "PocketTube-grade local groups for your subscriptions feed. Create named groups, drag channels in, sort by date/duration/unwatched/new-since-last-visit. Groups data lives in subscriptionGroupData (local only); use Export to back it up."
+    "message": "구독 피드를 위한 PocketTube급 로컬 그룹. 이름이 있는 그룹을 만들고, 채널을 드래그하여 추가하고, 날짜/길이/미시청/마지막 방문 이후 새 항목으로 정렬합니다. 그룹 데이터는 subscriptionGroupData에 로컬 저장됩니다. 내보내기로 백업하세요."
   },
   "feature_subscriptionGroups_name": {
-    "message": "Subscription Groups"
+    "message": "구독 그룹"
   },
   "feature_subscriptionsGrid_desc": {
-    "message": "Use a denser grid layout on the subscriptions page"
+    "message": "구독 페이지에서 더 밀집된 그리드 레이아웃 사용"
   },
   "feature_subscriptionsGrid_name": {
-    "message": "Subscriptions Grid"
+    "message": "구독 그리드"
   },
   "feature_subtitleDownload_desc": {
-    "message": "One-click SRT download of the active caption track — standalone player button, no sidebar required"
+    "message": "활성 자막 트랙의 원클릭 SRT 다운로드 — 독립 실행형 플레이어 버튼, 사이드바 불필요"
   },
   "feature_subtitleDownload_name": {
-    "message": "Subtitle Download (SRT)"
+    "message": "자막 다운로드 (SRT)"
   },
   "feature_subtitleStyling_desc": {
-    "message": "Override YouTube caption appearance — font size/family/color, background, position, shadow"
+    "message": "YouTube 자막 모양 변경 — 글꼴 크기/종류/색상, 배경, 위치, 그림자"
   },
   "feature_subtitleStyling_name": {
-    "message": "Subtitle Styling"
+    "message": "자막 스타일링"
   },
   "feature_theaterAutoScroll_desc": {
-    "message": "Scroll video into full view when theater mode activates"
+    "message": "Theater 모드 활성화 시 동영상이 전체 보이도록 스크롤"
   },
   "feature_theaterAutoScroll_name": {
-    "message": "Theater Auto-Scroll"
+    "message": "Theater 자동 스크롤"
   },
   "feature_themeAccentColor_desc": {
-    "message": "Custom accent color for highlights, progress bar, and active UI elements"
+    "message": "강조 표시, 진행 표시줄, 활성 UI 요소에 대한 사용자 지정 강조 색상"
   },
   "feature_themeAccentColor_name": {
-    "message": "Accent Color"
+    "message": "강조 색상"
   },
   "feature_thinScrollbar_desc": {
-    "message": "Use a slim, unobtrusive scrollbar"
+    "message": "얇고 눈에 띄지 않는 스크롤바 사용"
   },
   "feature_thinScrollbar_name": {
-    "message": "Thin Scrollbar"
+    "message": "얇은 스크롤바"
   },
   "feature_thumbnailPreviewSize_desc": {
-    "message": "Increase the size of thumbnail hover previews for easier viewing on large screens"
+    "message": "큰 화면에서 쉽게 볼 수 있도록 썸네일 호버 미리보기 크기 증가"
   },
   "feature_thumbnailPreviewSize_name": {
-    "message": "Large Thumbnail Previews"
+    "message": "큰 썸네일 미리보기"
   },
   "feature_thumbnailQualityUpgrade_desc": {
-    "message": "Upgrades video thumbnails to maximum resolution where available"
+    "message": "가능한 경우 동영상 썸네일을 최대 해상도로 업그레이드"
   },
   "feature_thumbnailQualityUpgrade_name": {
-    "message": "HD Thumbnails"
+    "message": "HD 썸네일"
   },
   "feature_timestampBookmarks_desc": {
-    "message": "Bookmark moments in videos with custom notes. Click a bookmark to seek. Persists across sessions."
+    "message": "사용자 메모와 함께 동영상의 순간을 북마크합니다. 북마크를 클릭하면 해당 위치로 이동합니다. 세션 간에 유지됩니다."
   },
   "feature_timestampBookmarks_name": {
-    "message": "Timestamp Bookmarks"
+    "message": "타임스탬프 북마크"
   },
   "feature_titleCaseTransform_desc": {
-    "message": "Override YouTube's clickbait UPPERCASE titles with a casing style of your choice"
+    "message": "YouTube의 어그로 대문자 제목을 원하는 대소문자 스타일로 변경"
   },
   "feature_titleCaseTransform_name": {
-    "message": "Transform Video Title Case"
+    "message": "동영상 제목 대소문자 변환"
   },
   "feature_titleNormalization_desc": {
-    "message": "Convert ALL CAPS titles to Title Case. Reduces clickbait without changing meaning."
+    "message": "모두 대문자인 제목을 Title Case로 변환합니다. 의미를 바꾸지 않고 어그로를 줄입니다."
   },
   "feature_titleNormalization_name": {
-    "message": "Normalize Clickbait Titles"
+    "message": "어그로 제목 정규화"
   },
   "feature_tokenThemeBridge_desc": {
-    "message": "Pipes the user's themeAccentColor into YouTube's native --yt-sys-color-* tokens so native badges, hover states, and primary buttons follow the Astra accent without restyling each surface."
+    "message": "사용자의 themeAccentColor를 YouTube 네이티브 --yt-sys-color-* 토큰에 연결하여 네이티브 배지, 호버 상태, 기본 버튼이 각 표면을 개별적으로 리스타일하지 않고도 Astra 강조 색상을 따르도록 합니다."
   },
   "feature_tokenThemeBridge_name": {
-    "message": "Native Token Theme Bridge"
+    "message": "네이티브 토큰 테마 브릿지"
   },
   "feature_transcriptAiHandoff_desc": {
-    "message": "Adds a player-button that copies the transcript and opens your chosen AI tool with a summarization prompt pre-filled"
+    "message": "대본을 복사하고 요약 프롬프트가 미리 채워진 상태로 선택한 AI 도구를 여는 플레이어 버튼을 추가합니다"
   },
   "feature_transcriptAiHandoff_name": {
-    "message": "Transcript → AI One-Click Handoff"
+    "message": "대본 → AI 원클릭 전달"
   },
   "feature_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "사이드바에 타임스탬프 탐색 및 내보내기(txt/srt/클립보드/LLM 프롬프트)가 가능한 클릭 가능 대본 패널 추가"
   },
   "feature_transcriptViewer_name": {
     "message": "대본 사이드바"
   },
   "feature_uiStyleManager_desc": {
-    "message": "Choose rounded or square UI elements"
+    "message": "둥근 또는 사각형 UI 요소 선택"
   },
   "feature_uiStyleManager_name": {
-    "message": "UI Style"
+    "message": "UI 스타일"
   },
   "feature_videoAgeColors_desc": {
-    "message": "Color-coded thumbnail borders by upload age — fresh (green), week (blue), month (yellow), year (orange), ancient (red)"
+    "message": "업로드 날짜별 색상 코딩 썸네일 테두리 — 신규(녹색), 일주일(파랑), 한 달(노랑), 일 년(주황), 오래된(빨강)"
   },
   "feature_videoAgeColors_name": {
-    "message": "Video Age Color Coding"
+    "message": "동영상 날짜별 색상 코딩"
   },
   "feature_videoContextMenu_desc": {
-    "message": "Right-click on the video player for yt-dlp download actions"
+    "message": "동영상 플레이어를 마우스 오른쪽 클릭하여 yt-dlp 다운로드 작업 실행"
   },
   "feature_videoContextMenu_name": {
-    "message": "Player Download Menu"
+    "message": "플레이어 다운로드 메뉴"
   },
   "feature_videoLoopButton_desc": {
-    "message": "Add a loop toggle button to the player controls for one-click video looping"
+    "message": "원클릭 동영상 반복을 위한 반복 토글 버튼을 플레이어 컨트롤에 추가"
   },
   "feature_videoLoopButton_name": {
-    "message": "Video Loop Button"
+    "message": "동영상 반복 버튼"
   },
   "feature_videoNotes_desc": {
-    "message": "Keep a local note for the current video, export the notes archive, and cap the store at the 1000 most recently edited videos."
+    "message": "현재 동영상에 대한 로컬 메모를 유지하고, 메모 아카이브를 내보내며, 최근 편집된 1000개 동영상으로 저장소를 제한합니다."
   },
   "feature_videoNotes_name": {
-    "message": "Per-Video Notes"
+    "message": "동영상별 메모"
   },
   "feature_videoResolutionBadge_desc": {
-    "message": "Shows a 4K, HD, or SD badge on video thumbnails based on available quality"
+    "message": "사용 가능한 화질에 따라 동영상 썸네일에 4K, HD 또는 SD 배지 표시"
   },
   "feature_videoResolutionBadge_name": {
-    "message": "Resolution Badge on Thumbnails"
+    "message": "썸네일 해상도 배지"
   },
   "feature_videoFlip_desc": {
-    "message": "Mirror the video horizontally or vertically — useful for mirrored dance tutorials, text readability, or flipped recordings"
+    "message": "동영상을 가로 또는 세로로 반전 — 거울 댄스 튜토리얼, 텍스트 가독성, 뒤집힌 녹화에 유용"
   },
   "feature_videoFlip_name": {
-    "message": "Video Flip"
+    "message": "동영상 반전"
   },
   "feature_monoToStereo_desc": {
-    "message": "Center mono audio equally in both ears — fixes one-sided recordings, lectures, and old content that sounds unbalanced on headphones"
+    "message": "모노 오디오를 양쪽 귀에 균등하게 배치 — 한쪽만 들리는 녹음, 강의, 헤드폰에서 불균형하게 들리는 오래된 콘텐츠를 수정합니다"
   },
   "feature_monoToStereo_name": {
-    "message": "Mono to Stereo"
+    "message": "모노를 스테레오로"
   },
   "feature_videoRotation_desc": {
-    "message": "Rotate the video 90/180/270 degrees via CSS transform — useful for sideways phone recordings"
+    "message": "CSS 변환을 통해 동영상을 90/180/270도 회전 — 옆으로 촬영된 스마트폰 녹화에 유용"
   },
   "feature_videoRotation_name": {
-    "message": "Video Rotation"
+    "message": "동영상 회전"
   },
   "feature_videoScreenshot_desc": {
-    "message": "Capture the current video frame as a PNG image — copies to clipboard and downloads"
+    "message": "현재 동영상 프레임을 PNG 이미지로 캡처 — 클립보드에 복사 및 다운로드"
   },
   "feature_videoScreenshot_name": {
-    "message": "Video Screenshot"
+    "message": "동영상 스크린샷"
   },
   "feature_videosPerRow_desc": {
-    "message": "Set how many video thumbnails per row (0 = dynamic based on window width)"
+    "message": "한 행당 동영상 썸네일 수 설정 (0 = 창 너비에 따라 동적)"
   },
   "feature_videosPerRow_name": {
-    "message": "Videos Per Row"
+    "message": "행당 동영상 수"
   },
   "feature_videoVisualFilters_desc": {
-    "message": "Adjust brightness / contrast / saturation / hue / grayscale / sepia via CSS filter on the video element"
+    "message": "동영상 요소에 CSS 필터로 밝기/대비/채도/색조/흑백/세피아 조정"
   },
   "feature_videoVisualFilters_name": {
-    "message": "Video Visual Filters"
+    "message": "동영상 시각 필터"
   },
   "feature_videoZoom_desc": {
-    "message": "Hold Ctrl and scroll on the video to zoom in, then drag to pan around"
+    "message": "Ctrl을 누른 채 동영상에서 스크롤하여 확대하고 드래그하여 이동"
   },
   "feature_videoZoom_name": {
-    "message": "Video Zoom & Pan"
+    "message": "동영상 확대 및 이동"
   },
   "feature_vlcMpvHandoff_desc": {
-    "message": "GitHub-full profile only. Adds buttons next to the player that fire ytvlc:// or ytmpv:// protocol URLs. The protocol handler must be registered on your OS — Astra Deck never runs binaries directly. Default off."
+    "message": "GitHub 전체 프로필 전용. ytvlc:// 또는 ytmpv:// 프로토콜 URL을 실행하는 버튼을 플레이어 옆에 추가합니다. 프로토콜 핸들러가 OS에 등록되어 있어야 합니다 — Astra Deck은 바이너리를 직접 실행하지 않습니다. 기본 꺼짐."
   },
   "feature_vlcMpvHandoff_name": {
-    "message": "VLC / MPV Stream Handoff"
+    "message": "VLC / MPV 스트림 전달"
   },
   "feature_volumeWheelMode_desc": {
-    "message": "Scroll the mouse wheel over the player to change volume in 5% steps. A floating indicator chip surfaces the new level for 1.2 s; no keyboard shortcut is added."
+    "message": "플레이어 위에서 마우스 휠을 스크롤하여 5% 단위로 볼륨을 변경합니다. 플로팅 표시 칩이 새 수준을 1.2초간 표시하며, 키보드 단축키는 추가되지 않습니다."
   },
   "feature_volumeWheelMode_name": {
-    "message": "Volume Wheel"
+    "message": "볼륨 휠"
   },
   "feature_watchHistoryAnalytics_desc": {
-    "message": "Modal dashboard visualizing your 30-day YouTube watch time as a CSS bar chart (requires Watch Time Tracker)"
+    "message": "30일 YouTube 시청 시간을 CSS 막대 차트로 시각화하는 모달 대시보드 (시청 시간 추적기 필요)"
   },
   "feature_watchHistoryAnalytics_name": {
-    "message": "Watch History Analytics"
+    "message": "시청 기록 분석"
   },
   "feature_watchLaterCleanup_desc": {
-    "message": "Adds a \"Remove Watched\" button to the Watch Later playlist header for batch cleanup"
+    "message": "일괄 정리를 위해 나중에 볼 동영상 재생목록 헤더에 \"시청한 항목 제거\" 버튼 추가"
   },
   "feature_watchLaterCleanup_name": {
-    "message": "Watch Later Cleanup Button"
+    "message": "나중에 볼 동영상 정리 버튼"
   },
   "feature_watchLaterQuickAdd_desc": {
-    "message": "Adds a clock icon on every thumbnail for one-click Watch Later saving"
+    "message": "모든 썸네일에 원클릭 나중에 보기 저장을 위한 시계 아이콘 추가"
   },
   "feature_watchLaterQuickAdd_name": {
-    "message": "Watch Later Quick Button"
+    "message": "나중에 보기 빠른 버튼"
   },
   "feature_watchPageRestyle_desc": {
-    "message": "Premium watch-page layout for title, description, and metadata without hiding native controls"
+    "message": "기본 컨트롤을 숨기지 않으면서 제목, 설명, 메타데이터를 위한 프리미엄 시청 페이지 레이아웃"
   },
   "feature_watchPageRestyle_name": {
-    "message": "Watch Page Restyle"
+    "message": "시청 페이지 리스타일"
   },
   "feature_watchPageTabs_desc": {
-    "message": "Horizontal tab bar above the comments/description area to quickly switch views on the watch page"
+    "message": "댓글/설명 영역 위에 시청 페이지의 뷰를 빠르게 전환할 수 있는 가로 탭 바"
   },
   "feature_watchPageTabs_name": {
-    "message": "Watch Page Tabs"
+    "message": "시청 페이지 탭"
   },
   "feature_watchProgress_desc": {
-    "message": "Show colored progress bars on video thumbnails based on your watch history (saved locally)"
+    "message": "시청 기록에 따라 동영상 썸네일에 색상 진행 표시줄 표시 (로컬 저장)"
   },
   "feature_watchProgress_name": {
-    "message": "Watch Progress Indicators"
+    "message": "시청 진행 표시기"
   },
   "feature_watchTimeTracker_desc": {
-    "message": "Track your daily/weekly YouTube watch time with a stats widget in the settings panel"
+    "message": "설정 패널의 통계 위젯으로 일간/주간 YouTube 시청 시간 추적"
   },
   "feature_watchTimeTracker_name": {
-    "message": "Watch Time Tracker"
+    "message": "시청 시간 추적기"
   },
   "feature_wheelSeek_desc": {
-    "message": "Scroll the mouse wheel over the progress bar to seek. Step defaults to 5 s (configure via wheelSeekStepSec). Scrolling elsewhere over the player still drives Volume Wheel if it is on; the two features do not conflict."
+    "message": "진행 표시줄 위에서 마우스 휠을 스크롤하여 탐색합니다. 기본 단계는 5초입니다(wheelSeekStepSec으로 설정 가능). 플레이어의 다른 곳에서 스크롤하면 볼륨 휠이 켜져 있을 경우 볼륨이 조절됩니다. 두 기능은 충돌하지 않습니다."
   },
   "feature_wheelSeek_name": {
-    "message": "Wheel Seek"
+    "message": "휠 탐색"
   },
   "feature_widenSearchBar_desc": {
-    "message": "Expand the search bar to use more available space"
+    "message": "검색 바를 더 넓게 확장하여 사용 가능한 공간 활용"
   },
   "feature_widenSearchBar_name": {
-    "message": "Widen Search Bar"
+    "message": "검색 바 넓히기"
   },
   "feature_wpHide_askAISection_desc": {
-    "message": "Hide AI section in description"
+    "message": "설명의 AI 섹션 숨기기"
   },
   "feature_wpHide_askAISection_name": {
-    "message": "Ask AI Section"
+    "message": "AI에게 물어보기 섹션"
   },
   "feature_wpHide_askButton_desc": {
-    "message": "Hide Ask AI button"
+    "message": "AI에게 물어보기 버튼 숨기기"
   },
   "feature_wpHide_askButton_name": {
-    "message": "Ask Button"
+    "message": "물어보기 버튼"
   },
   "feature_wpHide_channelInfoCards_desc": {
-    "message": "Hide channel info cards in description"
+    "message": "설명의 채널 정보 카드 숨기기"
   },
   "feature_wpHide_channelInfoCards_name": {
-    "message": "Channel Info Cards"
+    "message": "채널 정보 카드"
   },
   "feature_wpHide_joinButton_desc": {
-    "message": "Hide join/membership button"
+    "message": "가입/멤버십 버튼 숨기기"
   },
   "feature_wpHide_joinButton_name": {
-    "message": "Join Button"
+    "message": "가입 버튼"
   },
   "feature_wpHide_moreActions_desc": {
-    "message": "Hide more actions menu button"
+    "message": "더보기 메뉴 버튼 숨기기"
   },
   "feature_wpHide_moreActions_name": {
-    "message": "More Actions (...)"
+    "message": "더보기 (...)"
   },
   "feature_wpHide_podcastSection_desc": {
-    "message": "Hide podcast/course section in description"
+    "message": "설명의 팟캐스트/강좌 섹션 숨기기"
   },
   "feature_wpHide_podcastSection_name": {
-    "message": "Podcast/Course Section"
+    "message": "팟캐스트/강좌 섹션"
   },
   "feature_wpHide_saveButton_desc": {
-    "message": "Hide save to playlist button"
+    "message": "재생목록에 저장 버튼 숨기기"
   },
   "feature_wpHide_saveButton_name": {
-    "message": "Save Button"
+    "message": "저장 버튼"
   },
   "feature_wpHide_transcriptSection_desc": {
-    "message": "Hide transcript section in description"
+    "message": "설명의 대본 섹션 숨기기"
   },
   "feature_wpHide_transcriptSection_name": {
-    "message": "Transcript Section"
+    "message": "대본 섹션"
   },
   "feature_youtubeMusicCompat_desc": {
-    "message": "Applies Astra Deck themeing + OLED + density features on music.youtube.com. Player-specific features (downloads, RYD, SponsorBlock) keep their existing per-page gating."
+    "message": "music.youtube.com에 Astra Deck 테마 + OLED + 밀도 기능을 적용합니다. 플레이어 관련 기능(다운로드, RYD, SponsorBlock)은 기존 페이지별 제한을 유지합니다."
   },
   "feature_youtubeMusicCompat_name": {
-    "message": "YouTube Music Compatibility"
+    "message": "YouTube Music 호환"
   },
   "feature_zenMode_desc": {
-    "message": "Dims the page around the video player for a focused viewing experience"
+    "message": "집중 시청을 위해 동영상 플레이어 주변의 페이지를 어둡게 합니다"
   },
   "feature_zenMode_name": {
-    "message": "Zen Mode"
+    "message": "젠 모드"
   },
   "filterTogglesLabel": {
     "message": "빠른 토글 필터"
   },
   "filterTogglesPlaceholder": {
-    "message": "Filter — try risk:api or category:downloads"
+    "message": "필터 — risk:api 또는 category:downloads 시도"
   },
   "groupQuickControls": {
     "message": "빠른 컨트롤"
@@ -2235,7 +2235,7 @@
     "message": "가져오기"
   },
   "languageAr": {
-    "message": "العربية (Arabic)"
+    "message": "العربية (아랍어)"
   },
   "languageAuto": {
     "message": "자동 (브라우저 기본값)"
@@ -2322,100 +2322,100 @@
     "message": "비디오 다운로드"
   },
   "playerGearAriaTpl": {
-    "message": "Open … settings"
+    "message": "… 설정 열기"
   },
   "playerGearTitleTpl": {
-    "message": "… Settings"
+    "message": "… 설정"
   },
   "popupTitle": {
     "message": "Astra Deck"
   },
   "qt_autoTheaterMode_desc": {
-    "message": "Open videos in theater view"
+    "message": "동영상을 Theater 뷰에서 열기"
   },
   "qt_autoTheaterMode_name": {
     "message": "자동 시어터"
   },
   "qt_blueLightFilter_desc": {
-    "message": "Warm the player for late viewing"
+    "message": "야간 시청을 위해 플레이어를 따뜻하게"
   },
   "qt_blueLightFilter_name": {
     "message": "블루라이트 필터"
   },
   "qt_cleanShareUrls_desc": {
-    "message": "Remove tracking from share links"
+    "message": "공유 링크에서 추적 제거"
   },
   "qt_cleanShareUrls_name": {
     "message": "깨끗한 URL"
   },
   "qt_commentSearch_desc": {
-    "message": "Filter watch-page comments inline"
+    "message": "시청 페이지에서 댓글 인라인 필터링"
   },
   "qt_commentSearch_name": {
     "message": "댓글 검색"
   },
   "qt_deArrow_desc": {
-    "message": "Replace clickbait titles and thumbnails"
+    "message": "어그로 제목과 썸네일 교체"
   },
   "qt_deArrow_name": {
     "message": "DeArrow"
   },
   "qt_debugMode_desc": {
-    "message": "Record detailed local diagnostics"
+    "message": "상세 로컬 진단 기록"
   },
   "qt_debugMode_name": {
     "message": "디버그 모드"
   },
   "qt_digitalWellbeing_desc": {
-    "message": "Track breaks and daily viewing"
+    "message": "휴식과 일일 시청 시간 추적"
   },
   "qt_digitalWellbeing_name": {
     "message": "디지털 웰빙"
   },
   "qt_disableAutoplayNext_desc": {
-    "message": "Stop the next video from starting"
+    "message": "다음 동영상 자동 시작 방지"
   },
   "qt_disableAutoplayNext_name": {
     "message": "자동재생 없음"
   },
   "qt_disableInfiniteScroll_desc": {
-    "message": "Stop endless feed loading"
+    "message": "끝없는 피드 로딩 중지"
   },
   "qt_disableInfiniteScroll_name": {
     "message": "스크롤 제한"
   },
   "qt_hideRelatedVideos_desc": {
-    "message": "Clear the watch-page side rail"
+    "message": "시청 페이지 사이드 레일 비우기"
   },
   "qt_hideRelatedVideos_name": {
     "message": "관련 동영상 숨기기"
   },
   "qt_miniPlayerBar_desc": {
-    "message": "Keep controls visible while scrolling"
+    "message": "스크롤 시 컨트롤 계속 표시"
   },
   "qt_miniPlayerBar_name": {
     "message": "미니 플레이어 바"
   },
   "qt_persistentSpeed_desc": {
-    "message": "Keep playback speed consistent"
+    "message": "재생 속도 일관 유지"
   },
   "qt_persistentSpeed_name": {
     "message": "지속적인 속도"
   },
   "qt_removeAllShorts_desc": {
-    "message": "Remove Shorts shelves and links"
+    "message": "Shorts 선반과 링크 제거"
   },
   "qt_removeAllShorts_name": {
     "message": "Shorts 숨기기"
   },
   "qt_sponsorBlock_desc": {
-    "message": "Skip crowd-marked sponsor segments"
+    "message": "크라우드 마킹된 스폰서 구간 건너뛰기"
   },
   "qt_sponsorBlock_name": {
     "message": "SponsorBlock"
   },
   "qt_transcriptViewer_desc": {
-    "message": "Read, jump, and export captions"
+    "message": "자막 읽기, 이동, 내보내기"
   },
   "qt_transcriptViewer_name": {
     "message": "대본 사이드바"
@@ -2442,49 +2442,49 @@
     "message": "빠른 토글"
   },
   "reenableMediadlAria": {
-    "message": "Re-enable Astra Downloader install prompts"
+    "message": "Astra Downloader 설치 프롬프트 다시 활성화"
   },
   "reenableMediadlBtn": {
-    "message": "Enable Downloader Prompts"
+    "message": "다운로더 프롬프트 활성화"
   },
   "resetBtn": {
     "message": "재설정"
   },
   "resultsAllAvailableTpl": {
-    "message": "… quick controls are available in this popup"
+    "message": "…개의 빠른 컨트롤이 이 팝업에서 사용 가능합니다"
   },
   "resultsMatching": {
     "message": "일치"
   },
   "resultsMatchTpl": {
-    "message": "… of … … match this filter"
+    "message": "… 중 …개가 이 필터와 일치합니다"
   },
   "schemaOverviewCountTpl": {
-    "message": "{enabled}/{total} settings on across {categories} categories"
+    "message": "{categories}개 카테고리에서 {enabled}/{total}개 설정 활성화"
   },
   "schemaOverviewEyebrow": {
-    "message": "Settings overview"
+    "message": "설정 개요"
   },
   "selectorHealthCopyAria": {
-    "message": "Copy selector-health report to clipboard"
+    "message": "셀렉터 상태 보고서를 클립보드에 복사"
   },
   "selectorHealthCopyBtn": {
-    "message": "Copy report"
+    "message": "보고서 복사"
   },
   "selectorHealthCopyDone": {
-    "message": "Copied — paste into a GitHub issue."
+    "message": "복사됨 — GitHub 이슈에 붙여넣기하세요."
   },
   "selectorHealthCopyFail": {
-    "message": "Clipboard write blocked. Open DevTools and call window.__ytkitDiagnostics.download() instead."
+    "message": "클립보드 쓰기가 차단되었습니다. DevTools를 열고 window.__ytkitDiagnostics.download()를 호출하세요."
   },
   "selectorHealthCopyNeedYt": {
-    "message": "Open a YouTube tab to build the report."
+    "message": "보고서를 생성하려면 YouTube 탭을 여세요."
   },
   "selectorHealthCopyNoSnap": {
-    "message": "No snapshot available — the page may still be loading."
+    "message": "스냅샷을 사용할 수 없습니다 — 페이지가 아직 로드 중일 수 있습니다."
   },
   "selectorHealthCopyPending": {
-    "message": "Building report…"
+    "message": "보고서 작성 중…"
   },
   "selectorHealthEmpty": {
     "message": "아직 샘플링된 표면이 없습니다."
@@ -2496,10 +2496,10 @@
     "message": "{count}개 표면 추적 중"
   },
   "speedBtnAriaTpl": {
-    "message": "Default playback speed …. Click to change."
+    "message": "기본 재생 속도 …. 클릭하여 변경."
   },
   "speedBtnTitleTpl": {
-    "message": "Default playback speed: … — applies to every video"
+    "message": "기본 재생 속도: … — 모든 동영상에 적용"
   },
   "speedPopupAria": {
     "message": "기본 재생 속도"
@@ -2529,7 +2529,7 @@
     "message": "모든 데이터가 지워졌습니다."
   },
   "statusAllDataClearedUndo": {
-    "message": "All data cleared. Click Undo Reset to restore (until you close the browser)."
+    "message": "모든 데이터가 지워졌습니다. 실행 취소를 클릭하여 복원하세요 (브라우저를 닫기 전까지)."
   },
   "statusBackupExported": {
     "message": "백업이 내보내졌습니다."
@@ -2562,10 +2562,10 @@
     "message": "가져오기 실패"
   },
   "statusMediadlReenabled": {
-    "message": "Astra Downloader install prompts re-enabled — reload a YouTube tab to see them."
+    "message": "Astra Downloader 설치 프롬프트가 다시 활성화되었습니다 — YouTube 탭을 새로고침하면 표시됩니다."
   },
   "statusMediadlReenableFail": {
-    "message": "Could not re-enable Astra Downloader prompts. Open chrome://extensions and reload."
+    "message": "Astra Downloader 프롬프트를 다시 활성화할 수 없습니다. chrome://extensions를 열고 새로고침하세요."
   },
   "statusOpenWorkspaceFail": {
     "message": "전체 작업 공간을 열 수 없습니다. 다시 시도하세요."
@@ -2577,16 +2577,16 @@
     "message": "재설정 실패"
   },
   "statusResetSnapshotFail": {
-    "message": "Reset aborted — could not stage an undo snapshot (data too large for recoverable reset). Export a backup first."
+    "message": "재설정 중단 — 실행 취소 스냅샷을 준비할 수 없습니다 (복구 가능한 재설정에 비해 데이터가 너무 큼). 먼저 백업을 내보내세요."
   },
   "statusResetUndoExpired": {
-    "message": "Undo no longer available — snapshot expired with the browser session."
+    "message": "실행 취소를 더 이상 사용할 수 없습니다 — 브라우저 세션이 종료되어 스냅샷이 만료되었습니다."
   },
   "statusResetUndoFail": {
-    "message": "Undo failed"
+    "message": "실행 취소 실패"
   },
   "statusResetUndone": {
-    "message": "Reset undone — all data restored."
+    "message": "재설정 취소됨 — 모든 데이터가 복원되었습니다."
   },
   "statusStorageReadFail": {
     "message": "스토리지 읽기 실패"
@@ -2619,13 +2619,13 @@
     "message": "다운로드가 이미 진행 중입니다."
   },
   "toastDlInstallPrompt": {
-    "message": "Install Astra Downloader to enable downloads."
+    "message": "다운로드를 활성화하려면 Astra Downloader를 설치하세요."
   },
   "toastDlReady": {
-    "message": "Astra Downloader is ready."
+    "message": "Astra Downloader가 준비되었습니다."
   },
   "toastDlRequestFailed": {
-    "message": "Astra Downloader request failed."
+    "message": "Astra Downloader 요청이 실패했습니다."
   },
   "toastDlRunning": {
     "message": "Astra Downloader가 실행 중입니다!"
@@ -2637,7 +2637,7 @@
     "message": "Astra Downloader 시작 중…"
   },
   "toastDlStopped": {
-    "message": "Astra Downloader stopped. Starting it again…"
+    "message": "Astra Downloader가 중지되었습니다. 다시 시작 중…"
   },
   "toggleStateOff": {
     "message": "비활성화됨"
@@ -2652,21 +2652,21 @@
     "message": "활성화됨"
   },
   "toggleUpdateFailTpl": {
-    "message": "Couldn't update …. Try again."
+    "message": "…을(를) 업데이트할 수 없습니다. 다시 시도하세요."
   },
   "undoResetAria": {
-    "message": "Restore data from the most recent Reset"
+    "message": "가장 최근 재설정에서 데이터 복원"
   },
   "undoResetBtn": {
-    "message": "Undo Reset"
+    "message": "재설정 취소"
   },
   "workspaceEyebrow": {
     "message": "설정 작업 공간"
   },
   "workspaceSupport": {
-    "message": "Quick toggles save immediately and sync to YouTube."
+    "message": "빠른 토글은 즉시 저장되며 YouTube에 동기화됩니다."
   },
   "workspaceTitle": {
-    "message": "Controls and backups"
+    "message": "컨트롤 및 백업"
   }
 }
