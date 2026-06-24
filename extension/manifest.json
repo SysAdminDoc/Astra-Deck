@@ -170,6 +170,7 @@
         "features/return-dislike/index.js",
         "features/sponsorblock/index.js",
         "features/dearrow/index.js",
+        "features/download-ui/index.js",
         "ytkit.js"
       ],
       "run_at": "document_idle",
@@ -252,6 +253,7 @@
         "features/return-dislike/index.js",
         "features/sponsorblock/index.js",
         "features/dearrow/index.js",
+        "features/download-ui/index.js",
         "ytkit.js"
       ],
       "all_frames": true,
